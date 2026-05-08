@@ -1,0 +1,26 @@
+# Local tooling and machine state. Nothing here is ever committed.
+/.tools/
+/.local/
+/.build/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.auto.tfvars
+!*.example.auto.tfvars
+
+# Secrets, dumps, and backups must never enter Git
+*.env
+!*.env.example
+*.pem
+*.key
+*.dump
+*.sql
+*.sql.gz
+
+# Build outputs
+node_modules/
+.DS_Store
