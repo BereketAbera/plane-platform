@@ -1,0 +1,4 @@
+# Branded images are pushed from the host to 127.0.0.1:5001 and pulled by the node
+# over the kind network from the same registry, under the same name and digest.
+[host."http://plane-registry:5000"]
+  capabilities = ["pull", "resolve"]

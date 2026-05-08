@@ -1,0 +1,6 @@
+# Try the local pull-through cache first (it fronts mirror.gcr.io), then Docker Hub.
+# Digests make any mirror safe to trust: content is verified against the pinned hash.
+server = "https://registry-1.docker.io"
+
+[host."http://plane-mirror-docker:5000"]
+  capabilities = ["pull", "resolve"]
