@@ -36,6 +36,14 @@ else
 fi
 kind export kubeconfig --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG" >/dev/null 2>&1
 
+# NetworkPolicies allow node-sourced traffic from Docker's default pool, because the exact /16
+# differs per machine. A custom daemon pool would silently break them, so stop here instead.
+kind_subnet="$(docker network inspect kind --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}' | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)"
+case "$kind_subnet" in
+  172.1[6-9].*|172.2[0-9].*|172.3[01].*) ok "kind network $kind_subnet is inside 172.16.0.0/12" ;;
+  *) die "kind network is $kind_subnet, outside 172.16.0.0/12 that NetworkPolicies allow. See docs/runbooks/troubleshooting.md" ;;
+esac
+
 log "Starting local services (registry, pull-through caches, Git remote)"
 docker compose -f "$ROOT/infrastructure/local-services/compose.yaml" up -d --build --quiet-pull 2>&1 | tail -8
 
