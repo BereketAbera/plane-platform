@@ -1,0 +1,90 @@
+# Opens a pull request copying digests dev has already recorded into prod-sim. It never builds.
+#
+# A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan
+# with a private repository: no environment reviewers, no protected branches. See README.md.
+name: promote-prod-sim
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Image to promote, such as web or backend. Leave empty to copy every image from dev.
+        required: false
+        type: string
+      digest:
+        description: Digest to promote, sha256:... Must already be recorded for dev. Needed with image.
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: promote-prod-sim
+  cancel-in-progress: false
+
+jobs:
+  open-pull-request:
+    name: Open promotion pull request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the branch behind the pull request
+      pull-requests: write # open the pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The refusal of a digest never recorded for dev reads the overlay's whole history.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Edit and re-render the prod-sim overlay
+        id: promote
+        env:
+          IMAGE: ${{ inputs.image }}
+          DIGEST: ${{ inputs.digest }}
+          # The workflow cannot reach the cluster. make gitops-publish takes the backup after the merge.
+          SKIP_BACKUP: "yes"
+          CONFIRM: "yes"
+          COMMIT: "no"
+          SKIP_REGISTRY_CHECK: "yes"
+        run: |
+          ./scripts/install-tools.sh helm kustomize yq
+          ./scripts/promote.sh prod-sim
+          if [[ ! -f .build/promote-message.txt ]]; then
+            echo 'prod-sim already runs these digests, so there is nothing to open.' >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo 'message<<MESSAGE_END'
+            cat .build/promote-message.txt
+            echo 'MESSAGE_END'
+            echo "title=$(head -n 1 .build/promote-message.txt)"
+          } >>"$GITHUB_OUTPUT"
+      # A pull request opened with GITHUB_TOKEN does not trigger on: pull_request, so check it here.
+      - name: Validate the result
+        if: steps.promote.outputs.title != ''
+        env:
+          SKIP_CHARTS: "yes"
+        run: ./scripts/ci/validate-manifests.sh
+      - name: Open the pull request
+        if: steps.promote.outputs.title != ''
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: promote/prod-sim
+          delete-branch: true
+          add-paths: |
+            helm/plane/overlays/prod-sim/kustomization.yaml
+            gitops/environments/prod-sim/manifests.yaml
+          commit-message: ${{ steps.promote.outputs.message }}
+          title: ${{ steps.promote.outputs.title }}
+          body: |
+            Promotion to prod-sim, requested by @${{ github.actor }}. Every digest here was already recorded
+            for dev, and `scripts/promote.sh` refused anything else. Nothing was rebuilt.
+
+            **Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free
+            plan, so there are no environment reviewers and no protected branches. Review it as the control it
+            stands in for.
+
+            After merging:
+
+            1. `git pull`
+            2. `make gitops-publish`, which takes the prod-sim backup first, because this workflow cannot reach the cluster

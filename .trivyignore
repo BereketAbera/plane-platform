@@ -1,0 +1,6 @@
+# Each entry says why it is accepted, and expires so that it gets looked at again.
+
+# Root file system not read-only, HIGH. Plane images write into their own trees at boot (collectstatic,
+# gunicorn, nginx temp paths), and no image has been run read-only yet. Critique section 6 item 11 and
+# contract section 2 make this a per-workload test after non-root passes. Remove when that test is done.
+KSV-0014 exp:2027-02-01

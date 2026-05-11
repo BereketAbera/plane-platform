@@ -1,0 +1,60 @@
+# Runs the same scripts as `make ci`. No secrets and no cluster, so a compromised tool has little
+# to steal: every job holds a read-only token and persists no credentials.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests
+        run: ./scripts/ci/lint.sh
+
+  manifests:
+    name: Manifests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The promotion invariant reads the history of the dev overlay.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Render drift, kubeconform, conftest, promotion invariant
+        run: ./scripts/ci/validate-manifests.sh
+      - name: One owner per resource
+        run: ./scripts/ci/ownership.sh
+
+  security:
+    name: Security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # gitleaks scans all of history, not only this commit.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Gitleaks, trivy config, trivy fs
+        run: ./scripts/ci/security.sh

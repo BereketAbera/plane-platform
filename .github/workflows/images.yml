@@ -1,0 +1,147 @@
+# Pull request: build only. Push to main: build, push to GHCR, record digests, and open a pull
+# request bumping dev. Merging that pull request is left to a person. See README.md for what this
+# plan can and cannot enforce, and for how a GHCR digest reaches the local registry.
+name: images
+
+on:
+  pull_request:
+    paths:
+      - apps/wayline/**
+      - scripts/ci/build-images.sh
+      - .github/workflows/images.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/wayline/**
+      - scripts/ci/build-images.sh
+      - .github/workflows/images.yml
+
+permissions: {}
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build only
+    if: github.event_name == 'pull_request'
+    # Native arm64, so no emulation. The target is an arm64 kind node.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build without pushing
+        env:
+          MIN_FREE_DISK_GIB: "5"
+          PUSH: "no"
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          ./scripts/install-tools.sh yq
+          ./scripts/ci/build-images.sh "ghcr.io/${OWNER,,}/wayline"
+
+  publish:
+    name: Build and push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    # GitHub-hosted arm runners have little disk. The default guard suits the laptop, not this.
+    env:
+      MIN_FREE_DISK_GIB: "5"
+    permissions:
+      contents: read
+      packages: write # push the built images to GHCR
+    outputs:
+      digests: ${{ steps.build.outputs.digests }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build, push, record digests
+        id: build
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          ./scripts/install-tools.sh yq
+          ./scripts/ci/build-images.sh "ghcr.io/${OWNER,,}/wayline"
+          {
+            echo 'digests<<DIGESTS_END'
+            cat .build/digests.tsv
+            echo 'DIGESTS_END'
+          } >>"$GITHUB_OUTPUT"
+          {
+            echo '### Digests recorded'
+            echo '```'
+            cat .build/digests.tsv
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  bump-dev:
+    name: Open digest bump for dev
+    needs: publish
+    if: needs.publish.outputs.digests != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the branch behind the pull request
+      pull-requests: write # open the pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Edit and re-render the dev overlay
+        id: promote
+        env:
+          DIGESTS: ${{ needs.publish.outputs.digests }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          ./scripts/install-tools.sh helm kustomize yq
+          mkdir -p .build
+          printf '%s\n' "$DIGESTS" >.build/digests.tsv
+          # Argo CD pulls from the local registry in pass 1, so the overlay keeps naming it. The digest
+          # is what travels, and scripts/ci/copy-to-local-registry.sh puts it there after the merge.
+          sed -i "s|\tghcr.io/${OWNER,,}/wayline/|\tlocalhost:5001/wayline/|" .build/digests.tsv
+          COMMIT=no SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev
+          {
+            echo 'message<<MESSAGE_END'
+            cat .build/promote-message.txt
+            echo 'MESSAGE_END'
+            echo "title=$(head -n 1 .build/promote-message.txt)"
+          } >>"$GITHUB_OUTPUT"
+      # A pull request opened with GITHUB_TOKEN does not trigger on: pull_request, so check it here.
+      - name: Validate the result
+        env:
+          SKIP_CHARTS: "yes"
+        run: ./scripts/ci/validate-manifests.sh
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: bump/dev-images
+          delete-branch: true
+          add-paths: |
+            helm/plane/overlays/dev/kustomization.yaml
+            gitops/environments/dev/manifests.yaml
+          commit-message: ${{ steps.promote.outputs.message }}
+          title: ${{ steps.promote.outputs.title }}
+          body: |
+            Digest bump for dev, opened by `images.yml`. Merge it yourself: nothing merges this automatically.
+
+            After merging:
+
+            1. `git pull`
+            2. `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`
+            3. `make gitops-publish`
+
+            `validate-manifests.sh` already ran in this workflow, because a pull request opened with
+            `GITHUB_TOKEN` does not start CI on its own.
