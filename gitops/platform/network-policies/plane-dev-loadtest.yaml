@@ -1,0 +1,16 @@
+# The k6 Job runs in dev only and reaches Traefik's pod port directly, so Docker Desktop's port
+# mapping stays out of the measurement. It must carry this label. Traefik's side is in traefik.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: k6
+  namespace: plane-dev
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: k6 } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8000 }

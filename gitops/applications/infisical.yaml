@@ -1,0 +1,45 @@
+# No finalizer: deleting this Application must not take down the secret store both Plane environments
+# sync from. Removing it is a deliberate act, done with a backup in hand.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infisical
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infisical
+  sources:
+    - repoURL: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+      chart: infisical-standalone
+      targetRevision: 1.12.0
+      helm:
+        valueFiles:
+          - $values/helm/values/infisical.yaml
+    - repoURL: git://plane-git/plane-platform.git
+      targetRevision: main
+      ref: values
+    # Postgres, Redis, the IngressRoute and the server's ServiceAccount: the chart has no hook for
+    # them, and the values file disables its bundled copies.
+    - repoURL: git://plane-git/plane-platform.git
+      targetRevision: main
+      path: infisical/manifests
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

@@ -1,0 +1,126 @@
+# traefik. The single door in: every browser request and every UI crosses this pod.
+#
+# ASSUMPTION, used by every policy in this directory that names 172.16.0.0/12: that CIDR holds the kind
+# Docker network. kind fixes only the network's IPv6 subnet and lets Docker choose the IPv4 /16 from
+# its default pool, so the value depends on what else is on the host: 172.18.0.0/16 on a clean
+# machine, 172.24.0.0/16 here on 2026-11-04 (docker network inspect kind). A committed manifest
+# cannot follow that, so these rules allow Docker's whole 172.16.0.0/12 pool on named ports only. It
+# breaks if daemon.json sets default-address-pools outside that range, or the pool runs out and Docker
+# moves to 192.168.0.0/16. Neither kind's pod CIDR (10.244.0.0/16) nor its Service CIDR (10.96.0.0/16)
+# overlaps it. Pass 2 replaces this with the node network.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: traefik
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: traefik
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# NodePort traffic reaches this policy with its source from before kube-proxy's SNAT, so the node's own
+# address is not what must be allowed. That source is whatever Docker's port publishing presents: the
+# kind network gateway or, on Docker Desktop, an address in its VM subnet (default 192.168.65.0/24).
+# Which one is only known at runtime, so both are here. Loopback-only exposure is enforced by kind's
+# listenAddress, not by this rule.
+#
+# 8080 (dashboard and ping) stays closed: kubelet probes come from root on the node and bypass policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: traefik-ingress
+  namespace: traefik
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - ipBlock: { cidr: 172.16.0.0/12 }
+        - ipBlock: { cidr: 192.168.65.0/24 }
+      ports:
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 8443 }
+    # Each environment's api dials its own public host, which CoreDNS rewrites to this Service.
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - { key: kubernetes.io/metadata.name, operator: In, values: [plane-dev, plane-prod-sim] }
+          podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: blackbox-exporter } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: plane-dev } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: k6 } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9100 }
+---
+# The coarse half of each pair: the backend namespace's own policy narrows which pods and ports accept.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: traefik-egress
+  namespace: traefik
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+  policyTypes: [Egress]
+  egress:
+    # The CRD provider watches the API server, seen as the node IP after DNAT.
+    - to:
+        - ipBlock: { cidr: 172.16.0.0/12 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+    - to:
+        - namespaceSelector:
+            matchExpressions:
+              - { key: kubernetes.io/metadata.name, operator: In, values: [plane-dev, plane-prod-sim] }
+      ports:
+        - { protocol: TCP, port: 3000 }
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 9000 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: argocd } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: argocd-server } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: infisical } }
+          podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: grafana } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9090 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: alertmanager } }
+      ports:
+        - { protocol: TCP, port: 9093 }

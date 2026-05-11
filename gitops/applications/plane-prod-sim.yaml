@@ -1,0 +1,39 @@
+# Rendered plain manifests: no Helm or Kustomize at sync time. No finalizer, deliberately:
+# deleting this Application, or removing this file from Git, orphans every object instead of
+# deleting the workloads. The data PVCs come from volumeClaimTemplates with no retention policy
+# set, so Argo CD does not track them and Kubernetes keeps them either way. PruneLast applies
+# removals only after the new state is healthy. allowEmpty stays false, so an empty render cannot
+# prune everything.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plane-prod-sim
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: plane-prod-sim
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plane-prod-sim
+  source:
+    repoURL: git://plane-git/plane-platform.git
+    targetRevision: main
+    path: gitops/environments/prod-sim
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - PruneLast=true
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

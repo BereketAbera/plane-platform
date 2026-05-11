@@ -1,0 +1,467 @@
+# Expected network reachability, for the integrator's test to execute. Run tests only after the
+# network-policies Application is Synced.
+#
+# How to run a row:
+# - Start a NEW short-lived pod in from.ns with from.labels, and connect to to.host:to.port. kindnet
+#   evaluates only the first packet of a new connection, so a long-lived pod proves nothing.
+#   Never test from a hostNetwork pod: kindnet accepts root sockets on the node without evaluation.
+# - Give every probe pod a readinessGate that nothing satisfies. Some labels here are also a Service's
+#   whole selector (postgres-exporter, redis-exporter, blackbox-exporter), so a Ready probe would join
+#   the Service and receive real traffic.
+# - allow passes on a completed connection, or on connection refused: refused means the packet arrived.
+# - deny passes ONLY on a timeout. Refused means the packet arrived, so it is a failure. A DNS failure
+#   is inconclusive, never a pass. protocol udp rows are DNS lookups.
+# - to.port is the Service port. The policy rule is written against the target port.
+# - Run a sentinel first: one deny row must time out and one allow row must connect, or kindnet may be
+#   failing open.
+#
+# Not covered, because a pod cannot exercise it: NodePort traffic from the host. tests/e2e/smoke.py
+# covers that path through plane.dev.localhost.
+#
+# Known limit, deliberately not a row: api is allowed to Traefik, and Traefik routes by Host header, so
+# api could request the other environment's public hostname. NetworkPolicy cannot see that.
+cases:
+  # DNS works from every namespace, or every other row is meaningless
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: traefik, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: monitoring, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: infisical, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: argocd, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+
+  # plane-dev: Traefik to the app
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-admin.plane-dev.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-space.plane-dev.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny, note: "no route needs the database" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+
+  # plane-dev: app tier to data
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 15672 }, expect: deny, note: "management port stays closed" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+
+  # plane-dev: live
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+
+  # plane-dev: the api's self-call, and nobody else's
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: allow, note: "copy_object; Service 80 is pod port 8000" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+
+  # plane-dev: frontends reach nothing
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+
+  # plane-dev: Infisical operator
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+
+  # plane-dev: exporters and backup
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: postgres-exporter } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: redis-exporter } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: postgres-exporter } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+
+  # plane-dev: Prometheus scrapes metrics ports, never data ports
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-rabbitmq-metrics.plane-dev.svc.cluster.local, port: 15692 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: postgres-exporter.plane-dev.svc.cluster.local, port: 9187 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: redis-exporter.plane-dev.svc.cluster.local, port: 9121 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: iso-dev-controller-manager-metrics-service.plane-dev.svc.cluster.local, port: 8443 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+
+  # plane-dev: no path to plane-prod-sim, from any workload
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: deny }
+
+  # plane-dev: no telemetry and no general internet, no API server, no Infisical
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: telemetry.plane.so, port: 443 }, expect: deny, note: "phone-home; DNS failure means inconclusive, not deny" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: telemetry.plane.so, port: 443 }, expect: deny, note: "phone-home; DNS failure means inconclusive, not deny" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: api.github.com, port: 443 }, expect: deny, note: "register_instance version check; DNS failure means inconclusive" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+
+  # plane-dev: nothing reaches the platform's own control surfaces
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: kps-prometheus.monitoring.svc.cluster.local, port: 9090 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: deny }
+
+  # plane-prod-sim: Traefik to the app
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-web.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-admin.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-space.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-live.plane-prod-sim.svc.cluster.local, port: 3000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny, note: "no route needs the database" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+
+  # plane-prod-sim: app tier to data
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 15672 }, expect: deny, note: "management port stays closed" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+
+  # plane-prod-sim: live
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+
+  # plane-prod-sim: the api's self-call, and nobody else's
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: allow, note: "copy_object; Service 80 is pod port 8000" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny }
+
+  # plane-prod-sim: frontends reach nothing
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: admin } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: deny }
+
+  # plane-prod-sim: Infisical operator
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+
+  # plane-prod-sim: exporters and backup
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: postgres-exporter } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: redis-exporter } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: postgres-exporter } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+
+  # plane-prod-sim: Prometheus scrapes metrics ports, never data ports
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-rabbitmq-metrics.plane-prod-sim.svc.cluster.local, port: 15692 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-minio.plane-prod-sim.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: postgres-exporter.plane-prod-sim.svc.cluster.local, port: 9187 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: redis-exporter.plane-prod-sim.svc.cluster.local, port: 9121 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: iso-prod-sim-controller-manager-metrics-service.plane-prod-sim.svc.cluster.local, port: 8443 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-rabbitmq.plane-prod-sim.svc.cluster.local, port: 5672 }, expect: deny }
+
+  # plane-prod-sim: no path to plane-dev, from any workload
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-rabbitmq.plane-dev.svc.cluster.local, port: 5672 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-minio.plane-dev.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-web.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: plane-live.plane-dev.svc.cluster.local, port: 3000 }, expect: deny }
+
+  # plane-prod-sim: no telemetry and no general internet, no API server, no Infisical
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: telemetry.plane.so, port: 443 }, expect: deny, note: "phone-home; DNS failure means inconclusive, not deny" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: telemetry.plane.so, port: 443 }, expect: deny, note: "phone-home; DNS failure means inconclusive, not deny" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: api.github.com, port: 443 }, expect: deny, note: "register_instance version check; DNS failure means inconclusive" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+
+  # plane-prod-sim: nothing reaches the platform's own control surfaces
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: kps-prometheus.monitoring.svc.cluster.local, port: 9090 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: deny }
+
+  # plane-dev only: the k6 Job
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: k6 } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: allow }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: k6 } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: deny, note: "load test stays in dev" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: k6 } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny, note: "goes through Traefik only" }
+
+  # infisical: its own data and the API server, and never Plane
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: infisical-redis.infisical.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "token review" }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: plane-redis.plane-dev.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: plane-pgdb.plane-prod-sim.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: plane-api.plane-prod-sim.svc.cluster.local, port: 8000 }, expect: deny }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: plane-redis.plane-prod-sim.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: infisical, labels: { app: infisical-standalone, component: infisical } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: infisical, labels: { app.kubernetes.io/component: backup } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: allow }
+  - { from: { ns: infisical, labels: { app.kubernetes.io/component: backup } }, to: { host: infisical-redis.infisical.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: infisical, labels: { probe: unlabelled } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: deny }
+
+  # traefik: backends, the API server, and nothing else
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: allow, note: "Service 80 is pod port 8080" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: allow, note: "Service 80 is pod port 3000" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-prometheus.monitoring.svc.cluster.local, port: 9090 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-alertmanager.monitoring.svc.cluster.local, port: 9093 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "CRD provider" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: deny }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: traefik, labels: { probe: unlabelled } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny }
+
+  # argocd: repo-server reaches Git on the kind network and chart repos on 443
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: plane-git, port: 9418 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: traefik.github.io, port: 443 }, expect: allow, note: "chart repo; DNS failure means inconclusive" }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: 1.1.1.1, port: 443 }, expect: allow, note: "any public address on 443; needs internet" }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: 1.1.1.1, port: 80 }, expect: deny, note: "443 only" }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: argocd-redis.argocd.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "repo-server reads no Kubernetes API" }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-repo-server } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+
+  # argocd: controller and server
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-server } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-server } }, to: { host: argocd-redis.argocd.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-server } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-server } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-application-controller } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-application-controller } }, to: { host: argocd-redis.argocd.svc.cluster.local, port: 6379 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-application-controller } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-application-controller } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-server } }, to: { host: plane-git, port: 9418 }, expect: deny, note: "only repo-server speaks Git" }
+  - { from: { ns: argocd, labels: { app.kubernetes.io/name: argocd-redis-secret-init } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "Helm hook rerun by terraform apply" }
+  - { from: { ns: argocd, labels: { probe: unlabelled } }, to: { host: argocd-redis.argocd.svc.cluster.local, port: 6379 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: argocd-server-metrics.argocd.svc.cluster.local, port: 8083 }, expect: allow, note: "needs server.metrics.enabled" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: argocd-application-controller-metrics.argocd.svc.cluster.local, port: 8082 }, expect: allow, note: "needs controller.metrics.enabled" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: argocd-repo-server-metrics.argocd.svc.cluster.local, port: 8084 }, expect: allow, note: "needs repoServer.metrics.enabled" }
+
+  # monitoring: Prometheus
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "service discovery" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-platform-control-plane, port: 10250 }, expect: allow, note: "kubelet and cAdvisor" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: plane-platform-control-plane, port: 9100 }, expect: allow, note: "node-exporter on hostNetwork" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: kps-alertmanager.monitoring.svc.cluster.local, port: 9093 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: kps-kube-state-metrics.monitoring.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: kps-operator.monitoring.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: alloy.monitoring.svc.cluster.local, port: 12345 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: blackbox.monitoring.svc.cluster.local, port: 9115 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: traefik-metrics.traefik.svc.cluster.local, port: 9100 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+
+  # monitoring: the rest
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: grafana } }, to: { host: kps-prometheus.monitoring.svc.cluster.local, port: 9090 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: grafana } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: grafana } }, to: { host: kps-alertmanager.monitoring.svc.cluster.local, port: 9093 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: grafana } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "dashboard sidecars" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: grafana } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "no plugin or update traffic" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: grafana } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: alloy } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: alloy } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "loki.source.kubernetes" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: alloy } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: alertmanager } }, to: { host: alert-sink.monitoring.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: alertmanager } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: blackbox-exporter } }, to: { host: traefik.traefik.svc.cluster.local, port: 80 }, expect: allow, note: "Service 80 is pod port 8000" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: blackbox-exporter } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny, note: "goes through Traefik only" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: kube-state-metrics } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: loki } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "only the off rules sidecar would need it" }
+  - { from: { ns: monitoring, labels: { probe: unlabelled } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: deny }
+
+  # kube-system: metrics-server only
+  - { from: { ns: kube-system, labels: { app.kubernetes.io/name: metrics-server } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: kube-system, labels: { app.kubernetes.io/name: metrics-server } }, to: { host: plane-platform-control-plane, port: 10250 }, expect: allow, note: "kubelet" }
+  - { from: { ns: kube-system, labels: { app.kubernetes.io/name: metrics-server } }, to: { host: plane-api.plane-dev.svc.cluster.local, port: 8000 }, expect: deny }
