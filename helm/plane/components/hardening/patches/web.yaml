@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-web-wl
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: web
+    spec:
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: plane-web
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          readinessProbe:
+            httpGet: {path: /, port: 3000}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: /, port: 3000}
+            periodSeconds: 30
+            timeoutSeconds: 5
+          # nginx as UID 101 cannot write its pid or temp files on the image's root-owned paths.
+          volumeMounts:
+            - {name: nginx-cache, mountPath: /var/cache/nginx}
+            - {name: nginx-run, mountPath: /run}
+            - {name: nginx-tmp, mountPath: /tmp}
+      volumes:
+        - {name: nginx-cache, emptyDir: {sizeLimit: 32Mi}}
+        - {name: nginx-run, emptyDir: {sizeLimit: 1Mi}}
+        - {name: nginx-tmp, emptyDir: {sizeLimit: 8Mi}}

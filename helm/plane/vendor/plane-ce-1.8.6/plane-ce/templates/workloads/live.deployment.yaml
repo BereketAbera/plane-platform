@@ -1,0 +1,74 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-live
+  labels:
+    app.name: {{ .Release.Namespace }}-{{ .Release.Name }}-live
+    {{- include "plane.commonLabels" $ | nindent 4 }}
+spec:
+  {{- if not .Values.live.assign_cluster_ip }}
+  clusterIP: None
+  {{- end }}
+  ports:
+  - name: live-3000
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app.name: {{ .Release.Namespace }}-{{ .Release.Name }}-live
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-live-wl
+  {{- include "plane.labelsAndAnnotations" (dict "context" $ "values" .Values.live) }}
+spec:
+  replicas: {{ .Values.live.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.name: {{ .Release.Namespace }}-{{ .Release.Name }}-live
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app.name: {{ .Release.Namespace }}-{{ .Release.Name }}-live
+        {{- include "plane.commonLabels" $ | nindent 8 }}
+        {{- include "plane.serviceAccountPodLabels" . }}
+      annotations:
+        timestamp: {{ now | quote }}
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-live
+        imagePullPolicy: {{ .Values.live.pullPolicy | default "Always" }}
+        image: {{ .Values.live.image | default "artifacts.plane.so/makeplane/plane-live" }}:{{ .Values.planeVersion }}
+        stdin: true
+        tty: true
+        resources:
+          requests:
+            memory: {{ .Values.live.memoryRequest | default "50Mi" | quote }}
+            cpu: {{ .Values.live.cpuRequest | default "50m" | quote }}
+          limits:
+            memory: {{ .Values.live.memoryLimit  | default "1000Mi" | quote }}
+            cpu: {{ .Values.live.cpuLimit | default "500m" | quote}}
+        envFrom:
+          - configMapRef:
+              name: {{ .Release.Name }}-live-vars
+              optional: false
+          - secretRef:
+              name: {{ if not (empty .Values.external_secrets.live_env_existingSecret) }}{{ .Values.external_secrets.live_env_existingSecret }}{{ else }}{{ .Release.Name }}-live-secrets{{ end }}
+              optional: false
+          {{- /* LAST in envFrom, deliberately. envFrom is later-source-wins, so this has to
+                 follow app_env/live_env: those may carry their own SECRET_KEY, and this hook
+                 exists precisely to make the app and live copies agree. First would let a
+                 stale key in an operator-supplied Secret win on one workload and not the
+                 other, which breaks live-server auth with no error. */}}
+          {{- include "plane.appKeysSecretRef" . }}
+      {{- include "plane.podScheduling" .Values.live }}
+      serviceAccount: {{ include "plane.serviceAccountName" . }}
+      serviceAccountName: {{ include "plane.serviceAccountName" . }}
+---

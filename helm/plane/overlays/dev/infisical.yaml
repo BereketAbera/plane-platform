@@ -1,0 +1,244 @@
+# How the six Secrets in contract section 8 reach this namespace. Every value comes from the flat
+# keys in the plane-dev Infisical project, so each shared password has one source.
+#
+# Templates use secretFrom, not the documented `.KEY.Value`: a missing key then fails the reconcile
+# and the CR goes Degraded. `.KEY.Value` renders a literal "<no value>" and reports success
+# (operator #121), which a database would then accept as a real password.
+#
+# targets[].metadata stops the operator copying this CR's labels and annotations, including Argo's
+# tracking id, onto the Secret.
+#
+# A target with a template gets only its template's keys, so no Secret carries a key it does not need.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalConnection
+metadata:
+  name: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  # Always set: when empty the operator falls back to its chart's hostAPI, whose default is
+  # Infisical Cloud, and would send identity tokens there.
+  address: http://infisical.infisical.svc.cluster.local:8080/api
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalAuth
+metadata:
+  name: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  infisicalConnectionRef:
+    name: infisical
+    namespace: plane-dev
+  method: kubernetes
+  kubernetes:
+    # The CRD accepts only a Secret reference here, and the id changes on every Infisical
+    # re-bootstrap, so it cannot be in Git. scripts/infisical-bootstrap writes this Secret. It is
+    # not a credential: login also needs a token for the ServiceAccount below.
+    identityIdRef:
+      name: plane-infisical-identity
+      namespace: plane-dev
+      key: identityId
+    serviceAccountRef:
+      name: plane-infisical-auth
+      namespace: plane-dev
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: plane-app-env
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: plane-dev
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: plane-dev
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: plane-app-env
+      namespace: plane-dev
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: plane
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          DATABASE_URL: 'postgresql://{{ (secretFrom "/" "PG_USER").Value }}:{{ (secretFrom "/" "PG_PASSWORD").Value }}@plane-pgdb.plane-dev.svc.cluster.local/{{ (secretFrom "/" "PG_DB").Value }}'
+          REDIS_URL: redis://plane-redis.plane-dev.svc.cluster.local:6379/
+          AMQP_URL: 'amqp://{{ (secretFrom "/" "RABBITMQ_USER").Value }}:{{ (secretFrom "/" "RABBITMQ_PASSWORD").Value }}@plane-rabbitmq.plane-dev.svc.cluster.local/'
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: plane-app-keys
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: plane-dev
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: plane-dev
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: plane-app-keys
+      namespace: plane-dev
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: plane
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          SECRET_KEY: '{{ (secretFrom "/" "SECRET_KEY").Value }}'
+          LIVE_SERVER_SECRET_KEY: '{{ (secretFrom "/" "LIVE_SERVER_SECRET_KEY").Value }}'
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: plane-live-env
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: plane-dev
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: plane-dev
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: plane-live-env
+      namespace: plane-dev
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: plane
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          REDIS_URL: redis://plane-redis.plane-dev.svc.cluster.local:6379/
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: plane-doc-store
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: plane-dev
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: plane-dev
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: plane-doc-store
+      namespace: plane-dev
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: plane
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          USE_MINIO: "1"
+          MINIO_ROOT_USER: '{{ (secretFrom "/" "SILO_ACCESS_KEY").Value }}'
+          MINIO_ROOT_PASSWORD: '{{ (secretFrom "/" "SILO_SECRET_KEY").Value }}'
+          AWS_ACCESS_KEY_ID: '{{ (secretFrom "/" "SILO_ACCESS_KEY").Value }}'
+          AWS_SECRET_ACCESS_KEY: '{{ (secretFrom "/" "SILO_SECRET_KEY").Value }}'
+          AWS_S3_BUCKET_NAME: uploads
+          AWS_S3_ENDPOINT_URL: http://plane-minio:9000
+          # Bytes. Django crashes at import on a value like 5MB.
+          FILE_SIZE_LIMIT: "5242880"
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: plane-pgdb
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: plane-dev
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: plane-dev
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: plane-pgdb
+      namespace: plane-dev
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: plane
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          POSTGRES_USER: '{{ (secretFrom "/" "PG_USER").Value }}'
+          POSTGRES_PASSWORD: '{{ (secretFrom "/" "PG_PASSWORD").Value }}'
+          POSTGRES_DB: '{{ (secretFrom "/" "PG_DB").Value }}'
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: plane-rabbitmq
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: plane-dev
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: plane-dev
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: plane-rabbitmq
+      namespace: plane-dev
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: plane
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          RABBITMQ_DEFAULT_USER: '{{ (secretFrom "/" "RABBITMQ_USER").Value }}'
+          RABBITMQ_DEFAULT_PASS: '{{ (secretFrom "/" "RABBITMQ_PASSWORD").Value }}'

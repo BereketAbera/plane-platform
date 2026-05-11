@@ -1,0 +1,61 @@
+# Rendered by scripts/render.sh into gitops/environments/dev/manifests.yaml. Argo CD syncs that
+# file and never runs Kustomize or Helm.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: plane-dev
+
+helmGlobals:
+  chartHome: ../../vendor/plane-ce-1.8.6
+
+helmCharts:
+- name: plane-ce
+  namespace: plane-dev
+  releaseName: plane
+  valuesFile: values.yaml
+
+resources:
+- infisical.yaml
+
+components:
+- ../../components/hardening
+
+# Contract section 13: digests live here, and only `make promote` changes these lines. `name` is
+# the reference the chart renders, so it never changes. Index digests, never platform-specific ones.
+images:
+- digest: sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+  name: artifacts.plane.so/makeplane/plane-admin
+  newName: docker.io/makeplane/plane-admin
+  newTag: v1.4.3
+- digest: sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+  name: artifacts.plane.so/makeplane/plane-backend
+  newName: docker.io/makeplane/plane-backend
+  newTag: v1.4.3
+- digest: sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+  name: artifacts.plane.so/makeplane/plane-frontend
+  newName: docker.io/makeplane/plane-frontend
+  newTag: v1.4.3
+- digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+  name: artifacts.plane.so/makeplane/plane-live
+  newName: docker.io/makeplane/plane-live
+  newTag: v1.4.3
+- digest: sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+  name: artifacts.plane.so/makeplane/plane-space
+  newName: docker.io/makeplane/plane-space
+  newTag: v1.4.3
+- digest: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+  name: docker.io/pgsty/silo
+  newName: docker.io/pgsty/silo
+  newTag: RELEASE.2026-10-26T00-00-00Z-distroless
+- digest: sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+  name: postgres
+  newName: docker.io/library/postgres
+  newTag: 15.19-alpine
+- digest: sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+  name: rabbitmq
+  newName: docker.io/library/rabbitmq
+  newTag: 3.13.7-management-alpine
+- digest: sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+  name: valkey/valkey
+  newName: docker.io/valkey/valkey
+  newTag: 7.2.15-alpine

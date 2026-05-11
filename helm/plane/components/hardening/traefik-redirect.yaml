@@ -1,0 +1,12 @@
+# Upstream's Caddy proxy issues this redirect and the chart has no equivalent. Without it the
+# bare path reaches nginx, which redirects to the pod's port 3000 (helm-charts #211, #274).
+# Matching the scheme and host generically lets one Middleware serve both environments.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: plane-trailing-slash
+spec:
+  redirectRegex:
+    regex: ^(https?://[^/]+/(?:god-mode|spaces))(\?.*)?$
+    replacement: ${1}/${2}
+    permanent: true

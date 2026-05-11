@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-beat-worker-wl
+  annotations:
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: beat
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: plane-beat-worker
+          env:
+            - {name: HOME, value: /tmp}
+          resources:
+            requests: {cpu: 10m, memory: 128Mi}
+            limits: {cpu: 200m, memory: 256Mi}
+          # Beat has no ping, so this proves only that the process exists. The alert on
+          # last_run_at is the real check. exec with no shell, or pgrep -f matches the shell.
+          startupProbe:
+            exec:
+              command: [pgrep, -f, celery -A plane beat]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [pgrep, -f, celery -A plane beat]
+            periodSeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: [pgrep, -f, celery -A plane beat]
+            periodSeconds: 30
+            timeoutSeconds: 5
