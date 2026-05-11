@@ -1,0 +1,7 @@
+# Every variable has a working default for the local cluster. Copy to terraform.tfvars only to
+# override one. Nothing here is a secret, and no secret belongs in this file.
+
+# kubeconfig_path     = "/absolute/path/to/kubeconfig"
+# kube_context        = "kind-plane-platform"
+# git_repo_url        = "git://plane-git/plane-platform.git"
+# git_target_revision = "main"

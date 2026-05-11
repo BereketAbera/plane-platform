@@ -1,0 +1,5 @@
+apiVersion: v2
+name: plane-platform-bootstrap
+description: AppProjects and the root Application. Installed only by Terraform.
+type: application
+version: 0.1.0

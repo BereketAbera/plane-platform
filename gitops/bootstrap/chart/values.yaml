@@ -1,0 +1,5 @@
+# Set by infrastructure/terraform/modules/argocd. Defaults match contract section 5.
+gitRepoURL: git://plane-git/plane-platform.git
+targetRevision: main
+# Unused by the templates. Terraform passes a hash of this chart so an edit shows up in its plan.
+chartHash: ""
