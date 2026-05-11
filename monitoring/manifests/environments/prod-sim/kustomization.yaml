@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: plane-prod-sim
+resources:
+  - ../base
+patches:
+  - target: { kind: Service, name: plane-rabbitmq-metrics }
+    patch: |
+      - { op: replace, path: /spec/selector/app.name, value: plane-prod-sim-plane-rabbitmq }
+  - target: { kind: ServiceMonitor, name: plane-minio }
+    patch: |
+      - { op: replace, path: /spec/selector/matchLabels/app.name, value: plane-prod-sim-plane-minio }
+  # Every Probe gets the same two values.
+  - target: { kind: Probe }
+    patch: |
+      - { op: replace, path: /spec/targets/staticConfig/labels/env, value: prod-sim }
+      - { op: replace, path: /spec/targets/staticConfig/relabelingConfigs/0/replacement, value: plane.prod-sim.localhost }

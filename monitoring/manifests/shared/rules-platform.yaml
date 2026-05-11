@@ -1,0 +1,60 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform
+spec:
+  groups:
+    - name: platform.workloads
+      interval: 30s
+      rules:
+        - alert: PodRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m]) > 1
+          labels: { severity: warning, component: pod }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} restarted more than once in 15m"
+        - alert: ContainerMemorySaturation
+          expr: |
+            sum by (namespace, pod, container) (container_memory_working_set_bytes{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical",container!="",container!="POD"})
+              / on (namespace, pod, container)
+            sum by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory"})
+              > 0.9
+          for: 5m
+          labels: { severity: warning, component: pod }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} is at {{ $value | humanizePercentage }} of its memory limit"
+        # Container limits add up to more than the VM on purpose, so the VM can run out first.
+        - alert: VmMemoryLow
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+          for: 5m
+          labels: { severity: warning, component: node }
+          annotations:
+            summary: Docker VM has {{ $value | humanizePercentage }} of its memory available
+    # No disk rule here on purpose: the VM filesystem reports hundreds of free GiB on a sparse disk
+    # while the Mac runs out first. guard_disk in scripts/lib/common.sh is the real check.
+    - name: platform.argocd
+      interval: 30s
+      rules:
+        # for: is longer than scripts/test-alert.sh and restore.sh hold self-heal off, so drills
+        # that pause Argo do not page. A real drift still fires.
+        - alert: ArgoAppOutOfSync
+          expr: argocd_app_info{sync_status="OutOfSync"} == 1
+          for: 15m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} has been out of sync for 15m
+        - alert: ArgoAppDegraded
+          expr: argocd_app_info{health_status=~"Degraded|Missing"} == 1
+          for: 5m
+          labels: { severity: critical, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} is {{ $labels.health_status }}
+        # The counter first appears at 1 on an app's first failure, and increase() reads that as
+        # zero, so a new series also has to count. argocd_app_info has no phase label at v3.5.7.
+        - alert: ArgoSyncFailed
+          expr: |
+            increase(argocd_app_sync_total{phase=~"Error|Failed"}[15m]) > 0
+              or
+            (argocd_app_sync_total{phase=~"Error|Failed"} unless argocd_app_sync_total{phase=~"Error|Failed"} offset 15m)
+          labels: { severity: critical, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} had a {{ $labels.phase }} sync in the last 15m

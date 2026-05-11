@@ -1,0 +1,233 @@
+# kube-prometheus-stack 92.18.0. Release name kube-prometheus-stack, namespace monitoring.
+# Argo CD must sync this chart with ServerSideApply=true: crd-prometheuses.yaml is about 840 KiB,
+# over the 262144-byte annotation limit of client-side apply.
+fullnameOverride: kps
+
+# Components kind binds to loopback, so a pod can never scrape them. Leaving these on fires
+# permanent *Down alerts. The apiserver does scrape fine; it is off purely for series count.
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+kubeApiServer: { enabled: false }
+windowsMonitoring: { enabled: false }
+
+defaultRules:
+  rules:
+    etcd: false
+    windows: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeProxy: false
+  disabled:
+    # kubernetes-system-apiserver.yaml is not guarded by kubeApiServer.enabled and carries
+    # absent(up{job="apiserver"}), which would fire forever with the scrape off.
+    KubeAPIDown: true
+
+kubelet:
+  serviceMonitor:
+    probes: false # prober_* series are not worth their cost here
+    cAdvisor: true
+
+nodeExporter:
+  operatingSystems:
+    aix: { enabled: false }
+    darwin: { enabled: false }
+
+prometheus-node-exporter:
+  fullnameOverride: kps-node-exporter # subchart names otherwise follow the release name
+  # hostNetwork and hostPID need PSA privileged, so they stay out of the baseline monitoring
+  # namespace (critique C18).
+  namespaceOverride: monitoring-agents
+  image:
+    registry: quay.io
+    repository: prometheus/node-exporter
+    tag: v1.12.1
+    distroless: true # default false, and the tag and digest below only match with it on
+    digest: sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+  resources:
+    requests: { cpu: 10m, memory: 24Mi }
+    limits: { cpu: 100m, memory: 48Mi }
+
+kube-state-metrics:
+  fullnameOverride: kps-kube-state-metrics
+  image:
+    registry: registry.k8s.io
+    repository: kube-state-metrics/kube-state-metrics
+    tag: v2.20.0
+    # Unlike the parent chart, this subchart appends sha verbatim after "@", so it needs the prefix.
+    sha: sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b
+  # The default list adds cluster-wide list and watch on Secrets for metrics nothing here reads.
+  # Everything the default rules and dashboards use is below.
+  collectors:
+    - cronjobs
+    - daemonsets
+    - deployments
+    - jobs
+    - namespaces
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - pods
+    - replicasets
+    - resourcequotas
+    - statefulsets
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { cpu: 100m, memory: 96Mi }
+
+prometheusOperator:
+  admissionWebhooks: { enabled: false } # no cert Job and no certgen image; CI runs promtool instead
+  tls: { enabled: false }
+  image:
+    registry: quay.io
+    repository: prometheus-operator/prometheus-operator
+    tag: v0.94.2
+    sha: c7edf0379b7271ef1705dce258d2bb73820e299cc95559369e9f6fc3321639ec
+  resources:
+    requests: { cpu: 10m, memory: 48Mi }
+    limits: { cpu: 200m, memory: 128Mi }
+  prometheusConfigReloader:
+    image:
+      registry: quay.io
+      repository: prometheus-operator/prometheus-config-reloader
+      tag: v0.94.2
+      sha: a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+    resources:
+      requests: { cpu: 5m, memory: 16Mi }
+      limits: { cpu: 50m, memory: 48Mi }
+
+prometheus:
+  prometheusSpec:
+    image:
+      registry: quay.io
+      repository: prometheus/prometheus
+      tag: v3.15.1-distroless
+      sha: 451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934
+    replicas: 1
+    externalUrl: http://prometheus.localhost
+    scrapeInterval: 30s
+    scrapeTimeout: 10s
+    evaluationInterval: 30s
+    # local-path ignores PVC capacity, so retentionSize is the only real cap on the volume.
+    retention: 3d
+    retentionSize: 1GiB
+    walCompression: true
+    # Select every object in every namespace. The default selects only objects labelled with
+    # the Helm release, which the Probes and ServiceMonitors in monitoring/manifests are not.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    scrapeConfigSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 100m, memory: 300Mi }
+      limits: { cpu: "1", memory: 768Mi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources: { requests: { storage: 2Gi } }
+
+alertmanager:
+  serviceAccount:
+    automountServiceAccountToken: false # it calls a webhook; it never talks to the API
+  alertmanagerSpec:
+    automountServiceAccountToken: false
+    image:
+      registry: quay.io
+      repository: prometheus/alertmanager
+      tag: v0.34.2
+      sha: 39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b
+    replicas: 1
+    externalUrl: http://alertmanager.localhost
+    retention: 24h
+    resources:
+      requests: { cpu: 5m, memory: 48Mi }
+      limits: { cpu: 100m, memory: 96Mi }
+  # Rendered by the chart into a Secret, which holds no credentials: the sink has no auth.
+  # The short group_wait and group_interval are what let scripts/test-alert.sh meet its 180s
+  # deadline; the Alertmanager defaults are 30s and 5m.
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: sink
+      group_by: [alertname, namespace]
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 1h
+      routes:
+        # Watchdog always fires, so a line in the sink every 5 minutes is a continuous proof
+        # that rule evaluation, Alertmanager and the webhook all work.
+        - matchers: ['alertname="Watchdog"']
+          receiver: sink
+          group_wait: 0s
+          group_interval: 1m
+          repeat_interval: 5m
+        - matchers: ['alertname="InfoInhibitor"']
+          receiver: "null"
+    receivers:
+      - name: "null"
+      - name: sink
+        webhook_configs:
+          - url: http://alert-sink.monitoring.svc.cluster.local:8080/alerts
+            send_resolved: true
+            max_alerts: 20
+            timeout: 5s
+
+grafana:
+  fullnameOverride: kps-grafana
+  image:
+    registry: docker.io
+    repository: grafana/grafana
+    tag: 13.3.0-distroless
+    sha: 540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
+  # The chart generates Secret kps-grafana with a random admin password. Argo CD renders with
+  # no lookup, so every manifest regeneration draws a new one. The Application must ignore that
+  # diff; monitoring/README.md has the block and shows how to read the password.
+  adminUser: admin
+  persistence: { enabled: false } # state comes from Git
+  initChownData: { enabled: false } # nothing to chown without persistence, and no busybox image
+  testFramework: { enabled: false }
+  defaultDashboardsTimezone: utc
+  # No Role beyond the ConfigMaps in its own namespace. The chart default is cluster-wide.
+  rbac:
+    namespaced: true
+  resources:
+    requests: { cpu: 25m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 384Mi } # Grafana 13 idles higher than 12 (critique section 4)
+  grafana.ini:
+    server:
+      root_url: http://grafana.localhost
+    analytics:
+      check_for_updates: false
+      reporting_enabled: false
+  sidecar:
+    image:
+      registry: quay.io
+      repository: kiwigrid/k8s-sidecar
+      tag: 2.14.3
+      sha: 52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
+    resources:
+      requests: { cpu: 5m, memory: 48Mi }
+      limits: { cpu: 50m, memory: 96Mi }
+    dashboards:
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: null # own namespace only; matches rbac.namespaced above
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+        allowUiUpdates: false
+    datasources:
+      defaultDatasourceEnabled: true
+      uid: prometheus # dashboards in monitoring/manifests pin this uid
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+      jsonData: { maxLines: 1000 }

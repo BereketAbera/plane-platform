@@ -1,0 +1,123 @@
+# alloy 1.15.0 from https://grafana.github.io/helm-charts. Release name alloy, namespace monitoring.
+# A Deployment reading logs through the Kubernetes API, not a DaemonSet tailing /var/log/pods:
+# it needs no root, no hostPath and no privileged namespace (critique C17). The cost is more
+# kubelet traffic; if that shows up in apiserver load, the fallback is a DaemonSet in
+# monitoring-agents.
+controller:
+  type: deployment
+  replicas: 1
+  volumes:
+    extra:
+      - name: storage
+        emptyDir: { sizeLimit: 256Mi }
+
+global:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 473 # the image has no USER and would otherwise run as root
+    runAsGroup: 473
+    fsGroup: 473
+    seccompProfile: { type: RuntimeDefault }
+
+image:
+  registry: docker.io
+  repository: grafana/alloy
+  tag: v1.21.3-distroless
+  digest: sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2
+
+# Podlogs CRD and the reloader sidecar are both unused. With the reloader off the chart sets
+# checksum/config on the pod template, so a config change still rolls out through Argo CD.
+crds: { create: false }
+configReloader: { enabled: false }
+
+# The chart default grants cluster-wide read on every Secret and ConfigMap. Tailing logs needs
+# only pods and their logs. clusterRules must stay non-empty: the template prints it after rules
+# with toYaml, and an empty list renders as invalid YAML.
+rbac:
+  rules:
+    - apiGroups: [""]
+      resources: [pods, pods/log]
+      verbs: [get, list, watch]
+  clusterRules:
+    - apiGroups: [""]
+      resources: [namespaces]
+      verbs: [get, list, watch]
+
+serviceMonitor:
+  enabled: true
+
+alloy:
+  enableReporting: false
+  storagePath: /var/lib/alloy # holds tail positions; an emptyDir, so lines are lost on restart
+  mounts:
+    extra:
+      - name: storage
+        mountPath: /var/lib/alloy
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: [ALL] }
+  livenessProbe:
+    httpGet: { path: /-/healthy, port: 12345 }
+    initialDelaySeconds: 30
+    periodSeconds: 30
+  resources:
+    requests: { cpu: 25m, memory: 96Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+  extraEnv:
+    - { name: GOMEMLIMIT, value: 220MiB }
+  configMap:
+    content: |
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          regex         = "plane-dev|plane-prod-sim|infisical|argocd|traefik|monitoring"
+          action        = "keep"
+        }
+        // Finished pods have nothing left to tail, and each dead target would retry forever.
+        rule {
+          source_labels = ["__meta_kubernetes_pod_phase"]
+          regex         = "Succeeded|Failed"
+          action        = "drop"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.process.pods.receiver]
+      }
+
+      // No stage.cri: the API returns plain lines, and that stage only applies to log files.
+      loki.process "pods" {
+        // Blackbox probes the API every 15s from each environment. Without this those access
+        // lines would outnumber real requests in the Logs dashboard.
+        stage.drop {
+          expression          = ".*Blackbox-Exporter.*"
+          drop_counter_reason = "probe_noise"
+        }
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }

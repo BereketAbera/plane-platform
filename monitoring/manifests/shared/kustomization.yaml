@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - blackbox.yaml
+  - alert-sink.yaml
+  - ingress-routes.yaml
+  - service-monitors.yaml
+  - rules-plane.yaml
+  - rules-platform.yaml
+# Hashed names: a config change gives a new ConfigMap name, which rolls the pod. Dashboards keep
+# fixed names because the Grafana sidecar watches them by label and reloads without a restart.
+configMapGenerator:
+  - name: blackbox-config
+    files: [blackbox.yml]
+  - name: alert-sink
+    files: [sink.py]
+  - name: dashboards-platform
+    files:
+      - dashboards/platform-overview.json
+    options:
+      disableNameSuffixHash: true
+      labels: { grafana_dashboard: "1" }
+      annotations: { grafana_folder: Platform }
+  - name: dashboards-plane
+    files:
+      - dashboards/plane-data-services.json
+      - dashboards/deployments-rollbacks.json
+      - dashboards/logs.json
+    options:
+      disableNameSuffixHash: true
+      labels: { grafana_dashboard: "1" }
+      annotations: { grafana_folder: Plane }

@@ -1,0 +1,86 @@
+# Probes go to Traefik's in-cluster Service with the public host passed as ?hostname=, so they
+# exercise the same routes as a browser without depending on DNS for *.localhost. The operator
+# sets the namespace label from where each Probe lives, which gives the per-environment split.
+# Two API probes every 15s is 8 requests a minute from one IP, under Plane's anonymous limit of
+# 30 a minute; do not probe these two faster than about every 5s combined.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: plane-api-instance
+spec:
+  jobName: plane-http
+  interval: 15s
+  scrapeTimeout: 10s
+  module: http_plane_instance
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://traefik.traefik.svc.cluster.local/api/instances/
+      labels: { probe: api-instance, env: PATCHED-BY-OVERLAY }
+      relabelingConfigs:
+        - { targetLabel: __param_hostname, replacement: PATCHED-BY-OVERLAY }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: plane-api-db
+spec:
+  jobName: plane-http
+  interval: 15s
+  scrapeTimeout: 10s
+  module: http_plane_db
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/
+      labels: { probe: api-db, env: PATCHED-BY-OVERLAY }
+      relabelingConfigs:
+        - { targetLabel: __param_hostname, replacement: PATCHED-BY-OVERLAY }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: plane-live
+spec:
+  jobName: plane-http
+  interval: 15s
+  scrapeTimeout: 10s
+  module: http_live
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://traefik.traefik.svc.cluster.local/live/health
+      labels: { probe: live, env: PATCHED-BY-OVERLAY }
+      relabelingConfigs:
+        - { targetLabel: __param_hostname, replacement: PATCHED-BY-OVERLAY }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: plane-frontend
+spec:
+  jobName: plane-http
+  interval: 15s
+  scrapeTimeout: 10s
+  module: http_html
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://traefik.traefik.svc.cluster.local/
+        - http://traefik.traefik.svc.cluster.local/god-mode/
+        - http://traefik.traefik.svc.cluster.local/spaces/
+      labels: { probe: frontend, env: PATCHED-BY-OVERLAY }
+      relabelingConfigs:
+        - { targetLabel: __param_hostname, replacement: PATCHED-BY-OVERLAY }

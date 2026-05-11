@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backups-prod-sim
+  labels: { plane-platform/backups: "prod-sim" }
+spec:
+  capacity: { storage: 5Gi } # a label: hostPath enforces nothing, scripts/backup.sh checks host disk
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: { apiVersion: v1, kind: PersistentVolumeClaim, namespace: plane-prod-sim, name: backups }
+  hostPath: { path: /backups/prod-sim, type: DirectoryOrCreate }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backups
+  namespace: plane-prod-sim
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: backups-prod-sim
+  resources:
+    requests: { storage: 5Gi }

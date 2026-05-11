@@ -1,0 +1,10 @@
+# Root for the monitoring-extras Application (platform project, wave -5). It spans namespaces:
+# shared/ goes to monitoring, environments/<env>/ goes to that Plane namespace, because each
+# exporter holds its own environment's credentials and the operator takes the namespace label
+# for metrics from where the object lives.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - shared
+  - environments/dev
+  - environments/prod-sim

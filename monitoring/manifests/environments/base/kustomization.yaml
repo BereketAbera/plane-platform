@@ -1,0 +1,9 @@
+# Everything per environment. Overlays set the namespace, and patch the two values that cannot be
+# derived from it: chart app.name labels and the public hostname.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - exporters.yaml
+  - rabbitmq-metrics.yaml
+  - service-monitors.yaml
+  - probes.yaml
