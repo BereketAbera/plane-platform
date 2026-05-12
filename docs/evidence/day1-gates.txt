@@ -1,0 +1,21 @@
+--- Gate 1: digest pulls through each path
+PASS  docker.io digest pull
+PASS  quay.io digest pull
+PASS  pull-through cache holds blobs (not bypassed)
+PASS  localhost:5001 digest pull (sha256:d82c2ab94640ded77cf76514ce6a84870761105058a4a9e51b05a8a79be97a6c)
+--- Gate 2: kindnet enforces NetworkPolicy
+nftables tables on the node:
+    table ip nat
+    table ip mangle
+    table ip filter
+    table ip6 mangle
+    table ip6 nat
+    table ip6 filter
+    table inet kindnet-network-policies
+PASS  positive control: traffic flows before any policy
+PASS  default-deny blocked a new connection (client saw: wget: download timed out)
+PASS  allow rule admits only the labelled client
+--- Gate 5: git:// from inside the cluster
+PASS  pods resolve the Docker-network name plane-git
+PASS  git:// ls-remote from a pod: ea901136a27720e0d470826262b23f5a239350ae	HEAD
+--- Summary: 9 passed, 0 failed
