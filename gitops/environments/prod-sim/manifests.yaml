@@ -309,6 +309,7 @@ metadata:
   name: plane-admin-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -395,6 +396,7 @@ metadata:
   name: plane-api-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -494,6 +496,7 @@ metadata:
   name: plane-beat-worker-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -594,6 +597,7 @@ metadata:
   name: plane-live-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -679,6 +683,7 @@ metadata:
   name: plane-space-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -754,6 +759,7 @@ metadata:
   name: plane-web-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -840,6 +846,7 @@ metadata:
   name: plane-worker-wl
   namespace: plane-prod-sim
 spec:
+  progressDeadlineSeconds: 360
   replicas: 1
   selector:
     matchLabels:
@@ -964,6 +971,9 @@ spec:
         - /data
         - --console-address
         - :9090
+        env:
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
         envFrom:
         - secretRef:
             name: plane-doc-store
