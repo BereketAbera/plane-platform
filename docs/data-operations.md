@@ -2,7 +2,7 @@
 
 Postgres, Valkey, RabbitMQ and Silo in each Plane environment, where their bytes live, what a backup contains, and how to restore it.
 
-**Status: NOT RUN.** No backup or restore has run yet, and Plane has not been deployed. `docs/evidence/` holds no result. Every statement that depends on a runtime result carries a `[[VERIFY: ...]]` marker, and every number to measure carries `[[MEASURE: ...]]`.
+**Status: NOT RUN.** No backup or restore has run yet, and Plane has not been deployed. `docs/evidence/` holds no result. Every statement that depends on a runtime result carries a `VERIFY` marker, and every number to measure carries `MEASURE`.
 
 These are single-replica services on a local kind node. There is no replication, no failover and no point-in-time recovery. "prod-sim" is a simulation, and sharing one node with dev is not equivalent to an independent production cluster.
 
@@ -107,7 +107,7 @@ kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli info memory 
 kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli dbsize
 ```
 
-`/api/instances/` is cached here for two hours and answers 200 with Postgres down. A green result from that route says nothing about the database. That is why the probes and `rotate.sh` use a database-backed route.
+`/api/instances/` is cached here for two hours and answers 200 with Postgres down. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]] A green result from that route says nothing about the database. That is why the probes and `rotate.sh` use a database-backed route.
 
 [[VERIFY: flushing or losing Valkey costs only cache and throttle state, and existing sessions keep working]]
 
@@ -310,7 +310,7 @@ Each writes to `.local/evidence-raw/restore-<env>-<stamp>.json` with status **PA
 | `proof-encrypted-sentinel` | `WAYLINE_RESTORE_SENTINEL` decrypts to its seeded value | Encrypted rows are empty on a fresh instance, so a decrypt check with no sentinel proves nothing |
 | `proof-no-empty-decrypt` | No encrypted row decrypts to `""` | `decrypt_data` fails silently |
 | `proof-sentinel` | `tests/e2e/smoke.py --mode verify --job-probe`: the work item through the API, the attachment's checksum through a presigned URL, a worker finishing a new job | The token comes from the restored database, so this also proves tokens survived |
-| `proof-probes` | `probe_success` for the API and database probes reaches 1 in Prometheus within 180 s | Reported NOT RUN rather than FAIL if Prometheus cannot be reached. The data is proven above, and a broken dashboard path should not fail a restore |
+| `proof-probes` | `probe_success` for the API and database probes reaches 1 in Prometheus within 180 s | Reported NOT RUN rather than FAIL if Prometheus cannot be reached. The steps above already checked the data, and a broken dashboard path should not fail a restore |
 
 The evidence file records no durations. Time the run with `time` to get an RTO number. See [disaster-recovery.md](disaster-recovery.md#rpo-and-rto-to-measure-not-promised).
 

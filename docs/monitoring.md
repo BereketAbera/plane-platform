@@ -5,8 +5,8 @@ deployment and the platform around it are observed: what is scraped, why Plane n
 which alerts exist, where they go, and how the path is tested.
 
 **Status.** This page describes configuration. It reports no test result, because
-[`docs/evidence/`](evidence/) holds no monitoring evidence yet. Each `[[VERIFY: ...]]` and
-`[[MEASURE: ...]]` marker is a claim that needs a real run before it can stand. This stack is sized for a
+[`docs/evidence/`](evidence/) holds no monitoring evidence yet. Each `VERIFY` and
+`MEASURE` marker is a claim that needs a real run before it can stand. This stack is sized for a
 laptop and has no redundancy: one Prometheus, one Alertmanager, one Loki, no paging. It makes no claim
 of production readiness.
 
@@ -339,7 +339,7 @@ Limits to keep in mind:
 
 ## How alerts are tested
 
-`make test-alert ENV=dev` (or `ENV=prod-sim`) runs `scripts/test-alert.sh`. It proves one complete path for one alert,
+`make test-alert ENV=dev` (or `ENV=prod-sim`) runs `scripts/test-alert.sh`. It is written to prove one complete path for one alert,
 `PlaneApiDown`, including the other environment staying quiet.
 
 | Stage | What the script does | Deadline after injection |

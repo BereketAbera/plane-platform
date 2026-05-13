@@ -4,7 +4,7 @@
 
 Wayline is a customized deployment of open-source Plane Community Edition v1.4.3. It is not an original product. Plane is copyright Plane Software, Inc. and contributors, and licensed under AGPL-3.0-only. This page records what that means here, what is done, and what is not done.
 
-Written 2026-11-04, against commit `f733b87` and the uncommitted `apps/wayline/` as it stood at 23:16 local time. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes. Anything about the running system carries a `[[VERIFY]]` marker.
+Written 2026-11-04, against commit `f733b87` and the uncommitted `apps/wayline/` as it stood at 23:16 local time. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes. Anything about the running system carries a `VERIFY` marker.
 
 ## Status at a glance
 
@@ -45,7 +45,7 @@ The author's reading, to confirm with counsel:
 |---|---|
 | Unmodified upstream images configured through env vars, Helm values, ingress, and NetworkPolicies | Probably not, since it is triggered by modifying the Program. Configuration is unlikely to be modification |
 | Patched or derived images, including frontend bundles rebuilt from patched source and a derived backend image | Yes |
-| Modified version reached only by the owner on loopback | No other users exist to offer it to, so it has no practical effect. The offer is still built so the design is proven before Pass 2 |
+| Modified version reached only by the owner on loopback | No other users exist to offer it to, so it has no practical effect. The offer is still built, so the design can be tested before Pass 2 |
 | Modified version reached by anyone else, including a tester or a colleague | **Yes. The offer must work for them** |
 
 Sitting behind a proxy or Cloudflare probably does not change the analysis. The FSF FAQ has an entry on this (`#AGPLProxy`, cited in `plane-branding.md`), and counsel should read it.

@@ -4,7 +4,7 @@
 
 The migration as a whole is in [`PASS2_HANDOFF.md`](../PASS2_HANDOFF.md). This file covers only root modules, state, and how to tell an implementation meets the contract. Local Terraform is described in [terraform.md](terraform.md).
 
-Written 2026-11-04 against commit `f733b87`. `[[VERIFY]]` marks a provider detail from memory that has not been checked against current documentation.
+Written 2026-11-04 against commit `f733b87`. `VERIFY` marks a provider detail from memory that has not been checked against current documentation.
 
 ## What Terraform does today
 

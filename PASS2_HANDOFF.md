@@ -6,7 +6,7 @@ The application is a customized deployment of open-source Plane Community Editio
 
 Written 2026-11-04, mostly against commit `f733b87`, while Pass 1 was still being integrated and validated. Reconcile it against the final code before use.
 
-**Markers.** `[[VERIFY: ...]]` is a claim that needs a runtime result or a check against a current primary source. `[[MEASURE: ...]]` is a number that must come from a measurement. Anything about Hetzner or Cloudflare that carries `[[VERIFY]]` is from the author's memory and was not checked against current documentation. Treat it as a question to answer, not a fact.
+**Markers.** `VERIFY` is a claim that needs a runtime result or a check against a current primary source. `MEASURE` is a number that must come from a measurement. Anything about Hetzner or Cloudflare that carries `VERIFY` is from the author's memory and was not checked against current documentation. Treat it as a question to answer, not a fact.
 
 **Nothing cloud exists.** No Hetzner or Cloudflare resource, account, token, or Terraform code has been created. `infrastructure/terraform/environments/{dev,prod}` holds only interface documents.
 
@@ -43,7 +43,7 @@ Pass 1 is one kind node on a laptop, with two Plane namespaces. It is a rehearsa
 
 Runtime status when this was written:
 
-- The only runtime results are the day-1 gates (digest pulls, kindnet enforcement against a sentinel, `git://` from a pod), and their raw output is host-only. [[VERIFY: day-1 gate output has been copied to docs/evidence/ with date and command]]
+- The only runtime results are the day-1 gates (digest pulls, kindnet enforcement against a sentinel, `git://` from a pod), captured in [`docs/evidence/day1-gates.txt`](docs/evidence/day1-gates.txt).
 - Plane had not been deployed on this cluster, so no application behaviour below is proven. [[VERIFY: docs/validation.md records the final Pass 1 result of make up and make test]]
 - Read [`docs/validation.md`](docs/validation.md) for what actually ran before relying on any "carries over" row below.
 
@@ -393,7 +393,7 @@ Pass 1 assumes both environments in one cluster. `git grep` finds `prod-sim` in 
 | `gitops/platform/backup-storage/`, `infisical-operator-*` | Same |
 | `infisical/terraform/main.tf` | Local map has both environments, and slug `prod` is inside each project already. Run one root per instance |
 | Naming | Rename `prod-sim` to `prod` as one reviewed change. Namespace rename means new PVCs, so do it before any data exists |
-| Promotion | `scripts/promote.sh` compares overlays in one repository, which still works across clusters since Git is the source. The dev digest record is still the rule |
+| Promotion | `scripts/promote.sh` compares overlays in one repository, which does not depend on the cluster, since Git is the source. The dev digest record is still the rule |
 | Scripts | `monitoring/ops/lib.sh:17-18`, `tests/e2e/smoke.py:38`, `scripts/status.sh:25`, `scripts/rotate.sh:58` hard-code hosts and context |
 
 ## 5. Terraform module interfaces
@@ -459,7 +459,7 @@ The tunnel token must not be stored as an output or in state if avoidable. Gener
 | Module | Needed change |
 |---|---|
 | `modules/foundation` | Add an input selecting environments. Keep `coredns_rewrites` empty unless section 4.6's rewrite option is chosen. Its template is the kubeadm Corefile, and it overwrites a different distribution's config |
-| `modules/argocd` | Input `values_file` already works, so give each cluster its own values file. Add an input for the root path. Fix the variable description that claims one value is enough |
+| `modules/argocd` | Input `values_file` already exists, so give each cluster its own values file. Add an input for the root path. Fix the variable description that claims one value is enough |
 
 ## 6. Accounts and credentials the owner must supply
 

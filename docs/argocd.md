@@ -4,7 +4,7 @@ Argo CD deploys everything in the cluster except namespaces, quotas and itself. 
 a customized Plane Community Edition v1.4.3 deployment, not an original product.
 
 **Status of this page.** It describes configuration in the code and Argo CD v3.5.7 behaviour read from source. Nothing
-here has run on this platform at the time of writing. Runtime statements carry a `[[VERIFY]]` or `[[MEASURE]]` marker
+here has run on this platform at the time of writing. Runtime statements carry a `VERIFY` or `MEASURE` marker
 until [`docs/evidence/`](evidence/README.md) holds the result.
 
 ## Access
@@ -41,7 +41,7 @@ flowchart TD
 | Bare repo at `.local/git/plane-platform.git` | `make gitops-publish`, the only writer | Publishes commits on `main`. Uncommitted work never reaches Argo CD |
 | `plane-git` | Compose | Read-only `git daemon` on the `kind` network. GitHub runs CI, but Argo CD does not read it in Pass 1 |
 | Argo CD release | Terraform | Values in `helm/values/argocd.yaml`. **A change there needs `terraform apply`, not a publish** |
-| AppProjects, root Application | Terraform, through local chart `gitops/bootstrap/chart` | Not synced from Git, so a change in Git cannot widen its own permissions |
+| AppProjects, root Application | Terraform, through local chart `gitops/bootstrap/chart` | Not synced from Git, so a commit cannot edit what a project allows. A commit can still move an Application to project `platform`. See scenario 10 in [environments.md](environments.md#failure-scenarios) |
 | Everything else | Argo CD | |
 
 The root Application has two sources, so its status carries `status.sync.revisions` and `status.sync.revision` is empty.

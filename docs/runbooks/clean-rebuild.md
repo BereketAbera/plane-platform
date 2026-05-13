@@ -93,7 +93,7 @@ The design order in the integration review:
 6. `scripts/infisical-bootstrap.sh`, which waits for `/api/status`, then Terraform, seed, and identity ids.
 7. Wait for all Applications to be Synced and Healthy.
 
-A first install pulls about 8.56 GiB of unpacked images (measured from registry layer sizes, critique section 5), so expect it to take a while.
+A first install pulls about 8.56 GiB of unpacked images (estimate: summed from registry layer sizes before anything was deployed, critique section 5), so expect it to take a while.
 
 [[MEASURE: duration of make up from nothing, with empty mirrors and with full mirrors]]
 

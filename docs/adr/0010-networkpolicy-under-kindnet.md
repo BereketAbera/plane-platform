@@ -23,7 +23,7 @@ Keep kindnet, and enforce NetworkPolicy through it. Treat enforcement as somethi
 - **The `platform` AppProject owns all policies**, at wave -10. Plane projects cannot create or change one. So a compromised Plane Application cannot open its own network.
 - **Node-sourced traffic uses `172.16.0.0/12`,** Docker's default pool, on named ports only: 6443, 9418, 10250 and NodePort traffic to Traefik. Docker assigns the `kind` network a free `/16` that differs per machine, so a committed manifest cannot pin it. `scripts/cluster-up.sh` fails if the network is outside that range.
 - **Traefik also allows `192.168.65.0/24`,** Docker Desktop's VM subnet, because the source address of NodePort traffic is known only at runtime.
-- **A sentinel comes first.** `scripts/test-netpol.sh` proves in a throwaway namespace that a policy blocks, and that the script can tell a block from other failures. Only then does it run `tests/network-policy-matrix.yaml`.
+- **A sentinel comes first.** `scripts/test-netpol.sh` is written to prove in a throwaway namespace that a policy blocks, and that the script can tell a block from other failures. Only then does it run `tests/network-policy-matrix.yaml`.
 - **Verdicts are strict.** A `deny` passes only on a timeout, because a refusal means the packet arrived. A DNS failure is inconclusive and fails the run.
 
 ## Alternatives considered
@@ -54,7 +54,7 @@ These limits apply however well the policies are written.
 
 Runtime items:
 
-- Day-1 gate 2 records PASS on this host for three checks in a test namespace: traffic flows before any policy, default-deny blocks a new connection with a timeout, and an allow rule admits only the labelled client. The node also shows the `kindnet-network-policies` nftables table ([evidence](../evidence/day1-gates.txt)). This shows enforcement exists on this kernel. It says nothing about the platform's own policy set.
+- Day-1 gate 2 records PASS on this host for three checks in a test namespace: traffic flows before any policy, default-deny blocks a new connection with a timeout, and an allow rule admits the labelled client. That step does not re-probe an unlabelled client, despite the word "only" in its output line. The node also shows the `kindnet-network-policies` nftables table ([evidence](../evidence/day1-gates.txt)). This shows enforcement exists on this kernel. It says nothing about the platform's own policy set.
 - [[VERIFY: scripts/test-netpol.sh sentinel passes and the full matrix passes with every deny row ending in a timeout]]
 - [[VERIFY: NodePort traffic reaches Traefik from an address inside the two allowed ranges, and which address it is]]
 - [[VERIFY: operator token review works under default-deny with the node IP on 6443]]

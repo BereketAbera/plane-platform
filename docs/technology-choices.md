@@ -108,7 +108,7 @@ The patch-level bumps of Postgres, Valkey, and RabbitMQ over the chart's default
 | blackbox-exporter | v0.29.1 | Probes go through Traefik, so a failed probe matches a failed user request | Only pod-level health | Probes consume Plane's anonymous rate limit, so intervals are bounded |
 | postgres_exporter | v0.20.1 | Reads the existing `plane-pgdb` Secret, so no new Infisical path or permission | A `pg_monitor` role: needs a bootstrap step and a rotation path nobody owns yet | Connects as a superuser. Pass 2 improvement |
 | redis_exporter | v1.96.0 | Holds no credentials, since Valkey has no password | v1.97: too new at selection | |
-| Alert sink | `python:3.13.18-alpine` running `monitoring/manifests/shared/sink.py` | Proves delivery with no third party | Slack or email: would add an external dependency | Not a notification system |
+| Alert sink | `python:3.13.18-alpine` running `monitoring/manifests/shared/sink.py` | Can show delivery with no third party | Slack or email: would add an external dependency | Not a notification system |
 
 Whether Alloy's API path adds tolerable load is open. [[MEASURE: API server and kubelet load from loki.source.kubernetes at full pod count]]
 

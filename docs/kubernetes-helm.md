@@ -5,7 +5,7 @@ change it safely. Wayline is a customized Plane Community Edition v1.4.3 deploym
 is upstream's `plane-ce` 1.8.6, unmodified.
 
 **Status of this page.** It describes configuration in the code. No Plane workload has been deployed at the time of
-writing. Anything that depends on a real run carries a `[[VERIFY]]` or `[[MEASURE]]` marker. This is not a claim of
+writing. Anything that depends on a real run carries a `VERIFY` or `MEASURE` marker. This is not a claim of
 production readiness.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one

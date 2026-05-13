@@ -1,0 +1,44 @@
+[1;34m==>[0m Fetching node image sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+mirror.gcr.io/kindest/node@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed: Pulling from kindest/node
+45ce1f46a149: Pulling fs layer
+d441570a95cf: Pulling fs layer
+d441570a95cf: Download complete
+d441570a95cf: Pull complete
+45ce1f46a149: Download complete
+45ce1f46a149: Pull complete
+Digest: sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+Status: Downloaded newer image for mirror.gcr.io/kindest/node@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+mirror.gcr.io/kindest/node@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+[1;34m==>[0m Creating kind cluster plane-platform
+Creating cluster "plane-platform" ...
+ • Ensuring node image (kindest/node:v1.36.4) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.36.4) 🖼️
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Waiting ≤ 2m0s for control-plane = Ready ⏳  ...
+ ✓ Waiting ≤ 2m0s for control-plane = Ready ⏳
+ • Ready after 17s 💚
+Set kubectl context to "kind-plane-platform"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-plane-platform --kubeconfig /Users/bek/dev/pr/plane-platform/.local/kubeconfig
+
+Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
+[1;34m==>[0m Starting local services (registry, pull-through caches, Git remote)
+ Container plane-registry Starting 
+ Container plane-mirror-k8s Starting 
+ Container plane-git Starting 
+ Container plane-git Started 
+ Container plane-mirror-quay Started 
+ Container plane-mirror-docker Started 
+ Container plane-registry Started 
+ Container plane-mirror-k8s Started 
+[1;32m ok[0m cluster ready: context kind-plane-platform, kubeconfig /Users/bek/dev/pr/plane-platform/.local/kubeconfig

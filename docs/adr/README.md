@@ -10,8 +10,8 @@ The application here is a customized deployment of open-source Plane Community E
 
 | Marker | Meaning |
 |---|---|
-| `[[VERIFY: ...]]` | The sentence depends on a runtime result that has no evidence yet |
-| `[[MEASURE: ...]]` | The number has to be measured on a real run |
+| `VERIFY`, in double square brackets | The sentence depends on a runtime result that has no evidence yet |
+| `MEASURE`, in double square brackets | The number has to be measured on a real run |
 | "estimate" | A planning number. The text says how it was derived |
 | "research, 2026-11-04" | Read from an upstream source, registry or issue on that date, not re-checked since. Upstream status can change |
 

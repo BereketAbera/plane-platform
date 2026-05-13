@@ -5,7 +5,7 @@ repository wraps upstream Plane in a local deployment platform on kind. It is pr
 production-ready. See [known-limitations.md](known-limitations.md).
 
 **Status of this page.** It describes configuration and script behaviour read from the code. Anything that depends on
-a real run carries a `[[VERIFY]]` or `[[MEASURE]]` marker until [validation.md](validation.md) and
+a real run carries a `VERIFY` or `MEASURE` marker until [validation.md](validation.md) and
 [`docs/evidence/`](evidence/README.md) hold the result. Do not read an unmarked command as a tested command. It means
 only that the claim does not depend on a runtime result.
 
@@ -225,7 +225,7 @@ to supply those credentials yourself.
 | `make gates` | Runs `tests/gates/day1.sh`, the cheap runtime checks for assumptions source reading cannot settle | |
 | `make test-e2e` | End-to-end smoke test through `scripts/test.sh e2e` | `ENV=dev` |
 | `make test-netpol` | Runs the allow and deny matrix in `tests/network-policy-matrix.yaml` | |
-| `make test-alert` | Proves alert delivery end to end. Pauses auto-sync while it injects a failure | `ENV=dev` |
+| `make test-alert` | Exercises alert delivery end to end. Pauses auto-sync while it injects a failure | `ENV=dev` |
 | `make test-load` | Runs the k6 load test and captures resource use. Needs one earlier `make test-e2e` | `ENV=dev` |
 
 ### Data

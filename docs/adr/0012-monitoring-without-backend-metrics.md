@@ -12,7 +12,7 @@ Plane CE v1.4.3 exports no application metrics (research, 2026-11-04, reading th
 
 Status-only health checks are not good enough here. With no endpoints, Traefik can fall through to the catch-all web route, which answers 200 with HTML. So a status check can pass while the API is gone.
 
-The obvious API health route has its own trap. `/api/instances/` is cached in Valkey for two hours and answers 200 with Postgres down.
+The obvious API health route has its own trap. `/api/instances/` is cached in Valkey for two hours and answers 200 with Postgres down. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]]
 
 ## Decision
 

@@ -2,7 +2,7 @@
 
 How secret values reach the two Plane environments of Wayline, a customized Plane Community Edition v1.4.3 deployment, and what happens when the secret store is lost.
 
-**Status: NOT RUN.** Nothing in this file has run against a real cluster or a real Infisical yet. `docs/evidence/` holds no Infisical result. Every statement below that depends on a runtime result carries a `[[VERIFY: ...]]` marker. Prose without a marker describes configuration in the repository, not observed behaviour.
+**Status: NOT RUN.** Nothing in this file has run against a real cluster or a real Infisical yet. `docs/evidence/` holds no Infisical result. Every statement below that depends on a runtime result carries a `VERIFY` marker. Prose without a marker describes configuration in the repository, not observed behaviour.
 
 | Component | Version | Where it is pinned |
 |---|---|---|
@@ -222,7 +222,7 @@ Step 3 precedes step 4 because the operator owns the restart. New pods crash-loo
 |---|---|---|
 | Old rejected, new accepted | Login over the pod IP | The image's `pg_hba.conf` trusts the socket and 127.0.0.1, so a login there accepts any password |
 | The test can fail | Random password rejected first | |
-| Plane uses a new connection | `/api/public/anchor/__probe__/settings/` returns 404 "does not exist" | `/api/instances/` is cached in Valkey for two hours and answers 200 with Postgres down |
+| Plane uses a new connection | `/api/public/anchor/__probe__/settings/` returns 404 "does not exist" | `/api/instances/` is cached in Valkey for two hours and answers 200 with Postgres down. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]] |
 | Plane rolled | Pod template names the Secret's new version, `rollout status` finishes | |
 | Postgres untouched | Pod start time compared before and after | |
 | `SECRET_KEY` unchanged | Value compared before and after | |

@@ -14,8 +14,8 @@ This is Pass 1 of 2. It runs on one laptop. Nothing cloud is provisioned or conf
 
 | Area | State when written | Marker |
 |---|---|---|
-| kind cluster and local services (`scripts/cluster-up.sh`) | Ran. Raw log only, not yet in `docs/evidence/` | [[VERIFY: cluster-up log is copied to docs/evidence with date and command]] |
-| Day-1 gates: digest pulls, kindnet enforcement, `git://` from a pod | Ran. Raw capture records 9 checks PASS, 0 FAIL, not yet in `docs/evidence/` | [[VERIFY: day1-gates-2.txt is copied to docs/evidence with date and command, and shows 9 PASS, 0 FAIL]] |
+| kind cluster and local services (`scripts/cluster-up.sh`) | Ran. Log in [docs/evidence/](docs/evidence/cluster-up-20261104T184521Z.log). It shows cluster creation only, with nothing deployed | None |
+| Day-1 gates: digest pulls, kindnet enforcement, `git://` from a pod | PASS: 9 checks, 0 FAIL, in [docs/evidence/day1-gates.txt](docs/evidence/day1-gates.txt). These checks do not cover Plane | None |
 | Static checks (`make ci`) | No recorded result | [[VERIFY: make ci output is captured in docs/evidence and its result is stated]] |
 | `make up`, full platform | BLOCKED: `scripts/up.sh` did not exist | [[VERIFY: scripts/up.sh exists and make up reaches all Applications Synced and Healthy]] |
 | Plane deployed in `plane-dev` | NOT RUN | [[VERIFY: Plane is deployed and healthy in plane-dev]] |
