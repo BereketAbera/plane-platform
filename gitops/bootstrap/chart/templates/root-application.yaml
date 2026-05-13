@@ -27,9 +27,12 @@ spec:
       - CreateNamespace=false
     # A Degraded child fails this sync (sync_context.go treats only Degraded as failure), and a
     # child is often briefly Degraded on first boot. A finite limit would leave the later waves
-    # unsynced until the next commit, so retry without limit.
+    # unsynced until the next commit, so retry without limit. refresh makes each retry read the
+    # newest commit, so a fix to an Application manifest lands while this loops. A root that is
+    # waiting on a child never retries, so it needs terminating: infrastructure/terraform/README.md.
     retry:
       limit: -1
+      refresh: true
       backoff:
         duration: 30s
         factor: 2

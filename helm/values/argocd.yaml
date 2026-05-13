@@ -18,18 +18,36 @@ configs:
     url: http://argocd.localhost
 
     # Argo CD removed this check in 1.8, so without it a child reports no health and the root's
-    # waves pass straight through. Text from docs/operator-manual/health.md at v3.5.7.
+    # waves pass straight through. Base text from docs/operator-manual/health.md at v3.5.7.
     # A non-hook task waits on anything except Healthy and Degraded (sync_context.go), so Missing
     # and Progressing hold the wave, while Degraded fails the root sync and the root's retry reruns it.
+    #
+    # The base text alone does not gate. controller/health.go skips hooks and resources not created
+    # yet, so a child reads Healthy between its own waves and through its migrator. Healthy also needs:
+    # - No .operation. It clears only when an operation completes (setOperationState), so this covers
+    #   requested, running, retrying and terminating. With retry limit -1 a failing child never ends.
+    # - Synced. status.health is only as new as the last refresh. A one-wave child's sync succeeds on
+    #   apply, so at that moment it can still show a Healthy computed with objects absent, and that
+    #   same refresh recorded OutOfSync. The post-sync refresh then corrects both.
+    # Cost: a child that stays OutOfSync holds every later wave. `make up` needs all 14 Synced anyway.
     resource.customizations.health.argoproj.io_Application: |
       hs = {}
       hs.status = "Progressing"
       hs.message = ""
       if obj.status ~= nil then
-        if obj.status.health ~= nil then
+        if obj.status.health ~= nil and obj.status.health.status ~= nil then
           hs.status = obj.status.health.status
           if obj.status.health.message ~= nil then
             hs.message = obj.status.health.message
+          end
+        end
+        if hs.status == "Healthy" then
+          if obj.operation ~= nil then
+            hs.status = "Progressing"
+            hs.message = "Holding the wave: child sync has not finished"
+          elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+            hs.status = "Progressing"
+            hs.message = "Holding the wave: child is Healthy but not Synced"
           end
         end
       end
@@ -87,7 +105,7 @@ configs:
   params:
     # Traefik reaches the server over plain HTTP. The CLI needs --grpc-web --plaintext.
     server.insecure: true
-    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 384Mi limit.
+    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 512Mi limit.
     reposerver.parallelism.limit: 2
 
 dex:
@@ -100,10 +118,14 @@ notifications:
 applicationSet:
   replicas: 0
 
-# Memory below totals 360Mi requests and 1280Mi limits for the four running pods. ESTIMATE, unmeasured.
+# Memory below totals 360Mi requests and 1408Mi limits for the four running pods. ESTIMATE, unmeasured.
 # No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
 controller:
   replicas: 1
+  # A Service only. tests/network-policy-matrix.yaml dials it, and the ServiceMonitor that selects it
+  # lives in monitoring/manifests/shared, so the chart's own serviceMonitor stays off.
+  metrics:
+    enabled: true
   resources:
     requests:
       cpu: 100m
@@ -126,15 +148,24 @@ repoServer:
   automountServiceAccountToken: false
   serviceAccount:
     automountServiceAccountToken: false
+  # A Service only, as for the controller.
+  metrics:
+    enabled: true
   resources:
     requests:
       cpu: 50m
       memory: 96Mi
+    # Measured on macOS arm64 with Helm 4.3.1, so indicative: helm pull max RSS 194 MiB for
+    # kube-prometheus-stack, 139 MiB for Alloy, 107 MiB for Loki. Two renders plus the server itself
+    # can pass 384Mi. Measure again on the first real sync.
     limits:
-      memory: 384Mi
+      memory: 512Mi
 
 server:
   replicas: 1
+  # A Service only, as for the controller.
+  metrics:
+    enabled: true
   resources:
     requests:
       cpu: 25m
