@@ -33,6 +33,8 @@ locals {
   # Pods the contract budget does not list but that do run in these namespaces.
   plane_extras = {
     infisical-operator = { request = 64, limit = 128 }  # helm/values/infisical-operator-*.yaml, one per namespace
+    postgres-exporter  = { request = 16, limit = 48 }   # monitoring/manifests/environments/base/exporters.yaml
+    redis-exporter     = { request = 12, limit = 32 }   # same file
     migrator           = { request = 128, limit = 512 } # helm/plane overlays, Argo Sync hook
     backup-job         = { request = 128, limit = 256 } # ESTIMATE until the backup Job has run
     ad-hoc-pod         = { request = 64, limit = 256 }  # LimitRange defaults: smoke tests and drills

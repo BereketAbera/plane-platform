@@ -78,13 +78,43 @@ use `kubectl -n argocd port-forward svc/argocd-server 8080:80`.
 **Terraform owns the Argo CD release, and Argo CD does not manage itself.** A bad sync cannot take down the controller
 that would apply the fix, and `terraform apply` works while Git is down. Argo CD upgrades are therefore not GitOps.
 
-**ResourceQuota sizing** is computed in `modules/foundation/main.tf` from the contract's budget: 2704Mi requests and
-7904Mi limits per Plane namespace. That is the steady budget (1424Mi and 4192Mi), plus one surge pod for each Deployment
-during a rollout, plus the operator, migrator, a backup Job and one ad-hoc pod. It covers memory and object counts
-only, since the contract budgets no CPU.
+**ResourceQuota sizing** is computed in `modules/foundation/main.tf` from the contract's budget: 2732Mi requests,
+7984Mi limits and 24 pods per Plane namespace. That is the steady budget (1424Mi and 4192Mi), plus one surge pod for each
+Deployment during a rollout, plus the operator, both exporters, migrator, a backup Job and one ad-hoc pod. It covers
+memory and object counts only, since the contract budgets no CPU.
 
 ## After a stuck first sync
 
-A child that stays `Progressing` holds the root Application in `Running`, and the root will not pick up a new commit
-until that operation ends. Fix the child's cause, or run `argocd app terminate-op root`. Inject failure only after
-pausing automation on **both** the child and `root`: the root's self-heal reverts a patch to a child's `syncPolicy`.
+The root's waves wait for each child to be Healthy, Synced and finished with its own operation (the Lua check in
+`helm/values/argocd.yaml`). A `Degraded` child fails the root's sync, and `retry.refresh` makes the next attempt read the
+newest commit. A child in any other state, including Healthy but still OutOfSync, holds the root in `Running` with no
+retry, so the root will not pick up a new commit until that operation ends.
+
+The root's operation message names the child. The child's own status says what it is waiting for:
+
+```bash
+kubectl --context kind-plane-platform -n argocd get application root \
+  -o jsonpath='{.status.operationState.message}{"\n"}'
+kubectl --context kind-plane-platform -n argocd get application <child> \
+  -o jsonpath='{.status.health.status} {.status.sync.status} {.status.operationState.message}{"\n"}'
+```
+
+Fix the cause in Git and publish it. Whether that lands by itself depends on what is waiting:
+
+- A fix to a child's values or manifests reaches the child at its next automated sync or retry. A child waiting on something
+  that never turns Degraded, such as a StatefulSet, gets neither, so end that child's operation.
+- A fix to a child's Application manifest only reaches the cluster through the root, so end the root's operation.
+
+To end an operation, run `argocd app terminate-op <app>`. With no CLI, make the same request by hand. This patch has not
+yet been run against a live cluster:
+
+```bash
+kubectl --context kind-plane-platform -n argocd patch application <app> --type merge \
+  -p '{"status":{"operationState":{"phase":"Terminating"}}}'
+```
+
+A terminated operation does not retry. Automation starts a new sync only for a commit newer than the one that operation ran
+at, so a fix published beforehand starts it as soon as the operation ends.
+
+Inject failure only after pausing automation on **both** the child and `root`: the root's self-heal reverts a patch to a
+child's `syncPolicy`.
