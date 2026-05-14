@@ -66,6 +66,7 @@ jobs:
           SKIP_CHARTS: "yes"
         run: ./scripts/ci/validate-manifests.sh
       - name: Open the pull request
+        id: open
         if: steps.promote.outputs.title != ''
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
@@ -88,3 +89,19 @@ jobs:
 
             1. `git pull`
             2. `make gitops-publish`, which takes the prod-sim backup first, because this workflow cannot reach the cluster
+      # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
+      # promotion. The run stays red, because the pull request this workflow promises does not exist.
+      - name: Explain a refused pull request
+        if: failure() && steps.open.outcome == 'failure'
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          {
+            echo '### Branch pushed, pull request not opened'
+            echo
+            echo 'If the step above says Actions is not permitted to create pull requests, the repository'
+            echo 'setting is off: .github/workflows/README.md names it. A person can open this one by hand,'
+            echo 'and ci.yml then runs on it, which it does not for a pull request opened with GITHUB_TOKEN:'
+            echo
+            echo "https://github.com/$REPOSITORY/compare/main...promote/prod-sim?expand=1"
+          } >>"$GITHUB_STEP_SUMMARY"

@@ -81,6 +81,7 @@ helm template bootstrap gitops/bootstrap/chart --namespace argocd >"$WORK/in-rep
 fetch_schemas "${ENVIRONMENT_FILES[@]}" "$WORK"/in-repo/*.yaml
 
 check "render is up to date" "$ROOT/scripts/render.sh" --check
+check "helm lint: bootstrap chart" helm lint --strict --quiet gitops/bootstrap/chart
 check "kubeconform: rendered Plane" "${KUBECONFORM[@]}" "${ENVIRONMENT_FILES[@]}"
 check "kubeconform: platform manifests" "${KUBECONFORM[@]}" "$WORK/in-repo"
 
