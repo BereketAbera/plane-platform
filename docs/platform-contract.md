@@ -17,11 +17,11 @@ Decisions with a "why" live in [`docs/adr/`](adr/). This file only states what i
 | Plane chart | `plane-ce` 1.8.6, `https://helm.plane.so/`, tgz sha256 `c70244eefa7dfa94e8636048fe4032640999c7d4e265b1fec68d13060cf70e4f` |
 | Helm release name | `plane` in both environments, so object names match and one patch set fits both |
 | Distinct product name | **Wayline**, a customized Plane Community Edition deployment. Never present it as an original product |
-| Host-only state | `.local/` (gitignored): `kubeconfig`, `git/`, `backups/`, `secret-zero/`, `terraform/`, `evidence-raw/` |
+| Host-only state | `.local/` (gitignored): `kubeconfig`, `kind-cluster.yaml`, `git/`, `backups/`, `secret-zero/`, `terraform/`, `evidence-raw/`, `test-accounts.env`, `test-sentinel-<env>.json`, `kubeconform-schemas/`, `trivy-cache/`. Build output goes to `.build/`, also gitignored |
 
 ## 2. Namespaces
 
-Terraform creates every namespace. Argo CD never does (`CreateNamespace=false`).
+Terraform creates every namespace below. Argo CD never creates one (`CreateNamespace=false`).
 
 | Namespace | Purpose | PSA enforce | PSA warn/audit |
 |---|---|---|---|
@@ -33,8 +33,12 @@ Terraform creates every namespace. Argo CD never does (`CreateNamespace=false`).
 | `plane-dev` | Dev environment | `baseline` | `restricted` |
 | `plane-prod-sim` | Production simulation | `baseline`, tighten only after a per-workload non-root test passes | `restricted` |
 
-Every Plane namespace carries label `plane-platform/environment: dev|prod-sim`. All namespaces
-carry `plane-platform/managed-by: terraform`.
+Every Plane namespace carries label `plane-platform/environment: dev|prod-sim`. All namespaces in
+this table carry `plane-platform/managed-by: terraform`.
+
+metrics-server is the one platform workload outside this table. It runs in `kube-system`, which kubeadm
+creates, so Terraform does not create or label it. That namespace also holds kind's own CoreDNS, kindnet
+and kube-proxy, so its NetworkPolicy selects only the metrics-server pod, with no namespace default-deny.
 
 ## 3. Hostnames and exposure
 
@@ -68,7 +72,7 @@ CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to
 | **Docker Compose** via `infrastructure/local-services/` | Registry, pull-through caches, `git://` remote. These outlive the cluster | Cluster resources |
 | **Terraform** via `infrastructure/terraform/environments/local` | Namespaces and labels, ResourceQuota, LimitRange, CoreDNS rewrite, the Argo CD Helm release, AppProjects, the root Application | Anything Argo CD deploys |
 | **Terraform** via `infisical/terraform` (separate root and state) | Infisical projects, environments, machine identities, memberships, Kubernetes Auth config | Secret values (`*_wo` or scripts only, never in state) |
-| **Argo CD** | Everything else in the cluster: Traefik, metrics-server, NetworkPolicies, monitoring, Infisical server, operators, both Plane environments | Namespaces, itself |
+| **Argo CD** | Everything else in the cluster: Traefik, metrics-server (in `kube-system`), NetworkPolicies, monitoring, Infisical server, operators, both Plane environments | Namespaces, itself |
 | **Helm** | Renders charts. It is a packaging format here, not an owner. Nothing is `helm install`ed by hand | |
 | **Infisical** | Secret values and their rotation history | Kubernetes objects (the operator materialises them) |
 | **Scripts** via `.local/secret-zero/` | The only secrets that exist before Infisical does | Anything once Infisical is live |
@@ -108,10 +112,19 @@ Inside each Plane Application, in order:
 | 3 | Deployments: api, worker, beat, web, admin, space, live |
 | 4 | Ingress routes |
 
-Root app-of-apps, in order: `network-policies` (-10), `traefik` (-9), `metrics-server` (-8),
+Root app-of-apps, in order: `network-policies` and `backup-storage` (-10), `traefik` (-9), `metrics-server` (-8),
 `kube-prometheus-stack` (-7), `loki` and `alloy` (-6), `monitoring-extras` (-5), `infisical` (-4),
 `infisical-operator-dev` and `infisical-operator-prod-sim` (-3), `plane-dev` (-1), `plane-prod-sim` (0).
-`argocd-cm` carries a custom health check for `argoproj.io/Application` so these waves actually gate.
+
+`argocd-cm` carries a custom health check for `argoproj.io/Application`, and that check is what makes these
+waves gate. Argo's own health aggregation skips hooks and resources not created yet, so a child would read
+Healthy between its internal waves. So a child counts as Healthy only with health Healthy, no `.operation` in
+flight, and sync status Synced. A child that stays OutOfSync therefore holds every later wave.
+
+The waves order the sync, and nothing more. Root's own operation ends right after it applies wave 0, without
+waiting for `plane-prod-sim`, and `plane-dev` stays Degraded until `scripts/infisical-bootstrap.sh` publishes
+its identity Secret. So readiness is never read from root: `make up` waits for Traefik, then Infisical, and only
+after the bootstrap for all 14 Applications, each Synced and Healthy.
 
 ## 7. Argo CD projects
 
@@ -184,9 +197,15 @@ Bring the two environments up serially. Simultaneous first boots are the worst c
 ## 11. Make interface
 
 `make setup up status test logs backup restore down` plus `destroy`, `render`, `promote`, `rollback`, `rotate`,
-`ci`, `images`, `gitops-publish`, `drill-*`. `make help` lists them.
+`ci`, `images`, `gitops-publish`, `drill-failed-deploy`, `drill-pod-restart`. `make help` lists them. Options
+are passed as `make <target> NAME=value`.
 
 - `make down` stops the cluster and **keeps all data**. `make up` resumes it.
+- `make up` is idempotent, so it is also how to continue after a failure. It refuses uncommitted changes under
+  `gitops/`, `helm/`, `monitoring/` and `infisical/`, because Argo CD reads only commits.
+  `UP_STOP_AFTER=<cluster|publish|terraform|secret-zero|traefik|infisical>` stops it after that step.
+- `make test` keeps going after a failure and labels each test PASS, FAIL or BLOCKED. `scripts/test.sh` exits 0,
+  1 or 2 for those, as `tests/e2e/smoke.py` does. `make` itself exits 2 on any failure, and prints which.
 - `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`.
 - `make restore` refuses to overwrite a non-empty environment without `CONFIRM=yes`.
 - Every script checks free host disk through `guard_disk`, because the Docker VM cannot see the real limit.
@@ -223,5 +242,6 @@ Image digests for a Plane environment live in `helm/plane/overlays/<env>/kustomi
 `make promote` edits them and re-renders; nothing else writes those lines.
 
 The root app also includes `backup-storage` (wave -10), pointing at `gitops/platform/backup-storage`: a static hostPath PV
-per environment on `/backups`, `Retain`, plus a PVC in each Plane namespace, so backup pods mount only a PVC and stay
-PSA-compatible.
+on `/backups/<name>`, `Retain`, for each of `dev`, `prod-sim` and `infisical` (`backups-dev`, `backups-prod-sim`,
+`backups-infisical`), plus a PVC named `backups` in each of those three namespaces, so backup pods mount only a PVC and
+stay PSA-compatible.
