@@ -1,0 +1,98 @@
+# TEMPORARY. The commit after its run is saved in docs/evidence/ci/ deletes this file and
+# scripts/ci/ghcr-probe.sh. Dispatch only.
+#
+# It publishes nothing: no layer, no manifest, no tag. The GHCR jobs ask what a token may do and
+# cancel what they open. The last job goes red on purpose, on a defect planted in the runner's own
+# checkout and never committed, so a real check is seen failing on a real runner.
+name: ci-probe
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ghcr-write:
+    name: GHCR with packages write, on arm64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Runner facts, then ask GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
+        run: ./scripts/ci/ghcr-probe.sh
+
+  ghcr-read:
+    name: GHCR with packages read, the control
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Runner facts, then ask GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
+        run: ./scripts/ci/ghcr-probe.sh
+
+  ghcr-none:
+    name: GHCR with no packages permission, the control
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Runner facts, then ask GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
+        run: ./scripts/ci/ghcr-probe.sh
+
+  negative-controls:
+    name: Every planted defect, on a real runner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Plant each defect in a throwaway clone, require the matching check to fail
+        run: ./scripts/ci/negative-controls.sh
+
+  planted-secret:
+    name: Manifests check, red on purpose
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Plant a kind Secret in the rendered dev manifests, on this runner only
+        run: |
+          printf -- '---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: planted\n  namespace: plane-dev\nstringData:\n  note: planted\n' >>gitops/environments/dev/manifests.yaml
+          git diff --stat
+      - name: Render drift, kubeconform, conftest, promotion invariant
+        run: ./scripts/ci/validate-manifests.sh
