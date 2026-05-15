@@ -1,0 +1,70 @@
+# Captured 2026-11-04T20:40:23Z by the commands shown, from local main at b98fa47. Each block is one command and its raw output.
+
+$ gh api user --jq {login,plan}
+{"login":"BereketAbera","plan":{"collaborators":0,"name":"free","private_repos":10000,"space":976562499}}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform --jq {private,visibility,default_branch,owner:.owner.login,owner_type:.owner.type}
+{"default_branch":"main","owner":"BereketAbera","owner_type":"User","private":true,"visibility":"private"}
+[exit 0]
+
+$ gh workflow list --repo BereketAbera/plane-platform --all
+ci-probe	active	407377450
+ci	active	407351241
+images	active	407351244
+promote-prod-sim	active	407351246
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/permissions
+{"enabled":true,"allowed_actions":"all","sha_pinning_required":false}[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/permissions/workflow
+{"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/permissions/artifact-and-log-retention
+{"days":90,"maximum_allowed_days":400}[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/cache/usage
+{"full_name":"BereketAbera/plane-platform","active_caches_size_in_bytes":0,"active_caches_count":0}[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/artifacts?per_page=5
+{"total_count":0,"artifacts":[]}[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/branches/main/protection
+{"message":"Upgrade to GitHub Pro or make this repository public to enable this feature.","documentation_url":"https://docs.github.com/rest/branches/branch-protection#get-branch-protection","status":"403"}gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)
+[exit 1]
+
+$ gh api repos/BereketAbera/plane-platform/rulesets
+{"message":"Upgrade to GitHub Pro or make this repository public to enable this feature.","documentation_url":"https://docs.github.com/rest/repos/rules#get-all-repository-rulesets","status":"403"}gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)
+[exit 1]
+
+$ gh api repos/BereketAbera/plane-platform/environments
+{"total_count":0,"environments":[]}[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/codeowners/errors
+{"errors":[]}[exit 0]
+
+$ gh api users/BereketAbera/packages?package_type=container
+{"message":"You need at least read:packages scope to list packages.","documentation_url":"https://docs.github.com/rest/packages/packages#list-packages-for-a-user","status":"403"}gh: You need at least read:packages scope to list packages. (HTTP 403)
+[exit 1]
+
+$ gh api users/BereketAbera/settings/billing/packages
+{"message":"This endpoint has been moved.","documentation_url":"https://gh.io/billing-api-updates-user","status":"410"}gh: This endpoint has been moved. (HTTP 410)
+[exit 1]
+
+$ gh api users/BereketAbera/settings/billing/shared-storage
+{"message":"This endpoint has been moved.","documentation_url":"https://gh.io/billing-api-updates-user","status":"410"}gh: This endpoint has been moved. (HTTP 410)
+[exit 1]
+
+# Billing rows for this repository only. The filter hides the account's other repositories.
+
+$ gh api users/BereketAbera/settings/billing/usage?year=2026&month=11 --jq .usageItems[] | select(.repositoryName=="plane-platform") | [.date,.sku,.quantity,.unitType,.pricePerUnit,.grossAmount,.netAmount] | @tsv
+2026-11-04T20:05:22Z	Actions Linux ARM	1	Minutes	0.005	0.005	0
+2026-11-04T20:36:28Z	Actions Linux	4	Minutes	0.006	0.024	0
+[exit 0]
+
+# Pinned actions: tag to commit, compared with the SHA pinned in .github/workflows/.
+actions/checkout v7.0.1 pinned=3d3c42e5aac5ba805825da76410c181273ba90b1 tag=commit:3d3c42e5aac5ba805825da76410c181273ba90b1
+docker/setup-buildx-action v4.4.1 pinned=f87e5991a6d7451dcb8d9637bfbc97413f497069 tag=commit:f87e5991a6d7451dcb8d9637bfbc97413f497069
+docker/login-action v4.7.0 pinned=81c6f93d4bc991e510b342a00b419b3bb4efc5c6 tag=commit:81c6f93d4bc991e510b342a00b419b3bb4efc5c6
+peter-evans/create-pull-request v8.1.1 pinned=5f6978faf089d4d20b00c7766989d076bb2fc7f1 tag=commit:5f6978faf089d4d20b00c7766989d076bb2fc7f1

@@ -1,0 +1,500 @@
+Build and push	Set up job	﻿2026-11-04T20:05:02.7274364Z Current runner version: '2.338.2'
+Build and push	Set up job	2026-11-04T20:05:02.7301818Z ##[group]Runner Image Provisioner
+Build and push	Set up job	2026-11-04T20:05:02.7302759Z Hosted Compute Agent
+Build and push	Set up job	2026-11-04T20:05:02.7303452Z Version: 20261028.624
+Build and push	Set up job	2026-11-04T20:05:02.7304242Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Build and push	Set up job	2026-11-04T20:05:02.7305025Z Build Date: 2026-10-28T21:51:42Z
+Build and push	Set up job	2026-11-04T20:05:02.7306559Z Worker ID: {23a2f2e5-3118-4bfc-b131-357e29dc86a3}
+Build and push	Set up job	2026-11-04T20:05:02.7307344Z Region: westus3
+Build and push	Set up job	2026-11-04T20:05:02.7307979Z Cloud: Azure
+Build and push	Set up job	2026-11-04T20:05:02.7308609Z ##[endgroup]
+Build and push	Set up job	2026-11-04T20:05:02.7310318Z ##[group]Operating System
+Build and push	Set up job	2026-11-04T20:05:02.7311143Z Ubuntu
+Build and push	Set up job	2026-11-04T20:05:02.7311817Z 24.04.5
+Build and push	Set up job	2026-11-04T20:05:02.7312356Z LTS
+Build and push	Set up job	2026-11-04T20:05:02.7313103Z ##[endgroup]
+Build and push	Set up job	2026-11-04T20:05:02.7313721Z ##[group]Runner Image
+Build and push	Set up job	2026-11-04T20:05:02.7314354Z Image: ubuntu-24.04-arm
+Build and push	Set up job	2026-11-04T20:05:02.7315110Z Version: 20261101.172.1
+Build and push	Set up job	2026-11-04T20:05:02.7316572Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24-arm64/20261101.172/images/ubuntu/Ubuntu2404-Arm64-Readme.md
+Build and push	Set up job	2026-11-04T20:05:02.7318555Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24-arm64%2F20261101.172
+Build and push	Set up job	2026-11-04T20:05:02.7319554Z ##[endgroup]
+Build and push	Set up job	2026-11-04T20:05:02.7320947Z ##[group]GITHUB_TOKEN Permissions
+Build and push	Set up job	2026-11-04T20:05:02.7323580Z Contents: read
+Build and push	Set up job	2026-11-04T20:05:02.7324373Z Metadata: read
+Build and push	Set up job	2026-11-04T20:05:02.7325005Z Packages: write
+Build and push	Set up job	2026-11-04T20:05:02.7326006Z ##[endgroup]
+Build and push	Set up job	2026-11-04T20:05:02.7328375Z Secret source: Actions
+Build and push	Set up job	2026-11-04T20:05:02.7329474Z Cache mode: write
+Build and push	Set up job	2026-11-04T20:05:02.7330458Z Prepare workflow directory
+Build and push	Set up job	2026-11-04T20:05:02.7854447Z Prepare all required actions
+Build and push	Set up job	2026-11-04T20:05:02.7901544Z Getting action download info
+Build and push	Set up job	2026-11-04T20:05:03.1263798Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Build and push	Set up job	2026-11-04T20:05:03.3016496Z Download action repository 'docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069' (SHA:f87e5991a6d7451dcb8d9637bfbc97413f497069)
+Build and push	Set up job	2026-11-04T20:05:04.0022163Z Download action repository 'docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6' (SHA:81c6f93d4bc991e510b342a00b419b3bb4efc5c6)
+Build and push	Set up job	2026-11-04T20:05:04.8422456Z Complete job name: Build and push
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:05:04.9463307Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9465184Z with:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9466284Z   persist-credentials: false
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9467353Z   repository: BereketAbera/plane-platform
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9473678Z   token: ***
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9474551Z   ssh-strict: true
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9475314Z   ssh-user: git
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9476256Z   clean: true
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9477098Z   sparse-checkout-cone-mode: true
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9477974Z   fetch-depth: 1
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9478754Z   fetch-tags: false
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9479970Z   show-progress: true
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9480738Z   lfs: false
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9481526Z   submodules: false
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9482324Z   set-safe-directory: true
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9483183Z   allow-unsafe-pr-checkout: false
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9484561Z env:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9485293Z   MIN_FREE_DISK_GIB: 5
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:04.9486425Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0490967Z Syncing repository: BereketAbera/plane-platform
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0493977Z ##[group]Getting Git version info
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0495687Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0503075Z [command]/usr/bin/git version
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0698983Z git version 2.56.0
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0735804Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0765672Z Temporarily overriding HOME='/home/runner/work/_temp/9c9d2ad5-fb95-49a1-bd7b-95160ea49c12' before making global git config changes
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0769491Z Adding repository directory to the temporary git global config as a safe directory
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0772405Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0809588Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0812101Z ##[group]Determining repository object format
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0814423Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0816735Z ##[group]Initializing the repository
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0818945Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0917301Z hint: Using 'master' as the name for the initial branch. This default branch name
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0919770Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0922086Z hint: to use in all of your new repositories, which will suppress this warning,
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0923901Z hint: call:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0925686Z hint:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0928390Z hint: 	git config --global init.defaultBranch <name>
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0929602Z hint:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0930601Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0932251Z hint: 'development'. The just-created branch can be renamed via this command:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0933502Z hint:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0934229Z hint: 	git branch -m <name>
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0935145Z hint:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0936599Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0938426Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.0941469Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1026588Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1029974Z ##[group]Disabling automatic garbage collection
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1031193Z [command]/usr/bin/git config --local gc.auto 0
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1033765Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1035078Z ##[group]Setting up auth
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1036454Z Removing SSH command configuration
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1042982Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1104901Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1394946Z Removing HTTP extra header
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1400949Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1430749Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1659851Z Removing includeIf entries pointing to credentials config files
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1661851Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1694856Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1928381Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.1979736Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.2014981Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.2050303Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.2084642Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.2119776Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.2122726Z ##[group]Fetching the repository
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.2126528Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f733b87dba62a6a67a3192ef94b97bb39d7cb668:refs/remotes/origin/main
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.8986847Z From https://github.com/BereketAbera/plane-platform
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9006464Z  * [new ref]         f733b87dba62a6a67a3192ef94b97bb39d7cb668 -> origin/main
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9049424Z [command]/usr/bin/git branch --list --remote origin/main
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9070976Z   origin/main
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9106498Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9107345Z f733b87dba62a6a67a3192ef94b97bb39d7cb668
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9117177Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9119974Z ##[group]Determining the checkout info
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9121832Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9123530Z [command]/usr/bin/git sparse-checkout disable
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9146144Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9179347Z ##[group]Checking out the ref
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9180594Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9299824Z Switched to a new branch 'main'
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9305290Z branch 'main' set up to track 'origin/main'.
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9312454Z ##[endgroup]
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9354694Z [command]/usr/bin/git log -1 --format=%H
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9383466Z f733b87dba62a6a67a3192ef94b97bb39d7cb668
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9390900Z ##[group]Removing auth
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9392294Z Removing SSH command configuration
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9396793Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9430641Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9638185Z Removing HTTP extra header
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9646945Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9674744Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9897988Z Removing includeIf entries pointing to credentials config files
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9899235Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9921574Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9922829Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9923719Z includeif.gitdir:/github/workspace/.git.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9924379Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9934487Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9966935Z /home/runner/work/_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:05.9978006Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-85534ba7\-201d\-4c0e\-b700\-92a35a5883c9\.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0004115Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0034328Z /home/runner/work/_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0039023Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-85534ba7\-201d\-4c0e\-b700\-92a35a5883c9\.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0072628Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0099423Z /github/runner_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0114665Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-85534ba7\-201d\-4c0e\-b700\-92a35a5883c9\.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0146466Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0169638Z /github/runner_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0178492Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-85534ba7\-201d\-4c0e\-b700\-92a35a5883c9\.config
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0212680Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0428808Z Removing credentials config '/home/runner/work/_temp/git-credentials-85534ba7-201d-4c0e-b700-92a35a5883c9.config'
+Build and push	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:06.0434879Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	﻿2026-11-04T20:05:06.0697329Z ##[group]Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0697985Z with:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0698328Z   driver: docker-container
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0698695Z   use: true
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0698938Z   keep-state: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0699250Z   cache-binary: true
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0699513Z   cleanup: true
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0699789Z env:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0700110Z   MIN_FREE_DISK_GIB: 5
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.0700362Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.2449697Z ##[group]Docker info
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.2463390Z [command]/usr/bin/docker version
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3249787Z Client: Docker Engine - Community
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3250641Z  Version:           28.0.4
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3251333Z  API version:       1.48
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3252079Z  Go version:        go1.23.7
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3252650Z  Git commit:        b8034c0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3253277Z  Built:             Tue Mar 25 15:07:55 2025
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3253967Z  OS/Arch:           linux/arm64
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3254764Z  Context:           default
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3255157Z 
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3255951Z Server: Docker Engine - Community
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3256638Z  Engine:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3257093Z   Version:          28.0.4
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3257668Z   API version:      1.48 (minimum version 1.24)
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3258328Z   Go version:       go1.23.7
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3258899Z   Git commit:       6430e49
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3260104Z   Built:            Tue Mar 25 15:07:55 2025
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3260964Z   OS/Arch:          linux/arm64
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3261584Z   Experimental:     false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3262065Z  containerd:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3262612Z   Version:          v2.4.2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3263282Z   GitCommit:        b7a25261e029d68978bbf290df0a62fc819b3c51
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3263963Z  runc:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3264400Z   Version:          1.5.2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3265054Z   GitCommit:        v1.5.2-0-g29dd3dc2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3265882Z  docker-init:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3267734Z   Version:          0.19.0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3268546Z   GitCommit:        de40ad0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.3297503Z [command]/usr/bin/docker info
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6831277Z Client: Docker Engine - Community
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6832734Z  Version:    28.0.4
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6835642Z  Context:    default
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6836139Z  Debug Mode: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6836567Z  Plugins:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6838319Z   buildx: Docker Buildx (Docker Inc.)
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6842298Z     Version:  v0.38.1
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6856207Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6864388Z   compose: Docker Compose (Docker Inc.)
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6871311Z     Version:  v2.38.2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6872568Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6874352Z 
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6874633Z Server:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6874884Z  Containers: 0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6875135Z   Running: 0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6875615Z   Paused: 0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6875850Z   Stopped: 0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6876175Z  Images: 6
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6876376Z  Server Version: 28.0.4
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6876607Z  Storage Driver: overlay2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6876999Z   Backing Filesystem: extfs
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6877287Z   Supports d_type: true
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6877635Z   Using metacopy: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6877901Z   Native Overlay Diff: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6878153Z   userxattr: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6878465Z  Logging Driver: json-file
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6878703Z  Cgroup Driver: systemd
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6878951Z  Cgroup Version: 2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6879349Z  Plugins:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6879596Z   Volume: local
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6879984Z   Network: bridge host ipvlan macvlan null overlay
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6880382Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6880855Z  Swarm: inactive
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6881122Z  Runtimes: io.containerd.runc.v2 runc
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6881566Z  Default Runtime: runc
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6882477Z  Init Binary: docker-init
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6882785Z  containerd version: b7a25261e029d68978bbf290df0a62fc819b3c51
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6883222Z  runc version: v1.5.2-0-g29dd3dc2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6883463Z  init version: de40ad0
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6883807Z  Security Options:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6884089Z   apparmor
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6884335Z   seccomp
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6884705Z    Profile: builtin
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6884967Z   cgroupns
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6885149Z  Kernel Version: 7.0.0-1017-azure
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6885704Z  Operating System: Ubuntu 24.04.5 LTS
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6886114Z  OSType: linux
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6886375Z  Architecture: aarch64
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6886619Z  CPUs: 2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6886958Z  Total Memory: 7.721GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6887228Z  Name: runnervmkb2gk
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6887476Z  ID: cf2d1866-010b-4401-b673-15086a1125a1
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6887901Z  Docker Root Dir: /var/lib/docker
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6888197Z  Debug Mode: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6888599Z  Username: githubactions
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6888877Z  Experimental: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6889276Z  Insecure Registries:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6893527Z   ::1/128
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6893995Z   127.0.0.0/8
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6894281Z  Live Restore Enabled: false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6894458Z 
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.6895098Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.7313174Z ##[group]Buildx version
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.7331722Z [command]/usr/bin/docker buildx version
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.7795133Z github.com/docker/buildx v0.38.1 0dbe87f36ed472fe36b6796c3f70b4210a731fc5
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.7820000Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.7961545Z ##[group]Inspecting default docker context
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8091625Z [
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8092300Z   {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8092708Z     "Name": "default",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8093504Z     "Metadata": {},
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8093936Z     "Endpoints": {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8094539Z       "docker": {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8094930Z         "Host": "unix:///var/run/docker.sock",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8095838Z         "SkipTLSVerify": false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8096288Z       }
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8096616Z     },
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8096934Z     "TLSMaterial": {},
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8097491Z     "Storage": {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8098041Z       "MetadataPath": "<IN MEMORY>",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8098713Z       "TLSPath": "<IN MEMORY>"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8099054Z     }
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8099361Z   }
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8099713Z ]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8100598Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8790495Z ##[group]Pulling BuildKit image(s)
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:06.8815271Z [command]/usr/bin/docker pull moby/buildkit:buildx-stable-1
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.7066243Z buildx-stable-1: Pulling from moby/buildkit
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9532540Z 197a036d7c64: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9533595Z 259bfef66074: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9534330Z 3457cd54502a: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9534649Z 618b6aac0c4b: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9534995Z 79efd2259b60: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9535218Z 600af964d8b6: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9535685Z ab055a6ca909: Pulling fs layer
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9535961Z 79efd2259b60: Waiting
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9536183Z 600af964d8b6: Waiting
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9536369Z ab055a6ca909: Waiting
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:07.9536553Z 618b6aac0c4b: Waiting
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.1381991Z 3457cd54502a: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.1394153Z 3457cd54502a: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.1536025Z 197a036d7c64: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.1547207Z 197a036d7c64: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.1816044Z 259bfef66074: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.1826057Z 259bfef66074: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.2657576Z 197a036d7c64: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.3479363Z 618b6aac0c4b: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.3482659Z 618b6aac0c4b: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.3664158Z 600af964d8b6: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.3666918Z 600af964d8b6: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.5732232Z ab055a6ca909: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.5734878Z ab055a6ca909: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.6436265Z 79efd2259b60: Verifying Checksum
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:08.6442616Z 79efd2259b60: Download complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:13.2435963Z 259bfef66074: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:13.2640940Z 3457cd54502a: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:13.2833752Z 618b6aac0c4b: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.1629055Z 79efd2259b60: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.1809997Z 600af964d8b6: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.1978126Z ab055a6ca909: Pull complete
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.2016467Z Digest: sha256:c5f8862f52499773af85bc07695b2379ef08e8002352b0df2c4864c91d78dabe
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.2032922Z Status: Downloaded newer image for moby/buildkit:buildx-stable-1
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.2040919Z docker.io/moby/buildkit:buildx-stable-1
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.2056432Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.2057204Z ##[group]Creating a new builder instance
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.2698463Z [command]/usr/bin/docker buildx create --name builder-937ff106-a867-4678-8cde-a48a89eee0d2 --driver docker-container --buildkitd-flags --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host --use
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.3255229Z builder-937ff106-a867-4678-8cde-a48a89eee0d2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.3288034Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.3288605Z ##[group]Booting builder
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.3324855Z [command]/usr/bin/docker buildx inspect --bootstrap --builder builder-937ff106-a867-4678-8cde-a48a89eee0d2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.3779515Z #1 [internal] booting buildkit
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.5285365Z #1 pulling image moby/buildkit:buildx-stable-1
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:15.9411472Z #1 pulling image moby/buildkit:buildx-stable-1 0.6s done
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.0930611Z #1 creating container buildx_buildkit_builder-937ff106-a867-4678-8cde-a48a89eee0d20
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2156934Z #1 creating container buildx_buildkit_builder-937ff106-a867-4678-8cde-a48a89eee0d20 0.3s done
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2464682Z #1 DONE 0.8s
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2817412Z Name:          builder-937ff106-a867-4678-8cde-a48a89eee0d2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2818051Z Driver:        docker-container
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2819041Z Last Activity: 2026-11-04 20:05:15 +0000 UTC
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2819403Z 
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2819629Z Nodes:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2820054Z Name:                  builder-937ff106-a867-4678-8cde-a48a89eee0d20
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2820634Z Endpoint:              unix:///var/run/docker.sock
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2821037Z Status:                running
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2821652Z BuildKit daemon flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2822276Z BuildKit version:      v0.34.2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2823202Z Platforms:             linux/arm64, linux/arm/v7, linux/arm/v6
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2823630Z Labels:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2823986Z  org.mobyproject.buildkit.worker.executor:         oci
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2824478Z  org.mobyproject.buildkit.worker.hostname:         23952027d18a
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2824999Z  org.mobyproject.buildkit.worker.network:          host
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2825694Z  org.mobyproject.buildkit.worker.oci.process-mode: sandbox
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2826213Z  org.mobyproject.buildkit.worker.selinux.enabled:  false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2826719Z  org.mobyproject.buildkit.worker.snapshotter:      overlayfs
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2827156Z GC Policy rule#0:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2827440Z  All:            false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2827854Z  Filters:        type==source.local type==exec.cachemount type==source.git.checkout
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2828326Z  Keep Duration:  48h0m0s
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2828643Z  Max Used Space: 488.3MiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2828947Z GC Policy rule#1:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2829240Z  All:            false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2829533Z  Keep Duration:  1440h0m0s
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2829848Z  Reserved Space: 7.451GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2830155Z  Max Used Space: 54.02GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2830458Z  Min Free Space: 13.97GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2831113Z GC Policy rule#2:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2831409Z  All:            false
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2831705Z  Reserved Space: 7.451GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2832014Z  Max Used Space: 54.02GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2832324Z  Min Free Space: 13.97GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2832633Z GC Policy rule#3:
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2832918Z  All:            true
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2833270Z  Reserved Space: 7.451GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2833956Z  Max Used Space: 54.02GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2837382Z  Min Free Space: 13.97GiB
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.2874786Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3795249Z ##[group]Inspect builder
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3796046Z {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3797130Z   "nodes": [
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3797519Z     {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3798608Z       "name": "builder-937ff106-a867-4678-8cde-a48a89eee0d20",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3800747Z       "endpoint": "unix:///var/run/docker.sock",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3815530Z       "status": "running",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3816722Z       "buildkitd-flags": "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3818097Z       "buildkit": "v0.34.2",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3818770Z       "platforms": "linux/arm64,linux/arm/v7,linux/arm/v6",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3819879Z       "features": {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3821529Z         "Automatically load images to the Docker Engine image store": true,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3822998Z         "Cache export": true,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3823598Z         "Direct push": true,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3830814Z         "Docker exporter": true,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3832846Z         "Multi-platform build": true,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3833489Z         "OCI exporter": true
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3834707Z       },
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3835193Z       "labels": {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3836380Z         "org.mobyproject.buildkit.worker.executor": "oci",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3837780Z         "org.mobyproject.buildkit.worker.hostname": "23952027d18a",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3839100Z         "org.mobyproject.buildkit.worker.network": "host",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3839910Z         "org.mobyproject.buildkit.worker.oci.process-mode": "sandbox",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3841766Z         "org.mobyproject.buildkit.worker.selinux.enabled": "false",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3843218Z         "org.mobyproject.buildkit.worker.snapshotter": "overlayfs"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3843976Z       },
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3844317Z       "gcPolicy": [
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3845940Z         {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3846546Z           "all": false,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3848249Z           "filter": [
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3850067Z             "type==source.local type==exec.cachemount type==source.git.checkout"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3851453Z           ],
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3852030Z           "keepDuration": "48h0m0s",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3853401Z           "maxUsedSpace": "488.3MiB"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3853962Z         },
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3854827Z         {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3855174Z           "all": false,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3856473Z           "keepDuration": "1440h0m0s",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3857079Z           "reservedSpace": "7.451GiB",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3858003Z           "maxUsedSpace": "54.02GiB",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3858662Z           "minFreeSpace": "13.97GiB"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3859739Z         },
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3860108Z         {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3861827Z           "all": false,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3862108Z           "reservedSpace": "7.451GiB",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3862435Z           "maxUsedSpace": "54.02GiB",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3862722Z           "minFreeSpace": "13.97GiB"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3862960Z         },
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3863114Z         {
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3863268Z           "all": true,
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3863467Z           "reservedSpace": "7.451GiB",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3863723Z           "maxUsedSpace": "54.02GiB",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3864770Z           "minFreeSpace": "13.97GiB"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3865012Z         }
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3865167Z       ]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3865314Z     }
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3865678Z   ],
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3865922Z   "name": "builder-937ff106-a867-4678-8cde-a48a89eee0d2",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3866550Z   "driver": "docker-container",
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3866795Z   "lastActivity": "2026-11-04T20:05:15.000Z"
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3867031Z }
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3867417Z ##[endgroup]
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3868185Z ##[group]BuildKit version
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3868469Z builder-937ff106-a867-4678-8cde-a48a89eee0d20: v0.34.2
+Build and push	Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:16.3868881Z ##[endgroup]
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	﻿2026-11-04T20:05:16.3959126Z ##[group]Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3959513Z with:
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3959678Z   registry: ghcr.io
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3959869Z   username: BereketAbera
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3962316Z   password: ***
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3962508Z   logout: true
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3962671Z env:
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3962829Z   MIN_FREE_DISK_GIB: 5
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.3963017Z ##[endgroup]
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:16.5894846Z Logging into ghcr.io...
+Build and push	Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:17.2534776Z Login Succeeded!
+Build and push	Build, push, record digests	﻿2026-11-04T20:05:17.2667041Z ##[group]Run ./scripts/install-tools.sh yq
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2667527Z ^[[36;1m./scripts/install-tools.sh yq^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2667876Z ^[[36;1m./scripts/ci/build-images.sh "ghcr.io/${OWNER,,}/wayline"^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2668194Z ^[[36;1m{^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2668374Z ^[[36;1m  echo 'digests<<DIGESTS_END'^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2668621Z ^[[36;1m  cat .build/digests.tsv^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2668851Z ^[[36;1m  echo 'DIGESTS_END'^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2669070Z ^[[36;1m} >>"$GITHUB_OUTPUT"^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2669275Z ^[[36;1m{^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2669452Z ^[[36;1m  echo '### Digests recorded'^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2669692Z ^[[36;1m  echo '```'^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2669892Z ^[[36;1m  cat .build/digests.tsv^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2670133Z ^[[36;1m  echo '```'^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2670331Z ^[[36;1m} >>"$GITHUB_STEP_SUMMARY"^[[0m
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2787785Z shell: /usr/bin/bash -e {0}
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2788067Z env:
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2788241Z   MIN_FREE_DISK_GIB: 5
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2788507Z   OWNER: BereketAbera
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2788695Z ##[endgroup]
+Build and push	Build, push, record digests	2026-11-04T20:05:17.2954118Z fetching yq v4.53.2
+Build and push	Build, push, record digests	2026-11-04T20:05:17.8181377Z tools: 1 installed, 0 already current, in /home/runner/work/plane-platform/plane-platform/.tools/bin
+Build and push	Build, push, record digests	2026-11-04T20:05:17.8254189Z ^[[1;33mwarn^[[0m apps/wayline/images.txt does not exist yet, nothing to build
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	﻿2026-11-04T20:05:17.8378060Z Post job cleanup.
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0177978Z ##[group]Logout from ghcr.io
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0266065Z [command]/usr/bin/docker logout ghcr.io
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0396111Z Removing login credentials for ghcr.io
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0483725Z ##[endgroup]
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0491712Z ##[group]Post cache
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0516497Z State not set
+Build and push	Post Run docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6	2026-11-04T20:05:18.0549124Z ##[endgroup]
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	﻿2026-11-04T20:05:18.0798921Z Post job cleanup.
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.2407240Z ##[group]Removing builder
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.3943961Z [command]/usr/bin/docker buildx rm builder-937ff106-a867-4678-8cde-a48a89eee0d2
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6293615Z builder-937ff106-a867-4678-8cde-a48a89eee0d2 removed
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6337230Z ##[endgroup]
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6337845Z ##[group]Cleaning up certificates
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6338331Z ##[endgroup]
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6338752Z ##[group]Post cache
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6339040Z State not set
+Build and push	Post Run docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069	2026-11-04T20:05:18.6339362Z ##[endgroup]
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:05:18.6479305Z Post job cleanup.
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7237140Z [command]/usr/bin/git version
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7296348Z git version 2.56.0
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7335331Z Temporarily overriding HOME='/home/runner/work/_temp/f275cefc-a83c-4cdd-9ed7-835a2d12f4a1' before making global git config changes
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7336494Z Adding repository directory to the temporary git global config as a safe directory
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7337280Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7386774Z Removing SSH command configuration
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7387375Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7452928Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7708670Z Removing HTTP extra header
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7728964Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.7797288Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.8173655Z Removing includeIf entries pointing to credentials config files
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.8181456Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Build and push	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:05:18.8183007Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Build and push	Complete job	﻿2026-11-04T20:05:18.8603449Z Evaluate and set job outputs
+Build and push	Complete job	2026-11-04T20:05:18.8609718Z Cleaning up orphan processes

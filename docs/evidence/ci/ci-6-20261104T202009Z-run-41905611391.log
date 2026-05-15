@@ -1,0 +1,358 @@
+Open promotion pull request	Set up job	﻿2026-11-04T20:20:13.2358796Z Current runner version: '2.338.2'
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2394460Z ##[group]Runner Image Provisioner
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2395901Z Hosted Compute Agent
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2396955Z Version: 20261028.624
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2398089Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2399368Z Build Date: 2026-10-28T21:51:42Z
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2400630Z Worker ID: {e156aede-842e-4695-9935-d6839d113ee1}
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2402121Z Region: eastus
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2403098Z Cloud: Azure
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2404049Z ##[endgroup]
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2406235Z ##[group]Operating System
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2407424Z Ubuntu
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2408336Z 24.04.5
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2409204Z LTS
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2410130Z ##[endgroup]
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2411403Z ##[group]Runner Image
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2412478Z Image: ubuntu-24.04
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2413437Z Version: 20261101.360.1
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2415345Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2419026Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2421137Z ##[endgroup]
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2423253Z ##[group]GITHUB_TOKEN Permissions
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2426414Z Contents: write
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2427422Z Metadata: read
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2428402Z PullRequests: write
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2429435Z ##[endgroup]
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2432730Z Secret source: Actions
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2434479Z Cache mode: write
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2435837Z Prepare workflow directory
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2906921Z Prepare all required actions
+Open promotion pull request	Set up job	2026-11-04T20:20:13.2977470Z Getting action download info
+Open promotion pull request	Set up job	2026-11-04T20:20:13.5188707Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Open promotion pull request	Set up job	2026-11-04T20:20:13.6475744Z Download action repository 'peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1' (SHA:5f6978faf089d4d20b00c7766989d076bb2fc7f1)
+Open promotion pull request	Set up job	2026-11-04T20:20:13.8775003Z Complete job name: Open promotion pull request
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:20:13.9684580Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9685747Z with:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9686198Z   fetch-depth: 0
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9686691Z   persist-credentials: false
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9687288Z   repository: BereketAbera/plane-platform
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9691699Z   token: ***
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9692164Z   ssh-strict: true
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9692621Z   ssh-user: git
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9693058Z   clean: true
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9693520Z   sparse-checkout-cone-mode: true
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9694075Z   fetch-tags: false
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9694531Z   show-progress: true
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9695001Z   lfs: false
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9695428Z   submodules: false
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9695899Z   set-safe-directory: true
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9696438Z   allow-unsafe-pr-checkout: false
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:13.9697252Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.3314896Z Syncing repository: BereketAbera/plane-platform
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4647060Z ##[group]Getting Git version info
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4653223Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4694385Z [command]/usr/bin/git version
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4722355Z git version 2.56.0
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4728937Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4737780Z Temporarily overriding HOME='/home/runner/work/_temp/a8f68e47-32d6-485f-a3c7-a56fdca943b9' before making global git config changes
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4745738Z Adding repository directory to the temporary git global config as a safe directory
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4747760Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4752401Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4754364Z ##[group]Determining repository object format
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4755896Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4757076Z ##[group]Initializing the repository
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4758230Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4759740Z hint: Using 'master' as the name for the initial branch. This default branch name
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4761282Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4762985Z hint: to use in all of your new repositories, which will suppress this warning,
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4763863Z hint: call:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4764327Z hint:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4764900Z hint: 	git config --global init.defaultBranch <name>
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4765637Z hint:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4766701Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4767756Z hint: 'development'. The just-created branch can be renamed via this command:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4768582Z hint:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4769463Z hint: 	git branch -m <name>
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4770092Z hint:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4771067Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4772878Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4775092Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4777435Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4778619Z ##[group]Disabling automatic garbage collection
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4779935Z [command]/usr/bin/git config --local gc.auto 0
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4783293Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4784983Z ##[group]Setting up auth
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4786067Z Removing SSH command configuration
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4787646Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4792397Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4941821Z Removing HTTP extra header
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.4962653Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5019142Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5351766Z Removing includeIf entries pointing to credentials config files
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5354055Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5397085Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5668618Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5727541Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5776148Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5830350Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5878031Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5924033Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5926000Z ##[group]Fetching the repository
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.5932599Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9106704Z From https://github.com/BereketAbera/plane-platform
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9108775Z  * [new branch]      main       -> origin/main
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9128521Z [command]/usr/bin/git branch --list --remote origin/main
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9153574Z   origin/main
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9175399Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9202206Z f733b87dba62a6a67a3192ef94b97bb39d7cb668
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9214816Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9217199Z ##[group]Determining the checkout info
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9219678Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9221639Z [command]/usr/bin/git sparse-checkout disable
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9286527Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9334494Z ##[group]Checking out the ref
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9338405Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9537614Z Switched to a new branch 'main'
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9547644Z branch 'main' set up to track 'origin/main'.
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9554943Z ##[endgroup]
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9613122Z [command]/usr/bin/git log -1 --format=%H
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9655431Z f733b87dba62a6a67a3192ef94b97bb39d7cb668
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9667304Z ##[group]Removing auth
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9669648Z Removing SSH command configuration
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9673701Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:14.9722855Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0018475Z Removing HTTP extra header
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0022651Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0074034Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0353053Z Removing includeIf entries pointing to credentials config files
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0357255Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0394415Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0403772Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0408244Z includeif.gitdir:/github/workspace/.git.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0411804Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0419455Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0452143Z /home/runner/work/_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0469596Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-6c056e6b\-57db\-40f1\-b946\-17478d0ddf3f\.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0540210Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0585657Z /home/runner/work/_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0602072Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-6c056e6b\-57db\-40f1\-b946\-17478d0ddf3f\.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0661624Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0705178Z /github/runner_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0720400Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-6c056e6b\-57db\-40f1\-b946\-17478d0ddf3f\.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0773627Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0810680Z /github/runner_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0837833Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-6c056e6b\-57db\-40f1\-b946\-17478d0ddf3f\.config
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.0877452Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.1184634Z Removing credentials config '/home/runner/work/_temp/git-credentials-6c056e6b-57db-40f1-b946-17478d0ddf3f.config'
+Open promotion pull request	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:15.1193045Z ##[endgroup]
+Open promotion pull request	Edit and re-render the prod-sim overlay	﻿2026-11-04T20:20:15.1484068Z ##[group]Run ./scripts/install-tools.sh helm kustomize yq
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1485889Z ^[[36;1m./scripts/install-tools.sh helm kustomize yq^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1487367Z ^[[36;1m./scripts/promote.sh prod-sim^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1488808Z ^[[36;1mif [[ ! -f .build/promote-message.txt ]]; then^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1491288Z ^[[36;1m  echo 'prod-sim already runs these digests, so there is nothing to open.' >>"$GITHUB_STEP_SUMMARY"^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1493438Z ^[[36;1m  exit 0^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1494351Z ^[[36;1mfi^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1495200Z ^[[36;1m{^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1496113Z ^[[36;1m  echo 'message<<MESSAGE_END'^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1497418Z ^[[36;1m  cat .build/promote-message.txt^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1498690Z ^[[36;1m  echo 'MESSAGE_END'^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1500062Z ^[[36;1m  echo "title=$(head -n 1 .build/promote-message.txt)"^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1501701Z ^[[36;1m} >>"$GITHUB_OUTPUT"^[[0m
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1527054Z shell: /usr/bin/bash -e {0}
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1528190Z env:
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1529047Z   IMAGE: web
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1530527Z   DIGEST: sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1532651Z   SKIP_BACKUP: yes
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1533575Z   CONFIRM: yes
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1534471Z   COMMIT: no
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1535364Z   SKIP_REGISTRY_CHECK: yes
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1536393Z ##[endgroup]
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.1726157Z fetching helm v4.3.1
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:15.8199230Z fetching kustomize v5.8.3
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:16.0836882Z fetching yq v4.53.2
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:16.2772847Z tools: 3 installed, 0 already current, in /home/runner/work/plane-platform/plane-platform/.tools/bin
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:16.3453145Z ^[[1;33mwarn^[[0m sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208 is not what dev runs now (sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5). Pass REPO= if it came from another repository.
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:16.3579453Z ^[[1;34m==>^[[0m Promotion plan for prod-sim
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:16.3582479Z     plane-frontend -> docker.io/makeplane/plane-frontend@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:16.3711581Z ^[[1;32m ok^[[0m 1 digest(s) were recorded for dev
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:17.0426829Z ^[[1;33mwarn^[[0m SKIP_BACKUP=yes: no backup taken before this promotion
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:17.3465200Z ^[[1;32m ok^[[0m rendered gitops/environments/dev/manifests.yaml
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:17.6209163Z ^[[1;32m ok^[[0m rendered gitops/environments/prod-sim/manifests.yaml
+Open promotion pull request	Edit and re-render the prod-sim overlay	2026-11-04T20:20:17.6242502Z ^[[1;32m ok^[[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+Open promotion pull request	Validate the result	﻿2026-11-04T20:20:17.6458084Z ##[group]Run ./scripts/ci/validate-manifests.sh
+Open promotion pull request	Validate the result	2026-11-04T20:20:17.6458531Z ^[[36;1m./scripts/ci/validate-manifests.sh^[[0m
+Open promotion pull request	Validate the result	2026-11-04T20:20:17.6479659Z shell: /usr/bin/bash -e {0}
+Open promotion pull request	Validate the result	2026-11-04T20:20:17.6479932Z env:
+Open promotion pull request	Validate the result	2026-11-04T20:20:17.6480134Z   SKIP_CHARTS: yes
+Open promotion pull request	Validate the result	2026-11-04T20:20:17.6480405Z ##[endgroup]
+Open promotion pull request	Validate the result	2026-11-04T20:20:20.9029600Z ^[[1;34m==>^[[0m render is up to date
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.1733231Z ^[[1;32m ok^[[0m dev is up to date
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.4366892Z ^[[1;32m ok^[[0m prod-sim is up to date
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.4383511Z ^[[1;32m ok^[[0m render is up to date
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.4393177Z ^[[1;34m==>^[[0m kubeconform: rendered Plane
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.9373523Z Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.9427556Z ^[[1;32m ok^[[0m kubeconform: rendered Plane
+Open promotion pull request	Validate the result	2026-11-04T20:20:21.9430382Z ^[[1;34m==>^[[0m kubeconform: platform manifests
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.3415593Z Summary: 132 resources found in 7 files - Valid: 132, Invalid: 0, Errors: 0, Skipped: 0
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.3472034Z ^[[1;32m ok^[[0m kubeconform: platform manifests
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.3481982Z ^[[1;34m==>^[[0m conftest: rendered Plane
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.5741577Z 
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.5742421Z 814 tests, 814 passed, 0 warnings, 0 failures, 0 exceptions
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.5758084Z ^[[1;32m ok^[[0m conftest: rendered Plane
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.5759237Z ^[[1;34m==>^[[0m conftest: platform manifests
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.8669794Z 
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.8670500Z 1056 tests, 1056 passed, 0 warnings, 0 failures, 0 exceptions
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.8702437Z ^[[1;32m ok^[[0m conftest: platform manifests
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.8731245Z ^[[1;34m==>^[[0m promotion invariant
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.9133880Z ^[[1;32m ok^[[0m 8 digest(s) were recorded for dev
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.9153081Z ^[[1;32m ok^[[0m promotion invariant
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.9155367Z ^[[1;33mwarn^[[0m SKIP_CHARTS=yes: third-party platform charts were not rendered
+Open promotion pull request	Validate the result	2026-11-04T20:20:22.9156481Z ^[[1;32m ok^[[0m manifests valid
+Open promotion pull request	Open the pull request	﻿2026-11-04T20:20:22.9311744Z ##[group]Run peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9312240Z with:
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9312458Z   branch: promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9312709Z   delete-branch: true
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9313183Z   add-paths: helm/plane/overlays/prod-sim/kustomization.yaml
+Open promotion pull request	Open the pull request	gitops/environments/prod-sim/manifests.yaml
+Open promotion pull request	Open the pull request	
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9314401Z   commit-message: promote(prod-sim): plane-frontend 45c952532825
+Open promotion pull request	Open the pull request	
+Open promotion pull request	Open the pull request	Promote-Env: prod-sim
+Open promotion pull request	Open the pull request	Promote-Image: plane-frontend=docker.io/makeplane/plane-frontend:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9315395Z   title: promote(prod-sim): plane-frontend 45c952532825
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9317275Z   body: Promotion to prod-sim, requested by @BereketAbera. Every digest here was already recorded
+Open promotion pull request	Open the pull request	for dev, and `scripts/promote.sh` refused anything else. Nothing was rebuilt.
+Open promotion pull request	Open the pull request	
+Open promotion pull request	Open the pull request	**Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free
+Open promotion pull request	Open the pull request	plan, so there are no environment reviewers and no protected branches. Review it as the control it
+Open promotion pull request	Open the pull request	stands in for.
+Open promotion pull request	Open the pull request	
+Open promotion pull request	Open the pull request	After merging:
+Open promotion pull request	Open the pull request	
+Open promotion pull request	Open the pull request	1. `git pull`
+Open promotion pull request	Open the pull request	2. `make gitops-publish`, which takes the prod-sim backup first, because this workflow cannot reach the cluster
+Open promotion pull request	Open the pull request	
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9321847Z   token: ***
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9322224Z   committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9322771Z   author: BereketAbera <19558685+BereketAbera@users.noreply.github.com>
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9323142Z   signoff: false
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9323346Z   sign-commits: false
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9323554Z   draft: false
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9323761Z   maintainer-can-modify: true
+Open promotion pull request	Open the pull request	2026-11-04T20:20:22.9323997Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0604975Z ##[group]Prepare git configuration
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0692112Z [command]/usr/bin/git config --global --name-only --get-regexp safe.directory /home/runner/work/plane-platform/plane-platform
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0802173Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0853557Z [command]/usr/bin/git config --local --get remote.origin.url
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0891805Z https://github.com/BereketAbera/plane-platform
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0915973Z [command]/usr/bin/git config --local --name-only --get-regexp http.https://github.com/.extraheader ^AUTHORIZATION:
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0972665Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.0992437Z ##[group]Determining the base and head repositories
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1032236Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1037805Z Pull request branch target repository set to BereketAbera/plane-platform
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1039093Z ##[group]Configuring credential for HTTPS authentication
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1042457Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1105497Z [command]/usr/bin/git rev-parse --git-dir
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1170804Z .git
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1208235Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1220303Z ##[group]Checking the base repository state
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1221551Z [command]/usr/bin/git symbolic-ref HEAD --short
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1261626Z main
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1279359Z Working base is branch 'main'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1286111Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1286898Z Pull request branch to create or update set to 'promote/prod-sim'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1288100Z ##[group]Configuring the committer and author
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1311199Z Configured git committer as 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1331856Z Configured git author as 'BereketAbera <19558685+BereketAbera@users.noreply.github.com>'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1334904Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1371997Z ##[group]Create or update the pull request branch
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1389376Z [command]/usr/bin/git symbolic-ref HEAD --short
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1404339Z main
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1430770Z Working base is branch 'main'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1442040Z [command]/usr/bin/git checkout --progress -B 74ac928c-ab58-4a1e-ae20-6e20cb1c1448 HEAD --
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1443521Z Switched to a new branch '74ac928c-ab58-4a1e-ae20-6e20cb1c1448'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1444388Z M	gitops/environments/prod-sim/manifests.yaml
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1445162Z M	helm/plane/overlays/prod-sim/kustomization.yaml
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1446427Z [command]/usr/bin/git status --porcelain -unormal -- helm/plane/overlays/prod-sim/kustomization.yaml gitops/environments/prod-sim/manifests.yaml
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1493137Z  M gitops/environments/prod-sim/manifests.yaml
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1504263Z  M helm/plane/overlays/prod-sim/kustomization.yaml
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1508163Z Uncommitted changes found. Adding a commit.
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1509360Z [command]/usr/bin/git add -- helm/plane/overlays/prod-sim/kustomization.yaml gitops/environments/prod-sim/manifests.yaml
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1593679Z [command]/usr/bin/git -c author.name=BereketAbera -c author.email=19558685+BereketAbera@users.noreply.github.com -c committer.name=github-actions[bot] -c committer.email=41898282+github-actions[bot]@users.noreply.github.com commit -m promote(prod-sim): plane-frontend 45c952532825
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1595986Z 
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1611566Z Promote-Env: prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1617313Z Promote-Image: plane-frontend=docker.io/makeplane/plane-frontend:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1752185Z [74ac928c-ab58-4a1e-ae20-6e20cb1c1448 7ea9801] promote(prod-sim): plane-frontend 45c952532825
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1766268Z  Author: BereketAbera <19558685+BereketAbera@users.noreply.github.com>
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1767289Z  2 files changed, 2 insertions(+), 2 deletions(-)
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1773743Z [command]/usr/bin/git stash push --include-untracked
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1884213Z No local changes to save
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1901631Z Resetting working base branch 'main'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1921383Z [command]/usr/bin/git checkout --progress main --
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.1982922Z Switched to branch 'main'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.2001906Z Your branch is up to date with 'origin/main'.
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.2021367Z [command]/usr/bin/git reset --hard origin/main
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.2077050Z HEAD is now at f733b87 ci: add workflows, policies, promotion, rollback, and drills
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.2124593Z [command]/usr/bin/git rev-list --right-only --count main...74ac928c-ab58-4a1e-ae20-6e20cb1c1448
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.2165836Z 1
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.2181372Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --progress --no-recurse-submodules --force --depth=11 origin promote/prod-sim:refs/remotes/origin/promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4390536Z fatal: couldn't find remote ref promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4401951Z Pull request branch 'promote/prod-sim' does not exist yet.
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4409268Z [command]/usr/bin/git checkout --progress -B promote/prod-sim 74ac928c-ab58-4a1e-ae20-6e20cb1c1448 --
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4482310Z Switched to a new branch 'promote/prod-sim'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4495967Z [command]/usr/bin/git rev-list --right-only --count main...promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4535310Z 1
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4538468Z Created branch 'promote/prod-sim'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4546382Z [command]/usr/bin/git rev-parse main
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4605095Z f733b87dba62a6a67a3192ef94b97bb39d7cb668
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4614761Z [command]/usr/bin/git -c core.quotePath=false show --raw --cc --no-renames --no-abbrev --format=%H%n%T%n%P%n%G?%n%s%n%b%n###EOB### f733b87dba62a6a67a3192ef94b97bb39d7cb668
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4662982Z [command]/usr/bin/git rev-parse promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4697616Z 7ea9801432a845a53b2265e324a58dea83e9ad37
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4706443Z [command]/usr/bin/git log --format=%H main..promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4745176Z 7ea9801432a845a53b2265e324a58dea83e9ad37
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4754870Z [command]/usr/bin/git -c core.quotePath=false show --raw --cc --no-renames --no-abbrev --format=%H%n%T%n%P%n%G?%n%s%n%b%n###EOB### 7ea9801432a845a53b2265e324a58dea83e9ad37
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4802266Z [command]/usr/bin/git branch --delete --force 74ac928c-ab58-4a1e-ae20-6e20cb1c1448
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4844214Z Deleted branch 74ac928c-ab58-4a1e-ae20-6e20cb1c1448 (was 7ea9801).
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4851589Z [command]/usr/bin/git checkout --progress main --
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4911354Z Switched to branch 'main'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4926914Z Your branch is up to date with 'origin/main'.
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4933042Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4964296Z ##[group]Pushing pull request branch to 'origin/promote/prod-sim'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:23.4972064Z [command]/usr/bin/git push --force-with-lease origin promote/prod-sim:refs/heads/promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4388493Z remote: 
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4392141Z remote: Create a pull request for 'promote/prod-sim' on GitHub by visiting:        
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4393381Z remote:      https://github.com/BereketAbera/plane-platform/pull/new/promote/prod-sim        
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4394551Z remote: 
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4403287Z To https://github.com/BereketAbera/plane-platform
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4404137Z  * [new branch]      promote/prod-sim -> promote/prod-sim
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4462472Z ##[endgroup]
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4472234Z ##[group]Create or update the pull request
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.4472808Z Attempting creation of pull request
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6469484Z ##[error]GitHub Actions is not permitted to create or approve pull requests. - https://docs.github.com/rest/pulls/pulls#create-a-pull-request
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6480496Z ##[group]Restore git configuration
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6481894Z [command]/usr/bin/git config --local --name-only --get-regexp http.https://github.com/.extraheader ^AUTHORIZATION:
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6504126Z http.https://github.com/.extraheader
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6519412Z [command]/usr/bin/git config --local --get-regexp http.https://github.com/.extraheader ^AUTHORIZATION:
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6583745Z http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6591807Z [command]/usr/bin/git config --local --unset http.https://github.com/.extraheader ^AUTHORIZATION:
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6666783Z Unset config key 'http.https://github.com/.extraheader'
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6667806Z [command]/usr/bin/git config --global --unset safe.directory /home/runner/work/plane-platform/plane-platform
+Open promotion pull request	Open the pull request	2026-11-04T20:20:24.6733656Z ##[endgroup]
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:20:24.7375959Z Post job cleanup.
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:24.8431670Z [command]/usr/bin/git version
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:24.8783885Z git version 2.56.0
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:24.9240575Z Copying '/home/runner/.gitconfig' to '/home/runner/work/_temp/2b9ce256-c96c-47ca-abc2-24ae7da0515c/.gitconfig'
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:24.9378055Z Temporarily overriding HOME='/home/runner/work/_temp/2b9ce256-c96c-47ca-abc2-24ae7da0515c' before making global git config changes
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:24.9674899Z Adding repository directory to the temporary git global config as a safe directory
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0072745Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0326550Z Removing SSH command configuration
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0327895Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0332330Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0334195Z Removing HTTP extra header
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0334970Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0337326Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0488754Z Removing includeIf entries pointing to credentials config files
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0489808Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Open promotion pull request	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:20:25.0539923Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Open promotion pull request	Complete job	﻿2026-11-04T20:20:25.0958018Z Cleaning up orphan processes

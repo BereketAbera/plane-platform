@@ -1,0 +1,37 @@
+# Captured 2026-11-04T20:40:50Z. Sizes read from the registry for the digests pinned in helm/plane/overlays. Upstream Plane images, not Wayline. Script, then output:
+
+import json,urllib.request
+imgs={"plane-frontend":"sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5",
+"plane-admin":"sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208",
+"plane-space":"sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88",
+"plane-backend":"sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743",
+"plane-live":"sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e"}
+ACC=", ".join(["application/vnd.oci.image.index.v1+json","application/vnd.docker.distribution.manifest.list.v2+json","application/vnd.oci.image.manifest.v1+json","application/vnd.docker.distribution.manifest.v2+json"])
+def get(url,headers={}):
+    req=urllib.request.Request(url,headers=headers)
+    with urllib.request.urlopen(req,timeout=30) as r:
+        return json.load(r)
+sizes={}
+for name,d in imgs.items():
+    repo="makeplane/"+name
+    tok=get(f"https://auth.docker.io/token?service=registry.docker.io&scope=repository:{repo}:pull")["token"]
+    h={"Authorization":"Bearer "+tok,"Accept":ACC}
+    m=get(f"https://registry-1.docker.io/v2/{repo}/manifests/{d}",h)
+    if "manifests" in m:
+        c=[x for x in m["manifests"] if x.get("platform",{}).get("architecture")=="arm64" and x.get("platform",{}).get("os")=="linux"]
+        m=get(f"https://registry-1.docker.io/v2/{repo}/manifests/{c[0]['digest']}",h)
+    sizes[name]=sum(l["size"] for l in m["layers"])+m["config"]["size"]
+    print(f"{name:16s} linux/arm64 {d} layers={len(m['layers']):3d} compressed={sizes[name]/2**20:8.1f} MiB")
+four=sum(sizes[n] for n in ["plane-frontend","plane-admin","plane-space","plane-backend"])
+print(f"web, admin, space, backend, shared layers counted each time: {four/2**20:.1f} MiB")
+print(f"with live: {sum(sizes.values())/2**20:.1f} MiB")
+
+# output
+plane-frontend   linux/arm64 sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5 layers= 11 compressed=    44.0 MiB
+plane-admin      linux/arm64 sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208 layers= 11 compressed=    31.3 MiB
+plane-space      linux/arm64 sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 layers= 15 compressed=   255.8 MiB
+plane-backend    linux/arm64 sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 layers= 20 compressed=   105.9 MiB
+plane-live       linux/arm64 sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e layers= 15 compressed=   288.7 MiB
+web, admin, space, backend, shared layers counted each time: 437.0 MiB
+with live: 725.7 MiB
+[exit 0]

@@ -1,0 +1,5 @@
+# Captured 2026-11-04T20:44:04Z. Job 126848296823 is the promote-prod-sim job of run 41908167069, whose step 'Explain a refused pull request' wrote to GITHUB_STEP_SUMMARY and succeeded.
+
+$ gh api repos/BereketAbera/plane-platform/check-runs/126848296823 --jq '{name,conclusion,output}'
+{"conclusion":"failure","name":"Open promotion pull request","output":{"annotations_count":1,"annotations_url":"https://api.github.com/repos/BereketAbera/plane-platform/check-runs/126848296823/annotations","summary":null,"text":null,"title":null}}
+[exit 0]

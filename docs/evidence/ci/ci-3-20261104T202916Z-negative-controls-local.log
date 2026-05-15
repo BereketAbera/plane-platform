@@ -1,0 +1,49 @@
+[1;34m==>[0m baseline: an untouched clone must pass, or the failures below prove nothing
+[1;32m ok[0m lint.sh passes on 70713e1b7ef6c237f1e293583f07b878ff302579
+[1;32m ok[0m validate-manifests.sh passes on 70713e1b7ef6c237f1e293583f07b878ff302579
+[1;32m ok[0m ownership.sh passes on 70713e1b7ef6c237f1e293583f07b878ff302579
+[1;32m ok[0m security.sh passes on 70713e1b7ef6c237f1e293583f07b878ff302579
+[1;34m==>[0m secret-in-rendered-manifests
+[1;32m ok[0m secret-in-rendered-manifests: validate-manifests.sh exited 1 and printed: conftest: rendered Plane FAILED
+[1;34m==>[0m image-without-digest
+[1;32m ok[0m image-without-digest: validate-manifests.sh exited 1 and printed: conftest: rendered Plane FAILED
+[1;34m==>[0m render-drift
+[1;32m ok[0m render-drift: validate-manifests.sh exited 1 and printed: render is up to date FAILED
+[1;34m==>[0m unknown-field-in-manifest
+[1;32m ok[0m unknown-field-in-manifest: validate-manifests.sh exited 1 and printed: kubeconform: rendered Plane FAILED
+[1;34m==>[0m digest-never-recorded-for-dev
+[1;32m ok[0m digest-never-recorded-for-dev: validate-manifests.sh exited 1 and printed: promotion invariant FAILED
+[1;34m==>[0m unlintable-chart
+[1;32m ok[0m unlintable-chart: validate-manifests.sh exited 1 and printed: helm lint: bootstrap chart FAILED
+[1;34m==>[0m chart-version-missing
+[1;32m ok[0m chart-version-missing: validate-manifests.sh exited 1 and printed: helm template: platform charts FAILED
+[1;34m==>[0m namespace-in-gitops
+[1;32m ok[0m namespace-in-gitops: ownership.sh exited 1 and printed: is owned by Terraform, not Argo CD
+[1;34m==>[0m bad-workflow-expression
+[1;32m ok[0m bad-workflow-expression: lint.sh exited 1 and printed: actionlint FAILED
+[1;34m==>[0m unpinned-action
+[1;32m ok[0m unpinned-action: lint.sh exited 1 and printed: zizmor FAILED
+[1;34m==>[0m shell-warning-outside-scripts
+[1;32m ok[0m shell-warning-outside-scripts: lint.sh exited 1 and printed: shellcheck FAILED
+[1;34m==>[0m python-syntax-error
+[1;32m ok[0m python-syntax-error: lint.sh exited 1 and printed: python compile FAILED
+[1;34m==>[0m floating-base-image
+[1;32m ok[0m floating-base-image: lint.sh exited 1 and printed: hadolint FAILED
+[1;34m==>[0m unformatted-terraform
+[1;32m ok[0m unformatted-terraform: lint.sh exited 1 and printed: terraform fmt FAILED
+[1;34m==>[0m invalid-terraform
+[1;32m ok[0m invalid-terraform: lint.sh exited 1 and printed: terraform validate FAILED
+[1;34m==>[0m unused-terraform-variable
+[1;32m ok[0m unused-terraform-variable: lint.sh exited 1 and printed: tflint FAILED
+[1;34m==>[0m weakened-policy
+[1;32m ok[0m weakened-policy: lint.sh exited 1 and printed: conftest verify FAILED
+[1;34m==>[0m token-in-working-tree
+[1;32m ok[0m token-in-working-tree: security.sh exited 1 and printed: gitleaks working tree FAILED
+[1;34m==>[0m token-only-in-history
+[1;32m ok[0m token-only-in-history: security.sh exited 1 and printed: gitleaks history FAILED
+[1;34m==>[0m privileged-pod-trivy-config
+[1;32m ok[0m privileged-pod-trivy-config: security.sh exited 1 and printed: trivy config FAILED
+[1;34m==>[0m vulnerable-lockfile-trivy-fs
+[1;32m ok[0m vulnerable-lockfile-trivy-fs: security.sh exited 1 and printed: trivy fs FAILED
+[1;32m ok[0m 21 of 21 planted defects were caught, on 70713e1b7ef6c237f1e293583f07b878ff302579
+negative-controls exit=0
