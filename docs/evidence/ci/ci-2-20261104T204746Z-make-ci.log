@@ -1,0 +1,242 @@
+[1;34m==>[0m shellcheck
+[1;32m ok[0m shellcheck
+[1;34m==>[0m actionlint
+[1;32m ok[0m actionlint
+[1;34m==>[0m zizmor
+ INFO zizmor: 🌈 zizmor v1.32.0
+ INFO audit: zizmor: 🌈 completed .github/workflows/ci.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/images.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/promote-prod-sim.yml
+No findings to report. Good job! (2 suppressed)
+[1;32m ok[0m zizmor
+[1;34m==>[0m terraform fmt
+[1;32m ok[0m terraform fmt
+[1;34m==>[0m terraform validate
+Success! The configuration is valid.
+
+Success! The configuration is valid.
+
+[1;32m ok[0m terraform validate
+[1;34m==>[0m tflint
+[1;32m ok[0m tflint
+[1;34m==>[0m hadolint
+[1;32m ok[0m hadolint
+[1;34m==>[0m conftest verify
+
+37 tests, 37 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+[1;32m ok[0m conftest verify
+[1;34m==>[0m python compile
+[1;32m ok[0m python compile
+[1;34m==>[0m smoke.py self check
+selftest ok
+[1;32m ok[0m smoke.py self check
+[1;32m ok[0m lint passed
+[1;34m==>[0m render is up to date
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m helm lint: bootstrap chart
+[1;32m ok[0m helm lint: bootstrap chart
+[1;34m==>[0m kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: rendered Plane
+[1;34m==>[0m kubeconform: platform manifests
+Summary: 132 resources found in 7 files - Valid: 132, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: platform manifests
+[1;34m==>[0m conftest: rendered Plane
+
+814 tests, 814 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: rendered Plane
+[1;34m==>[0m conftest: platform manifests
+
+1056 tests, 1056 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform manifests
+[1;34m==>[0m promotion invariant
+[1;32m ok[0m 9 digest(s) were recorded for dev
+[1;32m ok[0m promotion invariant
+[1;34m==>[0m helm template: platform charts
+[1;32m ok[0m 8 platform chart(s) rendered
+[1;32m ok[0m helm template: platform charts
+[1;34m==>[0m kubeconform: platform charts
+Summary: 151 resources found in 8 files - Valid: 144, Invalid: 0, Errors: 0, Skipped: 7
+[1;32m ok[0m kubeconform: platform charts
+[1;34m==>[0m conftest: platform charts
+
+755 tests, 755 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform charts
+[1;32m ok[0m manifests valid
+[1;32m ok[0m 202 Argo CD objects and 7 Terraform objects, no resource has two owners
+[1;34m==>[0m gitleaks history
+[1;32m ok[0m gitleaks history
+[1;34m==>[0m gitleaks working tree
+[1;32m ok[0m gitleaks working tree
+[1;34m==>[0m trivy config
+2026-11-04T23:49:27+03:00	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-11-04T23:49:27+03:00	INFO	[checks-client] Using existing checks from cache	path="/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/clean/.local/trivy-cache/policy/content"
+2026-11-04T23:49:27+03:00	INFO	[terraform scanner] Scanning root module	file_path="infisical/terraform"
+2026-11-04T23:49:27+03:00	WARN	[terraform parser] Variable values were not found in the environment or variable files. Evaluating may not work correctly.	module="root" variables="kubernetes_ca_certificate, org_id"
+2026-11-04T23:49:27+03:00	INFO	[terraform scanner] Scanning root module	file_path="infrastructure/terraform/environments/local"
+2026-11-04T23:49:29+03:00	INFO	Detected config files	num=65
+
+Report Summary
+
+┌──────────────────────────────────────────────────────────────────┬────────────┬───────────────────┐
+│                              Target                              │    Type    │ Misconfigurations │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/alloy.yaml                                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/backup-storage.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/infisical-operator-dev.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/infisical-operator-prod-sim.yaml             │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/infisical.yaml                               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/kube-prometheus-stack.yaml                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/loki.yaml                                    │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/metrics-server.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/monitoring-extras.yaml                       │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/network-policies.yaml                        │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/plane-dev.yaml                               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/plane-prod-sim.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/traefik.yaml                                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/bootstrap/argocd-route/ingressroute.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/bootstrap/chart/templates/appprojects.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/bootstrap/chart/templates/root-application.yaml           │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/environments/dev/manifests.yaml                           │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/environments/prod-sim/manifests.yaml                      │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/backup-storage/dev.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/backup-storage/infisical.yaml                    │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/backup-storage/prod-sim.yaml                     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/argocd.yaml                     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/infisical.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/kube-system-metrics-server.yaml │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/monitoring-agents.yaml          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/monitoring.yaml                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/plane-dev-loadtest.yaml         │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/plane-dev.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/plane-prod-sim.yaml             │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/traefik.yaml                    │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/admin.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/api.yaml                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/beat.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/live.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/migrator.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/postgres.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/rabbitmq.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/silo.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/space.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/valkey.yaml              │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/web.yaml                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/worker.yaml              │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/rabbitmq-conf.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/serviceaccounts.yaml             │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/traefik-redirect.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/overlays/dev/infisical.yaml                           │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/overlays/prod-sim/infisical.yaml                      │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/ingressroute.yaml                            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/postgres.yaml                                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/redis.yaml                                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/serviceaccount.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/token-reviewer.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/terraform                                              │ terraform  │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infrastructure/local-services/git-daemon/Dockerfile              │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infrastructure/terraform/environments/local                      │ terraform  │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/exporters.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/probes.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/rabbitmq-metrics.yaml     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/service-monitors.yaml     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/alert-sink.yaml                      │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/blackbox.yaml                        │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/ingress-routes.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/rules-plane.yaml                     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/rules-platform.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/service-monitors.yaml                │ kubernetes │         0         │
+└──────────────────────────────────────────────────────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+[1;32m ok[0m trivy config
+[1;34m==>[0m trivy fs
+2026-11-04T23:49:29+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-04T23:49:29+03:00	INFO	[secret] Secret scanning is enabled
+2026-11-04T23:49:29+03:00	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-11-04T23:49:29+03:00	INFO	[secret] Please see https://trivy.dev/docs/v0.76/guide/scanner/secret#recommendation for faster secret detection
+2026-11-04T23:49:29+03:00	INFO	Number of language-specific files	num=0
+2026-11-04T23:49:29+03:00	WARN	[report] Supported files for scanner(s) not found.	scanners=[vuln]
+2026-11-04T23:49:29+03:00	INFO	[report] No issues detected with scanner(s).	scanners=[secret]
+
+Report Summary
+
+┌────────┬──────┬─────────────────┬─────────┐
+│ Target │ Type │ Vulnerabilities │ Secrets │
+├────────┼──────┼─────────────────┼─────────┤
+│   -    │  -   │        -        │    -    │
+└────────┴──────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+[1;32m ok[0m trivy fs
+[1;32m ok[0m security checks passed
