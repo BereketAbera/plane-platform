@@ -2,7 +2,9 @@
 # Create the kind cluster and the local services around it. Idempotent.
 source "$(dirname "$0")/lib/common.sh"
 
-guard_disk 15
+# Resuming grows nothing, so it needs only the default. Refusing a resume at 15 GiB would strand a
+# platform whose first install has already used the space. up.sh makes the 25 GiB check for a new one.
+if cluster_exists; then guard_disk; else guard_disk 15; fi
 mkdir -p "$LOCAL_DIR/backups" "$LOCAL_DIR/git" "$LOCAL_DIR/rendered"
 
 NODE_IMAGE="$(grep -E 'image: kindest/node' "$ROOT/infrastructure/kind/cluster.yaml.tmpl" | awk '{print $2}')"
@@ -45,7 +47,11 @@ case "$kind_subnet" in
 esac
 
 log "Starting local services (registry, pull-through caches, Git remote)"
-docker compose -f "$ROOT/infrastructure/local-services/compose.yaml" up -d --build --quiet-pull 2>&1 | tail -8
+# Without this, buildx stamps each build with a provenance attestation. On the containerd image store
+# that gives the same layers a new image ID, so compose recreated plane-git on every run, and Argo CD
+# reads Git through that container.
+BUILDX_NO_DEFAULT_ATTESTATIONS=1 docker compose -f "$ROOT/infrastructure/local-services/compose.yaml" \
+  up -d --build --quiet-pull 2>&1 | tail -8
 
 wait_for 180 "Kubernetes API" kc get --raw /readyz
 wait_for 180 "node Ready" kc wait --for=condition=Ready node --all --timeout=5s
