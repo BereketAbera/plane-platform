@@ -1,0 +1,33 @@
+# Day-1 gates
+# date (UTC): 2026-11-04T20:55:42Z
+# command: tests/gates/day1.sh
+# commit: d3bcbe2103fd
+# context: kind-plane-platform
+# NetworkPolicies already loaded: 60, default-deny in: argocd infisical monitoring-agents monitoring plane-dev plane-prod-sim traefik
+--- Gate 1: digest pulls through each path
+PASS  docker.io digest pull
+PASS  quay.io digest pull
+PASS  pull-through cache holds blobs (not bypassed)
+PASS  localhost:5001 digest pull (sha256:d82c2ab94640ded77cf76514ce6a84870761105058a4a9e51b05a8a79be97a6c)
+--- Gate 2: kindnet enforces NetworkPolicy
+nftables tables on the node:
+    table ip nat
+    table ip mangle
+    table ip filter
+    table ip6 mangle
+    table ip6 nat
+    table ip6 filter
+    table inet kindnet-network-policies
+PASS  positive control: the unlabelled client reaches the server before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  default-deny blocked a new connection from the unlabelled client (try 1, client saw: curl exit 28, HTTP 000, Connection timed out after 5001 milliseconds)
+PASS  default-deny blocked a new connection from the labelled client (try 1, client saw: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule admits only the labelled client: the unlabelled client is still blocked (try 1, client saw: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  control: with both policies deleted the unlabelled client connects again, so the policies caused those timeouts (try 1, HTTP 200)
+--- Gate 5: git:// from inside the cluster
+PASS  pods resolve the Docker-network name plane-git
+PASS  git:// ls-remote from a pod: d6ca5fa0b05c13eff71bf5e9e5c02c63bfc693f8	HEAD
+--- Cleanup
+PASS  namespace gate-checks and the throwaway gate.git are gone
+--- Summary: 14 passed, 0 failed
