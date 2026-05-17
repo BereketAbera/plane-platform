@@ -1,0 +1,456 @@
+diff --git a/apps/web/app/(all)/accounts/forgot-password/page.tsx b/apps/web/app/(all)/accounts/forgot-password/page.tsx
+index eb71311cb2ce7fa99f9797db18b7e6e136ffc163..2fc9ba52987df32ca5873678cdcb4460f2d26cbc 100644
+--- a/apps/web/app/(all)/accounts/forgot-password/page.tsx
++++ b/apps/web/app/(all)/accounts/forgot-password/page.tsx
+@@ -7,7 +7,9 @@
+ import { observer } from "mobx-react";
+ // components
+ import { ForgotPasswordForm } from "@/components/account/auth-forms/forgot-password";
++import { AuthFooter } from "@/components/auth-screens/footer";
+ import { AuthHeader } from "@/components/auth-screens/header";
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ // helpers
+ import { EAuthModes, EPageTypes } from "@/helpers/authentication.helper";
+ // layouts
+@@ -18,10 +20,11 @@ function ForgotPasswordPage() {
+   return (
+     <DefaultLayout>
+       <AuthenticationWrapper pageType={EPageTypes.NON_AUTHENTICATED}>
+-        <div className="relative z-10 flex h-screen w-screen flex-col items-center overflow-hidden overflow-y-auto px-8 pt-6 pb-10">
++        <AuthSplit>
+           <AuthHeader type={EAuthModes.SIGN_IN} />
+           <ForgotPasswordForm />
+-        </div>
++          <AuthFooter />
++        </AuthSplit>
+       </AuthenticationWrapper>
+     </DefaultLayout>
+   );
+diff --git a/apps/web/app/(all)/accounts/reset-password/page.tsx b/apps/web/app/(all)/accounts/reset-password/page.tsx
+index c9914f08de663b63ea7bcd987aba62fe23ef1d76..d1a22c39dad7c9d88e95ca0fe40a4c792d86a222 100644
+--- a/apps/web/app/(all)/accounts/reset-password/page.tsx
++++ b/apps/web/app/(all)/accounts/reset-password/page.tsx
+@@ -8,7 +8,9 @@
+ import { EAuthModes } from "@plane/constants";
+ // components
+ import { ResetPasswordForm } from "@/components/account/auth-forms/reset-password";
++import { AuthFooter } from "@/components/auth-screens/footer";
+ import { AuthHeader } from "@/components/auth-screens/header";
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ // helpers
+ import { EPageTypes } from "@/helpers/authentication.helper";
+ // layouts
+@@ -19,10 +21,11 @@ function ResetPasswordPage() {
+   return (
+     <DefaultLayout>
+       <AuthenticationWrapper pageType={EPageTypes.NON_AUTHENTICATED}>
+-        <div className="relative z-10 flex h-screen w-screen flex-col items-center overflow-hidden overflow-y-auto px-8 pt-6 pb-10">
++        <AuthSplit>
+           <AuthHeader type={EAuthModes.SIGN_IN} />
+           <ResetPasswordForm />
+-        </div>
++          <AuthFooter />
++        </AuthSplit>
+       </AuthenticationWrapper>
+     </DefaultLayout>
+   );
+diff --git a/apps/web/app/(all)/accounts/set-password/page.tsx b/apps/web/app/(all)/accounts/set-password/page.tsx
+index 493f86de8af33c324448dec033618b087b0e5983..4d1a58ec6daf9f195ff8549962ef0bc1d4f0008e 100644
+--- a/apps/web/app/(all)/accounts/set-password/page.tsx
++++ b/apps/web/app/(all)/accounts/set-password/page.tsx
+@@ -8,7 +8,9 @@
+ import { EAuthModes } from "@plane/constants";
+ // components
+ import { ResetPasswordForm } from "@/components/account/auth-forms/reset-password";
++import { AuthFooter } from "@/components/auth-screens/footer";
+ import { AuthHeader } from "@/components/auth-screens/header";
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ // helpers
+ import { EPageTypes } from "@/helpers/authentication.helper";
+ // layouts
+@@ -19,10 +21,11 @@ function SetPasswordPage() {
+   return (
+     <DefaultLayout>
+       <AuthenticationWrapper pageType={EPageTypes.SET_PASSWORD}>
+-        <div className="relative z-10 flex h-screen w-screen flex-col items-center overflow-hidden overflow-y-auto px-8 pt-6 pb-10">
++        <AuthSplit>
+           <AuthHeader type={EAuthModes.SIGN_IN} />
+           <ResetPasswordForm />
+-        </div>
++          <AuthFooter />
++        </AuthSplit>
+       </AuthenticationWrapper>
+     </DefaultLayout>
+   );
+diff --git a/apps/web/core/components/account/auth-forms/auth-header.tsx b/apps/web/core/components/account/auth-forms/auth-header.tsx
+index 239d65829183119c16f0db1d4d33bcb6178eaeca..c54909b73db1548801081073d8daf50835a2d24e 100644
+--- a/apps/web/core/components/account/auth-forms/auth-header.tsx
++++ b/apps/web/core/components/account/auth-forms/auth-header.tsx
+@@ -27,29 +27,29 @@ type TAuthHeader = {
+ const Titles = {
+   [EAuthModes.SIGN_IN]: {
+     [EAuthSteps.EMAIL]: {
+-      header: "Work in all dimensions.",
++      header: "Sign in",
+       subHeader: "Welcome back to Plane.",
+     },
+     [EAuthSteps.PASSWORD]: {
+-      header: "Work in all dimensions.",
++      header: "Sign in",
+       subHeader: "Welcome back to Plane.",
+     },
+     [EAuthSteps.UNIQUE_CODE]: {
+-      header: "Work in all dimensions.",
++      header: "Sign in",
+       subHeader: "Welcome back to Plane.",
+     },
+   },
+   [EAuthModes.SIGN_UP]: {
+     [EAuthSteps.EMAIL]: {
+-      header: "Work in all dimensions.",
++      header: "Create account",
+       subHeader: "Create your Plane account.",
+     },
+     [EAuthSteps.PASSWORD]: {
+-      header: "Work in all dimensions.",
++      header: "Create account",
+       subHeader: "Create your Plane account.",
+     },
+     [EAuthSteps.UNIQUE_CODE]: {
+-      header: "Work in all dimensions.",
++      header: "Create account",
+       subHeader: "Create your Plane account.",
+     },
+   },
+@@ -116,7 +116,7 @@ type TAuthHeaderBase = {
+ 
+ export function AuthHeaderBase(props: TAuthHeaderBase) {
+   return (
+-    <div className="flex flex-col gap-1">
++    <div data-wl-auth="title" className="flex flex-col gap-1">
+       <span className="text-h4-semibold text-primary">{props.header}</span>
+       <span className="text-h4-semibold text-placeholder">{props.subHeader}</span>
+     </div>
+diff --git a/apps/web/core/components/account/auth-forms/auth-root.tsx b/apps/web/core/components/account/auth-forms/auth-root.tsx
+index 5cba8a178e9af8dc82b1cefe1ad234a6f8dd4172..5dfd98b11f4f579eecdc4ca5c5664e14e193557e 100644
+--- a/apps/web/core/components/account/auth-forms/auth-root.tsx
++++ b/apps/web/core/components/account/auth-forms/auth-root.tsx
+@@ -151,7 +151,7 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
+ 
+ function AuthContainer({ children }: { children: React.ReactNode }) {
+   return (
+-    <div className="mt-10 flex w-full flex-grow flex-col items-center justify-center py-6">
++    <div data-wl-auth="form" className="mt-10 flex w-full flex-grow flex-col items-center justify-center py-6">
+       <div className="relative flex w-full max-w-[22.5rem] flex-col gap-6">{children}</div>
+     </div>
+   );
+diff --git a/apps/web/core/components/account/auth-forms/common/container.tsx b/apps/web/core/components/account/auth-forms/common/container.tsx
+index ecf13f9dddf58422b1801ea302e03f9d9d3afc37..f33c7cdd4802ca7ec811f52bb4e76c806b8e411f 100644
+--- a/apps/web/core/components/account/auth-forms/common/container.tsx
++++ b/apps/web/core/components/account/auth-forms/common/container.tsx
+@@ -6,7 +6,7 @@
+ 
+ export function FormContainer({ children }: { children: React.ReactNode }) {
+   return (
+-    <div className="mt-10 flex w-full flex-grow flex-col items-center justify-center py-6">
++    <div data-wl-auth="form" className="mt-10 flex w-full flex-grow flex-col items-center justify-center py-6">
+       <div className="relative flex w-full max-w-[22.5rem] flex-col gap-6">{children}</div>
+     </div>
+   );
+diff --git a/apps/web/core/components/account/auth-forms/common/header.tsx b/apps/web/core/components/account/auth-forms/common/header.tsx
+index 4639634df63a18d0a6a2b6b9f6ef601d8bcf1729..deb6f18f3e5aef6e7409660b98dfc564bcc8502d 100644
+--- a/apps/web/core/components/account/auth-forms/common/header.tsx
++++ b/apps/web/core/components/account/auth-forms/common/header.tsx
+@@ -6,7 +6,7 @@
+ 
+ export function AuthFormHeader({ title, description }: { title: string; description: string }) {
+   return (
+-    <div className="flex flex-col gap-1">
++    <div data-wl-auth="title" className="flex flex-col gap-1">
+       <span className="text-20 font-semibold text-primary">{title}</span>
+       <span className="text-20 font-semibold text-placeholder">{description}</span>
+     </div>
+diff --git a/apps/web/core/components/account/terms-and-conditions.tsx b/apps/web/core/components/account/terms-and-conditions.tsx
+index f6be596349127e9f7b6c0dcc5dded762ad553365..85e1d28397d754bc8b8e0544b6e8ab7da3e7454f 100644
+--- a/apps/web/core/components/account/terms-and-conditions.tsx
++++ b/apps/web/core/components/account/terms-and-conditions.tsx
+@@ -4,41 +4,22 @@
+  * See the LICENSE file for details.
+  */
+ 
+-import React from "react";
+-import Link from "next/link";
+ import { EAuthModes } from "@plane/constants";
+ 
+ interface TermsAndConditionsProps {
+   authType?: EAuthModes;
+ }
+ 
+-// Constants for better maintainability
+-const LEGAL_LINKS = {
+-  termsOfService: "https://plane.so/legals/terms-and-conditions",
+-  privacyPolicy: "https://plane.so/legals/privacy-policy",
+-} as const;
+-
+ const MESSAGES = {
+   [EAuthModes.SIGN_UP]: "By creating an account",
+   [EAuthModes.SIGN_IN]: "By signing in",
+ } as const;
+ 
+-// Reusable link component to reduce duplication
+-function LegalLink({ href, children }: { href: string; children: React.ReactNode }) {
+-  return (
+-    <Link href={href} className="text-secondary" target="_blank" rel="noopener noreferrer">
+-      <span className="text-13 font-medium underline hover:cursor-pointer">{children}</span>
+-    </Link>
+-  );
+-}
+-
+ export function TermsAndConditions({ authType = EAuthModes.SIGN_IN }: TermsAndConditionsProps) {
+   return (
+-    <div className="flex items-center justify-center">
++    <div data-wl-auth="terms" className="flex items-center justify-center">
+       <p className="text-center text-13 whitespace-pre-line text-tertiary">
+-        {`${MESSAGES[authType]}, you understand and agree to \n our `}
+-        <LegalLink href={LEGAL_LINKS.termsOfService}>Terms of Service</LegalLink> and{" "}
+-        <LegalLink href={LEGAL_LINKS.privacyPolicy}>Privacy Policy</LegalLink>.
++        {`${MESSAGES[authType]}, you agree to the terms set by \n the administrator of this instance.`}
+       </p>
+     </div>
+   );
+diff --git a/apps/web/core/components/auth-screens/auth-base.tsx b/apps/web/core/components/auth-screens/auth-base.tsx
+index 9d7af0d3523edab7acaed5101e2050f3e1c0f539..7852ea4e81d6f1227e135cd96217a0d8bcab8ad4 100644
+--- a/apps/web/core/components/auth-screens/auth-base.tsx
++++ b/apps/web/core/components/auth-screens/auth-base.tsx
+@@ -9,6 +9,7 @@ import { AuthRoot } from "@/components/account/auth-forms/auth-root";
+ import type { EAuthModes } from "@/helpers/authentication.helper";
+ import { AuthFooter } from "./footer";
+ import { AuthHeader } from "./header";
++import { AuthSplit } from "./wayline-split";
+ 
+ type AuthBaseProps = {
+   authType: EAuthModes;
+@@ -16,10 +17,10 @@ type AuthBaseProps = {
+ 
+ export function AuthBase({ authType }: AuthBaseProps) {
+   return (
+-    <div className="relative z-10 flex h-screen w-screen flex-col items-center overflow-hidden overflow-y-auto px-8 pt-6 pb-10">
++    <AuthSplit>
+       <AuthHeader type={authType} />
+       <AuthRoot authMode={authType} />
+       <AuthFooter />
+-    </div>
++    </AuthSplit>
+   );
+ }
+diff --git a/apps/web/core/components/auth-screens/footer.tsx b/apps/web/core/components/auth-screens/footer.tsx
+index 7ed0b4e7e5e875834eae2d1f511f02a333c428d9..db938ce865f89d18e9185a555e5a49e4a6f9ef23 100644
+--- a/apps/web/core/components/auth-screens/footer.tsx
++++ b/apps/web/core/components/auth-screens/footer.tsx
+@@ -4,42 +4,11 @@
+  * See the LICENSE file for details.
+  */
+ 
+-import React from "react";
+-import { AccentureLogo, DolbyLogo, SonyLogo, ZerodhaLogo } from "@plane/propel/icons";
+-
+-const BRAND_LOGOS: {
+-  id: string;
+-  icon: React.ReactNode;
+-}[] = [
+-  {
+-    id: "zerodha",
+-    icon: <ZerodhaLogo className="h-7 w-24 text-[#387ED1]" />,
+-  },
+-  {
+-    id: "sony",
+-    icon: <SonyLogo className="h-7 w-16 dark:text-on-color" />,
+-  },
+-  {
+-    id: "dolby",
+-    icon: <DolbyLogo className="h-7 w-16 dark:text-on-color" />,
+-  },
+-  {
+-    id: "accenture",
+-    icon: <AccentureLogo className="h-7 w-24 dark:text-on-color" />,
+-  },
+-];
+-
+ export function AuthFooter() {
+   return (
+-    <div className="flex flex-col items-center gap-6">
+-      <span className="text-13 whitespace-nowrap text-tertiary">Join 10,000+ teams building with Plane</span>
+-      <div className="flex w-full flex-wrap items-center justify-center gap-x-10 gap-y-4">
+-        {BRAND_LOGOS.map((brand) => (
+-          <div className="flex h-7 flex-1 items-center justify-center" key={brand.id}>
+-            {brand.icon}
+-          </div>
+-        ))}
+-      </div>
++    <div data-wl-auth="credit">
++      <span>Built on Plane Community Edition, AGPL-3.0</span>
++      <a href="/source">Source code</a>
+     </div>
+   );
+ }
+diff --git a/apps/web/core/components/auth-screens/header.tsx b/apps/web/core/components/auth-screens/header.tsx
+index 817bdf4464c6244ea05423ca031d0324e6ce275a..c07535ba0b1f4611e36b4a03db08508bec60a46b 100644
+--- a/apps/web/core/components/auth-screens/header.tsx
++++ b/apps/web/core/components/auth-screens/header.tsx
+@@ -71,7 +71,7 @@ export function AuthHeaderBase(props: TAuthHeaderBase) {
+   return (
+     <>
+       <PageHead title={pageTitle + " - Plane"} />
+-      <div className="sticky top-0 flex w-full flex-shrink-0 items-center justify-between gap-6">
++      <div data-wl-auth="topline" className="sticky top-0 flex w-full flex-shrink-0 items-center justify-between gap-6">
+         <Link href="/">
+           <PlaneLockup height={20} width={95} className="text-primary" />
+         </Link>
+diff --git a/apps/web/core/components/instance/not-ready-view.tsx b/apps/web/core/components/instance/not-ready-view.tsx
+index 850d0af2ebcb43b48f140ba667a32d0ed48a43e1..334d83a5dbcc80742f9577f0d596d430c9b036a5 100644
+--- a/apps/web/core/components/instance/not-ready-view.tsx
++++ b/apps/web/core/components/instance/not-ready-view.tsx
+@@ -6,9 +6,8 @@
+ 
+ import Link from "next/link";
+ import { GOD_MODE_URL } from "@plane/constants";
+-// assets
+-import GradientLogo from "@/app/assets/auth/gradient-logo.webp?url";
+-import GradientBgLogo from "@/app/assets/auth/gradient-bg-logo.webp?url";
++import { AuthFooter } from "@/components/auth-screens/footer";
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ import DefaultLayout from "@/layouts/default-layout";
+ import { PlaneLockup } from "@plane/propel/icons";
+ import { Button } from "@plane/propel/button";
+@@ -16,43 +15,25 @@ import { Button } from "@plane/propel/button";
+ export function InstanceNotReady() {
+   return (
+     <DefaultLayout>
+-      <div className="relative z-10 flex h-screen w-screen overflow-hidden">
+-        {/* Background decorations */}
+-        <img
+-          src={GradientBgLogo}
+-          className="pointer-events-none absolute -top-24 -left-32 h-56 w-96 opacity-15"
+-          alt=""
+-          aria-hidden="true"
+-        />
+-        <img
+-          src={GradientBgLogo}
+-          className="pointer-events-none absolute -right-20 -bottom-16 h-56 w-96 opacity-15"
+-          alt=""
+-          aria-hidden="true"
+-        />
+-        {/* Main content */}
+-        <div className="flex h-full w-full flex-col items-center px-8 pt-6 pb-10">
+-          <div className="sticky top-0 flex w-full shrink-0 items-center justify-between gap-6">
+-            <PlaneLockup height={20} width={95} className="text-primary" />
+-          </div>
+-          <div className="flex h-full w-full flex-col items-center justify-center gap-7">
+-            <div className="flex flex-col items-center gap-11">
+-              <img src={GradientLogo} className="h-24 w-40 object-contain" alt="Plane Logo" />
+-              <div className="flex max-w-124 flex-col items-center gap-3">
+-                <h1 className="text-h2-semibold text-primary">Welcome to Plane</h1>
+-                <p className="text-center text-body-md-regular text-secondary">
+-                  Set up your instance and create your first workspace to begin managing projects and work.
+-                </p>
+-              </div>
+-            </div>
+-            <a href={GOD_MODE_URL} className="w-72">
+-              <Button variant="primary" className="w-full" size="xl">
+-                Get started
+-              </Button>
+-            </a>
++      <AuthSplit>
++        <div data-wl-auth="topline" className="sticky top-0 flex w-full shrink-0 items-center justify-between gap-6">
++          <PlaneLockup height={20} width={95} className="text-primary" />
++        </div>
++        <div className="flex w-full flex-grow flex-col justify-center gap-7 py-6">
++          <div className="flex max-w-124 flex-col gap-3">
++            <h1 className="text-h2-semibold text-primary">Welcome to Plane</h1>
++            <p className="text-body-md-regular text-secondary">
++              Set up your instance and create your first workspace to begin managing projects and work.
++            </p>
+           </div>
++          <a href={GOD_MODE_URL} className="w-72 max-w-full">
++            <Button variant="primary" className="w-full" size="xl">
++              Get started
++            </Button>
++          </a>
+         </div>
+-      </div>
++        <AuthFooter />
++      </AuthSplit>
+     </DefaultLayout>
+   );
+ }
+diff --git a/apps/web/core/components/onboarding/header.tsx b/apps/web/core/components/onboarding/header.tsx
+index 224fca5f09f9796d04c9df2d5a9083d961a0b9a0..28ef94c0bd04964b51de5a9610a7f42e311d809e 100644
+--- a/apps/web/core/components/onboarding/header.tsx
++++ b/apps/web/core/components/onboarding/header.tsx
+@@ -68,9 +68,10 @@ export const OnboardingHeader = observer(function OnboardingHeader(props: Onboar
+ 
+   return (
+     <div className="sticky top-0 z-10 flex flex-col gap-4">
+-      <div className="h-1.5 w-full cursor-pointer overflow-hidden rounded-t-lg bg-surface-1">
++      <div data-wl-onboarding="track" className="h-1.5 w-full cursor-pointer overflow-hidden rounded-t-lg bg-surface-1">
+         <Tooltip tooltipContent={`${currentStepNumber}/${totalSteps}`} position="bottom-end">
+           <div
++            data-wl-onboarding="leg"
+             className="h-full bg-accent-primary transition-all duration-700 ease-out"
+             style={{ width: `${(currentStepNumber / totalSteps) * 100}%` }}
+           />
+diff --git a/apps/web/core/components/onboarding/root.tsx b/apps/web/core/components/onboarding/root.tsx
+index 395e19b095724dd55945b2e985f5852568e09127..7c60d52a4b6b9a10a36a7599bab66816d1de9eee 100644
+--- a/apps/web/core/components/onboarding/root.tsx
++++ b/apps/web/core/components/onboarding/root.tsx
+@@ -10,6 +10,8 @@ import { observer } from "mobx-react";
+ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+ import type { IWorkspaceMemberInvitation, TOnboardingStep, TOnboardingSteps, TUserProfile } from "@plane/types";
+ import { EOnboardingSteps } from "@plane/types";
++// components
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ // hooks
+ import { useInstance } from "@/hooks/store/use-instance";
+ import { useWorkspace } from "@/hooks/store/use-workspace";
+@@ -129,16 +131,18 @@ export const OnboardingRoot = observer(function OnboardingRoot({ invitations = [
+   }, []);
+ 
+   return (
+-    <div className="flex h-full flex-col">
+-      {/* Header with progress */}
+-      <OnboardingHeader
+-        currentStep={currentStep}
+-        updateCurrentStep={updateCurrentStep}
+-        hasInvitations={hasInvitations}
+-      />
++    <AuthSplit flush>
++      <div className="flex h-full flex-col">
++        {/* Header with progress */}
++        <OnboardingHeader
++          currentStep={currentStep}
++          updateCurrentStep={updateCurrentStep}
++          hasInvitations={hasInvitations}
++        />
+ 
+-      {/* Main content area */}
+-      <OnboardingStepRoot currentStep={currentStep} invitations={invitations} handleStepChange={handleStepChange} />
+-    </div>
++        {/* Main content area */}
++        <OnboardingStepRoot currentStep={currentStep} invitations={invitations} handleStepChange={handleStepChange} />
++      </div>
++    </AuthSplit>
+   );
+ });
+diff --git a/apps/web/core/components/onboarding/steps/profile/consent.tsx b/apps/web/core/components/onboarding/steps/profile/consent.tsx
+index 18f42063c8f84137ea50c40c40d494c8ddc9f811..bcb972c64c0699ffc1cbbaa364170d62471e648e 100644
+--- a/apps/web/core/components/onboarding/steps/profile/consent.tsx
++++ b/apps/web/core/components/onboarding/steps/profile/consent.tsx
+@@ -23,7 +23,7 @@ export function MarketingConsent({ isChecked, handleChange }: Props) {
+       >
+         {isChecked && <CheckIcon className="h-3 w-3 text-on-color" />}
+       </button>
+-      <span className="text-13 text-tertiary">I agree to Plane marketing communications</span>
++      <span className="text-13 text-tertiary">Email me updates from the instance administrator</span>
+     </div>
+   );
+ }

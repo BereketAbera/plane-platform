@@ -1,0 +1,190 @@
+/*
+ * Copyright (c) 2026 Bereket Abera
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Application shell: sidebar, top band, active nav route line, full-bleed content.
+ * Owner: the shell agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
+ *
+ * Hooks, all added by patches/10-shell.patch:
+ *   data-shell="top"            the top band (tokens.css makes any [data-shell] ink in every theme)
+ *   data-shell="nav"            the sidebar, its peek view and both extended sidebars
+ *   data-wl-nav="active|idle"   a sidebar row
+ *   data-wl-nav-icon="active|idle"  an icon button in the top band
+ *   data-wl-content             the content slot under the top band
+ *
+ * Not portalled, so ink like the band: the workspace menu and the search panel. Portalled, so page theme:
+ * CustomMenu dropdowns, tooltips and modals. checks/contrast.mjs covers every scoped token set here.
+ */
+
+/* ---------- Tokens tokens.css leaves at the page theme ---------- */
+/* These would otherwise stay dark-on-ink in light themes: Sign out, the unread dot, disabled controls. */
+[data-shell] {
+  --wl-ink-danger: #ff9d9d;
+  --wl-ink-danger-fill: #ff8585;
+  --wl-ink-danger-subtle: #3a1c28;
+  --wl-ink-success: #7fdba1;
+  --wl-ink-warning: #f0c26e;
+  --wl-ink-disabled: #76849c;
+
+  --bg-danger-primary: var(--wl-ink-danger-fill);
+  --bg-danger-primary-hover: var(--wl-ink-danger);
+  --bg-danger-primary-active: var(--wl-ink-danger);
+  --bg-danger-subtle: var(--wl-ink-danger-subtle);
+  --bg-danger-subtle-hover: var(--wl-ink-danger-subtle);
+  --bg-danger-subtle-active: var(--wl-ink-danger-subtle);
+  --bg-layer-disabled: var(--wl-ink-700);
+  --border-disabled: var(--wl-ink-500);
+  --txt-danger-primary: var(--wl-ink-danger);
+  --txt-danger-secondary: var(--wl-ink-danger);
+  --txt-success-primary: var(--wl-ink-success);
+  --txt-success-secondary: var(--wl-ink-success);
+  --txt-warning-primary: var(--wl-ink-warning);
+  --txt-warning-secondary: var(--wl-ink-warning);
+  --txt-disabled: var(--wl-ink-disabled);
+  --txt-on-color-disabled: var(--wl-ink-disabled);
+  --txt-icon-disabled: var(--wl-ink-disabled);
+  --txt-icon-on-color-disabled: var(--wl-ink-disabled);
+  --txt-icon-danger: var(--wl-ink-danger);
+  --txt-icon-danger-primary: var(--wl-ink-danger);
+  --txt-icon-danger-secondary: var(--wl-ink-danger);
+  --txt-icon-success-primary: var(--wl-ink-success);
+  --txt-icon-success-secondary: var(--wl-ink-success);
+  --txt-icon-warning-primary: var(--wl-ink-warning);
+  --txt-icon-warning-secondary: var(--wl-ink-warning);
+  --txt-icon-accent-secondary: var(--wl-ink-accent-text);
+  --txt-icon-accent-subtle: var(--wl-ink-accent-text);
+  --scrollbar-thumb: var(--alpha-white-200);
+  --scrollbar-thumb-surface-hover: var(--alpha-white-300);
+  --scrollbar-thumb-hover: var(--alpha-white-400);
+  --scrollbar-thumb-active: var(--alpha-white-500);
+}
+
+/* One step darker than the sidebar, so the two read as a band over a column rather than one dark L. */
+[data-shell="top"] {
+  --bg-canvas: var(--wl-ink-900);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/*
+ * ---------- High contrast keeps the ink shell ----------
+ * Skipping it would make a light-contrast sidebar paper, at lower contrast than ink gives and with a
+ * second silhouette to maintain. Ink values are fixed per theme anyway, so instead every step climbs:
+ * darker surfaces, text at or near white, hairlines that clear 3:1. Same rule as tokens.css: text climbs
+ * a step, hairlines become real lines. contrast.mjs requires 7:1 for shell text in these two themes.
+ */
+[data-theme$="-contrast"] [data-shell] {
+  --wl-ink-900: #060b13;
+  --wl-ink-800: #0b1320;
+  --wl-ink-700: #111c2e;
+  --wl-ink-text: #ffffff;
+  --wl-ink-text-muted: #e7e9ee;
+  --wl-ink-text-faint: #cdd2dc;
+  --wl-ink-accent: #f27bbe;
+  --wl-ink-accent-text: #f7a3d0;
+  --wl-ink-danger: #ffb8b8;
+  --wl-ink-danger-fill: #ff9d9d;
+  --wl-ink-success: #a3e8bd;
+  --wl-ink-warning: #f5d496;
+  --wl-ink-disabled: #a0aabb;
+  --border-subtle: #76849c;
+  --border-subtle-1: #76849c;
+  --border-strong: #a0aabb;
+  --border-strong-1: #a0aabb;
+  --border-accent-subtle: #76849c;
+}
+
+/* ---------- Full-bleed content ---------- */
+/* The projects layout loses its inset panel in the patch. The settings layout has the same one. */
+[data-wl-content] > .rounded-lg.border-subtle {
+  border: 0;
+  border-radius: 0;
+}
+
+/* The search field's placeholder-text-placeholder is not a utility this token setup defines, so state it here. */
+[data-shell] input::placeholder {
+  color: var(--txt-placeholder);
+  opacity: 1;
+}
+
+[data-shell="nav"] [role="separator"]:hover {
+  background-color: var(--wl-ink-400);
+}
+
+/*
+ * ---------- Active nav: a dashed route line with a waypoint diamond ----------
+ * Upstream paints the pill with a !important utility, which an unlayered rule cannot beat. It resolves
+ * through a token, so clearing the token on the row is enough, with no !important and no class edit.
+ */
+[data-wl-nav="active"] {
+  --bg-layer-transparent-active: transparent;
+  color: var(--txt-primary);
+}
+[data-wl-nav="active"] p {
+  color: var(--txt-primary);
+}
+[data-wl-nav="active"]::before,
+[data-wl-nav="idle"]:hover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+[data-wl-nav="active"]::before {
+  border-left: 2px dashed var(--bg-accent-primary);
+}
+/* Hover pencils the route in, thinner and in hairline colour. */
+[data-wl-nav="idle"]:hover::before {
+  border-left: 1px dashed var(--border-strong);
+}
+
+[data-wl-nav="active"]::after,
+[data-wl-nav-icon="active"]::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background-color: var(--bg-accent-primary);
+  /* The ring breaks the dashed line where the waypoint sits on it. */
+  box-shadow: 0 0 0 2px var(--bg-surface-1);
+  pointer-events: none;
+}
+[data-wl-nav="active"]::after {
+  top: 50%;
+  left: 1px;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* In the band the route runs under the icon, because a vertical line there would read as a divider. */
+[data-wl-nav-icon] {
+  position: relative;
+}
+[data-wl-nav-icon="active"] {
+  --bg-layer-transparent-selected: transparent;
+}
+[data-wl-nav-icon="active"]::before {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 0;
+  left: 3px;
+  border-bottom: 2px dashed var(--bg-accent-primary);
+  pointer-events: none;
+}
+[data-wl-nav-icon="active"]::after {
+  bottom: 1px;
+  left: 50%;
+  box-shadow: 0 0 0 2px var(--bg-canvas);
+  transform: translate(-50%, 50%) rotate(45deg);
+}
+
+/* Forced colours drop backgrounds and shadows, and a blank diamond would lose the active state. */
+@media (forced-colors: active) {
+  [data-wl-nav="active"]::after,
+  [data-wl-nav-icon="active"]::after {
+    forced-color-adjust: none;
+    background-color: Highlight;
+  }
+}

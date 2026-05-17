@@ -1,0 +1,268 @@
+/*
+ * Copyright (c) 2026 Bereket Abera
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Sign-in, sign-up and onboarding: split screen with the route-over-contour side.
+ * Owner: the auth agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
+ */
+
+/* ---------- Chart tokens: ramps, so the sheet is a paper chart by day and a night chart in Night Ops ---------- */
+[data-wl-auth="chart"] {
+  --wl-chart-paper: var(--neutral-200);
+  --wl-chart-tint: #a39a78;
+  --wl-chart-contour: #c9c3ae;
+  --wl-chart-index: #a29c86;
+  --wl-chart-figure: var(--neutral-900);
+  --wl-chart-grid: var(--neutral-1000);
+  --wl-chart-label: var(--neutral-1000);
+  --wl-chart-label-strong: var(--neutral-1200);
+  --wl-chart-water: #cfe0e2;
+  --wl-chart-water-line: #5f8ea3;
+  --wl-chart-route: var(--brand-default);
+}
+[data-theme*="dark"] [data-wl-auth="chart"] {
+  --wl-chart-paper: var(--neutral-black);
+  --wl-chart-tint: #7f93b5;
+  --wl-chart-contour: var(--neutral-400);
+  --wl-chart-index: var(--neutral-700);
+  --wl-chart-figure: var(--neutral-800);
+  --wl-chart-grid: var(--neutral-900);
+  --wl-chart-label: var(--neutral-900);
+  --wl-chart-water: #16304a;
+  --wl-chart-water-line: #4a7ea3;
+}
+
+/*
+ * chart:start. generate-contours.mjs --preview draws its picture with exactly these rules, so keep them
+ * plain: classes, var(--token), no nesting.
+ */
+.wl-c-paper { fill: var(--wl-chart-paper); }
+.wl-c-tint { fill: var(--wl-chart-tint); fill-opacity: 0.065; stroke: none; }
+.wl-c-minor { fill: none; stroke: var(--wl-chart-contour); stroke-width: 0.7; }
+.wl-c-index { fill: none; stroke: var(--wl-chart-index); stroke-width: 1.15; }
+.wl-c-grid { fill: none; stroke: var(--wl-chart-grid); stroke-width: 0.6; stroke-opacity: 0.55; }
+.wl-c-tick { fill: none; stroke: var(--wl-chart-grid); stroke-width: 0.6; stroke-opacity: 0.7; }
+.wl-c-river { fill: none; stroke: var(--wl-chart-water-line); stroke-width: 1; stroke-linecap: round; }
+.wl-c-lake { fill: var(--wl-chart-water); stroke: var(--wl-chart-water-line); stroke-width: 0.9; }
+.wl-c-isogonic { fill: none; stroke: var(--wl-chart-route); stroke-width: 0.7; stroke-dasharray: 9 5; stroke-opacity: 0.45; }
+.wl-c-airspace { fill: none; stroke: var(--wl-chart-route); stroke-width: 1.2; stroke-dasharray: 2 4; stroke-opacity: 0.55; }
+.wl-c-rose { fill: none; stroke: var(--wl-chart-grid); stroke-width: 0.8; }
+.wl-c-spot { fill: var(--wl-chart-label-strong); }
+.wl-c-halo { fill: none; stroke: var(--wl-chart-paper); stroke-width: 7; stroke-opacity: 0.9; }
+.wl-c-route { fill: none; stroke: var(--wl-chart-route); stroke-width: 2.6; }
+.wl-c-route-tick { fill: none; stroke: var(--wl-chart-route); stroke-width: 1.4; }
+.wl-c-ring { fill: var(--wl-chart-paper); stroke: var(--wl-chart-label-strong); stroke-width: 2.6; }
+.wl-c-wpt { fill: var(--wl-chart-paper); stroke: var(--wl-chart-route); stroke-width: 2.4; }
+.wl-c-wpt-end { fill: var(--wl-chart-label-strong); stroke: var(--wl-chart-paper); stroke-width: 1.5; }
+.wl-c-scale { fill: none; stroke: var(--wl-chart-label-strong); stroke-width: 1; }
+.wl-c-text { font-family: var(--font-code); font-size: 10px; letter-spacing: 0.04em; fill: var(--wl-chart-label); }
+.wl-c-text-faint { font-size: 9px; }
+.wl-c-figure { fill: var(--wl-chart-figure); stroke: var(--wl-chart-paper); stroke-width: 3; paint-order: stroke; font-size: 8.5px; }
+.wl-c-summit { fill: var(--wl-chart-label-strong); font-weight: 700; }
+.wl-c-text-rose { font-size: 8.5px; fill: var(--wl-chart-grid); }
+.wl-c-text-iso { font-size: 8.5px; fill: var(--wl-chart-route); }
+.wl-c-text-air { font-size: 8.5px; fill: var(--wl-chart-route); }
+.wl-c-text-route { fill: var(--wl-chart-route); stroke: var(--wl-chart-paper); stroke-width: 3; paint-order: stroke; font-size: 10.5px; font-weight: 600; }
+.wl-c-text-wpt { fill: var(--wl-chart-label-strong); stroke: var(--wl-chart-paper); stroke-width: 3; paint-order: stroke; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; }
+/* chart:end */
+
+/* ---------- Split screen: chart beside the form, on every sign-in and onboarding route ---------- */
+[data-wl-auth="split"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(30rem, 38%);
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background-color: var(--bg-surface-1);
+}
+[data-wl-auth="split"] > [data-wl-auth="chart"] {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--wl-chart-paper);
+  border-right: 1px solid var(--border-subtle);
+}
+[data-wl-auth="split"] [data-wl-chart] {
+  display: block;
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+}
+/* The sheet's margin strip, ink in both themes like the shell. */
+[data-wl-auth="caption"] {
+  display: flex;
+  flex: none;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.5rem 1rem;
+  overflow: hidden;
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--txt-secondary);
+  background-color: var(--bg-surface-1);
+}
+[data-wl-auth="caption-extra"]:last-child {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+[data-wl-auth="pane"] {
+  /* Placeholder grey is too light for the sub-headings that use it, and for input hints on this surface. */
+  --txt-placeholder: var(--txt-tertiary);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 clamp(1.5rem, 5vw, 4.5rem) 1.25rem;
+  overflow-y: auto;
+}
+[data-wl-flush] > [data-wl-auth="pane"] {
+  padding: 0;
+  overflow: hidden;
+}
+[data-wl-flush] > [data-wl-auth="pane"] > * {
+  flex: 1 1 0;
+  min-height: 0;
+}
+[data-wl-auth="topline"] {
+  z-index: 2;
+  padding-block: 1.25rem;
+  background-color: var(--bg-surface-1);
+}
+[data-wl-auth="form"] {
+  margin-top: 0;
+}
+[data-wl-auth="title"] > :first-child {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+}
+[data-wl-auth="title"] > :last-child {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+/* The credit line. */
+[data-wl-auth="credit"] {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.875rem;
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--txt-tertiary);
+  border-top: 1px solid var(--border-subtle);
+}
+[data-wl-auth="credit"] a {
+  color: var(--txt-accent-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Wide: the form sits on the pane's left gutter, in line with the logo above it. */
+@media (min-width: 901px) {
+  [data-wl-auth="form"] {
+    align-items: flex-start;
+  }
+  [data-wl-auth="terms"] {
+    justify-content: flex-start;
+  }
+  [data-wl-auth="terms"] > p {
+    text-align: left;
+  }
+}
+/* The strip keeps one line: the route goes first, then the disclaimer, and the coordinates always stay. */
+@media (max-width: 1439px) {
+  [data-wl-auth="caption-extra"]:not(:last-child) {
+    display: none;
+  }
+}
+@media (max-width: 1060px) {
+  [data-wl-auth="caption-extra"] {
+    display: none;
+  }
+}
+/* Narrow: the chart folds into a strip above the form, keeping the course line and dropping small print. */
+@media (max-width: 900px) {
+  [data-wl-auth="split"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 7.5rem minmax(0, 1fr);
+  }
+  [data-wl-auth="split"] > [data-wl-auth="chart"] {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  [data-wl-auth="caption"] {
+    padding-block: 0.25rem;
+  }
+  [data-wl-auth="caption-extra"] {
+    display: none;
+  }
+  [data-wl-chart] .wl-c-text,
+  [data-wl-chart] .wl-c-tick,
+  [data-wl-chart] .wl-c-rose {
+    display: none;
+  }
+  [data-wl-chart] .wl-c-text-wpt {
+    display: inline;
+  }
+}
+/* A phone on its side has no height to spare. */
+@media (max-width: 900px) and (max-height: 480px) {
+  [data-wl-auth="split"] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  [data-wl-auth="split"] > [data-wl-auth="chart"] {
+    display: none;
+  }
+}
+
+/*
+ * ---------- Onboarding ----------
+ * Takes the same split. The route's inset rounded panel sits around it in a page this area does not
+ * patch, so the flush split flattens its three wrappers from inside.
+ */
+div:has(> [data-wl-flush]),
+div:has(> * > [data-wl-flush]),
+div:has(> * > * > [data-wl-flush]) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Progress is the route so far: a dashed course ahead, a solid line behind, a waypoint at the current step. */
+[data-wl-onboarding="track"] {
+  flex: none;
+  height: 0.75rem;
+  overflow: visible;
+  border-radius: 0;
+  background: linear-gradient(90deg, var(--border-strong) 55%, transparent 0) 0 50% / 8px 1px repeat-x;
+}
+[data-wl-onboarding="leg"] {
+  position: relative;
+  background: linear-gradient(var(--bg-accent-primary), var(--bg-accent-primary)) 0 50% / 100% 2px no-repeat;
+}
+[data-wl-onboarding="leg"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--bg-accent-primary);
+  transform: translateY(-50%) rotate(45deg);
+}

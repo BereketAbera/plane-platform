@@ -1,0 +1,216 @@
+diff --git a/apps/web/app/(all)/[workspaceSlug]/(projects)/_sidebar.tsx b/apps/web/app/(all)/[workspaceSlug]/(projects)/_sidebar.tsx
+index 173b1fb0e0907b1bc08b39377d907b623ac916b4..1cb992da6f1a2f0e6b97bbda9cc3f4ab76aa400f 100644
+--- a/apps/web/app/(all)/[workspaceSlug]/(projects)/_sidebar.tsx
++++ b/apps/web/app/(all)/[workspaceSlug]/(projects)/_sidebar.tsx
+@@ -59,9 +59,9 @@ export const ProjectAppSidebar = observer(function ProjectAppSidebar() {
+         toggleCollapsed={toggleSidebar}
+         togglePeek={toggleSidebarPeek}
+         extendedSidebar={
+-          <>
++          <div data-shell="nav" className="contents">
+             <ExtendedAppSidebar />
+-          </>
++          </div>
+         }
+         isAnyExtendedSidebarExpanded={isAnyExtendedSidebarOpen}
+         isAnySidebarDropdownOpen={isAnySidebarDropdownOpen}
+diff --git a/apps/web/app/(all)/[workspaceSlug]/(projects)/layout.tsx b/apps/web/app/(all)/[workspaceSlug]/(projects)/layout.tsx
+index 090eefbf6b1cc5c56c5978770887181db966ccc1..943602c5951c91d7c2122f05981323a52664a40a 100644
+--- a/apps/web/app/(all)/[workspaceSlug]/(projects)/layout.tsx
++++ b/apps/web/app/(all)/[workspaceSlug]/(projects)/layout.tsx
+@@ -15,11 +15,13 @@ function WorkspaceLayout() {
+   return (
+     <>
+       <ProjectsAppPowerKProvider />
+-      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-subtle">
++      <div className="relative flex h-full w-full flex-col overflow-hidden">
+         <div id="full-screen-portal" className="absolute inset-0 w-full" />
+         <div className="relative flex size-full overflow-hidden">
+           <ProjectAppSidebar />
+-          <ExtendedProjectSidebar />
++          <div data-shell="nav" className="contents">
++            <ExtendedProjectSidebar />
++          </div>
+           <main className="relative flex h-full w-full flex-col overflow-hidden bg-surface-1">
+             <Outlet />
+           </main>
+diff --git a/apps/web/core/components/navigation/top-navigation-root.tsx b/apps/web/core/components/navigation/top-navigation-root.tsx
+index 2571ecee6b0f06dad795a08bbf784d2669c8dd6f..6b349ec3ee87a6696d9b444a10c281b49b54ba29 100644
+--- a/apps/web/core/components/navigation/top-navigation-root.tsx
++++ b/apps/web/core/components/navigation/top-navigation-root.tsx
+@@ -18,8 +18,6 @@ import { AppSidebarItem } from "@/components/sidebar/sidebar-item";
+ import { InboxIcon } from "@plane/propel/icons";
+ import useSWR from "swr";
+ import { useWorkspaceNotifications } from "@/hooks/store/notifications";
+-// local imports
+-import { StarUsOnGitHubLink } from "@/app/(all)/[workspaceSlug]/(projects)/star-us-link";
+ 
+ export const TopNavigationRoot = observer(function TopNavigationRoot() {
+   // router
+@@ -46,6 +44,7 @@ export const TopNavigationRoot = observer(function TopNavigationRoot() {
+ 
+   return (
+     <div
++      data-shell="top"
+       className={cn("z-[27] flex min-h-10 w-full items-center bg-canvas px-3.5 transition-all duration-300", {
+         "px-2": !showLabel,
+       })}
+@@ -78,7 +77,6 @@ export const TopNavigationRoot = observer(function TopNavigationRoot() {
+           />
+         </Tooltip>
+         <HelpMenuRoot />
+-        <StarUsOnGitHubLink />
+         <div className="flex size-8 items-center justify-center rounded-md hover:bg-layer-1-hover">
+           <UserMenuRoot />
+         </div>
+diff --git a/apps/web/core/components/sidebar/resizable-sidebar.tsx b/apps/web/core/components/sidebar/resizable-sidebar.tsx
+index 5db352d7235978d53082c69714018015392cfcc9..74cb51859cb417dbef3543077b4624d411ea2008 100644
+--- a/apps/web/core/components/sidebar/resizable-sidebar.tsx
++++ b/apps/web/core/components/sidebar/resizable-sidebar.tsx
+@@ -179,6 +179,7 @@ export function ResizableSidebar({
+       {/* Main Sidebar */}
+       <div
+         id="main-sidebar"
++        data-shell="nav"
+         className={cn(
+           "z-20 h-full border-r border-subtle bg-surface-1",
+           !isResizing && "transition-all duration-300 ease-in-out",
+@@ -221,6 +222,7 @@ export function ResizableSidebar({
+       </div>
+       {/* Peek View */}
+       <div
++        data-shell="nav"
+         className={cn(
+           "shadow-sm absolute left-0 z-20 h-full bg-surface-1",
+           !isResizing && "transition-all duration-300 ease-in-out",
+diff --git a/apps/web/core/components/sidebar/sidebar-item.tsx b/apps/web/core/components/sidebar/sidebar-item.tsx
+index fa3cfef1b5aacba768c10633c6fc1cadec131a2d..7d008b40a5e89285e3693783170323bc7ab9e713 100644
+--- a/apps/web/core/components/sidebar/sidebar-item.tsx
++++ b/apps/web/core/components/sidebar/sidebar-item.tsx
+@@ -87,6 +87,7 @@ function AppSidebarItemIcon({ icon, highlight }: AppSidebarItemIconProps) {
+ 
+   return (
+     <div
++      data-wl-nav-icon={highlight ? "active" : "idle"}
+       className={cn(styles.icon, {
+         [styles.iconActive]: highlight,
+         [styles.iconInactive]: !highlight,
+diff --git a/apps/web/core/components/sidebar/sidebar-navigation.tsx b/apps/web/core/components/sidebar/sidebar-navigation.tsx
+index 48815163683148f3b651e566816723d80819ff7a..0320696722f91eeb19933f6fc5c967133b66b316 100644
+--- a/apps/web/core/components/sidebar/sidebar-navigation.tsx
++++ b/apps/web/core/components/sidebar/sidebar-navigation.tsx
+@@ -16,6 +16,7 @@ export function SidebarNavItem(props: TSidebarNavItem) {
+   const { className, isActive, children } = props;
+   return (
+     <div
++      data-wl-nav={isActive ? "active" : "idle"}
+       className={cn(
+         "group relative flex w-full cursor-pointer items-center justify-between gap-1.5 rounded-md px-2 py-1 outline-none",
+         {
+diff --git a/apps/web/core/components/sidebar/sidebar-wrapper.tsx b/apps/web/core/components/sidebar/sidebar-wrapper.tsx
+index b59983f725f25910a8c630ebf49171769fe82fa7..ca2cc2e2248469d7eb9a846b27746a883d247976 100644
+--- a/apps/web/core/components/sidebar/sidebar-wrapper.tsx
++++ b/apps/web/core/components/sidebar/sidebar-wrapper.tsx
+@@ -16,7 +16,6 @@ import { CustomizeNavigationDialog } from "@/components/navigation/customize-nav
+ import { useAppTheme } from "@/hooks/store/use-app-theme";
+ import useSize from "@/hooks/use-window-size";
+ // plane web components
+-import { WorkspaceEditionBadge } from "@/components/workspace/edition-badge";
+ import { AppSidebarToggleButton } from "./sidebar-toggle-button";
+ import { IconButton } from "@plane/propel/icon-button";
+ 
+@@ -81,15 +80,6 @@ export const SidebarWrapper = observer(function SidebarWrapper(props: TSidebarWr
+         >
+           {children}
+         </ScrollArea>
+-        {/* Help Section */}
+-        <div className="flex h-12 items-center justify-between border-t border-subtle bg-surface-1 p-3">
+-          <WorkspaceEditionBadge />
+-          {/* TODO: To be checked if we need this */}
+-          {/* <div className="flex items-center gap-2">
+-          {!shouldRenderAppRail && <HelpMenu />}
+-          {!isAppRailEnabled && <AppSidebarToggleButton />}
+-        </div> */}
+-        </div>
+       </div>
+     </>
+   );
+diff --git a/apps/web/core/components/workspace/content-wrapper.tsx b/apps/web/core/components/workspace/content-wrapper.tsx
+index 3d605d65d6c8860e8423db7009d7643981513401..33487db2b1f7c229de61564646292f41487f4241 100644
+--- a/apps/web/core/components/workspace/content-wrapper.tsx
++++ b/apps/web/core/components/workspace/content-wrapper.tsx
+@@ -27,8 +27,9 @@ export const WorkspaceContentWrapper = observer(function WorkspaceContentWrapper
+         {/* Conditionally render AppRailRoot based on context */}
+         {shouldRenderAppRail && <AppRailRoot />}
+         <div
++          data-wl-content=""
+           className={cn(
+-            "relative size-full flex-grow overflow-hidden pr-2 pb-2 pl-2 transition-all duration-300 ease-in-out",
++            "relative size-full flex-grow overflow-hidden transition-all duration-300 ease-in-out",
+             {
+               "pl-0!": shouldRenderAppRail,
+             }
+diff --git a/apps/web/core/components/workspace/sidebar/dropdown-item.tsx b/apps/web/core/components/workspace/sidebar/dropdown-item.tsx
+index 5b660d326f9261942814f392ff7649b4cf1e3ce5..5b1d63bdc87a1ddb88e79fe7b563880ad882b7d0 100644
+--- a/apps/web/core/components/workspace/sidebar/dropdown-item.tsx
++++ b/apps/web/core/components/workspace/sidebar/dropdown-item.tsx
+@@ -52,7 +52,7 @@ const SidebarDropdownItem = observer(function SidebarDropdownItem(props: TProps)
+           <div className="relative flex w-[80%] items-center justify-start gap-2.5">
+             <span
+               className={`relative flex h-8 w-8 flex-shrink-0 items-center justify-center border-subtle p-2 text-14 font-medium uppercase ${
+-                !workspace?.logo_url && "rounded-md bg-[#026292] text-on-color"
++                !workspace?.logo_url && "rounded-md bg-accent-primary text-on-color"
+               }`}
+             >
+               {workspace?.logo_url && workspace.logo_url !== "" ? (
+diff --git a/apps/web/core/components/workspace/sidebar/favorites/favorites-menu.tsx b/apps/web/core/components/workspace/sidebar/favorites/favorites-menu.tsx
+index 624a07f637ecc807ff6089a7e8a5ab8bdf194293..e731b6998107b72c1d831dd44d747cbfc05759d8 100644
+--- a/apps/web/core/components/workspace/sidebar/favorites/favorites-menu.tsx
++++ b/apps/web/core/components/workspace/sidebar/favorites/favorites-menu.tsx
+@@ -203,7 +203,7 @@ export const SidebarFavoritesMenu = observer(function SidebarFavoritesMenu() {
+                 : "aria_labels.projects_sidebar.open_favorites_menu"
+             )}
+           >
+-            <span className="text-13 font-semibold">{t("favorites")}</span>
++            <span className="text-11 font-medium uppercase">{t("favorites")}</span>
+           </Disclosure.Button>
+           <div className="pointer-events-none flex items-center opacity-0 group-hover/favorites-button:pointer-events-auto group-hover/favorites-button:opacity-100">
+             <Tooltip tooltipHeading={t("create_folder")} tooltipContent="">
+diff --git a/apps/web/core/components/workspace/sidebar/projects-list-item.tsx b/apps/web/core/components/workspace/sidebar/projects-list-item.tsx
+index b0b5a1afec61ad89eb289f224dc937d8c83563b4..2430cb36c7b6061f312a1ea7cd6cf73dff71c575 100644
+--- a/apps/web/core/components/workspace/sidebar/projects-list-item.tsx
++++ b/apps/web/core/components/workspace/sidebar/projects-list-item.tsx
+@@ -291,6 +291,7 @@ export const SidebarProjectsListItem = observer(function SidebarProjectsListItem
+         >
+           <DropIndicator classNames="absolute top-0" isVisible={instruction === "DRAG_OVER"} />
+           <div
++            data-wl-nav={shouldHighlightProject ? "active" : "idle"}
+             className={cn(
+               "group/project-item relative flex w-full items-center rounded-md px-2 py-1.5 text-primary hover:bg-layer-transparent-hover",
+               {
+diff --git a/apps/web/core/components/workspace/sidebar/projects-list.tsx b/apps/web/core/components/workspace/sidebar/projects-list.tsx
+index 6301915bd548bd395ac20cb15315623f3771cf1b..847c072bf0b1b2a6ce867aeb01d34b6ca9c479da 100644
+--- a/apps/web/core/components/workspace/sidebar/projects-list.tsx
++++ b/apps/web/core/components/workspace/sidebar/projects-list.tsx
+@@ -183,7 +183,7 @@ export const SidebarProjectsList = observer(function SidebarProjectsList() {
+                     : "aria_labels.projects_sidebar.open_projects_menu"
+                 )}
+               >
+-                <span className="text-13 font-semibold">{t("projects")}</span>
++                <span className="text-11 font-medium uppercase">{t("projects")}</span>
+               </Disclosure.Button>
+               <div className="flex items-center gap-1">
+                 {isAuthorizedUser && (
+diff --git a/apps/web/core/components/workspace/sidebar/sidebar-menu-items.tsx b/apps/web/core/components/workspace/sidebar/sidebar-menu-items.tsx
+index 1c38dbdb810fae6b18aab39be8444cb7d1138348..bad56994cbfb4e51bf4ef194555467a989ff3ef6 100644
+--- a/apps/web/core/components/workspace/sidebar/sidebar-menu-items.tsx
++++ b/apps/web/core/components/workspace/sidebar/sidebar-menu-items.tsx
+@@ -115,7 +115,7 @@ export const SidebarMenuItems = observer(function SidebarMenuItems() {
+                 : "aria_labels.app_sidebar.open_workspace_menu"
+             )}
+           >
+-            <span className="text-13 font-semibold">{t("common.workspace")}</span>
++            <span className="text-11 font-medium uppercase">{t("common.workspace")}</span>
+           </Disclosure.Button>
+           <div className="pointer-events-none flex items-center opacity-0 group-hover:pointer-events-auto group-hover:opacity-100">
+             <Disclosure.Button
