@@ -1,0 +1,21 @@
+{
+  "name": "Wayline God Mode",
+  "short_name": "Wayline God Mode",
+  "description": "Wayline: issues, cycles and modules for your projects. Built on Plane Community Edition.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F4F2EA",
+  "theme_color": "#0F1B2D",
+  "icons": [
+    {
+      "src": "/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

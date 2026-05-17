@@ -1,0 +1,21 @@
+{
+  "name": "Wayline",
+  "short_name": "Wayline",
+  "description": "Wayline: issues, cycles and modules for your projects. Built on Plane Community Edition.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F4F2EA",
+  "theme_color": "#0F1B2D",
+  "icons": [
+    {
+      "src": "/plane-logos/plane-mobile-pwa.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/plane-logos/plane-mobile-pwa.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
