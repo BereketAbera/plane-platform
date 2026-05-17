@@ -1,0 +1,13 @@
+Vendored as files so the lockfile stays frozen. No npm dependency is added.
+Each tarball was checked against the registry's dist.integrity before extraction.
+
+@fontsource-variable/instrument-sans 5.3.0  OFL-1.1  see OFL-InstrumentSans.txt
+  sha512-u4gKbDBTNFGkg997tfQn3eHOhHuquWUFTRT/rwzuKtrxX5P2ekfs2x+LgBPP4P32+cC+vUwF1Cr+IdRoPQbrGw==
+  files/instrument-sans-latin-wght-normal.woff2
+  files/instrument-sans-latin-ext-wght-normal.woff2
+
+@fontsource-variable/jetbrains-mono 5.3.0  OFL-1.1  see OFL-JetBrainsMono.txt
+  sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw==
+  files/jetbrains-mono-latin-wght-normal.woff2
+  files/jetbrains-mono-latin-ext-wght-normal.woff2
+  files/jetbrains-mono-cyrillic-wght-normal.woff2

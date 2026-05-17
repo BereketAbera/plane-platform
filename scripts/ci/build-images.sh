@@ -5,12 +5,16 @@
 #   scripts/ci/build-images.sh localhost:5001/wayline
 #   PUSH=no scripts/ci/build-images.sh ghcr.io/owner/wayline     build only, for pull requests
 #
+# Builds the frontends natively first with apps/wayline/scripts/build.sh, because every Docker context
+# is assembled by that script. SKIP_NATIVE_BUILD=yes reuses the contexts already in .build/wayline-dist.
+#
 # Reads apps/wayline/images.txt, one image per line, paths relative to apps/wayline:
 #   <name> <dockerfile> <context>
 # With no images.txt there is nothing to build yet, which is not a failure.
 #
 # Writes .build/digests.tsv as: <name> TAB <repository> TAB <sha256 digest>. scripts/promote.sh
-# reads it. Environment: PUSH (yes), TAG (short git commit), DIGESTS_FILE.
+# reads it. Environment: PUSH (yes), TAG (short git commit), DIGESTS_FILE, SKIP_NATIVE_BUILD (no),
+# WAYLINE_SOURCE_REPO (where /source points, default the BereketAbera/plane-platform repository).
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 
@@ -30,13 +34,20 @@ if [[ ! -f "$LIST" ]]; then
 fi
 
 guard_disk
+if [[ "${SKIP_NATIVE_BUILD:-no}" != yes ]]; then
+  "$ROOT/apps/wayline/scripts/build.sh"
+fi
 TAG="${TAG:-$(git rev-parse --short=12 HEAD 2>/dev/null || echo dev)}"
+# AGPL section 13: the running image's /source link names the commit that built it.
+SOURCE_REPO="${WAYLINE_SOURCE_REPO:-https://github.com/BereketAbera/plane-platform}"
+SOURCE_REF="$(git rev-parse HEAD 2>/dev/null || echo main)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 while read -r name dockerfile context _; do
   [[ -z "$name" || "$name" == \#* ]] && continue
   [[ -n "$dockerfile" && -n "$context" ]] || die "images.txt: '$name' needs a dockerfile and a context"
+  [[ -d "apps/wayline/$context" ]] || die "no build context at apps/wayline/$context, run apps/wayline/scripts/build.sh"
   repository="$PREFIX/$name"
   metadata="$WORK/$name.json"
 
@@ -48,6 +59,7 @@ while read -r name dockerfile context _; do
   log "Building $repository:$TAG"
   docker buildx build --platform linux/arm64 --provenance=false --sbom=false \
     --metadata-file "$metadata" "${output[@]}" \
+    --build-arg "WAYLINE_SOURCE_REPO=$SOURCE_REPO" --build-arg "WAYLINE_SOURCE_REF=$SOURCE_REF" \
     -f "apps/wayline/$dockerfile" -t "$repository:$TAG" "apps/wayline/$context"
 
   if [[ "$PUSH" == yes ]]; then

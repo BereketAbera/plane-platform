@@ -1,0 +1,6 @@
+# <name> <dockerfile> <context>, paths relative to apps/wayline. Read by scripts/ci/build-images.sh.
+# Contexts are assembled by scripts/build.sh, which that script runs first unless SKIP_NATIVE_BUILD=yes.
+web runtime/Dockerfile.web ../../.build/wayline-dist/web
+admin runtime/Dockerfile.admin ../../.build/wayline-dist/admin
+space runtime/Dockerfile.space ../../.build/wayline-dist/space
+backend runtime/Dockerfile.backend ../../.build/wayline-dist/backend

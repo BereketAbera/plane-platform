@@ -1,0 +1,20 @@
+# Perl regexes, then " ## " and the reason. Each is tested against the match wrapped in << >>, plus 50
+# characters each side. Every entry needs a reason, and each one is a decision someone can later
+# question. Keep them narrow and always name the << >> match.
+
+# Notices and honest references
+Copyright \(c\) 2023-present <<Plane>> Software, Inc\. ## Required notice. AGPL section 5 keeps it, and the SSR server bundle retains source comments.
+Built on <<Plane>> Community Edition ## The one permitted UI credit, linking to /source. See NOTICE.md.
+https://docs\.<<plane\.so>>/core-concepts/projects/run-project#estimate ## Upstream's manual for this feature; no other documentation exists.
+https://docs\.<<plane\.so>>/ ## Upstream's manual for this software, linked from help menus. Reference, not a product claim.
+https://developers\.<<plane\.so>>/self-hosting/telemetry ## Explains the telemetry the code can send, beside the setting that controls it.
+
+# Functional identifiers, never shown to a user
+intake@<<plane\.so>> ## Compared with the address of the backend's intake bot in inbox-list-item.tsx.
+<<Plane>>(Lockup|Logo|Wordmark|NewIcon)\b ## Component export names kept on purpose so the 14 render sites need no edits. The artwork is ours.
+
+# Not the brand: other words that contain the same letters
+focal<<Plane>>(X|Y)?Resolution ## EXIF tag names in a third-party image library.
+<<Plane>>s Soportados|y <<Plane>>s|Seleccionar <<Plane>>s ## Spanish: "planes" means plans. Listed by phrase so a real leak is not hidden.
+<<Plane>>n Sie ## German: "planen Sie" means plan.
+<<Plane>>jado|<<Plane>>je ## Portuguese: "planejado" and "planeje" mean planned and plan.

@@ -1,6 +1,9 @@
-# Pull request: build only. Push to main: build, push to GHCR, record digests, and open a pull
-# request bumping dev. Merging that pull request is left to a person. See README.md for what this
-# plan can and cannot enforce, and for how a GHCR digest reaches the local registry.
+# Pull request: build only. Push to main: build, push to GHCR, prune old versions, record digests,
+# and open a pull request bumping dev. Merging that pull request is left to a person. See README.md
+# for what this plan can and cannot enforce, and for how a GHCR digest reaches the local registry.
+#
+# Both paths run the same native build through scripts/ci/build-images.sh as `make images` does. GHCR
+# gives this private repository 500 MB, and one image set is close to that. See apps/wayline/README.md.
 name: images
 
 on:
@@ -35,6 +38,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build without pushing
         env:
@@ -62,6 +68,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
@@ -86,6 +95,11 @@ jobs:
             cat .build/digests.tsv
             echo '```'
           } >>"$GITHUB_STEP_SUMMARY"
+      - name: Prune old image versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+        run: ./apps/wayline/scripts/prune-ghcr.sh "${OWNER}" 2
 
   bump-dev:
     name: Open digest bump for dev
