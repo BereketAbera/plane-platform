@@ -43,7 +43,8 @@ kubectl --context kind-plane-platform -n argocd get secret argocd-initial-admin-
   -o jsonpath='{.data.password}' | base64 -d
 ```
 
-The CLI reaches the server through Traefik with `argocd login argocd.localhost --grpc-web --plaintext`.
+The UI answers at `http://argocd.localhost/` through Traefik, once the root Application has synced Traefik and the route.
+This repo pins no `argocd` CLI, so everything below uses `kubectl` with `KUBECONFIG=.local/kubeconfig`.
 
 ## Destroy
 
@@ -90,9 +91,14 @@ The root's waves wait for each child to be Healthy, Synced and finished with its
 newest commit. A child in any other state, including Healthy but still OutOfSync, holds the root in `Running` with no
 retry, so the root will not pick up a new commit until that operation ends.
 
+The root checks a child only when its wave comes round. A crash-looping child that happens to read Healthy at that
+moment lets the later waves through, and the root does not go back to look at it again. This happened on the first real
+run, when Grafana's sidecars were being killed for memory.
+
 The root's operation message names the child. The child's own status says what it is waiting for:
 
 ```bash
+export KUBECONFIG=.local/kubeconfig
 kubectl --context kind-plane-platform -n argocd get application root \
   -o jsonpath='{.status.operationState.message}{"\n"}'
 kubectl --context kind-plane-platform -n argocd get application <child> \
@@ -105,16 +111,31 @@ Fix the cause in Git and publish it. Whether that lands by itself depends on wha
   that never turns Degraded, such as a StatefulSet, gets neither, so end that child's operation.
 - A fix to a child's Application manifest only reaches the cluster through the root, so end the root's operation.
 
-To end an operation, run `argocd app terminate-op <app>`. With no CLI, make the same request by hand. This patch has not
-yet been run against a live cluster:
+To end an operation, set its phase. The controller answers within seconds, deletes any running hook, and clears `.operation`:
 
 ```bash
 kubectl --context kind-plane-platform -n argocd patch application <app> --type merge \
   -p '{"status":{"operationState":{"phase":"Terminating"}}}'
 ```
 
-A terminated operation does not retry. Automation starts a new sync only for a commit newer than the one that operation ran
-at, so a fix published beforehand starts it as soon as the operation ends.
+Measured on Argo CD v3.5.7, both while a hook ran and during retry backoff: the phase becomes `Failed`, with the message
+`Operation terminated`. A terminated operation does not retry, and the same revision does not start again. Automation starts
+a new sync only for a newer commit that leaves the Application OutOfSync. A commit that changes only a hook does not: hooks
+are not compared, so the Application stays Synced and nothing runs.
+
+## Starting a child ahead of the root's waves
+
+There is no need to end the root's operation. Apply the child's own file from Git, and its automated sync starts at once:
+
+```bash
+kubectl --context kind-plane-platform -n argocd apply -f gitops/applications/<child>.yaml
+```
+
+Measured with a scratch parent holding on a 60-second hook: the child started immediately. When the parent's wave came, it
+adopted the child in place, with the same UID and a tracking annotation added, and finished Synced. Apply the file as it is
+at the published commit, because self-heal and the parent's later sync work from Git, not from this copy.
+
+## Pausing automation
 
 Inject failure only after pausing automation on **both** the child and `root`: the root's self-heal reverts a patch to a
 child's `syncPolicy`.
