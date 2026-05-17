@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2026 Bereket Abera
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Instance admin (god-mode) surfaces.
+ * Owner: the admin agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
+ *
+ * Hooks, all added by patches/40-admin.patch. The admin shell reuses the main app's: data-shell="nav" and
+ * "top" (tokens.css, shell.css) and data-wl-nav for the active route line (shell.css). The chart marks
+ * come from auth.css. Only what differs from those is here.
+ */
+
+/* ---------- Sign-in: chart side ---------- */
+[data-wl-admin-aside] {
+  position: relative;
+  display: flex;
+  flex: 0 0 44%;
+  max-width: 44rem;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 2rem;
+  background-color: var(--wl-chart-paper);
+  border-right: 1px solid var(--border-subtle);
+}
+[data-wl-admin-aside] > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The title block of a chart: an opaque box, so no contour runs through the text. */
+[data-wl-admin-legend] {
+  position: relative;
+  display: flex;
+  max-width: 24rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background-color: var(--bg-surface-1);
+  border: 1px solid var(--border-strong);
+}
+
+/* ---------- Sign-in: form side ---------- */
+[data-wl-admin-auth-main] > :not([data-shell]) {
+  padding-inline: 2rem;
+}
+[data-wl-admin-auth-main] > [data-shell="top"] {
+  z-index: 1;
+  height: 2.5rem;
+  padding-inline: 1.25rem;
+  background-color: var(--bg-canvas);
+}
+[data-wl-admin-form-header] > :first-child {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  letter-spacing: -0.012em;
+}
+[data-wl-admin-form-header] > :last-child {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--txt-secondary);
+}
+/* Field labels only: the telemetry consent is a sentence, so it stays in the body face. */
+[data-wl-admin-auth-main] form .space-y-1 > label {
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+/* Upstream's text-blue-* classes compile to nothing, which leaves this link looking like plain text. */
+[data-wl-admin-auth-main] form label a,
+[data-wl-admin-credit] a {
+  color: var(--txt-link-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+[data-wl-admin-auth-main] form label a:hover,
+[data-wl-admin-credit] a:hover {
+  color: var(--txt-link-primary-hover);
+}
+[data-wl-admin-credit] {
+  font-family: var(--font-code);
+}
+
+/* Narrow screens keep the form and its band. Wide ones have the lockup in the title block instead. */
+@media (max-width: 63.999rem) {
+  [data-wl-admin-aside] {
+    display: none;
+  }
+}
+@media (min-width: 64rem) {
+  [data-wl-admin-auth-main] > [data-shell="top"] > a {
+    display: none;
+  }
+}
+
+/* ---------- Dashboard: slim band on a paper canvas, full bleed beside the ink sidebar ---------- */
+[data-wl-admin-main] {
+  background-color: var(--bg-canvas);
+}
+[data-wl-admin-main] > [data-shell="top"] {
+  height: 2.5rem;
+  padding-block: 0;
+  background-color: var(--bg-canvas);
+}
+[data-wl-admin-main] > [data-shell="top"] a {
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Sidebar: its head lines up with the band ---------- */
+[data-wl-admin-nav-head] {
+  height: 2.5rem;
+  padding-block: 0;
+}
+[data-wl-admin-nav-head] h4 {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

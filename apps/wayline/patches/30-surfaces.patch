@@ -1,0 +1,486 @@
+diff --git a/apps/web/app/error/prod.tsx b/apps/web/app/error/prod.tsx
+index a8d61829e35a5d89049462536ebf2d83012d052d..74c08e3440f779cf169f8c4544be7a6171bb2768 100644
+--- a/apps/web/app/error/prod.tsx
++++ b/apps/web/app/error/prod.tsx
+@@ -15,19 +15,9 @@ import DefaultLayout from "@/layouts/default-layout";
+ 
+ const linkMap = [
+   {
+-    key: "mail_to",
+-    label: "Contact Support",
+-    value: "mailto:support@plane.so",
+-  },
+-  {
+-    key: "status",
+-    label: "Status Page",
+-    value: "https://status.plane.so/",
+-  },
+-  {
+-    key: "twitter_handle",
+-    label: "@planepowers",
+-    value: "https://x.com/planepowers",
++    key: "source",
++    label: "Source code",
++    value: "/source",
+   },
+ ];
+ 
+@@ -59,8 +49,7 @@ export function ProdErrorComponent({ onGoHome }: ProdErrorComponentProps) {
+           <div className="flex flex-col gap-2.5">
+             <h1 className="text-left text-18 font-semibold text-primary">&#x1F6A7; Looks like something went wrong!</h1>
+             <span className="text-left text-14 font-medium text-secondary">
+-              We track these errors automatically and working on getting things back up and running. If the problem
+-              persists feel free to contact us. In the meantime, try refreshing.
++              Try refreshing the page. If the problem persists, contact your administrator.
+             </span>
+           </div>
+ 
+diff --git a/apps/web/core/components/core/sidebar/progress-chart.tsx b/apps/web/core/components/core/sidebar/progress-chart.tsx
+index a5b99a9cddf1cb6df479877a983ebcabf79074d5..d302137b9ecd7514af6074bc58327f592271e49d 100644
+--- a/apps/web/core/components/core/sidebar/progress-chart.tsx
++++ b/apps/web/core/components/core/sidebar/progress-chart.tsx
+@@ -32,9 +32,9 @@ function ProgressChart({ distribution, totalIssues, className = "", plotTitle =
+           {
+             key: "current",
+             label: `Current ${plotTitle}`,
+-            strokeColor: "#3F76FF",
+-            fill: "#3F76FF33",
+-            fillOpacity: 1,
++            strokeColor: "var(--bg-accent-primary)",
++            fill: "var(--bg-accent-primary)",
++            fillOpacity: 0.2,
+             showDot: true,
+             smoothCurves: true,
+             strokeOpacity: 1,
+diff --git a/apps/web/core/components/global/product-updates/changelog.tsx b/apps/web/core/components/global/product-updates/changelog.tsx
+index cfddb2af4f275e2e1b2bde54b19661dc0d324ecc..5590c3e094013687bf14d9be4143a6c881e6f4e1 100644
+--- a/apps/web/core/components/global/product-updates/changelog.tsx
++++ b/apps/web/core/components/global/product-updates/changelog.tsx
+@@ -20,7 +20,9 @@ export const ProductUpdatesChangelog = observer(function ProductUpdatesChangelog
+   // store hooks
+   const { config } = useInstance();
+   // derived values
+-  const changeLogUrl = config?.instance_changelog_url;
++  // Only a same-origin page is embedded: upstream's backend image defaults this setting to a page on its own site.
++  const configuredUrl = config?.instance_changelog_url;
++  const changeLogUrl = configuredUrl && /^\/(?!\/)/.test(configuredUrl) ? configuredUrl : undefined;
+   const shouldShowFallback = !changeLogUrl || changeLogUrl === "" || hasError;
+ 
+   // timeout fallback - if iframe doesn't load within 15 seconds, show error
+@@ -65,7 +67,7 @@ export const ProductUpdatesChangelog = observer(function ProductUpdatesChangelog
+   if (shouldShowFallback) {
+     return (
+       <ProductUpdatesFallback
+-        description="We're having trouble fetching the updates. Please visit our changelog to view the latest updates."
++        description="This deployment has no embedded changelog. Its source code shows what is running."
+         variant={config?.is_self_managed ? "self-managed" : "cloud"}
+       />
+     );
+diff --git a/apps/web/core/components/global/product-updates/fallback.tsx b/apps/web/core/components/global/product-updates/fallback.tsx
+index 57ed75f95839dfc5b4f6965dbbd7b9bcdbee32d9..82604b0086ab7fe9c58e3ab63de9462321250bc6 100644
+--- a/apps/web/core/components/global/product-updates/fallback.tsx
++++ b/apps/web/core/components/global/product-updates/fallback.tsx
+@@ -27,7 +27,7 @@ export function ProductUpdatesFallback(props: TProductUpdatesFallbackProps) {
+         align="center"
+         actions={[
+           {
+-            label: "Go to changelog",
++            label: "View source code",
+             variant: "primary",
+             onClick: () => window.open(changelogUrl, "_blank"),
+           },
+diff --git a/apps/web/core/components/global/product-updates/footer.tsx b/apps/web/core/components/global/product-updates/footer.tsx
+index ed0a185a5451beb6cc55db8a74b9c35643b2ccaa..3f30fe723edb7110f897644303922fc668bebe24 100644
+--- a/apps/web/core/components/global/product-updates/footer.tsx
++++ b/apps/web/core/components/global/product-updates/footer.tsx
+@@ -4,13 +4,7 @@
+  * See the LICENSE file for details.
+  */
+ 
+-import { USER_TRACKER_ELEMENTS } from "@plane/constants";
+ import { useTranslation } from "@plane/i18n";
+-// ui
+-import { getButtonStyling } from "@plane/propel/button";
+-import { PlaneLogo } from "@plane/propel/icons";
+-// helpers
+-import { cn } from "@plane/utils";
+ 
+ export function ProductUpdatesFooter() {
+   const { t } = useTranslation();
+@@ -25,52 +19,14 @@ export function ProductUpdatesFooter() {
+         >
+           {t("docs")}
+         </a>
+-        <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 fill-current">
+-          <circle cx={1} cy={1} r={1} />
+-        </svg>
+-        <a
+-          data-ph-element={USER_TRACKER_ELEMENTS.CHANGELOG_REDIRECTED}
+-          href="https://go.plane.so/p-changelog"
+-          target="_blank"
+-          className="text-13 text-secondary underline-offset-1 outline-none hover:text-primary hover:underline"
+-          rel="noreferrer"
+-        >
+-          {t("full_changelog")}
+-        </a>
+-        <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 fill-current">
+-          <circle cx={1} cy={1} r={1} />
+-        </svg>
+-        <a
+-          href="mailto:support@plane.so"
+-          target="_blank"
+-          className="text-13 text-secondary underline-offset-1 outline-none hover:text-primary hover:underline"
+-          rel="noreferrer"
+-        >
+-          {t("support")}
+-        </a>
+-        <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 fill-current">
+-          <circle cx={1} cy={1} r={1} />
+-        </svg>
+-        <a
+-          href="https://forum.plane.so"
+-          target="_blank"
+-          className="text-13 text-secondary underline-offset-1 outline-none hover:text-primary hover:underline"
+-          rel="noreferrer"
+-        >
+-          Forum
+-        </a>
+       </div>
+       <a
+-        href="https://plane.so/pages"
++        href="/source"
+         target="_blank"
+-        className={cn(
+-          getButtonStyling("secondary", "base"),
+-          "flex items-center gap-1.5 text-center font-medium underline-offset-2 outline-none hover:underline"
+-        )}
++        className="text-13 text-secondary underline-offset-1 outline-none hover:text-primary hover:underline"
+         rel="noreferrer"
+       >
+-        <PlaneLogo className="h-4 w-auto text-primary" />
+-        {t("powered_by_plane_pages")}
++        Built on Plane Community Edition
+       </a>
+     </div>
+   );
+diff --git a/apps/web/core/components/power-k/config/help-commands.ts b/apps/web/core/components/power-k/config/help-commands.ts
+index 79e47354d56cfb80c3d4de1615d726dc67053bb7..564ae1a66a57ce3ddc0221da779f3d6962a22c52 100644
+--- a/apps/web/core/components/power-k/config/help-commands.ts
++++ b/apps/web/core/components/power-k/config/help-commands.ts
+@@ -4,7 +4,7 @@
+  * See the LICENSE file for details.
+  */
+ 
+-import { FileText, GithubIcon, MessageSquare, Rocket } from "lucide-react";
++import { FileText, Rocket } from "lucide-react";
+ // components
+ import type { TPowerKCommandConfig } from "@/components/power-k/core/types";
+ // hooks
+@@ -43,31 +43,5 @@ export const usePowerKHelpCommands = (): TPowerKCommandConfig[] => {
+       isVisible: () => true,
+       closeOnSelect: true,
+     },
+-    {
+-      id: "join_forum",
+-      type: "action",
+-      group: "help",
+-      i18n_title: "power_k.help_actions.join_forum",
+-      icon: MessageSquare,
+-      action: () => {
+-        window.open("https://forum.plane.so", "_blank", "noopener,noreferrer");
+-      },
+-      isEnabled: () => true,
+-      isVisible: () => true,
+-      closeOnSelect: true,
+-    },
+-    {
+-      id: "report_bug",
+-      type: "action",
+-      group: "help",
+-      i18n_title: "power_k.help_actions.report_bug",
+-      icon: GithubIcon,
+-      action: () => {
+-        window.open("https://github.com/makeplane/plane/issues/new/choose", "_blank", "noopener,noreferrer");
+-      },
+-      isEnabled: () => true,
+-      isVisible: () => true,
+-      closeOnSelect: true,
+-    },
+   ];
+ };
+diff --git a/apps/web/core/components/profile/sidebar.tsx b/apps/web/core/components/profile/sidebar.tsx
+index 42ec13d1f0702875ae99c532f19ecb66e09dcf87..bb582a979cfc32f4b0ba92b490452e25066f0d9d 100644
+--- a/apps/web/core/components/profile/sidebar.tsx
++++ b/apps/web/core/components/profile/sidebar.tsx
+@@ -210,7 +210,7 @@ export const ProfileSidebar = observer(function ProfileSidebar(props: TProfileSi
+                                 <div
+                                   className="h-1 rounded-sm"
+                                   style={{
+-                                    backgroundColor: "#3f76ff",
++                                    backgroundColor: "var(--bg-accent-primary)",
+                                     width: `${(project.assigned_issues / totalIssues) * 100}%`,
+                                   }}
+                                 />
+@@ -242,7 +242,7 @@ export const ProfileSidebar = observer(function ProfileSidebar(props: TProfileSi
+                               </div>
+                               <div className="flex items-center justify-between gap-2">
+                                 <div className="flex items-center gap-2">
+-                                  <div className="h-2.5 w-2.5 rounded-xs bg-[#3f76ff]" />
++                                  <div className="h-2.5 w-2.5 rounded-xs bg-accent-primary" />
+                                   Assigned
+                                 </div>
+                                 <div className="font-medium">
+diff --git a/apps/web/core/components/workspace/billing/root.tsx b/apps/web/core/components/workspace/billing/root.tsx
+index 33100a4372aac9347a2ceb5fe6f23bac831072b7..f2e1b5eed4d04b435221887c048fb9934339c513 100644
+--- a/apps/web/core/components/workspace/billing/root.tsx
++++ b/apps/web/core/components/workspace/billing/root.tsx
+@@ -4,51 +4,22 @@
+  * See the LICENSE file for details.
+  */
+ 
+-import { useState } from "react";
+ import { observer } from "mobx-react";
+ // plane imports
+-import { DEFAULT_PRODUCT_BILLING_FREQUENCY, SUBSCRIPTION_WITH_BILLING_FREQUENCY } from "@plane/constants";
+ import { useTranslation } from "@plane/i18n";
+-import type { TBillingFrequency, TProductBillingFrequency } from "@plane/types";
+-import { EProductSubscriptionEnum } from "@plane/types";
+ // components
+ import { SettingsBoxedControlItem } from "@/components/settings/boxed-control-item";
+ import { SettingsHeading } from "@/components/settings/heading";
+-// local imports
+-import { PlansComparison } from "./comparison/root";
+ 
+ export const BillingRoot = observer(function BillingRoot() {
+-  const [isCompareAllFeaturesSectionOpen, setIsCompareAllFeaturesSectionOpen] = useState(false);
+-  const [productBillingFrequency, setProductBillingFrequency] = useState<TProductBillingFrequency>(
+-    DEFAULT_PRODUCT_BILLING_FREQUENCY
+-  );
+   const { t } = useTranslation();
+ 
+-  /**
+-   * Retrieves the billing frequency for a given subscription type
+-   * @param {EProductSubscriptionEnum} subscriptionType - Type of subscription to get frequency for
+-   * @returns {TBillingFrequency | undefined} - Billing frequency if subscription supports it, undefined otherwise
+-   */
+-  const getBillingFrequency = (subscriptionType: EProductSubscriptionEnum): TBillingFrequency | undefined =>
+-    SUBSCRIPTION_WITH_BILLING_FREQUENCY.includes(subscriptionType)
+-      ? productBillingFrequency[subscriptionType]
+-      : undefined;
+-
+-  /**
+-   * Updates the billing frequency for a specific subscription type
+-   * @param {EProductSubscriptionEnum} subscriptionType - Type of subscription to update
+-   * @param {TBillingFrequency} frequency - New billing frequency to set
+-   * @returns {void}
+-   */
+-  const setBillingFrequency = (subscriptionType: EProductSubscriptionEnum, frequency: TBillingFrequency): void =>
+-    setProductBillingFrequency({ ...productBillingFrequency, [subscriptionType]: frequency });
+-
+   return (
+     <section className="relative scrollbar-hide size-full overflow-y-auto">
+       <div>
+         <SettingsHeading
+           title={t("workspace_settings.settings.billing_and_plans.heading")}
+-          description={t("workspace_settings.settings.billing_and_plans.description")}
++          description="No paid plans are offered on this deployment."
+         />
+         <div className="mt-6">
+           <SettingsBoxedControlItem
+@@ -57,15 +28,6 @@ export const BillingRoot = observer(function BillingRoot() {
+           />
+         </div>
+       </div>
+-      <div className="mt-10 flex flex-col gap-y-3">
+-        <h4 className="text-h6-semibold">All plans</h4>
+-        <PlansComparison
+-          isCompareAllFeaturesSectionOpen={isCompareAllFeaturesSectionOpen}
+-          getBillingFrequency={getBillingFrequency}
+-          setBillingFrequency={setBillingFrequency}
+-          setIsCompareAllFeaturesSectionOpen={setIsCompareAllFeaturesSectionOpen}
+-        />
+-      </div>
+     </section>
+   );
+ });
+diff --git a/apps/web/core/components/workspace/edition-badge.tsx b/apps/web/core/components/workspace/edition-badge.tsx
+index b11e850b4e501fa8edc017325fba77b0f5347bf1..7e0e7859b5d31ca4cfae8c5ba573184def8e98a6 100644
+--- a/apps/web/core/components/workspace/edition-badge.tsx
++++ b/apps/web/core/components/workspace/edition-badge.tsx
+@@ -4,43 +4,29 @@
+  * See the LICENSE file for details.
+  */
+ 
+-import { useState } from "react";
+ import { observer } from "mobx-react";
+ // ui
+-import { useTranslation } from "@plane/i18n";
++import { getButtonStyling } from "@plane/propel/button";
+ import { Tooltip } from "@plane/propel/tooltip";
+ // hooks
+ import { usePlatformOS } from "@/hooks/use-platform-os";
+ import packageJson from "package.json";
+-// local components
+-import { Button } from "@plane/propel/button";
+-import { PaidPlanUpgradeModal } from "@/components/license/modal/upgrade-modal";
+ 
+ export const WorkspaceEditionBadge = observer(function WorkspaceEditionBadge() {
+-  // states
+-  const [isPaidPlanPurchaseModalOpen, setIsPaidPlanPurchaseModalOpen] = useState(false);
+-  // translation
+-  const { t } = useTranslation();
+   // platform
+   const { isMobile } = usePlatformOS();
+ 
+   return (
+-    <>
+-      <PaidPlanUpgradeModal
+-        isOpen={isPaidPlanPurchaseModalOpen}
+-        handleClose={() => setIsPaidPlanPurchaseModalOpen(false)}
+-      />
+-      <Tooltip tooltipContent={`Version: v${packageJson.version}`} isMobile={isMobile}>
+-        <Button
+-          variant="tertiary"
+-          size="lg"
+-          onClick={() => setIsPaidPlanPurchaseModalOpen(true)}
+-          aria-haspopup="dialog"
+-          aria-label={t("aria_labels.projects_sidebar.edition_badge")}
+-        >
+-          Community
+-        </Button>
+-      </Tooltip>
+-    </>
++    <Tooltip tooltipContent={`Version: v${packageJson.version}`} isMobile={isMobile}>
++      <a
++        href="/source"
++        target="_blank"
++        rel="noopener noreferrer"
++        className={getButtonStyling("tertiary", "lg")}
++        aria-label="Community edition, source code"
++      >
++        Community
++      </a>
++    </Tooltip>
+   );
+ });
+diff --git a/apps/web/core/components/workspace/sidebar/help-section/root.tsx b/apps/web/core/components/workspace/sidebar/help-section/root.tsx
+index d19b8602d3b0378288d8e326c1f22ce5c6fd074a..56637a75c60cb76b91df048d1c9b646b0a6da28f 100644
+--- a/apps/web/core/components/workspace/sidebar/help-section/root.tsx
++++ b/apps/web/core/components/workspace/sidebar/help-section/root.tsx
+@@ -5,8 +5,9 @@
+  */
+ 
+ import React, { useState } from "react";
++import { Menu } from "@headlessui/react";
+ import { observer } from "mobx-react";
+-import { HelpCircle, User } from "lucide-react";
++import { HelpCircle } from "lucide-react";
+ import { useTranslation } from "@plane/i18n";
+ import { PageIcon } from "@plane/propel/icons";
+ // ui
+@@ -53,12 +54,6 @@ export const HelpMenuRoot = observer(function HelpMenuRoot() {
+             <span className="text-11">{t("documentation")}</span>
+           </div>
+         </CustomMenu.MenuItem>
+-        <CustomMenu.MenuItem onClick={() => window.open("mailto:sales@plane.so", "_blank")}>
+-          <div className="flex items-center gap-x-2 rounded-sm text-11">
+-            <User className="h-3.5 w-3.5 text-secondary" size={14} />
+-            <span className="text-11">{t("contact_sales")}</span>
+-          </div>
+-        </CustomMenu.MenuItem>
+         <div className="my-1 border-t border-subtle" />
+         <CustomMenu.MenuItem>
+           <button
+@@ -78,13 +73,32 @@ export const HelpMenuRoot = observer(function HelpMenuRoot() {
+             <span className="text-11">{t("whats_new")}</span>
+           </button>
+         </CustomMenu.MenuItem>
+-        <CustomMenu.MenuItem onClick={() => window.open("https://forum.plane.so", "_blank", "noopener,noreferrer")}>
+-          <div className="flex items-center gap-x-2 rounded-sm text-11">
+-            <span className="text-11">Forum</span>
++        {/* AGPL section 13. Plain anchors: /source is served by nginx, not the router. Menu.Item keeps them reachable
++            by keyboard, and stopPropagation is required because CustomMenu's root onClick calls preventDefault. */}
++        <div className="mt-1 flex flex-col gap-1 border-t border-subtle px-1 pt-2 text-11 text-secondary">
++          <div className="flex items-center justify-between gap-3">
++            <PlaneVersionNumber />
++            <Menu.Item
++              as="a"
++              href="/source"
++              target="_blank"
++              rel="noopener noreferrer"
++              onClick={(e: React.MouseEvent) => e.stopPropagation()}
++              className="text-accent-primary underline-offset-2 hover:underline data-[headlessui-state=active]:underline"
++            >
++              Source code
++            </Menu.Item>
+           </div>
+-        </CustomMenu.MenuItem>
+-        <div className="mt-1 border-t border-subtle px-1 pt-2 text-11 text-secondary">
+-          <PlaneVersionNumber />
++          <Menu.Item
++            as="a"
++            href="/source"
++            target="_blank"
++            rel="noopener noreferrer"
++            onClick={(e: React.MouseEvent) => e.stopPropagation()}
++            className="underline-offset-2 hover:underline data-[headlessui-state=active]:underline"
++          >
++            Built on Plane Community Edition
++          </Menu.Item>
+         </div>
+       </CustomMenu>
+     </>
+diff --git a/apps/web/core/components/workspace/upgrade-badge.tsx b/apps/web/core/components/workspace/upgrade-badge.tsx
+index 5bddd913d92a1d4f77728acf3f72a7d5d1cb7fe7..d2c814c6a9d855e454e0585618d2b9811bbd364b 100644
+--- a/apps/web/core/components/workspace/upgrade-badge.tsx
++++ b/apps/web/core/components/workspace/upgrade-badge.tsx
+@@ -4,32 +4,12 @@
+  * See the LICENSE file for details.
+  */
+ 
+-// helpers
+-import { useTranslation } from "@plane/i18n";
+-import { cn } from "@plane/utils";
+-
+ type TUpgradeBadge = {
+   className?: string;
+   size?: "sm" | "md";
+ };
+ 
+-export function UpgradeBadge(props: TUpgradeBadge) {
+-  const { className, size = "sm" } = props;
+-
+-  const { t } = useTranslation();
+-
+-  return (
+-    <div
+-      className={cn(
+-        "w-fit cursor-pointer rounded-2xl bg-accent-primary/20 text-center font-medium text-accent-secondary outline-none",
+-        {
+-          "px-3 text-13": size === "md",
+-          "px-2 text-11": size === "sm",
+-        },
+-        className
+-      )}
+-    >
+-      {t("sidebar.pro")}
+-    </div>
+-  );
++// No paid plans are offered on this deployment. Only the label goes: callers keep their gating.
++export function UpgradeBadge(_props: TUpgradeBadge) {
++  return null;
+ }
+diff --git a/packages/constants/src/settings/workspace.ts b/packages/constants/src/settings/workspace.ts
+index e9d326e6a6d05fb8d8c256370fb08b913430b34c..aaf79758aedb44f3100b9257f54bf1ef9440e378 100644
+--- a/packages/constants/src/settings/workspace.ts
++++ b/packages/constants/src/settings/workspace.ts
+@@ -45,7 +45,8 @@ export const WORKSPACE_SETTINGS: Record<TWorkspaceSettingsTabs, TWorkspaceSettin
+     key: "billing-and-plans",
+     i18n_label: "workspace_settings.settings.billing_and_plans.title",
+     href: `/settings/billing`,
+-    access: [EUserWorkspaceRoles.ADMIN],
++    // No role may open it. Hides it from settings nav and Power K, and the settings layout refuses the route.
++    access: [],
+     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/billing/`,
+   },
+   export: {
