@@ -49,18 +49,20 @@ test_wrong_bucket_in_container_env_rejected if {
 	count(plane.deny) == 1 with input as doc
 }
 
-route(match, service) := {
+route_in(namespace, match, service) := {
 	"kind": "IngressRoute",
-	"metadata": {"name": "plane-ingress"},
+	"metadata": {"name": "plane-ingress", "namespace": namespace},
 	"spec": {"routes": [{"match": match, "kind": "Rule", "services": [{"name": service, "port": 9000}]}]},
 }
+
+route(match, service) := route_in("plane-dev", match, service)
 
 test_uploads_route_accepted if {
 	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`) && PathPrefix(`/uploads`)", "plane-minio")
 }
 
 test_uploads_slash_route_accepted if {
-	count(plane.deny) == 0 with input as route("Path(`/uploads`) || PathPrefix(`/uploads/`)", "plane-minio")
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`) && (Path(`/uploads`) || PathPrefix(`/uploads/`))", "plane-minio")
 }
 
 test_other_bucket_route_rejected if {
@@ -68,5 +70,71 @@ test_other_bucket_route_rejected if {
 }
 
 test_route_to_other_service_ignored if {
-	count(plane.deny) == 0 with input as route("PathPrefix(`/api`)", "plane-api")
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`) && PathPrefix(`/api`)", "plane-api")
+}
+
+test_host_alone_accepted if {
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`)", "plane-web")
+	count(plane.deny) == 0 with input as route_in("plane-prod-sim", "Host(`plane.prod-sim.localhost`)", "plane-web")
+}
+
+test_dev_route_on_the_prod_sim_host_rejected if {
+	denied := plane.deny with input as route("Host(`plane.prod-sim.localhost`) && PathPrefix(`/`)", "plane-web")
+	count(denied) == 2 # not its own host, and not the namespace that host belongs to
+}
+
+test_prod_sim_route_on_the_dev_host_rejected if {
+	denied := plane.deny with input as route_in("plane-prod-sim", "Host(`plane.dev.localhost`)", "plane-web")
+	count(denied) == 2
+}
+
+test_route_with_no_host_rejected if {
+	count(plane.deny) == 1 with input as route("PathPrefix(`/`)", "plane-web")
+}
+
+test_host_regexp_rejected if {
+	count(plane.deny) == 1 with input as route("HostRegexp(`.+`)", "plane-web")
+}
+
+test_top_level_or_escapes_the_host_rejected if {
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && Path(`/a`) || PathPrefix(`/`)", "plane-web")
+	count(plane.deny) == 1 with input as route("PathPrefix(`/`) || Host(`plane.dev.localhost`)", "plane-web")
+}
+
+test_or_inside_parentheses_accepted if {
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`) && (Path(`/a`) || (Path(`/b`) && Method(`GET`)))", "plane-web")
+}
+
+test_unbalanced_rule_rejected if {
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && (Path(`/a`) || Path(`/b`)", "plane-web")
+}
+
+test_one_bad_route_among_good_ones_rejected if {
+	doc := {
+		"kind": "IngressRoute",
+		"metadata": {"name": "plane-ingress", "namespace": "plane-dev"},
+		"spec": {"routes": [
+			{"match": "Host(`plane.dev.localhost`)", "services": [{"name": "plane-web"}]},
+			{"match": "PathPrefix(`/`)", "services": [{"name": "plane-web"}]},
+		]},
+	}
+	count(plane.deny) == 1 with input as doc
+}
+
+test_platform_route_on_its_own_host_accepted if {
+	count(plane.deny) == 0 with input as route_in("monitoring", "Host(`grafana.localhost`)", "grafana")
+}
+
+test_platform_route_naming_a_plane_host_rejected if {
+	count(plane.deny) == 1 with input as route_in("monitoring", "Host(`plane.prod-sim.localhost`)", "grafana")
+}
+
+test_tcp_route_in_a_plane_namespace_rejected if {
+	doc := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "plane-dev"}, "spec": {"routes": [{"match": "HostSNI(`*`)"}]}}
+	count(plane.deny) == 1 with input as doc
+}
+
+test_tcp_route_elsewhere_ignored if {
+	doc := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {"routes": [{"match": "HostSNI(`*`)"}]}}
+	count(plane.deny) == 0 with input as doc
 }

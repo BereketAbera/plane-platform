@@ -64,6 +64,8 @@ plant_digest_never_in_dev() {
 }
 plant_plane_application_in_platform() { replace_first gitops/applications/plane-dev.yaml 'project: plane-dev' 'project: platform'; }
 plant_application_in_default() { replace_first gitops/applications/loki.yaml 'project: platform' 'project: default'; }
+plant_dev_route_on_prod_sim_host() { replace_first "$DEV_RENDERED" 'Host\(`plane\.dev\.localhost`\)' 'Host(`plane.prod-sim.localhost`)'; }
+plant_route_with_no_host() { replace_first "$DEV_RENDERED" 'Host\(`plane\.dev\.localhost`\) && PathPrefix\(`/`\)' 'PathPrefix(`/`)'; }
 plant_chart_version_missing() {
   yq -i '(.spec.sources[] | select(.chart != null) | .targetRevision) = "0.0.0-planted"' gitops/applications/kube-prometheus-stack.yaml
 }
@@ -147,6 +149,8 @@ control unlintable-chart validate-manifests.sh "helm lint: bootstrap chart FAILE
 CONTROL_SKIP_CHARTS=no control chart-version-missing validate-manifests.sh "helm template: platform charts FAILED" plant_chart_version_missing
 control plane-application-in-platform-project validate-manifests.sh "a Plane Application must use its own project" plant_plane_application_in_platform
 control application-in-default-project validate-manifests.sh "is not allowed, use platform" plant_application_in_default
+control dev-route-on-the-prod-sim-host validate-manifests.sh "which only namespace plane-prod-sim may serve" plant_dev_route_on_prod_sim_host
+control route-with-no-host validate-manifests.sh "must be limited to Host" plant_route_with_no_host
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action
