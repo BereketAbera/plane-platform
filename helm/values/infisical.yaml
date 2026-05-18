@@ -53,9 +53,10 @@ infisical:
   # The chart exposes only a readiness probe. No liveness probe is possible through values, and none
   # is wanted during the first boot: the migrations run in-process and must not be killed.
   #
-  # Measured on the first boot on this cluster, arm64, 2026-11-04: 602 migrations in 11.5s, container
-  # start to Ready in 21s. Peak 807 MiB by cgroup memory.peak with 0 OOM events, and about 730 MiB
-  # working set once idle. So 1Gi holds with 217 MiB to spare, and the request sits just above idle.
+  # Measured on this cluster, arm64, 2026-11-04. First boot: 602 migrations in 11.5s, container start
+  # to Ready in 21s, peak 807 MiB by cgroup memory.peak, 0 OOM events. A later boot peaks higher, at
+  # 822 MiB, and idles at 660 to 730 MiB. So 1Gi holds with 200 MiB to spare, and the request sits just
+  # above idle.
   resources:
     requests:
       cpu: 100m
