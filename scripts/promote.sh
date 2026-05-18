@@ -10,8 +10,8 @@
 # IMAGE is web, admin, space, live, backend, postgres, valkey, rabbitmq or silo, or a full
 # images[].name. ENV=<env> and environment variables work too, which is how make passes them.
 #
-# prod-sim refuses a digest never recorded for dev, takes a backup unless SKIP_BACKUP=yes, and
-# asks first unless CONFIRM=yes.
+# prod-sim refuses a digest dev never recorded for that image, takes a backup unless SKIP_BACKUP=yes,
+# and asks first unless CONFIRM=yes.
 #
 # COMMIT=no leaves the change uncommitted and unpublished, for CI, which turns it into a pull
 # request. SKIP_REGISTRY_CHECK=yes skips the local registry lookup, for CI and failure drills.
@@ -149,7 +149,7 @@ done <"$PLAN"
 
 while read -r name repo tag digest; do
   if [[ "$ENV" == prod-sim ]]; then
-    "$ROOT/scripts/ci/check-promoted-digests.sh" "$digest"
+    "$ROOT/scripts/ci/check-promoted-digests.sh" "$name=$digest"
   fi
   # A digest the local registry lacks would sit in ImagePullBackOff after Argo CD syncs it.
   if [[ "$repo" == localhost:5001/* && "${SKIP_REGISTRY_CHECK:-}" != yes ]]; then
