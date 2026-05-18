@@ -72,6 +72,7 @@ plant_bitnami_image() {
 plant_bitnami_chart_in_terraform() {
   printf 'locals {\n  planted = "oci://registry-1.docker.io/bitnamicharts/postgresql"\n}\n' >"$TERRAFORM_ROOT/planted.tf"
 }
+plant_chart_image_without_digest() { yq -i 'del(.image.digest)' helm/values/traefik.yaml; }
 plant_chart_version_missing() {
   yq -i '(.spec.sources[] | select(.chart != null) | .targetRevision) = "0.0.0-planted"' gitops/applications/kube-prometheus-stack.yaml
 }
@@ -159,6 +160,7 @@ control dev-route-on-the-prod-sim-host validate-manifests.sh "which only namespa
 control route-with-no-host validate-manifests.sh "must be limited to Host" plant_route_with_no_host
 control bitnami-image-in-a-manifest validate-manifests.sh "nothing from Bitnami" plant_bitnami_image
 control bitnami-chart-in-terraform lint.sh "no Bitnami reference FAILED" plant_bitnami_chart_in_terraform
+CONTROL_SKIP_CHARTS=no control chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_chart_image_without_digest
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action
