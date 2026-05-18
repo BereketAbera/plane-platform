@@ -12,6 +12,14 @@ Argo CD reads the local Git remote in pass 1, and only `make gitops-publish` wri
 `scripts/ci/negative-controls.sh` shows that the checks can fail. It plants one defect at a time in a throwaway
 clone and requires the matching check to go red. It takes minutes, so `make ci` does not run it.
 
+`scripts/ci/test-promotion-flows.sh` runs `promote.sh`, `rollback.sh`, `gitops-publish.sh` and the failed-deploy drill
+against a stub `kubectl`. The full `validate-manifests.sh` runs it. It proves how the scripts behave given those answers,
+and nothing about a real cluster.
+
+`make scan-images` runs trivy over every image the platform runs. It fails only on a CRITICAL finding with a fix in an image
+we build, or on an image it could not scan, and reports everything else. It needs a few GiB of transfer, so no workflow runs it
+in full. `images.yml` should run it on what it just built, with `SCAN_ONLY=built`.
+
 The runs behind every statement below are in [docs/evidence/ci/](../../docs/evidence/ci/README.md), along with
 what has not run yet.
 
@@ -27,7 +35,10 @@ So production approval here is a process, not a control:
 - **GitHub cannot enforce that.** Anyone with write access can merge their own pull request, push straight
   to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, so it does not even request a review.
 - What is enforced is in the scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim
-  digest never recorded for dev. CI runs that check, but nothing makes a failing check block a merge.
+  digest dev never recorded for that image. CI runs that check, but nothing makes a failing check block a merge.
+- Run locally, `scripts/promote.sh` also refuses unless plane-dev is Synced and Healthy with that digest in a ready container.
+  `promote-prod-sim.yml` has no cluster in reach, so there the check is skipped, and the run and the commit message
+  (`Promote-Dev-Check: skipped`) say so. Nothing repeats it when the merged pull request is published, so check dev first.
 - In pass 1 a merge changes nothing running. It reaches the cluster only when someone pulls `main` and runs
   `make gitops-publish`, which takes a prod-sim backup first if the change touches a prod-sim image.
 

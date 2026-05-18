@@ -52,6 +52,10 @@ test-alert: ## Prove alert delivery end to end: make test-alert ENV=dev
 test-load: ## Run the k6 load test and capture resource use, dev only: make test-load ENV=dev [THINK=0]
 	@./tests/load/run.sh "$(ENV)"
 
+.PHONY: scan-images
+scan-images: ## Scan every image the platform runs with trivy and report it all. Fails only on images we build. Needs 15 GiB free
+	@./scripts/ci/scan-images.sh
+
 # ---- failure drills -------------------------------------------------------------------------
 .PHONY: drill-failed-deploy drill-pod-restart
 drill-failed-deploy: ## A bad image reaches dev through Git, the rollout refuses it, a revert restores it. Dev only
