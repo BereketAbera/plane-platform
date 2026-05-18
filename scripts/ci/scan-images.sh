@@ -9,6 +9,10 @@
 # Docker Hub images come through mirror.gcr.io where it has them, so a full scan spends no Hub quota
 # while the cluster may need it. Digests make any mirror safe. Expect a few GiB of transfer.
 #
+# The web, admin and space clients are bundled into static files with no package metadata, so no image
+# scan can see their dependencies. So the lockfiles of the Wayline source in .build/plane-src are scanned
+# too, when it exists, and reported as one more row. They are upstream's, so they only ever report.
+#
 # Failure policy, in scan-images-report.py: exit 1 if
 # - an image we build, under .../wayline/, has a CRITICAL finding with a fix available, or
 # - an image could not be scanned, because a missing result must not read as a clean one.
@@ -93,6 +97,9 @@ else
   grep -q 'wayline/' "$RAW_LIST" || warn "no Wayline image exists yet in the manifests, .build/digests.tsv or the local registry, so none is scanned"
 fi
 
+WAYLINE_SOURCE=.build/plane-src
+[[ ! -s "$RAW_LIST" || ! -d "$WAYLINE_SOURCE" ]] || printf 'wayline-source-lockfiles\twayline\n' >>"$RAW_LIST"
+
 if [[ ! -s "$RAW_LIST" ]]; then
   [[ "$SCAN_ONLY" == built ]] || die "found no images at all, which cannot be right"
   warn "nothing was built, so there is nothing to scan"
@@ -137,6 +144,15 @@ scan_one() { # scan_one <image> <json>
     ${insecure[@]+"${insecure[@]}"} "$1"
 }
 
+scan_source() { # scan_source <json>
+  trivy fs --cache-dir "$LOCAL_DIR/trivy-cache" --skip-db-update --ignorefile "" --scanners vuln --skip-dirs '**/node_modules' \
+    --list-all-pkgs=false --exit-code 0 --format json --output "$1" --timeout "${SCAN_TIMEOUT:-30m}" --no-progress "$WAYLINE_SOURCE"
+}
+
+scan() { # scan <image> <json>
+  if [[ "$1" == wayline-source-lockfiles ]]; then scan_source "$2"; else scan_one "$1" "$2"; fi
+}
+
 : >"$OUT/not-scanned.txt"
 count=0
 stop=no
@@ -153,7 +169,7 @@ while IFS=$'\t' read -r image _ file; do
   fi
   log "[$count/$total] $image"
   # One retry, for a dropped connection. What it reports on each try stays in scan.log.
-  if ! scan_one "$image" "$json" </dev/null >>"$OUT/scan.log" 2>&1 && ! scan_one "$image" "$json" </dev/null >>"$OUT/scan.log" 2>&1; then
+  if ! scan "$image" "$json" </dev/null >>"$OUT/scan.log" 2>&1 && ! scan "$image" "$json" </dev/null >>"$OUT/scan.log" 2>&1; then
     warn "could not scan $image. See ${OUT#"$ROOT"/}/scan.log"
     rm -f "$json"
     printf '%s\ttrivy failed twice\n' "$image" >>"$OUT/not-scanned.txt"
