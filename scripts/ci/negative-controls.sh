@@ -81,6 +81,8 @@ plant_bitnami_chart_in_terraform() {
   printf 'locals {\n  planted = "oci://registry-1.docker.io/bitnamicharts/postgresql"\n}\n' >"$TERRAFORM_ROOT/planted.tf"
 }
 plant_chart_image_without_digest() { yq -i 'del(.image.digest)' helm/values/traefik.yaml; }
+# Infisical's chart really does bundle these, turned off in our values. This is what turning one on does.
+plant_bitnami_subchart_enabled() { yq -i '.postgresql.enabled = true' helm/values/infisical.yaml; }
 plant_invalid_alert_expression() {
   replace_first monitoring/manifests/shared/rules-plane.yaml 'expr: probe_success\{probe="api-instance"\} == 0' 'expr: probe_success{probe="api-instance"} ==== 0'
 }
@@ -150,7 +152,7 @@ control() { # control <name> <script in scripts/ci, or a function> <line a failu
     return 0
   fi
   [[ "$script" != *.sh ]] || script="./scripts/ci/$script"
-  (cd "$CLONE" && SKIP_CHARTS="${CONTROL_SKIP_CHARTS:-yes}" "$script") >"$output" 2>&1 || status=$?
+  (cd "$CLONE" && SKIP_FLOWS=yes SKIP_CHARTS="${CONTROL_SKIP_CHARTS:-yes}" "$script") >"$output" 2>&1 || status=$?
   if [[ "$status" -ne 0 ]] && grep -qF -- "$expected" "$output"; then
     ok "$name: $script exited $status and printed: $expected"
   else
@@ -187,6 +189,7 @@ control route-with-no-host validate-manifests.sh "must be limited to Host" plant
 control bitnami-image-in-a-manifest validate-manifests.sh "nothing from Bitnami" plant_bitnami_image
 control bitnami-chart-in-terraform lint.sh "no Bitnami reference FAILED" plant_bitnami_chart_in_terraform
 CONTROL_SKIP_CHARTS=no control chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_chart_image_without_digest
+CONTROL_SKIP_CHARTS=no control bitnami-subchart-turned-on validate-manifests.sh "nothing from Bitnami" plant_bitnami_subchart_enabled
 control invalid-alert-expression validate-manifests.sh "promtool: platform rules FAILED" plant_invalid_alert_expression
 control alert-that-fires-late validate-manifests.sh "promtool: rule unit tests FAILED" plant_alert_that_fires_late
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops

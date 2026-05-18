@@ -196,6 +196,7 @@ if [[ "$ENV" == prod-sim ]]; then
       while read -r problem; do warn "$problem"; done <<<"$problems"
       [[ -n "${OVERRIDE_DEV_CHECK:-}" ]] || die "plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK=\"<reason>\", which is logged."
       reason="$(tr -s '[:space:]' ' ' <<<"$OVERRIDE_DEV_CHECK")"
+      reason="${reason% }"
       mkdir -p "$LOCAL_DIR/evidence-raw"
       printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git config user.name || echo unknown)" "$(awk '{ printf "%s%s=%s", (NR > 1 ? "," : ""), $1, $4 }' "$PLAN")" "$reason" "$(tr '\n' ';' <<<"$problems")" \
         >>"$LOCAL_DIR/evidence-raw/promotion-overrides.log"
