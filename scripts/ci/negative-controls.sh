@@ -62,6 +62,8 @@ plant_digest_never_in_dev() {
   replace_every "$PROD_SIM_OVERLAY" "$digest" "$fake"
   replace_every "$PROD_SIM_RENDERED" "$digest" "$fake"
 }
+plant_plane_application_in_platform() { replace_first gitops/applications/plane-dev.yaml 'project: plane-dev' 'project: platform'; }
+plant_application_in_default() { replace_first gitops/applications/loki.yaml 'project: platform' 'project: default'; }
 plant_chart_version_missing() {
   yq -i '(.spec.sources[] | select(.chart != null) | .targetRevision) = "0.0.0-planted"' gitops/applications/kube-prometheus-stack.yaml
 }
@@ -143,6 +145,8 @@ control unknown-field-in-manifest validate-manifests.sh "kubeconform: rendered P
 control digest-never-recorded-for-dev validate-manifests.sh "promotion invariant FAILED" plant_digest_never_in_dev
 control unlintable-chart validate-manifests.sh "helm lint: bootstrap chart FAILED" plant_unlintable_chart
 CONTROL_SKIP_CHARTS=no control chart-version-missing validate-manifests.sh "helm template: platform charts FAILED" plant_chart_version_missing
+control plane-application-in-platform-project validate-manifests.sh "a Plane Application must use its own project" plant_plane_application_in_platform
+control application-in-default-project validate-manifests.sh "is not allowed, use platform" plant_application_in_default
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action
