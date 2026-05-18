@@ -66,6 +66,12 @@ plant_plane_application_in_platform() { replace_first gitops/applications/plane-
 plant_application_in_default() { replace_first gitops/applications/loki.yaml 'project: platform' 'project: default'; }
 plant_dev_route_on_prod_sim_host() { replace_first "$DEV_RENDERED" 'Host\(`plane\.dev\.localhost`\)' 'Host(`plane.prod-sim.localhost`)'; }
 plant_route_with_no_host() { replace_first "$DEV_RENDERED" 'Host\(`plane\.dev\.localhost`\) && PathPrefix\(`/`\)' 'PathPrefix(`/`)'; }
+plant_bitnami_image() {
+  printf 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  containers:\n    - name: planted\n      image: docker.io/bitnami/postgresql:17\n' >gitops/platform/network-policies/planted.yaml
+}
+plant_bitnami_chart_in_terraform() {
+  printf 'locals {\n  planted = "oci://registry-1.docker.io/bitnamicharts/postgresql"\n}\n' >"$TERRAFORM_ROOT/planted.tf"
+}
 plant_chart_version_missing() {
   yq -i '(.spec.sources[] | select(.chart != null) | .targetRevision) = "0.0.0-planted"' gitops/applications/kube-prometheus-stack.yaml
 }
@@ -151,6 +157,8 @@ control plane-application-in-platform-project validate-manifests.sh "a Plane App
 control application-in-default-project validate-manifests.sh "is not allowed, use platform" plant_application_in_default
 control dev-route-on-the-prod-sim-host validate-manifests.sh "which only namespace plane-prod-sim may serve" plant_dev_route_on_prod_sim_host
 control route-with-no-host validate-manifests.sh "must be limited to Host" plant_route_with_no_host
+control bitnami-image-in-a-manifest validate-manifests.sh "nothing from Bitnami" plant_bitnami_image
+control bitnami-chart-in-terraform lint.sh "no Bitnami reference FAILED" plant_bitnami_chart_in_terraform
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action

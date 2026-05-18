@@ -43,6 +43,17 @@ deny contains msg if {
 	msg := sprintf("%s: route to %s must match /uploads, got %s", [identity, svc.name, route.match])
 }
 
+# ADR 0015: nothing from Bitnami, image or chart. Reading every string catches an image, a chart
+# repository and a Helm value alike. scripts/ci/lint.sh covers what never renders into a manifest.
+bitnami_reference := `(?i)(^|[^a-z0-9])bitnami(legacy|charts|secure)?(/|$)|charts\.bitnami\.com`
+
+deny contains msg if {
+	walk(input, [path, value])
+	is_string(value)
+	regex.match(bitnami_reference, value)
+	msg := sprintf("%s: nothing from Bitnami may be used (ADR 0015), found at %v", [identity, path])
+}
+
 # Contract section 3: the host each Plane namespace serves.
 environment_hosts := {
 	"plane-dev": "plane.dev.localhost",

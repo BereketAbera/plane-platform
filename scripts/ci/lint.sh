@@ -58,6 +58,17 @@ tflint_all() {
   return "$status"
 }
 
+# ADR 0015: nothing from Bitnami. policy/plane.rego reads everything that renders into a manifest.
+# This reads what does not, such as a Dockerfile's FROM, a helm_release, or a compose file. Prose may
+# mention Bitnami to say why not, so docs are left out and the pattern wants a reference.
+no_bitnami() {
+  local hits
+  hits="$(files_matching '*' ':(exclude)docs/**' ':(exclude)*.md' ':(exclude)policy/**' \
+    ':(exclude)scripts/ci/lint.sh' ':(exclude)scripts/ci/negative-controls.sh' | tr '\n' '\0' |
+    xargs -0 grep -nIiE 'bitnami(legacy|charts|secure)?/|charts\.bitnami\.com|oci://[^[:space:]]*bitnami|(repository|registry|image)[[:space:]]*[:=][[:space:]]*["'\'']?bitnami' /dev/null || true)"
+  [[ -z "$hits" ]] || { printf '%s\n' "$hits" >&2; return 1; }
+}
+
 python_compile_all() {
   # PYTHONPYCACHEPREFIX keeps __pycache__ out of the tree.
   python_files | PYTHONPYCACHEPREFIX="$(mktemp -d)" xargs python3 -m py_compile
@@ -77,6 +88,7 @@ run "terraform validate" terraform_validate_all
 run "tflint" tflint_all
 run "hadolint" hadolint_all
 run "conftest verify" conftest verify --policy policy --no-color
+run "no Bitnami reference" no_bitnami
 run "python compile" python_compile_all
 run "smoke.py self check" smoke_self_check
 
