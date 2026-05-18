@@ -135,10 +135,10 @@ def table(rows):
 def report_lines(rows, critical, failures):
     scanned = [row for row in rows if row["scanned"] == "yes"]
     total = {severity: sum(row[severity.lower()] for row in scanned) for severity in SEVERITIES}
-    ours = [row for row in rows if row["ours"] == "yes"]
+    ours = [row for row in scanned if row["ours"] == "yes"]
     lines = table(rows)
     lines.append("")
-    lines.append(f"{len(scanned)} of {len(rows)} images scanned, {len(ours)} of them built here.")
+    lines.append(f"{len(scanned)} of {len(rows)} images scanned, {len(ours)} of the scanned ones built here.")
     lines.append("Findings across all images: " + ", ".join(f"{total[s]} {s}" for s in SEVERITIES) + ".")
     fixable_upstream = sorted({short(item["image"]) for item in critical if item["ours"] == "no" and item["fixed_in"]})
     if fixable_upstream:
