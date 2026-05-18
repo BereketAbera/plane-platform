@@ -24,6 +24,9 @@ defaultRules:
     # kubernetes-system-apiserver.yaml is not guarded by kubeApiServer.enabled and carries
     # absent(up{job="apiserver"}), which would fire forever with the scrape off.
     KubeAPIDown: true
+    # The Docker VM runs no NTP client, so adjtimex stays unsynchronised however right the clock is
+    # (measured: node_timex_sync_status 0, maxerror 16s). It would fire on every machine, always.
+    NodeClockNotSynchronising: true
 
 kubelet:
   serviceMonitor:
@@ -46,9 +49,17 @@ prometheus-node-exporter:
     tag: v1.12.1
     distroless: true # default false, and the tag and digest below only match with it on
     digest: sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+  # The chart defaults, plus fakeowner: Docker Desktop's mount of the Mac at /backups. Its statfs
+  # uses the wrong block size (measured: 4397 GiB available on a Mac with 17 GiB free), and at 96%
+  # used the percentage rules go critical on a healthy cluster. guard_disk is the real host check.
+  extraArgs:
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fakeowner|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
+  # No CPU limit: a scrape is a 280ms burst every 30s, about 1m on average, and a 100m quota still
+  # throttled 32% of its periods, which fires CPUThrottlingHigh for nothing.
   resources:
     requests: { cpu: 10m, memory: 24Mi }
-    limits: { cpu: 100m, memory: 48Mi }
+    limits: { memory: 48Mi }
 
 kube-state-metrics:
   fullnameOverride: kps-kube-state-metrics
@@ -94,9 +105,10 @@ prometheusOperator:
       repository: prometheus-operator/prometheus-config-reloader
       tag: v0.94.2
       sha: a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+    # No CPU limit, for the reason given at node-exporter: it idles under 1m and only bursts.
     resources:
       requests: { cpu: 5m, memory: 16Mi }
-      limits: { cpu: 50m, memory: 48Mi }
+      limits: { memory: 48Mi }
 
 prometheus:
   prometheusSpec:
@@ -201,9 +213,20 @@ grafana:
   grafana.ini:
     server:
       root_url: http://grafana.localhost
+    # No pod here has internet egress, so each of these can only time out and log an error.
     analytics:
       check_for_updates: false
+      check_for_plugin_updates: false
       reporting_enabled: false
+    news:
+      news_feed_enabled: false
+    plugins:
+      preinstall_disabled: true
+      plugin_admin_enabled: false
+      public_key_retrieval_disabled: true
+      # Each bundled datasource with a backend is its own process in this container, about 22 to
+      # 35 MiB RSS apiece. Only Prometheus, Loki and Alertmanager are provisioned.
+      disable_plugins: cloudwatch,elasticsearch,grafana-azure-monitor-datasource,grafana-postgresql-datasource,grafana-pyroscope-datasource,grafana-testdata-datasource,graphite,influxdb,jaeger,mssql,mysql,opentsdb,stackdriver,tempo,zipkin
   sidecar:
     image:
       registry: quay.io
@@ -212,9 +235,11 @@ grafana:
       sha: 52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
     # A Python process that imports the whole Kubernetes client. At 96Mi it was OOM-killed about 35s
     # after every start, before it logged a line, so Grafana never got a dashboard or a Ready pod.
+    # Measured peak 105Mi at start, 78Mi after. No CPU limit: it idles at 8m and only bursts on each
+    # 60s watch reconnect, which a 200m quota still throttled in over half of its periods.
     resources:
       requests: { cpu: 5m, memory: 96Mi }
-      limits: { cpu: 200m, memory: 256Mi }
+      limits: { memory: 160Mi }
     dashboards:
       label: grafana_dashboard
       labelValue: "1"
