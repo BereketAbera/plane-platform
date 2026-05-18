@@ -21,18 +21,21 @@
 # ignored. They are not hidden: .trivyignore is not read here, and the raw JSON keeps every finding.
 #
 # Raw results go to .local/evidence-raw/scan-images-<UTC start>/. Copying them to docs/evidence is a
-# deliberate step, as for all evidence. Stops, reporting the rest as not scanned, once the host has
-# less than SCAN_MIN_FREE_GIB free (15). SCAN_TIMEOUT limits each image (30m), SCAN_OUTPUT_DIR moves
-# the results.
+# deliberate step, as for all evidence. It refuses to start with less than SCAN_MIN_FREE_GIB free (15).
+# Between images it stops, reporting the rest as not scanned, below SCAN_FLOOR_GIB (the same unless
+# set). Each image's temp space comes back after that image, so the floor may sensibly be lower.
+# SCAN_TIMEOUT limits each image (30m), and SCAN_OUTPUT_DIR moves the results.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 # shellcheck source=lib-manifests.sh
 source "$(dirname "$0")/lib-manifests.sh"
 
 MIN_FREE="${SCAN_MIN_FREE_GIB:-15}"
+FLOOR="${SCAN_FLOOR_GIB:-$MIN_FREE}"
 SCAN_ONLY="${SCAN_ONLY:-}"
 [[ -z "$SCAN_ONLY" || "$SCAN_ONLY" == built ]] || die "SCAN_ONLY may only be built, got '$SCAN_ONLY'"
 guard_disk "$MIN_FREE"
+log "Disk limits for this run: ${MIN_FREE} GiB free to start, ${FLOOR} GiB free to keep going. $(free_disk_gib) GiB free now."
 cd "$ROOT"
 
 if [[ "$SCAN_ONLY" == built ]]; then
@@ -161,12 +164,12 @@ stop=no
 while IFS=$'\t' read -r image _ file; do
   count=$((count + 1))
   json="$OUT/images/$file"
-  if [[ "$stop" == no && "$(free_disk_gib)" -lt "$MIN_FREE" ]]; then
-    warn "the host is below ${MIN_FREE} GiB free, so stopping here"
+  if [[ "$stop" == no && "$(free_disk_gib)" -lt "$FLOOR" ]]; then
+    warn "the host is below ${FLOOR} GiB free, so stopping here"
     stop=yes
   fi
   if [[ "$stop" == yes ]]; then
-    printf '%s\tstopped, below %s GiB free\n' "$image" "$MIN_FREE" >>"$OUT/not-scanned.txt"
+    printf '%s\tstopped, below %s GiB free\n' "$image" "$FLOOR" >>"$OUT/not-scanned.txt"
     continue
   fi
   log "[$count/$total] $image"
