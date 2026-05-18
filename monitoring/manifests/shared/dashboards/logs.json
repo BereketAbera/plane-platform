@@ -159,7 +159,8 @@
     "sortOrder": "Descending",
     "enableLogDetails": true,
     "showLabels": false,
-    "dedupStrategy": "none"
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false
    },
    "targets": [
     {
@@ -198,7 +199,8 @@
     "sortOrder": "Descending",
     "enableLogDetails": true,
     "showLabels": false,
-    "dedupStrategy": "none"
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false
    },
    "targets": [
     {
@@ -238,7 +240,8 @@
     "sortOrder": "Descending",
     "enableLogDetails": true,
     "showLabels": false,
-    "dedupStrategy": "none"
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false
    },
    "targets": [
     {
