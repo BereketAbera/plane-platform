@@ -73,6 +73,12 @@ plant_bitnami_chart_in_terraform() {
   printf 'locals {\n  planted = "oci://registry-1.docker.io/bitnamicharts/postgresql"\n}\n' >"$TERRAFORM_ROOT/planted.tf"
 }
 plant_chart_image_without_digest() { yq -i 'del(.image.digest)' helm/values/traefik.yaml; }
+plant_invalid_alert_expression() {
+  replace_first monitoring/manifests/shared/rules-plane.yaml 'expr: probe_success\{probe="api-instance"\} == 0' 'expr: probe_success{probe="api-instance"} ==== 0'
+}
+plant_alert_that_fires_late() {
+  python3 -B -c 'import re; p="monitoring/manifests/shared/rules-plane.yaml"; s=open(p).read(); t,c=re.subn(r"(alert: PlaneApiDown\n\s+expr: [^\n]+\n\s+for: )1m", r"\g<1>30m", s); assert c==1; open(p,"w").write(t)'
+}
 plant_chart_version_missing() {
   yq -i '(.spec.sources[] | select(.chart != null) | .targetRevision) = "0.0.0-planted"' gitops/applications/kube-prometheus-stack.yaml
 }
@@ -161,6 +167,8 @@ control route-with-no-host validate-manifests.sh "must be limited to Host" plant
 control bitnami-image-in-a-manifest validate-manifests.sh "nothing from Bitnami" plant_bitnami_image
 control bitnami-chart-in-terraform lint.sh "no Bitnami reference FAILED" plant_bitnami_chart_in_terraform
 CONTROL_SKIP_CHARTS=no control chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_chart_image_without_digest
+control invalid-alert-expression validate-manifests.sh "promtool: platform rules FAILED" plant_invalid_alert_expression
+control alert-that-fires-late validate-manifests.sh "promtool: rule unit tests FAILED" plant_alert_that_fires_late
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action
