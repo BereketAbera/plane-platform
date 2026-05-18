@@ -305,8 +305,7 @@
      "custom": {
       "lineWidth": 0,
       "fillOpacity": 80
-     },
-     "noValue": ""
+     }
     },
     "overrides": []
    },
@@ -323,7 +322,7 @@
    },
    "targets": [
     {
-     "expr": "count by (container, digest) (label_replace(kube_pod_container_info{namespace=\"$namespace\",container=~\"plane-.*\"}, \"digest\", \"$1\", \"image_id\", \".*sha256:([a-f0-9]{12}).*\"))",
+     "expr": "count by (container, digest) (label_replace(kube_pod_container_info{namespace=\"$namespace\",container=~\"plane-.*\",image_id!=\"\"}, \"digest\", \"$1\", \"image_id\", \".*sha256:([a-f0-9]{12}).*\"))",
      "legendFormat": "{{container}} {{digest}}",
      "range": true,
      "instant": false,

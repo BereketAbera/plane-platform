@@ -46,8 +46,22 @@ wave does not wait forever on a pod that cannot start yet.
 **Apiserver scrape off.** Series cost on a small cluster. `KubeAPIDown` is disabled with it, because
 its rule file is not guarded by `kubeApiServer.enabled` and it would fire forever.
 
-**No disk alerts.** The Docker VM reports hundreds of free GiB on a sparse disk while the Mac runs out
-first. `guard_disk` in `scripts/lib/common.sh`, run on the host, is the real check.
+**No disk rule of our own.** The Docker VM reports hundreds of free GiB on a sparse disk while the Mac
+runs out first. `guard_disk` in `scripts/lib/common.sh`, run on the host, is the real check. The chart's
+`NodeFilesystem*` rules stay, and watch only the VM disk: `/backups` is excluded from node-exporter,
+because Docker Desktop's mount of the Mac reports the wrong block size (measured: 4397 GiB available on
+a Mac with 17 GiB free) and its percentage is the whole Mac, so the rules went critical on a healthy
+cluster.
+
+**`NodeClockNotSynchronising` off.** The VM runs no NTP client, so it fires on every machine, always
+(measured: `node_timex_sync_status` 0, `node_timex_maxerror_seconds` 16).
+
+**No CPU limit on small bursty containers.** Sidecars, config reloaders and node-exporter average under
+10m but burst, and `CPUThrottlingHigh` counts any throttled period. A quota only produced false alerts.
+
+**Grafana plugins.** Each bundled datasource with a backend runs as its own process in the Grafana
+container, 22 to 35 MiB apiece. All but Prometheus and Loki are disabled, along with anything that
+calls grafana.com, because no pod here has a route out.
 
 **Backups stay in their own environment.** Each PVC mounts only that environment's folder, so
 `restore.sh` refuses a backup from another environment rather than copying it across.
