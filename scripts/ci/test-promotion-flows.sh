@@ -88,6 +88,7 @@ export BAD_DIGEST
 DIGEST_A="sha256:$(printf 'a%.0s' {1..64})"
 DIGEST_B="sha256:$(printf 'b%.0s' {1..64})"
 BARE="$CLONE/.local/git/plane-platform.git"
+DEV_OVERLAY=helm/plane/overlays/dev/kustomization.yaml
 PROD_SIM_OVERLAY=helm/plane/overlays/prod-sim/kustomization.yaml
 OUT="$WORK/output"
 
@@ -121,6 +122,15 @@ reset_clone() {
 }
 
 in_clone() { (cd "$CLONE" && "$@") >"$OUT" 2>&1; }
+# The drill copies its output through tee, which can outlive it by a moment.
+run_drill() {
+  local status=0
+  printf '#!/usr/bin/env bash\nprintf 200\n' >"$CLONE/.tools/bin/curl"
+  chmod +x "$CLONE/.tools/bin/curl"
+  in_clone ./tests/drills/failed-deploy-rollback.sh || status=$?
+  sleep 1
+  return "$status"
+}
 promote_dev() { in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev IMAGE=web DIGEST="$1"; }
 promote_prod_sim() { in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim "$@"; }
 rollback() { in_clone env CONFIRM=yes ROLLBACK_DUMP_TIMEOUT="${ROLLBACK_DUMP_TIMEOUT:-5}" ./scripts/rollback.sh "$@"; }
@@ -250,6 +260,141 @@ override_unused_when_dev_is_fine() {
   expect "nothing logged" [ ! -e "$CLONE/.local/evidence-raw/promotion-overrides.log" ]
 }
 
+# ---- rollback
+rollback_rerun_after_failed_publish() {
+  local status=0 first second revert
+  promote_dev "$DIGEST_A" || status=$?
+  first="$(head_commit)"
+  promote_dev "$DIGEST_B" || status=$?
+  second="$(head_commit)"
+  expect "both promotions work" [ "$status" -eq 0 ]
+  printf '#!/bin/sh\nexit 1\n' >"$BARE/hooks/pre-receive"
+  chmod +x "$BARE/hooks/pre-receive"
+
+  status=0
+  rollback dev || status=$?
+  expect "the failed publish is reported" [ "$status" -ne 0 ]
+  expect "the operator is told what a re-run does" said "it publishes that revert and reverts nothing else"
+  revert="$(head_commit)"
+  expect "one revert on main" equal "$(reverts_on_main)" 1
+  expect "it is the revert of the newest promotion" grep -qF "This reverts commit $second" <(git -C "$CLONE" log -1 --format=%B)
+  expect "not published" equal "$(published)" "$second"
+
+  rm -f "$BARE/hooks/pre-receive"
+  status=0
+  rollback dev || status=$?
+  expect "the re-run works" [ "$status" -eq 0 ]
+  expect "it says it is publishing the earlier revert" said "was never published"
+  expect "no second revert" equal "$(reverts_on_main)" 1
+  expect "HEAD is still that revert" equal "$(head_commit)" "$revert"
+  expect "published now" equal "$(published)" "$revert"
+  expect "the first promotion still stands" equal "$(web_digest_in "$DEV_OVERLAY")" "$DIGEST_A"
+
+  # And once published, a run does step back one further, as the header says.
+  status=0
+  rollback dev || status=$?
+  expect "stepping back works" [ "$status" -eq 0 ]
+  expect "two reverts now" equal "$(reverts_on_main)" 2
+  expect "it reverted the first promotion" grep -qF "This reverts commit $first" <(git -C "$CLONE" log -1 --format=%B)
+}
+promote_prod_sim_committed() {
+  # dev first, then prod-sim with a commit and a publish, so there is a prod-sim promotion to roll back.
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  promote_prod_sim || status=$?
+  expect "the setup works" [ "$status" -eq 0 ]
+  rm -f "$STUB/backup-calls"
+}
+rollback_prod_sim_with_broken_backup() {
+  local status=0 promoted
+  promote_prod_sim_committed
+  promoted="$(web_digest_in "$DEV_OVERLAY")"
+  echo fail >"$STUB/backup-mode"
+  rollback prod-sim || status=$?
+  expect "the rollback works anyway" [ "$status" -eq 0 ]
+  expect "it says the dump failed" said "best-effort dump failed"
+  expect "it says how it published" said "Publishing with SKIP_BACKUP=yes"
+  expect "only its own attempt, no second from the publish" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "prod-sim is back" not_equal_digest "$promoted"
+}
+not_equal_digest() { [[ "$(web_digest_in "$PROD_SIM_OVERLAY")" != "$1" ]]; }
+rollback_prod_sim_with_hung_backup() {
+  local status=0
+  promote_prod_sim_committed
+  echo hang >"$STUB/backup-mode"
+  ROLLBACK_DUMP_TIMEOUT=2 rollback prod-sim || status=$?
+  expect "the rollback does not wait for it" [ "$status" -eq 0 ]
+  expect "it says time ran out" said "failed or ran out of time"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_prod_sim_names_the_older_dump() {
+  local status=0 older
+  promote_prod_sim_committed
+  older=20260101T000000Z
+  mkdir -p "$CLONE/.local/backups/prod-sim/$older"
+  echo '{}' >"$CLONE/.local/backups/prod-sim/$older/manifest.json"
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "it took a dump of its own" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+  expect "it names the dump to restore from" said "BACKUP=$older"
+  expect "and warns about latest" said "BACKUP=latest may name the dump taken just now"
+}
+rollback_prod_sim_skip_backup() {
+  local status=0
+  promote_prod_sim_committed
+  in_clone env CONFIRM=yes SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "no dump at all" [ ! -e "$STUB/backup-calls" ]
+  expect "it says so" said "no dump taken before this rollback"
+}
+rollback_dev_takes_no_dump() {
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  rollback dev || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "no dump" [ ! -e "$STUB/backup-calls" ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "dev is back" equal "$(web_digest_in "$DEV_OVERLAY")" "$(git -C "$CLONE" show "$BASE:$DEV_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest')"
+}
+rollback_leaves_other_staged_files_alone() {
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  echo staged >"$CLONE/docs/staged-by-someone.txt"
+  git -C "$CLONE" add docs/staged-by-someone.txt
+  rollback dev || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "the revert did not take the file" equal "$(git -C "$CLONE" show --name-only --format= HEAD | grep -c staged-by-someone || true)" 0
+  expect "it is still staged" equal "$(git -C "$CLONE" diff --cached --name-only)" docs/staged-by-someone.txt
+  git -C "$CLONE" reset --quiet
+  rm -f "$CLONE/docs/staged-by-someone.txt"
+}
+
+# ---- the failed-deploy drill, with Traefik stubbed too
+drill_runs_to_a_pass() {
+  local status=0
+  run_drill || status=$?
+  expect "the drill passes" [ "$status" -eq 0 ]
+  expect "RESULT PASS" said "RESULT PASS"
+  expect "promotion and revert on main" equal "$(reverts_on_main)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+drill_failed_promotion_reverts_nothing_else() {
+  # A real promotion is on main, then the drill's own promotion fails before its commit: stale render.
+  local status=0 before
+  promote_dev "$DIGEST_A" || status=$?
+  printf '# stale\n' >>"$CLONE/gitops/environments/dev/manifests.yaml"
+  git -C "$CLONE" add -- gitops
+  git -C "$CLONE" commit --quiet -m 'a change that leaves the render stale'
+  before="$(head_commit)"
+  status=0
+  run_drill || status=$?
+  expect "the drill fails" [ "$status" -ne 0 ]
+  expect "it says nothing needs reverting" said "the bad digest never reached main"
+  expect "HEAD did not move" equal "$(head_commit)" "$before"
+  expect "no revert" equal "$(reverts_on_main)" 0
+}
+
 scenario promote-digest-under-another-image digest_under_another_image
 scenario promote-digest-never-recorded digest_never_recorded
 scenario promote-dev-healthy-and-running dev_healthy_and_running
@@ -261,6 +406,15 @@ scenario promote-dev-container-not-ready dev_container_not_ready
 scenario promote-no-cluster-says-skipped no_cluster_says_skipped
 scenario promote-override-is-logged override_is_logged
 scenario promote-override-unused-when-dev-is-fine override_unused_when_dev_is_fine
+scenario rollback-rerun-after-failed-publish rollback_rerun_after_failed_publish
+scenario rollback-prod-sim-with-broken-backup rollback_prod_sim_with_broken_backup
+scenario rollback-prod-sim-with-hung-backup rollback_prod_sim_with_hung_backup
+scenario rollback-prod-sim-names-the-older-dump rollback_prod_sim_names_the_older_dump
+scenario rollback-prod-sim-skip-backup rollback_prod_sim_skip_backup
+scenario rollback-dev-takes-no-dump rollback_dev_takes_no_dump
+scenario rollback-leaves-other-staged-files-alone rollback_leaves_other_staged_files_alone
+scenario drill-runs-to-a-pass drill_runs_to_a_pass
+scenario drill-failed-promotion-reverts-nothing-else drill_failed_promotion_reverts_nothing_else
 
 [[ $((passed + failed)) -gt 0 ]] || die "no scenario matches '$FILTER'"
 [[ "$failed" -eq 0 ]] || die "$failed of $((passed + failed)) promotion flow scenarios failed"
