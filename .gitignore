@@ -10,8 +10,10 @@
 *.tfplan
 crash.log
 *.auto.tfvars
+*.auto.tfvars.json
 !*.example.auto.tfvars
 terraform.tfvars
+terraform.tfvars.json
 !terraform.tfvars.example
 
 # Secrets, dumps, and backups must never enter Git
