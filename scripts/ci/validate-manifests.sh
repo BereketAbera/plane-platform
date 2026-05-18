@@ -116,6 +116,8 @@ else
   check "conftest: platform charts" conftest_run charts,plane "$WORK"/charts/*.yaml
   rule_files "$WORK/chart-rules" "$WORK"/charts/*.yaml
   check "promtool: chart rules" promtool_check "$WORK/chart-rules"
+  # Last, and only in the full run: it re-renders the overlays many times, so it takes a minute.
+  check "promotion flows with a stub cluster" "$ROOT/scripts/ci/test-promotion-flows.sh"
 fi
 
 [[ "$failed" -eq 0 ]] || die "$failed manifest check(s) failed"
