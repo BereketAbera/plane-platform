@@ -1,0 +1,196 @@
+
+== web: localhost:5001/wayline/web@sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7
+run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
+PASS / answers 200 after about 1 s
+PASS / title names Wayline
+PASS / has no upstream brand
+PASS stylesheet /assets/globals-WyPPKNPI.css status: 200
+PASS stylesheet content type: text/css
+PASS font /assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 status: 200
+PASS font content type: font/woff2
+PASS font /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
+PASS font content type: font/woff2
+PASS SPA route /some-workspace/projects/ status: 200
+PASS SPA route serves index.html: 3dcab64ecb97dc0360ae2585569bbb29832222db350916338d5bc68dacb37f04  -
+/source -> 302 https://github.com/BereketAbera/plane-platform/tree/efb5af9d6e75f2a65cb9f664cf7ebb78b4735435
+PASS /source is a 302 to the repository at a commit
+PASS /source names commit efb5af9d6e75f2a65cb9f664cf7ebb78b4735435
+PASS manifest status: 200
+PASS manifest names Wayline
+PASS X-Frame-Options: DENY
+uid in container: 101
+memory after these requests: 3.383MiB / 64MiB
+PASS web logs show no permission or fatal errors
+
+== web: localhost:5001/wayline/web@sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7
+run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
+PASS / answers 200 after about 1 s
+PASS web also runs without the chart's emptyDirs
+
+== admin: localhost:5001/wayline/admin@sha256:3dda83bb7d274aec96f76c019ea206456123dd3e38d09fc98e684d6037017003
+run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
+PASS /god-mode/ answers 200 after about 1 s
+PASS /god-mode/ title names Wayline
+PASS /god-mode/ has no upstream brand
+PASS stylesheet /god-mode/assets/globals-DibWjCdP.css status: 200
+PASS stylesheet content type: text/css
+PASS font /god-mode/assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 status: 200
+PASS font content type: font/woff2
+PASS font /god-mode/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
+PASS font content type: font/woff2
+PASS SPA route /god-mode/general/ status: 200
+PASS SPA route serves god-mode index.html: df1b1749786f6d882c65cea94202594866254e6ba8fbd579da3ef77212869f0d  -
+uid in container: 101
+memory after these requests: 3.367MiB / 64MiB
+PASS admin logs show no permission or fatal errors
+
+== space: localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c
+run as uid 1000, memory 256m, cpus 0.25, cap-drop ALL, no-new-privileges
+PASS /spaces/ answers 200 after about 8 s
+PASS /spaces/ title names Wayline
+PASS /spaces/ has no upstream brand
+PASS stylesheet /spaces/assets/globals-CYEzlz7v.css status: 200
+PASS stylesheet content type: text/css
+PASS font /spaces/assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 status: 200
+PASS font content type: font/woff2
+PASS font /spaces/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
+PASS font content type: font/woff2
+uid in container: 1000
+memory after these requests: 73.46MiB / 256MiB
+PASS space logs show no permission or fatal errors
+
+0 failure(s) in the frontend images
+
+== backend: localhost:5001/wayline/backend@sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615
+== docker image inspect
+id=sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615 arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+== base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+
+== manage.py check
+System check identified no issues (0 silenced).
+
+== check_image.py
+
+== Image layout
+PASS working directory /code
+PASS uid 1000
+PASS entrypoint /code/bin/docker-entrypoint-api.sh
+PASS entrypoint /code/bin/docker-entrypoint-worker.sh
+PASS entrypoint /code/bin/docker-entrypoint-beat.sh
+PASS entrypoint /code/bin/docker-entrypoint-migrator.sh
+PASS /code/plane/static/logos/Logo.png is Wayline's sha256 16f7b58bae95
+PASS no stale bytecode under /code/plane
+
+== Compile every edited Python file
+PASS compile plane/api/views/issue.py
+PASS compile plane/bgtasks/forgot_password_task.py
+PASS compile plane/bgtasks/issue_activities_task.py
+PASS compile plane/bgtasks/magic_link_code_task.py
+PASS compile plane/bgtasks/project_add_user_email_task.py
+PASS compile plane/bgtasks/project_invitation_task.py
+PASS compile plane/bgtasks/user_activation_email_task.py
+PASS compile plane/bgtasks/user_deactivation_email_task.py
+PASS compile plane/bgtasks/user_email_update_task.py
+PASS compile plane/bgtasks/workspace_invitation_task.py
+PASS compile plane/bgtasks/workspace_seed_task.py
+PASS compile plane/db/management/commands/test_email.py
+PASS compile plane/license/api/views/configuration.py
+PASS compile plane/license/management/commands/register_instance.py
+PASS compile plane/license/utils/instance_value.py
+PASS compile plane/settings/openapi.py
+
+== Parse every edited seed file
+PASS json plane/seeds/data/cycles.json valid, no brand or hotlink
+PASS json plane/seeds/data/issues.json valid, no brand or hotlink
+PASS json plane/seeds/data/pages.json valid, no brand or hotlink
+PASS json plane/seeds/data/projects.json valid, no brand or hotlink
+
+== Telemetry default at registration (static: reads the create() call)
+PASS Instance.objects.create(is_telemetry_enabled=False)
+PASS Instance.objects.create(instance_name='Wayline')
+PASS no migration mentions Wayline 130 files read
+
+DJANGO_SETTINGS_MODULE=plane.settings.production django=5.2.15 TEMPLATES.DIRS=['templates']
+
+== Render every email template with Django's engine, under plane's own settings
+PASS render forgot_password 4242 bytes, 509 bytes text, sha256 8b060b229908
+PASS render magic_signin 3518 bytes, 404 bytes text, sha256 31a801f67b3a
+PASS render analytics 3323 bytes, 452 bytes text, sha256 c8ae7a45faa4
+PASS render project_invitation 3632 bytes, 233 bytes text, sha256 a50c2d952bfa
+PASS render workspace_invitation 4241 bytes, 509 bytes text, sha256 6bc6f1f92f6b
+PASS render issue-updates: one actor, every property 20126 bytes, 861 bytes text, sha256 cb9c34c8af96
+PASS render issue-updates: several actors, else branches 7623 bytes, 469 bytes text, sha256 a68f6e12d0a7
+PASS render issue-updates: comments only 5638 bytes, 398 bytes text, sha256 0c8945053658
+PASS render issue-updates: priority colours 10115 bytes, 437 bytes text, sha256 82a95da0b806
+PASS render project_addition 4299 bytes, 564 bytes text, sha256 addb08657eb9
+PASS render webhook-deactivate 3373 bytes, 192 bytes text, sha256 ed09810184fe
+PASS render test_email 2901 bytes, 219 bytes text, sha256 898618a14d64
+PASS render email_updated 3411 bytes, 359 bytes text, sha256 d205cbdd0edd
+PASS render user_activation 3804 bytes, 426 bytes text, sha256 708a597c5af8
+PASS render user_deactivation 3795 bytes, 419 bytes text, sha256 4ece36f6cbea
+PASS every email template was rendered (12 templates)
+
+== Other edited templates
+PASS render base.html
+     django.contrib.admin installed under plane's settings: False
+PASS render admin/base_site.html against a stub parent
+
+== Template logic against upstream's copy from the pinned base image
+PASS logic emails/auth/forgot_password.html 0 tags in the same order, 2 distinct variables
+PASS logic emails/auth/magic_signin.html 0 tags in the same order, 2 distinct variables
+PASS logic emails/exports/analytics.html 0 tags in the same order, 0 distinct variables
+PASS logic emails/invitations/project_invitation.html 0 tags in the same order, 5 distinct variables
+PASS logic emails/invitations/workspace_invitation.html 0 tags in the same order, 4 distinct variables
+PASS state icon blocks removed from comparison (2)
+PASS logic emails/notifications/issue-updates.html 127 tags in the same order, 47 distinct variables
+PASS logic emails/notifications/project_addition.html 0 tags in the same order, 5 distinct variables
+PASS logic emails/notifications/webhook-deactivate.html 0 tags in the same order, 3 distinct variables
+PASS logic emails/test_email.html 0 tags in the same order, 0 distinct variables
+PASS logic emails/user/email_updated.html 0 tags in the same order, 1 distinct variables
+PASS logic emails/user/user_activation.html 0 tags in the same order, 2 distinct variables
+PASS logic emails/user/user_deactivation.html 0 tags in the same order, 2 distinct variables
+
+== Edited modules import under plane's own settings
+PASS import plane.api.views.issue
+PASS import plane.bgtasks.forgot_password_task
+PASS import plane.bgtasks.issue_activities_task
+PASS import plane.bgtasks.magic_link_code_task
+PASS import plane.bgtasks.project_add_user_email_task
+PASS import plane.bgtasks.project_invitation_task
+PASS import plane.bgtasks.user_activation_email_task
+PASS import plane.bgtasks.user_deactivation_email_task
+PASS import plane.bgtasks.user_email_update_task
+PASS import plane.bgtasks.workspace_invitation_task
+PASS import plane.bgtasks.workspace_seed_task
+PASS import plane.db.management.commands.test_email
+PASS import plane.license.api.views.configuration
+PASS import plane.license.management.commands.register_instance
+PASS import plane.license.utils.instance_value
+PASS import plane.settings.openapi
+
+== Values that reach users
+PASS openapi TITLE = 'The Wayline REST API'
+PASS openapi CONTACT = {'name': 'Wayline', 'url': 'https://github.com/BereketAbera/plane-platform'}
+PASS openapi LICENSE = {'name': 'GNU AGPLv3', 'url': 'https://www.gnu.org/licenses/agpl-3.0.html'}
+PASS openapi SERVERS = [{'url': 'http://localhost:8000', 'description': 'Local'}]
+PASS INSTANCE_CHANGELOG_URL = ''
+
+== Brand left in the backend's code, each with its reason (tests excluded)
+         1  APM app name, off unless SCOUT_MONITOR is set
+         1  TextChoices label: changing it would call for a migration
+         3  code comment
+         3  functional webhook header
+         1  metric description, sent only if telemetry is enabled
+         2  module docstring
+       451  required notice
+         6  telemetry endpoint default, used only if telemetry is enabled
+         1  the permitted credit
+         4  upstream notice, must not be edited
+         4  upstream's manual: same policy as leak-allowlist.txt
+         1  upstream's release check
+PASS brand scan finished 478 explained lines
+
+RESULT PASS: 0 failed
+PASS backend check-image.sh exit 0
+
+smoke-images: 0 failure(s)

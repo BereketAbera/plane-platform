@@ -1,0 +1,29 @@
+# scripts/ci/build-images.sh localhost:5001/wayline, excerpt. The space push hit two transient blob errors and buildx retried them.
+# Thu Nov  5 00:14:56 EAT 2026 HEAD efb5af9d6e75f2a65cb9f664cf7ebb78b4735435
+$ /usr/bin/time -l scripts/ci/build-images.sh localhost:5001/wayline
+ ok /Users/bek/dev/pr/plane-platform/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
+ ok 7 patches applied
+leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
+ ok web: 5 font URLs under /assets/, all files present, brand values present
+ ok admin: 5 font URLs under /god-mode/assets/, all files present, brand values present
+ ok space: 5 font URLs under /spaces/assets/, all files present, brand values present
+ ok Build complete for: web admin space backend
+==> Building localhost:5001/wayline/web:efb5af9d6e75
+#13 exporting manifest sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7 done
+ ok localhost:5001/wayline/web@sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7
+==> Building localhost:5001/wayline/admin:efb5af9d6e75
+#12 exporting manifest sha256:3dda83bb7d274aec96f76c019ea206456123dd3e38d09fc98e684d6037017003 done
+ ok localhost:5001/wayline/admin@sha256:3dda83bb7d274aec96f76c019ea206456123dd3e38d09fc98e684d6037017003
+==> Building localhost:5001/wayline/space:efb5af9d6e75
+#10 exporting manifest sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c done
+#10 1.146 retrying in 1s
+#10 2.874 retrying in 2s
+ ok localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c
+==> Building localhost:5001/wayline/backend:efb5af9d6e75
+#12 exporting manifest sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615 done
+ ok localhost:5001/wayline/backend@sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615
+ ok digests recorded in .build/digests.tsv
+       31.94 real         6.35 user         4.46 sys
+           421691392  maximum resident set size
+# exit code 0
+peak_total_kib=352352 peak_largest_proc_kib=342736
