@@ -55,7 +55,7 @@ infisical:
   #
   # Measured on this cluster, arm64, 2026-11-04. First boot: 602 migrations in 11.5s, container start
   # to Ready in 21s, peak 807 MiB by cgroup memory.peak, 0 OOM events. A later boot peaks higher, at
-  # 822 MiB, and idles at 660 to 730 MiB. So 1Gi holds with 200 MiB to spare, and the request sits just
+  # 822 MiB, and idles at 650 to 730 MiB. So 1Gi holds with 200 MiB to spare, and the request sits just
   # above idle.
   resources:
     requests:
