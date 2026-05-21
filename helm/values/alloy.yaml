@@ -1,8 +1,9 @@
 # alloy 1.15.0 from https://grafana.github.io/helm-charts. Release name alloy, namespace monitoring.
 # A Deployment reading logs through the Kubernetes API, not a DaemonSet tailing /var/log/pods:
 # it needs no root, no hostPath and no privileged namespace (critique C17). The cost is more
-# kubelet traffic; if that shows up in apiserver load, the fallback is a DaemonSet in
-# monitoring-agents.
+# kubelet traffic, and it is small: a second Alloy on the same 53 log streams added 6 to 40 MiB to
+# apiserver RSS and about 20 MiB to the kubelet's, with CPU inside the noise. So the fallback, a
+# DaemonSet in monitoring-agents, is not needed at this size.
 controller:
   type: deployment
   replicas: 1
@@ -48,7 +49,10 @@ serviceMonitor:
 
 alloy:
   enableReporting: false
-  storagePath: /var/lib/alloy # holds tail positions; an emptyDir, so lines are lost on restart
+  # Holds tail positions, on an emptyDir, so a new pod re-reads each container's log. Measured over a
+  # pod replacement: no line lost or duplicated, peak 91 MiB. Loki answers 400 for lines over an hour
+  # behind their stream, and Alloy logs those as dropped. They were stored the first time round.
+  storagePath: /var/lib/alloy
   mounts:
     extra:
       - name: storage
