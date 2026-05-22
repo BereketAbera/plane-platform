@@ -2,8 +2,9 @@
 # Copyright (c) 2026 Bereket Abera
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Deletes all but the newest <keep> versions of each Wayline image in GHCR. The free private quota is
-# 500 MB, so old versions cannot be left to pile up. It lists what it deletes, and DRY_RUN=yes only
+# Deletes all but the newest <keep> versions of each Wayline image in GHCR. This is a precaution: GitHub's billing
+# page says Container registry storage and bandwidth are currently free, with a month's notice before that changes,
+# and nothing has been stored there yet to confirm how it is counted. It lists what it deletes, and DRY_RUN=yes only
 # lists. A digest that dev or prod-sim still pins should be copied to the local registry first
 # (scripts/ci/copy-to-local-registry.sh), which is why <keep> must be at least 2.
 #

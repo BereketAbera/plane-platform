@@ -1,0 +1,5 @@
+# Replaces PyJWT 2.13.0 from the base image, for CVE-2026-102268. Fixed in 2.14.0. PyJWT requires nothing on this
+# Python and no installed package requires it, so runtime/Dockerfile.backend installs this with --no-deps.
+# Hash of pyjwt-2.14.0-py3-none-any.whl from https://pypi.org/pypi/PyJWT/2.14.0/json, 2026-11-05.
+PyJWT==2.14.0 \
+    --hash=sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc

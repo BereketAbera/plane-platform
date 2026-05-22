@@ -1,0 +1,11 @@
+# Upstream's own AGPL-3.0-only copy of apps/api/plane/utils/email.py, kept byte for byte in vendor/email.py and
+# copied over the v1.4.3 file by runtime/Dockerfile.backend. Decision D12 in PASS2_HANDOFF.md.
+# assemble.sh and check_image.py read sha256 from here. To check it against upstream:
+#   gh api 'repos/makeplane/plane/contents/apps/api/plane/utils/email.py?ref=<commit>' -H 'Accept: application/vnd.github.raw+json'
+repository=makeplane/plane
+path=apps/api/plane/utils/email.py
+branch=preview
+commit=86d9b158fa4edd0c5deebb29367b5dd9b821716f
+blob=4fe3709e1d9065b5e16696a200e567c9301c2b4c
+sha256=620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+fetched=2026-11-05

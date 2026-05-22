@@ -26,12 +26,14 @@ UPSTREAM commit ──> overlay/ ──> patches/*.patch ──> codemod/rebrand
 | `checks/leak-scan.sh` | Fails on the upstream brand in what the frontends ship and in the rewritten mail templates, except allowlisted entries with reasons. `backend/check_image.py` covers the rest of the backend image, inside the image |
 | `checks/bundle-art.sh` | Fails if upstream's isometric empty states reach a bundle |
 | `checks/font-urls.sh` | Proves from the built CSS that fonts resolve under `/`, `/god-mode/`, `/spaces/` |
-| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
+| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts and that X-Forwarded-For behaves. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
+| `checks/backend-db.sh` | Runs the backend against a scratch Postgres, Redis and mail server it starts itself: migrations, registration, the setup endpoint, an invitation and a mail read back. `WAYLINE_BASE_CONTROL=yes` also shows the same checks failing on upstream's image. **Manual:** no workflow runs it |
 | `checks/upgrade-check.sh` | `make wayline-upgrade-check`. After a bump, with no build: overlay lock, patches, tokens, contrast, and upstream's Dockerfiles and nginx configs against what was derived from them |
 | `checks/upstream-check.sh` | `make wayline-upstream-check REF=preview`. Dry-runs overlay and patches against another upstream ref and reports the size of the work. A workflow also runs it weekly against `preview` |
 | `runtime/` | Thin Dockerfiles and nginx configs. Upstream's Dockerfiles are not used |
 | `assets/` | `masters/` holds logo masters and spinner source. `generate.mjs`, `generate-contours.mjs` and `generate-empty-states.mjs` regenerate the overlay's images, manifests, the sign-in chart and the empty states. See `assets/README.md` |
-| `backend/` | Email templates, scripted string edits and the in-image check for the derived backend image |
+| `backend/` | Email templates, scripted string edits, the in-image checks for the derived backend image, upstream's AGPL `email.py` in `vendor/`, and the PyJWT pin |
+| `scripts/publish-gate.sh` | Where images may go, from `backend/email-py-decision.txt`. `scripts/ci/build-images.sh` and `images.yml` both call it |
 
 ```sh
 apps/wayline/scripts/build.sh                                    # the whole thing
@@ -53,8 +55,8 @@ an estimated 5 GiB in the Docker VM for upstream's Dockerfiles. Static web and a
 upstream's Linux `node_modules` and swaps only `build/`.
 
 Post-build rewriting alone cannot restructure the shell or the sign-in screen, and a full fork would carry over 5,000
-files to change 85 by patch and replace 155 whole. Those are measured, on 2026-11-05: patches are 85 files, +310 -499,
-139 hunks, about 110 KB, and brand CSS is about 1,200 lines. The research's estimate of about 20 files and 150 to 200
+files to change 86 by patch and replace 155 whole. Those are measured, on 2026-11-05: patches are 86 files, +311 -500,
+140 hunks, about 110 KB, and brand CSS is about 1,200 lines. The research's estimate of about 20 files and 150 to 200
 lines was far too low. `MODIFICATIONS.md` has the breakdown.
 
 ## Domain and link policy
@@ -88,31 +90,36 @@ The licence texts are in every image at `/usr/share/licenses/wayline/`, and at `
 |---|---|---|---|
 | `wayline/web` | `nginx:1.31-alpine` | UID 101 (hardening patch) | pid on `/run`, temp on `/var/cache/nginx`, both emptyDirs |
 | `wayline/admin` | `nginx:1.31-alpine` | UID 101 | Served under `/god-mode/` |
-| `wayline/space` | `makeplane/plane-space:v1.4.3` | UID 1000 | Only `build/` replaced |
-| `wayline/backend` | `makeplane/plane-backend:v1.4.3` | UID 1000 | Templates and strings. Used by api, worker, beat, migrator. Label says `AGPL-3.0-only AND LicenseRef-Plane-Commercial`, see `MODIFICATIONS.md` |
+| `wayline/space` | `makeplane/plane-space:v1.4.3` | UID 1000 | `build/` replaced, proxy-addr 2.0.8, no storybook or tinypool: `runtime/space-deps.mjs` |
+| `wayline/backend` | `makeplane/plane-backend:v1.4.3` | UID 1000 | Templates, strings, upstream's AGPL `email.py`, PyJWT 2.14.0. Used by api, worker, beat, migrator. Label says `AGPL-3.0-only`. The commercially headed original is still in the `FROM` layer, see D12 in `MODIFICATIONS.md` |
 
 Base digests come from `docker buildx imagetools inspect`, and are written in each Dockerfile with the date. Rebuilding
 the same commit can give a different digest, because file times and OS packages move. A digest, not a rebuild, is the
 identity of a release.
 
-### GHCR quota
+A file replaced or removed in a derived image stays in the `FROM` layers underneath, so it is gone from the container's
+filesystem, and from what `trivy image` reports, but not from the bytes of the image.
 
-The free private quota is 500 MB, shared with Actions artifacts. GHCR stores upstream's layers too,
-because nothing is mounted across registries. Compressed arm64 sizes measured on 2026-11-04 with
-`docker buildx imagetools inspect --raw`: backend base 105.9 MiB, nginx base 25.0 MiB. The space base
-is 255.8 MiB from the research's registry measurement. With about 25 MiB of app layers, that is about
-415 MiB for one set (nginx counted once), so one set fits and little else does. So:
+### Publishing to GHCR
 
 - **`images.yml` has never run with `apps/wayline` in it.** One pull request is needed to exercise the build-only job,
-  and the native arm64 build, GHCR push, prune and these numbers are unproven until then.
-- Publishing is off until the owner decides D12 (`backend/email-py-decision.txt`), so a push to main stops before GHCR.
+  and the native arm64 build, GHCR push, scan, prune and the numbers here are unproven until then.
+- Images go only to the local registry or the owner's private GHCR packages, `ghcr.io/bereketabera/wayline`. That is decision
+  D12 (`backend/email-py-decision.txt`, `scripts/publish-gate.sh`), and `images.yml` also requires
+  `github.event.repository.private`, so making the repository public stops publishing until D12 is revisited.
 - Pull requests only build, and never push.
-- A push to main publishes, then `scripts/prune-ghcr.sh` keeps the newest two versions per image. Later
-  versions share the upstream layers, so a second version should cost only its app layers if GHCR
-  counts shared layers once. That is an assumption: GitHub does not document it, so check the
-  package page after the first two publishes.
+- A push to main publishes, then scans what it pushed with `scripts/ci/scan-images.sh`, and a failure there stops the prune and
+  the digest bump. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
+- `make images` to the local registry uses no GHCR storage and is the path in pass 1.
 - Pruning with `GITHUB_TOKEN` has not been run yet, and may need the package's Actions access set to Admin.
-- `make images` to the local registry uses no quota and is the path in pass 1.
+
+Pruning is a precaution, not a response to a known limit. GitHub's Packages billing page lists 500 MB of storage for private
+packages on Free, and also says "Container image storage and bandwidth for the Container registry is currently free", with at
+least a month's notice before that changes. So the 500 MB should not apply to `ghcr.io` today, but nothing has been stored there
+to confirm it. After the first publish, read the package page. GHCR stores upstream's layers too, because nothing is
+mounted across registries. Compressed arm64 sizes measured on 2026-11-04 with `docker buildx imagetools inspect --raw`: backend
+base 105.9 MiB, nginx base 25.0 MiB. The space base is 255.8 MiB from the research's registry measurement. With about 25 MiB of app
+layers, that is about 415 MiB for one set (nginx counted once).
 
 ## Upgrading upstream
 
@@ -127,9 +134,12 @@ is 255.8 MiB from the research's registry measurement. With about 25 MiB of app 
    the conflicts in `.build/plane-patchwork`, and save each patch again with `scripts/save-patch.sh`.
 4. It finishes with token-diff, contrast, `VITE_*` in `scripts/build.sh` against upstream's Dockerfiles, and upstream's
    nginx configs and Dockerfiles against what `runtime/` derived from them. Read anything it names.
-5. Run `make images`, which is the only place `backend/edit_strings.py` runs, with an exact match count for every edit. Its
-   failure names the string that moved. `leak-scan` reports new brand strings, usually a line for `codemod/rebrand.mjs`.
-6. Run `checks/smoke-images.sh` by hand, with `WAYLINE_EXPECT_REF` set to the commit. No workflow runs it.
+5. Run `make images`, which is the only place `backend/edit_strings.py` and `runtime/space-deps.mjs` run. Each states exactly
+   what it expects, so its failure names the string or package that moved. If upstream has moved past a dependency this replaces, or
+   a release now carries the AGPL header on `email.py`, delete the replacement rather than updating it. `leak-scan` reports new
+   brand strings, usually a line for `codemod/rebrand.mjs`.
+6. Run `checks/smoke-images.sh` by hand, with `WAYLINE_EXPECT_REF` set to the commit, and `WAYLINE_BASE_CONTROL=yes checks/backend-db.sh`.
+   No workflow runs either.
 7. Look at the app: sign-in, sidebar, board, settings, an empty state, god-mode, a public page.
 
 What this costs, measured on 2026-11-05 with `checks/upstream-check.sh`, which applies the current overlay and every
@@ -137,10 +147,10 @@ patch file by file:
 
 | Upstream | Patches failing | Files needing a rebase | Overlay paths gone or changed | Design system |
 |---|---|---|---|---|
-| `v1.4.2` | 0 of 7 | 0 of 85 | 0 | Same |
-| `v1.4.0` | 0 of 7 | 0 of 85 | 0 | Same |
-| `v1.3.0` | 4 of 7 | 14 of 85 | 0 | Same |
-| `preview` (`package.json` 1.5.0, unreleased, may change) | 7 of 7 | 67 of 85 | 45 gone, 3 changed of 155 | `variables.css` is gone, tokens moved to `@makeplane/propel` |
+| `v1.4.2` | 0 of 7 | 0 of 86 | 0 | Same |
+| `v1.4.0` | 0 of 7 | 0 of 86 | 0 | Same |
+| `v1.3.0` | 4 of 7 | 14 of 86 | 0 | Same |
+| `preview` (`package.json` 1.5.0, unreleased, may change) | 7 of 7 | 68 of 86 | 45 gone, 3 changed of 155 | `variables.css` is gone, tokens moved to `@makeplane/propel` |
 
 So a patch release has needed nothing, and an earlier minor release needed about a sixth of the patched files reworked.
 **Expect 1.5 to need a rework of the brand tokens and most patches**, not a routine rebase. No time estimate is given,

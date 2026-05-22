@@ -30,7 +30,9 @@ build time. Application functionality is unchanged except where listed.
 | Product name in UI text, translations, manifests and page titles | `codemod/rebrand.mjs`, run at build time |
 | Links to upstream's marketing, legal, support and community pages removed or pointed at `/source` | `codemod/rebrand.mjs`, `patches/` |
 | Upstream's customer logos and most paid-plan prompts removed | `patches/` |
-| Telemetry starts off in the setup form and at instance registration | `patches/40-admin.patch`, `backend/edit_strings.py` |
+| Telemetry starts off in the setup form, at instance registration and when the setup request omits it. Marketing consent starts off in onboarding | `patches/40-admin.patch`, `patches/20-auth.patch`, `backend/edit_strings.py` |
+| `plane/utils/email.py` replaced with upstream's later AGPL-3.0-only version, unchanged | `backend/vendor/email.py`, `runtime/Dockerfile.backend` |
+| Dependencies with known critical vulnerabilities replaced or removed: PyJWT, proxy-addr, storybook, tinypool | `backend/pyjwt-requirements.txt`, `runtime/space-deps.mjs` |
 | Billing settings refused for every role, and the page for a paid feature (active cycles across projects) replaced with a plain statement | `patches/30-surfaces.patch` |
 | Email templates and subjects, seed data, bot name, default sender and API metadata rebranded | `backend/`, `runtime/Dockerfile.backend` |
 | Container images: thin runtime images instead of upstream's Dockerfiles, fitted to non-root UIDs | `runtime/` |
@@ -42,9 +44,11 @@ build time. Application functionality is unchanged except where listed.
   original header.
 - Functional identifiers: `@plane/*` packages, the `plane` Python module, `X-Plane-*` headers.
 - Only upstream's public Community Edition tag and images are used, and license gates are neither unlocked
-  nor bypassed. One file in that tag carries a commercial license header and is inherited unchanged. The backend
-  image's label says so, and it is not published beyond the local registry until the owner decides. See the
-  open item in `apps/wayline/MODIFICATIONS.md`.
+  nor bypassed. One file in that tag, `plane/utils/email.py`, carries a commercial license header. The backend image
+  replaces it with upstream's own later AGPL-3.0-only version, and no file under `/code` in the image carries that header.
+  The original is still in the upstream `FROM` layer underneath, so the image is published only to private GHCR
+  packages under the owner's account. A public distribution of it is a point to take advice on before a public launch. See
+  D12 in `apps/wayline/MODIFICATIONS.md`.
 
 ## Third-party notices
 

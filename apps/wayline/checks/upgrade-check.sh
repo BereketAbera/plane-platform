@@ -38,6 +38,19 @@ for spec in web:apps/web/Dockerfile.web admin:apps/admin/Dockerfile.admin space:
   done
 done
 
+log "What the backend image replaces in upstream"
+if grep -q 'LicenseRef-Plane-Commercial' "$SRC/apps/api/plane/utils/email.py"; then
+  ok "this tag's email.py still has the commercial header, so backend/vendor/email.py is still needed"
+else
+  warn "this tag's email.py has no commercial header. Drop backend/vendor/ and its COPY in runtime/Dockerfile.backend, and revisit D12"
+  status=1
+fi
+# The only thing any caller at v1.4.3 takes from it. check_image.py proves it again in the image.
+others="$(grep -rhE '^[[:space:]]*(from plane\.utils\.email import|import plane\.utils\.email)' "$SRC/apps/api/plane" --include='*.py' | LC_ALL=C sort -u | grep -vxF 'from plane.utils.email import generate_plain_text_from_html' || true)"
+[[ -z "$others" ]] || { warn "callers of email.py now take something else, so check it against backend/vendor/email.py: $others"; status=1; }
+grep -qx 'PyJWT==2.13.0' "$SRC/apps/api/requirements/base.txt" \
+  || { warn "upstream moved its PyJWT pin. Read backend/pyjwt-requirements.txt and the edit in backend/edit_strings.py"; status=1; }
+
 if [[ "$status" -eq 0 ]]; then
   ok "upgrade check clean. Now build, then run scripts/ci/build-images.sh and checks/smoke-images.sh, and look at the app"
 else

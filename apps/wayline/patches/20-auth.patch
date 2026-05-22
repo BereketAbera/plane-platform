@@ -593,3 +593,16 @@ index 18f42063c8f84137ea50c40c40d494c8ddc9f811..bcb972c64c0699ffc1cbbaa364170d62
      </div>
    );
  }
+diff --git a/apps/web/core/components/onboarding/steps/profile/root.tsx b/apps/web/core/components/onboarding/steps/profile/root.tsx
+index 5e71c802f3bb19fdb84b74cfb66e33676e4cb451..a03eae5453a577f9ffdf8bbb70441046d9cf69a1 100644
+--- a/apps/web/core/components/onboarding/steps/profile/root.tsx
++++ b/apps/web/core/components/onboarding/steps/profile/root.tsx
+@@ -50,7 +50,7 @@ const defaultValues: Partial<TProfileSetupFormValues> = {
+   avatar_url: "",
+   password: undefined,
+   confirm_password: undefined,
+-  has_marketing_email_consent: true,
++  has_marketing_email_consent: false,
+ };
+ 
+ export const ProfileSetupStep = observer(function ProfileSetupStep({ handleStepChange }: Props) {

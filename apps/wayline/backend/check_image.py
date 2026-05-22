@@ -2,20 +2,29 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 """Proves the derived backend image from the inside. Run by check-image.sh, in a container with no network.
 
-Prints one PASS or FAIL line per check and exits non-zero on any FAIL.
+Prints one PASS or FAIL line per check and exits non-zero on any FAIL. With --build-time, Dockerfile.backend
+runs only the checks that need no Django, so a commercially headed file or a wrong PyJWT stops the image build.
 """
 import argparse
 import ast
 import collections
 import hashlib
 import importlib
+import importlib.metadata
 import json
 import os
 import re
+import secrets
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path("/code")
+OPT = Path("/opt/wayline")
+COMMERCIAL = b"LicenseRef-Plane-Commercial"
+EMAIL_PY = ROOT / "plane/utils/email.py"
+PYJWT_VERSION = "2.14.0"
 BRAND = re.compile(r"Plane|plane\.so|plane\.sh|makeplane|planepowers|plane-marketing|mailinblue|imagekit")
 CREDIT = "Built on Plane Community Edition"
 failures = 0
@@ -28,7 +37,107 @@ def report(ok, label, detail=""):
 
 
 def edited_files():
-    return Path("/opt/wayline/edited-files.txt").read_text().split()
+    return (OPT / "edited-files.txt").read_text().split()
+
+
+def email_pin():
+    lines = (OPT / "vendor/email.py.pin").read_text().splitlines()
+    return dict(line.split("=", 1) for line in lines if "=" in line and not line.startswith("#"))
+
+
+def check_licence():
+    print(f"\n== Licence headers under {ROOT}")
+    hits, count = [], 0
+    for path in ROOT.rglob("*"):
+        if path.is_file() and not path.is_symlink():
+            count += 1
+            if COMMERCIAL in path.read_bytes():
+                hits.append(str(path))
+    report(not hits, f"no file under {ROOT} contains {COMMERCIAL.decode()}", str(hits) if hits else f"{count} files read")
+    data = EMAIL_PY.read_bytes()
+    report(b"# SPDX-License-Identifier: AGPL-3.0-only\n" in data, f"{EMAIL_PY} carries AGPL-3.0-only")
+    pin, digest = email_pin(), hashlib.sha256(data).hexdigest()
+    report(digest == pin["sha256"], f"{EMAIL_PY} is upstream's file at {pin['commit']}", f"sha256 {digest}")
+
+
+def check_pyjwt_install():
+    print("\n== PyJWT as installed")
+    version = importlib.metadata.version("PyJWT")
+    report(version == PYJWT_VERSION, f"PyJWT is {version}")
+    copies = [d.version for d in importlib.metadata.distributions() if (d.metadata["Name"] or "").lower() == "pyjwt"]
+    report(copies == [PYJWT_VERSION], f"one copy installed: {copies}")
+    result = subprocess.run([sys.executable, "-m", "pip", "check"], capture_output=True, text=True, check=False)
+    report(result.returncode == 0, "pip check", (result.stdout or result.stderr).strip())
+
+
+def check_pyjwt_use():
+    import jwt
+    from django.conf import settings
+    from django.core.management.utils import get_random_secret_key
+
+    print("\n== PyJWT as Plane uses it")
+    importers = []
+    for path in sorted((ROOT / "plane").rglob("*.py")):
+        if "tests" not in path.parts and re.search(r"^\s*(import jwt\b|from jwt\b)", path.read_text(errors="replace"), re.M):
+            importers.append(str(path.relative_to(ROOT)))
+    report(importers == ["plane/app/views/project/invite.py", "plane/app/views/workspace/invite.py"], f"importers of jwt: {importers}")
+    for rel in importers:
+        calls = [
+            node for node in ast.walk(ast.parse((ROOT / rel).read_text()))
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and getattr(node.func.value, "id", "") == "jwt"
+        ]
+        names = [call.func.attr for call in calls]
+        algorithm = [kw.value.value for call in calls for kw in call.keywords if kw.arg == "algorithm"]
+        report(names == ["encode"] and algorithm == ["HS256"], f"{rel} calls jwt.encode with HS256 and nothing else", str(names))
+    # The same payload shape and call as both invite views. The keys: this image's setting, the format
+    # scripts/secret-zero.sh generates (openssl rand -hex 24), and the format upstream's settings suggest.
+    payload = {"email": {"email": "invitee@x.test", "role": 15}, "timestamp": 1762300000.25}
+    keys = [("settings.SECRET_KEY", settings.SECRET_KEY), ("24 random bytes in hex", secrets.token_hex(24)), ("get_random_secret_key()", get_random_secret_key())]
+    for label, key in keys:
+        token = jwt.encode(payload, key, algorithm="HS256")
+        report(isinstance(token, str) and jwt.decode(token, key, algorithms=["HS256"]) == payload, f"encode and decode, HS256, {label}", f"{len(token)} characters")
+
+
+def check_email():
+    from plane.utils import email as email_utils
+    from plane.utils.email import generate_plain_text_from_html as plain
+
+    print("\n== plane.utils.email: every caller fits, and the cases upstream tests at the pinned commit")
+    names = collections.Counter()
+    bad_calls = []
+    callers = []
+    for path in sorted((ROOT / "plane").rglob("*.py")):
+        if "tests" in path.parts:
+            continue
+        tree = ast.parse(path.read_text(errors="replace"))
+        imported = [a.name for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module == "plane.utils.email" for a in n.names]
+        if not imported:
+            continue
+        callers.append(str(path.relative_to(ROOT)))
+        names.update(imported)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "generate_plain_text_from_html" and (len(node.args) != 1 or node.keywords):
+                bad_calls.append(f"{path.relative_to(ROOT)}:{node.lineno}")
+    report(bool(callers) and set(names) == {"generate_plain_text_from_html"} and hasattr(email_utils, "generate_plain_text_from_html"),
+           f"{len(callers)} modules import only generate_plain_text_from_html", str(callers))
+    report(not bad_calls, "every call passes one positional argument", str(bad_calls) if bad_calls else "")
+
+    url = "https://example.com/workspace-invitations/?invitation_id=abc&slug=acme&token=xyz"
+    text = plain(f'<p>copy this:</p><a href="{url.replace("&", "&amp;")}"><span>{url.replace("&", "&amp;")}</span></a>')
+    report(url in text and "&amp;" not in text, "an escaped invitation URL reaches the text part whole")
+    text = plain("<p>Ren&eacute;&#39;s workspace &lt;tag&gt; &amp; more</p>")
+    report("René's workspace <tag> & more" in text, "named and numeric character references are decoded")
+    text = plain("<style>p { color: red; }</style>\n<p>Hello <strong>world</strong></p>")
+    report("color: red" not in text and "<p>" not in text and "Hello world" in text, "style blocks and tags are stripped")
+    text = plain("<p>First</p>\n\n\n\n<p>Second</p>")
+    report("\n\n\n" not in text.strip() and text.startswith("\n\n") and text.endswith("\n\n"), "blank lines collapse and the output is padded")
+    for html in ("<STYLE type='text/css'>\na{}\n</Style><p>Hi</p><style>b{}</style>tail", "<style>a{}</style><style>unclosed <p>Hi</p>", "<style</style>x</style>", "<p>Hi</p>" + "<style" * 50):
+        expected = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        report(email_utils._remove_style_blocks(html) == expected, f"style removal matches the old regex on {html[:24]!r}")
+    start = time.perf_counter()
+    text = plain("<p>" + "<style-x>" * 11000 + "</p>")
+    elapsed = time.perf_counter() - start
+    report(elapsed < 1 and text == "\n\n\n\n", "11000 unclosed style-like tags take under a second", f"{elapsed:.3f} s")
 
 
 def check_python():
@@ -59,6 +168,14 @@ def check_python():
     report(isinstance(value, ast.Constant) and value.value is False, "Instance.objects.create(is_telemetry_enabled=False)")
     name = kwargs.get("instance_name")
     report(isinstance(name, ast.Constant) and name.value == "Wayline", "Instance.objects.create(instance_name='Wayline')")
+    fallback = [
+        node.args[1] for node in ast.walk(ast.parse((ROOT / "plane/license/api/views/admin.py").read_text()))
+        if isinstance(node, ast.Call) and getattr(node.func, "attr", "") == "get" and len(node.args) == 2
+        and isinstance(node.args[0], ast.Constant) and node.args[0].value == "is_telemetry_enabled"
+    ]
+    report(len(fallback) == 1 and isinstance(fallback[0], ast.Constant) and fallback[0].value is False, "the setup endpoint falls back to False when the field is missing")
+    model = (ROOT / "plane/license/models/instance.py").read_text()
+    report("is_telemetry_enabled = models.BooleanField(default=True)" in model, "the model default is unchanged, so there is no migration")
     migrations = sorted((ROOT / "plane/license/migrations").glob("*.py")) + sorted((ROOT / "plane/db/migrations").glob("*.py"))
     report(not [p for p in migrations if b"Wayline" in p.read_bytes()], "no migration mentions Wayline", f"{len(migrations)} files read")
 
@@ -261,7 +378,6 @@ def check_logic(upstream):
 KNOWN_REMAINDER = [
     (r"Copyright \(c\) 2023-present Plane Software", "required notice"),
     (r"X-Plane-", "functional webhook header"),
-    (r"^plane/utils/email\.py:.*(Plane|plane\.so)", "upstream notice, must not be edited"),
     (r"^plane/settings/openapi\.py:.*Built on Plane Community Edition", "the permitted credit"),
     (r"^plane/db/models/workspace\.py:.*New at Plane", "TextChoices label: changing it would call for a migration"),
     (r"^plane/settings/production\.py:.*SCOUT_NAME", "APM app name, off unless SCOUT_MONITOR is set"),
@@ -338,9 +454,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--upstream", type=Path, help="upstream's templates/emails, from the base image")
     parser.add_argument("--render-dir", type=Path, help="write the rendered HTML here")
+    parser.add_argument("--build-time", action="store_true", help="only the checks that need no Django")
     args = parser.parse_args()
 
+    if args.build_time:
+        check_licence()
+        check_pyjwt_install()
+        print(f"\nRESULT {'FAIL' if failures else 'PASS'}: {failures} failed")
+        sys.exit(1 if failures else 0)
+
     check_layout()
+    check_licence()
+    check_pyjwt_install()
     check_python()
 
     sys.path.insert(0, str(ROOT))
@@ -351,6 +476,8 @@ def main():
 
     print(f"\nDJANGO_SETTINGS_MODULE={settings.SETTINGS_MODULE} django={django.get_version()} TEMPLATES.DIRS={settings.TEMPLATES[0]['DIRS']}")
     check_render(args.render_dir)
+    check_email()
+    check_pyjwt_use()
     if args.upstream:
         check_logic(args.upstream)
     check_settings()

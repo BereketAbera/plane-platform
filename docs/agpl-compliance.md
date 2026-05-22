@@ -125,25 +125,31 @@ What section 5 asks of the modified work:
 
 ## The commercial header in `email.py`
 
-At tag `v1.4.3`, `apps/api/plane/utils/email.py` is headed `SPDX-License-Identifier: LicenseRef-Plane-Commercial`, and states it is proprietary and that its notice must not be removed. It is the only such file in the tree. It is a small plain-text helper imported by several email tasks, so it ships in the upstream `plane-backend` image and in any image derived from it.
+At tag `v1.4.3`, `apps/api/plane/utils/email.py` is headed `SPDX-License-Identifier: LicenseRef-Plane-Commercial`, and states it is proprietary and that its notice must not be removed. It is the only such file in the tree. It is a small plain-text helper imported by every email task, so it ships in the upstream `plane-backend` image and in any image derived from it.
 
 | Fact | Status |
 |---|---|
 | Header on the tag | Read directly on 2026-11-04 |
-| Upstream treats it as a mistake | Issue #9595 (closed) and PR #9865, which switches it to AGPL-3.0-only, merged into `preview` on 2026-09-22, per `plane-app.md` |
-| `v1.4.3` and `master` | Still carried the commercial header when researched |
+| Upstream treats it as a mistake | Issue #9595 (closed), and commit `3e44777e6c` (PR #9865), which switches it to AGPL-3.0-only on `preview`, 2026-09-22 |
+| Upstream's later changes on `preview` | `297c3fdf2a` (#9841) decodes character references in the text part, and `86d9b158fa` (#10053, a security fix) strips style blocks in linear time |
+| Upstream releases | On 2026-11-05 the latest release is `v1.4.3`. It and `master` still carry the commercial header. Only `preview` carries AGPL-3.0-only (read from each ref) |
 
-Why it matters: if source or images are conveyed, this file goes with them, under a header that conflicts with the rest of the tree.
+**Decision, by the project lead on 2026-11-05, recorded as D12 in the [handoff](../PASS2_HANDOFF.md#12-open-decisions): the notice is not edited. The derived backend image replaces the file with upstream's own AGPL-3.0-only version from `preview`, pinned by commit, so the running image contains no commercially headed code.**
 
-| Option | Note |
+| What was done | Where |
 |---|---|
-| Leave the file untouched, and document it | Honest and minimal. Does not resolve the conflict |
-| Apply upstream's PR #9865 change as a named patch, citing the PR | Follows upstream's own stated fix. Changes a notice that says not to change it |
-| Move to an upstream release carrying the fix | Cleanest. Requires a version change |
+| Upstream's file at `86d9b158fa4edd0c5deebb29367b5dd9b821716f`, unchanged, sha256 `620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda`. It fits every caller at `v1.4.3`: 11 modules import only `generate_plain_text_from_html`, with one argument | `apps/wayline/backend/vendor/email.py`, `email.py.pin` |
+| Copied over the original in the image | `apps/wayline/runtime/Dockerfile.backend` |
+| The image build stops if any file under `/code` contains `LicenseRef-Plane-Commercial`, or if this file is not that AGPL-3.0-only version | `apps/wayline/backend/check_image.py --build-time` |
+| The image's license label is `AGPL-3.0-only` | `apps/wayline/runtime/Dockerfile.backend` |
+| The file renders mail from the real templates, in the image, and a mail went through it to a scratch SMTP server and back | `docs/evidence/branding/smoke.txt`, `backend-db.txt` |
+| Publishing is limited: the local registry, or private GHCR packages under the owner's account, and `images.yml` also requires the repository to be private | `apps/wayline/backend/email-py-decision.txt`, `apps/wayline/scripts/publish-gate.sh`, `.github/workflows/images.yml` |
 
-**Decision: open, and for the owner with legal advice.** Do not strip the header silently, and do not let a codemod alter it. Recorded as D12 in the [handoff](../PASS2_HANDOFF.md#12-open-decisions). [[VERIFY: whether a newer upstream release carries the AGPL header on email.py]]
+**What this does not do.** The upstream base layer still holds the original file underneath, because it is a `FROM` layer. A running container cannot see it, and nothing executes it. Anyone who pulls the image and unpacks that layer can read it. So the image's filesystem carries no commercially headed code, while its bytes still do.
 
-Until it is decided, the backend image's label reads `AGPL-3.0-only AND LicenseRef-Plane-Commercial`, and `apps/wayline/backend/email-py-decision.txt` (`pending`) stops `scripts/ci/build-images.sh` and `images.yml` from publishing beyond the local registry. Changing that file to the decision is what opens the gate.
+**What remains for the owner before a public launch.** A public distribution of this image hands out that layer, so it is a point to take advice on. Upstream publishes the same layer publicly itself, which is a fact to give counsel and not a conclusion. Moving to an upstream release that carries the AGPL header would end the question, and no such release exists yet. An image with no such layer would also end it, and none is built today. Opening the gate wider means a new value in `email-py-decision.txt` and a change to `publish-gate.sh`.
+
+Source is a separate matter. `apps/wayline/UPSTREAM` pins `v1.4.3`, whose tree holds the commercially headed file, so the source offer names that tree. This repository does not copy the original, and it holds the AGPL version in `backend/vendor/`.
 
 ## Other AGPL components
 

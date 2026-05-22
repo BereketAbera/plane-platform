@@ -149,8 +149,9 @@ if wants admin; then
   cp "$WAYLINE/runtime/nginx-admin.conf" "$DIST/admin/nginx.conf"
 fi
 if wants space; then
-  rm -rf "${DIST:?}/space"; mkdir -p "$DIST/space"
+  rm -rf "${DIST:?}/space"; mkdir -p "$DIST/space/wayline"
   cp -R "$SRC/apps/space/build" "$DIST/space/build"
+  cp "$WAYLINE/runtime/space-deps.mjs" "$DIST/space/wayline/"
 fi
 if wants backend; then
   rm -rf "${DIST:?}/backend"; mkdir -p "$DIST/backend"
