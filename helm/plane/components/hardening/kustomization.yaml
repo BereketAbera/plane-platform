@@ -96,6 +96,16 @@ patches:
     patch: |-
       - {op: add, path: /spec/progressDeadlineSeconds, value: 600}
 
+  # A pod gets SIGTERM at the moment its endpoint starts to go, and Traefik reacts about 2s later. With
+  # no pause the process is gone first: during a rollout each route answered 502, then left requests
+  # hanging, even with the new pod Ready. So these keep serving for 5s. Sleep needs no shell, and
+  # worker and beat have no Service, so they do not need it.
+  - target: {kind: Deployment, name: plane-(web|admin|space|live|api)-wl}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/lifecycle
+        value: {preStop: {sleep: {seconds: 5}}}
+
   # Sync at wave 2, never PreSync: Postgres is applied in the Sync phase, wait_for_db does not wait,
   # so a PreSync migrator exhausts its retries against no database and stops a fresh install.
   # No ttlSecondsAfterFinished: Argo can wait forever on a hook Kubernetes already deleted.

@@ -330,6 +330,10 @@ spec:
       containers:
       - image: docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
         livenessProbe:
           httpGet:
             path: /god-mode/
@@ -437,6 +441,10 @@ spec:
             optional: false
         image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
         livenessProbe:
           httpGet:
             path: /
@@ -628,6 +636,10 @@ spec:
             optional: false
         image: docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
         livenessProbe:
           httpGet:
             path: /live/health
@@ -704,6 +716,10 @@ spec:
       containers:
       - image: docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
         livenessProbe:
           httpGet:
             path: /spaces/
@@ -780,6 +796,10 @@ spec:
       containers:
       - image: docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
         livenessProbe:
           httpGet:
             path: /
