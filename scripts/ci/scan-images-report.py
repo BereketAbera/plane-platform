@@ -138,11 +138,11 @@ def report_lines(rows, critical, failures):
     ours = [row for row in scanned if row["ours"] == "yes"]
     lines = table(rows)
     lines.append("")
-    lines.append(f"{len(scanned)} of {len(rows)} images scanned, {len(ours)} of the scanned ones built here.")
+    lines.append(f"{len(scanned)} of {len(rows)} targets scanned, {len(ours)} of the scanned ones built here.")
     lines.append("Findings across all images: " + ", ".join(f"{total[s]} {s}" for s in SEVERITIES) + ".")
     fixable_upstream = sorted({short(item["image"]) for item in critical if item["ours"] == "no" and item["fixed_in"]})
     if fixable_upstream:
-        lines.append(f"Reported, not failing: {len(fixable_upstream)} upstream image(s) have a CRITICAL finding with a fix, so a newer digest may help:")
+        lines.append(f"Reported, not failing: {len(fixable_upstream)} upstream target(s) have a CRITICAL finding with a fix, so a newer version may help:")
         lines += [f"  {image}" for image in fixable_upstream]
     end_of_life = sorted(short(row["image"]) for row in scanned if row["os_end_of_life"] == "yes")
     if end_of_life:
