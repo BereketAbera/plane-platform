@@ -79,9 +79,10 @@ alloy:
       discovery.relabel "pod_logs" {
         targets = discovery.kubernetes.pods.targets
 
+        // kube-system holds only kindnet's own container, for the fail-open line counted below.
         rule {
-          source_labels = ["__meta_kubernetes_namespace"]
-          regex         = "plane-dev|plane-prod-sim|infisical|argocd|traefik|monitoring"
+          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
+          regex         = "(plane-dev|plane-prod-sim|infisical|argocd|traefik|monitoring);.*|kube-system;kindnet-cni"
           action        = "keep"
         }
         // Finished pods have nothing left to tail, and each dead target would retry forever.
@@ -111,6 +112,39 @@ alloy:
 
       // No stage.cri: the API returns plain lines, and that stage only applies to log files.
       loki.process "pods" {
+        // kindnet fails open: if its policy controller cannot start, it logs this line once at INFO and
+        // runs on with no NetworkPolicy enforced. KindnetSkippedNetworkPolicies alerts on the counter. The
+        // series must outlive a long idle, because the line never repeats and the default expiry is 5m.
+        stage.match {
+          selector = "{container=\"kindnet-cni\"} |~ \"skipping network policies\""
+          stage.metrics {
+            metric.counter {
+              name              = "kindnet_netpol_skipped_total"
+              description       = "Lines where kindnet said it is skipping network policies"
+              match_all         = true
+              action            = "inc"
+              max_idle_duration = "8760h"
+            }
+          }
+        }
+        // The rest is a heartbeat every 10s. Counting it proves this tail is alive, which
+        // KindnetLogsNotRead watches, and keeping it out of Loki keeps the log volume as it was.
+        stage.match {
+          selector = "{container=\"kindnet-cni\"}"
+          stage.metrics {
+            metric.counter {
+              name        = "kindnet_log_lines_total"
+              description = "Lines Alloy read from kindnet"
+              match_all   = true
+              action      = "inc"
+            }
+          }
+        }
+        stage.match {
+          selector            = "{container=\"kindnet-cni\"} !~ \"skipping network policies\""
+          action              = "drop"
+          drop_counter_reason = "kindnet_heartbeat"
+        }
         // Blackbox probes the API every 15s from each environment. Without this those access
         // lines would outnumber real requests in the Logs dashboard.
         stage.drop {

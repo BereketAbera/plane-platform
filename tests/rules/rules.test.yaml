@@ -154,3 +154,43 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: ArgoAppOutOfSync, name: plane-dev, dest_namespace: plane-dev, severity: warning, component: argocd }
             exp_annotations: { summary: Application plane-dev has been out of sync for 15m }
+  - name: kindnet's fail-open line fires at once, and clears when that pod is gone
+    interval: 30s
+    input_series:
+      - series: 'loki_process_custom_kindnet_netpol_skipped_total{component_id="loki.process.pods",exported_namespace="kube-system",exported_pod="kindnet-abc",exported_container="kindnet-cni",namespace="monitoring",pod="alloy-1",container="alloy",job="alloy"}'
+        values: '_ _ 1x40'
+      - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-abc",node="n",uid="u"}'
+        values: '1x20 stale'
+      - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-new",node="n",uid="v"}'
+        values: '_x21 1x20'
+      - series: 'loki_process_custom_kindnet_log_lines_total{component_id="loki.process.pods",exported_namespace="kube-system",exported_pod="kindnet-abc",exported_container="kindnet-cni",namespace="monitoring",pod="alloy-1",container="alloy",job="alloy"}'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts:
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, pod: kindnet-abc, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+      - eval_time: 15m
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: KindnetLogsNotRead
+        exp_alerts: []
+  - name: KindnetLogsNotRead fires when the tail is gone
+    interval: 1m
+    input_series:
+      - series: 'up{job="alloy"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: KindnetLogsNotRead
+        exp_alerts: []
+      - eval_time: 11m
+        alertname: KindnetLogsNotRead
+        exp_alerts:
+          - exp_labels: { alertname: KindnetLogsNotRead, severity: warning, component: network }
+            exp_annotations: { summary: "Alloy has read no kindnet log line for 15m, so KindnetSkippedNetworkPolicies cannot fire" }

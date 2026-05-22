@@ -29,6 +29,30 @@ spec:
           labels: { severity: warning, component: node }
           annotations:
             summary: Docker VM has {{ $value | humanizePercentage }} of its memory available
+    # kindnet fails open: if its policy controller cannot start, it logs "skipping network policies" once at
+    # INFO, and every NetworkPolicy stops being enforced with nothing else to show for it. Alloy counts that
+    # line (helm/values/alloy.yaml). The metric's own namespace and pod arrive as exported_*, because the
+    # scrape's labels name Alloy. Once the kindnet pod is replaced the old count no longer applies. This sees
+    # that one log line and nothing else: `make test-netpol`, which sends real traffic, remains the real check.
+    - name: platform.network
+      interval: 30s
+      rules:
+        - alert: KindnetSkippedNetworkPolicies
+          expr: |
+            max by (pod) (label_replace(loki_process_custom_kindnet_netpol_skipped_total, "pod", "$1", "exported_pod", "(.*)"))
+              and on (pod)
+            kube_pod_info{namespace="kube-system"}
+          labels: { severity: critical, component: network }
+          annotations:
+            summary: kindnet pod {{ $labels.pod }} logged that it is skipping network policies, so NetworkPolicies are not enforced
+        # Without this, a broken tail would leave the alert above silently unable to fire. The series expires
+        # 5m after kindnet's last line, and kindnet logs every 10s.
+        - alert: KindnetLogsNotRead
+          expr: absent(loki_process_custom_kindnet_log_lines_total)
+          for: 10m
+          labels: { severity: warning, component: network }
+          annotations:
+            summary: Alloy has read no kindnet log line for 15m, so KindnetSkippedNetworkPolicies cannot fire
     # No disk rule here on purpose: the VM filesystem reports hundreds of free GiB on a sparse disk
     # while the Mac runs out first. guard_disk in scripts/lib/common.sh is the real check.
     - name: platform.argocd
