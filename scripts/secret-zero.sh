@@ -16,6 +16,9 @@ need_commands kubectl openssl jq yq
 umask 077
 mkdir -p "$SECRET_ZERO_DIR"
 chmod 700 "$SECRET_ZERO_DIR"
+# Dumps hold password hashes and API tokens. This runs on every make up, ahead of any possible backup.
+mkdir -p "$LOCAL_DIR/backups"
+chmod 700 "$LOCAL_DIR/backups"
 
 NS=infisical
 DB_USER=infisical

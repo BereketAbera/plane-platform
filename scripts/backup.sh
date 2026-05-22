@@ -10,10 +10,18 @@
 # Objects: rclone copy plus a downloading check. Plane only.
 # Keys: only a truncated hash of SECRET_KEY or ENCRYPTION_KEY goes in the manifest, never the key.
 # Dumps hold password hashes and plaintext API tokens, so the backup root is kept at 0700.
+# Recovery set: after the Job, this script adds recovery/ to the backup from the host, because that is
+# where those files live. See infisical/lib/recovery.sh. Infisical exits non-zero if its set is not
+# whole, and keeps the dump: an in-place restore can use it, a clean restore cannot.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../monitoring/ops/lib.sh
 source "$ROOT/monitoring/ops/lib.sh"
+# shellcheck source=../infisical/lib/api.sh
+source "$ROOT/infisical/lib/api.sh"
+# shellcheck source=../infisical/lib/recovery.sh
+source "$ROOT/infisical/lib/recovery.sh"
+trap ia_cleanup EXIT
 
 accept_assignments "ENV KEEP" "$@"
 target="${ENV:-}"
@@ -45,8 +53,9 @@ ID="$(date -u +%Y%m%dT%H%M%SZ)"
 JOB="plane-backup-$(printf '%s' "$ID" | tr '[:upper:]' '[:lower:]')"
 
 # The Job runs as the postgres UID, and hostPath ignores fsGroup, so the environment folder must be
-# writable by anyone. The parent at 0700 is what keeps other host users out. VirtioFS UID mapping
-# is unverified; if the Job cannot write, this is the first place to look.
+# writable by anyone. The parent at 0700 is what keeps other host users out. Measured on VirtioFS
+# (fakeowner): a Job as UID 70 writes here, and on the host the files belong to the Docker Desktop
+# user, mode 0600 from the Job's umask.
 mkdir -p "$LOCAL_DIR/backups/$ENV_NAME"
 chmod 0700 "$LOCAL_DIR/backups"
 chmod 0777 "$LOCAL_DIR/backups/$ENV_NAME"
@@ -226,9 +235,9 @@ spec:
               umask 077
               D="/backups/$BACKUP_ID.partial"
               mkdir -p "$D/objects"
-              # --metadata keeps Content-Type, which Plane's presigned GET serves as stored. Local
-              # storage keeps it in xattrs, which VirtioFS may not support, so lsjson records it too.
-              rclone copy "src:$BUCKET" "$D/objects" --metadata --checksum --transfers 4 --stats 0
+              # Plane's presigned GET serves Content-Type as stored. Local storage could keep it only
+              # in xattrs, which VirtioFS refuses (measured), so lsjson records it and restore replays it.
+              rclone copy "src:$BUCKET" "$D/objects" --checksum --transfers 4 --stats 0
               rclone check "src:$BUCKET" "$D/objects" --one-way --download --combined "$D/objects.check"
               rclone lsjson -R --metadata "src:$BUCKET" > "$D/objects.lsjson"
               echo "objects: $(wc -l < "$D/objects.check") checked"
@@ -315,12 +324,13 @@ YAML
 }
 
 backup_infisical() {
-  local pg_image
+  local pg_image server_image
   pg_image="$(live_image statefulset infisical-postgres postgres)"
-  [[ -n "$pg_image" ]] || die "cannot read infisical-postgres. Is the infisical Application synced?"
+  server_image="$(live_image deployment infisical infisical-standalone-infisical)"
+  [[ -n "$pg_image" && -n "$server_image" ]] || die "cannot read the Infisical workloads. Is the infisical Application synced?"
 
   log "Backing up $NS to .local/backups/$ENV_NAME/$ID"
-  fill "JOB=$JOB" "NS=$NS" "ID=$ID" "ENV_NAME=$ENV_NAME" "KEEP=$KEEP" "PG_IMAGE=$pg_image" <<'YAML' | run_job "$NS" "$JOB" 1800
+  fill "JOB=$JOB" "NS=$NS" "ID=$ID" "ENV_NAME=$ENV_NAME" "KEEP=$KEEP" "PG_IMAGE=$pg_image" "SERVER_IMAGE=$server_image" <<'YAML' | run_job "$NS" "$JOB" 1800
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -361,6 +371,7 @@ spec:
             - { name: ENV_NAME, value: "__ENV_NAME__" }
             - { name: KEEP, value: "__KEEP__" }
             - { name: PG_IMAGE, value: "__PG_IMAGE__" }
+            - { name: SERVER_IMAGE, value: "__SERVER_IMAGE__" }
             - { name: PGHOST, value: infisical-postgres }
             - { name: PGUSER, valueFrom: { secretKeyRef: { name: infisical-db, key: POSTGRES_USER } } }
             - { name: PGPASSWORD, valueFrom: { secretKeyRef: { name: infisical-db, key: POSTGRES_PASSWORD } } }
@@ -388,14 +399,17 @@ spec:
               mkdir "$D" "$D/postgres"
               pg_dump -Fc -Z 6 -f "$D/postgres/infisical.dump" "$POSTGRES_DB"
               pg_restore -l "$D/postgres/infisical.dump" > "$D/postgres/infisical.toc.txt"
+              # One statement per table, because a UNION over 785 partitions runs out of shared
+              # memory here, as --single-transaction does below (measured, with max_connections=30).
               cat > "$D/postgres/rowcounts.sql" <<'SQL'
-              SELECT string_agg(format('SELECT %L AS t, count(*) AS c FROM public.%I', tablename, tablename), ' UNION ALL ' ORDER BY tablename) AS q FROM pg_tables WHERE schemaname = 'public' \gset
-              SELECT * FROM (:q) s ORDER BY t;
+              SELECT format('SELECT %L AS t, count(*) AS c FROM public.%I', tablename, tablename) FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename \gexec
               SQL
               V="scratch_$(printf '%s' "$BACKUP_ID" | tr '[:upper:]' '[:lower:]')"
               trap 'dropdb --if-exists --force "$V" || true' EXIT
               createdb "$V"
-              pg_restore --no-owner --no-privileges --exit-on-error --single-transaction -d "$V" "$D/postgres/infisical.dump"
+              # Never --single-transaction: 3,000 partition indexes need more locks in one transaction
+              # than this server has. scripts/restore.sh gets its atomicity from a rename instead.
+              pg_restore --no-owner --no-privileges --exit-on-error -d "$V" "$D/postgres/infisical.dump"
               psql -XAt -F "$TAB" -v ON_ERROR_STOP=1 -d "$V" -f "$D/postgres/rowcounts.sql" > "$D/postgres/rowcounts.tsv"
               cd "$D"
               entry() { printf '{"path":"%s","bytes":%s,"sha256":"%s"}' "$1" "$(wc -c < "$1" | tr -d ' ')" "$(sha256sum "$1" | cut -d' ' -f1)"; }
@@ -408,6 +422,7 @@ spec:
                 "id": "$BACKUP_ID",
                 "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
                 "pg_image": "$PG_IMAGE",
+                "server_image": "$SERVER_IMAGE",
                 "pg_server_version": "$(psql -XAt -d "$POSTGRES_DB" -c 'SHOW server_version')",
                 "pg_dump_version": "$(pg_dump --version)",
                 "encryption_key_fp": "$FP",
@@ -433,10 +448,18 @@ final="$LOCAL_DIR/backups/$ENV_NAME/$ID"
 [[ -f "$final/manifest.json" ]] || die "the Job finished but $final/manifest.json is not on the host: check the kind mount of .local/backups"
 (cd "$final" && shasum -a 256 -c SHA256SUMS >/dev/null) || die "checksum verification failed on the host for $final"
 
+recovery_failed=no
+if [[ "$ENV_NAME" == infisical ]]; then
+  recovery_write_infisical "$final" || recovery_failed=yes
+else
+  recovery_write_plane "$final" "$ENV_NAME"
+fi
+
 # A later success clears the failure that PlaneBackupFailed would otherwise report for 7 days.
 kc -n "$NS" get jobs -l app.kubernetes.io/name=plane-backup -o json \
   | jq -r '.items[] | select((.status.failed // 0) > 0) | .metadata.name' \
   | while read -r old_job; do kc -n "$NS" delete job "$old_job" >/dev/null; done
 
 jq -r '"backup \(.id): " + ([.files[] | "\(.path) \(.bytes) B"] | join(", "))' "$final/manifest.json"
+[[ "$recovery_failed" == no ]] || die "the dump in .local/backups/$ENV_NAME/$ID is good, but its recovery set is not whole, as the warnings above say. An in-place restore can use it, and make restore-clean will refuse it."
 ok "backup complete: .local/backups/$ENV_NAME/$ID"

@@ -4,6 +4,12 @@
 #
 # Runs from the host so the admin token never enters the cluster. Publishing comes last, after
 # seeding, so an operator never logs in to an empty project.
+#
+# INFISICAL_RESTORED=yes is restored mode, for an instance whose database just came back from a backup
+# (`make restore-clean` runs it). It keeps every credential, refreshes the cluster CA through Terraform,
+# republishes the identity Secrets and writes no secret value. It refuses instead of repairing: a
+# fresh instance, a token the server rejects, Terraform wanting to create or delete anything, or a
+# missing secret all mean this database and these local files are not a pair. Idempotent.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../infisical/lib/api.sh
@@ -18,6 +24,7 @@ ADMIN_EMAIL="admin@wayline.localhost"
 ADMIN_ORG="wayline"
 TF_ROOT="$ROOT/infisical/terraform"
 TF_STATE_DIR="$LOCAL_DIR/terraform/infisical"
+RESTORED="${INFISICAL_RESTORED:-}"
 
 # Fixed by helm/plane/overlays/*/infisical.yaml and infisical/manifests/token-reviewer.yaml.
 IDENTITY_SECRET=plane-infisical-identity
@@ -98,6 +105,30 @@ tf() { # Subshell, so the token lives only in the environment of this one terraf
   )
 }
 
+# A restore may only update what is stored about the old cluster, which is the CA in Kubernetes Auth.
+# Saved plan, so what is applied is exactly what was checked.
+apply_restored() {
+  local rc=0 plan unexpected
+  [[ -s "$TF_STATE_DIR/terraform.tfstate" ]] \
+    || die "no Terraform state at $TF_STATE_DIR, and creating what the restored database already holds would fail. Restore it with: scripts/restore.sh infisical <backup-id> CONFIRM=yes"
+  tf plan -lock-timeout=10m -input=false -detailed-exitcode -out="$IA_TMP/restored.tfplan" || rc=$?
+  case "$rc" in
+    0)
+      ok "Terraform has nothing to change: the CA is already this cluster's"
+      return 0
+      ;;
+    2) ;;
+    *) die "terraform plan failed against the restored instance" ;;
+  esac
+  plan="$(tf show -json "$IA_TMP/restored.tfplan")"
+  unexpected="$(jq -r '[.resource_changes[]?
+      | select(.change.actions != ["no-op"] and .change.actions != ["read"] and .change.actions != ["update"])
+      | "\(.address) (\(.change.actions | join("+")))"] | join(", ")' <<<"$plan")"
+  [[ -z "$unexpected" ]] \
+    || die "Terraform wants to change more than an update in place: $unexpected. The state and the restored database are not a pair, so nothing was applied. Restore them together with: scripts/restore.sh infisical <backup-id> CONFIRM=yes"
+  tf apply -lock-timeout=10m -input=false "$IA_TMP/restored.tfplan"
+}
+
 publish_identity() { # env. An id is not a credential, yet the CRD accepts only a Secret reference.
   local env="$1" ns id
   ns="$(env_namespace "$env")"
@@ -122,6 +153,11 @@ initialized="$(printf '%s' "$IA_BODY" | jq -r '.config.initialized | tostring')"
 
 case "$initialized" in
   false)
+    [[ "$RESTORED" != yes ]] \
+      || die "Infisical is uninitialized, so the restore did not take. Refusing to bootstrap: that would generate new credentials and new secrets."
+    if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
+      die "a clean restore is under way ($RESTORE_CLEAN_MARKER), and bootstrapping this fresh instance would create new secrets that do not match the backup. Finish it with: make restore-clean BACKUP=latest. To give up on it and start an empty platform, remove that file and run this again."
+    fi
     archive_stale_state
     bootstrap_instance
     ;;
@@ -135,6 +171,12 @@ esac
 
 ia_load_admin
 ORG_ID="$(jq -er '.organization.id' "$ADMIN_FILE")"
+if [[ "$RESTORED" == yes ]]; then
+  ia_request GET "/api/v2/organizations/$ORG_ID/identity-memberships?limit=1"
+  [[ "$IA_STATUS" == 200 ]] \
+    || die "the restored instance answers HTTP $IA_STATUS to the admin token in $ADMIN_FILE: $(ia_error). The token, AUTH_SECRET and the database must come from the same set. See infisical/README.md, section Recovery."
+  ok "the restored instance accepts the admin token"
+fi
 # Public. Stored in Kubernetes Auth, and it changes whenever the cluster is recreated.
 KUBE_CA="$(kc -n infisical get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}')"
 [[ -n "$KUBE_CA" ]] || die "could not read the cluster CA from ConfigMap infisical/kube-root-ca.crt"
@@ -143,7 +185,11 @@ mkdir -p "$TF_STATE_DIR"
 chmod 700 "$TF_STATE_DIR"
 log "Applying infisical/terraform"
 tf init -input=false -lockfile=readonly >/dev/null
-tf apply -lock-timeout=10m -input=false -auto-approve
+if [[ "$RESTORED" == yes ]]; then
+  apply_restored
+else
+  tf apply -lock-timeout=10m -input=false -auto-approve
+fi
 
 tf output -json | jq --slurpfile admin "$ADMIN_FILE" '{
     organization: $admin[0].organization,
@@ -156,7 +202,11 @@ chmod 600 "$MACHINE_FILE.tmp"
 mv "$MACHINE_FILE.tmp" "$MACHINE_FILE"
 ok "machine details in $MACHINE_FILE"
 
-"$(dirname "$0")/infisical-seed.sh"
+if [[ "$RESTORED" == yes ]]; then
+  SEED_VERIFY_ONLY=yes "$(dirname "$0")/infisical-seed.sh"
+else
+  "$(dirname "$0")/infisical-seed.sh"
+fi
 
 publish_identity dev
 publish_identity prod-sim
