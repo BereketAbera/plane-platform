@@ -53,7 +53,7 @@ an estimated 5 GiB in the Docker VM for upstream's Dockerfiles. Static web and a
 upstream's Linux `node_modules` and swaps only `build/`.
 
 Post-build rewriting alone cannot restructure the shell or the sign-in screen, and a full fork would carry over 5,000
-files to change 85 by patch and replace 155 whole. Those are measured, on 2026-11-05: patches are 85 files, +311 -499,
+files to change 85 by patch and replace 155 whole. Those are measured, on 2026-11-05: patches are 85 files, +310 -499,
 139 hunks, about 110 KB, and brand CSS is about 1,200 lines. The research's estimate of about 20 files and 150 to 200
 lines was far too low. `MODIFICATIONS.md` has the breakdown.
 

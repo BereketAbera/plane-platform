@@ -32,7 +32,7 @@ Most of this is appearance and text. These are the changes that alter what the s
 | The workspace "Active cycles" menu item is gone. Its route, which in Community Edition only ever held an upsell, now says plainly that the feature is not part of this edition | `patches/30-surfaces.patch` |
 | "Star us on GitHub" and the edition badge footer are no longer rendered in the shell | `patches/10-shell.patch` |
 | The backend image sets `INSTANCE_CHANGELOG_URL` empty, so "What's new" shows the local fallback rather than upstream's page. The setting still works for an operator who sets it | `runtime/Dockerfile.backend`, `patches/30-surfaces.patch` (fallback wording) |
-| `source` and `licenses` are reserved workspace slugs, because the web image answers those paths itself. A workspace that already uses either keeps working, except that the exact URL `/source` or `/licenses/` goes to nginx | `patches/30-surfaces.patch`, `backend/edit_strings.py` |
+| `source` is a reserved workspace slug, because the web image answers that path itself. (Upstream already reserves `licenses`, the other path it answers.) A workspace that already uses it keeps working, except that the exact URL `/source` goes to nginx | `patches/30-surfaces.patch`, `backend/edit_strings.py` |
 | The maintenance and error pages say "contact your administrator" and link the source code, not upstream's support address | `patches/30-surfaces.patch` |
 | The "Learn more about projects" button and the expired-invitation page's "Star us on GitHub" and "Join our community" items are removed | `patches/30-surfaces.patch` |
 | Help menus lose the forum, contact-sales and bug-report entries, and gain a source code link | `patches/30-surfaces.patch`, `patches/40-admin.patch` |
@@ -73,7 +73,7 @@ third-party sign-in logos, the fallback avatar.
 
 ### Patches (`patches/`)
 
-Measured with `git apply --numstat` on 2026-11-05: 85 files, +311 -499, 139 hunks, about 110 KB.
+Measured with `git apply --numstat` on 2026-11-05: 85 files, +310 -499, 139 hunks, about 110 KB.
 
 | Patch | Files | Lines | Scope |
 |---|---|---|---|
@@ -81,7 +81,7 @@ Measured with `git apply --numstat` on 2026-11-05: 85 files, +311 -499, 139 hunk
 | `01-fonts` | 3 | +3 -31 | `apps/{web,admin,space}/app/root.tsx`: stops loading Inter and IBM Plex Mono, ink `theme-color` |
 | `10-shell` | 20 | +43 -32 | `apps/web`: full-bleed content (`workspace/content-wrapper.tsx`, `(projects)/layout.tsx`, `settings/profile/layout.tsx`), shell attributes (`navigation/top-navigation-root.tsx`, `sidebar/*`, the three settings sidebars), active item hooks, section label classes, metadata hooks |
 | `20-auth` | 17 | +91 -155 | `apps/web`: split sign-in (`auth-screens/*`, `account/auth-forms/*`, `accounts/*/page.tsx`, `instance/not-ready-view.tsx`, `onboarding/*`, `create-workspace`, `invitations`), customer logos removed, terms text |
-| `30-surfaces` | 21 | +75 -178 | `apps/web`, `packages/constants`: help menu, error and maintenance pages, product updates, badges, active cycles, billing, theme swatches, reserved slugs, chart colours |
+| `30-surfaces` | 21 | +74 -178 | `apps/web`, `packages/constants`: help menu, error and maintenance pages, product updates, badges, active cycles, billing, theme swatches, reserved slugs, chart colours |
 | `40-admin` | 13 | +49 -42 | `apps/admin`: split sign-in, shell, help section, setup and general forms, failure view |
 | `50-space` | 10 | +49 -61 | `apps/space`: split sign-in, ink band, source badge, terms text, error and failure views |
 

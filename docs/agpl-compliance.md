@@ -78,7 +78,7 @@ A small "Source code" link, in places that already hold version or footer inform
 | API clients, optional | `Link: <url>; rel="source"` at ingress | Traefik middleware | Not built | [[VERIFY: decide on and test the API source header]] |
 | The route itself | `/source` | `runtime/nginx-web.conf` | Verified by `checks/smoke-images.sh`: 302 to `<repo>/tree/<commit>` | [[VERIFY: /source returns a redirect to the exact deployed commit, from a logged-out browser]] |
 
-The `/source` path and the Plane routing need to coexist. `source` and `licenses` are reserved workspace slugs in both the frontend and backend lists, and no router link may point at `/source` (`checks/source-links.mjs`). [[VERIFY: Traefik routes /source to the web container in the rendered IngressRoute]]
+The `/source` path and the Plane routing need to coexist. `source` is a reserved workspace slug in both the frontend and backend lists, and no router link may point at `/source` (`checks/source-links.mjs`). [[VERIFY: Traefik routes /source to the web container in the rendered IngressRoute]]
 
 ### The private repository caveat
 

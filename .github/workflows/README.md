@@ -7,6 +7,7 @@ Argo CD reads the local Git remote in pass 1, and only `make gitops-publish` wri
 |---|---|---|
 | `ci.yml` | pull request, push to main | `scripts/ci/lint.sh`, `validate-manifests.sh`, `ownership.sh`, `security.sh`, with no secrets |
 | `images.yml` | changes under `apps/wayline`, to `scripts/ci/build-images.sh`, or to `images.yml` itself | Builds images. On main, pushes to GHCR, records digests, opens a digest-bump PR for dev |
+| `wayline-upstream-check.yml` | weekly, manual dispatch | Dry-runs the Wayline overlay and patches against an upstream ref, default `preview`, and reports the size of the work. Builds and pushes nothing |
 | `promote-prod-sim.yml` | manual dispatch | Opens a PR copying a digest already recorded for dev to prod-sim. Never rebuilds |
 
 `scripts/ci/negative-controls.sh` shows that the checks can fail. It plants one defect at a time in a throwaway
