@@ -77,7 +77,7 @@ tests:
       - eval_time: 6m
         alertname: ArgoAppDegraded
         exp_alerts:
-          - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, sync_status: OutOfSync, health_status: Degraded, severity: critical, component: argocd }
+          - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, health_status: Degraded, severity: critical, component: argocd }
             exp_annotations: { summary: Application plane-dev is Degraded }
       - eval_time: 10m
         alertname: ArgoAppOutOfSync
@@ -85,5 +85,72 @@ tests:
       - eval_time: 16m
         alertname: ArgoAppOutOfSync
         exp_alerts:
-          - exp_labels: { alertname: ArgoAppOutOfSync, name: plane-dev, sync_status: OutOfSync, health_status: Degraded, severity: warning, component: argocd }
+          - exp_labels: { alertname: ArgoAppOutOfSync, name: plane-dev, severity: warning, component: argocd }
+            exp_annotations: { summary: Application plane-dev has been out of sync for 15m }
+  # What a failing sync looks like under retry.limit -1, taken from a real one: the operation stays open,
+  # no sync_total series appears, and health and sync status move underneath it.
+  - name: ArgoSyncFailed fires during a retry loop, through label changes and a controller restart
+    interval: 1m
+    input_series:
+      # Health changes at 8m, which is a new series. The scrape then misses one sample at 12m, as when the
+      # controller restarts.
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",project="plane-dev",sync_status="OutOfSync",health_status="Progressing",operation="sync"}'
+        values: '1x7 stale'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",project="plane-dev",sync_status="OutOfSync",health_status="Degraded",operation="sync"}'
+        values: '_x8 1x3 stale 1x9 stale'
+      # A normal sync, closed after 5m, then this Application carries no operation label.
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",project="plane-prod-sim",sync_status="OutOfSync",health_status="Progressing",operation="sync"}'
+        values: '1x4 stale'
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",project="plane-prod-sim",sync_status="Synced",health_status="Healthy"}'
+        values: '_x5 1x30'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoSyncFailed
+        exp_alerts:
+          - exp_labels: { alertname: ArgoSyncFailed, name: plane-dev, dest_namespace: plane-dev, phase: Running, severity: critical, component: argocd }
+            exp_annotations:
+              summary: Application plane-dev has had a sync Running for 15m
+              description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
+      # The operation closed at 23m, and the 2m window has passed.
+      - eval_time: 26m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+  - name: root's operation walks every wave, so only ArgoRootSyncStuck covers it, and much later
+    interval: 1m
+    input_series:
+      - series: 'argocd_app_info{name="root",dest_namespace="argocd",project="platform",sync_status="OutOfSync",health_status="Progressing",operation="sync"}'
+        values: '1x70'
+    alert_rule_test:
+      - eval_time: 45m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+      - eval_time: 45m
+        alertname: ArgoRootSyncStuck
+        exp_alerts: []
+      - eval_time: 62m
+        alertname: ArgoRootSyncStuck
+        exp_alerts:
+          - exp_labels: { alertname: ArgoRootSyncStuck, name: root, dest_namespace: argocd, severity: warning, component: argocd }
+            exp_annotations: { summary: The root Application has had a sync Running for 60m }
+  - name: self-heal opening and closing operations does not restart for on OutOfSync or Degraded
+    interval: 1m
+    input_series:
+      # Neither series lasts 5 minutes, but the Application is OutOfSync and Degraded throughout.
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="OutOfSync",health_status="Degraded"}'
+        values: '1x3 stale _x3 1x3 stale _x3 1x3 stale _x3'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="OutOfSync",health_status="Degraded",operation="sync"}'
+        values: '_x4 1x3 stale _x3 1x3 stale _x3 1x3 stale'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ArgoAppDegraded
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, dest_namespace: plane-dev, health_status: Degraded, severity: critical, component: argocd }
+            exp_annotations: { summary: Application plane-dev is Degraded }
+      - eval_time: 16m
+        alertname: ArgoAppOutOfSync
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppOutOfSync, name: plane-dev, dest_namespace: plane-dev, severity: warning, component: argocd }
             exp_annotations: { summary: Application plane-dev has been out of sync for 15m }

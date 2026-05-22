@@ -188,7 +188,7 @@
      }
     }
    ],
-   "description": "Sync operations by outcome over the selected time range, counted since the application controller last started. A subtraction, because increase() reads a counter's first value as zero and would hide each Application's first sync.",
+   "description": "Completed sync operations by outcome over the selected time range, counted since the application controller last started. A subtraction, because increase() reads a counter's first value as zero and would hide each Application's first sync. A failing sync retries without limit and never completes, so it is not counted here: see Syncs still open.",
    "transformations": [
     {
      "id": "organize",
@@ -216,7 +216,7 @@
    "gridPos": {
     "x": 0,
     "y": 10,
-    "w": 24,
+    "w": 12,
     "h": 7
    },
    "fieldConfig": {
@@ -267,7 +267,60 @@
      }
     }
    ],
-   "description": "argocd_app_sync_total has no dest_namespace label, so this matches on Application name, which equals the namespace."
+   "description": "Completed operations only. argocd_app_sync_total has no dest_namespace label, so this matches on Application name, which equals the namespace."
+  },
+  {
+   "id": 11,
+   "type": "state-timeline",
+   "title": "Syncs still open",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 10,
+    "w": 12,
+    "h": 7
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "orange"
+     },
+     "custom": {
+      "lineWidth": 0,
+      "fillOpacity": 80
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showValue": "never",
+    "mergeValues": true,
+    "rowHeight": 0.7,
+    "legend": {
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "targets": [
+    {
+     "expr": "max by (name) (argocd_app_info{operation=\"sync\"})",
+     "legendFormat": "{{name}}",
+     "range": true,
+     "instant": false,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "One row per Application while it has a sync operation open. Every Application retries without limit, so a failing sync goes back to Running instead of Failed and its row stays on. A few minutes is a normal sync, and 15 minutes fires ArgoSyncFailed."
   },
   {
    "id": 5,
