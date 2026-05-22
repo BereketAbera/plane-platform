@@ -4,8 +4,18 @@
 #
 #   scripts/gitops-publish.sh                creates the bare repo if absent, then pushes main
 #   SKIP_BACKUP=yes scripts/gitops-publish.sh   publishes a prod-sim digest change with no dump
+#
+# A publish that brings prod-sim a digest must have plane-dev Synced and Healthy with that digest in a
+# ready container, as in promote.sh. SKIP_BACKUP does not change that. Three ways past it:
+#   OVERRIDE_DEV_CHECK="<reason>"   runs the check and goes ahead if it fails, logging the reason
+#   SKIP_DEV_CHECK="<reason>"       does not ask the cluster at all, and logs the reason. For rollback,
+#                                   which must work while dev is broken, and has no other caller
+#   no cluster in reach             the check is skipped, and this says so
+# Both reasons go in .local/evidence-raw/promotion-overrides.log.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# shellcheck source=lib/dev-check.sh
+source "$(dirname "$0")/lib/dev-check.sh"
 
 guard_disk 1
 cd "$ROOT"
@@ -30,18 +40,44 @@ if [[ "$old" == "$new" ]]; then
 fi
 
 # A promotion merged on GitHub reaches the cluster here, not in the workflow, which cannot talk to
-# the cluster. So this is where such a promotion must take the dump the contract requires.
+# the cluster. So this is where such a promotion must prove itself on plane-dev and take the dump the
+# contract requires, in that order, so a refused publish costs no dump.
 # grep reads to the end, not -q. With -q it stops at the first match, git dies of SIGPIPE on a large
-# diff, and under pipefail the pipeline reads as no match, which would skip the dump.
-if [[ -n "$old" && "${SKIP_BACKUP:-}" != yes ]] && git cat-file -e "$old" 2>/dev/null &&
+# diff, and under pipefail the pipeline reads as no match, which would skip both.
+if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null &&
   git diff "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+].*@sha256:' >/dev/null; then
-  # A cluster with no prod-sim database has nothing to dump, which is what make up meets after make
-  # destroy. If kubectl cannot tell, go on to the backup, which fails and stops this publish.
-  if [[ -n "$(kc -n plane-prod-sim get statefulset plane-pgdb-wl --ignore-not-found -o name 2>/dev/null || echo unknown)" ]]; then
-    log "This publish changes a prod-sim image, so taking a backup first"
-    "$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."
-  else
-    log "This publish changes a prod-sim image, but prod-sim has no database yet, so nothing to back up"
+  # The digests on added lines. An image that was only removed brings nothing to prove.
+  added=()
+  while read -r digest; do added+=("$digest"); done < <(git diff "$old" "$new" -- "$PROD_SIM_MANIFESTS" |
+    sed -n 's/^+.*@\(sha256:[a-f0-9]\{64\}\).*/\1/p' | sort -u)
+
+  # A cluster with no prod-sim database has nothing running to protect or to dump, which is what make
+  # up meets after make destroy. If kubectl cannot tell, go on, and the backup fails and stops this
+  # publish. With both skips set nothing here asks the cluster anything, as rollback needs.
+  database=not-asked
+  if [[ -z "${SKIP_DEV_CHECK:-}" || "${SKIP_BACKUP:-}" != yes ]]; then
+    database="$(kc --request-timeout=10s -n plane-prod-sim get statefulset plane-pgdb-wl --ignore-not-found -o name 2>/dev/null || echo unknown)"
+  fi
+
+  if [[ ${#added[@]} -gt 0 ]]; then
+    if [[ -n "${SKIP_DEV_CHECK:-}" ]]; then
+      record_dev_check not-run "$SKIP_DEV_CHECK" "" "${added[@]}"
+      warn "plane-dev check not run for this publish: $SKIP_DEV_CHECK. Logged in ${DEV_CHECK_LOG#"$ROOT"/}."
+    elif [[ -z "$database" ]]; then
+      log "This publish changes a prod-sim image, but prod-sim has no database yet, so there is nothing running for the plane-dev check to protect"
+    else
+      log "This publish changes a prod-sim image, so plane-dev must have proven it"
+      check_dev_proven "${added[@]}" || refuse_unproven_dev "Nothing was published."
+    fi
+  fi
+
+  if [[ "${SKIP_BACKUP:-}" != yes ]]; then
+    if [[ -n "$database" ]]; then
+      log "This publish changes a prod-sim image, so taking a backup first"
+      "$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."
+    else
+      log "This publish changes a prod-sim image, but prod-sim has no database yet, so nothing to back up"
+    fi
   fi
 fi
 
