@@ -1,48 +1,55 @@
-# Thu Nov  5 00:11:15 EAT 2026 commit 4a49a9c9d3614aa0e08888c66a79515e6d2e02c6 plus uncommitted apps/wayline
+# Thu Nov  5 01:43:59 EAT 2026 commit 1242134361ffff7ddff5144bc912a98832181401
 $ rm -rf .build/plane-src && /usr/bin/time -l apps/wayline/scripts/build.sh
 ==> Node v22.22.2
  ok /Users/bek/dev/pr/plane-platform/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
+==> Overlay against the pinned commit
+ ok overlay.lock matches v1.4.3: 155 replaced, 20 new
+143 images, 7 manifests, 2.82 MiB in the overlay
+against /Users/bek/dev/pr/plane-platform/.build/plane-src: 143 outputs compared, 188 images referenced by source, 0 uncovered
 ==> Overlay
  ok 7 patches applied
 ==> Codemod
-rebrand: 3737 files read, 432 changed, 8 lines dropped
+rebrand: 3739 files read, 439 changed, 8 lines dropped
 ==> Token diff and contrast
-token-diff: 248 names across 6 brand files, 928 upstream tokens, 0 problems
-light: 113 pairs, lowest 4.58
+token-diff: 266 names across 6 brand files, 928 upstream tokens, 0 problems
+light: 194 pairs, lowest 4.58
 light [data-shell]: 40 pairs, lowest 5.25
+light page main: 194 pairs, lowest 4.53
 light: disabled text on surface-1 = 3.70 (exempt, informational)
-dark: 113 pairs, lowest 4.86
+dark: 194 pairs, lowest 4.52
 dark [data-shell]: 40 pairs, lowest 5.25
 dark: disabled text on surface-1 = 4.52 (exempt, informational)
-light-contrast: 113 pairs, lowest 4.82
+light-contrast: 194 pairs, lowest 4.82
 light-contrast [data-shell]: 40 pairs, lowest 5.25
+light-contrast page main: 194 pairs, lowest 4.82
 light-contrast: disabled text on surface-1 = 3.86 (exempt, informational)
-dark-contrast: 113 pairs, lowest 4.86
+dark-contrast: 194 pairs, lowest 5.22
 dark-contrast [data-shell]: 40 pairs, lowest 5.25
 dark-contrast: disabled text on surface-1 = 4.52 (exempt, informational)
-light shell nav: 152 pairs, lowest 5.25
-light shell top: 172 pairs, lowest 5.25
+light shell nav: 304 pairs, lowest 4.99
+light shell top: 324 pairs, lowest 4.99
 light shell: hairline 1.66, disabled text 4.57 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-dark shell nav: 152 pairs, lowest 5.25
-dark shell top: 172 pairs, lowest 5.25
-dark shell: hairline 1.66, disabled text 4.57 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-light-contrast shell nav: 155 pairs, lowest 4.92
-light-contrast shell top: 178 pairs, lowest 4.92
+dark shell nav: 304 pairs, lowest 4.99
+dark shell top: 324 pairs, lowest 4.99
+dark shell: hairline 1.78, disabled text 4.92 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+light-contrast shell nav: 307 pairs, lowest 4.92
+light-contrast shell top: 330 pairs, lowest 4.92
 light-contrast shell: hairline 4.92, disabled text 7.94 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-dark-contrast shell nav: 155 pairs, lowest 4.92
-dark-contrast shell top: 178 pairs, lowest 4.92
-dark-contrast shell: hairline 4.92, disabled text 7.94 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-1926 pairs checked, 0 below AA
+dark-contrast shell nav: 307 pairs, lowest 5.21
+dark-contrast shell top: 330 pairs, lowest 4.92
+dark-contrast shell: hairline 5.21, disabled text 8.42 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+3854 pairs checked, 0 below AA
+source-links: 1579 files read, 0 problems
 ==> pnpm 11.10.0
 ==> pnpm install
 Scope: 16 of 20 workspace projects
-✓ Lockfile passes supply-chain policies (verified 47m ago)
+✓ Lockfile passes supply-chain policies (verified 2h ago)
 Lockfile is up to date, resolution step is skipped
 Progress: resolved 1, reused 0, downloaded 0, added 0
 .                                        |    +1301 ++++++++++++++++++++++++++++
-Progress: resolved 1301, reused 1297, downloaded 0, added 508
+Progress: resolved 1301, reused 1297, downloaded 0, added 422
 Progress: resolved 1301, reused 1297, downloaded 0, added 834
-Progress: resolved 1301, reused 1297, downloaded 0, added 1213
+Progress: resolved 1301, reused 1297, downloaded 0, added 1194
 Progress: resolved 1301, reused 1297, downloaded 0, added 1300
 Progress: resolved 1301, reused 1297, downloaded 0, added 1301, done
 .../node_modules/@swc/core postinstall$ node postinstall.js
@@ -50,7 +57,7 @@ Progress: resolved 1301, reused 1297, downloaded 0, added 1301, done
 . prepare$ husky
 . prepare: HUSKY=0 skip install
 . prepare: Done
-Done in 6.5s using pnpm v11.10.0
+Done in 7.5s using pnpm v11.10.0
 ==> turbo build web
 
    • Packages in scope: web
@@ -59,8 +66,8 @@ Done in 6.5s using pnpm v11.10.0
 
 
  Tasks:    11 successful, 11 total
-Cached:    9 cached, 11 total
-  Time:    12.851s 
+Cached:    3 cached, 11 total
+  Time:    27.074s 
 
 ==> turbo build admin
 
@@ -70,8 +77,8 @@ Cached:    9 cached, 11 total
 
 
  Tasks:    8 successful, 8 total
-Cached:    8 cached, 8 total
-  Time:    86ms >>> FULL TURBO
+Cached:    2 cached, 8 total
+  Time:    17.942s 
 
 ==> turbo build space
 
@@ -82,13 +89,13 @@ Cached:    8 cached, 8 total
 
  Tasks:    10 successful, 10 total
 Cached:    8 cached, 10 total
-  Time:    15.081s 
+  Time:    17.526s 
 
 leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
   allowlisted 293x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
   allowlisted 13x: Built on <<Plane>> Community Edition
   allowlisted 1x: https://docs\.<<plane\.so>>/core-concepts/projects/run-project#estimate
-  allowlisted 4x: https://docs\.<<plane\.so>>/
+  allowlisted 4x: https://docs\.<<plane\.so>>/(?:["'`\\]|\s|$)
   allowlisted 2x: https://developers\.<<plane\.so>>/self-hosting/telemetry
   allowlisted 1x: intake@<<plane\.so>>
   allowlisted 6x: <<Plane>>(Lockup|Logo|Wordmark|NewIcon)\b
@@ -97,36 +104,24 @@ leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
   allowlisted 6x: <<Plane>>n Sie
   allowlisted 9x: <<Plane>>jado|<<Plane>>je
  ok web: 5 font URLs under /assets/, all files present, brand values present
+ ok web ships none of upstream's empty-state illustrations
  ok admin: 5 font URLs under /god-mode/assets/, all files present, brand values present
+ ok admin ships none of upstream's empty-state illustrations
  ok space: 5 font URLs under /spaces/assets/, all files present, brand values present
+ ok space ships none of upstream's empty-state illustrations
 ==> Assemble /Users/bek/dev/pr/plane-platform/.build/wayline-dist
-4.9M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/admin
-128K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
+==> web built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
+==> admin built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
+==> space built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
+==> backend built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
+4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.admin
+4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.backend
+4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.space
+4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web
+5.0M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/admin
+188K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
  24M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/space
- 29M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/web
+ 28M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/web
  ok Build complete for: web admin space backend
-       42.95 real        39.67 user        30.41 sys
-          1998946304  maximum resident set size
-                   0  average shared memory size
-                   0  average unshared data size
-                   0  average unshared stack size
-              902078  page reclaims
-                8247  page faults
-                   0  swaps
-                   0  block input operations
-                   0  block output operations
-                3067  messages sent
-                3667  messages received
-                 174  signals received
-               36928  voluntary context switches
-             1588623  involuntary context switches
-           264247065  instructions retired
-           118611606  cycles elapsed
-             3932448  peak memory footprint
-# exit code 0
-
-# Sampled RSS of the build's process tree every 2 s, which double-counts shared pages:
-peak_total_kib=2097632 peak_largest_proc_kib=1924080
-
-# First clean run this session, before the codemod fix, same command: time -l maximum resident 1896366080 bytes, sampler peak_total_kib=1973920.
-# Both runs reused the turbo cache for packages whose inputs had not changed. A fully cold turbo cache on 2026-11-04 measured 2126 MiB total, sampled at 1 s.
+       81.66 real        95.86 user        41.91 sys
+build.sh exit 0

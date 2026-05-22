@@ -2,7 +2,7 @@ leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
   allowlisted 293x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
   allowlisted 13x: Built on <<Plane>> Community Edition
   allowlisted 1x: https://docs\.<<plane\.so>>/core-concepts/projects/run-project#estimate
-  allowlisted 4x: https://docs\.<<plane\.so>>/
+  allowlisted 4x: https://docs\.<<plane\.so>>/(?:["'`\\]|\s|$)
   allowlisted 2x: https://developers\.<<plane\.so>>/self-hosting/telemetry
   allowlisted 1x: intake@<<plane\.so>>
   allowlisted 6x: <<Plane>>(Lockup|Logo|Wordmark|NewIcon)\b

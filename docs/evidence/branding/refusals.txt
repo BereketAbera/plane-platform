@@ -1,0 +1,15 @@
+# Provenance and publishing refusals, each run on purpose. None of them pushes anything.
+
+$ # stamp says the web context was built from uncommitted source
+fail web was built from uncommitted source. Commit, then rebuild without SKIP_NATIVE_BUILD
+exit 1
+
+$ # no stamp at all
+fail no /Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web, so nothing says what built this context. Run apps/wayline/scripts/build.sh
+exit 1
+
+$ # a registry other than the local one, while D12 is pending
+fail the owner has not decided D12 (apps/wayline/backend/email-py-decision.txt), so nothing goes to ghcr.io/example/wayline
+exit 1
+
+digests.tsv unchanged by all three

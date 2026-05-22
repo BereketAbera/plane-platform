@@ -1,25 +1,27 @@
-light: 113 pairs, lowest 4.58
+light: 194 pairs, lowest 4.58
 light [data-shell]: 40 pairs, lowest 5.25
+light page main: 194 pairs, lowest 4.53
 light: disabled text on surface-1 = 3.70 (exempt, informational)
-dark: 113 pairs, lowest 4.86
+dark: 194 pairs, lowest 4.52
 dark [data-shell]: 40 pairs, lowest 5.25
 dark: disabled text on surface-1 = 4.52 (exempt, informational)
-light-contrast: 113 pairs, lowest 4.82
+light-contrast: 194 pairs, lowest 4.82
 light-contrast [data-shell]: 40 pairs, lowest 5.25
+light-contrast page main: 194 pairs, lowest 4.82
 light-contrast: disabled text on surface-1 = 3.86 (exempt, informational)
-dark-contrast: 113 pairs, lowest 4.86
+dark-contrast: 194 pairs, lowest 5.22
 dark-contrast [data-shell]: 40 pairs, lowest 5.25
 dark-contrast: disabled text on surface-1 = 4.52 (exempt, informational)
-light shell nav: 152 pairs, lowest 5.25
-light shell top: 172 pairs, lowest 5.25
+light shell nav: 304 pairs, lowest 4.99
+light shell top: 324 pairs, lowest 4.99
 light shell: hairline 1.66, disabled text 4.57 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-dark shell nav: 152 pairs, lowest 5.25
-dark shell top: 172 pairs, lowest 5.25
-dark shell: hairline 1.66, disabled text 4.57 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-light-contrast shell nav: 155 pairs, lowest 4.92
-light-contrast shell top: 178 pairs, lowest 4.92
+dark shell nav: 304 pairs, lowest 4.99
+dark shell top: 324 pairs, lowest 4.99
+dark shell: hairline 1.78, disabled text 4.92 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+light-contrast shell nav: 307 pairs, lowest 4.92
+light-contrast shell top: 330 pairs, lowest 4.92
 light-contrast shell: hairline 4.92, disabled text 7.94 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-dark-contrast shell nav: 155 pairs, lowest 4.92
-dark-contrast shell top: 178 pairs, lowest 4.92
-dark-contrast shell: hairline 4.92, disabled text 7.94 (informational, 7:1 and 3:1 rules above apply to high contrast only)
-1926 pairs checked, 0 below AA
+dark-contrast shell nav: 307 pairs, lowest 5.21
+dark-contrast shell top: 330 pairs, lowest 4.92
+dark-contrast shell: hairline 5.21, disabled text 8.42 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+3854 pairs checked, 0 below AA

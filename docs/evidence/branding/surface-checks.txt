@@ -1,0 +1,40 @@
+# Strings the review named, read from the built output of commit 1242134361ffff7ddff5144bc912a98832181401.
+mailto:the source repository               files in web, admin, space client: 0
+Join our community of active creators      files in web, admin, space client: 0
+Learn more about projects                  files in web, admin, space client: 0
+plane.github.com                           files in web, admin, space client: 0
+placeholder:`/source`                      files in web, admin, space client: 0
+
+# "Star us on GitHub" survives only as an unused i18n key (home.star_us_on_github). Its one reader, star-us-link.tsx, is not rendered.
+
+# Form placeholders, en and cs, after the codemod
+165:            "placeholder": "https://example.com",
+189:            "placeholder": "https://example.com/privacy-policy",
+115:    "base_url_placeholder": "např. \"https://git.example.com\"",
+282:    "base_url_placeholder": "např., \"https://git.example.com\"",
+
+# Upstream blue and teal left in shipped files. The blue in CSS is one stop of a rainbow conic gradient, not a brand colour.
+#3f76ff: web/client/assets/globals-jxbsRdCA.css admin/client/assets/globals-baDRgtAC.css space/build/client/assets/globals-BbMWYMN9.css 
+#028375: 
+
+# Paid-plan strings still in a bundle, and why they do not render
+web/client/assets/page-aheSOd7B.js
+web/client/assets/common-bS0DlV_1.js
+The payment URL constants are read only by BillingRoot and PaidPlanUpgradeModal. /settings/billing is refused for every role, and nothing imports the modal:
+apps/web/core/components/license/modal/upgrade-modal.tsx:29:export type PaidPlanUpgradeModalProps = {
+apps/web/core/components/license/modal/upgrade-modal.tsx:34:export const PaidPlanUpgradeModal = observer(funct
+
+# Reserved slug in the backend image and the frontend list
+RESTRICTED_WORKSPACE_SLUGS = [
+    "404",
+    "accounts",
+    "source",
+    "api",
+16:  "source",
+
+# Image labels
+web AGPL-3.0-only 1242134361ffff7ddff5144bc912a98832181401
+backend AGPL-3.0-only AND LicenseRef-Plane-Commercial 1242134361ffff7ddff5144bc912a98832181401
+
+# Computed in a browser: stub API, built web client, /acme/projects/p1/issues/, light
+{"display":{"border":"1px rgb(181, 175, 154)","shadow":"rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px"},"main":["rgb(244, 242, 234)"],"idFont":"JetBrainsMono, ui-mo","search":14,"rail":["none","none","none"]}
