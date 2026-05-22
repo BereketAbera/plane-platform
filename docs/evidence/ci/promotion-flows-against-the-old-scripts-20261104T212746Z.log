@@ -1,0 +1,198 @@
+[1;33mwarn[0m   expected: a refusal
+[1;33mwarn[0m   expected: the reason
+[1;33mwarn[0m   expected: no overlay change
+[1;33mwarn[0m promote-digest-under-another-image FAILED. Its last command printed:
+    [1;33mwarn[0m sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208 is not what dev runs now (sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5). Pass REPO= if it came from another repository.
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;32m ok[0m promote-digest-never-recorded
+[1;33mwarn[0m   expected: a recorded pass
+[1;33mwarn[0m promote-dev-healthy-and-running FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: a refusal
+[1;33mwarn[0m   expected: the reason
+[1;33mwarn[0m   expected: no overlay change
+[1;33mwarn[0m promote-dev-out-of-sync FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: a refusal
+[1;33mwarn[0m   expected: the reason
+[1;33mwarn[0m promote-dev-degraded FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: a refusal, failing closed
+[1;33mwarn[0m   expected: the reason
+[1;33mwarn[0m promote-dev-application-missing FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: a refusal
+[1;33mwarn[0m   expected: the reason
+[1;33mwarn[0m promote-dev-running-another-digest FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: a refusal
+[1;33mwarn[0m   expected: the reason
+[1;33mwarn[0m promote-dev-container-not-ready FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: the skip is printed
+[1;33mwarn[0m   expected: the skip is in the commit message
+[1;33mwarn[0m promote-no-cluster-says-skipped FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for prod-sim
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m 1 digest(s) were recorded for dev
+    [1;33mwarn[0m SKIP_BACKUP=yes: no backup taken before this promotion
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+[1;33mwarn[0m   expected: the promotion goes ahead
+[1;33mwarn[0m   expected: the override is printed
+[1;33mwarn[0m   expected: the commit message keeps the reason
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/evidence-raw/promotion-overrides.log: No such file or directory
+[1;33mwarn[0m   expected: the log keeps reason and state
+[1;33mwarn[0m promote-override-is-logged FAILED. Its last command printed:
+    [1;31mfail[0m usage: ./scripts/promote.sh dev|prod-sim [IMAGE=name DIGEST=sha256:... [REPO=repository]] [CONFIRM=yes] [SKIP_BACKUP=yes] [COMMIT=no]
+[1;33mwarn[0m   expected: the promotion goes ahead
+[1;33mwarn[0m   expected: a pass, not an override
+[1;33mwarn[0m promote-override-unused-when-dev-is-fine FAILED. Its last command printed:
+    [1;31mfail[0m usage: ./scripts/promote.sh dev|prod-sim [IMAGE=name DIGEST=sha256:... [REPO=repository]] [CONFIRM=yes] [SKIP_BACKUP=yes] [COMMIT=no]
+[1;33mwarn[0m   expected: the operator is told what a re-run does
+[1;33mwarn[0m   expected: it says it is publishing the earlier revert
+[1;33mwarn[0m   expected: no second revert
+[1;33mwarn[0m   expected: HEAD is still that revert
+[1;33mwarn[0m   expected: published now
+[1;33mwarn[0m   expected: the first promotion still stands
+[1;33mwarn[0m   expected: stepping back works
+[1;33mwarn[0m rollback-rerun-after-failed-publish FAILED. Its last command printed:
+    [1;31mfail[0m no promotion of dev left to roll back
+[1;33mwarn[0m   expected: the rollback works anyway
+[1;33mwarn[0m   expected: it says the dump failed
+[1;33mwarn[0m   expected: it says how it published
+[1;33mwarn[0m   expected: published
+[1;33mwarn[0m rollback-prod-sim-with-broken-backup FAILED. Its last command printed:
+    [1;34m==>[0m Rolling back: 0eae8a5 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 1422cd9: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    [1;34m==>[0m This publish changes a prod-sim image, so taking a backup first
+    stub backup: failing as told
+    [1;31mfail[0m backup failed, nothing was published. SKIP_BACKUP=yes overrides.
+[1;33mwarn[0m   expected: it says time ran out
+[1;33mwarn[0m rollback-prod-sim-with-hung-backup FAILED. Its last command printed:
+    [1;34m==>[0m Rolling back: cbaecd4 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed d38d8cd: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    [1;34m==>[0m This publish changes a prod-sim image, so taking a backup first
+    [1;32m ok[0m published main d38d8cdad80b to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/git/plane-platform.git
+[1;33mwarn[0m   expected: it names the dump to restore from
+[1;33mwarn[0m   expected: and warns about latest
+[1;33mwarn[0m rollback-prod-sim-names-the-older-dump FAILED. Its last command printed:
+    [1;34m==>[0m Rolling back: 9c59ac5 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed bbb43f9: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    [1;34m==>[0m This publish changes a prod-sim image, so taking a backup first
+    [1;32m ok[0m published main bbb43f96f333 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/git/plane-platform.git
+[1;33mwarn[0m   expected: it says so
+[1;33mwarn[0m rollback-prod-sim-skip-backup FAILED. Its last command printed:
+    [1;34m==>[0m Rolling back: dd7dc33 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 1e4dee2: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    [1;32m ok[0m published main 1e4dee2948d5 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/git/plane-platform.git
+[1;32m ok[0m rollback-dev-takes-no-dump
+[1;33mwarn[0m   expected: the rollback works
+[1;33mwarn[0m rollback-leaves-other-staged-files-alone FAILED. Its last command printed:
+    [1;34m==>[0m Rolling back: e6ca9ab promote(dev): plane-frontend aaaaaaaaaaaa
+    error: your local changes would be overwritten by revert.
+    hint: commit your changes or stash them to proceed.
+    fatal: revert failed
+    error: no cherry-pick or revert in progress
+    fatal: revert failed
+    [1;31mfail[0m the revert conflicts with a later change to helm/plane/overlays/dev. Nothing changed. Resolve it by hand.
+[1;33mwarn[0m   expected: the warning
+[1;33mwarn[0m publish-warns-when-ahead-of-origin FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed f4be060: promote(dev): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m published main f4be060945e3 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/git/plane-platform.git
+[1;32m ok[0m publish-quiet-when-level-with-origin
+[1;33mwarn[0m   expected: it says it cannot tell
+[1;33mwarn[0m publish-says-when-origin-is-unknown FAILED. Its last command printed:
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 2309608: promote(dev): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m published main 2309608cddc0 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/git/plane-platform.git
+[1;32m ok[0m publish-still-backs-up-prod-sim-change
+[1;32m ok[0m drill-runs-to-a-pass
+[1;33mwarn[0m   expected: it says nothing needs reverting
+[1;33mwarn[0m   expected: HEAD did not move
+[1;33mwarn[0m   expected: no revert
+[1;33mwarn[0m drill-failed-promotion-reverts-nothing-else FAILED. Its last command printed:
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving docker.io/makeplane/plane-frontend:v1.4.3@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> docker.io/makeplane/plane-frontend@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    --- /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/gitops/environments/dev/manifests.yaml	2026-11-05 00:27:43
+    +++ /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.slZL0NBsxL/dev.yaml	2026-11-05 00:27:44
+    @@ -1764,4 +1764,3 @@
+         permanent: true
+         regex: ^(https?://[^/]+/(?:god-mode|spaces))(\?.*)?$
+         replacement: ${1}/${2}
+    -# stale
+    [1;33mwarn[0m dev is out of date: run make render and commit the result
+    [1;31mfail[0m rendered manifests are already stale: run make render and commit first
+    
+    --- Restore (exit trap)
+    [1;34m==>[0m Rolling back: 4bff489 promote(dev): plane-frontend aaaaaaaaaaaa
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 3b86656: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    [1;32m ok[0m published main 3b866561a9a9 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/git/plane-platform.git
+    PASS  bad promotion reverted by the trap
+    
+    RESULT FAIL   aborted, 0 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.RHWAqAENFx/repo/.local/evidence-raw/drill-failed-deploy-20261104T212743Z.log
+[1;31mfail[0m 19 of 24 promotion flow scenarios failed
