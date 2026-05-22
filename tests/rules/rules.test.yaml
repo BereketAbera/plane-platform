@@ -157,13 +157,14 @@ tests:
   - name: kindnet's fail-open line fires at once, and clears when that pod is gone
     interval: 30s
     input_series:
-      - series: 'loki_process_custom_kindnet_netpol_skipped_total{component_id="loki.process.pods",exported_namespace="kube-system",exported_pod="kindnet-abc",exported_container="kindnet-cni",namespace="monitoring",pod="alloy-1",container="alloy",job="alloy"}'
+      # The labels a real series carries: the chart's ServiceMonitor sets honorLabels.
+      - series: 'loki_process_custom_kindnet_netpol_skipped_total{component_id="loki.process.pods",component_path="/",namespace="kube-system",pod="kindnet-abc",container="kindnet-cni",instance="kube-system/kindnet-abc:kindnet-cni",job="loki.source.kubernetes.pods",service="alloy",endpoint="http-metrics"}'
         values: '_ _ 1x40'
       - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-abc",node="n",uid="u"}'
         values: '1x20 stale'
       - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-new",node="n",uid="v"}'
         values: '_x21 1x20'
-      - series: 'loki_process_custom_kindnet_log_lines_total{component_id="loki.process.pods",exported_namespace="kube-system",exported_pod="kindnet-abc",exported_container="kindnet-cni",namespace="monitoring",pod="alloy-1",container="alloy",job="alloy"}'
+      - series: 'loki_process_custom_kindnet_log_lines_total{component_id="loki.process.pods",component_path="/",namespace="kube-system",pod="kindnet-abc",container="kindnet-cni",instance="kube-system/kindnet-abc:kindnet-cni",job="loki.source.kubernetes.pods",service="alloy",endpoint="http-metrics"}'
         values: '0+1x40'
     alert_rule_test:
       - eval_time: 30s
@@ -172,7 +173,7 @@ tests:
       - eval_time: 2m
         alertname: KindnetSkippedNetworkPolicies
         exp_alerts:
-          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, pod: kindnet-abc, severity: critical, component: network }
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
             exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
       - eval_time: 15m
         alertname: KindnetSkippedNetworkPolicies
