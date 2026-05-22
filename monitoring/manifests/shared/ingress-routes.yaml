@@ -1,5 +1,22 @@
 # Loopback only in pass 1: kind maps the Traefik NodePort to 127.0.0.1. Prometheus and Alertmanager
 # have no login of their own, so pass 2 must put these behind an auth middleware before exposing them.
+#
+# The Traefik NetworkPolicy has to admit each Plane api, for the CoreDNS self-dial, and Traefik routes by
+# Host header, so without this list a compromised api could read every metric and silence alerts.
+# 172.16.0.0/12 is Docker's default pool, which holds the kind network (contract section 3, enforced by
+# scripts/cluster-up.sh). A browser on the host arrives as the kind gateway, measured with conntrack, and
+# pods arrive from 10.244.0.0/16. There is no ipStrategy, so Traefik reads the socket address and a client
+# cannot talk its way in with X-Forwarded-For. Traefik refuses a Middleware from another namespace, so
+# argocd and infisical each hold their own copy. tests/routes/internal-routes.sh proves all of this.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: node-network-only
+spec:
+  ipAllowList:
+    sourceRange:
+      - 172.16.0.0/12
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -9,6 +26,8 @@ spec:
   routes:
     - match: Host(`grafana.localhost`)
       kind: Rule
+      middlewares:
+        - name: node-network-only
       services:
         - { name: kps-grafana, port: 80 }
 ---
@@ -21,6 +40,8 @@ spec:
   routes:
     - match: Host(`prometheus.localhost`)
       kind: Rule
+      middlewares:
+        - name: node-network-only
       services:
         - { name: kps-prometheus, port: 9090 }
 ---
@@ -33,5 +54,7 @@ spec:
   routes:
     - match: Host(`alertmanager.localhost`)
       kind: Rule
+      middlewares:
+        - name: node-network-only
       services:
         - { name: kps-alertmanager, port: 9093 }
