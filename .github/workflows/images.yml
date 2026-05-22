@@ -2,14 +2,16 @@
 # and open a pull request bumping dev. Merging that pull request is left to a person. See README.md
 # for what this plan can and cannot enforce, and for how a GHCR digest reaches the local registry.
 #
-# Both paths run the same native build through scripts/ci/build-images.sh as `make images` does. GHCR
-# gives this private repository 500 MB, and one image set is close to that. See apps/wayline/README.md.
+# Both paths run the same native build through scripts/ci/build-images.sh as `make images` does. Old versions are
+# pruned as a precaution: GitHub's billing page says Container registry storage and bandwidth are currently free,
+# and nothing has been stored there yet to confirm it. See apps/wayline/README.md.
 #
 # Not exercised yet. No run has contained apps/wayline. A pull request is what runs the build-only job for the
 # first time. checks/smoke-images.sh is manual: it needs the images and is not run here.
 #
-# Publishing is gated on D12 (apps/wayline/backend/email-py-decision.txt): the backend image carries a file headed
-# LicenseRef-Plane-Commercial, so until the owner decides, this job stops short of GHCR and says so.
+# Publishing is gated on D12 (apps/wayline/backend/email-py-decision.txt): the backend image replaces upstream's
+# commercially headed email.py, but the original is still in its FROM layer. So images go only to private GHCR
+# packages under the owner's account, and this job stops short of GHCR, and says so, if the repository is public.
 name: images
 
 on:
@@ -61,6 +63,9 @@ jobs:
       - name: Build without pushing
         env:
           MIN_FREE_DISK_GIB: "5"
+          # This runner was measured at 2 cores and 7.7 GiB. The defaults in build.sh suit the laptop.
+          WAYLINE_TURBO_CONCURRENCY: "2"
+          WAYLINE_HEAP_MB: "2560"
           PUSH: "no"
           OWNER: ${{ github.repository_owner }}
         run: |
@@ -72,9 +77,14 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 90
-    # GitHub-hosted arm runners have little disk. The default guard suits the laptop, not this.
+    # An arm runner was measured with 34 GiB free, 2 cores and 7.7 GiB of memory. The default disk guard protects the
+    # laptop's shared disk, and this disk is thrown away after the run. The build defaults would allow four tasks
+    # at 3 GiB of heap each, more than this memory holds, so this allows two. A local build under these two values
+    # peaked below the heap limit: docs/evidence/branding/build-ci-settings.txt.
     env:
       MIN_FREE_DISK_GIB: "5"
+      WAYLINE_TURBO_CONCURRENCY: "2"
+      WAYLINE_HEAP_MB: "2560"
     permissions:
       contents: read
       packages: write # push the built images to GHCR
@@ -84,11 +94,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Check the owner has decided D12
+      - name: Check D12 allows publishing
         id: gate
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+          OWNER: ${{ github.repository_owner }}
         run: |
-          if [[ "$(cat apps/wayline/backend/email-py-decision.txt)" == pending ]]; then
-            echo "::warning title=Nothing published::D12 is undecided (apps/wayline/backend/email-py-decision.txt), so no image goes to GHCR"
+          if [[ "$REPOSITORY_PRIVATE" != true ]]; then
+            echo "::warning title=Nothing published::This repository is not private, and D12 allows only private GHCR packages. See apps/wayline/backend/email-py-decision.txt"
+            echo "allowed=no" >>"$GITHUB_OUTPUT"
+          elif ! ./apps/wayline/scripts/publish-gate.sh "ghcr.io/${OWNER,,}/wayline"; then
+            echo "::warning title=Nothing published::D12 does not allow ghcr.io/${OWNER,,}/wayline. See apps/wayline/backend/email-py-decision.txt"
             echo "allowed=no" >>"$GITHUB_OUTPUT"
           else
             echo "allowed=yes" >>"$GITHUB_OUTPUT"
@@ -124,6 +140,13 @@ jobs:
             cat .build/digests.tsv
             echo '```'
           } >>"$GITHUB_STEP_SUMMARY"
+      # A failure here fails this job, so nothing below prunes an old version or opens a bump for these digests.
+      - name: Scan what was just pushed
+        if: steps.gate.outputs.allowed == 'yes'
+        env:
+          SCAN_ONLY: built
+          SCAN_MIN_FREE_GIB: "5"
+        run: ./scripts/ci/scan-images.sh
 
   # Its own job, so a prune failure cannot hold back the digest bump. Pruning with GITHUB_TOKEN is still untested.
   prune:
