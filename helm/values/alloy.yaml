@@ -116,7 +116,7 @@ alloy:
         // runs on with no NetworkPolicy enforced. KindnetSkippedNetworkPolicies alerts on the counter. The
         // series must outlive a long idle, because the line never repeats and the default expiry is 5m.
         stage.match {
-          selector = "{container=\"kindnet-cni\"} |~ \"skipping network policies\""
+          selector = "{namespace=\"kube-system\", container=\"kindnet-cni\"} |~ \"skipping network policies\""
           stage.metrics {
             metric.counter {
               name              = "kindnet_netpol_skipped_total"
@@ -130,7 +130,7 @@ alloy:
         // The rest is a heartbeat every 10s. Counting it proves this tail is alive, which
         // KindnetLogsNotRead watches, and keeping it out of Loki keeps the log volume as it was.
         stage.match {
-          selector = "{container=\"kindnet-cni\"}"
+          selector = "{namespace=\"kube-system\", container=\"kindnet-cni\"}"
           stage.metrics {
             metric.counter {
               name        = "kindnet_log_lines_total"
@@ -141,7 +141,7 @@ alloy:
           }
         }
         stage.match {
-          selector            = "{container=\"kindnet-cni\"} !~ \"skipping network policies\""
+          selector            = "{namespace=\"kube-system\", container=\"kindnet-cni\"} !~ \"skipping network policies\""
           action              = "drop"
           drop_counter_reason = "kindnet_heartbeat"
         }
