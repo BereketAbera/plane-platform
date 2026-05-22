@@ -91,12 +91,15 @@
   --radius-2xl: 3px;
   --radius-3xl: 3px;
 
-  /* Flat: outlined rather than soft. Upstream inlines these at compile time, so @theme is the place. */
-  --shadow-raised-100: 0 0 0 1px var(--border-subtle);
-  --shadow-raised-200: 0 0 0 1px var(--border-subtle);
-  --shadow-raised-300: 0 0 0 1px var(--border-subtle);
-  --shadow-overlay-100: 0 0 0 1px var(--border-strong);
-  --shadow-overlay-200: 0 0 0 1px var(--border-strong);
+  /*
+   * Flat: no shadow at all. Upstream inlines these at compile time, so @theme is the place. Most uses sit on an
+   * element with a border, where a ring would double the stroke. The rest get a hairline further down.
+   */
+  --shadow-raised-100: 0 0 #0000;
+  --shadow-raised-200: 0 0 #0000;
+  --shadow-raised-300: 0 0 #0000;
+  --shadow-overlay-100: 0 0 #0000;
+  --shadow-overlay-200: 0 0 #0000;
   --shadow-direction-left: -1px 0 0 0 var(--border-subtle);
   --shadow-direction-right: 1px 0 0 0 var(--border-subtle);
 
@@ -148,12 +151,12 @@
     --brand-500: #d97cb1;
     --brand-600: #cc5096;
     --brand-700: #bf2f82;
-    --brand-800: #b0186e;
+    --brand-800: #9f1265;
     --brand-900: #8e1259;
     --brand-1000: #6e0e45;
     --brand-1100: #4f0a32;
     --brand-1200: #330620;
-    --brand-default: #b0186e;
+    --brand-default: #9f1265;
 
     --bg-canvas: var(--neutral-200);
     --bg-accent-primary-hover: var(--brand-900);
@@ -180,7 +183,7 @@
     --txt-icon-on-color: var(--neutral-white);
     --txt-success-secondary: var(--green-900);
     --txt-warning-secondary: var(--amber-900);
-    --txt-danger-secondary: var(--red-800);
+    --txt-danger-secondary: var(--red-900);
     --txt-icon-accent-subtle: var(--brand-500);
     --txt-icon-tertiary: var(--neutral-1000);
     --txt-icon-placeholder: var(--neutral-900);
@@ -213,7 +216,7 @@
       --brand-400: #6e2760;
       --brand-500: #8e3079;
       --brand-600: #b63f8f;
-      --brand-700: #ee7ab9;
+      --brand-700: #f08abf;
       --brand-800: #f39ccb;
       --brand-900: #f8bedd;
       --brand-1000: #fbd8ea;
@@ -222,6 +225,11 @@
       --brand-default: #e65aa6;
 
       --bg-canvas: var(--neutral-black);
+      /* One step lower than upstream, so accent text keeps 4.5:1 on a pressed row. */
+      --bg-layer-3-active: var(--neutral-500);
+      --bg-layer-3-selected: var(--neutral-500);
+      --bg-danger-subtle-active: var(--red-200);
+      --bg-danger-subtle-selected: var(--red-200);
       /* A light accent needs dark text, so hover and active go lighter, not darker. */
       --bg-accent-primary-hover: var(--brand-700);
       --bg-accent-primary-active: var(--brand-800);
@@ -246,7 +254,7 @@
       --txt-icon-on-color: var(--neutral-black);
       --txt-success-secondary: var(--green-700);
       --txt-warning-secondary: var(--amber-700);
-      --txt-danger-secondary: var(--red-700);
+      --txt-danger-secondary: var(--red-800);
       --txt-icon-accent-subtle: var(--brand-700);
       --txt-icon-tertiary: var(--neutral-1000);
       --txt-icon-placeholder: var(--neutral-800);
@@ -305,6 +313,7 @@
   --wl-ink-800: #0f1b2d;
   --wl-ink-700: #172438;
   --wl-ink-600: #1e2c43;
+  --wl-ink-550: #243249;
   --wl-ink-500: #30405c;
   --wl-ink-400: #4e6080;
   --wl-ink-text: #e7e9ee;
@@ -329,9 +338,9 @@
   --bg-layer-2-active: var(--wl-ink-600);
   --bg-layer-2-selected: var(--wl-ink-600);
   --bg-layer-3: var(--wl-ink-600);
-  --bg-layer-3-hover: var(--wl-ink-500);
-  --bg-layer-3-active: var(--wl-ink-500);
-  --bg-layer-3-selected: var(--wl-ink-500);
+  --bg-layer-3-hover: var(--wl-ink-550);
+  --bg-layer-3-active: var(--wl-ink-550);
+  --bg-layer-3-selected: var(--wl-ink-550);
   --bg-layer-transparent: transparent;
   --bg-layer-transparent-hover: var(--wl-ink-700);
   --bg-layer-transparent-active: var(--wl-ink-600);
@@ -370,16 +379,38 @@
 
 /* ---------- Unlayered rules: these beat every Tailwind layer without !important ---------- */
 
-/* JetBrains Mono for uppercase labels, keys and code. */
+/* A raised element with no border of its own still needs its edge: outlined, never soft. */
+:is(.shadow-raised-100, .shadow-raised-200, .shadow-raised-300):not([class*="border"]) {
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
+:is(.shadow-overlay-100, .shadow-overlay-200):not([class*="border"]) {
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+/* A see-through accent under on-color text falls below 4.5:1, so the fill goes solid. */
+.bg-accent-primary\/80.text-on-color,
+.bg-accent-primary\/90.text-on-color {
+  background-color: var(--bg-accent-primary);
+}
+/* The hover tint is too strong for accent text at rest, so the text moves a step, as upstream's user menu does. */
+.text-accent-primary.hover\:bg-accent-primary\/30:hover {
+  color: var(--txt-accent-secondary);
+}
+
+/* JetBrains Mono for uppercase labels, keys, code and metadata (work item identifiers, date chips). */
 .uppercase,
 kbd,
 code,
 pre,
-samp {
+samp,
+[data-wl-meta] {
   font-family: var(--font-code);
 }
 .uppercase {
   letter-spacing: 0.06em;
+}
+[data-wl-meta] {
+  letter-spacing: 0.02em;
 }
 
 /*

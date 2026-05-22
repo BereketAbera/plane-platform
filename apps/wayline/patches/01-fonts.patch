@@ -1,5 +1,5 @@
 diff --git a/apps/admin/app/root.tsx b/apps/admin/app/root.tsx
-index 5d4eafb765a8955e1c7cea87b6d393c7f88814ce..0ec39e086eb8da3d889e07fe37373f2dac68fff3 100644
+index 5d4eafb765a8955e1c7cea87b6d393c7f88814ce..547d36357565ec19e29e37156f31ee997e6a9125 100644
 --- a/apps/admin/app/root.tsx
 +++ b/apps/admin/app/root.tsx
 @@ -16,10 +16,7 @@ import globalStyles from "@/styles/globals.css?url";
@@ -27,8 +27,16 @@ index 5d4eafb765a8955e1c7cea87b6d393c7f88814ce..0ec39e086eb8da3d889e07fe37373f2d
  ];
  
  export function Layout({ children }: { children: ReactNode }) {
+@@ -47,6 +37,7 @@ export function Layout({ children }: { children: ReactNode }) {
+       <head>
+         <meta charSet="utf-8" />
+         <meta name="viewport" content="width=device-width, initial-scale=1" />
++        <meta name="theme-color" content="#0b1320" />
+         <Meta />
+         <Links />
+       </head>
 diff --git a/apps/space/app/root.tsx b/apps/space/app/root.tsx
-index fe504b1edf09648b31ac77b165d14b42337b4be3..2fba4f2ae2e3891586f223cee7c1171e63b4039f 100644
+index fe504b1edf09648b31ac77b165d14b42337b4be3..d784678aa2b94876b4b11c00ae6bda6af9052ba8 100644
 --- a/apps/space/app/root.tsx
 +++ b/apps/space/app/root.tsx
 @@ -19,10 +19,7 @@ import type { Route } from "./+types/root";
@@ -56,8 +64,16 @@ index fe504b1edf09648b31ac77b165d14b42337b4be3..2fba4f2ae2e3891586f223cee7c1171e
  ];
  
  export const headers: Route.HeadersFunction = () => ({
+@@ -56,6 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
+       <head>
+         <meta charSet="utf-8" />
+         <meta name="viewport" content="width=device-width, initial-scale=1" />
++        <meta name="theme-color" content="#0b1320" />
+         <meta name="robots" content="noindex, nofollow" />
+         <Meta />
+         <Links />
 diff --git a/apps/web/app/root.tsx b/apps/web/app/root.tsx
-index 08a38e632ebf7996823954f54dabc3759652b65f..eaabd65c8fc8e3b669ee28a3e2707cbc04e67394 100644
+index 08a38e632ebf7996823954f54dabc3759652b65f..01b5421df3092020374fb2acda1fb4120330c902 100644
 --- a/apps/web/app/root.tsx
 +++ b/apps/web/app/root.tsx
 @@ -30,10 +30,7 @@ import { isStaleAssetError, recoverFromStaleAsset } from "@/lib/stale-asset-erro
@@ -85,3 +101,12 @@ index 08a38e632ebf7996823954f54dabc3759652b65f..eaabd65c8fc8e3b669ee28a3e2707cbc
  ];
  
  export function Layout({ children }: { children: ReactNode }) {
+@@ -64,7 +54,7 @@ export function Layout({ children }: { children: ReactNode }) {
+       <head>
+         <meta charSet="utf-8" />
+         <meta name="viewport" content="width=device-width, initial-scale=1" />
+-        <meta name="theme-color" content="#fff" />
++        <meta name="theme-color" content="#0b1320" />
+         {/* Meta info for PWA */}
+         <meta name="application-name" content="Plane" />
+         <meta name="apple-mobile-web-app-capable" content="yes" />

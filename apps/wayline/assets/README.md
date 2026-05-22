@@ -7,8 +7,18 @@ below. Only regenerating does.
 ```sh
 node apps/wayline/assets/generate.mjs                     # needs rsvg-convert, cwebp, dwebp, ffmpeg
 node apps/wayline/assets/generate.mjs --only cycle        # just the paths containing "cycle"
-node apps/wayline/assets/generate.mjs --verify --against <upstream checkout>   # after bumping UPSTREAM
+node apps/wayline/assets/generate.mjs --verify --against <upstream checkout>   # needs only Node. apply.sh runs it on every build
+node apps/wayline/assets/generate-contours.mjs            # the sign-in chart, one copy per app. Needs only Node
+node apps/wayline/assets/generate-empty-states.mjs        # propel's empty-state registry. Needs only Node
 ```
+
+To check that the committed overlay still matches its generators, run the first command and then
+`git status --short apps/wayline/overlay`, which should list nothing. That last held on 2026-11-05 with rsvg-convert 2.62.3,
+cwebp 1.6.0 and ffmpeg 9.0.1. Other encoder versions may change bytes. No CI step runs this, because CI has no reason
+to install encoders.
+
+The images still draw the route in `#B0186E`, the brief's value. The token moved to `#9F1265` for contrast, and the
+difference does not justify re-encoding 143 files. `lib/chart.mjs` is the place to change it if it ever does.
 
 A full run also writes a contact sheet of the encoded outputs to `.local/evidence-raw/wayline-assets-sheet.png`.
 Drawings are seeded from their path, so a run reproduces the same pictures.

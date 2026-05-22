@@ -273,13 +273,14 @@ KNOWN_REMAINDER = [
     (r"^plane/utils/core/__init__\.py:", "module docstring"),
     (r"^plane/utils/ip_address\.py:.*# ", "code comment"),
     (r"^plane/seeds/data/issues\.json:.*https://docs\.plane\.so/", "upstream's manual: same policy as leak-allowlist.txt"),
+    (r"^templates/.*(Copyright \(c\) 2023-present Plane Software|Built on Plane Community Edition)", "required notice and the permitted credit"),
 ]
 
 
 def check_remainder():
     print("\n== Brand left in the backend's code, each with its reason (tests excluded)")
     counts = collections.Counter()
-    for path in sorted((ROOT / "plane").rglob("*")):
+    for path in sorted([*(ROOT / "plane").rglob("*"), *(ROOT / "templates").rglob("*")]):
         if path.suffix not in {".py", ".json", ".html"} or "tests" in path.parts or "static-assets" in path.parts or not path.is_file():
             continue
         rel = path.relative_to(ROOT)

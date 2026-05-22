@@ -22,9 +22,10 @@ while read -r name _; do
   [[ -z "$name" || "$name" == \#* ]] && continue
   package="wayline%2F$name"
   # Newest first, which is how the API returns them.
-  versions="$(gh api --paginate "/users/$owner/packages/container/$package/versions" --jq '.[] | "\(.id) \(.name)"' 2>/dev/null || true)"
-  if [[ -z "$versions" ]]; then
-    warn "no versions listed for $name, skipping"
+  if ! versions="$(gh api --paginate "/users/$owner/packages/container/$package/versions" --jq '.[] | "\(.id) \(.name)"' 2>"$BUILD_DIR/prune.err")"; then
+    # A package that does not exist yet is fine. A token without rights must not look like an empty package.
+    grep -q 'HTTP 404' "$BUILD_DIR/prune.err" || die "listing $name failed: $(cat "$BUILD_DIR/prune.err")"
+    warn "$name has no package yet, skipping"
     continue
   fi
   while read -r id digest; do

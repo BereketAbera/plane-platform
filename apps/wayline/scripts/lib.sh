@@ -17,6 +17,11 @@ OVERLAY="$WAYLINE/overlay"
 PATCHES="$WAYLINE/patches"
 LOCK_DIR="$BUILD_DIR/build.lockdir"
 BASE_TAG="wayline-base"
+OVERLAY_LOCK="$WAYLINE/overlay.lock"
+# What an image's Corresponding Source is, beyond the pinned upstream commit: the build that made it.
+# A change here means an image's /source link no longer names what built it. Other agents' and other
+# directories' work does not, so a dirty monitoring/ does not stop an image build.
+SOURCE_PATHS=(apps/wayline LICENSE COPYRIGHT.txt NOTICE.md scripts/ci/build-images.sh scripts/lib/common.sh)
 
 # shellcheck disable=SC1091
 source "$WAYLINE/UPSTREAM"
@@ -29,6 +34,21 @@ wgit() {
   GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git \
     -c user.name=wayline-build -c user.email=build@wayline.invalid -c commit.gpgsign=false \
     -c core.autocrlf=false -c advice.detachedHead=false "$@"
+}
+
+# require_tools <tool...>: say what is missing before any work starts, not halfway through.
+require_tools() {
+  local missing=() tool
+  for tool in "$@"; do command -v "$tool" >/dev/null 2>&1 || missing+=("$tool"); done
+  [[ ${#missing[@]} -eq 0 ]] || die "missing tools: ${missing[*]}. make setup installs yq and the other pinned CLIs; Node comes from nvm."
+}
+
+# write_source_stamp <file>: the commit this tree is at, and whether the build inputs differ from it.
+write_source_stamp() {
+  local commit dirty=yes
+  commit="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
+  [[ -n "$(git -C "$ROOT" status --porcelain -- "${SOURCE_PATHS[@]}" 2>/dev/null || echo unknown)" ]] || dirty=no
+  printf 'commit=%s\ndirty=%s\n' "$commit" "$dirty" >"$1"
 }
 
 # Patches in the order they are applied. Numeric prefixes are zero-padded, so bytewise sort is numeric.

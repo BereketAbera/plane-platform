@@ -2,10 +2,11 @@
 // Copyright (c) 2026 Bereket Abera
 // SPDX-License-Identifier: AGPL-3.0-only
 //
-// Computes WCAG contrast for the main token pairs in all four themes and the ink shell scope, from
-// upstream's variables.css and brand/tokens.css cascaded in source order. Exits non-zero below AA:
-// 4.5:1 for text, 3:1 for icons and focus indicators. Disabled text is exempt under WCAG 1.4.3, so
-// it is printed but does not fail.
+// Computes WCAG contrast for the main token pairs in all four themes, the ink shell scope and the paper
+// page scope, from upstream's variables.css and brand/tokens.css cascaded in source order. Covers resting
+// colours, every hover, active and selected layer, and accent tints composited over the surfaces they sit on.
+// Exits non-zero below AA: 4.5:1 for text, 3:1 for icons and focus indicators. Disabled text is exempt under
+// WCAG 1.4.3, so it is printed but does not fail.
 //
 //   node apps/wayline/checks/contrast.mjs [path/to/upstream/variables.css] [-v]
 import { readFileSync, existsSync } from "node:fs";
@@ -24,6 +25,10 @@ const variablesPath = args.find((a) => a !== "-v") ?? [
 if (!variablesPath) {
   console.error("contrast: upstream variables.css not found, run apps/wayline/scripts/fetch.sh first");
   process.exit(2);
+}
+if (!existsSync(variablesPath)) {
+  console.error(`contrast: ${variablesPath} does not exist. Upstream's design system has moved, so brand/tokens.css needs reworking first.`);
+  process.exit(1);
 }
 
 const decls = [
@@ -98,9 +103,33 @@ const ratio = (a, b) => {
   const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
   return (x + 0.05) / (y + 0.05);
 };
-const over = (fg, bg) => fg.rgb.map((v, i) => v * fg.a + bg.rgb[i] * (1 - fg.a));
+// Browsers composite in gamma-encoded sRGB, not linear light, and the stored values are linear.
+const toGamma = (c) => (c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055);
+const over = (fg, bg) => fg.rgb.map((v, i) => toLinear(toGamma(v) * fg.a + toGamma(bg.rgb[i]) * (1 - fg.a)));
+
+// An alpha background counts as what it composites to. Transparent state layers sit on surface-1, and a
+// tint such as bg-accent-primary/20 names its base: { tint, alpha, over }.
+function backgroundOf(vars, bg) {
+  if (typeof bg === "object") {
+    const base = backgroundOf(vars, bg.over);
+    return { rgb: over({ rgb: resolve(vars, bg.tint).rgb, a: bg.alpha }, base), a: 1 };
+  }
+  const c = resolve(vars, bg);
+  if (c.a === 1 || bg === "--bg-surface-1") return c;
+  return { rgb: over(c, resolve(vars, "--bg-surface-1")), a: 1 };
+}
+const nameOf = (bg) => (typeof bg === "object" ? `${bg.tint}/${Math.round(bg.alpha * 100)} over ${bg.over}` : bg);
 
 const BG = ["--bg-canvas", "--bg-surface-1", "--bg-surface-2", "--bg-layer-1", "--bg-layer-2"];
+const STATE_LAYERS = ["1", "2", "3"].flatMap((n) => ["hover", "active", "selected"].map((s) => `--bg-layer-${n}-${s}`));
+const TRANSPARENT_LAYERS = ["hover", "active", "selected"].map((s) => `--bg-layer-transparent-${s}`);
+// The tints upstream actually pairs with accent text, over the surfaces they appear on. /30 is only a hover
+// state, and tokens.css moves the text to accent-secondary there. /80 and /90 under on-color text are made
+// solid in tokens.css, so they are not listed.
+const ACCENT_TINTS = [0.05, 0.1, 0.2].flatMap((alpha) =>
+  ["--bg-canvas", "--bg-surface-1", "--bg-surface-2", "--bg-layer-1"].map((base) => ({ tint: "--bg-accent-primary", alpha, over: base }))
+);
+const HOVER_TINTS = ["--bg-canvas", "--bg-surface-1", "--bg-layer-1"].map((base) => ({ tint: "--bg-accent-primary", alpha: 0.3, over: base }));
 const cross = (fgs, bgs, min) => fgs.flatMap((fg) => bgs.map((bg) => [fg, bg, min]));
 const PAGE_PAIRS = [
   ...cross(["--txt-primary", "--txt-secondary", "--txt-tertiary"], [...BG, "--bg-layer-3", "--bg-layer-1-hover"], 4.5),
@@ -121,11 +150,13 @@ const PAGE_PAIRS = [
     ],
     4.5
   ),
-  ["--txt-accent-primary", "--bg-accent-subtle", 4.5],
-  ["--txt-accent-primary", "--bg-accent-subtle-hover", 4.5],
-  ["--txt-danger-primary", "--bg-danger-subtle", 4.5],
-  ["--txt-success-primary", "--bg-success-subtle", 4.5],
-  ["--txt-warning-primary", "--bg-warning-subtle", 4.5],
+  ...cross(["--txt-primary", "--txt-secondary", "--txt-tertiary", "--txt-accent-primary"], [...STATE_LAYERS, ...TRANSPARENT_LAYERS], 4.5),
+  ...cross(["--txt-accent-primary", "--txt-accent-secondary"], ACCENT_TINTS, 4.5),
+  ...cross(["--txt-accent-secondary"], HOVER_TINTS, 4.5),
+  ...cross(["--txt-accent-primary"], ["--bg-accent-subtle", "--bg-accent-subtle-hover", "--bg-accent-subtle-active"], 4.5),
+  ...cross(["--txt-danger-primary", "--txt-danger-secondary"], ["--bg-danger-subtle", "--bg-danger-subtle-hover", "--bg-danger-subtle-active"], 4.5),
+  ...cross(["--txt-success-primary"], ["--bg-success-subtle"], 4.5),
+  ...cross(["--txt-warning-primary"], ["--bg-warning-subtle"], 4.5),
   ...cross(["--txt-icon-primary", "--txt-icon-secondary", "--txt-icon-tertiary"], BG, 3),
   ["--txt-icon-on-color", "--bg-accent-primary", 3],
   ...cross(["--bg-accent-primary", "--border-accent-strong"], ["--bg-canvas", "--bg-surface-1"], 3),
@@ -146,13 +177,13 @@ let checked = 0;
 function run(label, vars, pairs) {
   let lowest = Infinity;
   for (const [fg, bg, min] of pairs) {
-    const b = resolve(vars, bg);
+    const b = backgroundOf(vars, bg);
     const r = ratio(over(resolve(vars, fg), b), b.rgb);
     checked++;
     lowest = Math.min(lowest, r);
     const failed = r < min;
     if (failed) failures++;
-    if (failed || verbose) console.log(`${failed ? "FAIL" : "ok  "} ${label}: ${fg} on ${bg} = ${r.toFixed(2)} (min ${min})`);
+    if (failed || verbose) console.log(`${failed ? "FAIL" : "ok  "} ${label}: ${fg} on ${nameOf(bg)} = ${r.toFixed(2)} (min ${min})`);
   }
   console.log(`${label}: ${pairs.length} pairs, lowest ${lowest.toFixed(2)}`);
 }
@@ -160,6 +191,15 @@ function run(label, vars, pairs) {
 for (const theme of THEMES) {
   run(theme, themeVars(theme, false), PAGE_PAIRS);
   run(`${theme} [data-shell]`, themeVars(theme, true), SHELL_PAIRS);
+  // shell.css: in the light themes the page under the top band is paper, with cards and fields raised on it.
+  if (theme.startsWith("light")) {
+    const page = themeVars(theme, false);
+    page.set("--bg-surface-1", "var(--neutral-200)");
+    page.set("--bg-surface-2", "var(--neutral-300)");
+    page.set("--bg-layer-1", "var(--neutral-white)");
+    page.set("--bg-layer-1-hover", "var(--neutral-100)");
+    run(`${theme} page main`, page, PAGE_PAIRS);
+  }
   const vars = themeVars(theme, false);
   const disabled = ratio(resolve(vars, "--txt-disabled").rgb, resolve(vars, "--bg-surface-1").rgb);
   console.log(`${theme}: disabled text on surface-1 = ${disabled.toFixed(2)} (exempt, informational)`);
@@ -174,7 +214,12 @@ for (const theme of THEMES) {
   const CONTRAST_SELECTOR = '[data-theme$="-contrast"] [data-shell]';
   const scoped = (theme, scope) => {
     const vars = themeVars(theme, true);
-    const selectors = ["[data-shell]", `[data-shell="${scope}"]`, ...(theme.endsWith("-contrast") ? [CONTRAST_SELECTOR] : [])];
+    const selectors = [
+      "[data-shell]",
+      `[data-shell="${scope}"]`,
+      ...(theme.includes("dark") ? [`[data-theme*="dark"] [data-shell="${scope}"]`] : []),
+      ...(theme.endsWith("-contrast") ? [CONTRAST_SELECTOR] : []),
+    ];
     for (const selector of selectors) {
       for (const d of shellDecls) {
         if (d.name.startsWith("--") && d.path.length === 1 && d.path[0] === selector) vars.set(d.name, d.value);
@@ -192,8 +237,10 @@ for (const theme of THEMES) {
     "--txt-icon-accent-primary", "--txt-icon-danger", "--txt-icon-danger-primary",
   ];
   const NAV_BG = [
-    "--bg-surface-1", "--bg-surface-2", "--bg-layer-1", "--bg-layer-1-hover", "--bg-layer-2", "--bg-layer-2-hover",
-    "--bg-layer-transparent-hover", "--bg-layer-transparent-active",
+    "--bg-surface-1", "--bg-surface-2", "--bg-layer-1", "--bg-layer-1-hover", "--bg-layer-1-active", "--bg-layer-2",
+    "--bg-layer-2-hover", "--bg-layer-2-active", "--bg-layer-3", "--bg-layer-3-hover", "--bg-layer-3-active",
+    "--bg-layer-transparent-hover", "--bg-layer-transparent-active", "--bg-layer-transparent-selected",
+    "--bg-accent-subtle", "--bg-accent-subtle-hover",
   ];
   const TOP_BG = ["--bg-canvas", ...NAV_BG];
   const LINES = ["--border-subtle", "--border-subtle-1", "--border-strong"];
@@ -205,6 +252,9 @@ for (const theme of THEMES) {
       ...cross(["--txt-on-color", "--txt-icon-on-color"], ["--bg-accent-primary", "--bg-accent-primary-hover", "--bg-danger-primary"], 4.5),
       ...cross(["--bg-accent-primary", "--bg-danger-primary"], marks, 3),
       ...(high ? cross(LINES, marks, 3) : []),
+      ...cross(["--txt-primary", "--txt-danger-primary"], ["--bg-danger-subtle", "--bg-danger-subtle-hover"], high ? 7 : 4.5),
+      ...cross(["--txt-primary", "--txt-success-primary"], ["--bg-success-subtle"], high ? 7 : 4.5),
+      ...cross(["--txt-primary", "--txt-warning-primary"], ["--bg-warning-subtle"], high ? 7 : 4.5),
     ];
   };
   for (const theme of THEMES) {

@@ -2,12 +2,17 @@
 # Copyright (c) 2026 Bereket Abera
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Scans build output for the upstream brand: Plane, plane.so, planes.so, makeplane, planepowers, and the
-# lower-case word in prose (space before it, space or sentence punctuation after, so object keys and
-# emoji tags stay out). Exits non-zero on any match that no entry in leak-allowlist.txt covers. Entries
-# are Perl regexes tested against the match wrapped in << >>, plus 50 characters each side, so an entry
-# must name the match itself and a real leak next to an allowed one is still caught. Every entry must
-# state its reason.
+# Scans build output for the upstream brand: Plane, plane.so, planes.so, makeplane, planepowers, hostnames
+# under plane. (plane.github.com, for example), and the lower-case word in prose (space before it, space or
+# sentence punctuation after, so object keys and emoji tags stay out). It also rejects a mailto: followed by
+# something that is not an address, which is what a text rewrite leaves behind when it hits a link.
+# Exits non-zero on any match that no entry in leak-allowlist.txt covers. Entries are Perl regexes tested
+# against the match wrapped in << >>, plus 50 characters each side, so an entry must name the match itself
+# and a real leak next to an allowed one is still caught. Every entry must state its reason.
+#
+# Scope: what the frontends ship, and the mail templates in backend/templates, which are all the backend
+# context now copies over upstream's. Everything else in the backend image, and its Python, is covered
+# by backend/check_image.py inside the built image.
 #
 #   apps/wayline/checks/leak-scan.sh [web] [admin] [space] [backend]     default: all four
 # shellcheck source=../scripts/lib.sh
@@ -48,7 +53,7 @@ for my $path (@paths) {
   open(my $fh, "<:raw", $path) or die "cannot read $path: $!";
   my $data = do { local $/; <$fh> };
   close $fh;
-  while ($data =~ /(Plane|planes?\.so|makeplane|planepowers|(?<= )plane(?=[ ,.!?]))/g) {
+  while ($data =~ /(Plane|planes?\.so|makeplane|planepowers|(?<= )plane(?=[ ,.!?])|(?<![A-Za-z0-9_\$-])plane\.(?:[a-z][a-z0-9-]*\.)*(?:com|so|sh|town|io|dev|org|net)\b|mailto:[A-Za-z][A-Za-z ]*(?=["\x27`]))/g) {
     $matches++;
     my $start = $-[0] - 50; $start = 0 if $start < 0;
     my $ctx = substr($data, $start, $-[0] - $start) . "<<$1>>" . substr($data, $+[0], 50);

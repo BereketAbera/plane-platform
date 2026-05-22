@@ -6,7 +6,7 @@
 Copyright \(c\) 2023-present <<Plane>> Software, Inc\. ## Required notice. AGPL section 5 keeps it, and the SSR server bundle retains source comments.
 Built on <<Plane>> Community Edition ## The one permitted UI credit, linking to /source. See NOTICE.md.
 https://docs\.<<plane\.so>>/core-concepts/projects/run-project#estimate ## Upstream's manual for this feature; no other documentation exists.
-https://docs\.<<plane\.so>>/ ## Upstream's manual for this software, linked from help menus. Reference, not a product claim.
+https://docs\.<<plane\.so>>/(?:["'`\\]|\s|$) ## Upstream's manual, the exact root URL linked from help menus. Reference, not a product claim.
 https://developers\.<<plane\.so>>/self-hosting/telemetry ## Explains the telemetry the code can send, beside the setting that controls it.
 
 # Functional identifiers, never shown to a user

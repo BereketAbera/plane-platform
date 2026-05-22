@@ -6,11 +6,15 @@
 # Digest from 'docker buildx imagetools inspect nginx:1.31-alpine', 2026-11-04.
 FROM nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
 
-# Where /source redirects. Pass the commit that built the image so the offer names exact source.
-ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
-ARG WAYLINE_SOURCE_REF=main
-# Bump to take OS security updates: buildx caches this layer on the command string.
+# Bump to take OS security updates: buildx caches this layer on the command string. Anything that changes
+# per commit goes below this RUN, because every ARG above a RUN is part of that RUN's cache key.
 ARG APK_SECURITY_PATCH=2026-11-04
+RUN echo "apk-security-patch ${APK_SECURITY_PATCH}" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+
+# Where /source redirects. scripts/ci/build-images.sh passes the commit that built the client, and has no
+# default ref here on purpose: the build below fails rather than name a branch.
+ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
+ARG WAYLINE_SOURCE_REF
 
 LABEL org.opencontainers.image.title="wayline-web" \
       org.opencontainers.image.description="Customized Plane Community Edition web client" \
@@ -18,12 +22,14 @@ LABEL org.opencontainers.image.title="wayline-web" \
       org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
       org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
 
-RUN echo "apk-security-patch ${APK_SECURITY_PATCH}" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
-
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY client/ /usr/share/nginx/html/
+# AGPL section 4 and OFL 1.1. /licenses/ serves them to browsers, which receive the fonts.
+COPY licenses/ /usr/share/licenses/wayline/
+COPY licenses/ /usr/share/nginx/html/licenses/
 
-RUN sed -i "s|__WAYLINE_SOURCE_URL__|${WAYLINE_SOURCE_REPO}/tree/${WAYLINE_SOURCE_REF}|" /etc/nginx/nginx.conf \
+RUN test -n "${WAYLINE_SOURCE_REF}" \
+  && sed -i "s|__WAYLINE_SOURCE_URL__|${WAYLINE_SOURCE_REPO}/tree/${WAYLINE_SOURCE_REF}|" /etc/nginx/nginx.conf \
   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
 
 # Same UID as the hardening patch. These paths are writable here too, so the image also runs without

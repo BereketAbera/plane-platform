@@ -17,6 +17,8 @@ SOURCE="${PLANE_SOURCE_MIRROR:-$UPSTREAM_REPO}"
 
 ensure_cache() {
   if wgit -C "$UPSTREAM_CACHE" cat-file -e "$UPSTREAM_COMMIT^{commit}" 2>/dev/null; then
+    # Always, not just on a fetch: rolling UPSTREAM back to a commit already cached must move the ref too.
+    wgit -C "$UPSTREAM_CACHE" update-ref "refs/wayline/pinned" "$UPSTREAM_COMMIT"
     return 0
   fi
   log "Fetching $UPSTREAM_TAG ($UPSTREAM_COMMIT) from $SOURCE"

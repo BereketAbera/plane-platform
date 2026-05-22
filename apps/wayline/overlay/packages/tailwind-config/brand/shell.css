@@ -25,12 +25,16 @@
   --wl-ink-danger-subtle: #3a1c28;
   --wl-ink-success: #7fdba1;
   --wl-ink-warning: #f0c26e;
+  --wl-ink-success-subtle: #12302a;
+  --wl-ink-warning-subtle: #33291a;
   --wl-ink-disabled: #76849c;
 
   --bg-danger-primary: var(--wl-ink-danger-fill);
   --bg-danger-primary-hover: var(--wl-ink-danger);
   --bg-danger-primary-active: var(--wl-ink-danger);
   --bg-danger-subtle: var(--wl-ink-danger-subtle);
+  --bg-success-subtle: var(--wl-ink-success-subtle);
+  --bg-warning-subtle: var(--wl-ink-warning-subtle);
   --bg-danger-subtle-hover: var(--wl-ink-danger-subtle);
   --bg-danger-subtle-active: var(--wl-ink-danger-subtle);
   --bg-layer-disabled: var(--wl-ink-700);
@@ -65,6 +69,18 @@
   --bg-canvas: var(--wl-ink-900);
   border-bottom: 1px solid var(--border-subtle);
 }
+/* Upstream centres the search between two equal groups. On the chart it follows the workspace switcher. */
+[data-shell="top"] > .flex-1:first-child {
+  flex: none;
+  margin-right: 1rem;
+}
+
+/* Night Ops: content is the raised surface, so the shell recedes to the canvas, as it does in Chart. */
+[data-theme*="dark"] [data-shell="nav"] {
+  --bg-canvas: var(--wl-ink-900);
+  --bg-surface-1: var(--wl-ink-900);
+  --bg-surface-2: var(--wl-ink-800);
+}
 
 /*
  * ---------- High contrast keeps the ink shell ----------
@@ -77,6 +93,7 @@
   --wl-ink-900: #060b13;
   --wl-ink-800: #0b1320;
   --wl-ink-700: #111c2e;
+  --wl-ink-550: #1e2c43;
   --wl-ink-text: #ffffff;
   --wl-ink-text-muted: #e7e9ee;
   --wl-ink-text-faint: #cdd2dc;
@@ -100,6 +117,25 @@
   border: 0;
   border-radius: 0;
 }
+/*
+ * Chart: the page is paper, and cards and fields are raised on it. Full bleed would otherwise leave the raised
+ * colour as the whole page. Portalled menus and modals are outside this scope and stay raised on their own.
+ * Night Ops keeps its tokens, and the shell recedes instead. contrast.mjs checks this scope as "page main".
+ */
+:root:where([data-theme="light"], [data-theme="light-contrast"]) [data-wl-content] main {
+  --bg-surface-1: var(--neutral-200);
+  --bg-surface-2: var(--neutral-300);
+  --bg-layer-1: var(--neutral-white);
+  --bg-layer-1-hover: var(--neutral-100);
+}
+
+/* Settings section labels read like the sidebar's own. */
+[data-shell="nav"] .text-caption-md-medium.capitalize {
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 
 /* The search field's placeholder-text-placeholder is not a utility this token setup defines, so state it here. */
 [data-shell] input::placeholder {
@@ -118,6 +154,7 @@
  */
 [data-wl-nav="active"] {
   --bg-layer-transparent-active: transparent;
+  --bg-layer-transparent-selected: transparent;
   color: var(--txt-primary);
 }
 [data-wl-nav="active"] p {
@@ -132,8 +169,10 @@
   left: 0;
   pointer-events: none;
 }
+/* Drawn, not a dashed border: a browser's 2px dashes over a 28px row come out as two stubs. */
 [data-wl-nav="active"]::before {
-  border-left: 2px dashed var(--bg-accent-primary);
+  width: 2px;
+  background-image: repeating-linear-gradient(to bottom, var(--bg-accent-primary) 0 4px, transparent 4px 7px);
 }
 /* Hover pencils the route in, thinner and in hairline colour. */
 [data-wl-nav="idle"]:hover::before {
@@ -148,7 +187,7 @@
   height: 7px;
   background-color: var(--bg-accent-primary);
   /* The ring breaks the dashed line where the waypoint sits on it. */
-  box-shadow: 0 0 0 2px var(--bg-surface-1);
+  box-shadow: 0 0 0 1px var(--bg-surface-1);
   pointer-events: none;
 }
 [data-wl-nav="active"]::after {
@@ -180,6 +219,11 @@
   transform: translate(-50%, 50%) rotate(45deg);
 }
 
+/* Upstream's solid rail beside project sub-items: the route line is the only line in that column. */
+[data-shell="nav"] .left-\[15px\].w-\[1px\] {
+  display: none;
+}
+
 /* Forced colours drop backgrounds and shadows, and a blank diamond would lose the active state. */
 @media (forced-colors: active) {
   [data-wl-nav="active"]::after,
@@ -187,4 +231,23 @@
     forced-color-adjust: none;
     background-color: Highlight;
   }
+  [data-wl-nav="active"]::before {
+    forced-color-adjust: none;
+    background-image: none;
+    background-color: Highlight;
+  }
+}
+
+/* ---------- Literal soft shadows and large radii that bypass the tokens ---------- */
+.rounded {
+  border-radius: var(--radius-md);
+}
+.rounded-\[10px\] {
+  border-radius: var(--radius-lg);
+}
+.shadow-\[8px_22px_22px_10px_rgba\(0\,0\,0\,0\.05\)\] {
+  box-shadow: 1px 0 0 0 var(--border-subtle);
+}
+html .bprogress .peg {
+  display: none;
 }

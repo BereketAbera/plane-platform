@@ -1,3 +1,82 @@
+diff --git a/apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx b/apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx
+index 12e3afe53cae37bc3635266c52a394443b0469fd..e6ac77c0b17fbda33b41a1dee52690f56798e944 100644
+--- a/apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx
++++ b/apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx
+@@ -9,8 +9,6 @@ import { observer } from "mobx-react";
+ import { PageHead } from "@/components/core/page-title";
+ // hooks
+ import { useWorkspace } from "@/hooks/store/use-workspace";
+-// local imports
+-import { WorkspaceActiveCyclesUpgrade } from "@/components/active-cycles/workspace-active-cycles-upgrade";
+ 
+ function WorkspaceActiveCyclesPage() {
+   const { currentWorkspace } = useWorkspace();
+@@ -20,7 +18,10 @@ function WorkspaceActiveCyclesPage() {
+   return (
+     <>
+       <PageHead title={pageTitle} />
+-      <WorkspaceActiveCyclesUpgrade />
++      {/* No paid plans are offered on this deployment. A bookmarked URL lands here, and nothing is unlocked. */}
++      <div className="grid size-full place-items-center p-6 text-13 text-secondary">
++        Active cycles across projects are not part of Community Edition. Each project keeps its own Cycles page.
++      </div>
+     </>
+   );
+ }
+diff --git a/apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/page.tsx b/apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/page.tsx
+index 86bd9f85f422fb0496c0b2a9e2e8fb731e8b4b11..494c2da6d1046da272adba3452f9e26245cb9771 100644
+--- a/apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/page.tsx
++++ b/apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/page.tsx
+@@ -5,12 +5,10 @@
+  */
+ 
+ import { observer } from "mobx-react";
+-import Link from "next/link";
+ import { useTheme } from "next-themes";
+ // plane imports
+ import { PROJECT_TRACKER_ELEMENTS } from "@plane/constants";
+-import { Button, getButtonStyling } from "@plane/propel/button";
+-import { cn } from "@plane/utils";
++import { Button } from "@plane/propel/button";
+ // assets
+ import ProjectDarkEmptyState from "@/app/assets/empty-state/project-settings/no-projects-dark.png?url";
+ import ProjectLightEmptyState from "@/app/assets/empty-state/project-settings/no-projects-light.png?url";
+@@ -32,9 +30,6 @@ function ProjectSettingsPage() {
+         need to get things done.
+       </div>
+       <div className="flex gap-2">
+-        <Link href="https://plane.so/" target="_blank" className={cn(getButtonStyling("secondary", "base"))}>
+-          Learn more about projects
+-        </Link>
+         <Button
+           onClick={() => toggleCreateProjectModal(true)}
+           data-ph-element={PROJECT_TRACKER_ELEMENTS.EMPTY_STATE_CREATE_PROJECT_BUTTON}
+diff --git a/apps/web/app/(all)/workspace-invitations/page.tsx b/apps/web/app/(all)/workspace-invitations/page.tsx
+index d6267d1888cbffbdc5bbedc92112cec30d508aee..53b17e33cdbac566dec8a47250f79448f9955dbe 100644
+--- a/apps/web/app/(all)/workspace-invitations/page.tsx
++++ b/apps/web/app/(all)/workspace-invitations/page.tsx
+@@ -7,7 +7,7 @@
+ import { observer } from "mobx-react";
+ import { useSearchParams } from "next/navigation";
+ import useSWR from "swr";
+-import { Boxes, Share2, Star, User2 } from "lucide-react";
++import { Boxes, User2 } from "lucide-react";
+ import { CheckIcon, CloseIcon } from "@plane/propel/icons";
+ // components
+ import { LogoSpinner } from "@/components/common/logo-spinner";
+@@ -111,12 +111,6 @@ function WorkspaceInvitationPage() {
+               ) : (
+                 <EmptySpaceItem Icon={Boxes} title="Continue to home" href="/" />
+               )}
+-              <EmptySpaceItem Icon={Star} title="Star us on GitHub" href="https://github.com/makeplane" />
+-              <EmptySpaceItem
+-                Icon={Share2}
+-                title="Join our community of active creators"
+-                href="https://forum.plane.so"
+-              />
+             </EmptySpace>
+           )
+         ) : (
 diff --git a/apps/web/app/error/prod.tsx b/apps/web/app/error/prod.tsx
 index a8d61829e35a5d89049462536ebf2d83012d052d..74c08e3440f779cf169f8c4544be7a6171bb2768 100644
 --- a/apps/web/app/error/prod.tsx
@@ -52,22 +131,39 @@ index a5b99a9cddf1cb6df479877a983ebcabf79074d5..d302137b9ecd7514af6074bc58327f59
              showDot: true,
              smoothCurves: true,
              strokeOpacity: 1,
+diff --git a/apps/web/core/components/core/theme/color-inputs.tsx b/apps/web/core/components/core/theme/color-inputs.tsx
+index bb3f79952791547bd985598e96d1a66447a0c783..f40f3ef2e2f1e54a27387e61d076357e1c8cf257 100644
+--- a/apps/web/core/components/core/theme/color-inputs.tsx
++++ b/apps/web/core/components/core/theme/color-inputs.tsx
+@@ -81,7 +81,7 @@ export const CustomThemeColorInputs = observer(function CustomThemeColorInputs(p
+                 name="primary"
+                 value={value}
+                 onChange={(val) => handleValueChange(val, onChange)}
+-                placeholder="#3f76ff"
++                placeholder="#9f1265"
+                 className="w-full placeholder:text-placeholder"
+                 style={{
+                   backgroundColor: value,
+diff --git a/apps/web/core/components/core/theme/custom-theme-selector.tsx b/apps/web/core/components/core/theme/custom-theme-selector.tsx
+index 47307776d85a8653da55f1fc2253600379324b9d..36a0d6000c626c0542696df8861a34962933f784 100644
+--- a/apps/web/core/components/core/theme/custom-theme-selector.tsx
++++ b/apps/web/core/components/core/theme/custom-theme-selector.tsx
+@@ -47,8 +47,8 @@ export const CustomThemeSelector = observer(function CustomThemeSelector() {
+     // Fallback to defaults
+     return {
+       theme: "custom",
+-      primary: "#3f76ff",
+-      background: "#1a1a1a",
++      primary: "#9f1265",
++      background: "#0b1320",
+       darkPalette: false,
+     };
+   }, [userProfile?.theme]);
 diff --git a/apps/web/core/components/global/product-updates/changelog.tsx b/apps/web/core/components/global/product-updates/changelog.tsx
-index cfddb2af4f275e2e1b2bde54b19661dc0d324ecc..5590c3e094013687bf14d9be4143a6c881e6f4e1 100644
+index cfddb2af4f275e2e1b2bde54b19661dc0d324ecc..58141ee65cc92d2e9f61fb77ddb7b5994211baaf 100644
 --- a/apps/web/core/components/global/product-updates/changelog.tsx
 +++ b/apps/web/core/components/global/product-updates/changelog.tsx
-@@ -20,7 +20,9 @@ export const ProductUpdatesChangelog = observer(function ProductUpdatesChangelog
-   // store hooks
-   const { config } = useInstance();
-   // derived values
--  const changeLogUrl = config?.instance_changelog_url;
-+  // Only a same-origin page is embedded: upstream's backend image defaults this setting to a page on its own site.
-+  const configuredUrl = config?.instance_changelog_url;
-+  const changeLogUrl = configuredUrl && /^\/(?!\/)/.test(configuredUrl) ? configuredUrl : undefined;
-   const shouldShowFallback = !changeLogUrl || changeLogUrl === "" || hasError;
- 
-   // timeout fallback - if iframe doesn't load within 15 seconds, show error
-@@ -65,7 +67,7 @@ export const ProductUpdatesChangelog = observer(function ProductUpdatesChangelog
+@@ -65,7 +65,7 @@ export const ProductUpdatesChangelog = observer(function ProductUpdatesChangelog
    if (shouldShowFallback) {
      return (
        <ProductUpdatesFallback
@@ -163,6 +259,46 @@ index ed0a185a5451beb6cc55db8a74b9c35643b2ccaa..3f30fe723edb7110f897644303922fc6
        </a>
      </div>
    );
+diff --git a/apps/web/core/components/instance/maintenance-message.tsx b/apps/web/core/components/instance/maintenance-message.tsx
+index f2d662c9a2981d7377a6bcb0e04440570698a6c2..9b06731c72072c8c2f97650e6552374b44f77aec 100644
+--- a/apps/web/core/components/instance/maintenance-message.tsx
++++ b/apps/web/core/components/instance/maintenance-message.tsx
+@@ -7,9 +7,9 @@
+ export function MaintenanceMessage() {
+   const linkMap = [
+     {
+-      key: "mail_to",
+-      label: "Contact Support",
+-      value: "mailto:support@plane.so",
++      key: "source",
++      label: "Source code",
++      value: "/source",
+     },
+   ];
+ 
+@@ -21,7 +21,7 @@ export function MaintenanceMessage() {
+         </h1>
+         <span className="text-left text-14 font-medium text-secondary">
+           Some services might have failed to start. Please check your container logs to identify and resolve the issue.
+-          If you&apos;re stuck, reach out to our support team for more help.
++          If you&apos;re stuck, contact your administrator.
+         </span>
+       </div>
+       <div className="mt-1 flex items-center justify-start gap-6">
+diff --git a/apps/web/core/components/issues/bulk-operations/upgrade-banner.tsx b/apps/web/core/components/issues/bulk-operations/upgrade-banner.tsx
+index bfd33369020c6262aeb4191e4f4e3ec2a2e291ee..d088d9c47740ad4d65bdccffa92fe93e8ae8822f 100644
+--- a/apps/web/core/components/issues/bulk-operations/upgrade-banner.tsx
++++ b/apps/web/core/components/issues/bulk-operations/upgrade-banner.tsx
+@@ -13,6 +13,9 @@ type Props = {
+ };
+ 
+ export function BulkOperationsUpgradeBanner(props: Props) {
++  // No paid plans are offered on this deployment. Callers keep their gating: nothing is unlocked.
++  return null;
++
+   const { className } = props;
+ 
+   return (
 diff --git a/apps/web/core/components/power-k/config/help-commands.ts b/apps/web/core/components/power-k/config/help-commands.ts
 index 79e47354d56cfb80c3d4de1615d726dc67053bb7..564ae1a66a57ce3ddc0221da779f3d6962a22c52 100644
 --- a/apps/web/core/components/power-k/config/help-commands.ts
@@ -230,79 +366,6 @@ index 42ec13d1f0702875ae99c532f19ecb66e09dcf87..bb582a979cfc32f4b0ba92b490452e25
                                    Assigned
                                  </div>
                                  <div className="font-medium">
-diff --git a/apps/web/core/components/workspace/billing/root.tsx b/apps/web/core/components/workspace/billing/root.tsx
-index 33100a4372aac9347a2ceb5fe6f23bac831072b7..f2e1b5eed4d04b435221887c048fb9934339c513 100644
---- a/apps/web/core/components/workspace/billing/root.tsx
-+++ b/apps/web/core/components/workspace/billing/root.tsx
-@@ -4,51 +4,22 @@
-  * See the LICENSE file for details.
-  */
- 
--import { useState } from "react";
- import { observer } from "mobx-react";
- // plane imports
--import { DEFAULT_PRODUCT_BILLING_FREQUENCY, SUBSCRIPTION_WITH_BILLING_FREQUENCY } from "@plane/constants";
- import { useTranslation } from "@plane/i18n";
--import type { TBillingFrequency, TProductBillingFrequency } from "@plane/types";
--import { EProductSubscriptionEnum } from "@plane/types";
- // components
- import { SettingsBoxedControlItem } from "@/components/settings/boxed-control-item";
- import { SettingsHeading } from "@/components/settings/heading";
--// local imports
--import { PlansComparison } from "./comparison/root";
- 
- export const BillingRoot = observer(function BillingRoot() {
--  const [isCompareAllFeaturesSectionOpen, setIsCompareAllFeaturesSectionOpen] = useState(false);
--  const [productBillingFrequency, setProductBillingFrequency] = useState<TProductBillingFrequency>(
--    DEFAULT_PRODUCT_BILLING_FREQUENCY
--  );
-   const { t } = useTranslation();
- 
--  /**
--   * Retrieves the billing frequency for a given subscription type
--   * @param {EProductSubscriptionEnum} subscriptionType - Type of subscription to get frequency for
--   * @returns {TBillingFrequency | undefined} - Billing frequency if subscription supports it, undefined otherwise
--   */
--  const getBillingFrequency = (subscriptionType: EProductSubscriptionEnum): TBillingFrequency | undefined =>
--    SUBSCRIPTION_WITH_BILLING_FREQUENCY.includes(subscriptionType)
--      ? productBillingFrequency[subscriptionType]
--      : undefined;
--
--  /**
--   * Updates the billing frequency for a specific subscription type
--   * @param {EProductSubscriptionEnum} subscriptionType - Type of subscription to update
--   * @param {TBillingFrequency} frequency - New billing frequency to set
--   * @returns {void}
--   */
--  const setBillingFrequency = (subscriptionType: EProductSubscriptionEnum, frequency: TBillingFrequency): void =>
--    setProductBillingFrequency({ ...productBillingFrequency, [subscriptionType]: frequency });
--
-   return (
-     <section className="relative scrollbar-hide size-full overflow-y-auto">
-       <div>
-         <SettingsHeading
-           title={t("workspace_settings.settings.billing_and_plans.heading")}
--          description={t("workspace_settings.settings.billing_and_plans.description")}
-+          description="No paid plans are offered on this deployment."
-         />
-         <div className="mt-6">
-           <SettingsBoxedControlItem
-@@ -57,15 +28,6 @@ export const BillingRoot = observer(function BillingRoot() {
-           />
-         </div>
-       </div>
--      <div className="mt-10 flex flex-col gap-y-3">
--        <h4 className="text-h6-semibold">All plans</h4>
--        <PlansComparison
--          isCompareAllFeaturesSectionOpen={isCompareAllFeaturesSectionOpen}
--          getBillingFrequency={getBillingFrequency}
--          setBillingFrequency={setBillingFrequency}
--          setIsCompareAllFeaturesSectionOpen={setIsCompareAllFeaturesSectionOpen}
--        />
--      </div>
-     </section>
-   );
- });
 diff --git a/apps/web/core/components/workspace/edition-badge.tsx b/apps/web/core/components/workspace/edition-badge.tsx
 index b11e850b4e501fa8edc017325fba77b0f5347bf1..7e0e7859b5d31ca4cfae8c5ba573184def8e98a6 100644
 --- a/apps/web/core/components/workspace/edition-badge.tsx
@@ -364,21 +427,19 @@ index b11e850b4e501fa8edc017325fba77b0f5347bf1..7e0e7859b5d31ca4cfae8c5ba573184d
    );
  });
 diff --git a/apps/web/core/components/workspace/sidebar/help-section/root.tsx b/apps/web/core/components/workspace/sidebar/help-section/root.tsx
-index d19b8602d3b0378288d8e326c1f22ce5c6fd074a..56637a75c60cb76b91df048d1c9b646b0a6da28f 100644
+index d19b8602d3b0378288d8e326c1f22ce5c6fd074a..d8cd57178edf3bbf245da7545cdabbae45408536 100644
 --- a/apps/web/core/components/workspace/sidebar/help-section/root.tsx
 +++ b/apps/web/core/components/workspace/sidebar/help-section/root.tsx
-@@ -5,8 +5,9 @@
-  */
+@@ -6,7 +6,7 @@
  
  import React, { useState } from "react";
-+import { Menu } from "@headlessui/react";
  import { observer } from "mobx-react";
 -import { HelpCircle, User } from "lucide-react";
 +import { HelpCircle } from "lucide-react";
  import { useTranslation } from "@plane/i18n";
  import { PageIcon } from "@plane/propel/icons";
  // ui
-@@ -53,12 +54,6 @@ export const HelpMenuRoot = observer(function HelpMenuRoot() {
+@@ -53,12 +53,6 @@ export const HelpMenuRoot = observer(function HelpMenuRoot() {
              <span className="text-11">{t("documentation")}</span>
            </div>
          </CustomMenu.MenuItem>
@@ -391,85 +452,65 @@ index d19b8602d3b0378288d8e326c1f22ce5c6fd074a..56637a75c60cb76b91df048d1c9b646b
          <div className="my-1 border-t border-subtle" />
          <CustomMenu.MenuItem>
            <button
-@@ -78,13 +73,32 @@ export const HelpMenuRoot = observer(function HelpMenuRoot() {
+@@ -78,9 +72,15 @@ export const HelpMenuRoot = observer(function HelpMenuRoot() {
              <span className="text-11">{t("whats_new")}</span>
            </button>
          </CustomMenu.MenuItem>
 -        <CustomMenu.MenuItem onClick={() => window.open("https://forum.plane.so", "_blank", "noopener,noreferrer")}>
--          <div className="flex items-center gap-x-2 rounded-sm text-11">
++        {/* AGPL section 13. window.open, because /source is served by nginx, not the router. */}
++        <CustomMenu.MenuItem onClick={() => window.open("/source", "_blank", "noopener,noreferrer")}>
++          <div className="flex items-center gap-x-2 rounded-sm text-11">
++            <span className="text-11">Source code</span>
++          </div>
++        </CustomMenu.MenuItem>
++        <CustomMenu.MenuItem onClick={() => window.open("/source", "_blank", "noopener,noreferrer")}>
+           <div className="flex items-center gap-x-2 rounded-sm text-11">
 -            <span className="text-11">Forum</span>
-+        {/* AGPL section 13. Plain anchors: /source is served by nginx, not the router. Menu.Item keeps them reachable
-+            by keyboard, and stopPropagation is required because CustomMenu's root onClick calls preventDefault. */}
-+        <div className="mt-1 flex flex-col gap-1 border-t border-subtle px-1 pt-2 text-11 text-secondary">
-+          <div className="flex items-center justify-between gap-3">
-+            <PlaneVersionNumber />
-+            <Menu.Item
-+              as="a"
-+              href="/source"
-+              target="_blank"
-+              rel="noopener noreferrer"
-+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-+              className="text-accent-primary underline-offset-2 hover:underline data-[headlessui-state=active]:underline"
-+            >
-+              Source code
-+            </Menu.Item>
++            <span className="text-11">Built on Plane Community Edition</span>
            </div>
--        </CustomMenu.MenuItem>
--        <div className="mt-1 border-t border-subtle px-1 pt-2 text-11 text-secondary">
--          <PlaneVersionNumber />
-+          <Menu.Item
-+            as="a"
-+            href="/source"
-+            target="_blank"
-+            rel="noopener noreferrer"
-+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-+            className="underline-offset-2 hover:underline data-[headlessui-state=active]:underline"
-+          >
-+            Built on Plane Community Edition
-+          </Menu.Item>
-         </div>
-       </CustomMenu>
-     </>
+         </CustomMenu.MenuItem>
+         <div className="mt-1 border-t border-subtle px-1 pt-2 text-11 text-secondary">
+diff --git a/apps/web/core/components/workspace/sidebar/workspace-menu.tsx b/apps/web/core/components/workspace/sidebar/workspace-menu.tsx
+index d25c590925394d3a0aaedc585c0118551f251f9e..09a2c1558c5762acee7afcd2da85ffaddbf4926a 100644
+--- a/apps/web/core/components/workspace/sidebar/workspace-menu.tsx
++++ b/apps/web/core/components/workspace/sidebar/workspace-menu.tsx
+@@ -9,7 +9,7 @@ import { observer } from "mobx-react";
+ import { useParams } from "next/navigation";
+ import { Disclosure, Transition } from "@headlessui/react";
+ // plane imports
+-import { AnalyticsIcon, CycleIcon, ProjectIcon, ViewsIcon } from "@plane/propel/icons";
++import { AnalyticsIcon, ProjectIcon, ViewsIcon } from "@plane/propel/icons";
+ import { EUserWorkspaceRoles } from "@plane/types";
+ // hooks
+ import useLocalStorage from "@/hooks/use-local-storage";
+@@ -40,13 +40,6 @@ export const SidebarWorkspaceMenu = observer(function SidebarWorkspaceMenu() {
+       access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER, EUserWorkspaceRoles.GUEST],
+       Icon: ViewsIcon,
+     },
+-    {
+-      key: "active-cycles",
+-      labelTranslationKey: "sidebar.cycles",
+-      href: `/${workspaceSlug}/active-cycles/`,
+-      access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
+-      Icon: CycleIcon,
+-    },
+     {
+       key: "analytics",
+       labelTranslationKey: "sidebar.analytics",
 diff --git a/apps/web/core/components/workspace/upgrade-badge.tsx b/apps/web/core/components/workspace/upgrade-badge.tsx
-index 5bddd913d92a1d4f77728acf3f72a7d5d1cb7fe7..d2c814c6a9d855e454e0585618d2b9811bbd364b 100644
+index 5bddd913d92a1d4f77728acf3f72a7d5d1cb7fe7..60402dd2c53d7462096961e28746b714f4cf1cb4 100644
 --- a/apps/web/core/components/workspace/upgrade-badge.tsx
 +++ b/apps/web/core/components/workspace/upgrade-badge.tsx
-@@ -4,32 +4,12 @@
-  * See the LICENSE file for details.
-  */
- 
--// helpers
--import { useTranslation } from "@plane/i18n";
--import { cn } from "@plane/utils";
--
- type TUpgradeBadge = {
-   className?: string;
-   size?: "sm" | "md";
+@@ -14,6 +14,9 @@ type TUpgradeBadge = {
  };
  
--export function UpgradeBadge(props: TUpgradeBadge) {
--  const { className, size = "sm" } = props;
--
--  const { t } = useTranslation();
--
--  return (
--    <div
--      className={cn(
--        "w-fit cursor-pointer rounded-2xl bg-accent-primary/20 text-center font-medium text-accent-secondary outline-none",
--        {
--          "px-3 text-13": size === "md",
--          "px-2 text-11": size === "sm",
--        },
--        className
--      )}
--    >
--      {t("sidebar.pro")}
--    </div>
--  );
-+// No paid plans are offered on this deployment. Only the label goes: callers keep their gating.
-+export function UpgradeBadge(_props: TUpgradeBadge) {
+ export function UpgradeBadge(props: TUpgradeBadge) {
++  // No paid plans are offered on this deployment. Only the label goes: callers keep their gating.
 +  return null;
- }
++
+   const { className, size = "sm" } = props;
+ 
+   const { t } = useTranslation();
 diff --git a/packages/constants/src/settings/workspace.ts b/packages/constants/src/settings/workspace.ts
 index e9d326e6a6d05fb8d8c256370fb08b913430b34c..aaf79758aedb44f3100b9257f54bf1ef9440e378 100644
 --- a/packages/constants/src/settings/workspace.ts
@@ -484,3 +525,92 @@ index e9d326e6a6d05fb8d8c256370fb08b913430b34c..aaf79758aedb44f3100b9257f54bf1ef
      highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/settings/billing/`,
    },
    export: {
+diff --git a/packages/constants/src/themes.ts b/packages/constants/src/themes.ts
+index 4c2cf21dc72e8ab14c729c8178177fc7495ae617..9fc199add483977df4b398f3b13b7b320ee5f1dc 100644
+--- a/packages/constants/src/themes.ts
++++ b/packages/constants/src/themes.ts
+@@ -25,9 +25,9 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
+     i18n_label: "System preference",
+     type: "light",
+     icon: {
+-      border: "#DEE2E6",
+-      color1: "#FAFAFA",
+-      color2: "#3F76FF",
++      border: "#CFC9B6",
++      color1: "#F4F2EA",
++      color2: "#9F1265",
+     },
+   },
+   {
+@@ -36,9 +36,9 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
+     i18n_label: "Light",
+     type: "light",
+     icon: {
+-      border: "#DEE2E6",
+-      color1: "#FAFAFA",
+-      color2: "#3F76FF",
++      border: "#CFC9B6",
++      color1: "#F4F2EA",
++      color2: "#9F1265",
+     },
+   },
+   {
+@@ -47,9 +47,9 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
+     i18n_label: "Dark",
+     type: "dark",
+     icon: {
+-      border: "#2E3234",
+-      color1: "#191B1B",
+-      color2: "#3C85D9",
++      border: "#30405C",
++      color1: "#0B1320",
++      color2: "#E65AA6",
+     },
+   },
+   {
+@@ -60,7 +60,7 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
+     icon: {
+       border: "#000000",
+       color1: "#FFFFFF",
+-      color2: "#3F76FF",
++      color2: "#8E1259",
+     },
+   },
+   {
+@@ -70,8 +70,8 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
+     type: "dark",
+     icon: {
+       border: "#FFFFFF",
+-      color1: "#030303",
+-      color2: "#3A8BE9",
++      color1: "#060B13",
++      color2: "#F27BBE",
+     },
+   },
+   {
+@@ -80,9 +80,9 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
+     i18n_label: "Custom theme",
+     type: "light",
+     icon: {
+-      border: "#FFC9C9",
+-      color1: "#FFF7F7",
+-      color2: "#FF5151",
++      border: "#CFC9B6",
++      color1: "#FBFAF6",
++      color2: "#5F8EA3",
+     },
+   },
+ ];
+diff --git a/packages/constants/src/workspace.ts b/packages/constants/src/workspace.ts
+index 6083c77195fb5660168ca0e1cdc4a8e2245c7406..92116d20e5b9bd4197dc3342db8a6adb432b7f10 100644
+--- a/packages/constants/src/workspace.ts
++++ b/packages/constants/src/workspace.ts
+@@ -13,6 +13,8 @@ export const RESTRICTED_URLS: string[] = [
+   "404",
+   "accounts",
+   "api",
++  "source",
++  "licenses",
+   "create-workspace",
+   "god-mode",
+   "installations",

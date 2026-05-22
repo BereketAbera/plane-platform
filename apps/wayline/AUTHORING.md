@@ -10,6 +10,7 @@ apps/wayline/scripts/patchwork.sh                       # create .build/plane-pa
 apps/wayline/scripts/save-patch.sh 20-shell path/one "apps/web/app/(all)/[workspaceSlug]/layout.tsx"
 apps/wayline/scripts/sync-overlay.sh                    # after editing apps/wayline/overlay, to see it in the patchwork
 apps/wayline/scripts/apply.sh                           # fresh tree in .build/plane-src, stops on a failed hunk
+apps/wayline/scripts/overlay-lock.sh --update           # after adding or removing an overlay file
 apps/wayline/scripts/build.sh                           # the real build, serialized by a lock
 ```
 
@@ -49,7 +50,9 @@ Patches apply **before** the codemod, so write them against upstream's text. Do 
 fix a string the codemod already handles. `"Built on Plane Community Edition"` is protected, so the codemod leaves
 it alone and the leak scan allows it. Any other "Plane" in a patch becomes "Wayline".
 
-Keep patches small. Never touch a copyright or SPDX line. New source files carry the AGPL-3.0-only SPDX header.
+Keep patches small. A whole new file belongs in `overlay/`, not a patch. To remove a component's output, prefer a
+one-line early return over deleting its body, as `upgrade-badge.tsx` does: the smaller the pre-image, the less a future
+upstream edit can conflict with. Never touch a copyright or SPDX line. New source files carry the AGPL-3.0-only SPDX header.
 Functional identifiers stay: `@plane/*`, the `plane` module, `X-Plane-*`.
 
 ## Who owns which CSS

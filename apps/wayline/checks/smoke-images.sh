@@ -92,8 +92,15 @@ check_brand_html() { # check_brand_html <path>
   fi
 }
 
+LICENCE_FILES="LICENSE.txt COPYRIGHT.txt NOTICE.txt MODIFICATIONS.txt OFL-InstrumentSans.txt OFL-JetBrainsMono.txt"
 report_process() {
   docker exec "$container" sh -c 'printf "uid in container: "; id -u'
+  # shellcheck disable=SC2016  # expanded in the container
+  if docker exec "$container" sh -c 'cd /usr/share/licenses/wayline && for f in '"$LICENCE_FILES"'; do test -s "$f" || { echo "missing $f"; exit 1; }; done'; then
+    pass "$1 carries the licence texts in /usr/share/licenses/wayline"
+  else
+    fail "$1 licence texts"
+  fi
   docker stats --no-stream --format 'memory after these requests: {{.MemUsage}}' "$container"
   if docker logs "$container" 2>&1 | grep -E 'Permission denied|\[(emerg|crit|alert)\]'; then
     fail "$1 logged permission or fatal errors"
@@ -127,6 +134,19 @@ if [[ -n "$(ref_of web)" ]]; then
     *"/tree/$WAYLINE_EXPECT_REF") pass "/source names commit $WAYLINE_EXPECT_REF" ;;
     *) fail "/source does not name $WAYLINE_EXPECT_REF" ;;
   esac
+  # The offer only counts if it lands somewhere, logged out. The repository being private is known and stated in
+  # NOTICE.md, so this is reported rather than failed until WAYLINE_REQUIRE_PUBLIC_SOURCE=yes, which is what
+  # the checklist in docs/agpl-compliance.md asks for before anyone else uses an instance.
+  source_target="$(curl -s -o /dev/null -m 15 -w '%{http_code}' "${source_status#* }" || echo unreachable)"
+  if [[ "${WAYLINE_REQUIRE_PUBLIC_SOURCE:-no}" == yes ]]; then
+    check "/source target, followed logged out" "$source_target" 200
+  else
+    printf 'NOTE /source target, followed logged out, answers %s. 404 is expected while the repository is private or the commit is unpushed\n' "$source_target"
+  fi
+  check "/licenses/LICENSE.txt status" "$(code /licenses/LICENSE.txt)" 200
+  check "/licenses/LICENSE.txt content type" "$(ctype /licenses/LICENSE.txt | sed 's/;.*//')" text/plain
+  check "/licenses/OFL-InstrumentSans.txt status" "$(code /licenses/OFL-InstrumentSans.txt)" 200
+  check "/licenses/OFL-JetBrainsMono.txt status" "$(code /licenses/OFL-JetBrainsMono.txt)" 200
   check "manifest status" "$(code /site.webmanifest.json)" 200
   if curl -s "$base/site.webmanifest.json" | grep -q Wayline; then pass "manifest names Wayline"; else fail "manifest does not name Wayline"; fi
   check "X-Frame-Options" "$(curl -sI "$base/" | tr -d '\r' | awk -F': ' 'tolower($1) == "x-frame-options" { print $2 }')" DENY
@@ -172,6 +192,12 @@ if [[ -n "$(ref_of backend)" ]]; then
     pass "backend check-image.sh exit 0"
   else
     fail "backend check-image.sh"
+  fi
+  # shellcheck disable=SC2016  # expanded in the container
+  if docker run --rm --network none --entrypoint sh "$ref" -c 'cd /usr/share/licenses/wayline && for f in '"$LICENCE_FILES"'; do test -s "$f" || { echo "missing $f"; exit 1; }; done'; then
+    pass "backend carries the licence texts in /usr/share/licenses/wayline"
+  else
+    fail "backend licence texts"
   fi
 fi
 

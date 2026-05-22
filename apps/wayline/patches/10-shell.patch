@@ -34,6 +34,71 @@ index 090eefbf6b1cc5c56c5978770887181db966ccc1..943602c5951c91d7c2122f05981323a5
            <main className="relative flex h-full w-full flex-col overflow-hidden bg-surface-1">
              <Outlet />
            </main>
+diff --git a/apps/web/app/(all)/settings/profile/layout.tsx b/apps/web/app/(all)/settings/profile/layout.tsx
+index a30518f658c3fa0aaafe13e615ef371977bef30b..10244bb7377c063e2348a0128fdaf0dd74ffec5c 100644
+--- a/apps/web/app/(all)/settings/profile/layout.tsx
++++ b/apps/web/app/(all)/settings/profile/layout.tsx
+@@ -4,7 +4,10 @@
+  * See the LICENSE file for details.
+  */
+ 
++import Link from "next/link";
+ import { Outlet } from "react-router";
++// plane imports
++import { PlaneLockup } from "@plane/propel/icons";
+ // components
+ import { ProjectsAppPowerKProvider } from "@/components/power-k/projects-app-provider";
+ // lib
+@@ -15,12 +18,19 @@ export default function ProfileSettingsLayout() {
+     <>
+       <ProjectsAppPowerKProvider />
+       <AuthenticationWrapper>
+-        <div className="relative flex size-full overflow-hidden bg-canvas p-2">
+-          <main className="relative flex size-full flex-col overflow-hidden rounded-lg border border-subtle bg-surface-1">
+-            <div className="size-full overflow-hidden">
+-              <Outlet />
+-            </div>
+-          </main>
++        <div className="relative flex size-full flex-col overflow-hidden bg-canvas">
++          <div data-shell="top" className="z-[27] flex min-h-10 w-full shrink-0 items-center bg-canvas px-3.5">
++            <Link href="/">
++              <PlaneLockup height={20} width={95} className="text-primary" />
++            </Link>
++          </div>
++          <div data-wl-content="" className="relative min-h-0 w-full flex-1 overflow-hidden">
++            <main className="relative flex size-full flex-col overflow-hidden bg-surface-1">
++              <div className="size-full overflow-hidden">
++                <Outlet />
++              </div>
++            </main>
++          </div>
+         </div>
+       </AuthenticationWrapper>
+     </>
+diff --git a/apps/web/core/components/dropdowns/date-range.tsx b/apps/web/core/components/dropdowns/date-range.tsx
+index c9de567e3764a040efb5603e0142abfc6de27ae9..3dd7cf9660d27d4692c3f826d9d0332e1752432f 100644
+--- a/apps/web/core/components/dropdowns/date-range.tsx
++++ b/apps/web/core/components/dropdowns/date-range.tsx
+@@ -160,6 +160,7 @@ export const DateRangeDropdown = observer(function DateRangeDropdown(props: Prop
+     <button
+       ref={setReferenceElement}
+       type="button"
++      data-wl-meta=""
+       className={cn(
+         "clickable block h-full max-w-full outline-none",
+         {
+diff --git a/apps/web/core/components/issues/issue-detail/identifier-text.tsx b/apps/web/core/components/issues/issue-detail/identifier-text.tsx
+index a3a19fee3c3dddbe2f53f33674f829a07de1eee1..17dcb23df8fd7b622b26a4f6f37a00ccb2fe2cee 100644
+--- a/apps/web/core/components/issues/issue-detail/identifier-text.tsx
++++ b/apps/web/core/components/issues/issue-detail/identifier-text.tsx
+@@ -52,6 +52,7 @@ export function IdentifierText(props: TIdentifierTextProps) {
+     <Tooltip tooltipContent="Click to copy" disabled={!enableClickToCopyIdentifier} position="top">
+       <button
+         type="button"
++        data-wl-meta=""
+         className={cn("text-12 font-medium whitespace-nowrap text-tertiary", textSizeClassName, variantClassName, {
+           "cursor-pointer": enableClickToCopyIdentifier,
+         })}
 diff --git a/apps/web/core/components/navigation/top-navigation-root.tsx b/apps/web/core/components/navigation/top-navigation-root.tsx
 index 2571ecee6b0f06dad795a08bbf784d2669c8dd6f..6b349ec3ee87a6696d9b444a10c281b49b54ba29 100644
 --- a/apps/web/core/components/navigation/top-navigation-root.tsx
@@ -63,6 +128,77 @@ index 2571ecee6b0f06dad795a08bbf784d2669c8dd6f..6b349ec3ee87a6696d9b444a10c281b4
          <div className="flex size-8 items-center justify-center rounded-md hover:bg-layer-1-hover">
            <UserMenuRoot />
          </div>
+diff --git a/apps/web/core/components/settings/profile/sidebar/root.tsx b/apps/web/core/components/settings/profile/sidebar/root.tsx
+index bef2b9928ee10f8522ea18cfcda1d0c1a0de648f..68e899ae9cee5b51199511402562e016f0b2f207 100644
+--- a/apps/web/core/components/settings/profile/sidebar/root.tsx
++++ b/apps/web/core/components/settings/profile/sidebar/root.tsx
+@@ -23,10 +23,11 @@ export function ProfileSettingsSidebarRoot(props: Props) {
+ 
+   return (
+     <ScrollArea
++      data-shell="nav"
+       scrollType="hover"
+       orientation="vertical"
+       size="sm"
+-      rootClassName={cn("shrink-0 overflow-y-scroll border-r border-r-subtle bg-surface-2 px-3 py-4", className)}
++      rootClassName={cn("shrink-0 overflow-y-scroll border-r border-r-subtle bg-surface-1 px-3 py-4", className)}
+     >
+       <ProfileSettingsSidebarHeader />
+       <ProfileSettingsSidebarItemCategories activeTab={activeTab} updateActiveTab={updateActiveTab} />
+diff --git a/apps/web/core/components/settings/project/sidebar/root.tsx b/apps/web/core/components/settings/project/sidebar/root.tsx
+index 1352b0fd9b387bb579cebb563af41389f829d31f..053e29298f80006d8fe8ea4987dd85a2c88a4525 100644
+--- a/apps/web/core/components/settings/project/sidebar/root.tsx
++++ b/apps/web/core/components/settings/project/sidebar/root.tsx
+@@ -19,6 +19,7 @@ export function ProjectSettingsSidebarRoot(props: Props) {
+ 
+   return (
+     <ScrollArea
++      data-shell="nav"
+       scrollType="hover"
+       orientation="vertical"
+       size="sm"
+diff --git a/apps/web/core/components/settings/sidebar/item.tsx b/apps/web/core/components/settings/sidebar/item.tsx
+index 47937c37847848476c81a1bc3c74c7d04b4aec98..68d2f0b8cb3af691c7ba1e61dec46a874f73dc39 100644
+--- a/apps/web/core/components/settings/sidebar/item.tsx
++++ b/apps/web/core/components/settings/sidebar/item.tsx
+@@ -26,7 +26,7 @@ export function SettingsSidebarItem(props: Props) {
+   const { as, isActive, label } = props;
+   // common class
+   const className = cn(
+-    "flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-body-sm-medium text-secondary transition-colors",
++    "relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-body-sm-medium text-secondary transition-colors",
+     {
+       "bg-layer-transparent-selected text-primary": isActive,
+       "hover:bg-layer-transparent-hover": !isActive,
+@@ -46,14 +46,14 @@ export function SettingsSidebarItem(props: Props) {
+ 
+   if (as === "button") {
+     return (
+-      <button type="button" className={className} onClick={props.onClick}>
++      <button type="button" data-wl-nav={isActive ? "active" : "idle"} className={className} onClick={props.onClick}>
+         {content}
+       </button>
+     );
+   }
+ 
+   return (
+-    <Link className={className} href={props.href}>
++    <Link data-wl-nav={isActive ? "active" : "idle"} className={className} href={props.href}>
+       {content}
+     </Link>
+   );
+diff --git a/apps/web/core/components/settings/workspace/sidebar/root.tsx b/apps/web/core/components/settings/workspace/sidebar/root.tsx
+index e6d8b637cfaf4a2ba899ea4167e2bb82dc42f90b..96c4f57cba9c3ff2f8c8807aa141e0be7d4d8d0c 100644
+--- a/apps/web/core/components/settings/workspace/sidebar/root.tsx
++++ b/apps/web/core/components/settings/workspace/sidebar/root.tsx
+@@ -20,6 +20,7 @@ export function WorkspaceSettingsSidebarRoot(props: Props) {
+ 
+   return (
+     <ScrollArea
++      data-shell="nav"
+       scrollType="hover"
+       orientation="vertical"
+       size="sm"
 diff --git a/apps/web/core/components/sidebar/resizable-sidebar.tsx b/apps/web/core/components/sidebar/resizable-sidebar.tsx
 index 5db352d7235978d53082c69714018015392cfcc9..74cb51859cb417dbef3543077b4624d411ea2008 100644
 --- a/apps/web/core/components/sidebar/resizable-sidebar.tsx

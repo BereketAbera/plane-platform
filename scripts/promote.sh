@@ -132,6 +132,11 @@ elif [[ "$ENV" == prod-sim ]]; then
   done < <(entries "$DEV_KUSTOMIZATION")
 else
   [[ -s "$DIGESTS_FILE" ]] || die "nothing to promote: pass IMAGE= and DIGEST=, or run make images to write ${DIGESTS_FILE#"$ROOT"/}"
+  # A partial file must not look like a complete set. Backend, web and the rest move together.
+  if [[ -f apps/wayline/images.txt ]]; then
+    [[ "$(awk '$1 !~ /^#/ && NF { print $1 }' apps/wayline/images.txt | LC_ALL=C sort)" == "$(cut -f1 "$DIGESTS_FILE" | LC_ALL=C sort)" ]] \
+      || die "$DIGESTS_FILE does not name every image in apps/wayline/images.txt. Run make images again, or use IMAGE= and DIGEST="
+  fi
   while IFS=$'\t' read -r image repo digest; do
     [[ -n "$image" ]] || continue
     [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "bad digest for $image in $DIGESTS_FILE"
