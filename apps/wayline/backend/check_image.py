@@ -24,7 +24,6 @@ ROOT = Path("/code")
 OPT = Path("/opt/wayline")
 COMMERCIAL = b"LicenseRef-Plane-Commercial"
 EMAIL_PY = ROOT / "plane/utils/email.py"
-PYJWT_VERSION = "2.14.0"
 BRAND = re.compile(r"Plane|plane\.so|plane\.sh|makeplane|planepowers|plane-marketing|mailinblue|imagekit")
 CREDIT = "Built on Plane Community Edition"
 failures = 0
@@ -62,10 +61,11 @@ def check_licence():
 
 def check_pyjwt_install():
     print("\n== PyJWT as installed")
+    pinned = re.search(r"^PyJWT==(\S+)", (OPT / "pyjwt-requirements.txt").read_text(), re.M).group(1)
     version = importlib.metadata.version("PyJWT")
-    report(version == PYJWT_VERSION, f"PyJWT is {version}")
+    report(version == pinned, f"PyJWT is {version}, and backend/pyjwt-requirements.txt pins {pinned}")
     copies = [d.version for d in importlib.metadata.distributions() if (d.metadata["Name"] or "").lower() == "pyjwt"]
-    report(copies == [PYJWT_VERSION], f"one copy installed: {copies}")
+    report(copies == [pinned], f"one copy installed: {copies}")
     result = subprocess.run([sys.executable, "-m", "pip", "check"], capture_output=True, text=True, check=False)
     report(result.returncode == 0, "pip check", (result.stdout or result.stderr).strip())
 
@@ -425,6 +425,13 @@ def check_settings():
                 report(True, f"import {module}")
             except Exception as err:  # noqa: BLE001 - the point is to report any failure
                 report(False, f"import {module}", repr(err))
+
+    print("\n== Every task module loads, as a worker's start does")
+    from plane.celery import app
+
+    app.loader.import_default_modules()
+    tasks = [name for name in app.tasks if name.startswith("plane.")]
+    report("plane.bgtasks.workspace_invitation_task.workspace_invitation" in tasks and "plane.license.bgtasks.telemetry_metrics.push_instance_metrics" in tasks, f"{len(tasks)} tasks registered")
 
     print("\n== Values that reach users")
     from django.conf import settings

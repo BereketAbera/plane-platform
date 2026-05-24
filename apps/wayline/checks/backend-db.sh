@@ -64,6 +64,7 @@ in_app() {
 }
 
 status=0
+mkdir -p "$BUILD_DIR/tmp"
 log "manage.py migrate, on $image"
 in_app "$image" plane python manage.py migrate --noinput >"$BUILD_DIR/tmp/$run_id-migrate.log" 2>&1 \
   || { cat "$BUILD_DIR/tmp/$run_id-migrate.log"; die "migrate failed"; }
@@ -83,6 +84,35 @@ in_app "$image" plane python manage.py register_instance proof-machine || status
 
 log "check_db.py, on $image"
 in_app "$image" plane python /opt/wayline/check_db.py || status=1
+
+# bin/docker-entrypoint-api.sh's steps, minus create_bucket, which needs an object store this does not start.
+log "The api entrypoint's steps, then gunicorn, on $image"
+# shellcheck disable=SC2016  # expanded in the container
+in_app "$image" plane bash -c '
+  set -e
+  export HOME=/tmp
+  python manage.py configure_instance >/dev/null
+  python manage.py clear_cache
+  python manage.py collectstatic --noinput
+  gunicorn -w 1 -k uvicorn.workers.UvicornWorker plane.asgi:application --bind 127.0.0.1:8000 --access-logfile - &
+  server=$!
+  python - <<PY
+import json, sys, time, urllib.error, urllib.request
+for _ in range(90):
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/", timeout=2) as reply:
+            print("PASS GET / answers", reply.status)
+        break
+    except (urllib.error.URLError, OSError):
+        time.sleep(1)
+else:
+    sys.exit("FAIL gunicorn did not answer")
+with urllib.request.urlopen("http://127.0.0.1:8000/api/instances/", timeout=10) as reply:
+    instance = json.load(reply)["instance"]
+    print("PASS GET /api/instances/ answers", reply.status, "with instance_name", repr(instance["instance_name"]))
+PY
+  kill "$server"
+' || status=1
 
 if [[ "${WAYLINE_BASE_CONTROL:-no}" == yes ]]; then
   # The mail server must be empty for its one-message check.

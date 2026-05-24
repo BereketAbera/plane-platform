@@ -8,6 +8,8 @@
 #   apps/wayline/scripts/build.sh
 #   WAYLINE_APPS="web admin" apps/wayline/scripts/build.sh     subset; leak-scan covers that subset
 #
+# WAYLINE_TURBO_CONCURRENCY (4) and WAYLINE_HEAP_MB (3072) suit the laptop. images.yml sets both lower for its runner.
+#
 # Steps: apply, token-diff, contrast, source-links, pnpm install, one turbo build per app, leak-scan,
 # bundle checks, assemble. Each context ends up with its licence texts, and $DIST/SOURCE.<app> records the
 # commit that built it, which scripts/ci/build-images.sh turns into the image's /source link.
