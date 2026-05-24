@@ -1,4 +1,4 @@
-# Thu Nov  5 01:45:30 EAT 2026 on the tree built from commit 1242134361ffff7ddff5144bc912a98832181401, run directly and gated on exit code
+# Thu Nov  5 02:30:03 EAT 2026 on the tree built from commit 8e328a06545030a43066b65112082491311e0048, run directly and gated on exit code. Node v22.22.2
 token-diff exit 0
 contrast exit 0
 leak-scan exit 0
@@ -10,4 +10,7 @@ bundle-art-admin exit 0
 font-urls-space exit 0
 bundle-art-space exit 0
 smoke-images exit 0
-smoke containers left:        0
+smoke containers left: 0
+backend-db exit 0
+backend-db containers left: 0
+gates failed: 0

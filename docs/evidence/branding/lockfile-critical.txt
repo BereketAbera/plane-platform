@@ -1,0 +1,49 @@
+# The one CRITICAL with a fix in the wayline-source-lockfiles row: what it is, and whether it ships in a bundle. Commit 8e328a06545030a43066b65112082491311e0048.
+
+$ # the finding
+CVE-2026-90711 proxy-addr 2.0.7 fixed in 2.0.8 in pnpm-lock.yaml
+
+$ # who depends on it in pnpm-lock.yaml
+8495:  proxy-addr@2.0.7:
+14305:      proxy-addr: 2.0.7
+16596:  proxy-addr@2.0.7:
+  express@4.22.0:
+# and who depends on express:
+  '@react-router/express@7.18.1
+  '@react-router/serve@7.18.1
+  express-ws@5.0.2
+importer  apps/live:
+
+$ # strings only proxy-addr's code holds, in what the four images ship from the build contexts. 0 files means it was not bundled
+invalid range on address       web/client           0
+invalid range on address       admin/client         0
+invalid range on address       space/build/client   0
+invalid range on address       space/build/server   0
+invalid range on address       backend              0
+trust argument is required     web/client           0
+trust argument is required     admin/client         0
+trust argument is required     space/build/client   0
+trust argument is required     space/build/server   0
+trust argument is required     backend              0
+invalid IP address:            web/client           0
+invalid IP address:            admin/client         0
+invalid IP address:            space/build/client   0
+invalid IP address:            space/build/server   0
+invalid IP address:            backend              0
+proxy-addr                     web/client           0
+proxy-addr                     admin/client         0
+proxy-addr                     space/build/client   0
+proxy-addr                     space/build/server   0
+proxy-addr                     backend              2
+proxyaddr                      web/client           0
+proxyaddr                      admin/client         0
+proxyaddr                      space/build/client   0
+proxyaddr                      space/build/server   0
+proxyaddr                      backend              0
+
+$ # the two hits in the backend context, which are the record of this change, not code
+.build/wayline-dist/backend/licenses/NOTICE.txt
+.build/wayline-dist/backend/licenses/MODIFICATIONS.txt
+
+$ # the space server loads it from node_modules, not from the bundle, and that copy is now 2.0.8: see space-deps.txt
+$ # web and admin are nginx with static files, and the backend is Python. The live service keeps upstream's image, which has 2.0.7 and is not built here: reported, not failing, in the full scan (H50)

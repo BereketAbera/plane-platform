@@ -1,0 +1,273 @@
+# storybook, tinypool and proxy-addr in the space image. Recorded Thu Nov  5 02:35:51 EAT 2026. Final image: localhost:5001/wayline/space@sha256:19f1fac2700ecf5a1eda326904d20f25b8e7d20101890c9732be7a09badb8ce8
+
+$ # 1. What the server bundle really imports and what those reach, read in the final image: node space-deps.mjs closure, as UID 1000, no network
+# 30 static imports of a package in the server bundle:
+@bprogress/core
+@headlessui/react
+@popperjs/core
+@react-router/node
+axios
+clsx
+date-fns
+isbot
+lodash-es
+lucide-react
+mobx
+mobx-react
+mobx-utils
+next-themes
+react
+react-dom
+react-hook-form
+react-popper
+react-router
+swr
+uuid
+# import() or require() of a package with a literal name:
+@tiptap/core
+ReactPropTypes
+hast
+hast-util-is-element
+highlight.js
+highlight.js/private
+markdown-it
+markdown-it-for-inline
+markdown-table
+mdast
+mdast-util-from-markdown
+mdast-util-to-markdown
+micromark-extension-gfm-footnote
+micromark-extension-gfm-strikethrough
+micromark-util-types
+parse5
+prosemirror-model
+prosemirror-state
+trough
+unified
+unist
+unist-util-is
+unist-util-visit-parents
+vfile
+yjs
+# of those, not resolvable here: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+# 131 packages reachable, with what first pulled each in:
+@bprogress/core@1.3.4	server bundle
+@headlessui/react@1.7.19	server bundle
+@mjackson/node-fetch-server@0.2.0	@react-router/serve
+@popperjs/core@2.11.8	server bundle
+@react-router/express@7.18.1	@react-router/serve
+@react-router/node@7.18.1	server bundle
+@react-router/serve@7.18.1	CMD
+@tanstack/react-virtual@3.13.12	@headlessui/react
+@tanstack/virtual-core@3.13.12	@tanstack/react-virtual
+accepts@1.3.8	express
+agent-base@6.0.2	https-proxy-agent
+array-flatten@1.1.1	express
+asynckit@0.4.0	form-data
+axios@1.18.1	server bundle
+basic-auth@2.0.1	morgan
+body-parser@1.20.6	express
+buffer-from@1.1.2	source-map-support
+bytes@3.1.2	body-parser
+call-bind-apply-helpers@1.0.2	get-intrinsic
+call-bound@1.0.4	side-channel-weakmap
+client-only@0.0.1	@headlessui/react
+clsx@2.1.1	server bundle
+combined-stream@1.0.8	form-data
+compressible@2.0.18	compression
+compression@1.8.1	@react-router/serve
+content-disposition@0.5.4	express
+content-type@1.0.5	express
+cookie@0.7.1	express
+cookie@1.0.2	react-router
+cookie-signature@1.0.6	express
+date-fns@4.1.0	server bundle
+debug@2.6.9	morgan
+debug@4.4.3	https-proxy-agent
+delayed-stream@1.0.0	combined-stream
+depd@2.0.0	morgan
+destroy@1.2.0	send
+dunder-proto@1.0.1	get-proto
+ee-first@1.1.1	on-finished
+encodeurl@2.0.0	express
+encodeurl@1.0.2	send
+es-define-property@1.0.1	qs
+es-errors@1.3.0	side-channel
+es-object-atoms@1.1.1	get-intrinsic
+es-set-tostringtag@2.1.0	form-data
+escape-html@1.0.3	express
+etag@1.8.1	express
+express@4.22.0	@react-router/serve
+finalhandler@1.3.1	express
+follow-redirects@1.16.0	axios
+form-data@4.0.6	axios
+forwarded@0.2.0	proxy-addr
+fresh@0.5.2	express
+function-bind@1.1.2	get-intrinsic
+get-intrinsic@1.3.0	side-channel-weakmap
+get-port@5.1.1	@react-router/serve
+get-proto@1.0.1	get-intrinsic
+gopd@1.2.0	get-intrinsic
+has-symbols@1.1.0	get-intrinsic
+has-tostringtag@1.0.2	es-set-tostringtag
+hasown@2.0.4	get-intrinsic
+http-errors@2.0.0	express
+http-errors@2.0.1	body-parser
+https-proxy-agent@5.0.1	axios
+iconv-lite@0.4.24	body-parser
+inherits@2.0.4	http-errors
+ipaddr.js@1.9.1	proxy-addr
+isbot@5.1.31	server bundle
+js-tokens@4.0.0	loose-envify
+lodash-es@4.18.1	server bundle
+loose-envify@1.4.0	warning
+lucide-react@0.469.0	server bundle
+math-intrinsics@1.1.0	get-intrinsic
+media-typer@0.3.0	type-is
+merge-descriptors@1.0.3	express
+methods@1.1.2	express
+mime@1.6.0	send
+mime-db@1.52.0	mime-types
+mime-db@1.54.0	compressible
+mime-types@2.1.35	type-is
+mobx@6.12.0	server bundle
+mobx-react@9.1.1	server bundle
+mobx-react-lite@4.1.0	mobx-react
+mobx-utils@6.0.8	server bundle
+morgan@1.12.0	@react-router/serve
+ms@2.0.0	debug
+ms@2.1.3	send
+negotiator@0.6.3	accepts
+negotiator@0.6.4	compression
+next-themes@0.4.6	server bundle
+object-inspect@1.13.4	side-channel
+on-finished@2.4.1	morgan
+on-headers@1.1.0	morgan
+parseurl@1.3.3	express
+path-to-regexp@0.1.13	express
+proxy-addr@2.0.8	express
+proxy-from-env@2.1.0	axios
+qs@6.16.0	express
+range-parser@1.2.1	express
+raw-body@2.5.3	body-parser
+react@18.3.1	server bundle
+react-dom@18.3.1	server bundle
+react-fast-compare@3.2.2	react-popper
+react-hook-form@7.51.5	server bundle
+react-popper@2.3.0	server bundle
+react-router@7.18.1	server bundle
+safe-buffer@5.1.2	basic-auth
+safe-buffer@5.2.1	express
+safer-buffer@2.1.2	iconv-lite
+scheduler@0.23.2	react-dom
+send@0.19.0	express
+serve-static@1.16.2	express
+set-cookie-parser@2.7.1	react-router
+setprototypeof@1.2.0	express
+side-channel@1.1.1	qs
+side-channel-list@1.0.1	side-channel
+side-channel-map@1.0.1	side-channel
+side-channel-weakmap@1.0.2	side-channel
+source-map@0.6.1	source-map-support
+source-map-support@0.5.21	@react-router/serve
+statuses@2.0.1	express
+statuses@2.0.2	http-errors
+swr@2.2.4	server bundle
+toidentifier@1.0.1	http-errors
+type-is@1.6.18	express
+typescript@5.8.3	@react-router/express
+unpipe@1.0.0	finalhandler
+use-sync-external-store@1.5.0	swr
+utils-merge@1.0.1	express
+uuid@14.0.0	server bundle
+vary@1.1.2	express
+warning@4.0.3	react-popper
+# storybook or tinypool among them: 0
+# bundle files that mention either name: 0
+# missing: none
+exit 0
+
+$ # the same in the bundle's source: any mention of either name in the build context
+grep exit 1 (1 means no file matched)
+
+$ # what in the store links to them, read from the unmodified upstream image: development tools only
+storybook <- @chromatic-com+storybook@5.2.1
+storybook <- @storybook+addon-designs@11.1.3
+storybook <- @storybook+addon-docs@10.4.6
+storybook <- @storybook+addon-links@10.4.6
+storybook <- @storybook+addon-onboarding@10.4.6
+storybook <- @storybook+addon-styling-webpack@3.0.2
+storybook <- @storybook+addon-webpack5-compiler-swc@4.0.3
+storybook <- @storybook+builder-vite@10.4.6
+storybook <- @storybook+builder-webpack5@10.4.6
+storybook <- @storybook+core-webpack@10.4.6
+storybook <- @storybook+csf-plugin@10.4.6
+storybook <- @storybook+preset-react-webpack@10.4.6
+storybook <- @storybook+react-dom-shim@10.4.6
+storybook <- @storybook+react-vite@10.4.6
+storybook <- @storybook+react-webpack5@10.4.6
+storybook <- @storybook+react@10.4.6
+storybook <- pnpm hoisted link in .pnpm/node
+tinypool <- oxfmt@0.35.0
+tinypool <- pnpm hoisted link in .pnpm/node
+
+$ # 2. What Node really loads while serving, on the previous image, which still holds both: every file resolved from the store, after serving pages under the chart's UID and limits
+/spaces/, with X-Forwarded-For: 200
+/spaces/issues/does-not-exist/, with X-Forwarded-For: 200
+/spaces/not-a-page/, with X-Forwarded-For: 200
+files resolved from the store: 1339, in 130 packages
+storybook or tinypool among them: 0
+proxy-addr resolved as: proxy-addr@2.0.7/node_modules/proxy-addr/index.js
+the packages: @bprogress+core@1.3.4 @headlessui+react@1.7.19 @mjackson+node-fetch-server@0.2.0 @popperjs+core@2.11.8 @react-router+express@7.18.1 @react-router+node@7.18.1 @react-router+serve@7.18.1 @tanstack+react-virtual@3.13.12 @tanstack+virtual-core@3.13.12 accepts@1.3.8 agent-base@6.0.2 array-flatten@1.1.1 asynckit@0.4.0 axios@1.18.1 basic-auth@2.0.1 body-parser@1.20.6 buffer-from@1.1.2 bytes@3.1.2 call-bind-apply-helpers@1.0.2 call-bound@1.0.4 client-only@0.0.1 clsx@2.1.1 combined-stream@1.0.8 compressible@2.0.18 compression@1.8.1 content-disposition@0.5.4 content-type@1.0.5 cookie-signature@1.0.6 cookie@0.7.1 cookie@1.0.2 date-fns@4.1.0 debug@2.6.9 debug@4.4.3 delayed-stream@1.0.0 depd@2.0.0 destroy@1.2.0 dunder-proto@1.0.1 ee-first@1.1.1 encodeurl@1.0.2 encodeurl@2.0.0 es-define-property@1.0.1 es-errors@1.3.0 es-object-atoms@1.1.1 es-set-tostringtag@2.1.0 escape-html@1.0.3 etag@1.8.1 express@4.22.0 finalhandler@1.3.1 follow-redirects@1.16.0 form-data@4.0.6 forwarded@0.2.0 fresh@0.5.2 function-bind@1.1.2 get-intrinsic@1.3.0 get-port@5.1.1 get-proto@1.0.1 gopd@1.2.0 has-flag@4.0.0 has-symbols@1.1.0 has-tostringtag@1.0.2 hasown@2.0.4 http-errors@2.0.0 http-errors@2.0.1 https-proxy-agent@5.0.1 iconv-lite@0.4.24 inherits@2.0.4 ipaddr.js@1.9.1 isbot@5.1.31 lodash-es@4.18.1 lucide-react@0.469.0 math-intrinsics@1.1.0 media-typer@0.3.0 merge-descriptors@1.0.3 methods@1.1.2 mime-db@1.52.0 mime-db@1.54.0 mime-types@2.1.35 mime@1.6.0 mobx-react-lite@4.1.0 mobx-react@9.1.1 mobx-utils@6.0.8 mobx@6.12.0 morgan@1.12.0 ms@2.0.0 ms@2.1.3 negotiator@0.6.3 negotiator@0.6.4 next-themes@0.4.6 object-inspect@1.13.4 on-finished@2.4.1 on-headers@1.1.0 parseurl@1.3.3 path-to-regexp@0.1.13 proxy-addr@2.0.7 proxy-from-env@2.1.0 qs@6.16.0 range-parser@1.2.1 raw-body@2.5.3 react-dom@18.3.1 react-fast-compare@3.2.2 react-hook-form@7.51.5 react-popper@2.3.0 react-router@7.18.1 react@18.3.1 safe-buffer@5.1.2 safe-buffer@5.2.1 safer-buffer@2.1.2 scheduler@0.23.2 send@0.19.0 serve-static@1.16.2 set-cookie-parser@2.7.1 setprototypeof@1.2.0 side-channel-list@1.0.1 side-channel-map@1.0.1 side-channel-weakmap@1.0.2 side-channel@1.1.1 source-map-support@0.5.21 source-map@0.6.1 statuses@2.0.1 statuses@2.0.2 supports-color@7.2.0 swr@2.2.4 toidentifier@1.0.1 type-is@1.6.18 unpipe@1.0.0 use-sync-external-store@1.5.0 utils-merge@1.0.1 uuid@14.0.0 vary@1.1.2 warning@4.0.3 
+
+$ # 3. The same on the final image, which holds neither
+/spaces/, with X-Forwarded-For: 200
+/spaces/issues/does-not-exist/, with X-Forwarded-For: 200
+/spaces/not-a-page/, with X-Forwarded-For: 200
+files resolved from the store: 1339, in 130 packages
+storybook or tinypool among them: 0
+proxy-addr resolved as: proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+the packages: @bprogress+core@1.3.4 @headlessui+react@1.7.19 @mjackson+node-fetch-server@0.2.0 @popperjs+core@2.11.8 @react-router+express@7.18.1 @react-router+node@7.18.1 @react-router+serve@7.18.1 @tanstack+react-virtual@3.13.12 @tanstack+virtual-core@3.13.12 accepts@1.3.8 agent-base@6.0.2 array-flatten@1.1.1 asynckit@0.4.0 axios@1.18.1 basic-auth@2.0.1 body-parser@1.20.6 buffer-from@1.1.2 bytes@3.1.2 call-bind-apply-helpers@1.0.2 call-bound@1.0.4 client-only@0.0.1 clsx@2.1.1 combined-stream@1.0.8 compressible@2.0.18 compression@1.8.1 content-disposition@0.5.4 content-type@1.0.5 cookie-signature@1.0.6 cookie@0.7.1 cookie@1.0.2 date-fns@4.1.0 debug@2.6.9 debug@4.4.3 delayed-stream@1.0.0 depd@2.0.0 destroy@1.2.0 dunder-proto@1.0.1 ee-first@1.1.1 encodeurl@1.0.2 encodeurl@2.0.0 es-define-property@1.0.1 es-errors@1.3.0 es-object-atoms@1.1.1 es-set-tostringtag@2.1.0 escape-html@1.0.3 etag@1.8.1 express@4.22.0 finalhandler@1.3.1 follow-redirects@1.16.0 form-data@4.0.6 forwarded@0.2.0 fresh@0.5.2 function-bind@1.1.2 get-intrinsic@1.3.0 get-port@5.1.1 get-proto@1.0.1 gopd@1.2.0 has-flag@4.0.0 has-symbols@1.1.0 has-tostringtag@1.0.2 hasown@2.0.4 http-errors@2.0.0 http-errors@2.0.1 https-proxy-agent@5.0.1 iconv-lite@0.4.24 inherits@2.0.4 ipaddr.js@1.9.1 isbot@5.1.31 lodash-es@4.18.1 lucide-react@0.469.0 math-intrinsics@1.1.0 media-typer@0.3.0 merge-descriptors@1.0.3 methods@1.1.2 mime-db@1.52.0 mime-db@1.54.0 mime-types@2.1.35 mime@1.6.0 mobx-react-lite@4.1.0 mobx-react@9.1.1 mobx-utils@6.0.8 mobx@6.12.0 morgan@1.12.0 ms@2.0.0 ms@2.1.3 negotiator@0.6.3 negotiator@0.6.4 next-themes@0.4.6 object-inspect@1.13.4 on-finished@2.4.1 on-headers@1.1.0 parseurl@1.3.3 path-to-regexp@0.1.13 proxy-addr@2.0.8 proxy-from-env@2.1.0 qs@6.16.0 range-parser@1.2.1 raw-body@2.5.3 react-dom@18.3.1 react-fast-compare@3.2.2 react-hook-form@7.51.5 react-popper@2.3.0 react-router@7.18.1 react@18.3.1 safe-buffer@5.1.2 safe-buffer@5.2.1 safer-buffer@2.1.2 scheduler@0.23.2 send@0.19.0 serve-static@1.16.2 set-cookie-parser@2.7.1 setprototypeof@1.2.0 side-channel-list@1.0.1 side-channel-map@1.0.1 side-channel-weakmap@1.0.2 side-channel@1.1.1 source-map-support@0.5.21 source-map@0.6.1 statuses@2.0.1 statuses@2.0.2 supports-color@7.2.0 swr@2.2.4 toidentifier@1.0.1 type-is@1.6.18 unpipe@1.0.0 use-sync-external-store@1.5.0 utils-merge@1.0.1 uuid@14.0.0 vary@1.1.2 warning@4.0.3 
+
+$ # 4. Why X-Forwarded-For reaches proxy-addr on every page request, as read in the final image
+135:    req._remoteAddress = getip(req)
+532:  return req.ip ||
+349:defineGetter(req, 'ip', function ip(){
+350-  var trust = this.app.get('trust proxy fn');
+351-  return proxyaddr(this, trust);
+352-});
+--
+366:defineGetter(req, 'ips', function ips() {
+367-  var trust = this.app.get('trust proxy fn');
+368-  var addrs = proxyaddr.all(this, trust);
+369-
+55:    "proxy-addr": "~2.0.7",
+
+$ # 5. Negative control: the check, against the previous image, must fail
+
+== What the server bundle imports
+30 static imports and 25 import() or require() of a package, across 533 bundle files
+131 packages reachable from them and from @react-router/serve
+PASS every import and required dependency resolves
+PASS storybook and tinypool are not reachable
+PASS no bundle file mentions storybook or tinypool
+note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+
+== What is gone from the store
+FAIL storybook is gone
+FAIL tinypool is gone
+FAIL proxy-addr@2.0.7 is gone
+PASS nothing links to them
+
+== proxy-addr, as express resolves it
+FAIL express resolves proxy-addr 2.0.7 /app/node_modules/.pnpm/proxy-addr@2.0.7/node_modules/proxy-addr/index.js
+FAIL the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+PASS a plain IPv4 subnet still trusts its own addresses
+
+== X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+FAIL trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"203.0.113.9","ips":["203.0.113.9","198.51.100.7"]}
+
+space-deps: 6 failed
+exit 1

@@ -1,0 +1,20 @@
+==> Disk limits for this run: 12 GiB free to start, 12 GiB free to keep going. 15 GiB free now.
+ ok 5 image(s) to scan, listed in /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/scan-images-20261104T233230Z/inventory.tsv
+==> Making sure the vulnerability database is current
+==> [1/5] localhost:5001/wayline/admin@sha256:2198daa96d9361eae378ca562cd8c4716e04ba693f01f8511163fa85b4b698ba
+==> [2/5] localhost:5001/wayline/backend@sha256:cd6302a9cc04aa8badcaba102fe6ed6b091c56f666af514595a6e9a6ba34d72e
+==> [3/5] localhost:5001/wayline/space@sha256:19f1fac2700ecf5a1eda326904d20f25b8e7d20101890c9732be7a09badb8ce8
+==> [4/5] localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f
+==> [5/5] wayline-source-lockfiles
+image                                                                                    CRITICAL         HIGH       MEDIUM    LOW  os
+localhost:5001/wayline/space@19f1fac2700e                                               0 (0 fix)  30 (30 fix)  22 (22 fix)      5  alpine 3.24.3
+localhost:5001/wayline/backend@cd6302a9cc04                                             0 (0 fix)    4 (4 fix)  11 (11 fix)      2  alpine 3.23.3
+localhost:5001/wayline/admin@2198daa96d93                                               0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+localhost:5001/wayline/web@9d0b40641031                                                 0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+wayline-source-lockfiles                                                                1 (1 fix)  31 (31 fix)  24 (24 fix)      7  none
+
+5 of 5 targets scanned, 4 of the scanned ones built here.
+Findings across all images: 1 CRITICAL, 65 HIGH, 57 MEDIUM, 14 LOW, 0 UNKNOWN.
+Reported, not failing: 1 upstream target(s) have a CRITICAL finding with a fix, so a newer version may help:
+  wayline-source-lockfiles
+PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.

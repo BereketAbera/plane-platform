@@ -1,3 +1,5 @@
+# Only apps/web changed in TypeScript since these ran on 1242134, one line in onboarding, so only apps/web was run again, on 8e328a065450.
+# The other lines are from 1242134.
 # Type checks: each package's check:types (tsc --noEmit, plus react-router typegen for apps), one at a time, Node 22,
 # on the patched and codemodded tree. packages/decorators and packages/logger have no node_modules (not in the build's
 # install filter, which the three apps do not need) so tsc could not run there. Heap 3072 MiB, 4096 for web.
@@ -13,4 +15,4 @@ packages/services exit=0 errors=0 peak_rss_mib=202 real_s=1.27
 packages/shared-state exit=0 errors=0 peak_rss_mib=289 real_s=1.64
 apps/admin exit=0 errors=0 peak_rss_mib=502 real_s=7.90
 apps/space exit=0 errors=0 peak_rss_mib=503 real_s=9.69
-apps/web exit=0 errors=0 peak_rss_mib=946 real_s=15.53
+apps/web exit=0 errors=0 peak_rss_mib=833 real_s=17.81

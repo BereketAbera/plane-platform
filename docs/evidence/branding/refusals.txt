@@ -1,15 +1,76 @@
-# Provenance and publishing refusals, each run on purpose. None of them pushes anything.
+# Provenance and publishing refusals, each run on purpose, plus the build-time licence check. None of them pushes anything.
 
-$ # stamp says the web context was built from uncommitted source
-fail web was built from uncommitted source. Commit, then rebuild without SKIP_NATIVE_BUILD
+$ scripts/ci/build-images.sh docker.io/someone/wayline    # not the local registry, and not the owner's GHCR namespace
+publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not docker.io/someone/wayline
+fail not publishing to docker.io/someone/wayline
 exit 1
 
-$ # no stamp at all
+$ scripts/ci/build-images.sh ghcr.io/someoneelse/wayline    # not the local registry, and not the owner's GHCR namespace
+publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not ghcr.io/someoneelse/wayline
+fail not publishing to ghcr.io/someoneelse/wayline
+exit 1
+
+$ scripts/ci/build-images.sh ghcr.io/BereketAbera/wayline    # not the local registry, and not the owner's GHCR namespace
+publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not ghcr.io/BereketAbera/wayline
+fail not publishing to ghcr.io/BereketAbera/wayline
+exit 1
+
+$ # the gate table, with no build: apps/wayline/scripts/publish-gate.sh <prefix>
+localhost:5001/wayline: exit 0
+127.0.0.1:5001/wayline: exit 0
+ghcr.io/bereketabera/wayline: exit 0
+publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not ghcr.io/someoneelse/wayline
+ghcr.io/someoneelse/wayline: exit 1
+
+$ # a decision file that still says pending, in a scratch copy of the gate: the owner's own namespace is refused too
+publish-gate: <scratch copy>/backend/email-py-decision.txt says 'pending', which does not allow ghcr.io/bereketabera/wayline. See D12 in PASS2_HANDOFF.md
+exit 1
+localhost:5001/wayline: exit 0
+
+$ # the stamp refusals: a copy of the stamp saying dirty, then no stamp at all, with SKIP_NATIVE_BUILD=yes
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+fail web was built from uncommitted source. Commit, then rebuild without SKIP_NATIVE_BUILD
+exit 1
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
 fail no /Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web, so nothing says what built this context. Run apps/wayline/scripts/build.sh
 exit 1
 
-$ # a registry other than the local one, while D12 is pending
-fail the owner has not decided D12 (apps/wayline/backend/email-py-decision.txt), so nothing goes to ghcr.io/example/wayline
+digests.tsv unchanged by all of the above
+
+$ # the build-time check in Dockerfile.backend: without the COPY of email.py, the image build must stop
+FAIL no file under /code contains LicenseRef-Plane-Commercial ['/code/plane/utils/email.py']
+FAIL /code/plane/utils/email.py carries AGPL-3.0-only
+FAIL /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc
+PASS PyJWT is 2.14.0
+PASS one copy installed: ['2.14.0']
+PASS pip check No broken requirements found.
+RESULT FAIL: 3 failed
+0.400 FAIL no file under /code contains LicenseRef-Plane-Commercial ['/code/plane/utils/email.py']
+0.400 FAIL /code/plane/utils/email.py carries AGPL-3.0-only
+0.400 FAIL /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc
+0.403 PASS PyJWT is 2.14.0
+0.426 PASS one copy installed: ['2.14.0']
+1.164 PASS pip check No broken requirements found.
+1.164 RESULT FAIL: 3 failed
 exit 1
 
-digests.tsv unchanged by all three
+$ # and without the PyJWT install, it must stop too
+PASS no file under /code contains LicenseRef-Plane-Commercial 707 files read
+PASS /code/plane/utils/email.py carries AGPL-3.0-only
+PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+FAIL PyJWT is 2.13.0
+FAIL one copy installed: ['2.13.0']
+PASS pip check No broken requirements found.
+RESULT FAIL: 2 failed
+0.415 PASS no file under /code contains LicenseRef-Plane-Commercial 707 files read
+0.415 PASS /code/plane/utils/email.py carries AGPL-3.0-only
+0.415 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+0.418 FAIL PyJWT is 2.13.0
+0.437 FAIL one copy installed: ['2.13.0']
+1.143 PASS pip check No broken requirements found.
+1.143 RESULT FAIL: 2 failed
+exit 1
+
+$ # the vendored file changed by one byte: assemble.sh must refuse, in a scratch copy
+assemble.sh: vendor/email.py is 64ec36ecd51110e5db82427edf3790be3d71c7c912cede4442c7c1e1a0c17218, and vendor/email.py.pin says 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+exit 1
