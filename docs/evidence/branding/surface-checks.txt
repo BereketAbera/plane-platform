@@ -1,4 +1,4 @@
-# Strings the review named, read from the built output of commit 8e328a06545030a43066b65112082491311e0048.
+# Strings the review named, read from the built output of commit 1563cbfbe89536541c041ec59f241edeab3740c2.
 mailto:the source repository               files in web, admin, space client: 0
 Join our community of active creators      files in web, admin, space client: 0
 Learn more about projects                  files in web, admin, space client: 0
@@ -28,10 +28,10 @@ license/models/instance.py:35:    is_telemetry_enabled = models.BooleanField(def
 etry_enabled`,children:[`Send anonymous usage events to the upstream project.`,` `,(0,j.jsx)(`a`,{href:`https://developers.plane.so/self
 
 # Image labels
-web AGPL-3.0-only 8e328a06545030a43066b65112082491311e0048
-admin AGPL-3.0-only 8e328a06545030a43066b65112082491311e0048
-space AGPL-3.0-only 8e328a06545030a43066b65112082491311e0048
-backend AGPL-3.0-only 8e328a06545030a43066b65112082491311e0048
+web AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
+admin AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
+space AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
+backend AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
 
 # Reserved slug in the backend image and the frontend list
 RESTRICTED_WORKSPACE_SLUGS = [
