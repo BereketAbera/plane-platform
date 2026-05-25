@@ -43,12 +43,13 @@ docker run -d --name "$run_id-redis" --network "$network" --network-alias redis 
   "$REDIS_IMAGE" redis-server --save '' --appendonly no >/dev/null
 docker run -d --name "$run_id-mail" --network "$network" --network-alias mail --memory 64m "$MAILPIT_IMAGE" >/dev/null
 
+# Over TCP, because the temporary server the image starts to initialize itself listens only on its Unix socket.
 log "Waiting for Postgres"
 for _ in $(seq 1 120); do
-  docker exec "$run_id-postgres" pg_isready -q -U plane -d plane && break
+  docker exec "$run_id-postgres" pg_isready -q -h 127.0.0.1 -U plane -d plane && break
   sleep 1
 done
-docker exec "$run_id-postgres" pg_isready -U plane -d plane || { docker logs --tail 30 "$run_id-postgres" 2>&1; die "Postgres did not start"; }
+docker exec "$run_id-postgres" pg_isready -h 127.0.0.1 -U plane -d plane || { docker logs --tail 30 "$run_id-postgres" 2>&1; die "Postgres did not start"; }
 
 # in_app <image> <database> <command...>. Tasks that views queue stay in an in-memory broker with no worker, so
 # mail goes out only where check_db.py calls the task itself.
@@ -115,10 +116,6 @@ PY
 ' || status=1
 
 if [[ "${WAYLINE_BASE_CONTROL:-no}" == yes ]]; then
-  # The mail server must be empty for its one-message check.
-  docker rm -f "$run_id-mail" >/dev/null
-  docker run -d --name "$run_id-mail" --network "$network" --network-alias mail --memory 64m "$MAILPIT_IMAGE" >/dev/null
-  sleep 2
   log "Control: the same on the upstream base image, $base, which must fail"
   in_app "$base" control python manage.py register_instance proof-machine
   control_rc=0

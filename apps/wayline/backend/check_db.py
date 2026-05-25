@@ -129,6 +129,7 @@ def check_invitations(admin):
         report(claims["email"]["email"] == INVITEE, "its stored token decodes with SECRET_KEY", sorted(claims))
 
     print("\n== email.py through a real mail: the invitation task, rendered, sent over SMTP, and read back from the server")
+    urllib.request.urlopen(urllib.request.Request(f"{MAILPIT}/messages", method="DELETE"), timeout=10).close()
     workspace_invitation(INVITEE, workspace.id, invite.token, "https://x.test", admin.email)
     with urllib.request.urlopen(f"{MAILPIT}/messages", timeout=10) as reply:
         messages = json.load(reply)["messages"]
