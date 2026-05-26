@@ -66,9 +66,11 @@ rendered_fingerprints() {
   done
 }
 
+# Not infisical-machine.json: bootstrap rewrites it, and identifiers below compares what it holds.
 secret_zero_checksums() {
   local name
   for name in $RECOVERY_ZERO_REQUIRED $RECOVERY_ZERO_OPTIONAL; do
+    [[ "$name" != infisical-machine.json ]] || continue
     if [[ -f "$SECRET_ZERO_DIR/$name" ]]; then printf '%s %s\n' "$name" "$(recovery_sha256 "$SECRET_ZERO_DIR/$name")"; fi
   done
 }
@@ -82,6 +84,12 @@ apps_all_ok() {
     (.items | length) == $want and all(.items[]; .status.sync.status == "Synced" and .status.health.status == "Healthy")' >/dev/null
 }
 
+apps_summary() {
+  kc -n argocd get applications -o json | jq -r '[.items[] | select(.status.sync.status != "Synced" or .status.health.status != "Healthy")
+    | "\(.metadata.name)=\(.status.sync.status // "?")/\(.status.health.status // "?")"] as $w
+    | "\(.items | length) Applications, not Synced and Healthy: \(if ($w | length) == 0 then "none" else ($w | join(" ")) end)"'
+}
+
 # Every step of a restore's evidence file must be PASS. NOT RUN counts as a failure here, because it
 # means a proof this drill exists to make did not happen. The exception is the Prometheus probe, which
 # a restore itself treats as a warning: it says something about monitoring, not about the data.
@@ -91,7 +99,7 @@ restore_evidence_clean() { # file
 
 stage "0. Preflight"
 kc get --raw /readyz >/dev/null || abort "cluster is not reachable"
-apps_all_ok || abort "not every Application is Synced and Healthy. A drill needs a working baseline: run make status"
+apps_all_ok || abort "a drill needs a working baseline, and it needs exactly the Applications in Git: $(apps_summary)"
 pass "every Application is Synced and Healthy"
 for env in $ENVIRONMENTS; do
   [[ -f "$LOCAL_DIR/test-sentinel-$env.json" ]] || abort "no sentinel for $env: run make test-e2e ENV=$env first, or the drill cannot prove its data came back"
@@ -185,7 +193,7 @@ for evidence in "$LOCAL_DIR"/evidence-raw/restore-clean-[0-9]*.json "$LOCAL_DIR"
   fi
 done
 
-if apps_all_ok; then pass "every Application is Synced and Healthy"; else fail "not every Application is Synced and Healthy"; fi
+if apps_all_ok; then pass "every Application is Synced and Healthy"; else fail "$(apps_summary)"; fi
 
 stage "7. A second run changes nothing"
 BOOTSTRAP_LOG="$WORK/bootstrap.log"

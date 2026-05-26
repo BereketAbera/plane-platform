@@ -127,9 +127,15 @@ clean_resolve() {
     CLEAN_IID="$(clean_marker_value infisical)"
     CLEAN_ENVS="$(clean_marker_value envs)"
     if [[ "$requested" != latest && "$requested" != "$CLEAN_IID" ]]; then
-      die "a clean restore of Infisical backup $CLEAN_IID is under way ($RESTORE_CLEAN_MARKER). Finish it with BACKUP=$CLEAN_IID. To start over, run make destroy, then remove that file."
+      die "a clean restore of Infisical backup $CLEAN_IID is under way ($RESTORE_CLEAN_MARKER). Finish it with BACKUP=$CLEAN_IID. To start over with another backup, run make destroy CONFIRM=yes SKIP_BACKUP=yes first."
     fi
     log "Resuming the clean restore of Infisical backup $CLEAN_IID"
+    # The cluster it was restoring into is gone, so nothing it finished still counts.
+    if ! cluster_exists && grep -q '^done ' "$RESTORE_CLEAN_MARKER"; then
+      warn "the cluster that restore was working on is gone, so it starts again from the beginning"
+      sed '/^done /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+    fi
   else
     CLEAN_ENVS="${ENVS:-dev prod-sim}"
     if [[ "$requested" == latest ]]; then
