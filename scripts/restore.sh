@@ -997,18 +997,18 @@ YAML
 # in place would have the operators render the old value, and Plane's next restart would fail to log in.
 # Not an issue on a clean restore, where Postgres initializes with whatever Infisical says.
 refuse_stale_plane_secrets() { # set-file
-  local env want have stale=""
+  local env details stale=""
   for env in dev prod-sim; do
-    have="$(kc -n "plane-$env" get secret plane-pgdb -o json 2>/dev/null | jq -je '.data.POSTGRES_PASSWORD | @base64d' 2>/dev/null | recovery_fp || true)"
-    [[ "$have" != "$(printf '' | recovery_fp)" ]] || continue # no such Secret, so nothing to go stale
-    want="$(jq -r --arg e "$env" '.plane_secrets[$e].PG_PASSWORD.fp // ""' "$1")"
-    if [[ "$have" != "$want" ]]; then stale="$stale $env"; fi
+    kc -n "plane-$env" get secret plane-pgdb >/dev/null 2>&1 || continue # nothing rendered, so nothing to go stale
+    if ! details="$(recovery_compare_rendered "$1" "$env")"; then
+      stale="$stale $env ($(printf '%s' "$details" | awk '{print $2}' | tr '\n' ' ' | sed 's/ $//'))"
+    fi
   done
   [[ -n "$stale" ]] || return 0
   if [[ "${ALLOW_STALE_PLANE_SECRETS:-}" == yes ]]; then
-    record stale-plane-secrets FAIL "PG_PASSWORD in this dump differs from what runs in:$stale, proceeding on ALLOW_STALE_PLANE_SECRETS=yes"
+    record stale-plane-secrets FAIL "this dump holds other values than run in:$stale, proceeding on ALLOW_STALE_PLANE_SECRETS=yes"
   else
-    die "this dump holds an older PG_PASSWORD than Plane runs on in:$stale, so a rotation happened after it. The operators would render the old value, and Plane would fail to log in at its next restart. Use a newer backup, or pass ALLOW_STALE_PLANE_SECRETS=yes and repair it with ALTER ROLE."
+    die "this dump holds other values than run in:$stale, so a rotation or a manual change happened after it. The operators would render the old values, and Plane would fail to log in at its next restart. Use a newer backup, or pass ALLOW_STALE_PLANE_SECRETS=yes and repair it with ALTER ROLE."
   fi
 }
 
