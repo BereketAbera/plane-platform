@@ -7,8 +7,10 @@ spec:
     - name: platform.workloads
       interval: 30s
       rules:
+        # increase() extrapolates to the ends of its window, so one restart reads just over 1 (1.024 measured)
+        # and up to 1.5 on a series a few samples old. Two restarts read 2 or more, so 1.5 separates them.
         - alert: PodRestarting
-          expr: increase(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m]) > 1
+          expr: increase(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m]) > 1.5
           labels: { severity: warning, component: pod }
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} restarted more than once in 15m"
@@ -32,16 +34,29 @@ spec:
     # kindnet fails open: if its policy controller cannot start, it logs "skipping network policies" once at
     # INFO, and every NetworkPolicy stops being enforced with nothing else to show for it. Alloy counts that
     # line (helm/values/alloy.yaml), and the chart's ServiceMonitor honors the labels it carries, so namespace
-    # and pod name kindnet. Once that pod is replaced the old count no longer applies. This sees that one log
-    # line and nothing else: `make test-netpol`, which sends real traffic, remains the real check.
+    # and pod name kindnet. This sees that one log line and nothing else: `make test-netpol`, which sends real
+    # traffic, remains the real check.
+    #
+    # The count lives in Alloy's memory, and its read positions on an emptyDir that survives a container
+    # restart. So any in-place Alloy restart, an OOM kill or a liveness failure, empties the count and never
+    # reads the line again, rotated or not. Measured on the heartbeat counter beside it: 6244 before, then 19 and
+    # 67, with 6328 lines in kindnet's log. So the rule reads the highest count of the last 3d, which is
+    # Prometheus's retention, and retentionSize can end that sooner. Past that window a line Alloy forgot resolves
+    # this while kindnet may still be failing open.
+    #
+    # The opposite error remains. A count stands for a pod name, not a container, so if kindnet's container
+    # restarts in the same pod and comes up healthy, this keeps firing: while Alloy keeps the count in memory,
+    # and for 3d after it forgets it. Once `make test-netpol` passes, replacing the pod clears it, because a
+    # count no longer applies once its pod is gone. The 5m on kube_pod_info is there so that a
+    # kube-state-metrics restart does not resolve this by itself.
     - name: platform.network
       interval: 30s
       rules:
         - alert: KindnetSkippedNetworkPolicies
           expr: |
-            max by (namespace, pod) (loki_process_custom_kindnet_netpol_skipped_total)
+            max by (namespace, pod) (max_over_time(loki_process_custom_kindnet_netpol_skipped_total[3d]))
               and on (namespace, pod)
-            kube_pod_info
+            max_over_time(kube_pod_info{namespace="kube-system"}[5m])
           labels: { severity: critical, component: network }
           annotations:
             summary: kindnet pod {{ $labels.pod }} logged that it is skipping network policies, so NetworkPolicies are not enforced
@@ -59,7 +74,7 @@ spec:
       interval: 30s
       rules:
         # argocd_app_info carries sync_status, health_status, operation and autosync_enabled, and for: starts
-        # again whenever a series' labels change. These two aggregate those away so a flapping Application
+        # again whenever a series' labels change. These aggregate those away so a flapping Application
         # still fires. for: is longer than scripts/test-alert.sh and restore.sh hold self-heal off, so drills
         # that pause Argo do not page. A real drift still fires.
         - alert: ArgoAppOutOfSync
@@ -68,6 +83,19 @@ spec:
           labels: { severity: warning, component: argocd }
           annotations:
             summary: Application {{ $labels.name }} has been out of sync for 15m
+        # A commit Argo CD cannot render, or a Git it cannot read. The sync status goes Unknown on that load failure
+        # (controller/state.go:1034 at v3.5.7) and health stays as it was, usually Healthy. Auto-sync runs only from
+        # OutOfSync (controller/appcontroller.go:2432), so no operation opens, nothing retries, and the running state
+        # silently stays on the old commit with none of the other rules here matching. Measured on a throwaway with
+        # a path that does not exist: Unknown, Healthy, no operation, condition ComparisonError. max_over_time rides
+        # out a controller restart, as for ArgoSyncFailed below.
+        - alert: ArgoAppSyncUnknown
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{sync_status="Unknown"}[2m])) == 1
+          for: 15m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: Argo CD has been unable to compare Application {{ $labels.name }} with Git for 15m, so new commits do not reach it
+            description: A commit that cannot render, or a Git that cannot be read, leaves sync Unknown and starts no sync. status.conditions has the ComparisonError; see docs/runbooks/argo-sync-stuck.md.
         - alert: ArgoAppDegraded
           expr: max by (name, dest_namespace, health_status) (argocd_app_info{health_status=~"Degraded|Missing"}) == 1
           for: 5m
@@ -77,15 +105,24 @@ spec:
         # Every Application sets retry.limit -1, so a failing sync never completes: the controller sets each
         # failed attempt back to phase Running, and argocd_app_sync_total does not move. What does hold is
         # .operation, which clears only when an operation completes, and it shows as operation="sync".
-        # Measured on a throwaway Application refused by its project: no condition is set during the loop,
-        # so argocd_app_condition would not help even if it were switched on.
+        # Measured during that retry loop, on a throwaway Application refused by its project: no condition is
+        # set, so argocd_app_condition would not help even if it were switched on.
         #
         # So "still open" is the signal, and for: separates failing from slow. Sync operations measured on
-        # this cluster: under 2m on a commit (the last wave counts as done once applied), 6 to 10m for a
-        # chart's first boot. plane-dev does fire on a first boot, for its 30-odd minutes waiting on
-        # scripts/infisical-bootstrap.sh. That loop is real, and ArgoAppDegraded fires for it too.
-        # A bad image in the last wave never reaches this rule: its sync succeeds on apply, and
+        # this cluster: under 2m on commits that pulled no new image, 58s on promotion 4f622e3 (its layers were
+        # already on the node, each pull under 0.4s), 448s for wave 3 alone when a first boot pulled four images
+        # through the mirror, 6 to 10m for a chart's first boot. No measured promotion has pulled new layers, so
+        # that margin against 15m is still unproven. plane-dev does fire on a first boot, for its 30-odd minutes
+        # waiting on scripts/infisical-bootstrap.sh. That loop is real, and ArgoAppDegraded fires for it too.
+        #
+        # A bad image in a Plane Deployment holds the operation open: Deployments are wave 3 and routes wave 4, so
+        # the sync waits on the rollout, fails when it misses its 600s deadline, retries, and reaches this rule at
+        # 15m if nobody reverts. Only a single-wave chart Application closes on apply: this rule never sees it, and
         # ArgoAppDegraded reports it once the rollout misses its deadline.
+        # tests/drills/failed-deploy-rollback.sh reverts at the first Degraded, about 10m in, and ArgoAppDegraded
+        # needs 5m of that, so what should show is this rule and ArgoAppDegraded pending, with neither firing unless
+        # the revert takes more than 5m. That is expected, not measured: the drill has not been run with these rules.
+        #
         # max_over_time rides out a missed scrape, as when the controller is slow to restart, and aggregating
         # drops the pod and instance labels that a restart changes. Either would otherwise start for: again.
         - alert: ArgoSyncFailed
@@ -95,8 +132,26 @@ spec:
           annotations:
             summary: Application {{ $labels.name }} has had a sync Running for 15m
             description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
+        # A child whose objects never turn healthy, with no operation left open. A single-wave chart child closes
+        # its operation on apply, then reads Synced and Progressing for as long as a StatefulSet or DaemonSet stays
+        # unready, and neither of those has a deadline that would turn it Degraded. Root waits on it with no retry.
+        # Longest measured on a first boot: about 10m for kube-prometheus-stack, pulling images. It includes open
+        # operations too, so that one opening does not start for: again. Root is left out: it only repeats its child.
+        - alert: ArgoAppStuckProgressing
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{health_status="Progressing",name!="root"}[2m])) == 1
+          for: 30m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} has read Progressing for 30m
+            description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. The root sync waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
         # Root's operation walks every wave, so it stays open while its children come up: 41m measured on a
-        # first boot, and scripts/up.sh allows 50m. A child that is stuck fires the rule above much sooner.
+        # first boot, and scripts/up.sh allows 50m. What fires sooner depends on the child it is waiting on:
+        # - Operation still open, as for a Plane Application in wave 3 or a retry loop: ArgoSyncFailed at 15m.
+        # - Operation closed and Degraded, as for a Deployment past its deadline: ArgoAppDegraded at 5m.
+        # - Operation closed and Progressing, as for a stuck StatefulSet in a chart: the chart's
+        #   KubeStatefulSetReplicasMismatch at 15m, ArgoAppStuckProgressing at 30m.
+        # - A Prometheus that cannot start: nothing, because nothing evaluates rules. Only the sink notices, when
+        #   Watchdog stops arriving every 5 minutes, and nothing watches for that.
         - alert: ArgoRootSyncStuck
           expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{operation="sync",name="root"}[2m])) == 1
           for: 60m
