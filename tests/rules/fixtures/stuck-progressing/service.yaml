@@ -1,0 +1,13 @@
+# Not deployed by anything in Git. A throwaway Application reads this directory to prove ArgoAppStuckProgressing from
+# the source to the sink. Argo CD reads a LoadBalancer Service with no address as Progressing, kind has nothing to give
+# it one, and no deadline ever turns it Degraded, so this is a chart child stuck with its operation closed. With no
+# selector and no node port it routes nothing and costs nothing. monitoring/README.md has how it was run.
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-truth-stuck-progressing
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  ports:
+    - { name: none, port: 80 }
