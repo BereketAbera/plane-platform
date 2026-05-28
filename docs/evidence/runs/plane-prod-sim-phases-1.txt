@@ -1,0 +1,16 @@
+2026-11-04T23:26:26Z both smokes start, with prod-sim's worker control and a 330s WebSocket soak
+2026-11-04T23:26:51Z snapshot during both smokes
+2026-11-04T23:27:34Z dev smoke finished, exit 0
+2026-11-04T23:27:51Z second dev smoke finished, exit 0
+2026-11-04T23:27:51Z netpol matrix from plane-dev starts, while prod-sim's soak runs
+2026-11-04T23:29:40Z netpol from plane-dev finished, exit 0
+2026-11-04T23:33:04Z prod-sim smoke with soak finished, exit 0
+2026-11-04T23:34:50Z netpol from plane-prod-sim finished, exit 0
+2026-11-04T23:35:00Z drill-pod-restart in prod-sim starts
+2026-11-04T23:45:44Z drill-pod-restart in prod-sim finished, exit 2
+2026-11-04T23:48:05Z worker and broker experiment starts
+2026-11-04T23:53:43Z worker and broker experiment finished
+2026-11-04T23:54:02Z second drill-pod-restart in prod-sim starts
+2026-11-04T23:54:53Z second drill-pod-restart finished, exit 0
+2026-11-04T23:56:05Z proposed smoke change tested, from a copy
+2026-11-04T23:59:08Z final checks start

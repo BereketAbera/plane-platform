@@ -1,0 +1,66 @@
+# NOTE added after the run. The helper that printed the queue used grep -P, which macOS grep does not have. So the
+# 'queue' values below are empty, 370 lines of grep's usage text were removed, and the line 'NO CONSUMER after
+# 240s' is false: the wait loop could not read the count. The job probe, the worker's own log and the read-only
+# section at the end show what really happened. A second broker restart to get a cleaner file was refused by the
+# session's permission system, so this one run is the evidence.
+
+# 2026-11-05T00:30:32Z tests/e2e/smoke.py --worker-negative-control in prod-sim, then a broker restart, then a job probe.
+# Commit under test: 23e3fe2d2aa3, plus the uncommitted smoke.py from this track
+2026-11-05T00:30:32Z application plane-prod-sim: Synced/Healthy
+worker before: plane-worker-wl-667f56c7f8-6m5kr restarts=0 created=2026-11-04T23:57:06Z
+smoke with control and --branding require: exit 1 (1 expected: upstream images fail the branding checks)
+FAIL    branding-web  / title does not name Wayline: 'Plane | Simple, extensible, open-source project management tool.'; / title names upstream as the product: 'Plane | Simple, extensible, open-source project management tool.'; / carries the upstream brand 7 t
+FAIL    branding-admin  /god-mode/ title does not name Wayline: 'Plane | Simple, extensible, open-source project management tool.'; /god-mode/ title names upstream as the product: 'Plane | Simple, extensible, open-source project management tool.'; /god-mode/ c
+FAIL    branding-space  /spaces/ title does not name Wayline: 'Plane Publish | Make your Plane boards public with one-click'; /spaces/ title names upstream as the product: 'Plane Publish | Make your Plane boards public with one-click'; /spaces/ carries the ups
+FAIL    branding-backend  the backend reports upstream's changelog: 'https://sites.plane.so/pages/691ef037bcfe416a902e48cb55f59891/'
+FAIL    branding-seed  want one bot named Wayline in this new workspace, found [('Plane', 'Plane')]; the seed content names upstream 10 time(s), first: " you're getting familiar with Plane, let's explore how you can cu"; the seed content does not name Wayline,
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks 
+PASS    worker-negative-control  With 0 consumers: 4 messages parked, no activity after 15s. Asked the consumer back: activity within 16.7s. Worker pod replaced, so no emptied queue selection is left behind
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+RESULT  FAIL
+worker after the control: plane-worker-wl-667f56c7f8-t9g6g restarts=0 created=2026-11-05T00:31:34Z
+Canceling queue lines in the worker's log: 0
+queue now: 
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'arguments': None, 'durable': True, 
+
+1 node online.
+
+== 2026-11-05T00:32:27Z restart the broker, which is what a worker with an emptied selection does not survive
+pod "plane-rabbitmq-wl-0" deleted from plane-prod-sim namespace
+delete pod: exit 0
+Waiting for 1 pods to be ready...
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+pod/plane-rabbitmq-wl-0 condition met
+broker Ready again after 11s
+NO CONSUMER after 240s
+2026-11-05T00:36:31Z consumer on queue celery after 242s: 
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'arguments': None, 'durable': True, 
+
+1 node online.
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.3s
+evidence: .local/evidence-raw/harness-worker-control-prod-sim-verify-1.json
+RESULT  PASS
+verify and job probe: exit 0
+worker at the end: plane-worker-wl-667f56c7f8-t9g6g restarts=0 created=2026-11-05T00:31:34Z
+queue at the end: 
+application Synced/Healthy
+== 2026-11-05T00:36:50Z done
+
+== Read-only, after the run
+$ date -u: 2026-11-05T00:44:11Z
+queues (name, messages, consumers):
+  celery	0	1
+  celeryev.c9f4d7b9-0f56-4664-80bd-65328e02f9b7	0	1
+  celery@plane-worker-wl-667f56c7f8-t9g6g.celery.pidbox	0	1
+worker: plane-worker-wl-667f56c7f8-t9g6g restarts=0 created=2026-11-05T00:31:34Z
+broker: plane-rabbitmq-wl-0 created=2026-11-05T00:32:29Z
+'Canceling queue' lines in this worker's log: 0
+the worker's log around the broker restart:
+  [2026-11-05 00:31:48,510: INFO/MainProcess] Connected to amqp://plane:**@plane-rabbitmq.plane-prod-sim.svc.cluster.local:5672//
+  [2026-11-05 00:32:27,657: WARNING/MainProcess] consumer: Connection to broker lost. Trying to re-establish the connection...
+  [2026-11-05 00:32:47,749: INFO/MainProcess] Connected to amqp://plane:**@plane-rabbitmq.plane-prod-sim.svc.cluster.local:5672//
+  [2026-11-05 00:32:48,858: INFO/MainProcess] mingle: all alone

@@ -1,0 +1,25 @@
+# 2026-11-04T20:11:40Z SKIP_CHARTS=yes scripts/ci/validate-manifests.sh
+==> render is up to date
+ ok dev is up to date
+ ok prod-sim is up to date
+ ok render is up to date
+==> kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+ ok kubeconform: rendered Plane
+==> kubeconform: platform manifests
+Summary: 132 resources found in 7 files - Valid: 132, Invalid: 0, Errors: 0, Skipped: 0
+ ok kubeconform: platform manifests
+==> conftest: rendered Plane
+
+814 tests, 814 passed, 0 warnings, 0 failures, 0 exceptions
+ ok conftest: rendered Plane
+==> conftest: platform manifests
+
+1056 tests, 1056 passed, 0 warnings, 0 failures, 0 exceptions
+ ok conftest: platform manifests
+==> promotion invariant
+ ok 9 digest(s) were recorded for dev
+ ok promotion invariant
+warn SKIP_CHARTS=yes: third-party platform charts were not rendered
+ ok manifests valid
+exit=0

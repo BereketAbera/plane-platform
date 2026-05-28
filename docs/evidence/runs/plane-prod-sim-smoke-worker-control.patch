@@ -1,0 +1,36 @@
+--- /Users/bek/dev/pr/plane-platform/tests/e2e/smoke.py	2026-11-05 01:58:28
++++ tests/e2e/smoke.py	2026-11-05 02:56:05
+@@ -1020,11 +1020,32 @@
+         results = expect(self.http.get(target, session=False, headers=self.api()), 200).json().get("results", [])
+         return sum(1 for activity in results if activity.get("verb") == "created")
+ 
++    def replace_worker(self, data: dict) -> None:
++        """cancel_consumer empties Celery's queue selection, and add_consumer attaches a consumer without
++        putting the queue back in it. Such a worker runs normally until its next broker reconnect. It then
++        builds its consumer from the empty selection and consumes nothing, while inspect ping still answers.
++        A new pod has a clean selection, and deleting a pod is no drift for Argo CD."""
++        self.cluster.in_namespace("delete", "pod", "-l", "app.kubernetes.io/component=worker", "--wait=true",
++                                  "--timeout=120s", timeout=150)
++        self.cluster.in_namespace("rollout", "status", "deployment/plane-worker-wl", "--timeout=180s", timeout=200)
++        end = time.monotonic() + 120
++        while self.cluster.queues().get("celery", {}).get("consumers", 0) < 1:
++            if time.monotonic() > end:
++                raise StepFailed("the replacement worker has no consumer on queue celery after 120s")
++            time.sleep(2)
++        data["worker_replaced"] = True
++
+     def step_worker_negative_control(self, data: dict) -> str:
+-        """Stops the worker consuming, with no pod or spec touched, so Argo CD sees nothing.
++        """Stops the worker consuming, then replaces its pod, because that leaves state a later reconnect would trip on.
+ 
+         Without this, an activity that some other path wrote would pass the background-job step.
+         """
++        try:
++            return self.worker_negative_control(data)
++        finally:
++            self.replace_worker(data)
++
++    def worker_negative_control(self, data: dict) -> str:
+         control = self.cluster.celery_control
+         control("cancel_consumer", "celery")
+         try:

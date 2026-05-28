@@ -1,0 +1,48 @@
+# date: 2026-11-04T23:14:59Z. ArgoSyncFailed on h16-sync-failure-probe, rule live since 23:06:02Z, for: 15m
+[23:21:07Z] firing in Prometheus
+[23:21:07Z] active in Alertmanager
+[23:21:17Z] reached the sink:
+2026-11-04T23:21:12Z group_status=firing alert_status=firing {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "h16-sync-failure-probe", "phase": "Running", "prometheus": "monitoring/kps-prometheus", "severity": "critical"} startsAt=2026-11-04T23:21:02 endsAt=0001-01-01T00:00:00
+
+# date: 2026-11-04T23:25:07Z. The same alert through 2 Prometheus restarts (23:21:26Z, 23:24:01Z) and a controller restart (23:23:37Z, new pod, new instance label).
+## raw series, argocd_app_info operation="sync"
+   samples 11 first 23:22:30 last 23:25:00 gaps [] zero-at []
+## smoothed, the rule expression
+   samples 11 first 23:22:30 last 23:25:00 gaps [] zero-at []
+## ALERTS firing
+   samples 11 first 23:22:30 last 23:25:00 gaps [] zero-at []
+## controller up
+   samples 11 first 23:22:30 last 23:25:00 gaps [] zero-at []
+   samples 5 first 23:24:00 last 23:25:00 gaps [] zero-at []
+# every delivery of ArgoSyncFailed at the sink since 23:05Z:
+2026-11-04T23:21:12Z group_status=firing alert_status=firing {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "h16-sync-failure-probe", "phase": "Running", "prometheus": "monitoring/kps-prometheus", "severity": "critical"} startsAt=2026-11-04T23:21:02 endsAt=0001-01-01T00:00:00
+# the old expression over the whole loop, which is what stayed silent: series for this app in argocd_app_sync_total:
+0
+# before removing the throwaway:
+k6 tracking-id=network-policies:networking.k8s.io/NetworkPolicy:plane-dev/k6 resourceVersion=11345
+throwaway phase Running retryCount 8 conditions None startedAt 2026-11-04T22:55:25Z
+one or more synchronization tasks are not valid: resource networking.k8s.io:NetworkPolicy is not permitted in project plane-dev. Retrying attempt #8 at 11:27PM.
+# deleting at 2026-11-04T23:25:07Z
+application.argoproj.io "h16-sync-failure-probe" deleted from argocd namespace
+      14
+# date: 2026-11-04T23:27:15Z. Resolved after the throwaway was deleted at 23:25:07Z:
+2026-11-04T23:27:12Z group_status=resolved alert_status=resolved {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "h16-sync-failure-probe", "phase": "Running", "prometheus": "monitoring/kps-prometheus", "severity": "critical"} startsAt=2026-11-04T23:21:02 endsAt=2026-11-04T23:27:02
+# after: ALERTS naming the throwaway:
+[('ArgoAppDegraded', 'pending'), ('ArgoAppOutOfSync', 'firing')]
+# after: the NetworkPolicy it pointed at is unchanged, and the Applications:
+k6 tracking-id=network-policies:networking.k8s.io/NetworkPolicy:plane-dev/k6 resourceVersion=11345
+NAME                          SYNC     HEALTH    OP
+alloy                         Synced   Healthy   Succeeded
+backup-storage                Synced   Healthy   Succeeded
+infisical                     Synced   Healthy   Succeeded
+infisical-operator-dev        Synced   Healthy   Succeeded
+infisical-operator-prod-sim   Synced   Healthy   Succeeded
+kube-prometheus-stack         Synced   Healthy   Succeeded
+loki                          Synced   Healthy   Succeeded
+metrics-server                Synced   Healthy   Succeeded
+monitoring-extras             Synced   Healthy   Succeeded
+network-policies              Synced   Healthy   Succeeded
+plane-dev                     Synced   Healthy   Succeeded
+plane-prod-sim                Synced   Healthy   Succeeded
+root                          Synced   Healthy   Succeeded
+traefik                       Synced   Healthy   Succeeded

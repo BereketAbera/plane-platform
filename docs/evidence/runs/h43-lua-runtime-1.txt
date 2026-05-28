@@ -1,0 +1,37 @@
+# date: 2026-11-04T23:16:26Z
+# pod: argocd-server-6879f6c57b-fr2fd
+# image: quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+argocd: v3.5.7
+## Argo CD's built-in check, no override in the ConfigMap
+PASS  want Progressing got Progressing rc=0 no status yet  [Waiting for initialization]
+PASS  want Progressing got Progressing rc=0 status with no conditions  [Waiting for initialization]
+PASS  want Progressing got Progressing rc=0 empty conditions  [Waiting for initialization]
+PASS  want Progressing got Progressing rc=0 only Reconciled so far  [Waiting for initialization]
+PASS  want Healthy     got Healthy     rc=0 ready  [All instances are available]
+PASS  want Healthy     got Healthy     rc=0 ready, conditions in the other order  [All instances are available]
+PASS  want Degraded    got Degraded    rc=0 image pulling or restarting: NoPodReady  [pod prometheus-kps-prometheus-0: containers with incomplete status: [init-config-reloader]]
+PASS  want Degraded    got Degraded    rc=0 NoPodReady, empty message  []
+PASS  want Progressing got Progressing rc=0 rolling a replica: SomePodsNotReady  [pod x not ready]
+PASS  want Degraded    got Degraded    rc=0 operator failed and no pods  [no pods]
+PASS  want Degraded    got Degraded    rc=0 operator failed, Reconciled listed first  [no pods]
+PASS  want Degraded    got Degraded    rc=0 an unknown reason stays Degraded  [m]
+PASS  want Healthy     got Healthy     rc=0 running on an old config while reconcile fails  [All instances are available]
+## the override in helm/values/argocd.yaml
+PASS  want Progressing got Progressing rc=0 no status yet  [Waiting for initialization]
+PASS  want Progressing got Progressing rc=0 status with no conditions  [Waiting for initialization]
+PASS  want Progressing got Progressing rc=0 empty conditions  [Waiting for initialization]
+PASS  want Progressing got Progressing rc=0 only Reconciled so far  [Waiting for initialization]
+PASS  want Healthy     got Healthy     rc=0 ready  [All instances are available]
+PASS  want Healthy     got Healthy     rc=0 ready, conditions in the other order  [All instances are available]
+PASS  want Progressing got Progressing rc=0 image pulling or restarting: NoPodReady  [NoPodReady: pod prometheus-kps-prometheus-0: containers with incomplete status: [init-conf]
+PASS  want Progressing got Progressing rc=0 NoPodReady, empty message  [NoPodReady: ]
+PASS  want Progressing got Progressing rc=0 rolling a replica: SomePodsNotReady  [SomePodsNotReady: pod x not ready]
+PASS  want Degraded    got Degraded    rc=0 operator failed and no pods  [sync failed: invalid spec]
+PASS  want Degraded    got Degraded    rc=0 operator failed, Reconciled listed first  [sync failed: invalid spec]
+PASS  want Degraded    got Degraded    rc=0 an unknown reason stays Degraded  [m]
+PASS  want Healthy     got Healthy     rc=0 running on an old config while reconcile fails  [All instances are available]
+# fails: 0
+# Negative control: a script with a syntax error must not produce a status
+{"level":"fatal","msg":"failed to get resource health for monitoring/kps-prometheus: \u003cstring\u003e line:31(column:3) near 'end':   syntax error\n","time":"2026-11-04T23:16:31Z"}
+rc=20
+# cleaned /tmp/luacheck

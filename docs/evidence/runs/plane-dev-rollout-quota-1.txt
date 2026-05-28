@@ -1,0 +1,28 @@
+# All seven Plane Deployments rolling at once, the worst surge. 2026-11-04T22:45:59Z. Quota plane-budget.
+## Round 1: kubectl rollout restart on all seven, started 22:45:59
+quota used: {'limits.memory': '4400Mi/7984Mi', 'persistentvolumeclaims': '5/6', 'pods': '14/24', 'requests.memory': '1516Mi/2732Mi'}
+all rollouts complete after 38s
+most live pods seen: 21
+at that moment, quota used: {'limits.memory': '6960Mi/7984Mi', 'persistentvolumeclaims': '5/6', 'pods': '21/24', 'requests.memory': '2412Mi/2732Mi'}
+availability samples: 33
+samples with any non-200:
+22:46:22 web=200 api=200 live=000
+22:46:36 web=200 api=000 live=200
+FailedCreate or quota events since start:
+
+quota used: {'limits.memory': '5424Mi/7984Mi', 'persistentvolumeclaims': '5/6', 'pods': '16/24', 'requests.memory': '1900Mi/2732Mi'}
+plane-admin-wl-5c44d6dc7d-7vmsv               true    0
+plane-api-wl-64bb48f986-694mw                 true    0
+plane-beat-worker-wl-6959997d75-fgws8         true    0
+plane-beat-worker-wl-c5c96d747-45jks          true    0
+plane-live-wl-5b675fb86f-h9vhv                true    0
+plane-minio-wl-0                              true    0
+plane-pgdb-wl-0                               true    0
+plane-rabbitmq-wl-0                           true    0
+plane-redis-wl-0                              true    0
+plane-space-wl-755985bb65-s7tgq               true    0
+plane-web-wl-868d6bfd86-6ck2j                 true    0
+plane-worker-wl-55c87f6f94-fnhrq              true    0
+plane-worker-wl-79dc7db6cb-kbxfm              true    0
+Application: Synced/Healthy
+

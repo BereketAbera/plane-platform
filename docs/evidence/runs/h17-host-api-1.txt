@@ -1,0 +1,25 @@
+# date: 2026-11-04T23:01:24Z
+# command: ISOLATION_IN_CLUSTER=no infisical/tests/isolation.sh, real logins and reads from the host through http://infisical.localhost, after the middleware landed
+[1;34m==>[0m Logins, through http://infisical.localhost
+PASS     plane-dev SA logs in as the dev reader                         expected=200      got=200  
+PASS     plane-prod-sim SA logs in as the prod-sim reader               expected=200      got=200  
+PASS     plane-dev SA refused as the prod-sim reader                    expected=401|403  got=401  Access denied: K8s namespace not allowed.
+PASS     plane-prod-sim SA refused as the dev reader                    expected=401|403  got=401  Access denied: K8s namespace not allowed.
+PASS     plane-dev/default SA refused as the dev reader                 expected=401|403  got=401  tokenreviews.authentication.k8s.io is forbidden: User "system:serviceaccount:plane-dev:default" cannot create resource "tokenreviews" in API group "authentication.k8s.io" at the cluster scope
+PASS     plane-dev/iso-dev-controller-manager SA refused as the dev reader expected=401|403  got=401  Access denied: K8s name not allowed.
+PASS     a forged token is refused                                      expected=401|403  got=401  Unauthorized
+[1;34m==>[0m Reads: each reader against its own project, then the other one
+PASS     dev reader lists plane-dev                                     expected=200      got=200  9 keys
+PASS     prod-sim reader lists plane-prod-sim                           expected=200      got=200  9 keys
+PASS     dev reader lists plane-prod-sim                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader reads plane-prod-sim PG_PASSWORD                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader resolves slug plane-prod-sim (operator's first call) expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader lists plane-dev                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader reads plane-dev PG_PASSWORD                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader resolves slug plane-dev                        expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+[1;34m==>[0m Role limits on the reader's own project and organization
+PASS     dev reader cannot write to its own project                     expected=403      got=403  You are not allowed to create on secrets
+PASS     dev reader cannot list the organization's identities           expected=403      got=403  You are not allowed to read on identity
+PASS     no token at all                                                expected=401      got=401  Token missing
+[1;32m ok[0m isolation: every row passed
+exit=0

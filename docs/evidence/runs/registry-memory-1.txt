@@ -1,0 +1,301 @@
+# H39: how much memory plane-registry needs during a push
+# Captured 2026-11-04 22:53Z to 23:06Z (Docker clock). Commands: the two scripts at the end of this file, then the compose command below.
+# Every run below is a scratch container, plane-h39-registry, with the same image digest and flags as the compose service,
+# on its own scratch volume and port 5019. plane-registry took no part until the recreate at the end.
+# Each run pushes the four real images localhost:5001/wayline/*:1242134361ff, 412 MiB on disk once every layer is new.
+# Modes: sequential = docker push one after another. together = four docker pushes at once. buildx = the path
+# scripts/ci/build-images.sh takes, buildx --push one after another, with a LABEL added. load dd = another container
+# writing and fsyncing 800 MiB on the same disk during the run. Sampled every 0.2s from memory.stat, inside the container.
+# killed = RestartCount 1 at the end. failed = a push exited non-zero. limit-hits = memory.events max, runs that were not killed.
+# All sizes MiB.
+
+limit pushes     load runs killed   failed     limit-hits    peak anon+swap non-file  dirty  sock
+128m  buildx     -       8      2        0      4223-5237   128.1      32.2     42.1  120.0  17.5
+128m  sequential -       7      0        0      4902-5631   128.3      34.8     45.8  112.0  17.8
+128m  sequential dd      3      0        0      4738-5028   128.0      25.0     40.4   93.6  12.0
+128m  together   -       9      6        6      4750-6716   128.0      40.1     87.6  104.2  53.2
+256m  together   -       6      0        0      2732-3174   256.0      30.2     75.0  103.4  38.5
+256m  together   dd      3      0        0      2661-3270   256.0      32.7     86.4  128.0  51.3
+384m  together   -       6      0        0       798-1115   384.0      30.4     75.7  125.4  40.0
+512m  buildx     -       4      0        0            0-0   447.8      21.4     36.7   84.2   5.8
+512m  sequential -       3      0        0            0-0   450.3      24.2     39.4   90.0   4.4
+512m  sequential dd      3      0        0            0-0   454.3      22.8     38.0   90.4   2.8
+512m  together   -       9      0        0            0-0   458.7      31.9     61.2  148.0  26.4
+512m  together   dd      3      0        0            0-0   458.1      31.2     59.5  136.9  18.0
+1g    together   -       3      0        0            0-0   458.8      32.2     47.7  123.3   6.0
+
+## One line per run
+128m     sequential #1 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 4902 oom 0 oom_kill 0   | samples 33 max_anon=21.0MiB max_anon+swap=34.8MiB max_cur=128.0MiB max_cur-file=38.0MiB max_file=112.8MiB max_file_dirty=109.0MiB max_kernel=6.2MiB max_sock=11.3MiB max_swap=18.3MiB
+128m     sequential #2 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 5298 oom 0 oom_kill 0   | samples 32 max_anon=22.3MiB max_anon+swap=30.2MiB max_cur=128.0MiB max_cur-file=40.2MiB max_file=102.5MiB max_file_dirty=100.2MiB max_kernel=6.4MiB max_sock=12.0MiB max_swap=8.1MiB
+128m     sequential #3 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 5216 oom 0 oom_kill 0   | samples 31 max_anon=20.2MiB max_anon+swap=34.4MiB max_cur=128.1MiB max_cur-file=29.9MiB max_file=117.4MiB max_file_dirty=82.0MiB max_kernel=6.4MiB max_sock=5.8MiB max_swap=19.5MiB
+128m     sequential #4 run-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 5268 oom 0 oom_kill 0   | samples 33 max_anon=22.4MiB max_anon+swap=31.6MiB max_cur=128.0MiB max_cur-file=34.5MiB max_file=106.2MiB max_file_dirty=49.0MiB max_kernel=6.0MiB max_sock=5.9MiB max_swap=9.5MiB
+128m     sequential #5 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 5153 oom 0 oom_kill 0   | samples 31 max_anon=20.4MiB max_anon+swap=32.6MiB max_cur=128.3MiB max_cur-file=35.3MiB max_file=112.0MiB max_file_dirty=112.0MiB max_kernel=6.3MiB max_sock=9.2MiB max_swap=13.1MiB
+128m     sequential #6 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 5437 oom 0 oom_kill 0   | samples 33 max_anon=20.9MiB max_anon+swap=34.4MiB max_cur=128.0MiB max_cur-file=28.5MiB max_file=115.5MiB max_file_dirty=62.6MiB max_kernel=6.4MiB max_sock=5.5MiB max_swap=17.1MiB
+128m     together   #1 run-rc=0 pushes done in 2s, overall rc=1 | restarts=1 | events: max 0 oom 0 oom_kill 0   | samples 15 max_anon=26.8MiB max_anon+swap=26.8MiB max_cur=127.8MiB max_cur-file=84.7MiB max_file=43.1MiB max_file_dirty=14.6MiB max_kernel=4.7MiB max_sock=51.9MiB
+128m     together   #2 run-rc=0 pushes done in 1s, overall rc=1 | restarts=1 | events: max 0 oom 0 oom_kill 0   | samples 15 max_anon=25.5MiB max_anon+swap=25.5MiB max_cur=120.6MiB max_cur-file=71.8MiB max_file=48.8MiB max_file_dirty=27.5MiB max_kernel=5.0MiB max_sock=40.0MiB
+128m     together   #3 run-rc=0 pushes done in 2s, overall rc=1 | restarts=1 | events: max 0 oom 0 oom_kill 0   | samples 15 max_anon=27.6MiB max_anon+swap=27.6MiB max_cur=127.8MiB max_cur-file=84.8MiB max_file=43.0MiB max_file_dirty=10.7MiB max_kernel=4.9MiB max_sock=51.7MiB
+128m     together   #4 run-rc=0 pushes done in 2s, overall rc=1 | restarts=1 | events: max 0 oom 0 oom_kill 0   | samples 15 max_anon=29.0MiB max_anon+swap=29.0MiB max_cur=119.4MiB max_cur-file=69.6MiB max_file=49.8MiB max_file_dirty=28.0MiB max_kernel=4.8MiB max_sock=34.5MiB
+128m     together   #5 run-rc=0 pushes done in 1s, overall rc=1 | restarts=1 | events: max 0 oom 0 oom_kill 0   | samples 15 max_anon=32.7MiB max_anon+swap=32.7MiB max_cur=124.6MiB max_cur-file=87.6MiB max_file=37.0MiB max_file_dirty=1.2MiB max_kernel=4.9MiB max_sock=50.2MiB
+128m     together   #6 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 6716 oom 0 oom_kill 0   | samples 21 max_anon=28.0MiB max_anon+swap=33.8MiB max_cur=128.0MiB max_cur-file=53.5MiB max_file=114.2MiB max_file_dirty=104.2MiB max_kernel=7.6MiB max_sock=19.3MiB max_swap=28.5MiB
+256m     together   #1 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 2971 oom 0 oom_kill 0   | samples 22 max_anon=29.7MiB max_anon+swap=29.7MiB max_cur=256.0MiB max_cur-file=75.0MiB max_file=215.6MiB max_file_dirty=94.9MiB max_kernel=10.6MiB max_sock=38.5MiB
+256m     together   #2 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 2732 oom 0 oom_kill 0   | samples 21 max_anon=25.4MiB max_anon+swap=25.4MiB max_cur=256.0MiB max_cur-file=65.5MiB max_file=219.6MiB max_file_dirty=98.0MiB max_kernel=10.5MiB max_sock=31.5MiB
+256m     together   #3 run-rc=0 pushes done in 3s, overall rc=0 | restarts=0 | events: max 2876 oom 0 oom_kill 0   | samples 23 max_anon=29.2MiB max_anon+swap=29.2MiB max_cur=256.0MiB max_cur-file=61.9MiB max_file=218.3MiB max_file_dirty=64.5MiB max_kernel=10.3MiB max_sock=30.4MiB
+256m     together   #4 run-rc=0 pushes done in 3s, overall rc=0 | restarts=0 | events: max 3147 oom 0 oom_kill 0   | samples 22 max_anon=30.2MiB max_anon+swap=30.2MiB max_cur=255.9MiB max_cur-file=54.6MiB max_file=217.7MiB max_file_dirty=103.4MiB max_kernel=10.6MiB max_sock=17.8MiB
+256m     together   #5 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 3073 oom 0 oom_kill 0   | samples 22 max_anon=26.0MiB max_anon+swap=26.0MiB max_cur=255.9MiB max_cur-file=57.8MiB max_file=219.4MiB max_file_dirty=67.2MiB max_kernel=10.6MiB max_sock=23.4MiB
+256m     together   #6 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 3174 oom 0 oom_kill 0   | samples 21 max_anon=29.9MiB max_anon+swap=29.9MiB max_cur=256.0MiB max_cur-file=52.7MiB max_file=215.4MiB max_file_dirty=93.0MiB max_kernel=10.5MiB max_sock=11.9MiB
+384m     together   #1 run-rc=0 pushes done in 1s, overall rc=0 | restarts=0 | events: max 950 oom 0 oom_kill 0   | samples 20 max_anon=27.8MiB max_anon+swap=27.8MiB max_cur=384.0MiB max_cur-file=60.8MiB max_file=340.3MiB max_file_dirty=87.1MiB max_kernel=13.9MiB max_sock=22.3MiB
+384m     together   #2 run-rc=0 pushes done in 1s, overall rc=0 | restarts=0 | events: max 971 oom 0 oom_kill 0   | samples 19 max_anon=30.4MiB max_anon+swap=30.4MiB max_cur=383.9MiB max_cur-file=59.8MiB max_file=338.3MiB max_file_dirty=125.1MiB max_kernel=14.4MiB max_sock=17.9MiB
+384m     together   #3 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 1115 oom 0 oom_kill 0   | samples 19 max_anon=29.5MiB max_anon+swap=29.5MiB max_cur=383.9MiB max_cur-file=51.5MiB max_file=336.9MiB max_file_dirty=105.0MiB max_kernel=13.9MiB max_sock=6.7MiB
+384m     together   #4 run-rc=0 pushes done in 3s, overall rc=0 | restarts=0 | events: max 799 oom 0 oom_kill 0   | samples 26 max_anon=26.3MiB max_anon+swap=26.3MiB max_cur=384.0MiB max_cur-file=53.4MiB max_file=343.1MiB max_file_dirty=120.2MiB max_kernel=13.8MiB max_sock=18.0MiB
+384m     together   #5 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 955 oom 0 oom_kill 0   | samples 23 max_anon=28.6MiB max_anon+swap=28.6MiB max_cur=384.0MiB max_cur-file=75.7MiB max_file=343.3MiB max_file_dirty=125.4MiB max_kernel=13.8MiB max_sock=40.0MiB
+384m     together   #6 run-rc=0 pushes done in 3s, overall rc=0 | restarts=0 | events: max 798 oom 0 oom_kill 0   | samples 22 max_anon=27.5MiB max_anon+swap=27.5MiB max_cur=384.0MiB max_cur-file=67.2MiB max_file=346.0MiB max_file_dirty=92.3MiB max_kernel=14.0MiB max_sock=35.3MiB
+512m     together   #1 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 22 max_anon=30.3MiB max_anon+swap=30.3MiB max_cur=443.3MiB max_cur-file=45.7MiB max_file=397.6MiB max_file_dirty=122.0MiB max_kernel=15.4MiB max_sock=0.6MiB
+512m     together   #2 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 21 max_anon=29.2MiB max_anon+swap=29.2MiB max_cur=445.5MiB max_cur-file=41.3MiB max_file=404.4MiB max_file_dirty=90.5MiB max_kernel=16.0MiB max_sock=6.4MiB
+512m     together   #3 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 21 max_anon=31.9MiB max_anon+swap=31.9MiB max_cur=456.1MiB max_cur-file=56.9MiB max_file=411.3MiB max_file_dirty=90.3MiB max_kernel=15.7MiB max_sock=17.7MiB
+512m     together   #4 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 21 max_anon=26.0MiB max_anon+swap=26.0MiB max_cur=453.0MiB max_cur-file=53.4MiB max_file=411.0MiB max_file_dirty=101.3MiB max_kernel=15.7MiB max_sock=17.7MiB
+512m     together   #5 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 20 max_anon=29.4MiB max_anon+swap=29.4MiB max_cur=453.1MiB max_cur-file=61.2MiB max_file=411.0MiB max_file_dirty=88.4MiB max_kernel=15.7MiB max_sock=26.4MiB
+512m     together   #6 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 19 max_anon=31.4MiB max_anon+swap=31.4MiB max_cur=458.7MiB max_cur-file=59.7MiB max_file=411.0MiB max_file_dirty=148.0MiB max_kernel=15.8MiB max_sock=17.8MiB
+512m     together   #7 run-rc=0 pushes done in 1s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 19 max_anon=28.7MiB max_anon+swap=28.7MiB max_cur=455.5MiB max_cur-file=44.5MiB max_file=411.0MiB max_file_dirty=81.5MiB max_kernel=15.9MiB max_sock=4.1MiB
+512m     together   #8 run-rc=0 pushes done in 7s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 46 max_anon=24.7MiB max_anon+swap=24.7MiB max_cur=451.1MiB max_cur-file=40.0MiB max_file=411.1MiB max_file_dirty=67.1MiB max_kernel=15.9MiB max_sock=1.0MiB
+512m     together   #9 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 20 max_anon=31.2MiB max_anon+swap=31.2MiB max_cur=456.9MiB max_cur-file=50.3MiB max_file=411.3MiB max_file_dirty=106.5MiB max_kernel=16.2MiB max_sock=5.9MiB
+512m     sequential #1 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 30 max_anon=23.3MiB max_anon+swap=23.3MiB max_cur=449.3MiB max_cur-file=38.4MiB max_file=411.0MiB max_file_dirty=52.1MiB max_kernel=14.9MiB max_sock=2.0MiB
+512m     sequential #2 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 31 max_anon=24.2MiB max_anon+swap=24.2MiB max_cur=450.3MiB max_cur-file=39.4MiB max_file=411.0MiB max_file_dirty=90.0MiB max_kernel=15.1MiB max_sock=4.4MiB
+512m     sequential #3 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 31 max_anon=23.4MiB max_anon+swap=23.4MiB max_cur=449.7MiB max_cur-file=38.7MiB max_file=411.0MiB max_file_dirty=59.4MiB max_kernel=15.5MiB max_sock=1.0MiB
+1g       together   #1 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 20 max_anon=32.2MiB max_anon+swap=32.2MiB max_cur=454.5MiB max_cur-file=47.1MiB max_file=411.0MiB max_file_dirty=85.0MiB max_kernel=16.0MiB max_sock=5.7MiB
+1g       together   #2 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 31 max_anon=29.1MiB max_anon+swap=29.1MiB max_cur=452.1MiB max_cur-file=44.7MiB max_file=411.0MiB max_file_dirty=123.3MiB max_kernel=15.6MiB max_sock=6.0MiB
+1g       together   #3 run-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 19 max_anon=30.7MiB max_anon+swap=30.7MiB max_cur=458.8MiB max_cur-file=47.7MiB max_file=411.0MiB max_file_dirty=90.2MiB max_kernel=15.6MiB max_sock=1.8MiB
+MATRIX-DONE
+128m     buildx     #1 run-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 4600 oom 0 oom_kill 0   | samples 39 max_anon=19.9MiB max_anon+swap=27.7MiB max_cur=128.0MiB max_cur-file=38.3MiB max_file=109.1MiB max_file_dirty=106.2MiB max_kernel=6.4MiB max_sock=12.0MiB max_swap=9.5MiB
+128m     buildx     #2 run-rc=0 pushes done in 7s, overall rc=0 | restarts=1 | events: max 3571 oom 0 oom_kill 0   | samples 41 max_anon=16.8MiB max_anon+swap=26.8MiB max_cur=128.0MiB max_cur-file=25.9MiB max_file=120.0MiB max_file_dirty=120.0MiB max_kernel=5.8MiB max_sock=11.9MiB max_swap=18.5MiB
+128m     buildx     #3 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 5237 oom 0 oom_kill 0   | samples 34 max_anon=18.2MiB max_anon+swap=30.2MiB max_cur=128.1MiB max_cur-file=31.3MiB max_file=115.0MiB max_file_dirty=114.9MiB max_kernel=6.0MiB max_sock=7.7MiB max_swap=12.7MiB
+128m     buildx     #4 run-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 4827 oom 0 oom_kill 0   | samples 34 max_anon=19.1MiB max_anon+swap=19.1MiB max_cur=128.0MiB max_cur-file=30.2MiB max_file=103.2MiB max_file_dirty=85.0MiB max_kernel=6.2MiB max_sock=6.0MiB
+128m     buildx     #5 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 4319 oom 0 oom_kill 0   | samples 32 max_anon=18.8MiB max_anon+swap=18.8MiB max_cur=127.9MiB max_cur-file=25.6MiB max_file=103.4MiB max_file_dirty=13.9MiB max_kernel=6.2MiB max_sock=1.0MiB
+128m     buildx     #6 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 5003 oom 0 oom_kill 0   | samples 34 max_anon=19.3MiB max_anon+swap=32.2MiB max_cur=128.0MiB max_cur-file=37.1MiB max_file=118.4MiB max_file_dirty=118.4MiB max_kernel=5.9MiB max_sock=11.6MiB max_swap=16.4MiB
+128m     buildx     #7 run-rc=0 pushes done in 7s, overall rc=0 | restarts=1 | events: max 2726 oom 0 oom_kill 0   | samples 40 max_anon=19.2MiB max_anon+swap=19.2MiB max_cur=128.0MiB max_cur-file=42.1MiB max_file=110.5MiB max_file_dirty=4.0MiB max_kernel=5.9MiB max_sock=17.5MiB
+128m     buildx     #8 run-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 4223 oom 0 oom_kill 0   | samples 37 max_anon=19.2MiB max_anon+swap=19.2MiB max_cur=128.0MiB max_cur-file=34.6MiB max_file=104.3MiB max_file_dirty=76.2MiB max_kernel=6.2MiB max_sock=11.1MiB
+512m     buildx     #1 run-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 34 max_anon=19.7MiB max_anon+swap=19.7MiB max_cur=445.6MiB max_cur-file=34.4MiB max_file=411.2MiB max_file_dirty=40.9MiB max_kernel=14.7MiB max_sock=3.0MiB
+512m     buildx     #2 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 34 max_anon=21.4MiB max_anon+swap=21.4MiB max_cur=447.8MiB max_cur-file=36.7MiB max_file=411.1MiB max_file_dirty=84.2MiB max_kernel=15.2MiB max_sock=5.8MiB
+512m     buildx     #3 run-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 34 max_anon=19.2MiB max_anon+swap=19.2MiB max_cur=432.6MiB max_cur-file=33.7MiB max_file=398.8MiB max_file_dirty=76.9MiB max_kernel=14.8MiB max_sock=0.5MiB
+512m     buildx     #4 run-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | samples 35 max_anon=20.0MiB max_anon+swap=20.0MiB max_cur=445.8MiB max_cur-file=34.7MiB max_file=411.1MiB max_file_dirty=74.0MiB max_kernel=14.6MiB max_sock=1.7MiB
+MATRIX-DONE
+128m     sequential #1 run-rc=0 dd-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 5028 oom 0 oom_kill 0   | max_anon=22.9MiB max_anon+swap=22.9MiB max_cur=128.0MiB max_cur-file=39.0MiB max_file=101.1MiB max_file_dirty=93.6MiB max_kernel=6.4MiB max_sock=12.0MiB
+128m     sequential #2 run-rc=0 dd-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 4738 oom 0 oom_kill 0   | max_anon=24.1MiB max_anon+swap=24.1MiB max_cur=128.0MiB max_cur-file=38.1MiB max_file=100.2MiB max_file_dirty=67.9MiB max_kernel=6.4MiB max_sock=7.5MiB
+128m     sequential #3 run-rc=0 dd-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 4811 oom 0 oom_kill 0   | max_anon=25.0MiB max_anon+swap=25.0MiB max_cur=128.0MiB max_cur-file=40.4MiB max_file=99.5MiB max_file_dirty=77.6MiB max_kernel=6.4MiB max_sock=12.0MiB
+256m     together   #1 run-rc=0 dd-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 3101 oom 0 oom_kill 0   | max_anon=28.6MiB max_anon+swap=28.6MiB max_cur=256.0MiB max_cur-file=86.4MiB max_file=216.0MiB max_file_dirty=128.0MiB max_kernel=10.5MiB max_sock=51.3MiB
+256m     together   #2 run-rc=0 dd-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 2661 oom 0 oom_kill 0   | max_anon=29.0MiB max_anon+swap=29.0MiB max_cur=256.0MiB max_cur-file=58.1MiB max_file=219.7MiB max_file_dirty=97.2MiB max_kernel=10.6MiB max_sock=20.3MiB
+256m     together   #3 run-rc=0 dd-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 3270 oom 0 oom_kill 0   | max_anon=32.7MiB max_anon+swap=32.7MiB max_cur=256.0MiB max_cur-file=49.4MiB max_file=212.6MiB max_file_dirty=56.0MiB max_kernel=10.5MiB max_sock=5.9MiB
+512m     together   #1 run-rc=0 dd-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | max_anon=29.8MiB max_anon+swap=29.8MiB max_cur=456.2MiB max_cur-file=57.8MiB max_file=411.0MiB max_file_dirty=111.0MiB max_kernel=15.7MiB max_sock=18.0MiB
+512m     together   #2 run-rc=0 dd-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | max_anon=25.8MiB max_anon+swap=25.8MiB max_cur=454.1MiB max_cur-file=43.0MiB max_file=411.1MiB max_file_dirty=77.6MiB max_kernel=15.8MiB max_sock=1.1MiB
+512m     together   #3 run-rc=0 dd-rc=0 pushes done in 2s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | max_anon=31.2MiB max_anon+swap=31.2MiB max_cur=458.1MiB max_cur-file=59.5MiB max_file=411.1MiB max_file_dirty=136.9MiB max_kernel=16.0MiB max_sock=17.9MiB
+512m     sequential #1 run-rc=0 dd-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | max_anon=22.8MiB max_anon+swap=22.8MiB max_cur=454.3MiB max_cur-file=38.0MiB max_file=416.4MiB max_file_dirty=82.2MiB max_kernel=15.0MiB max_sock=2.2MiB
+512m     sequential #2 run-rc=0 dd-rc=0 pushes done in 4s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | max_anon=22.5MiB max_anon+swap=22.5MiB max_cur=452.1MiB max_cur-file=37.8MiB max_file=414.3MiB max_file_dirty=57.0MiB max_kernel=15.5MiB max_sock=2.8MiB
+512m     sequential #3 run-rc=0 dd-rc=0 pushes done in 5s, overall rc=0 | restarts=0 | events: max 0 oom 0 oom_kill 0   | max_anon=22.4MiB max_anon+swap=22.4MiB max_cur=449.1MiB max_cur-file=37.6MiB max_file=411.5MiB max_file_dirty=90.4MiB max_kernel=15.2MiB max_sock=1.4MiB
+STRESS-DONE
+
+## Kernel record of a kill on the buildx path at 128m, dmesg on the node, stats lines only
+[Wed Nov  4 23:03:20 2026] registry invoked oom-killer: gfp_mask=0x100cca(GFP_HIGHUSER_MOVABLE), order=0, oom_score_adj=0
+[Wed Nov  4 23:03:20 2026] memory: usage 133580kB, limit 131072kB, failcnt 12486
+[Wed Nov  4 23:03:20 2026] swap: usage 17996kB, limit 131072kB, failcnt 0
+[Wed Nov  4 23:03:20 2026] anon 0
+[Wed Nov  4 23:03:20 2026] file 125452288
+[Wed Nov  4 23:03:20 2026] kernel 5214208
+[Wed Nov  4 23:03:20 2026] sock 6119424
+[Wed Nov  4 23:03:20 2026] file_dirty 125452288
+[Wed Nov  4 23:03:20 2026] file_writeback 0
+[Wed Nov  4 23:03:20 2026] inactive_anon 0
+[Wed Nov  4 23:03:20 2026] active_anon 0
+[Wed Nov  4 23:03:20 2026] inactive_file 123445248
+[Wed Nov  4 23:03:20 2026] active_file 2007040
+[Wed Nov  4 23:03:20 2026] slab 4604136
+[Wed Nov  4 23:03:20 2026] Memory cgroup out of memory: Killed process 916449 (registry) total-vm:1379332kB, anon-rss:0kB, file-rss:29712kB, shmem-rss:0kB, UID:0 pgtables:220kB oom_score_adj:0
+
+## The first kill reproduced, with four pushes at once at 128m, as printed by dmesg at the time (the ring buffer has since dropped it)
+[Wed Nov  4 22:54:25 2026] memory: usage 134412kB, limit 131072kB, failcnt 11609
+[Wed Nov  4 22:54:25 2026] swap: usage 29792kB, limit 131072kB, failcnt 0
+[Wed Nov  4 22:54:25 2026] anon 12288 / file 117374976 / kernel 6283264 / sock 13733888 / file_dirty 117374976 / file_writeback 229376
+[Wed Nov  4 22:54:25 2026] Memory cgroup out of memory: Killed process 838110 (registry) total-vm:1314284kB, anon-rss:368kB, file-rss:15480kB, shmem-rss:0kB, UID:0 pgtables:248kB oom_score_adj:0
+
+## The original kills on plane-registry, from .local/evidence-raw/monitoring-final-status-1.txt, truncated there
+[13894.881426] Memory cgroup out of memory: Killed process 42131 (registry) total-vm:1313228kB, anon-rss:232kB
+[13896.610511] Memory cgroup out of memory: Killed process 346144 (registry) total-vm:1312404kB, anon-rss:0kB,
+
+## Dirty page settings and where the volume lives, on the VM kernel 6.12.76-linuxkit
+vm.dirty_ratio = 20, vm.dirty_background_ratio = 10, vm.dirty_expire_centisecs = 3000, vm.dirty_writeback_centisecs = 1500, vm.swappiness = 60
+/dev/vda1 on /var/lib/registry type ext4 (rw,relatime,discard)
+
+## The recreate: REPO_ROOT set, docker compose -f infrastructure/local-services/compose.yaml up -d --no-deps registry
+Compose config, old file against new: only registry changed, mem_limit 134217728 to 536870912. Mirrors stay at 134217728, git at 67108864.
+## before, 2026-11-04T23:05:28Z
+id=4a8fb6c4e81f started=2026-11-04T21:15:20.303476252Z restarts=2 Memory=134217728 MemorySwap=268435456 network=kind volume=plane-platform-local_registry-data:/var/lib/registry
+files=267 blobs=111 du=705MiB
+748161124 13653
+volume created=2026-11-04T18:45:20Z
+/plane-mirror-docker id=53b43caa3e49 started=2026-11-04T18:45:20.351414585Z
+/plane-mirror-quay id=59cbf6b500e5 started=2026-11-04T18:45:20.34895871Z
+/plane-mirror-k8s id=dc5eb4a18e8d started=2026-11-04T18:45:20.350583085Z
+/plane-git id=e695f4be07ef started=2026-11-04T20:53:08.185260552Z
+cgroup before: peak=136245248 events=low 0 high 0 max 4939 oom 0 oom_kill 0 oom_group_kill 0 
+compose up rc=0 in 1s
+ Container plane-registry Recreate 
+ Container plane-registry Recreated 
+ Container plane-registry Starting 
+ Container plane-registry Started 
+GET /v2/ from the host: 200
+## after, 2026-11-04T23:05:30Z
+id=35c85cde625d started=2026-11-04T23:05:29.932598839Z restarts=0 Memory=536870912 MemorySwap=1073741824 network=kind volume=plane-platform-local_registry-data:/var/lib/registry
+files=267 blobs=111 du=705MiB
+748161124 13653
+volume created=2026-11-04T18:45:20Z
+/plane-mirror-docker id=53b43caa3e49 started=2026-11-04T18:45:20.351414585Z
+/plane-mirror-quay id=59cbf6b500e5 started=2026-11-04T18:45:20.34895871Z
+/plane-mirror-k8s id=dc5eb4a18e8d started=2026-11-04T18:45:20.350583085Z
+/plane-git id=e695f4be07ef started=2026-11-04T20:53:08.185260552Z
+
+## pulls after the recreate, 2026-11-04T23:06:10Z
+-- 4 refs: what live pods run, plus .build/digests.tsv
+localhost:5001/wayline/admin@sha256:d95b4e604977fb62701faa2f489fb0ff790f146aee69230bbe0c3da30fb3da4a imagetools-rc=0 node-crictl-pull-rc=0
+localhost:5001/wayline/backend@sha256:2e5e574957be703fa8233dee9f3254e1e887569d0b88b6002556453a8003fc97 imagetools-rc=0 node-crictl-pull-rc=0
+localhost:5001/wayline/space@sha256:73a19dd1d2fde47c721e913a7cff583111c535f89bc022b5b911c494d284c8dc imagetools-rc=0 node-crictl-pull-rc=0
+localhost:5001/wayline/web@sha256:171ba385a650141152d6d70837142c0c357cec7529ca9d75ecf42db4f01a047a imagetools-rc=0 node-crictl-pull-rc=0
+-- every layer of the four current images, read back through localhost:5001 and hashed
+web: 16 blobs match their digests, 0 do not
+admin: 14 blobs match their digests, 0 do not
+space: 19 blobs match their digests, 0 do not
+backend: 26 blobs match their digests, 0 do not
+-- what containerd asked of the registry since the recreate
+   8 "GET 200 "containerd/2.2.4+unknown"
+  27 "GET 200 "containerd/v2.3.4"
+   8 "HEAD 200 "containerd/2.2.4+unknown"
+   8 "HEAD 200 "containerd/v2.3.4"
+-- registry after this
+peak=466661376 swap_peak=0 current=465477632
+events: low 0 high 0 max 0 oom 0 oom_kill 0 oom_group_kill 0 
+anon 34283520 file 425771008 file_dirty 8192 
+restarts=0 status=running
+plane-registry 30.17MiB / 512MiB 5.89%
+
+## The harness: run.sh
+#!/bin/bash
+# H39: what does a registry container need during real pushes? A scratch registry (same image digest, same flags as
+# the compose service, its own scratch volume and port) takes real `docker push`es of the four real wayline images.
+# plane-registry and its volume are not involved. Usage: run.sh <mem limit> <sequential|together> <label>
+set -u
+LIMIT="$1"; MODE="$2"; LABEL="$3"
+OUT=$SCRATCH
+IMG='ghcr.io/distribution/distribution:3.1.2@sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9'
+C=plane-h39-registry; V=plane-h39-data; PORT=5019
+TAG=1242134361ff
+NAMES='web admin space backend'
+SAMPLES="$OUT/samples-$LABEL.txt"
+
+teardown() {
+  docker rm -f "$C" >/dev/null 2>&1
+  docker volume rm "$V" >/dev/null 2>&1
+  for n in $NAMES; do docker image rm "localhost:$PORT/wayline/$n:h39" >/dev/null 2>&1; done
+}
+free_gib() { df -g /Users/bek/dev/pr/plane-platform | awk 'NR==2{print $4}'; }
+trap teardown EXIT
+
+[[ "$(free_gib)" -ge 11 ]] || { echo "only $(free_gib) GiB free, not starting"; exit 3; }
+teardown
+echo "## $LABEL: limit $LIMIT, $MODE pushes of $NAMES, $(date -u +%Y-%m-%dT%H:%M:%SZ), host free $(free_gib) GiB"
+docker run -d --name "$C" --memory "$LIMIT" --read-only --tmpfs /tmp --restart unless-stopped \
+  -p "127.0.0.1:$PORT:5000" -e REGISTRY_STORAGE_DELETE_ENABLED=true -v "$V:/var/lib/registry" "$IMG" >/dev/null || exit 4
+docker inspect "$C" --format 'Memory={{.HostConfig.Memory}} MemorySwap={{.HostConfig.MemorySwap}}'
+for _ in 1 2 3 4 5 6 7 8 9 10; do curl -fs "http://localhost:$PORT/v2/" >/dev/null && break; sleep 0.5; done
+
+: > "$SAMPLES"
+( while docker inspect "$C" >/dev/null 2>&1; do
+    docker exec "$C" sh -c 'cd /sys/fs/cgroup; while :; do
+      echo "$(date +%s) cur=$(cat memory.current) swap=$(cat memory.swap.current) $(grep -E "^(anon|file|file_dirty|file_writeback|sock|slab|kernel) " memory.stat | tr " " "=" | tr "\n" " ")"
+      sleep 0.2
+    done' >> "$SAMPLES" 2>/dev/null
+    sleep 0.2
+  done ) &
+SAMPLER=$!
+
+for n in $NAMES; do docker tag "localhost:5001/wayline/$n:$TAG" "localhost:$PORT/wayline/$n:h39" || exit 5; done
+start=$SECONDS
+rc_all=0
+if [[ "$MODE" == buildx ]]; then
+  # The path scripts/ci/build-images.sh takes: buildx --push, one image after another, here with only a label added.
+  mkdir -p "$OUT/empty"
+  for n in $NAMES; do
+    s=$SECONDS
+    printf 'FROM localhost:5001/wayline/%s:%s\nLABEL h39=%s\n' "$n" "$TAG" "$LABEL" > "$OUT/Dockerfile.$n"
+    docker buildx build --platform linux/arm64 --provenance=false --sbom=false --push -t "localhost:$PORT/wayline/$n:h39" -f "$OUT/Dockerfile.$n" "$OUT/empty" > "$OUT/push-$LABEL-$n.out" 2>&1; rc=$?
+    echo "buildx push $n rc=$rc secs=$((SECONDS - s)) $(grep -E 'ERROR|error:' "$OUT/push-$LABEL-$n.out" | head -1 | cut -c1-140)"
+    [[ $rc -eq 0 ]] || rc_all=$rc
+  done
+elif [[ "$MODE" == sequential ]]; then
+  for n in $NAMES; do
+    s=$SECONDS
+    docker push -q "localhost:$PORT/wayline/$n:h39" > "$OUT/push-$LABEL-$n.out" 2>&1; rc=$?
+    echo "push $n rc=$rc secs=$((SECONDS - s)) $(tail -1 "$OUT/push-$LABEL-$n.out" | cut -c1-120)"
+    [[ $rc -eq 0 ]] || rc_all=$rc
+  done
+else
+  pids=""
+  for n in $NAMES; do
+    docker push -q "localhost:$PORT/wayline/$n:h39" > "$OUT/push-$LABEL-$n.out" 2>&1 &
+    pids="$pids $!:$n"
+  done
+  for p in $pids; do
+    wait "${p%%:*}"; rc=$?
+    echo "push ${p#*:} rc=$rc $(tail -1 "$OUT/push-$LABEL-${p#*:}.out" | cut -c1-120)"
+    [[ $rc -eq 0 ]] || rc_all=$rc
+  done
+fi
+echo "pushes done in $((SECONDS - start))s, overall rc=$rc_all"
+sleep 2
+docker inspect "$C" --format 'restarts={{.RestartCount}} status={{.State.Status}} oomkilled={{.State.OOMKilled}} started={{.State.StartedAt}}'
+docker exec "$C" sh -c 'cd /sys/fs/cgroup; echo "peak=$(cat memory.peak) swap_peak=$(cat memory.swap.peak)"; echo "events: $(tr "\n" " " < memory.events)"; echo "swap events: $(tr "\n" " " < memory.swap.events)"' 2>&1
+docker exec "$C" du -sh /var/lib/registry 2>&1
+kill "$SAMPLER" 2>/dev/null; wait "$SAMPLER" 2>/dev/null
+pkill -f "docker exec $C" 2>/dev/null
+python3 -I - "$SAMPLES" <<'PY'
+import re,sys
+mx={}; n=0
+for l in open(sys.argv[1]):
+    d=dict(re.findall(r'(\w+)=(\d+)',l))
+    if 'anon' not in d: continue
+    n+=1
+    d={k:int(v) for k,v in d.items()}
+    d['anon+swap']=d['anon']+d.get('swap',0)
+    d['cur-file']=d['cur']-d.get('file',0)
+    for k,v in d.items():
+        if v>mx.get(k,0): mx[k]=v
+print('samples',n,' '.join('max_%s=%.1fMiB'%(k,v/1048576) for k,v in sorted(mx.items())))
+PY
+docker exec plane-platform-control-plane sh -c 'free -m | sed -n 2,3p'
+echo "host free after run, before teardown: $(free_gib) GiB"
+
+## The harness: stress.sh
+#!/bin/bash
+# The same scratch-registry run, while another container writes and fsyncs 800 MiB on the same VM disk, as a build does.
+# Only a scratch volume is written. Usage: stress.sh <limit> <mode> <n>
+set -u
+H=$SCRATCH
+IMG='ghcr.io/distribution/distribution:3.1.2@sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9'
+VOL=plane-h39-dd
+limit="$1"; mode="$2"; n="$3"
+label="load-$mode-$limit-$n"; log="$H/$label.log"
+docker volume create "$VOL" >/dev/null
+docker run --rm --name plane-h39-dd --entrypoint sh -v "$VOL:/d" "$IMG" -c 'dd if=/dev/zero of=/d/f bs=1M count=800 conv=fsync 2>/dev/null; rm -f /d/f' &
+ddpid=$!
+sleep 1
+/bin/bash "$H/run.sh" "$limit" "$mode" "$label" > "$log" 2>&1; rc=$?
+wait "$ddpid"; ddrc=$?
+docker volume rm "$VOL" >/dev/null
+printf '%-8s %-10s #%s run-rc=%s dd-rc=%s %s | %s | %s | %s\n' "$limit" "$mode" "$n" "$rc" "$ddrc" \
+  "$(grep -E '^pushes done' "$log" | cut -c1-40)" \
+  "$(grep -E '^restarts=' "$log" | cut -d' ' -f1)" \
+  "$(grep -E '^events:' "$log" | sed -E 's/low 0 high 0 //; s/oom_group_kill 0//' | cut -c1-50)" \
+  "$(grep -E '^samples' "$log" | sed -E 's/max_file_writeback=[^ ]* //; s/max_slab=[^ ]* //; s/samples [0-9]+ //')"
+
+## docker compose --dry-run up -d --no-build, after the comment was reworded: nothing to recreate
+ Container plane-git Running 
+ Container plane-registry Running 
+ Container plane-mirror-docker Running 
+ Container plane-mirror-quay Running 
+ Container plane-mirror-k8s Running 

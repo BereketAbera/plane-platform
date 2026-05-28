@@ -1,0 +1,53 @@
+{
+  "environment": "infisical",
+  "backup": "20261105T001814Z",
+  "started_at": "20261105T001834Z",
+  "result": "PASS",
+  "steps": [
+    {
+      "step": "checksums",
+      "status": "PASS",
+      "detail": "7 files match"
+    },
+    {
+      "step": "key-fingerprint",
+      "status": "PASS",
+      "detail": "ENCRYPTION_KEY matches the backup"
+    },
+    {
+      "step": "overwrite-guard",
+      "status": "PASS",
+      "detail": "target holds 1 users and 0 objects, overwriting on CONFIRM=yes"
+    },
+    {
+      "step": "app-stopped",
+      "status": "PASS",
+      "detail": "infisical at zero with auto-sync paused"
+    },
+    {
+      "step": "postgres",
+      "status": "PASS",
+      "detail": "dump restored into a second database, row counts equal the backup, swapped in"
+    },
+    {
+      "step": "redis",
+      "status": "PASS",
+      "detail": "flushed, so no cache or queued job from before the restore survives"
+    },
+    {
+      "step": "proof-status",
+      "status": "PASS",
+      "detail": "/api/status answers 200 through Traefik"
+    },
+    {
+      "step": "proof-initialized",
+      "status": "PASS",
+      "detail": "the server reads the restored admin config"
+    },
+    {
+      "step": "proof-values",
+      "status": "PASS",
+      "detail": "every Plane secret decrypts to the value, version and id the backup recorded"
+    }
+  ]
+}

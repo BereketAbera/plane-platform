@@ -1,0 +1,45 @@
+[1;34m==>[0m render is up to date
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m helm lint: bootstrap chart
+[1;32m ok[0m helm lint: bootstrap chart
+[1;34m==>[0m kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: rendered Plane
+[1;34m==>[0m kubeconform: platform manifests
+Summary: 135 resources found in 7 files - Valid: 135, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: platform manifests
+[1;34m==>[0m conftest: rendered Plane
+
+1480 tests, 1480 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: rendered Plane
+[1;34m==>[0m conftest: platform manifests
+
+2160 tests, 2160 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform manifests
+[1;34m==>[0m promotion invariant
+[1;32m ok[0m 9 image(s) were recorded for dev under the same name
+[1;32m ok[0m promotion invariant
+[1;34m==>[0m promtool: platform rules
+[1;32m ok[0m 2 rule file(s) valid
+[1;32m ok[0m promtool: platform rules
+[1;34m==>[0m promtool: rule unit tests
+  SUCCESS
+
+[1;32m ok[0m promtool: rule unit tests
+[1;34m==>[0m helm template: platform charts
+[1;32m ok[0m 9 platform chart(s) rendered
+[1;32m ok[0m helm template: platform charts
+[1;34m==>[0m kubeconform: platform charts
+Summary: 194 resources found in 9 files - Valid: 184, Invalid: 0, Errors: 0, Skipped: 10
+[1;32m ok[0m kubeconform: platform charts
+[1;34m==>[0m conftest: platform charts
+WARN - /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.bw7rIiPVux/charts/argocd.yaml - charts - Deployment argocd/argocd-applicationset-controller: container "applicationset-controller" has no memory limit, so set one in helm/values
+
+2716 tests, 2715 passed, 1 warning, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform charts
+[1;34m==>[0m promtool: chart rules
+[1;32m ok[0m 26 rule file(s) valid
+[1;32m ok[0m promtool: chart rules
+[1;32m ok[0m manifests valid

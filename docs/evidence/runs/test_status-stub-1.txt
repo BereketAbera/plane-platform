@@ -1,0 +1,43 @@
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: none)
+    NAME                           SYNC       HEALTH       REVISION
+    chart-only                     Synced     Healthy      1.2.3
+    new-app                        -          -            -
+    root                           OutOfSync  Progressing  aaaaaaaa
+    traefik                        Synced     Healthy      bbbbbbbb
+    zz-last                        Synced     Healthy      aaaaaaaa
+[1;34m==>[0m Pods not ready
+    plane-dev/plane-api-abc 0/1 Running
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         200
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                200
+    http://prometheus.localhost/             200
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+        plane-platform-control-plane: 4GiB / 13GiB, CPU 10%
+    Host disk free: 100 GiB
+PASS  rc 0
+PASS  single source shows its commit
+PASS  chart plus values shows the Git commit, not the chart version
+PASS  two Git sources show the first
+PASS  no Git source falls back to the chart version
+PASS  no status at all shows dashes
+PASS  header is there
+PASS  rows sorted by name
+PASS  endpoints show the code
+PASS  endpoint with an answer
+PASS  pods not ready listed
+PASS  failed connection reads unreachable, not 000unreachable
+PASS  still rc 0 with nothing answering
+PASS  no bare repo yet
+PASS  shows the published commit
+PASS  kubectl failing on Applications does not stop the screen
+PASS  still reaches Endpoints
+PASS  stopped cluster
+PASS  no cluster
+
+SUMMARY: 19 passed, 0 failed

@@ -1,0 +1,7 @@
+# date: 2026-11-04T23:19:42Z
+# Is the 200 through host.docker.internal really Prometheus? Scratch pod in kube-system, GET only, first bytes of the body.
+pod/h17-door-probe created
+pod/h17-door-probe condition met
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1793834383.274,"1"]}]}}
+command terminated with exit code 28
+pod "h17-door-probe" force deleted from kube-system namespace

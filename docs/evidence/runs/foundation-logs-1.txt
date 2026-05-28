@@ -1,0 +1,28 @@
+# date: 2026-11-04T21:22:02Z
+== traefik log levels since start
+   9 INF
+   6 WRN
+   2 
+   1 will
+   1 us
+   1 details:
+   4 WRN aliasHeadersStrategy is not configured: the request headers whose name aliases another header name (e.g. X_Auth_User
+   1 WRN Traefik can reject some encoded characters in the request path. When your backend is not fully compliant with [RFC 3
+   1 WRN SafeNaming is not explicitly set: generated routers, middlewares and services will use the legacy naming scheme, und
+== metrics-server errors
+E1104 21:19:39.142495       1 pod.go:74] "Skipping container usage metric" err="unexpected decrease in cumulative CPU usage value" container="g2-labelled" pod="gate-review/g2-label
+E1104 21:19:39.142605       1 pod.go:74] "Skipping container usage metric" err="unexpected decrease in cumulative CPU usage value" container="g2-server" pod="gate-review/g2-server"
+(end)
+== Argo errors
+deploy/argocd-server: 0
+deploy/argocd-repo-server: 0
+statefulset controller: 0
+== nftables: kindnet table present, fail-open line count
+table inet kindnet-network-policies
+0
+== images pulled through the mirrors (first hit per image, from each mirror's log)
+172.24.0.2 - - [04/Nov/2026:20:40:50 +0000] "GET /v2/argoproj/argocd/manifests/sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db?ns=quay.io HTTP/1.1
+172.24.0.2 - - [04/Nov/2026:20:44:46 +0000] "GET /v2/library/redis/manifests/sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763?ns=docker.io HTTP/1.1
+172.24.0.2 - - [04/Nov/2026:20:44:46 +0000] "GET /v2/library/redis/manifests/sha256:8767d84b0adc89c37a352a17372a5e97bf21bb723890e244c212bb44b9f11177?ns=docker.io HTTP/1.1
+time="2026-11-04T20:44:50.351479835Z" level=debug msg="{\"Name\":\"GET /v2/library/redis/manifests/sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+172.24.0.2 - - [04/Nov/2026:20:46:28 +0000] "GET /v2/metrics-server/metrics-server/manifests/sha256:9b0ba1926e1d3089673f45461c3c1416109dea33b3ba3434048defd380df329b?ns=re

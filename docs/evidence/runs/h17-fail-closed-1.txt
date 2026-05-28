@@ -1,0 +1,9 @@
+# date: 2026-11-04T23:01:15Z
+# Does a route whose Middleware is missing fail closed? This is the state for a moment during a first sync, because Argo CD applies IngressRoute before Middleware in one wave.
+ingressroute.traefik.io/h17-scratch-missing-middleware created
+host curl with Host h17-scratch.localhost:
+404
+2026-11-04T23:01:15Z ERR error="middleware \"monitoring-does-not-exist@kubernetescrd\" does not exist" entryPointName=web routerName=monitoring-h17-scratch-missing-middleware-27dd5bc1ce1188194709@kube
+ingressroute.traefik.io "h17-scratch-missing-middleware" deleted from monitoring namespace
+after delete, same request:
+404

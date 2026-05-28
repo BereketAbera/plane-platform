@@ -1,0 +1,102 @@
+# H46: gate 2 under injected faults, on scratch copies of tests/gates/day1.sh as committed in f878bca (namespace gate-h46-a, gates 1 and 5 skipped).
+# What each variant injects is in the comments of the harness, which is not kept. In short:
+#   control-gate2: only names change. drop-clusterip: no policy at all, the deny rows and the node's witness ask a port the Service does not expose.
+#   client-loss: an egress policy on the clients drops all but DNS. egress-target-only: an egress policy lets through DNS and the reference only, the limit the script's comment states.
+#   witness-gone: the node's fetch gives no result. reference-gone: the reference pod is deleted before the deny rows. target-only-dark: the server pod is deleted before the deny rows.
+# Date: 2026-11-04, about 23:12Z to 23:17Z.
+
+== control-gate2 exit=0 namespace-left=no seconds=30 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  default-deny, labelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 10 passed, 0 failed
+
+== drop-clusterip exit=1 namespace-left=no seconds=22 distinct NetworkPolicy objects seen by the 1s poller: []
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+FAIL  default-deny, unlabelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds)
+FAIL  default-deny, labelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5001 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+FAIL  allow rule, unlabelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5001 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+NetworkPolicies in gate-h46-a just before cleanup: []
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 7 passed, 3 failed
+
+== client-loss exit=1 namespace-left=no seconds=28 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+FAIL  default-deny, unlabelled client: the target timed out but the reference did not answer this client, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; node: curl exit 0, HTTP 200)
+FAIL  default-deny, labelled client: the target timed out but the reference did not answer this client, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5001 milliseconds; reference: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; node: curl exit 0, HTTP 200)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+NetworkPolicies in gate-h46-a just before cleanup: []
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 8 passed, 2 failed
+
+== egress-target-only exit=0 namespace-left=no seconds=32 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/fault ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  default-deny, labelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5006 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+NetworkPolicies in gate-h46-a just before cleanup: []
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 10 passed, 0 failed
+
+== witness-gone exit=1 namespace-left=no seconds=23 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+FAIL  default-deny, unlabelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5001 milliseconds; reference: curl exit 0, HTTP 200; node: no result)
+FAIL  default-deny, labelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5005 milliseconds; reference: curl exit 0, HTTP 200; node: no result)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+FAIL  allow rule, unlabelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds; reference: curl exit 0, HTTP 200; node: no result)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 7 passed, 3 failed
+
+== reference-gone exit=1 namespace-left=no seconds=23 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5001 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+FAIL  default-deny, labelled client: the target timed out but the reference did not answer this client, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds; reference: curl exit 7, HTTP 000, Failed to connect to g2-reference.gate-h46-a.svc.cluster.local port 8080 after 1 ms: Could not connect to server; node: curl exit 0, HTTP 200)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+FAIL  allow rule, unlabelled client: the target timed out but the reference did not answer this client, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 7, HTTP 000, Failed to connect to g2-reference.gate-h46-a.svc.cluster.local port 8080 after 1 ms: Could not connect to server; node: curl exit 0, HTTP 200)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 8 passed, 2 failed
+
+== target-only-dark exit=1 namespace-left=no seconds=87 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+FAIL  default-deny, unlabelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+FAIL  default-deny, labelled client: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy (target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+FAIL  allow rule admits the labelled client: TIMEOUT (curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+NOT RUN unlabelled client under the allow rule, because a timeout proves nothing until the rule has been seen working
+FAIL  control: with both policies deleted the unlabelled client connects again, so the network and the server still work: TIMEOUT (curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  namespace gate-h46-a and the throwaway gate-h46-a.git are gone
+--- Summary: 5 passed, 4 failed, 1 not run
+
+GATE2-FAULTS-DONE

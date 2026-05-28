@@ -1,0 +1,42 @@
+# INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh against the live instance, just restored. 2026-11-04T23:16:31Z
+[1;34m==>[0m Waiting for http://infisical.localhost (first boot runs about 600 migrations)
+[1;32m ok[0m Infisical already bootstrapped
+[1;32m ok[0m the restored instance accepts the admin token
+[1;34m==>[0m Applying infisical/terraform
+[0m[1minfisical_identity.reader["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project_environment.prod["dev"]: Refreshing state... [id=73729bc5-949d-4bda-83d8-35c1ec3db976][0m
+[0m[1minfisical_project_identity.reader["dev"]: Refreshing state...[0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Refreshing state... [id=2505453a-9dc6-447a-9668-9684689aa795][0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Refreshing state...[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Refreshing state... [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Refreshing state... [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[1;32m ok[0m Terraform has nothing to change: the CA is already this cluster's
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform/.local/secret-zero/infisical-machine.json
+[1;32m ok[0m dev: all secrets already exist, nothing written
+[1;32m ok[0m prod-sim: all secrets already exist, nothing written
+[1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+[1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+exit=0
+
+# plan only with a CA from elsewhere, as on a new cluster. Nothing applied. 2026-11-04T23:16:33Z
+plan exit code: 2
+infisical_identity.reader["dev"] no-op
+infisical_identity.reader["prod-sim"] no-op
+infisical_identity_kubernetes_auth.reader["dev"] update
+infisical_identity_kubernetes_auth.reader["prod-sim"] update
+infisical_project.plane["dev"] no-op
+infisical_project.plane["prod-sim"] no-op
+infisical_project_environment.prod["dev"] no-op
+infisical_project_environment.prod["prod-sim"] no-op
+infisical_project_identity.reader["dev"] no-op
+infisical_project_identity.reader["prod-sim"] no-op
+2

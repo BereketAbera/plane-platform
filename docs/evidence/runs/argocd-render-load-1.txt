@@ -1,0 +1,45 @@
+# 2026-11-04T21:12:53Z
+# Hard refresh of every chart Application at once: the repo-server worst case. cgroup peak read before and after, on the same pod.
+pod argocd-repo-server-84d5c84659-jmlnw restarts=0
+before: current=77938688 peak=249360384
+grafana before: gen=1 checksum=<scrubbed> rs=1
+chart apps: alloy infisical infisical-operator-dev infisical-operator-prod-sim kube-prometheus-stack loki metrics-server traefik 
+all refresh annotations cleared after 25s, still set: 0
+after: current=81580032 peak=259448832
+2026-11-04T21:12:13Z helm template --include-crds 81.366084ms
+2026-11-04T21:12:17Z helm template --include-crds 147.471875ms
+2026-11-04T21:12:25Z helm template --include-crds 32.565666ms
+2026-11-04T21:12:43Z helm template --include-crds 42.104ms
+2026-11-04T21:12:55Z helm pull infisical-standalone 1802.7042930000002ms
+2026-11-04T21:12:55Z helm template --include-crds 32.254583000000004ms
+2026-11-04T21:12:57Z helm pull secrets-operator 1735.5674589999999ms
+2026-11-04T21:12:57Z helm template --include-crds 32.43ms
+2026-11-04T21:12:58Z helm pull secrets-operator 859.1195ms
+2026-11-04T21:12:58Z helm pull alloy 4585.788752ms
+2026-11-04T21:12:58Z helm template --include-crds 25.264667ms
+2026-11-04T21:12:58Z helm template --include-crds 26.574959ms
+2026-11-04T21:13:12Z helm pull loki 13896.384549ms
+2026-11-04T21:13:12Z helm template --include-crds 80.780708ms
+2026-11-04T21:13:13Z helm pull kube-prometheus-stack 15112.990174ms
+2026-11-04T21:13:13Z helm template --include-crds 135.01258299999998ms
+2026-11-04T21:13:14Z helm pull metrics-server 1972.635709ms
+2026-11-04T21:13:14Z helm template --include-crds 27.182208ms
+2026-11-04T21:13:17Z helm pull traefik 3314.336918ms
+2026-11-04T21:13:17Z helm template --include-crds 40.302292ms
+repo-server errors: 0
+grafana after: gen=1 checksum=<scrubbed> rs=1
+NAME                          SYNC STATUS   HEALTH STATUS
+alloy                         Synced        Healthy
+backup-storage                Synced        Healthy
+infisical                     Synced        Healthy
+infisical-operator-dev        Synced        Healthy
+infisical-operator-prod-sim   Synced        Healthy
+kube-prometheus-stack         Synced        Progressing
+loki                          Synced        Healthy
+metrics-server                Synced        Healthy
+monitoring-extras             Synced        Healthy
+network-policies              Synced        Healthy
+plane-dev                     OutOfSync     Degraded
+root                          OutOfSync     Degraded
+traefik                       Synced        Healthy
+{"sync":"Synced","revs":["92.18.0","4a49a9c9d3614aa0e08888c66a79515e6d2e02c6"],"ops":"successfully synced (all tasks run)","started":"2026-11-04T20:47:38Z"}

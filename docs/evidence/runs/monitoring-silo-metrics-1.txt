@@ -1,0 +1,17 @@
+# captured 2026-11-04T22:19:31Z
+
+$ Silo metrics the dashboards and rules use
+== up{service="plane-minio"}
+{"m":{"namespace":"plane-dev","bucket":null,"metrics_path":"/minio/v2/metrics/cluster"},"v":"1"}
+{"m":{"namespace":"plane-dev","bucket":null,"metrics_path":"/minio/v2/metrics/bucket"},"v":"1"}
+{"m":{"namespace":"plane-prod-sim","bucket":null,"metrics_path":"/minio/v2/metrics/bucket"},"v":"1"}
+{"m":{"namespace":"plane-prod-sim","bucket":null,"metrics_path":"/minio/v2/metrics/cluster"},"v":"1"}
+== minio_bucket_usage_total_bytes
+{"m":{"namespace":"plane-dev","bucket":"uploads","metrics_path":"/minio/v2/metrics/bucket"},"v":"1622"}
+{"m":{"namespace":"plane-prod-sim","bucket":"uploads","metrics_path":"/minio/v2/metrics/bucket"},"v":"0"}
+== minio_bucket_usage_object_total
+{"m":{"namespace":"plane-dev","bucket":"uploads","metrics_path":"/minio/v2/metrics/bucket"},"v":"2"}
+{"m":{"namespace":"plane-prod-sim","bucket":"uploads","metrics_path":"/minio/v2/metrics/bucket"},"v":"0"}
+== count by (namespace) ({__name__=~"minio_.*"})
+{"m":{"namespace":"plane-dev","bucket":null,"metrics_path":null},"v":"253"}
+{"m":{"namespace":"plane-prod-sim","bucket":null,"metrics_path":null},"v":"160"}

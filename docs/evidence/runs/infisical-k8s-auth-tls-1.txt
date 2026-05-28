@@ -1,0 +1,27 @@
+# TLS verification on Kubernetes Auth. 2026-11-04T21:39:01Z
+create scratch identity -> 200
+
+== wrong CA, right host
+attach -> 400 SSL certificate verification failed for Kubernetes host at https://kubernetes.default.svc.cluster.local. Verify the CA certificate is correct and the server certificate is valid.
+
+== real CA, right host (SAN kubernetes.default.svc.cluster.local)
+attach or update -> 200 
+real CA: login -> 200 
+
+== real CA, host name the certificate does not cover
+update -> 400 Failed to connect to Kubernetes host at https://plane-platform-control-plane.invalid:6443: getaddrinfo ENOTFOUND plane-platform-control-plane.invalid
+update to a name that does not resolve -> 400 Failed to connect to Kubernetes host at https://kubernetes.infisical.svc.cluster.local: getaddrinfo ENOTFOUND kubernetes.infisical.svc.cluster.local
+
+== SANs on the API server certificate, from inside the node
+X509v3 Subject Alternative Name: 
+DNS:kubernetes
+DNS:kubernetes.default
+DNS:kubernetes.default.svc
+DNS:kubernetes.default.svc.cluster.local
+DNS:localhost
+DNS:plane-platform-control-plane
+IP Address:10.96.0.1
+IP Address:172.24.0.2
+IP Address:127.0.0.1
+delete scratch identity -> 200
+exit 0

@@ -1,0 +1,87 @@
+# Final state of plane-dev. 2026-11-04T23:07:12Z. main de786cf, published de786cf
+
+$ kubectl -n argocd get applications
+NAME                          SYNC STATUS   HEALTH STATUS
+alloy                         Synced        Healthy
+backup-storage                Synced        Healthy
+h16-sync-failure-probe        OutOfSync     Missing
+infisical                     Synced        Healthy
+infisical-operator-dev        Synced        Healthy
+infisical-operator-prod-sim   Synced        Healthy
+kube-prometheus-stack         Synced        Healthy
+loki                          Synced        Healthy
+metrics-server                Synced        Healthy
+monitoring-extras             Synced        Healthy
+network-policies              Synced        Healthy
+plane-dev                     Synced        Healthy
+plane-prod-sim                Synced        Healthy
+root                          Synced        Healthy
+traefik                       Synced        Healthy
+
+plane-dev synced revision: de786cfcf8a2, phase Succeeded
+
+$ kubectl -n plane-dev get pods
+NAME                                          READY   PHASE       RESTARTS   LAST     IMAGE
+iso-dev-controller-manager-85dbfbcb5b-vswbn   true    Running     0          <none>   docker.io/infisical/kubernetes-ope
+plane-admin-wl-d4dcd654f-vrm8f                true    Running     0          <none>   docker.io/makeplane/plane-admin:v1
+plane-api-migrate-1-89fdx                     false   Succeeded   0          <none>   docker.io/makeplane/plane-backend:
+plane-api-wl-69447b65-7c5rl                   true    Running     0          <none>   docker.io/makeplane/plane-backend:
+plane-backup-20261104t225855z-6s5fz           false   Succeeded   0          <none>   docker.io/library/postgres:15.19-a
+plane-beat-worker-wl-c5c96d747-p9dn8          true    Running     0          <none>   docker.io/makeplane/plane-backend:
+plane-live-wl-5744d85f8b-qdb9d                true    Running     0          <none>   docker.io/makeplane/plane-live:v1.
+plane-minio-wl-0                              true    Running     0          <none>   docker.io/pgsty/silo:RELEASE.2026-
+plane-pgdb-wl-0                               true    Running     0          <none>   docker.io/library/postgres:15.19-a
+plane-rabbitmq-wl-0                           true    Running     0          <none>   docker.io/library/rabbitmq:3.13.7-
+plane-redis-wl-0                              true    Running     0          <none>   docker.io/valkey/valkey:7.2.15-alp
+plane-space-wl-6578687c54-2svs9               true    Running     0          <none>   docker.io/makeplane/plane-space:v1
+plane-web-wl-66c4bd5b4f-jwcgm                 true    Running     0          <none>   docker.io/makeplane/plane-frontend
+plane-worker-wl-55c87f6f94-gv6lw              true    Running     0          <none>   docker.io/makeplane/plane-backend:
+postgres-exporter-79f8bbdffd-p5q9g            true    Running     0          <none>   quay.io/prometheuscommunity/postgr
+redis-exporter-5b59d6cb7c-rp2rd               true    Running     0          <none>   docker.io/oliver006/redis_exporter
+
+$ deployments and statefulsets
+deployment.apps/iso-dev-controller-manager   1/1   1     1     116m
+deployment.apps/plane-admin-wl               1/1   1     1     91m
+deployment.apps/plane-api-wl                 1/1   1     1     91m
+deployment.apps/plane-beat-worker-wl         1/1   1     1     91m
+deployment.apps/plane-live-wl                1/1   1     1     91m
+deployment.apps/plane-space-wl               1/1   1     1     91m
+deployment.apps/plane-web-wl                 1/1   1     1     91m
+deployment.apps/plane-worker-wl              1/1   1     1     91m
+deployment.apps/postgres-exporter            1/1   1     1     123m
+deployment.apps/redis-exporter               1/1   1     1     123m
+statefulset.apps/plane-minio-wl      1/1   98m
+statefulset.apps/plane-pgdb-wl       1/1   98m
+statefulset.apps/plane-rabbitmq-wl   1/1   98m
+statefulset.apps/plane-redis-wl      1/1   98m
+
+Host checks
+/                  200
+/god-mode/         200
+/spaces/           200
+/live/health       200
+/api/instances/    200
+prod-sim / 200
+
+Leftovers from the diagnostics
+restartedAt annotations on live Deployments: 0
+celery consumers on queue celery: 1
+public boards left published: 5
+
+Row counts, read from Postgres
+workspaces|11
+projects|22
+issues|91
+issue_activities|101
+pages|131
+page_versions|0
+file_assets uploaded|18
+exporters completed|4
+users|16
+
+Git
+(end of status for my paths)
+ ok dev is up to date
+ ok prod-sim is up to date
+
+Correction to the line above: deploy_boards rows active (deleted_at is null) / all rows: 0|5

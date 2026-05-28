@@ -1,0 +1,8 @@
+# Admin token recovery path, from infisical/README.md. 2026-11-04T21:47:04Z
+sign in -> 200
+select organization -> 200 
+issue a token for the instance admin identity -> 200 
+the new token reads a project -> 200
+revoke the probe token -> 200 
+the revoked token reads a project -> 401
+exit 0

@@ -1,0 +1,26 @@
+# After the concurrent load. 2026-11-05T00:04:31.034769+00:00
+
+## Peak working set per namespace and for both Plane environments together over the last 30 minutes, MiB, 15s step
+plane-dev        now   1255  peak   1306
+plane-prod-sim   now   1222  peak   1495
+both             now   2477  peak   2736
+whole cluster    now   7000  peak   7238
+
+## CPU throttling in prod-sim over the last 30 minutes: throttled share of periods per container
+ 49.5%  plane-worker-wl-667f56c7f8-zxq29/plane-worker
+ 37.6%  plane-worker-wl-667f56c7f8-9wrtg/plane-worker
+ 30.8%  plane-worker-wl-667f56c7f8-6m5kr/plane-worker
+ 13.0%  plane-worker-wl-667f56c7f8-lnv72/plane-worker
+ 12.8%  plane-rabbitmq-wl-0/plane-rabbitmq
+ 10.1%  redis-exporter-5b59d6cb7c-xsw9t/redis-exporter
+  5.3%  plane-redis-wl-0/plane-redis
+  4.5%  plane-live-wl-5d5fd749c6-szdzq/plane-live
+
+## 5xx through Traefik for prod-sim over the last 60 minutes
+[{'metric': {'code': '500', 'service': 'plane-prod-sim-plane-ingress-64a8b812e8ac7ded3f3b@kubernetescrd'}, 'value': [1793837071.068, '1.015463899291184']}]
+
+## Alerts now
+firing Watchdog None   2026-11-04T23:24:26.617154565Z
+pending PrometheusMissingRuleEvaluations monitoring  prometheus-kps-prometheus-0 2026-11-05T00:02:18.555583222Z
+pending PrometheusMissingRuleEvaluations monitoring  prometheus-kps-prometheus-0 2026-11-05T00:00:18.555583222Z
+firing PodRestarting monitoring  alloy-68d8ccc746-n2tbr 2026-11-04T23:53:51.341451366Z

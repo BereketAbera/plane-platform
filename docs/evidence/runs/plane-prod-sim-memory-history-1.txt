@@ -1,0 +1,9 @@
+# VM memory from node-exporter, per window, 15s step. Includes the owner's unrelated containers and other agents' work.
+# Queried 2026-11-05T00:04:30Z
+whole history since Prometheus started               VM used  5.34 to 10.30 GiB, top at 23:24:45; swap top 0.60 GiB; working set dev  1762, prod-sim  1495 MiB
+plane-dev first boot 21:29 to 21:46                  VM used  6.73 to  8.62 GiB, top at 21:46:30; swap top 0.02 GiB; working set dev  1167, prod-sim    48 MiB
+plane-prod-sim first boot 21:46:41 to 21:49:24       VM used  8.59 to  9.23 GiB, top at 21:49:11; swap top 0.02 GiB; working set dev  1112, prod-sim   884 MiB
+both running, 21:50 to 22:30                         VM used  9.45 to 10.07 GiB, top at 21:57:45; swap top 0.13 GiB; working set dev  1350, prod-sim  1152 MiB
+first prod-sim smoke 23:13:59 to 23:14:20            VM used  9.40 to  9.40 GiB, top at 23:14:14; swap top 0.55 GiB; working set dev  1199, prod-sim  1125 MiB
+separation runs 23:17:45 to 23:24:50                 VM used  9.39 to 10.30 GiB, top at 23:24:45; swap top 0.60 GiB; working set dev  1255, prod-sim  1385 MiB
+concurrent load from 23:26:26                        VM used  9.35 to  9.89 GiB, top at 23:53:41; swap top 0.60 GiB; working set dev  1306, prod-sim  1453 MiB

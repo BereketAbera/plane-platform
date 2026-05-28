@@ -1,0 +1,147 @@
+# H46: scripts/logs.sh. Exit codes and line counts only, no log contents from Plane. Real namespaces unless a section says scratch.
+
+## 2026-11-04T23:12:42Z, commit fbfd7c5c87c6, script changes: 0
+## the listing
+list dev rc=0
+Usage: make logs ENV=dev SVC=<name>. Names in plane-dev:
+  SVC                                workload in plane-dev
+  api                                deployment/plane-api-wl
+  worker                             deployment/plane-worker-wl
+  beat, beat-worker                  deployment/plane-beat-worker-wl
+  web                                deployment/plane-web-wl
+  admin                              deployment/plane-admin-wl
+  space                              deployment/plane-space-wl
+  live                               deployment/plane-live-wl
+  postgres, postgresql, pg, pgdb     statefulset/plane-pgdb-wl
+  valkey, redis                      statefulset/plane-redis-wl
+  rabbitmq, rabbit                   statefulset/plane-rabbitmq-wl
+  silo, minio                        statefulset/plane-minio-wl
+  migrator, migrate, api-migrate-1   job/plane-api-migrate-1
+  iso-dev-controller-manager         deployment/iso-dev-controller-manager
+  postgres-exporter                  deployment/postgres-exporter
+  redis-exporter                     deployment/redis-exporter
+  plane-backup-20261104t225855z      job/plane-backup-20261104t225855z
+For history and search across pods, use Grafana Explore: http://grafana.localhost
+
+## every live workload, in every spelling, both environments
+valid spellings of every live workload: 96 tailed, 0 refused
+
+## every table name, dev
+ok    rc=0 lines=100  secs=0   dev api
+ok    rc=0 lines=100  secs=0   dev worker
+ok    rc=0 lines=15   secs=0   dev beat
+ok    rc=0 lines=15   secs=0   dev beat-worker
+ok    rc=0 lines=100  secs=0   dev web
+ok    rc=0 lines=100  secs=0   dev admin
+ok    rc=0 lines=100  secs=0   dev space
+ok    rc=0 lines=100  secs=1   dev live
+ok    rc=0 lines=25   secs=0   dev postgres
+ok    rc=0 lines=25   secs=0   dev postgresql
+ok    rc=0 lines=25   secs=0   dev pg
+ok    rc=0 lines=25   secs=0   dev pgdb
+ok    rc=0 lines=28   secs=0   dev valkey
+ok    rc=0 lines=28   secs=0   dev redis
+ok    rc=0 lines=100  secs=0   dev rabbitmq
+ok    rc=0 lines=100  secs=0   dev rabbit
+ok    rc=0 lines=11   secs=1   dev silo
+ok    rc=0 lines=11   secs=0   dev minio
+ok    rc=0 lines=6    secs=0   dev migrator
+ok    rc=0 lines=6    secs=0   dev migrate
+ok    rc=0 lines=6    secs=0   dev api-migrate-1
+ok    rc=0 lines=100  secs=0   dev plane-api-wl
+ok    rc=0 lines=15   secs=0   dev plane-beat-worker-wl
+
+## a kind/ prefix that agrees with the table
+ok    rc=0 lines=100  secs=0   dev deployment/api
+ok    rc=0 lines=100  secs=0   dev deployment.apps/plane-api-wl
+ok    rc=0 lines=25   secs=1   dev statefulset/postgres
+ok    rc=0 lines=28   secs=0   dev statefulset.apps/plane-redis-wl
+ok    rc=0 lines=6    secs=0   dev job/migrator
+ok    rc=0 lines=6    secs=0   dev job.batch/migrate
+
+## a kind/ prefix that does not, and names nothing has
+ok    rc=1 secs=0   dev job/api | fail unknown service 'job/api'. The valid names are listed above.
+ok    rc=1 secs=0   dev statefulset/api | fail unknown service 'statefulset/api'. The valid names are listed above.
+ok    rc=1 secs=0   dev deployment/migrator | fail unknown service 'deployment/migrator'. The valid names are listed above.
+ok    rc=1 secs=0   dev deployment/postgres | fail unknown service 'deployment/postgres'. The valid names are listed above.
+ok    rc=1 secs=0   dev job/redis | fail unknown service 'job/redis'. The valid names are listed above.
+ok    rc=1 secs=0   dev bogus/api | fail unknown service 'bogus/api'. The valid names are listed above.
+ok    rc=1 secs=0   dev a/b/c/api | fail unknown service 'a/b/c/api'. The valid names are listed above.
+ok    rc=1 secs=0   dev pod/api | fail unknown service 'pod/api'. The valid names are listed above.
+ok    rc=1 secs=0   dev job/ | fail unknown service 'job/'. The valid names are listed above.
+ok    rc=1 secs=1   dev /api | fail unknown service '/api'. The valid names are listed above.
+ok    rc=1 secs=0   dev job/redis-exporter | fail unknown service 'job/redis-exporter'. The valid names are listed above.
+ok    rc=1 secs=0   dev pod/redis-exporter | fail unknown service 'pod/redis-exporter'. The valid names are listed above.
+ok    rc=1 secs=0   dev plane-redis-exporter | fail unknown service 'plane-redis-exporter'. The valid names are listed above.
+ok    rc=1 secs=0   dev nope-xyz | fail unknown service 'nope-xyz'. The valid names are listed above.
+ok    rc=1 secs=0   dev iso-prod-sim-controller-manager | fail unknown service 'iso-prod-sim-controller-manager'. The valid names are listed above.
+
+## bad option and environment
+bad option rc=1 fail unknown option '--bogus'. The only option is --no-follow.
+bad env rc=1 fail ENV must be dev or prod-sim, not 'staging'
+
+## real objects in a scratch namespace, through a copy with only its namespace changed
+-- namespace does not exist yet
+ok    rc=1 secs=0   dev api | fail cannot tail deployment/plane-api-wl in gate-h46-l: Error from server (NotFound): namespaces "gate-h46-l" not found
+ok    rc=1 secs=0   dev anything | fail unknown service 'anything'. The valid names are listed above.
+apply rc=0
+deployments available rc=0
+jobs complete rc=0
+job gone: pods deleted rc=0
+deployment.apps/dup
+deployment.apps/redis
+deployment.apps/zero
+statefulset.apps/zero-sts
+job.batch/dup
+job.batch/gone
+-- a name two kinds share: each prints its own lines, and the bare name asks which
+ok    rc=1 secs=0   dev dup | fail 'dup' names more than one live workload in gate-h46-l. Say which, as kind/name: deployment/dup job/dup 
+job/dup rc=0 output=[from-job-dup]
+deployment/dup rc=0 output=[from-deployment-dup]
+deployment.apps/dup rc=0 output=[from-deployment-dup]
+job.batch/dup rc=0 output=[from-job-dup]
+ok    rc=1 secs=0   dev statefulset/dup | fail unknown service 'statefulset/dup'. The valid names are listed above.
+-- a workload with no pods: refused at once, saying why
+ok    rc=1 secs=0   dev zero | fail deployment/zero in gate-h46-l has no pods, so there is nothing to tail. A Deployment at 0 replicas or a Job whose pods were removed looks like this.
+ok    rc=1 secs=0   dev deployment/zero | fail deployment/zero in gate-h46-l has no pods, so there is nothing to tail. A Deployment at 0 replicas or a Job whose pods were removed looks like this.
+ok    rc=1 secs=0   dev zero-sts | fail statefulset/zero-sts in gate-h46-l has no pods, so there is nothing to tail. A Deployment at 0 replicas or a Job whose pods were removed looks like this.
+ok    rc=1 secs=0   dev gone | fail job/gone in gate-h46-l has no pods, so there is nothing to tail. A Deployment at 0 replicas or a Job whose pods were removed looks like this.
+ok    rc=1 secs=1   dev job/gone | fail job/gone in gate-h46-l has no pods, so there is nothing to tail. A Deployment at 0 replicas or a Job whose pods were removed looks like this.
+-- a live Deployment with a name the table also uses
+ok    rc=1 secs=0   dev redis | fail cannot tail statefulset/plane-redis-wl in gate-h46-l: Error from server (NotFound): statefulsets.apps "plane-redis-wl" not found
+deployment/redis rc=0 output=[from-deployment-named-redis]
+deployment.apps/redis rc=0 output=[from-deployment-named-redis]
+-- the listing shows them all
+list rc=0
+  migrator, migrate, api-migrate-1   job/plane-api-migrate-1
+  dup                                deployment/dup
+  redis                              deployment/redis
+  zero                               deployment/zero
+  zero-sts                           statefulset/zero-sts
+  dup                                job/dup
+  gone                               job/gone
+For history and search across pods, use Grafana Explore: http://grafana.localhost
+-- a dead kubeconfig: an unknown name and a table name say what failed
+(a copy of common.sh computes ROOT from its own path, so this copy is only checked for its exit code)
+LOGS-TEST-DONE
+scratch namespace after the harness: []
+
+## malformed kind prefixes, real script
+dev /api rc=1 | fail unknown service '/api'. The valid names are listed above.
+dev .apps/plane-api-wl rc=1 | fail unknown service '.apps/plane-api-wl'. The valid names are listed above.
+dev //api rc=1 | fail unknown service '//api'. The valid names are listed above.
+dev job//api rc=1 | fail unknown service 'job//api'. The valid names are listed above.
+## still fine
+dev api rc=0 lines=100
+dev deployment/api rc=0 lines=100
+dev job.batch/migrate rc=0 lines=6
+## the follow path, which is what make logs uses: still running after 4s, then TERM to its own process group
+scripts/logs.sh dev api: still following after 4s=yes rc-after-TERM=1 lines=100
+make logs ENV=dev SVC=web: still following after 4s=yes rc-after-TERM=143 lines=102
+make logs ENV=prod-sim rc=0 lines=19
+## a dead kubeconfig, through a copy with KUBECONFIG pointed at nothing
+dev api rc=1 | fail cannot tail deployment/plane-api-wl in plane-dev: error: context "kind-plane-platform" does not exist
+dev nope-xyz rc=1 | fail 'nope-xyz' is not in the table above, and the live workloads could not be checked for it: context "kind-plane-platform" does not exist
+list rc=0 | For history and search across pods, use Grafana Explore: http://grafana.localhost
+## STUB: the first get works and listing the pods fails, through a copy with kc overridden. This branch did not fail for real.
+dev api rc=1 | fail cannot tail deployment/plane-api-wl in plane-dev: could not list its pods.

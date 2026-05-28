@@ -1,0 +1,62 @@
+# plane-prod-sim host behaviour and workload identity. 2026-11-04T23:26:44Z
+
+## Debug surface: the schema endpoint is on in dev only
+plane.prod-sim.localhost /api/schema/ -> 404
+plane.dev.localhost /api/schema/ -> 200
+
+## CORS: the API answers a preflight for its own origin and not for the other environment's
+host plane.prod-sim.localhost, Origin http://plane.prod-sim.localhost: Access-Control-Allow-Origin=http://plane.prod-sim.localhost
+host plane.prod-sim.localhost, Origin http://plane.dev.localhost: Access-Control-Allow-Origin=none
+host plane.dev.localhost, Origin http://plane.prod-sim.localhost: Access-Control-Allow-Origin=none
+host plane.dev.localhost, Origin http://plane.dev.localhost: Access-Control-Allow-Origin=http://plane.dev.localhost
+
+## Cookies: host-only, so a browser never sends one environment's cookie to the other
+Set-Cookie: csrftoken=<value>; expires=Wed, 03 Nov 2027 23:26:45 GMT; HttpOnly; Max-Age=31449600; Path=/; SameSite=Lax
+
+## Non-root: the UID each running process really has, and the server's verdict for PSA restricted
+iso-prod-sim-controller-manager-5cc86cc76-4r45n      no shell in the image; spec runAsUser=
+plane-admin-wl-5d6489d557-vr62j                      uid=101(nginx) gid=101(nginx) groups=101(nginx)
+plane-api-wl-8566bcd789-lc7df                        uid=1000 gid=1000 groups=1000
+plane-beat-worker-wl-5c8845c7d5-cqhpz                uid=1000 gid=1000 groups=1000
+plane-live-wl-5d5fd749c6-szdzq                       uid=1000(node) gid=1000(node) groups=1000(node)
+plane-minio-wl-0                                     no shell in the image; spec runAsUser=1000
+plane-pgdb-wl-0                                      uid=70(postgres) gid=70(postgres) groups=70(postgres)
+plane-rabbitmq-wl-0                                  uid=100(rabbitmq) gid=101(rabbitmq) groups=101(rabbitmq)
+plane-redis-wl-0                                     uid=999(valkey) gid=1000(valkey) groups=1000(valkey)
+plane-space-wl-54c66d4dcb-zz2nn                      uid=1000(node) gid=1000(node) groups=1000(node)
+plane-web-wl-8fb59c6c9-b4nq8                         uid=101(nginx) gid=101(nginx) groups=101(nginx)
+plane-worker-wl-667f56c7f8-lnv72                     uid=1000 gid=1000 groups=1000
+postgres-exporter-b6f657c47-p65fl                    no shell in the image; spec runAsUser=65534
+redis-exporter-5b59d6cb7c-xsw9t                      no shell in the image; spec runAsUser=59000
+namespace/plane-prod-sim labeled (server dry run)
+
+## Namespace labels
+{"kubernetes.io/metadata.name":"plane-prod-sim","plane-platform/environment":"prod-sim","plane-platform/managed-by":"terraform","pod-security.kubernetes.io/audit":"restricted","pod-security.kubernetes.io/enforce":"baseline","pod-security.kubernetes.io/warn":"restricted"}
+
+## Errors in the application logs, current containers
+deploy/plane-api-wl                     524 lines,     1 match error|exception|traceback|fatal|panic
+   1 Error checking for latest version
+deploy/plane-worker-wl                  572 lines,    50 match error|exception|traceback|fatal|panic
+   1 {"levelname": "WARNING", "asctime": ",929", "module": "exporter", "name": "opentelemetry.exporter.otlp.proto.grpc.exporter", "message": "Tra
+   1 {"levelname": "WARNING", "asctime": ",916", "module": "exporter", "name": "opentelemetry.exporter.otlp.proto.grpc.exporter", "message": "Tra
+   1 {"levelname": "WARNING", "asctime": ",897", "module": "exporter", "name": "opentelemetry.exporter.otlp.proto.grpc.exporter", "message": "Tra
+   1 {"levelname": "WARNING", "asctime": ",887", "module": "exporter", "name": "opentelemetry.exporter.otlp.proto.grpc.exporter", "message": "Tra
+   1 {"levelname": "WARNING", "asctime": ",880", "module": "exporter", "name": "opentelemetry.exporter.otlp.proto.grpc.exporter", "message": "Tra
+   1 {"levelname": "WARNING", "asctime": ",875", "module": "exporter", "name": "opentelemetry.exporter.otlp.proto.grpc.exporter", "message": "Tra
+deploy/plane-beat-worker-wl              15 lines,     0 match error|exception|traceback|fatal|panic
+deploy/plane-live-wl                    448 lines,     1 match error|exception|traceback|fatal|panic
+   1 {"code":"AUTH_USER_MISMATCH","level":"error","message":"Authentication failed Authentication unsuccessful: User ID mismatch","name":"AppErro
+deploy/plane-space-wl                   454 lines,     2 match error|exception|traceback|fatal|panic
+   1 Error fetching issue metadata: TypeError: Failed to parse URL from /api/public/anchor/372125a0a7ac4b02b2b8a5299dc8a631/meta/
+   1   [cause]: TypeError: Invalid URL
+sts/plane-pgdb-wl                       102 lines,     3 match error|exception|traceback|fatal|panic
+   1  UTC [8221] FATAL:  password authentication failed for user "plane"
+   1  UTC [7962] FATAL:  password authentication failed for user "plane"
+   1  UTC [7917] FATAL:  password authentication failed for user "plane"
+sts/plane-rabbitmq-wl                   675 lines,    14 match error|exception|traceback|fatal|panic
+   4 [38;5;160m+00:00 [error] <pid> {bad_header,<<"GET / HT">>}[0m
+   4 [38;5;160m+00:00 [error] <pid> closing AMQP connection <pid> (<ip> -> <ip>):[0m
+   3 [38;5;160m+00:00 [error] <pid> Error on AMQP connection <pid> (<ip> -> <ip>, state: starting):[0m
+   3 [38;5;160m+00:00 [error] <pid> AMQPLAIN login refused: user 'plane' - invalid credentials[0m
+sts/plane-redis-wl                       48 lines,     0 match error|exception|traceback|fatal|panic
+sts/plane-minio-wl                       13 lines,     0 match error|exception|traceback|fatal|panic

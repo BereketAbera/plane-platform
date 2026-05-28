@@ -1,0 +1,12 @@
+# Time to Ready after deleting each Deployment's pod, one at a time, image already on the node. 2026-11-04T22:40:48Z
+component    budget                  seconds second sample for api, worker, beat below
+web          none                          2 container start to Ready 1s, restarts 0
+admin        none                          2 container start to Ready 1s, restarts 0
+space        180s                         11 container start to Ready 10s, restarts 0
+live         180s                         21 container start to Ready 20s, restarts 0
+api          300s                         32 container start to Ready 31s, restarts 0
+worker       300s                         10 container start to Ready 10s, restarts 0
+beat         300s                         26 container start to Ready 25s, restarts 0
+api          300s                         31 container start to Ready 31s, restarts 0
+worker       300s                         11 container start to Ready 10s, restarts 0
+beat         300s                         26 container start to Ready 25s, restarts 0

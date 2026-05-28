@@ -1,0 +1,9 @@
+2026-11-04T20:36:19Z
+--- imagetools on the real plane-registry, read-only
+ERROR: localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000: not found
+absent digest exit=1
+gate/probe digest=sha256:d82c2ab94640ded77cf76514ce6a84870761105058a4a9e51b05a8a79be97a6c
+present, digest form exit=0
+present, tag and digest form exit=0
+--- kubectl --ignore-not-found on a missing namespace, read-only
+exit=0

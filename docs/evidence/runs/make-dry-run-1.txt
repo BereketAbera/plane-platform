@@ -1,0 +1,110 @@
+--- make -n help
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n setup
+./scripts/install-tools.sh
+./scripts/prereqs.sh
+exit=0
+--- make -n up
+./scripts/up.sh
+exit=0
+--- make -n down
+./scripts/down.sh
+exit=0
+--- make -n destroy
+./scripts/destroy.sh
+exit=0
+--- make -n status
+./scripts/status.sh
+exit=0
+--- make -n logs
+./scripts/logs.sh "dev" ""
+exit=0
+--- make -n test
+./scripts/test.sh
+exit=0
+--- make -n gates
+./tests/gates/day1.sh
+exit=0
+--- make -n test-e2e
+./scripts/test.sh e2e "dev"
+exit=0
+--- make -n test-netpol
+./scripts/test-netpol.sh
+exit=0
+--- make -n test-alert
+./scripts/test-alert.sh "dev"
+exit=0
+--- make -n test-load
+./tests/load/run.sh "dev"
+exit=0
+--- make -n drill-failed-deploy
+./tests/drills/failed-deploy-rollback.sh
+exit=0
+--- make -n drill-pod-restart
+./tests/drills/pod-restart-persistence.sh "dev"
+exit=0
+--- make -n backup
+./scripts/backup.sh "dev"
+exit=0
+--- make -n restore
+./scripts/restore.sh "dev" ""
+exit=0
+--- make -n rotate
+./scripts/rotate.sh "dev"
+exit=0
+--- make -n render
+./scripts/render.sh
+exit=0
+--- make -n images
+./scripts/ci/build-images.sh localhost:5001/wayline
+exit=0
+--- make -n promote
+./scripts/promote.sh "dev"
+exit=0
+--- make -n rollback
+./scripts/rollback.sh "dev"
+exit=0
+--- make -n gitops-publish
+./scripts/gitops-publish.sh
+exit=0
+--- make -n ci
+status=0; \
+	for check in lint validate-manifests ownership security; do \
+	  ./scripts/ci/$check.sh || status=1; \
+	done; \
+	exit $status
+exit=0
+--- make -n logs ENV=dev SVC=api
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n test-e2e ENV=prod-sim
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n test-alert ENV=prod-sim
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n test-load ENV=dev
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n drill-pod-restart ENV=prod-sim
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n backup ENV=all
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n restore ENV=dev BACKUP=latest CONFIRM=yes
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n rotate ENV=prod-sim CONFIRM=yes
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n promote ENV=dev IMAGE=web DIGEST=sha256:abc
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n rollback ENV=prod-sim CONFIRM=yes
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0
+--- make -n up UP_STOP_AFTER=traefik
+awk 'BEGIN{FS=":.*## "} /^[a-zA-Z0-9_-]+:.*## /{printf "  \033[36m%-20s\033[0m %s\n",$1,$2}'  Makefile
+exit=0

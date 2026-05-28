@@ -1,0 +1,7 @@
+baseline: PlaneFrontendDown|old1
+unrelated new alerts in the other environment:
+  isolation=PASS
+exit 0
+a new API alert in the other environment:
+  isolation=FAIL stage=isolation: new alerts in plane-prod-sim during the drill: PlaneApiDatabaseProbeFailing|new1
+exit 1

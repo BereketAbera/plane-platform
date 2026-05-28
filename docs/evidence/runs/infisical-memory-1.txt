@@ -1,0 +1,33 @@
+# Memory and disk of the secrets layer, 2026-11-04T21:54:36Z, with both Plane environments up.
+$ kubectl top, by container
+POD                          NAME                             CPU(cores)   MEMORY(bytes)   
+infisical-567944c58f-vsrl8   infisical-standalone-infisical   12m          646Mi           
+infisical-postgres-0         postgres                         5m           55Mi            
+infisical-redis-0            redis                            5m           9Mi             
+POD                                           NAME                CPU(cores)   MEMORY(bytes)   
+iso-dev-controller-manager-85dbfbcb5b-vswbn   manager             3m           22Mi            
+iso-prod-sim-controller-manager-5cc86cc76-4r45n   manager             2m           38Mi            
+
+$ cgroup counters. memory.peak covers the life of each current container
+infisical/infisical-567944c58f-vsrl8 current=655Mi peak=821Mi max=1024Mi oom_kill 0  restarts=0
+infisical/infisical-postgres-0 current=59Mi peak=70Mi max=256Mi oom_kill 0  restarts=0
+infisical/infisical-redis-0 current=10Mi peak=20Mi max=96Mi oom_kill 0  restarts=0
+plane-dev/iso-dev-controller-manager-85dbfbcb5b-vswbn current=23Mi peak=25Mi max=128Mi oom_kill 0  restarts=0
+plane-prod-sim/iso-prod-sim-controller-manager-5cc86cc76-4r45n current=38Mi peak=40Mi max=128Mi oom_kill 0  restarts=0
+
+$ disk used on the local-path volumes
+postgres data: 156.1M
+postgres database: 69 MB
+postgres connections to this database: 3
+redis data: 4.5M
+
+$ VM
+plane-platform-control-plane 7.952GiB / 13.63GiB
+plane-platform-control-plane   812m   6%    8239Mi   59%   
+
+# VM, 22:03:42
+MemTotal:       14294756 kB
+MemAvailable:    3962752 kB
+SwapTotal:       2097148 kB
+SwapFree:        2014552 kB
+kernel OOM lines naming infisical or postgres-exporter or secrets-operator since boot: 0

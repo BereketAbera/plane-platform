@@ -1,0 +1,188 @@
+# date: 2026-11-05T00:33:45Z
+# Which memory touched the limits. cgroup files read on the node (cg.sh); Prometheus range queries over the last 4h at 30s.
+### monitoring/prometheus-kps-prometheus-0/prometheus qos=burstable restarts=0 started=2026-11-04T23:24:04Z
+memory.current 608190464
+memory.peak 805355520
+memory.max 805306368
+memory.high max
+memory.swap.current 0
+memory.swap.peak 0
+--- memory.events
+low 0
+high 0
+max 688
+oom 0
+oom_kill 0
+oom_group_kill 0
+--- memory.stat (selected)
+anon 505823232
+file 69111808
+kernel 3895296
+kernel_stack 114688
+pagetables 1789952
+sock 0
+shmem 0
+file_mapped 35323904
+file_dirty 122880
+file_writeback 0
+inactive_anon 489172992
+active_anon 46006272
+inactive_file 47996928
+active_file 21118976
+slab_reclaimable 1778640
+slab_unreclaimable 187240
+slab 1965880
+workingset_refault_anon 0
+workingset_refault_file 8448
+pgscan 65283
+pgsteal 63125
+pgfault 149926
+pgmajfault 273
+pgrefill 756
+### monitoring/loki-0/loki qos=burstable restarts=1 started=2026-11-04T21:58:06Z
+memory.current 358490112
+memory.peak 671072256
+memory.max 671088640
+memory.high max
+memory.swap.current 0
+memory.swap.peak 0
+--- memory.events
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+--- memory.stat (selected)
+anon 279547904
+file 21143552
+kernel 6156288
+kernel_stack 819200
+pagetables 1679360
+sock 0
+shmem 0
+file_mapped 13316096
+file_dirty 24576
+file_writeback 0
+inactive_anon 315473920
+active_anon 15712256
+inactive_file 15003648
+active_file 6144000
+slab_reclaimable 3289120
+slab_unreclaimable 344392
+slab 3633512
+workingset_refault_anon 0
+workingset_refault_file 409791
+pgscan 905956
+pgsteal 903865
+pgfault 697565
+pgmajfault 473
+pgrefill 1756
+### infisical/infisical-postgres-0/postgres qos=burstable restarts=0 started=2026-11-04T21:43:28Z
+memory.current 226729984
+memory.peak 268435456
+memory.max 268435456
+memory.high max
+memory.swap.current 0
+memory.swap.peak 0
+--- memory.events
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+--- memory.stat (selected)
+anon 15155200
+file 192888832
+kernel 18685952
+kernel_stack 163840
+pagetables 1548288
+sock 0
+shmem 43683840
+file_mapped 41484288
+file_dirty 57344
+file_writeback 0
+inactive_anon 40194048
+active_anon 18640896
+inactive_file 92205056
+active_file 56999936
+slab_reclaimable 16312096
+slab_unreclaimable 595608
+slab 16907704
+workingset_refault_anon 0
+workingset_refault_file 127998
+pgscan 330390
+pgsteal 326772
+pgfault 18422354
+pgmajfault 1685
+pgrefill 59749
+### argocd/argocd-application-controller-0/application-controller qos=burstable restarts=0 started=2026-11-04T23:23:38Z
+memory.current 358744064
+memory.peak 533278720
+memory.max 805306368
+memory.high max
+memory.swap.current 0
+memory.swap.peak 0
+--- memory.events
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+--- memory.stat (selected)
+anon 318742528
+file 13967360
+kernel 2494464
+kernel_stack 311296
+pagetables 1454080
+sock 0
+shmem 0
+file_mapped 1961984
+file_dirty 4096
+file_writeback 0
+inactive_anon 0
+active_anon 342274048
+inactive_file 9691136
+active_file 4280320
+slab_reclaimable 532736
+slab_unreclaimable 167800
+slab 700536
+workingset_refault_anon 0
+workingset_refault_file 1546
+pgscan 1856
+pgsteal 1856
+pgfault 1532024
+pgmajfault 51
+pgrefill 217
+== container_memory_working_set_bytes in MiB: first/last/min/max and when
+container=prometheus,pod=prometheus-kps-prometheus-0 n=434 first=20:57:16Z last=00:33:46Z min=25.76@20:57:16Z max=688.203@23:57:46Z lastval=534.234
+container=loki,pod=loki-0 n=422 first=21:03:16Z last=00:33:46Z min=17.09@21:58:16Z max=603.043@21:47:46Z lastval=327.531
+container=postgres,pod=infisical-postgres-0 n=417 first=21:05:46Z last=00:33:46Z min=3.957@21:05:46Z max=218.805@21:25:46Z lastval=128.293
+container=application-controller,pod=argocd-application-controller-0 n=434 first=20:57:16Z last=00:33:46Z min=22.62@23:23:46Z max=630.43@22:40:46Z lastval=394.152
+== container_memory_rss in MiB: first/last/min/max and when
+container=prometheus,pod=prometheus-kps-prometheus-0 n=434 first=20:57:16Z last=00:33:46Z min=25.09@20:57:16Z max=652.695@23:57:46Z lastval=482.383
+container=loki,pod=loki-0 n=422 first=21:03:16Z last=00:33:46Z min=13.99@21:58:16Z max=533.398@21:53:16Z lastval=266.555
+container=postgres,pod=infisical-postgres-0 n=417 first=21:05:46Z last=00:33:46Z min=0.7227@21:43:46Z max=64.3594@23:14:46Z lastval=14.4531
+container=application-controller,pod=argocd-application-controller-0 n=434 first=20:57:16Z last=00:33:46Z min=21.67@23:23:46Z max=508.816@22:40:46Z lastval=365.277
+== container_memory_cache in MiB: first/last/min/max and when
+container=prometheus,pod=prometheus-kps-prometheus-0 n=434 first=20:57:16Z last=00:33:46Z min=0.08203@20:57:16Z max=172.609@23:23:16Z lastval=65.8398
+container=loki,pod=loki-0 n=422 first=21:03:16Z last=00:33:46Z min=0.1719@21:06:16Z max=255.992@21:43:46Z lastval=20.1445
+container=postgres,pod=infisical-postgres-0 n=417 first=21:05:46Z last=00:33:46Z min=1.086@21:05:46Z max=207.559@22:57:46Z lastval=183.953
+container=application-controller,pod=argocd-application-controller-0 n=434 first=20:57:16Z last=00:33:46Z min=0.007812@23:23:46Z max=15.3828@23:15:16Z lastval=13.293
+== container_memory_usage_bytes in MiB: first/last/min/max and when
+container=prometheus,pod=prometheus-kps-prometheus-0 n=434 first=20:57:16Z last=00:33:46Z min=25.84@20:57:16Z max=729.898@23:57:16Z lastval=579.938
+container=loki,pod=loki-0 n=422 first=21:03:17Z last=00:33:47Z min=17.09@21:58:17Z max=639.688@21:54:17Z lastval=341.82
+container=postgres,pod=infisical-postgres-0 n=417 first=21:05:47Z last=00:33:47Z min=3.988@21:05:47Z max=255.75@21:25:47Z lastval=216.227
+container=application-controller,pod=argocd-application-controller-0 n=434 first=20:57:17Z last=00:33:47Z min=22.62@23:23:47Z max=637.441@22:40:47Z lastval=403.395
+== Loki, anon since the 3.5 MB/s stress test ended (query from 22:10)
+loki rss max 341.2 at 22:26:00Z
+loki working set max 366.0 at 22:26:00Z
+postgres rss max 64.4 at 23:15:00Z
+postgres working set max 197.1 at 23:15:00Z
+== Prometheus: head series, compaction, GC
+container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 178708 00:33:47Z
+ n=217 first=20:57:47Z last=00:33:47Z min=9529@20:57:47Z max=241366@23:56:47Z lastval=178708
+container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 691.1999998092651 00:33:47Z
+container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 75 00:33:47Z

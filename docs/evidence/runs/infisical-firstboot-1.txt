@@ -1,0 +1,98 @@
+# Infisical first boot, measured on the pod that ran it (restart count 0). Captured 2026-11-04T21:25:13Z
+$ kubectl -n infisical get pods -o wide
+NAME                         READY   STATUS    RESTARTS   AGE   IP             NODE                           NOMINATED NODE   READINESS GATES
+infisical-57bfb89746-n6slc   1/1     Running   0          19m   10.244.0.131   plane-platform-control-plane   <none>           <none>
+infisical-postgres-0         1/1     Running   0          20m   10.244.0.130   plane-platform-control-plane   <none>           <none>
+infisical-redis-0            1/1     Running   0          20m   10.244.0.129   plane-platform-control-plane   <none>           <none>
+
+$ per-pod start and restart data
+infisical-57bfb89746-n6slc	created=2026-11-04T21:05:49Z	restarts=0	startedAt=2026-11-04T21:10:39Z	lastState={}
+infisical-postgres-0	created=2026-11-04T21:04:24Z	restarts=0	startedAt=2026-11-04T21:05:42Z	lastState={}
+infisical-redis-0	created=2026-11-04T21:04:24Z	restarts=0	startedAt=2026-11-04T21:04:51Z	lastState={}
+
+$ node cgroup v2 counters, per container
+-- infisical-57bfb89746-n6slc
+memory.current 767336448
+memory.peak 846061568
+memory.max 1073741824
+memory.events low 0 high 0 max 0 oom 0 oom_kill 0 oom_group_kill 0
+cpu.max 150000 100000
+nr_throttled 59
+throttled_usec 11627274
+-- infisical-postgres-0
+memory.current 167333888
+memory.peak 268435456
+memory.max 268435456
+memory.events low 0 high 0 max 0 oom 0 oom_kill 0 oom_group_kill 0
+cpu.max 50000 100000
+nr_throttled 74
+throttled_usec 1730086
+-- infisical-redis-0
+memory.current 12791808
+memory.peak 21872640
+memory.max 100663296
+memory.events low 0 high 0 max 0 oom 0 oom_kill 0 oom_group_kill 0
+cpu.max 20000 100000
+nr_throttled 8
+throttled_usec 430376
+
+$ migration timeline from server log (epoch ms, ISO derived)
+2026-11-04T21:10:43Z	Running Infisical vv0.167.6
+2026-11-04T21:10:43Z	Migration tables initialized
+2026-11-04T21:10:43Z	Running application migrations.
+2026-11-04T21:10:43Z	Startup lock acquired [sessionId=72d2af7d-b842-4c57-96a7-e77882a944ec] [node=infisical-57bfb89746-n6slc-1] [attempts=1]
+2026-11-04T21:10:54Z	Migrations completed successfully
+2026-11-04T21:10:54Z	Finished application migrations.
+
+
+$ knex_migrations row count, from inside the postgres pod over its socket
+602
+
+$ non-root and read-only root, postgres
+uid=70(postgres) gid=70(postgres) groups=70(postgres)
+overlay / overlay ro,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/552/fs:/var/
+touch: /rootfs-write-test: Read-only file system
+rc=1
+data-write-rc=0
+drwxrwsrwx    2 root     postgres      4096 Nov  4 21:04 /tmp
+drwxrwxrwx    3 root     root          4096 Nov  4 21:25 /var/lib/postgresql/data
+drwx------   19 postgres postgres      4096 Nov  4 21:05 /var/lib/postgresql/data/pgdata
+drwxrwsrwt    2 root     postgres        80 Nov  4 21:05 /var/run/postgresql
+PID   USER     COMMAND
+    1 postgres postgres
+   52 postgres postgres
+   53 postgres postgres
+   55 postgres postgres
+/var/lib/postgresql/data/pgdata|f|00:19:29.806995
+
+$ non-root and read-only root, redis
+uid=999(redis) gid=1000(redis) groups=1000(redis)
+overlay / overlay ro,relatime,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/541/fs:/var/
+touch: /rootfs-write-test: Read-only file system
+rc=1
+data-write-rc=0
+/data:
+total 44
+drwxrwxrwx    3 root     root          4096 Nov  4 21:25 .
+drwxr-xr-x    1 root     root          4096 Nov  4 21:04 ..
+drwx------    2 redis    redis         4096 Nov  4 21:04 appendonlydir
+-rw-------    1 redis    redis        32693 Nov  4 21:20 dump.rdb
+
+/data/appendonlydir:
+total 1188
+drwx------    2 redis    redis         4096 Nov  4 21:04 .
+drwxrwxrwx    3 root     root          4096 Nov  4 21:25 ..
+-rw-------    1 redis    redis           89 Nov  4 21:04 appendonly.aof.1.base.rdb
+-rw-------    1 redis    redis      1192019 Nov  4 21:25 appendonly.aof.1.incr.aof
+-rw-------    1 redis    redis           88 Nov  4 21:04 appendonly.aof.manifest
+appendonly yes 
+maxmemory-policy noeviction 
+rdb_last_bgsave_status:ok
+aof_enabled:1
+aof_last_write_status:ok
+
+$ PVs behind the data pods
+NAME                        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE
+backups                     Bound    backups-infisical                          5Gi        RWO                           <unset>                 39m   Filesystem
+data-infisical-postgres-0   Bound    pvc-f2678959-c3b6-4b83-a944-f39f5ac04b3a   1Gi        RWO            standard       <unset>                 20m   Filesystem
+data-infisical-redis-0      Bound    pvc-974fedf5-e207-42c1-aa70-613e6fb08206   256Mi      RWO            standard       <unset>                 20m   Filesystem

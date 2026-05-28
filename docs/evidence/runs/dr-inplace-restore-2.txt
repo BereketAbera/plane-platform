@@ -1,0 +1,55 @@
+# In-place Infisical restore with the committed scripts at 5fc3ba2, from a backup taken moments before. 2026-11-05T00:18:14Z
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T001814Z
+[pod/plane-backup-20261105t001814z-t59hh/postgres] postgres: 20261105T001814Z complete, 785 tables counted from a scratch restore
+backup 20261105T001814Z: postgres/infisical.dump 4407329 B, postgres/infisical.toc.txt 942298 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T001814Z
+backup exit=0
+[1;34m==>[0m Verifying 20261105T001814Z
+[1;32m ok[0m checksums: 7 files match
+[1;32m ok[0m key-fingerprint: ENCRYPTION_KEY matches the backup
+[1;32m ok[0m overwrite-guard: target holds 1 users and 0 objects, overwriting on CONFIRM=yes
+[1;34m==>[0m Pausing auto-sync: infisical
+[1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+[pod/plane-restore-20261105t001834z-vzjxf/postgres] NOTICE:  database "infisical_restoring" does not exist, skipping
+[pod/plane-restore-20261105t001834z-vzjxf/postgres] vacuumdb: vacuuming database "infisical_restoring"
+[pod/plane-restore-20261105t001834z-vzjxf/postgres] GATE1 ok: 785 tables equal the backup
+[pod/plane-restore-20261105t001834z-vzjxf/postgres] ALTER DATABASE
+[pod/plane-restore-20261105t001834z-vzjxf/postgres] swapped in: infisical is now the restored database
+[1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+[1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+[1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+[1;32m ok[0m proof-initialized: the server reads the restored admin config
+[1;32m ok[0m proof-values: every Plane secret decrypts to the value, version and id the backup recorded
+[1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+[1;32m ok[0m auto-sync restored on infisical
+[1;32m ok[0m restore of 20261105T001814Z into infisical complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-infisical-20261105T001834Z.json
+restore exit=0
+restore took 44s
+lines that differ in Plane pod uids and restart counts, workload generations, Secret resourceVersions: 0
+[1;34m==>[0m Waiting for http://infisical.localhost (first boot runs about 600 migrations)
+[1;32m ok[0m Infisical already bootstrapped
+[1;32m ok[0m the restored instance accepts the admin token
+[1;34m==>[0m Applying infisical/terraform
+[0m[1minfisical_project.plane["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Refreshing state... [id=2505453a-9dc6-447a-9668-9684689aa795][0m
+[0m[1minfisical_project_environment.prod["dev"]: Refreshing state... [id=73729bc5-949d-4bda-83d8-35c1ec3db976][0m
+[0m[1minfisical_project_identity.reader["dev"]: Refreshing state...[0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Refreshing state...[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Refreshing state... [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Refreshing state... [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[1;32m ok[0m Terraform has nothing to change: the CA is already this cluster's
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform/.local/secret-zero/infisical-machine.json
+[1;32m ok[0m dev: all secrets already exist, nothing written
+[1;32m ok[0m prod-sim: all secrets already exist, nothing written
+[1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+[1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+restored bootstrap exit=0

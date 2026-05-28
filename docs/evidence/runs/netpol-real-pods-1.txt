@@ -1,0 +1,40 @@
+# date: 2026-11-04T21:01:42Z
+pod argocd/argocd-repo-server-84d5c84659-jmlnw ip=10.244.0.86 hostNetwork=
+pod argocd/argocd-server-6879f6c57b-fr2fd ip=10.244.0.88 hostNetwork=
+pod argocd/argocd-application-controller-0 ip=10.244.0.87 hostNetwork=
+pod argocd/argocd-redis-ff6755697-jcd8p ip=10.244.0.85 hostNetwork=
+pod traefik/traefik-6955f98f54-7z9wr ip=10.244.0.34 hostNetwork=
+Service kubernetes: 10.96.0.1:443 -> endpoint 172.24.0.2:6443
+--- repo-server, with Argo CD's own git binary and bash /dev/tcp
+$ git ls-remote git://plane-git/plane-platform.git refs/heads/main
+4a49a9c9d3614aa0e08888c66a79515e6d2e02c6	refs/heads/main
+rc=0  (working main: 4a49a9c9d3614aa0e08888c66a79515e6d2e02c6)
+PASS  expect=allow got=CONNECTED  1s  repo-server -> plane-git:9418 
+PASS  expect=allow got=CONNECTED  0s  repo-server -> argocd-redis:6379 
+PASS  expect=deny  got=TIMEOUT    6s  repo-server -> 10.96.0.1:443 command terminated with exit code 124
+PASS  expect=deny  got=TIMEOUT    6s  repo-server -> 172.24.0.2:6443 command terminated with exit code 124
+PASS  expect=deny  got=TIMEOUT    6s  repo-server -> 1.1.1.1:80 command terminated with exit code 124
+--- server
+PASS  expect=allow got=CONNECTED  0s  server -> 10.96.0.1:443 
+PASS  expect=allow got=CONNECTED  0s  server -> 172.24.0.2:6443 
+PASS  expect=allow got=CONNECTED  0s  server -> argocd-repo-server:8081 
+PASS  expect=allow got=CONNECTED  0s  server -> argocd-redis:6379 
+PASS  expect=deny  got=TIMEOUT    6s  server -> plane-git:9418 command terminated with exit code 124
+PASS  expect=deny  got=TIMEOUT    6s  server -> 1.1.1.1:443 command terminated with exit code 124
+--- application-controller
+PASS  expect=allow got=CONNECTED  0s  application-controller -> 10.96.0.1:443 
+PASS  expect=allow got=CONNECTED  0s  application-controller -> argocd-repo-server:8081 
+PASS  expect=allow got=CONNECTED  0s  application-controller -> argocd-redis:6379 
+PASS  expect=deny  got=TIMEOUT    7s  application-controller -> plane-git:9418 command terminated with exit code 124
+--- traefik (busybox only, so nc)
+rc=0 0s traefik -> argocd-server.argocd:80 expect=allow
+rc=1 5s traefik -> argocd-repo-server.argocd:8081 expect=deny
+rc=1 5s traefik -> 1.1.1.1:443 expect=deny
+--- DNS rewrite, from a pod
+10.96.112.180   plane.dev.localhost
+10.96.112.180   plane.prod-sim.localhost
+fc00:f853:ccd:e793::3 plane-git
+10.96.112.180   traefik.traefik.svc.cluster.local
+traefik ClusterIP: 10.96.112.180
+--- kindnet logs: fail-open line
+lines=    1979 skipping_network_policies=0

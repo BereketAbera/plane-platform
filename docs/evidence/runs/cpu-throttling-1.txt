@@ -1,0 +1,188 @@
+# date: 2026-11-05T00:49:29Z
+# CPUThrottlingHigh: 25% of periods over 5m, for 15m. Where it went pending or firing, from ALERTS over the last 3.6h
+dr-rehearsal infisical-postgres-0 postgres pending from 23:23 to 23:29 samples 13 = 6.5 min
+infisical infisical-postgres-0 postgres pending from 22:59 to 00:23 samples 22 = 11.0 min
+monitoring alertmanager-kps-alertmanager-0 config-reloader pending from 21:14 to 21:39 samples 33 = 16.5 min
+monitoring kps-grafana-5485666c45-pl472 grafana pending from 21:29 to 21:29 samples 1 = 0.5 min
+monitoring kps-grafana-5485666c45-pl472 grafana-sc-dashboard pending from 21:29 to 21:34 samples 10 = 5.0 min
+monitoring kps-grafana-5485666c45-pl472 grafana-sc-datasources pending from 21:30 to 21:34 samples 9 = 4.5 min
+monitoring kps-grafana-6797b8c945-rfhjg grafana-sc-dashboard pending from 21:13 to 21:32 samples 32 = 16.0 min
+monitoring kps-grafana-6797b8c945-rfhjg grafana-sc-datasources pending from 21:13 to 21:32 samples 31 = 15.5 min
+monitoring kps-grafana-77cb96fc89-v8g6n grafana pending from 22:07 to 22:07 samples 1 = 0.5 min
+monitoring loki-0 loki pending from 21:46 to 22:02 samples 27 = 13.5 min
+monitoring prometheus-kps-prometheus-0 config-reloader pending from 21:14 to 21:32 samples 22 = 11.0 min
+monitoring-agents kps-node-exporter-bwdlr node-exporter firing from 21:19 to 21:38 samples 40 = 20.0 min
+monitoring-agents kps-node-exporter-bwdlr node-exporter pending from 21:13 to 21:18 samples 11 = 5.5 min
+plane-dev plane-admin-wl-57ff9b4b88-7w5qb plane-admin pending from 21:43 to 21:43 samples 1 = 0.5 min
+plane-dev plane-api-migrate-1-bzmqw plane-api-migrate pending from 21:34 to 21:39 samples 11 = 5.5 min
+plane-dev plane-api-wl-648bc8f87c-6m7p6 plane-api pending from 00:12 to 00:15 samples 7 = 3.5 min
+plane-dev plane-api-wl-64bb48f986-694mw plane-api pending from 22:47 to 22:51 samples 9 = 4.5 min
+plane-dev plane-api-wl-655ddd4b88-2bfh2 plane-api pending from 22:43 to 22:45 samples 5 = 2.5 min
+plane-dev plane-api-wl-655ddd4b88-j7zmm plane-api pending from 22:48 to 22:50 samples 5 = 2.5 min
+plane-dev plane-api-wl-655ddd4b88-lpcmq plane-api pending from 22:42 to 22:46 samples 9 = 4.5 min
+plane-dev plane-api-wl-655ddd4b88-vwcd4 plane-api pending from 21:37 to 21:37 samples 2 = 1.0 min
+plane-dev plane-api-wl-69447b65-2g9n4 plane-api pending from 22:52 to 22:56 samples 10 = 5.0 min
+plane-dev plane-api-wl-69447b65-7c5rl plane-api pending from 22:54 to 22:56 samples 5 = 2.5 min
+plane-dev plane-api-wl-8779f95fb-fdcz6 plane-api pending from 22:53 to 22:53 samples 2 = 1.0 min
+plane-dev plane-beat-worker-wl-657897986c-mv2kk plane-beat-worker pending from 00:12 to 00:16 samples 10 = 5.0 min
+plane-dev plane-beat-worker-wl-6959997d75-fgws8 plane-beat-worker pending from 22:47 to 22:51 samples 10 = 5.0 min
+plane-dev plane-beat-worker-wl-77b96cd4b6-fmdmm plane-beat-worker pending from 22:53 to 22:57 samples 10 = 5.0 min
+plane-dev plane-beat-worker-wl-c5c96d747-45jks plane-beat-worker pending from 22:44 to 22:51 samples 12 = 6.0 min
+plane-dev plane-beat-worker-wl-c5c96d747-7sdk2 plane-beat-worker pending from 21:37 to 21:40 samples 8 = 4.0 min
+plane-dev plane-beat-worker-wl-c5c96d747-bqrsc plane-beat-worker pending from 22:48 to 22:53 samples 10 = 5.0 min
+plane-dev plane-beat-worker-wl-c5c96d747-kpn59 plane-beat-worker pending from 22:43 to 22:47 samples 10 = 5.0 min
+plane-dev plane-beat-worker-wl-c5c96d747-p9dn8 plane-beat-worker pending from 22:54 to 22:58 samples 10 = 5.0 min
+plane-dev plane-live-wl-5744d85f8b-7qxdc plane-live pending from 22:54 to 22:59 samples 10 = 5.0 min
+plane-dev plane-live-wl-5744d85f8b-j8ltw plane-live pending from 22:52 to 22:56 samples 9 = 4.5 min
+plane-dev plane-live-wl-5744d85f8b-qdb9d plane-live pending from 22:55 to 23:00 samples 10 = 5.0 min
+plane-dev plane-live-wl-5b675fb86f-h9vhv plane-live pending from 22:47 to 22:51 samples 10 = 5.0 min
+plane-dev plane-live-wl-7c74478fc5-2hslp plane-live pending from 21:39 to 22:44 samples 15 = 7.5 min
+plane-dev plane-live-wl-7c74478fc5-h48zx plane-live pending from 22:48 to 22:52 samples 9 = 4.5 min
+plane-dev plane-live-wl-7c74478fc5-k5w9g plane-live pending from 22:42 to 22:46 samples 9 = 4.5 min
+plane-dev plane-live-wl-849f567995-7m8d5 plane-live pending from 22:53 to 22:57 samples 9 = 4.5 min
+plane-dev plane-minio-wl-0 plane-minio pending from 21:31 to 21:31 samples 1 = 0.5 min
+plane-dev plane-pgdb-wl-0 plane-pgdb pending from 22:43 to 22:43 samples 1 = 0.5 min
+plane-dev plane-rabbitmq-wl-0 plane-rabbitmq pending from 21:31 to 21:32 samples 3 = 1.5 min
+plane-dev plane-space-wl-5c8c797bc7-bhsz2 plane-space pending from 22:53 to 22:53 samples 1 = 0.5 min
+plane-dev plane-space-wl-6578687c54-2svs9 plane-space pending from 22:54 to 22:54 samples 1 = 0.5 min
+plane-dev plane-space-wl-6578687c54-crmhb plane-space pending from 22:52 to 22:56 samples 9 = 4.5 min
+plane-dev plane-space-wl-755985bb65-s7tgq plane-space pending from 22:47 to 22:51 samples 9 = 4.5 min
+plane-dev plane-space-wl-7c685dc55-52gsl plane-space pending from 22:42 to 22:46 samples 9 = 4.5 min
+plane-dev plane-space-wl-7c685dc55-fmb9q plane-space pending from 22:48 to 22:48 samples 1 = 0.5 min
+plane-dev plane-space-wl-7c685dc55-v8gsv plane-space pending from 21:43 to 21:47 samples 9 = 4.5 min
+plane-dev plane-space-wl-7fcd9ddf68-wzbtl plane-space pending from 00:12 to 00:16 samples 10 = 5.0 min
+plane-dev plane-web-wl-77dd4cf56-7jhnw plane-web pending from 21:43 to 21:43 samples 1 = 0.5 min
+plane-dev plane-worker-wl-55c87f6f94-4mfkj plane-worker pending from 21:37 to 21:42 samples 12 = 6.0 min
+plane-dev plane-worker-wl-55c87f6f94-dhdrg plane-worker pending from 22:43 to 22:47 samples 9 = 4.5 min
+plane-dev plane-worker-wl-55c87f6f94-fnhrq plane-worker pending from 22:44 to 22:48 samples 9 = 4.5 min
+plane-dev plane-worker-wl-55c87f6f94-gv6lw plane-worker pending from 22:54 to 22:58 samples 9 = 4.5 min
+plane-dev plane-worker-wl-55c87f6f94-lrcqx plane-worker pending from 22:48 to 22:52 samples 9 = 4.5 min
+plane-dev plane-worker-wl-68ff64dd8b-qsnkf plane-worker pending from 00:30 to 00:38 samples 17 = 8.5 min
+plane-dev plane-worker-wl-68ff64dd8b-w4qjk plane-worker pending from 00:12 to 00:16 samples 10 = 5.0 min
+plane-dev plane-worker-wl-79dc7db6cb-kbxfm plane-worker pending from 22:47 to 22:51 samples 9 = 4.5 min
+plane-dev plane-worker-wl-847d7dfb7c-hfd7s plane-worker pending from 22:53 to 22:57 samples 9 = 4.5 min
+plane-dev postgres-exporter-559df864f6-dxfpj postgres-exporter pending from 21:39 to 22:00 samples 37 = 18.5 min
+plane-prod-sim plane-api-migrate-1-8vzxg plane-api-migrate pending from 21:48 to 21:53 samples 11 = 5.5 min
+plane-prod-sim plane-api-wl-7f874fd7d8-7hq8s plane-api pending from 21:50 to 21:53 samples 7 = 3.5 min
+plane-prod-sim plane-api-wl-8566bcd789-lc7df plane-api pending from 22:52 to 22:55 samples 6 = 3.0 min
+plane-prod-sim plane-beat-worker-wl-5c8845c7d5-cqhpz plane-beat-worker pending from 21:50 to 21:54 samples 10 = 5.0 min
+plane-prod-sim plane-live-wl-5d5fd749c6-szdzq plane-live pending from 22:52 to 22:56 samples 10 = 5.0 min
+plane-prod-sim plane-live-wl-6c858449df-qbbxx plane-live pending from 21:49 to 21:54 samples 10 = 5.0 min
+plane-prod-sim plane-rabbitmq-wl-0 plane-rabbitmq pending from 21:48 to 00:39 samples 20 = 10.0 min
+plane-prod-sim plane-space-wl-54c66d4dcb-zz2nn plane-space pending from 22:52 to 22:56 samples 10 = 5.0 min
+plane-prod-sim plane-space-wl-68c595d665-dfct7 plane-space pending from 21:49 to 21:54 samples 10 = 5.0 min
+plane-prod-sim plane-web-wl-8fb59c6c9-b4nq8 plane-web pending from 22:52 to 22:52 samples 1 = 0.5 min
+plane-prod-sim plane-worker-wl-667f56c7f8-6m5kr plane-worker pending from 23:58 to 00:36 samples 11 = 5.5 min
+plane-prod-sim plane-worker-wl-667f56c7f8-9wrtg plane-worker pending from 23:53 to 00:02 samples 14 = 7.0 min
+plane-prod-sim plane-worker-wl-667f56c7f8-lnv72 plane-worker pending from 21:50 to 21:52 samples 5 = 2.5 min
+plane-prod-sim plane-worker-wl-667f56c7f8-t9g6g plane-worker pending from 00:32 to 00:36 samples 9 = 4.5 min
+plane-prod-sim plane-worker-wl-667f56c7f8-zxq29 plane-worker pending from 23:49 to 23:57 samples 14 = 7.0 min
+
+## Throttled share of periods over 5m, now, over 2%
+container=kube-state-metrics,namespace=monitoring,pod=kps-kube-state-metrics-58c95899dd-s8bb4 0.04 00:49:30Z
+container=redis-exporter,namespace=plane-prod-sim,pod=redis-exporter-5b59d6cb7c-xsw9t 0.14864864864864866 00:49:30Z
+container=redis-exporter,namespace=plane-dev,pod=redis-exporter-5b59d6cb7c-rp2rd 0.0746268656716418 00:49:30Z
+container=sink,namespace=monitoring,pod=alert-sink-78dcd6dbb4-fxfst 0.0423728813559322 00:49:30Z
+container=alertmanager,namespace=monitoring,pod=alertmanager-kps-alertmanager-0 0.023255813953488372 00:49:30Z
+container=plane-rabbitmq,namespace=plane-dev,pod=plane-rabbitmq-wl-0 0.042868277474668745 00:49:30Z
+container=plane-redis,namespace=plane-dev,pod=plane-redis-wl-0 0.060092449922958396 00:49:30Z
+container=plane-pgdb,namespace=plane-prod-sim,pod=plane-pgdb-wl-0 0.021917808219178082 00:49:30Z
+container=plane-redis,namespace=plane-prod-sim,pod=plane-redis-wl-0 0.060126582278481014 00:49:30Z
+container=plane-beat-worker,namespace=plane-dev,pod=plane-beat-worker-wl-657897986c-mv2kk 0.04142011834319527 00:49:30Z
+container=plane-space,namespace=plane-dev,pod=plane-space-wl-7fcd9ddf68-wzbtl 0.02531645569620253 00:49:30Z
+container=plane-worker,namespace=plane-dev,pod=plane-worker-wl-68ff64dd8b-qsnkf 0.07291666666666667 00:49:30Z
+container=plane-worker,namespace=plane-prod-sim,pod=plane-worker-wl-667f56c7f8-t9g6g 0.06962025316455696 00:49:30Z
+container=plane-rabbitmq,namespace=plane-prod-sim,pod=plane-rabbitmq-wl-0 0.02390438247011952 00:49:30Z
+
+## Plane containers: minutes over 25%, and how many of those were later than the first 6 minutes of data for that pod (last 5h)
+namespace pod container minutes_over_25% of_those_after_6m max current still_running
+plane-prod-sim plane-rabbitmq-wl-0 plane-rabbitmq 9 7 0.71 0.02 True
+plane-dev plane-api-wl-648bc8f87c-6m7p6 plane-api 3 0 0.68 0.0 True
+plane-dev plane-beat-worker-wl-657897986c-mv2kk plane-beat-worker 5 0 0.61 0.04 True
+plane-dev plane-live-wl-5744d85f8b-qdb9d plane-live 5 0 0.9 0.0 True
+plane-dev plane-rabbitmq-wl-0 plane-rabbitmq 2 0 0.83 0.04 True
+plane-dev plane-space-wl-7fcd9ddf68-wzbtl plane-space 4 0 0.75 0.03 True
+plane-dev plane-worker-wl-68ff64dd8b-qsnkf plane-worker 4 0 0.64 0.07 True
+plane-prod-sim plane-api-wl-8566bcd789-lc7df plane-api 3 0 0.55 0.0 True
+plane-prod-sim plane-beat-worker-wl-5c8845c7d5-cqhpz plane-beat-worker 5 0 0.8 0.02 True
+plane-prod-sim plane-live-wl-5d5fd749c6-szdzq plane-live 5 0 0.86 0.01 True
+plane-prod-sim plane-space-wl-54c66d4dcb-zz2nn plane-space 4 0 0.72 0.01 True
+plane-prod-sim plane-worker-wl-667f56c7f8-t9g6g plane-worker 5 0 0.68 0.07 True
+plane-dev postgres-exporter-559df864f6-dxfpj postgres-exporter 19 19 0.35 0.18 False
+plane-dev plane-live-wl-7c74478fc5-2hslp plane-live 8 3 0.99 0.0 False
+plane-prod-sim plane-worker-wl-667f56c7f8-9wrtg plane-worker 7 2 0.79 0.36 False
+plane-dev plane-beat-worker-wl-c5c96d747-45jks plane-beat-worker 6 1 0.92 0.58 False
+plane-prod-sim plane-worker-wl-667f56c7f8-6m5kr plane-worker 6 1 0.98 0.0 False
+plane-dev plane-api-wl-64bb48f986-694mw plane-api 5 0 0.92 0.0 False
+plane-dev plane-api-wl-655ddd4b88-2bfh2 plane-api 2 0 0.59 0.0 False
+plane-dev plane-api-wl-655ddd4b88-j7zmm plane-api 3 0 0.49 0.0 False
+plane-dev plane-api-wl-655ddd4b88-lpcmq plane-api 5 0 0.7 0.58 False
+plane-dev plane-api-wl-655ddd4b88-vwcd4 plane-api 3 0 0.73 0.0 False
+plane-dev plane-api-wl-69447b65-2g9n4 plane-api 4 0 0.45 0.23 False
+plane-dev plane-api-wl-69447b65-7c5rl plane-api 3 0 0.96 0.0 False
+plane-dev plane-api-wl-8779f95fb-fdcz6 plane-api 2 0 0.92 0.02 False
+plane-dev plane-beat-worker-wl-6959997d75-fgws8 plane-beat-worker 6 0 1.0 0.09 False
+plane-dev plane-beat-worker-wl-77b96cd4b6-fmdmm plane-beat-worker 6 0 0.46 0.25 False
+plane-dev plane-beat-worker-wl-c5c96d747-7sdk2 plane-beat-worker 5 0 0.91 0.0 False
+plane-dev plane-beat-worker-wl-c5c96d747-bqrsc plane-beat-worker 5 0 0.98 0.07 False
+plane-dev plane-beat-worker-wl-c5c96d747-kpn59 plane-beat-worker 5 0 0.87 0.25 False
+plane-dev plane-beat-worker-wl-c5c96d747-p9dn8 plane-beat-worker 5 0 1.0 0.12 False
+plane-dev plane-live-wl-5744d85f8b-7qxdc plane-live 5 0 0.92 0.04 False
+plane-dev plane-live-wl-5744d85f8b-j8ltw plane-live 4 0 0.55 0.1 False
+plane-dev plane-live-wl-5b675fb86f-h9vhv plane-live 5 0 0.95 0.13 False
+plane-dev plane-live-wl-7c74478fc5-h48zx plane-live 5 0 0.38 0.04 False
+plane-dev plane-live-wl-7c74478fc5-k5w9g plane-live 5 0 0.9 0.0 False
+plane-dev plane-live-wl-849f567995-7m8d5 plane-live 5 0 0.99 0.02 False
+plane-dev plane-space-wl-5c8c797bc7-bhsz2 plane-space 1 0 0.4 0.01 False
+plane-dev plane-space-wl-6578687c54-2svs9 plane-space 1 0 0.84 0.03 False
+plane-dev plane-space-wl-6578687c54-crmhb plane-space 4 0 0.62 0.17 False
+plane-dev plane-space-wl-755985bb65-s7tgq plane-space 5 0 0.89 0.0 False
+plane-dev plane-space-wl-7c685dc55-52gsl plane-space 5 0 0.72 0.0 False
+plane-dev plane-space-wl-7c685dc55-v8gsv plane-space 5 0 0.74 0.04 False
+plane-dev plane-worker-wl-55c87f6f94-4mfkj plane-worker 2 0 0.5 0.0 False
+plane-dev plane-worker-wl-55c87f6f94-dhdrg plane-worker 5 0 0.82 0.0 False
+plane-dev plane-worker-wl-55c87f6f94-fnhrq plane-worker 5 0 0.96 0.0 False
+plane-dev plane-worker-wl-55c87f6f94-gv6lw plane-worker 5 0 0.87 0.0 False
+plane-dev plane-worker-wl-55c87f6f94-lrcqx plane-worker 5 0 0.74 0.0 False
+plane-dev plane-worker-wl-68ff64dd8b-w4qjk plane-worker 4 0 0.59 0.0 False
+plane-dev plane-worker-wl-79dc7db6cb-kbxfm plane-worker 5 0 0.86 0.0 False
+plane-dev plane-worker-wl-847d7dfb7c-hfd7s plane-worker 5 0 0.83 0.0 False
+plane-prod-sim plane-api-wl-7f874fd7d8-7hq8s plane-api 4 0 0.93 0.0 False
+plane-prod-sim plane-live-wl-6c858449df-qbbxx plane-live 5 0 0.9 0.0 False
+plane-prod-sim plane-space-wl-68c595d665-dfct7 plane-space 5 0 0.87 0.0 False
+plane-prod-sim plane-worker-wl-667f56c7f8-lnv72 plane-worker 3 0 0.68 0.21 False
+plane-prod-sim plane-worker-wl-667f56c7f8-zxq29 plane-worker 6 0 0.75 0.13 False
+
+## Average CPU in prod-sim over 10m against each limit
+container=redis-exporter 0.0006727856980132127 00:49:30Z
+container=plane-beat-worker 0.0035619839691436064 00:49:30Z
+container=manager 0.0018702992295892792 00:49:30Z
+container=postgres-exporter 0.001224294014090549 00:49:30Z
+container=plane-admin 0.00022080606678277022 00:49:30Z
+container=plane-api 0.016437580184918272 00:49:30Z
+container=plane-live 0.0015013388449831378 00:49:30Z
+container=plane-space 0.0024414541153643344 00:49:30Z
+container=plane-web 0.00022338681487695764 00:49:30Z
+container=plane-minio 0.0016726635621117534 00:49:30Z
+container=plane-pgdb 0.008872862889997753 00:49:30Z
+container=plane-redis 0.003192436653645497 00:49:30Z
+container=plane-worker 0.0071826893855674685 00:49:30Z
+container=plane-rabbitmq 0.01667202826897506 00:49:30Z
+container=redis-exporter 0.1 00:49:30Z
+container=plane-beat-worker 0.2 00:49:30Z
+container=manager 0.5 00:49:30Z
+container=plane-api-migrate 0.75 00:49:30Z
+container=plane-api 0.75 00:49:30Z
+container=plane-space 0.25 00:49:30Z
+container=plane-web 0.1 00:49:30Z
+container=plane-admin 0.1 00:49:30Z
+container=plane-live 0.25 00:49:30Z
+container=finalize 0.8 00:49:30Z
+container=plane-minio 0.5 00:49:30Z
+container=plane-pgdb 0.5 00:49:30Z
+container=plane-redis 0.1 00:49:30Z
+container=plane-worker 0.5 00:49:30Z
+container=plane-rabbitmq 0.5 00:49:30Z
+
+## RabbitMQ in prod-sim was replaced at (kube_pod_start_time):
+ 1793838749 00:49:30Z

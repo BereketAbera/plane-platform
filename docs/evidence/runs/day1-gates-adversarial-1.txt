@@ -1,0 +1,323 @@
+# The second adversarial review's own logs, kept because their scratch directory is being removed. They describe the script BEFORE f878bca and fbfd7c5.
+
+## proto.log
+## PROTOTYPE of the fixes, a scratch copy only. Control: full gate 2 must still pass
+control exit=0 --- Summary: 10 passed, 0 failed
+## double TERM
+double-term #1 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+double-term #2 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+double-term #3 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+## TERM in kc create
+claim-create         #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #2 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #3 rc=143 child-alive-at-kill=no secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #4 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+## TERM in the widened docker image rm window
+cleanup-docker-slow  #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-docker-slow  #2 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+## kill path, unremovable repository
+exit=143
+--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run
+--- Left behind: .local/git/gate-adv-p.git
+## TERM 0ms after --- Cleanup, unmodified timing
+natural #1 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+natural #2 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+natural #3 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+natural #4 rc=143 ns=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+## rm cannot reach the repository
+no-permission parent exit=1
+--- Cleanup
+FAIL  the throwaway .local/git/gate-adv-p.git is still there. Delete it by hand: rm -rf .local/git/gate-adv-p.git
+--- Summary: 0 passed, 1 failed
+dangling symlink exit=1
+--- Cleanup
+FAIL  the throwaway .local/git/gate-adv-p.git is still there. Delete it by hand: rm -rf .local/git/gate-adv-p.git
+--- Summary: 0 passed, 1 failed
+nothing there exit=0
+--- Cleanup
+PASS  namespace gate-adv-p and the throwaway gate-adv-p.git are gone
+--- Summary: 1 passed, 0 failed
+PROTO-DONE
+
+## term-single.log
+## one SIGTERM to the script's pid. Control first: without fd 3 the line must vanish, or the kill point is not inside a redirect
+ctl-no-fd3-delete    #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Cleanup]
+ctl-no-fd3-delete    #2 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=NO ns-after=[] last=[--- Cleanup]
+ctl-no-fd3-delete    #3 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=NO ns-after=[] last=[--- Cleanup]
+ctl-no-fd3-wait      #1 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=NO ns-after=[] last=[--- Gate 1: digest pulls through each path]
+ctl-no-fd3-wait      #2 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Gate 1: digest pulls through each path]
+ctl-no-fd3-wait      #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Gate 1: digest pulls through each path]
+## the committed closing line
+cleanup-delete       #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-delete       #2 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-delete       #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-delete       #4 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-delete       #5 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+wait-pull            #1 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+wait-pull            #2 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+wait-pull            #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+wait-pull            #4 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+wait-pull            #5 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+run-pod              #1 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 5 passed, 0 failed]
+run-pod              #2 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 5 passed, 0 failed]
+run-pod              #3 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 5 passed, 0 failed]
+run-pod              #4 rc=143 child-alive-at-kill=yes secs-after-kill=2 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 2 passed, 0 failed, 0 not run]
+run-pod              #5 rc=143 child-alive-at-kill=yes secs-after-kill=3 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 2 passed, 0 failed, 0 not run]
+ready-wait           #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+ready-wait           #2 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+ready-wait           #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+ready-wait           #4 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+ready-wait           #5 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+apply-deny           #1 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 4 passed, 0 failed, 0 not run]
+apply-deny           #2 rc=143 child-alive-at-kill=yes secs-after-kill=6 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 6 passed, 0 failed, 0 not run]
+apply-deny           #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 4 passed, 0 failed, 0 not run]
+apply-deny           #4 rc=143 child-alive-at-kill=no secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 4 passed, 0 failed, 0 not run]
+apply-deny           #5 rc=143 child-alive-at-kill=no secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 4 passed, 0 failed, 0 not run]
+delete-np            #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 8 passed, 0 failed, 0 not run]
+delete-np            #2 rc=0 child-alive-at-kill=not-found secs-after-kill=30 closing-line=NO ns-after=[] last=[--- Summary: 10 passed, 0 failed]
+delete-np            #3 rc=143 child-alive-at-kill=no secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 8 passed, 0 failed, 0 not run]
+exec-cmdsub          #1 rc=0 child-alive-at-kill=not-found secs-after-kill=30 closing-line=NO ns-after=[] last=[--- Summary: 10 passed, 0 failed]
+exec-cmdsub          #2 rc=0 child-alive-at-kill=not-found secs-after-kill=22 closing-line=NO ns-after=[] last=[--- Summary: 10 passed, 0 failed]
+exec-cmdsub          #3 rc=0 child-alive-at-kill=not-found secs-after-kill=23 closing-line=NO ns-after=[] last=[--- Summary: 10 passed, 0 failed]
+TERM-SINGLE-DONE
+
+## term-double.log
+## two SIGTERMs to the script's pid: one in gate 1, one while on_exit's cleanup runs kubectl delete
+double-term            #1 rc=143 closing-line=NO ns-after=[] first-landed-in-wait=yes second-landed-in-delete=yes last=[--- Gate 1: digest pulls through each path]
+double-term            #2 rc=143 closing-line=NO ns-after=[] first-landed-in-wait=yes second-landed-in-delete=yes last=[--- Gate 1: digest pulls through each path]
+double-term            #3 rc=143 closing-line=NO ns-after=[] first-landed-in-wait=yes second-landed-in-delete=yes last=[--- Gate 1: digest pulls through each path]
+double-term            #4 rc=143 closing-line=NO ns-after=[] first-landed-in-wait=yes second-landed-in-delete=yes last=[--- Gate 1: digest pulls through each path]
+double-term            #5 rc=143 closing-line=NO ns-after=[] first-landed-in-wait=yes second-landed-in-delete=yes last=[--- Gate 1: digest pulls through each path]
+## two SIGTERMs close together, both during the same kubectl wait
+double-same-wait       #1 rc=143 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+double-same-wait       #2 rc=143 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+double-same-wait       #3 rc=143 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+## process group, one signal, as a terminal or a CI runner sends it
+group-TERM-once        #1 rc=143 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+group-TERM-once        #2 rc=143 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+group-TERM-once        #3 rc=143 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+group-INT-once         #1 rc=130 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-INT-once         #2 rc=130 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-INT-once         #3 rc=130 closing-line=yes ns-after=[]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+## process group, two signals: one in gate 1, then again as soon as on_exit's kubectl delete exists. Ctrl-C twice.
+group-INT-twice        #1 rc=130 closing-line=yes ns-after=[Terminating]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-INT-twice        #2 rc=130 closing-line=yes ns-after=[Terminating]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-INT-twice        #3 rc=130 closing-line=yes ns-after=[Terminating]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-TERM-twice       #1 rc=143 closing-line=NO ns-after=[Terminating]  last=[--- Gate 1: digest pulls through each path]
+group-TERM-twice       #2 rc=143 closing-line=NO ns-after=[Terminating]  last=[--- Gate 1: digest pulls through each path]
+group-TERM-twice       #3 rc=143 closing-line=NO ns-after=[Terminating]  last=[--- Gate 1: digest pulls through each path]
+## process group, two signals, the second 1s after the delete started, so the delete request is out
+group-INT-twice-late   #1 rc=130 closing-line=yes ns-after=[Terminating]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-INT-twice-late   #2 rc=130 closing-line=yes ns-after=[Terminating]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+group-INT-twice-late   #3 rc=130 closing-line=yes ns-after=[Terminating]  last=[--- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run]
+TERM-DOUBLE-DONE
+
+## leak-rm.log
+## signal while the namespace is being created, before CLAIMED=yes
+claim-create         #1 rc=143 child-alive-at-kill=no secs-after-kill=5 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #2 rc=143 child-alive-at-kill=yes secs-after-kill=0 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #3 rc=143 child-alive-at-kill=yes secs-after-kill=0 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #4 rc=143 child-alive-at-kill=yes secs-after-kill=0 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+claim-create         #5 rc=143 child-alive-at-kill=yes secs-after-kill=0 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+## signal during the docker image rm in report_cleanup, unmodified timing (it often will not catch it)
+cleanup-docker       #1 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 1 passed, 0 failed]
+cleanup-docker       #2 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 1 passed, 0 failed]
+cleanup-docker       #3 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 1 passed, 0 failed]
+cleanup-docker       #4 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 1 passed, 0 failed]
+cleanup-docker       #5 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 1 passed, 0 failed]
+cleanup-docker       #6 rc=0 child-alive-at-kill=not-found secs-after-kill=5 closing-line=NO ns-after=[] last=[--- Summary: 1 passed, 0 failed]
+## the same window, widened to 1s by a sleep in the copy
+cleanup-docker-slow  #1 rc=143 child-alive-at-kill=yes secs-after-kill=1 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-docker-slow  #2 rc=143 child-alive-at-kill=yes secs-after-kill=1 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+cleanup-docker-slow  #3 rc=143 child-alive-at-kill=yes secs-after-kill=1 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+
+## rm failure, real repository from the real gate 5 served over git://, immutable config
+exit=1 still-there=yes ns=[]
+--- Gate 5: git:// from inside the cluster
+PASS  pods resolve the Docker-network name plane-git
+PASS  git:// ls-remote from a pod: 33581584f22aaffb3186a0527ad5def8db5a622c	HEAD
+--- Cleanup
+rm: /Users/bek/dev/pr/plane-platform/.local/git/gate-adv-r.git/config: Operation not permitted
+rm: /Users/bek/dev/pr/plane-platform/.local/git/gate-adv-r.git: Directory not empty
+FAIL  the throwaway .local/git/gate-adv-r.git is still there. Delete it by hand: rm -rf .local/git/gate-adv-r.git
+--- Summary: 2 passed, 1 failed
+
+## kill path, unremovable repository: SIGTERM in a redirected kubectl wait
+exit=143 repo-still-there=yes lines-mentioning-it=0 rm-errors=0
+# run start on the Docker clock: 2026-11-04T22:26:12.089312387Z
+# NetworkPolicies already loaded: 60, default-deny in: argocd infisical monitoring-agents monitoring plane-dev plane-prod-sim traefik
+--- Gate 1: digest pulls through each path
+--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run
+
+## fake LOCAL_DIR: real rm failures the shared .local/git cannot be used for
+-- immutable file inside the repository
+exit=1
+--- Cleanup
+rm: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/adv/fake-local-gate-adv-r/git/gate-adv-r.git/config: Operation not permitted
+rm: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/adv/fake-local-gate-adv-r/git/gate-adv-r.git: Directory not empty
+FAIL  the throwaway .local/git/gate-adv-r.git is still there. Delete it by hand: rm -rf .local/git/gate-adv-r.git
+--- Summary: 0 passed, 1 failed
+-- parent directory with no permissions: rm fails, and -e cannot see the repository
+exit=0; after restoring the mode the repository exists: yes
+--- Cleanup
+PASS  namespace gate-adv-r and the throwaway gate-adv-r.git are gone
+--- Summary: 1 passed, 0 failed
+-- a dangling symlink in an immutable parent: rm fails, and -e says it is gone
+exit=0; the symlink exists after the run: yes
+--- Cleanup
+rm: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/adv/fake-local-gate-adv-r/git/gate-adv-r.git: Operation not permitted
+PASS  namespace gate-adv-r and the throwaway gate-adv-r.git are gone
+--- Summary: 1 passed, 0 failed
+
+## a real refused namespace delete: a finalizer holds it in Terminating, real 120s timeout
+exit=1 seconds=120 ns=[Terminating]
+--- Cleanup
+FAIL  namespace gate-adv-r is not confirmed gone: namespace/gate-adv-r. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl delete namespace gate-adv-r
+--- Summary: 0 passed, 1 failed
+finalizer removed rc=0
+after clearing ns=[]
+LEAK-RM-DONE
+
+## natural.log
+## unmodified timing: SIGTERM N ms after --- Cleanup is printed, polled every 1ms
+delay=0  ms #1 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=0  ms #2 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=0  ms #3 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=0  ms #4 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=0  ms #5 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=0  ms #6 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=0ms: namespace left Active in 6 of 6 runs
+delay=5  ms #1 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=5  ms #2 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=5  ms #3 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=5  ms #4 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=5  ms #5 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=5  ms #6 rc=143 closing-line=yes ns-after=[Active] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=5ms: namespace left Active in 6 of 6 runs
+delay=15 ms #1 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=15 ms #2 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=15 ms #3 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=15 ms #4 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=15 ms #5 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=15 ms #6 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=15ms: namespace left Active in 0 of 6 runs
+delay=30 ms #1 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=30 ms #2 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=30 ms #3 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=30 ms #4 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=30 ms #5 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=30 ms #6 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=30ms: namespace left Active in 0 of 6 runs
+delay=60 ms #1 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=60 ms #2 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=60 ms #3 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=60 ms #4 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=60 ms #5 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=60 ms #6 rc=143 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not ru]
+delay=60ms: namespace left Active in 0 of 6 runs
+## kill point inside $(...), fixed regex
+exec-cmdsub          #1 rc=143 child-alive-at-kill=yes secs-after-kill=10 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+exec-cmdsub          #2 rc=143 child-alive-at-kill=yes secs-after-kill=10 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+exec-cmdsub          #3 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+NATURAL-DONE
+
+## gate2-more.log
+== client-loss exit=1 namespace-left=no seconds=35 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+FAIL  default-deny blocked a new connection from the unlabelled client: the target timed out but the reference did not answer, so this says nothing about the policy (reference: TIMEOUT, curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds, target: curl exit 28, HTTP 000, Connection t
+FAIL  default-deny blocked a new connection from the labelled client: the target timed out but the reference did not answer, so this says nothing about the policy (reference: TIMEOUT, curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds, target: curl exit 28, HTTP 000, Connection tim
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule admits only the labelled client: the unlabelled client is still blocked (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+NetworkPolicies in gate-adv-a just before cleanup: []
+PASS  namespace gate-adv-a and the throwaway gate-adv-a.git are gone
+--- Summary: 8 passed, 2 failed
+
+== egress-target-only exit=0 namespace-left=no seconds=34 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/fault ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny blocked a new connection from the unlabelled client (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5004 milliseconds)
+PASS  default-deny blocked a new connection from the labelled client (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule admits only the labelled client: the unlabelled client is still blocked (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+NetworkPolicies in gate-adv-a just before cleanup: []
+PASS  namespace gate-adv-a and the throwaway gate-adv-a.git are gone
+--- Summary: 10 passed, 0 failed
+
+== witness-real exit=0 namespace-left=no seconds=25 distinct NetworkPolicy objects seen by the 1s poller: [networkpolicy.networking.k8s.io/allow-labelled networkpolicy.networking.k8s.io/deny-to-server ]
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny blocked a new connection from the unlabelled client (node curl to the target: 200) (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  default-deny blocked a new connection from the labelled client (node curl to the target: 200) (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule admits only the labelled client: the unlabelled client is still blocked (node curl to the target: 200) (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+PASS  namespace gate-adv-a and the throwaway gate-adv-a.git are gone
+--- Summary: 10 passed, 0 failed
+
+== witness-drop exit=1 namespace-left=no seconds=33 distinct NetworkPolicy objects seen by the 1s poller: []
+PASS  positive control: the unlabelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+FAIL  default-deny blocked a new connection from the unlabelled client: the target timed out, but the node could not reach it either (node curl: 000), so this says nothing about the policy
+FAIL  default-deny blocked a new connection from the labelled client: the target timed out, but the node could not reach it either (node curl: 000), so this says nothing about the policy
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+FAIL  allow rule admits only the labelled client: the unlabelled client is still blocked: the target timed out, but the node could not reach it either (node curl: 000), so this says nothing about the policy
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+PASS  namespace gate-adv-a and the throwaway gate-adv-a.git are gone
+--- Summary: 7 passed, 3 failed
+
+GATE2-RUNS-DONE
+
+## slow.log
+## how long one SIGTERM takes to act when the foreground kubectl wait has its full 180s to run
+slow-wait            #1 rc=143 child-alive-at-kill=yes secs-after-kill=185 closing-line=yes ns-after=[] last=[--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run]
+SLOW-DONE
+
+## real-run.out
+# Day-1 gates
+# date (UTC): 2026-11-04T22:36:12Z
+# command: tests/gates/day1.sh
+# commit: 8fe66eb82207
+# context: kind-plane-platform
+# run start on the Docker clock: 2026-11-04T22:36:12.895574679Z
+# NetworkPolicies already loaded: 60, default-deny in: argocd infisical monitoring-agents monitoring plane-dev plane-prod-sim traefik
+--- Gate 1: digest pulls through each path
+PASS  docker.io digest pull
+PASS  docker.io digest pull through plane-mirror-docker: containerd asked it for sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec in this run, and it answered 200
+PASS  quay.io digest pull
+PASS  quay.io digest pull through plane-mirror-quay: containerd asked it for sha256:7379672d53c28113469275f2eb48adffa19954f39f8ef20c1e2992278f658e6c in this run, and it answered 200
+PASS  localhost:5001 digest pull (sha256:d82c2ab94640ded77cf76514ce6a84870761105058a4a9e51b05a8a79be97a6c)
+--- Gate 2: kindnet enforces NetworkPolicy
+nftables tables on the node:
+    table ip nat
+    table ip mangle
+    table ip filter
+    table ip6 mangle
+    table ip6 nat
+    table ip6 filter
+    table inet kindnet-network-policies
+PASS  positive control: the unlabelled client reaches the server before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny blocked a new connection from the unlabelled client (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5004 milliseconds)
+PASS  default-deny blocked a new connection from the labelled client (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule admits only the labelled client: the unlabelled client is still blocked (try 1, same moment, reference: curl exit 0, HTTP 200, target: curl exit 28, HTTP 000, Connection timed out after 5003 milliseconds)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+--- Gate 5: git:// from inside the cluster
+PASS  pods resolve the Docker-network name plane-git
+PASS  git:// ls-remote from a pod: f9e50880ae32cafe70602bdb52ebc1b05fcf7191	HEAD
+--- Cleanup
+PASS  namespace gate-checks and the throwaway gate.git are gone
+--- Summary: 17 passed, 0 failed

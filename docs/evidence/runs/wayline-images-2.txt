@@ -1,0 +1,296 @@
+[1;34m==>[0m Building localhost:5001/wayline/web:foundation-test
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.web
+#1 transferring dockerfile: 1.80kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 3.4s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [1/6] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 31.42MB 0.2s done
+#7 DONE 0.2s
+
+#8 [2/6] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+#8 0.114 apk-security-patch 2026-11-04
+#8 10.27 Preupgrading:
+#8 10.27 (1/2) Upgrading libapk (3.0.8-r0 -> 3.0.9-r0)
+#8 10.90 (2/2) Upgrading apk-tools (3.0.8-r0 -> 3.0.9-r0)
+#8 11.03 Executing busybox-1.37.0-r31.trigger
+#8 11.06 Continuing with the main upgrade transaction:
+#8 17.10 (1/5) Upgrading brotli-libs (1.2.0-r1 -> 1.2.1-r0)
+#8 17.44 (2/5) Upgrading libcurl (8.22.0-r0 -> 8.23.0-r0)
+#8 18.28 (3/5) Upgrading curl (8.22.0-r0 -> 8.23.0-r0)
+#8 18.75 (4/5) Upgrading libexpat (2.9.0-r0 -> 2.10.0-r0)
+#8 19.00 (5/5) Upgrading tzdata (2026e-r0 -> 2026f-r0)
+#8 19.25 Executing busybox-1.37.0-r31.trigger
+#8 19.25 OK: 59.4 MiB in 72 packages
+#8 DONE 19.3s
+
+#9 [3/6] COPY nginx.conf /etc/nginx/nginx.conf
+#9 DONE 0.0s
+
+#10 [4/6] COPY client/ /usr/share/nginx/html/
+#10 DONE 0.1s
+
+#11 [5/6] RUN sed -i "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/47c5ba4dd896c04ce060c5b7b8930061e93ebcbe|" /etc/nginx/nginx.conf   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
+#11 DONE 0.1s
+
+#12 [6/6] RUN chown -R 101:101 /run /var/cache/nginx
+#12 DONE 0.1s
+
+#13 resolving provenance for metadata file
+#13 DONE 0.0s
+[1;34m==>[0m Building localhost:5001/wayline/admin:foundation-test
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.admin
+#1 transferring dockerfile: 1.47kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 0.3s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [1/5] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 6.28MB 0.0s done
+#7 DONE 0.0s
+
+#8 [2/5] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+#8 CACHED
+
+#9 [3/5] COPY nginx.conf /etc/nginx/nginx.conf
+#9 DONE 0.0s
+
+#10 [4/5] COPY client/ /usr/share/nginx/html/god-mode/
+#10 DONE 0.0s
+
+#11 [5/5] RUN chown -R 101:101 /run /var/cache/nginx
+#11 DONE 0.1s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+[1;34m==>[0m Building localhost:5001/wayline/space:foundation-test
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.space
+#1 transferring dockerfile: 1.20kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 2.7s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 ...
+
+#7 [1/3] FROM docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+#7 resolve docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 0.0s done
+#7 CACHED
+
+#8 [2/3] RUN rm -rf /app/apps/space/build
+#8 DONE 0.2s
+
+#6 [internal] load build context
+#6 transferring context: 24.49MB 0.2s done
+#6 DONE 0.2s
+
+#9 [3/3] COPY build/ /app/apps/space/build/
+#9 DONE 0.1s
+
+#10 resolving provenance for metadata file
+#10 DONE 0.0s
+[1;34m==>[0m Building localhost:5001/wayline/backend:foundation-test
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.backend
+#1 transferring dockerfile: 1.18kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 0.4s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#4 DONE 4.5s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 349.16kB done
+#6 DONE 0.0s
+
+#7 [1/2] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#7 resolve docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 done
+#7 DONE 0.1s
+
+#7 [1/2] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#7 sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 0B / 656.99kB 0.2s
+#7 sha256:e4e24f985b56c5f405cbf26d0b4e13d3ae39847e4187b1daa920f1e8ff325600 0B / 132B 0.2s
+#7 sha256:a944bb63192a5ed78600672e4cc49b88b060e6883ba9c6117bdfbb72970b9b76 0B / 956B 0.2s
+#7 sha256:2971492cd252a9fd2b8f2d8c5e38540748f71a8c8adfa8df8050556885cb5ac6 0B / 624.21kB 0.2s
+#7 sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 656.99kB / 656.99kB 1.8s
+#7 sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 656.99kB / 656.99kB 1.8s done
+#7 sha256:8b5cf9ef44c804798e6a1ce5ac50024e77009fc6fa942af446925d56eb94b9e3 0B / 251B 0.2s
+#7 sha256:e4e24f985b56c5f405cbf26d0b4e13d3ae39847e4187b1daa920f1e8ff325600 132B / 132B 2.0s done
+#7 sha256:82afb6fae256ede4b46f6e37718b4e7df5d798fb13cb062f88e85fbc0137423d 0B / 31.12kB 0.2s
+#7 sha256:a944bb63192a5ed78600672e4cc49b88b060e6883ba9c6117bdfbb72970b9b76 956B / 956B 2.3s done
+#7 sha256:8b5cf9ef44c804798e6a1ce5ac50024e77009fc6fa942af446925d56eb94b9e3 251B / 251B 0.5s done
+#7 sha256:cd1e248a64ddafa48b23d921182772a0521041051434fa0b915f44aed3f19367 0B / 624.10kB 0.2s
+#7 sha256:f21a91bde4b72fa14799bb962ef7d4c82dbeda4ae31fdd18630fc00f49a0fdb3 0B / 563B 0.2s
+#7 sha256:2971492cd252a9fd2b8f2d8c5e38540748f71a8c8adfa8df8050556885cb5ac6 624.21kB / 624.21kB 3.6s done
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 0B / 79.32MB 0.2s
+#7 sha256:f21a91bde4b72fa14799bb962ef7d4c82dbeda4ae31fdd18630fc00f49a0fdb3 563B / 563B 1.8s done
+#7 sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 0B / 1.82MB 0.2s
+#7 sha256:82afb6fae256ede4b46f6e37718b4e7df5d798fb13cb062f88e85fbc0137423d 31.12kB / 31.12kB 2.4s done
+#7 sha256:6015bd0ae1a12bd1af37e3698e530b9d51a0a4f08a2bf67ee4edb2f7e9e595e7 0B / 1.18kB 0.2s
+#7 sha256:6015bd0ae1a12bd1af37e3698e530b9d51a0a4f08a2bf67ee4edb2f7e9e595e7 1.18kB / 1.18kB 1.3s done
+#7 sha256:4e7b563da78e36465b819285c84040563635cda73884c9766f83effb5bc8f6b1 0B / 241B 0.2s
+#7 sha256:4e7b563da78e36465b819285c84040563635cda73884c9766f83effb5bc8f6b1 241B / 241B 1.0s done
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 0B / 1.55MB 0.2s
+#7 sha256:cd1e248a64ddafa48b23d921182772a0521041051434fa0b915f44aed3f19367 624.10kB / 624.10kB 4.6s done
+#7 sha256:c02fb40c743e241a861b17630d83ed88b06d8d3fc70934213040d3ca2a2ced22 0B / 94B 0.2s
+#7 sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 1.05MB / 1.82MB 3.6s
+#7 sha256:be1bf212c5ab8a3ce644f20c0fc7e36996591c0794d78e9e39e5f116d752ef75 0B / 247B 0.2s
+#7 sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 1.82MB / 1.82MB 4.2s done
+#7 sha256:be1bf212c5ab8a3ce644f20c0fc7e36996591c0794d78e9e39e5f116d752ef75 247B / 247B 0.7s done
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 0B / 7.83MB 0.2s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 0B / 13.89MB 0.2s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 1.05MB / 79.32MB 5.3s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 1.05MB / 7.83MB 1.4s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 2.10MB / 7.83MB 2.3s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 3.15MB / 7.83MB 3.3s
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 0B / 1.55MB 5.3s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 4.19MB / 7.83MB 3.9s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 0B / 13.89MB 5.3s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 5.24MB / 7.83MB 5.4s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 3.15MB / 79.32MB 10.4s
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 1.05MB / 1.55MB 7.5s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 6.29MB / 7.83MB 6.2s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 7.34MB / 7.83MB 7.2s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 7.83MB / 7.83MB 7.5s done
+#7 sha256:c746ec0a997c7069e8a770a91558b284d554ad0bb7f70df91910d5d79979db0b 0B / 463.01kB 0.2s
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 1.55MB / 1.55MB 9.4s done
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 0B / 13.89MB 10.4s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 6.29MB / 79.32MB 15.5s
+#7 sha256:c746ec0a997c7069e8a770a91558b284d554ad0bb7f70df91910d5d79979db0b 463.01kB / 463.01kB 4.0s done
+#7 extracting sha256:c746ec0a997c7069e8a770a91558b284d554ad0bb7f70df91910d5d79979db0b 0.1s done
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 1.05MB / 13.89MB 11.9s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 10.49MB / 79.32MB 18.8s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 1.05MB / 13.89MB 17.0s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 14.68MB / 79.32MB 22.2s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 18.87MB / 79.32MB 25.5s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 2.10MB / 13.89MB 21.2s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 23.07MB / 79.32MB 28.4s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 2.10MB / 13.89MB 26.3s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 27.26MB / 79.32MB 32.9s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 3.15MB / 13.89MB 29.1s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 29.36MB / 79.32MB 38.0s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 3.15MB / 13.89MB 34.2s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 31.46MB / 79.32MB 43.1s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 3.15MB / 13.89MB 39.3s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 4.19MB / 13.89MB 42.4s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 35.65MB / 79.32MB 47.9s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 4.19MB / 13.89MB 47.5s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 39.85MB / 79.32MB 52.8s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 5.24MB / 13.89MB 48.9s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 41.94MB / 79.32MB 57.9s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 5.24MB / 13.89MB 54.0s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 44.04MB / 79.32MB 63.0s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 6.29MB / 13.89MB 58.9s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 46.14MB / 79.32MB 68.1s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 6.29MB / 13.89MB 64.0s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 7.34MB / 13.89MB 65.0s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 8.39MB / 13.89MB 67.8s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 49.28MB / 79.32MB 73.2s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 8.39MB / 13.89MB 72.9s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 9.44MB / 13.89MB 73.1s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 52.43MB / 79.32MB 78.3s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 10.49MB / 13.89MB 74.7s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 56.62MB / 79.32MB 81.8s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 11.53MB / 13.89MB 77.4s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 12.58MB / 13.89MB 81.6s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 59.77MB / 79.32MB 86.8s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 13.63MB / 13.89MB 84.6s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 13.89MB / 13.89MB 85.6s done
+#7 extracting sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6
+#7 extracting sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 0.2s done
+#7 extracting sha256:be1bf212c5ab8a3ce644f20c0fc7e36996591c0794d78e9e39e5f116d752ef75 done
+#7 extracting sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 0.1s done
+#7 extracting sha256:c02fb40c743e241a861b17630d83ed88b06d8d3fc70934213040d3ca2a2ced22 done
+#7 extracting sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 0.0s done
+#7 extracting sha256:4e7b563da78e36465b819285c84040563635cda73884c9766f83effb5bc8f6b1 done
+#7 extracting sha256:6015bd0ae1a12bd1af37e3698e530b9d51a0a4f08a2bf67ee4edb2f7e9e595e7 done
+#7 extracting sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 0.0s done
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 62.91MB / 79.32MB 92.0s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 67.11MB / 79.32MB 95.7s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 71.30MB / 79.32MB 99.6s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 74.45MB / 79.32MB 104.7s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 78.64MB / 79.32MB 108.3s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 79.32MB / 79.32MB 108.6s done
+#7 extracting sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb
+#7 extracting sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 1.5s done
+#7 DONE 113.8s
+
+#7 [1/2] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#7 extracting sha256:f21a91bde4b72fa14799bb962ef7d4c82dbeda4ae31fdd18630fc00f49a0fdb3 done
+#7 extracting sha256:cd1e248a64ddafa48b23d921182772a0521041051434fa0b915f44aed3f19367 0.0s done
+#7 extracting sha256:82afb6fae256ede4b46f6e37718b4e7df5d798fb13cb062f88e85fbc0137423d done
+#7 extracting sha256:8b5cf9ef44c804798e6a1ce5ac50024e77009fc6fa942af446925d56eb94b9e3 done
+#7 extracting sha256:2971492cd252a9fd2b8f2d8c5e38540748f71a8c8adfa8df8050556885cb5ac6 0.0s done
+#7 extracting sha256:a944bb63192a5ed78600672e4cc49b88b060e6883ba9c6117bdfbb72970b9b76 done
+#7 extracting sha256:e4e24f985b56c5f405cbf26d0b4e13d3ae39847e4187b1daa920f1e8ff325600 done
+#7 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+#7 extracting sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 0.0s done
+#7 DONE 113.9s
+
+#8 [2/2] COPY templates/ /code/templates/
+#8 DONE 0.3s
+
+#9 resolving provenance for metadata file
+#9 DONE 0.0s

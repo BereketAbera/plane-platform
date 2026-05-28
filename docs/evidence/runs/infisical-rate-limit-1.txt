@@ -1,0 +1,18 @@
+# Rate limit, measured from the host. 2026-11-04T21:49:10Z
+  60 200
+
+== ia_request, the helper every script uses, right after the limit tripped
+ia_request -> 200 after 0s
+
+== operators meanwhile: their own limit, own IP
+dev operator successful reconciles in the last 2m: 12
+dev operator "too many requests" lines: 0
+exit 0
+
+# Second run: 60 did not trip it, so 240 in a row. 2026-11-04T21:50:21Z
+ 240 200
+240 requests in 4s, from one client address
+rate-limit headers on the last response: []
+exit 0
+
+# Why, read in backend/src/server/app.ts at v0.167.6: await server.register(ratelimiter, ...) sits inside: if (appCfg.isProductionMode && appCfg.isCloud). isCloud is Boolean(LICENSE_SERVER_V2_SERVICE_KEY), which this instance does not set. Self-hosted registers no rate limiter, so the plan's secretsLimit of 40 is not enforced here.

@@ -1,0 +1,2 @@
+scripts/test.sh e2e prod-sim, started 20261104T231359Z
+PASS     e2e prod-sim               evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261104T231359Z.json

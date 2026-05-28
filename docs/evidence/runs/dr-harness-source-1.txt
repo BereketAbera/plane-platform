@@ -1,0 +1,1009 @@
+
+===== harness.sh =====
+#!/usr/bin/env bash
+# Scenario tests for the clean restore, in a throwaway tree. The scripts under test are real copies from the
+# repo. Stubbed: kubectl, kind, docker, terraform, scripts/up.sh, tests/e2e/smoke.py and the Infisical API.
+# Real: jq, yq, shasum, curl, openssl, the recovery set files on disk.
+set -uo pipefail
+REPO=/Users/bek/dev/pr/plane-platform
+DR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr
+STUBS=$DR/stubs
+H=$DR/h
+PASSES=0; FAILS=0
+API_PID=""
+pass() { printf 'PASS  %s\n' "$*"; PASSES=$((PASSES+1)); }
+fail() { printf 'FAIL  %s\n' "$*"; FAILS=$((FAILS+1)); }
+scenario() { printf '\n=== %s\n' "$*"; }
+log_has() { grep -E -- "$1" "$H/state/calls.log" >/dev/null 2>&1; }
+check() { # description command...
+  local d="$1"; shift
+  if "$@"; then pass "$d"; else fail "$d"; fi
+}
+no_log() { ! log_has "$1"; }
+order() { # pattern... each after the previous in calls.log
+  local line=0 p n
+  for p in "$@"; do
+    n="$(awk -v s="$line" -v p="$p" 'NR > s && $0 ~ p { print NR; exit }' "$H/state/calls.log")"
+    if [[ -z "$n" ]]; then echo "  no '$p' after line $line" >&2; return 1; fi
+    line=$n
+  done
+}
+stop_api() { if [[ -n "$API_PID" ]]; then kill "$API_PID" 2>/dev/null; wait "$API_PID" 2>/dev/null; API_PID=""; fi; }
+trap 'stop_api; rm -rf "$H"' EXIT
+
+fake_token() { printf 'x.%s.y' "$(printf '{"exp":%s}' "$1" | base64 | tr '+/' '-_' | tr -d '=')"; }
+
+reset() {
+  stop_api
+  rm -rf "$H"
+  mkdir -p "$H"/{scripts/lib,monitoring/ops,infisical/lib,infisical/terraform,tests/drills,tests/e2e,gitops/environments/dev,gitops/environments/prod-sim,gitops/applications,.tools/bin,state,.local/secret-zero,.local/terraform/infisical,.local/terraform/local,.local/evidence-raw}
+  cp "$REPO"/scripts/{restore.sh,backup.sh,destroy.sh,infisical-bootstrap.sh,infisical-seed.sh,secret-zero.sh} "$H/scripts/"
+  cp "$REPO"/scripts/lib/common.sh "$H/scripts/lib/"
+  cp "$REPO"/monitoring/ops/lib.sh "$H/monitoring/ops/"
+  cp "$REPO"/infisical/lib/*.sh "$H/infisical/lib/"
+  cp "$REPO"/tests/drills/{clean-restore.sh,lib.sh} "$H/tests/drills/"
+  cp "$REPO"/gitops/environments/dev/manifests.yaml "$H/gitops/environments/dev/"
+  cp "$REPO"/gitops/environments/prod-sim/manifests.yaml "$H/gitops/environments/prod-sim/"
+  cp "$REPO"/gitops/applications/*.yaml "$H/gitops/applications/"
+  cp "$STUBS"/up.sh "$H/scripts/up.sh"
+  cp "$STUBS"/smoke.py "$H/tests/e2e/smoke.py"
+  cp "$STUBS"/{kubectl,kind,docker,terraform} "$H/.tools/bin/"
+  ln -s "$REPO/.tools/bin/yq" "$H/.tools/bin/yq"
+  export H_ROOT="$H" H_STATE="$H/state" H_STUBS="$STUBS" PATH="$H/.tools/bin:$PATH"
+  export MIN_FREE_DISK_GIB=1
+  PORT=$((20000 + RANDOM % 10000))
+  export INFISICAL_URL="http://127.0.0.1:$PORT"
+  : > "$H/state/calls.log"
+  local z="$H/.local/secret-zero" token exp
+  chmod 700 "$z"
+  printf 'k%.0s' 1 2 3 4 > "$z/ENCRYPTION_KEY"; printf 'a%.0s' 1 2 3 > "$z/AUTH_SECRET"; printf 'dbpw' > "$z/DB_PASSWORD"; printf 'rdpw' > "$z/REDIS_PASSWORD"; printf 'uipw' > "$z/infisical-admin-password"
+  exp=$(($(date +%s) + 86400 * 60))
+  token="$(fake_token "$exp")"
+  jq -n --arg t "$token" '{email:"<redacted>",token:$t,organization:{id:"org-old",name:"wayline",slug:"w"},identity:{id:"adm",name:"admin"}}' > "$z/infisical-admin.json"
+  jq -n '{organization:{id:"org-old"},environment_slug:"prod",project_ids:{dev:"p-dev","prod-sim":"p-prod"},project_slugs:{dev:"plane-dev","prod-sim":"plane-prod-sim"},identity_ids:{dev:"i-dev","prod-sim":"i-prod"}}' > "$z/infisical-machine.json"
+  chmod 600 "$z"/*
+  jq -n '{serial:12,lineage:"L",resources:[1,2,3,4,5]}' > "$H/.local/terraform/infisical/terraform.tfstate"
+  jq -n '{serial:3,lineage:"local"}' > "$H/.local/terraform/local/terraform.tfstate"
+  python3 - <<PY
+import json, secrets
+keys = ["PG_USER","PG_PASSWORD","PG_DB","RABBITMQ_USER","RABBITMQ_PASSWORD","SILO_ACCESS_KEY","SILO_SECRET_KEY","SECRET_KEY","LIVE_SERVER_SECRET_KEY"]
+def env():
+    return {k: ("plane" if k in ("PG_USER","PG_DB","RABBITMQ_USER") else secrets.token_hex(24)) for k in keys}
+d, p = env(), env()
+tok = json.load(open("$z/infisical-admin.json"))["token"]
+proj = lambda e, tag: {k: {"value": v, "version": 1, "id": f"{tag}-{k}"} for k, v in e.items()}
+json.dump({"initialized": True, "token": tok, "org": "org-old", "project_ids": {"dev":"p-dev","prod-sim":"p-prod"}, "identity_ids": {"dev":"i-dev","prod-sim":"i-prod"}, "projects": {"p-dev": proj(d,"d"), "p-prod": proj(p,"p")}}, open("$H/state/api.json","w"))
+json.dump({"dev": d, "prod-sim": p}, open("$H/state/rendered.json","w"))
+json.dump({"exists": True, "generation": 1, "plane_pvcs": True, "infisical_pvc": True, "zero_applied": {"ENCRYPTION_KEY": open("$z/ENCRYPTION_KEY").read()}}, open("$H/state/cluster.json","w"))
+PY
+  printf 'update' > "$H/state/tf-scenario"
+  printf 'PLANE_DEV_ADMIN_EMAIL=a@b\nPLANE_DEV_ADMIN_PASSWORD=devpw\nPLANE_DEV_API_TOKEN=devtok\nPLANE_PROD_SIM_ADMIN_EMAIL=c@d\nPLANE_PROD_SIM_ADMIN_PASSWORD=prodpw\nPLANE_PROD_SIM_API_TOKEN=prodtok\n' > "$H/.local/test-accounts.env"
+  for e in dev prod-sim; do jq -n --arg e "$e" '{environment:$e,slug:"s",project_id:"p",work_item_id:"w",name:"n",asset_id:"a",sha256:"h",created_at:"c"}' > "$H/.local/test-sentinel-$e.json"; done
+  chmod 600 "$H/.local/test-accounts.env" "$H"/.local/test-sentinel-*.json
+  python3 "$STUBS/fakeapi.py" "$PORT" & API_PID=$!
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do curl -s -o /dev/null -m 1 "$INFISICAL_URL/api/status" && break; sleep 0.2; done
+}
+
+run() { # label, command...: runs in the tree, keeps output and exit code
+  OUT="$H/state/out.txt"
+  ( cd "$H" && "$@" ) > "$OUT" 2>&1
+  RC=$?
+}
+out_has() { grep -F -- "$1" "$OUT" >/dev/null; }
+take_backups() {
+  ( cd "$H" && scripts/backup.sh all ) > "$H/state/backup.out" 2>&1 || { cat "$H/state/backup.out"; fail "fixture: backup.sh all failed"; return 1; }
+  sleep 1
+}
+lose_cluster() { # The disaster: nothing of the cluster is left, and the fake API is empty until a restore.
+  python3 - <<PY
+import json
+c = json.load(open("$H/state/cluster.json"))
+json.dump({"exists": False, "generation": c.get("generation", 1)}, open("$H/state/cluster.json", "w"))
+PY
+  rm -rf "$H/.local/terraform/local"
+}
+fresh_api_state() { : ; }
+sum_zero() { (cd "$H/.local/secret-zero" && shasum -a 256 ENCRYPTION_KEY AUTH_SECRET DB_PASSWORD REDIS_PASSWORD infisical-admin-password infisical-admin.json); }
+
+# ------------------------------------------------------------------------------------------------
+scenario "S1. The happy path: nothing left but the host's files"
+reset; take_backups
+before="$(sum_zero)"
+: > "$H/state/calls.log"
+lose_cluster
+run scripts/restore.sh clean latest
+check "exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -15 "$OUT"
+check "order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, dev, prod-sim" order \
+  'up.sh UP_STOP_AFTER=traefik INFISICAL_RESTORED=$' \
+  'kc patch application infisical pause' \
+  'kc scale deployment/infisical --replicas=0 ns=infisical' \
+  'kc apply Job plane-restore ns=infisical' \
+  'kc exec redis FLUSHALL ns=infisical' \
+  'kc scale deployment/infisical --replicas=1 ns=infisical' \
+  'kc patch application infisical resume' \
+  'up.sh UP_STOP_AFTER= INFISICAL_RESTORED=yes' \
+  'tf plan' 'tf apply saved-plan' \
+  'kc publish identity ns=plane-dev id=i-dev' 'kc publish identity ns=plane-prod-sim id=i-prod' \
+  'kc apply Job plane-restore ns=plane-dev' 'kc apply Job plane-restore ns=plane-prod-sim' 'smoke --env dev' 'smoke --env prod-sim'
+check "root was never paused for Infisical" no_log 'kc patch application root pause.*infisical'
+check "no admin bootstrap call" no_log 'api POST bootstrap'
+check "no secret written" no_log 'api POST secrets/batch'
+check "terraform never ran with -auto-approve" no_log 'tf apply auto-approve'
+check "marker removed" test ! -e "$H/.local/restore-clean.state"
+check "secret zero unchanged" test "$before" = "$(sum_zero)"
+check "no archive made" test -z "$(find "$H/.local/secret-zero" -maxdepth 1 -name 'archive-*')"
+check "evidence says PASS" jq -e '.result == "PASS"' "$(ls -t "$H"/.local/evidence-raw/restore-clean-*.json | head -1)"
+check "every clean step PASS" jq -e 'all(.steps[]; .status == "PASS")' "$(ls -t "$H"/.local/evidence-raw/restore-clean-*.json | head -1)"
+
+scenario "S2. A cluster with data: refuse, change nothing"
+reset; take_backups; : > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "non-zero exit" test "$RC" -ne 0
+check "says why" out_has "already holds Plane volumes"
+check "marker not written" test ! -e "$H/.local/restore-clean.state"
+check "nothing ran" no_log 'up.sh|kc apply|kc scale'
+
+scenario "S3. No Infisical backup at all, Plane backups exist"
+reset; take_backups; rm -rf "$H/.local/backups/infisical"; lose_cluster; : > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "non-zero exit" test "$RC" -ne 0
+check "says Infisical is the source of truth" out_has "no Infisical backup with a complete recovery set"
+check "nothing ran" no_log 'up.sh|kc apply|kc scale'
+
+scenario "S4. Plane backup taken with another SECRET_KEY"
+reset; take_backups
+for f in "$H"/.local/backups/dev/*/manifest.json; do
+  jq '.secret_key_fp = "0000000000000000"' "$f" > "$f.t" && mv "$f.t" "$f"
+  d="${f%/manifest.json}"; (cd "$d" && grep -v ' ./manifest.json$' SHA256SUMS > S.t; shasum -a 256 ./manifest.json >> S.t; mv S.t SHA256SUMS)
+done
+lose_cluster; : > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "non-zero exit" test "$RC" -ne 0
+check "names the mismatch" out_has "no backup of dev matches Infisical backup"
+check "tells what to do" out_has "ENVS="
+check "nothing ran" no_log 'up.sh|kc apply|kc scale'
+run scripts/restore.sh clean latest ENVS=prod-sim PLAN_ONLY=yes
+check "leaving dev out passes the plan" test "$RC" -eq 0
+
+scenario "S5. A tampered dump"
+reset; take_backups
+printf 'tampered' >> "$(ls -d "$H"/.local/backups/prod-sim/*/ | tail -1)postgres/plane.dump"
+lose_cluster; : > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "non-zero exit" test "$RC" -ne 0
+check "says which" out_has "does not match its SHA256SUMS"
+check "nothing ran" no_log 'up.sh|kc apply|kc scale'
+
+scenario "S6. Secret zero: ENCRYPTION_KEY gone"
+reset; take_backups; rm "$H/.local/secret-zero/ENCRYPTION_KEY"; lose_cluster; : > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "non-zero exit" test "$RC" -ne 0
+check "says unreadable" out_has "the dump is unreadable"
+check "nothing ran" no_log 'up.sh|kc apply|kc scale'
+
+scenario "S7. A plain make up came first, which archived the credentials. Restore finds them by checksum"
+reset; take_backups; want="$(sum_zero)"
+mkdir "$H/.local/secret-zero/archive-20260101T000000Z"
+mv "$H/.local/secret-zero/infisical-admin.json" "$H/.local/secret-zero/infisical-admin-password" "$H/.local/secret-zero/archive-20260101T000000Z/"
+printf '{"token":"x.e30.y","organization":{"id":"org-new"}}' > "$H/.local/secret-zero/infisical-admin.json"
+printf 'newpw' > "$H/.local/secret-zero/infisical-admin-password"
+mv "$H/.local/terraform/infisical/terraform.tfstate" "$H/.local/terraform/infisical/terraform.tfstate.stale-x"
+printf '{"serial":1,"lineage":"new","resources":[]}' > "$H/.local/terraform/infisical/terraform.tfstate"
+lose_cluster; : > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -15 "$OUT"
+check "credentials are the backup's again" test "$want" = "$(sum_zero)"
+check "what it replaced is kept" test -n "$(find "$H/.local/secret-zero" -maxdepth 2 -path '*archive-pre-restore-*' -name infisical-admin.json)"
+check "Terraform state is the backup's" jq -e '.lineage == "L" and .serial == 12' "$H/.local/terraform/infisical/terraform.tfstate"
+check "the state it replaced is kept" test -n "$(find "$H/.local/terraform/infisical" -name 'terraform.tfstate.pre-restore-*')"
+
+scenario "S8. Fails partway, then resumes"
+reset; take_backups; lose_cluster; : > "$H/state/calls.log"
+printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+run scripts/restore.sh clean latest
+check "first run fails at dev" test "$RC" -ne 0
+check "marker stays" test -f "$H/.local/restore-clean.state"
+check "Infisical marked done" grep -qx 'done infisical' "$H/.local/restore-clean.state"
+check "says to run it again" out_has "it resumes"
+rm -f "$H/state/fail-jobs.json"; printf '{}' > "$H/state/jobs.json"
+: > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "second run exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -15 "$OUT"
+check "Infisical not restored twice" no_log 'kc apply Job plane-restore ns=infisical'
+check "dev restored this time" log_has 'kc apply Job plane-restore ns=plane-dev'
+check "marker removed" test ! -e "$H/.local/restore-clean.state"
+: > "$H/state/calls.log"
+
+scenario "S9. Under way, a plain make up on the fresh instance, and another backup id"
+reset; take_backups; IID="$(ls "$H/.local/backups/infisical" | tail -1)"; lose_cluster; : > "$H/state/calls.log"
+printf 'x' > "$H/state/fail-up"
+run scripts/restore.sh clean latest
+check "first run stops in up.sh" test "$RC" -ne 0
+check "marker there" test -f "$H/.local/restore-clean.state"
+: > "$H/state/calls.log"
+(cd "$H" && scripts/up.sh) > "$H/state/o2.txt" 2>&1; rc2=$?
+check "plain up refuses to bootstrap a fresh instance while a restore is under way" test "$rc2" -ne 0
+grep -F 'a clean restore is under way' "$H/state/o2.txt" >/dev/null; check "and says so" test "$?" -eq 0
+check "no bootstrap call" no_log 'api POST bootstrap'
+run scripts/restore.sh clean 20200101T000000Z
+check "another backup id refused while one is under way" out_has "is under way"
+run scripts/restore.sh clean "$IID"
+check "the same id resumes, exit 0 (got $RC)" test "$RC" -eq 0
+
+scenario "S10. Restored mode refuses instead of repairing"
+for sc in create replace; do
+  reset; take_backups; printf '%s' "$sc" > "$H/state/tf-scenario"; : > "$H/state/calls.log"
+  run env INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+  check "$sc: non-zero" test "$RC" -ne 0
+  check "$sc: names the resource" out_has "infisical_"
+  check "$sc: nothing applied" no_log 'tf apply'
+done
+reset; take_backups; printf 'none' > "$H/state/tf-scenario"; : > "$H/state/calls.log"
+run env INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+check "no changes: exit 0 (got $RC)" test "$RC" -eq 0
+check "no changes: says so" out_has "nothing to change"
+check "no changes: identities still published" log_has 'kc publish identity ns=plane-dev'
+check "no changes: no write" no_log 'api POST'
+reset; take_backups; python3 - <<PY
+import json
+a = json.load(open("$H/state/api.json")); a["initialized"] = False; json.dump(a, open("$H/state/api.json", "w"))
+PY
+: > "$H/state/calls.log"
+run env INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+check "fresh instance: refuses" test "$RC" -ne 0
+check "fresh instance: says the restore did not take" out_has "the restore did not take"
+check "fresh instance: no bootstrap call" no_log 'api POST bootstrap'
+check "fresh instance: nothing archived" test -z "$(find "$H/.local/secret-zero" -maxdepth 1 -name 'archive-*')"
+reset; take_backups; python3 - <<PY
+import json
+a = json.load(open("$H/state/api.json")); a["token"] = "someone-else"; json.dump(a, open("$H/state/api.json", "w"))
+PY
+: > "$H/state/calls.log"
+run env INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+check "rejected token: refuses" test "$RC" -ne 0
+check "rejected token: says so" out_has "same set"
+reset; take_backups; python3 - <<PY
+import json
+a = json.load(open("$H/state/api.json")); del a["projects"]["p-dev"]["SECRET_KEY"]; json.dump(a, open("$H/state/api.json", "w"))
+PY
+: > "$H/state/calls.log"
+run env INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+check "missing secret: refuses" test "$RC" -ne 0
+check "missing secret: names it, generates nothing" out_has "SECRET_KEY"
+check "missing secret: no write" no_log 'api POST secrets/batch'
+reset; take_backups; rm "$H/.local/terraform/infisical/terraform.tfstate"; : > "$H/state/calls.log"
+run env INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+check "no state: refuses before planning" test "$RC" -ne 0
+check "no state: no plan" no_log 'tf plan'
+
+scenario "S11. Plain make up on a fresh instance works as before, including over old state"
+reset; python3 - <<PY
+import json
+a = json.load(open("$H/state/api.json")); a["initialized"] = False; a["token"] = ""; a["projects"] = {}; json.dump(a, open("$H/state/api.json", "w"))
+PY
+: > "$H/state/calls.log"
+run scripts/infisical-bootstrap.sh
+check "exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -15 "$OUT"
+check "bootstrap call" log_has 'api POST bootstrap'
+check "old credentials moved to an archive" test -n "$(find "$H/.local/secret-zero" -maxdepth 2 -path '*archive-*' -name infisical-admin.json)"
+check "old Terraform state moved aside" test -n "$(find "$H/.local/terraform/infisical" -name 'terraform.tfstate.stale-*')"
+check "terraform ran with -auto-approve" log_has 'tf apply auto-approve'
+check "secrets seeded in both projects" test "$(grep -c 'api POST secrets/batch n=9' "$H/state/calls.log")" -eq 2
+check "identity published" log_has 'kc publish identity ns=plane-dev'
+
+scenario "S12. destroy.sh keeps what a restore needs"
+reset; take_backups; before_state="$(shasum -a 256 "$H/.local/terraform/infisical/terraform.tfstate")"; : > "$H/state/calls.log"
+run env CONFIRM=yes SKIP_BACKUP=yes scripts/destroy.sh
+check "exit 0 (got $RC)" test "$RC" -eq 0
+check "cluster deleted" log_has 'kind delete cluster'
+check "local state removed" test ! -e "$H/.local/terraform/local"
+check "Infisical state kept, byte for byte" test "$before_state" = "$(shasum -a 256 "$H/.local/terraform/infisical/terraform.tfstate")"
+check "secret zero kept" test -s "$H/.local/secret-zero/ENCRYPTION_KEY"
+check "points at restore-clean" out_has "make restore-clean"
+
+scenario "S13. The drill, start to finish"
+reset; python3 - <<PY
+import json
+PY
+run env PLAN_ONLY=yes tests/drills/clean-restore.sh
+check "PLAN_ONLY: exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -15 "$OUT"
+check "PLAN_ONLY: deleted nothing" no_log 'kind delete cluster'
+run tests/drills/clean-restore.sh
+check "no CONFIRM: refuses" test "$RC" -ne 0
+sleep 1
+run env CONFIRM=yes ALLOW_LOW_DISK=yes SKIP_E2E=yes tests/drills/clean-restore.sh
+check "drill exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || { grep -E 'FAIL|RESULT|fail' "$OUT" | head -20; }
+check "drill deleted the cluster" log_has 'kind delete cluster'
+check "RESULT PASS" out_has "RESULT PASS"
+grep -E '^FAIL' "$OUT" | head -10
+
+scenario "S14. Rotation guard on an in-place restore"
+reset; take_backups
+python3 - <<PY
+import json
+r = json.load(open("$H/state/rendered.json")); r["dev"]["PG_PASSWORD"] = "rotated-since-the-dump"; json.dump(r, open("$H/state/rendered.json", "w"))
+PY
+: > "$H/state/calls.log"
+run scripts/restore.sh infisical latest CONFIRM=yes
+check "refuses" test "$RC" -ne 0
+check "says a rotation happened" out_has "a rotation or a manual change happened after it"
+check "names the keys" out_has "POSTGRES_PASSWORD"
+check "nothing stopped" no_log 'kc scale'
+: > "$H/state/calls.log"
+run scripts/restore.sh infisical latest CONFIRM=yes ALLOW_STALE_PLANE_SECRETS=yes
+check "the override goes on" log_has 'kc scale deployment/infisical --replicas=0 ns=infisical'
+
+scenario "S15. A restore under way, and the cluster it was working on goes away"
+reset; take_backups; lose_cluster; : > "$H/state/calls.log"
+printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+run scripts/restore.sh clean latest
+check "fails at dev, Infisical marked done" grep -qx 'done infisical' "$H/.local/restore-clean.state"
+rm -f "$H/state/fail-jobs.json"; printf '{}' > "$H/state/jobs.json"
+lose_cluster
+: > "$H/state/calls.log"
+run scripts/restore.sh clean latest
+check "run again with the cluster gone: exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -12 "$OUT"
+check "Infisical restored again, because the new cluster has none" log_has 'kc apply Job plane-restore ns=infisical'
+reset; take_backups; lose_cluster
+printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+run scripts/restore.sh clean latest
+check "fails at dev, marker there" test -f "$H/.local/restore-clean.state"
+run env CONFIRM=yes SKIP_BACKUP=yes scripts/destroy.sh
+check "destroy clears the marker" test ! -e "$H/.local/restore-clean.state"
+
+scenario "S16. Retention must be able to remove a backup that has a recovery set, and PLAN_ONLY changes nothing"
+reset; take_backups
+sum_tree() { (cd "$H/.local" && find . -type f ! -path './evidence-raw/*' -exec shasum -a 256 {} + | LC_ALL=C sort | shasum -a 256); }
+a="$(sum_tree)"
+run scripts/restore.sh clean latest PLAN_ONLY=yes
+check "PLAN_ONLY exit 0 (got $RC)" test "$RC" -eq 0
+check "not one file under .local changed" test "$a" = "$(sum_tree)"
+
+scenario "S17. Infisical cannot be read at backup time: the backup says so, and a clean restore passes over it"
+reset; take_backups; good="$(ls "$H/.local/backups/infisical" | tail -1)"; sleep 1; stop_api
+( cd "$H" && scripts/backup.sh infisical ) > "$H/state/o3.txt" 2>&1; rc3=$?
+check "backup exits non-zero (got $rc3)" test "$rc3" -ne 0
+grep -F 'its recovery set is not whole' "$H/state/o3.txt" >/dev/null; check "and says why" test "$?" -eq 0
+bad="$(ls "$H/.local/backups/infisical" | tail -1)"
+check "the dump is kept" test -f "$H/.local/backups/infisical/$bad/postgres/infisical.dump"
+check "a newer backup exists" test "$bad" != "$good"
+python3 "$STUBS/fakeapi.py" "$PORT" & API_PID=$!
+sleep 1
+run scripts/restore.sh clean latest PLAN_ONLY=yes
+check "latest passes over it, exit 0 (got $RC)" test "$RC" -eq 0
+check "and names it" out_has "$bad"
+check "and uses the good one" out_has "Infisical  $good"
+run scripts/restore.sh clean "$bad" PLAN_ONLY=yes
+check "naming it directly is refused" test "$RC" -ne 0
+check "with the reason" out_has "could not complete it"
+
+scenario "S18. An older Infisical backup pairs with the Plane backups of its own run"
+reset; take_backups; first_i="$(ls "$H/.local/backups/infisical" | tail -1)"; first_d="$(ls "$H/.local/backups/dev" | tail -1)"; sleep 1
+take_backups; second_i="$(ls "$H/.local/backups/infisical" | tail -1)"; second_d="$(ls "$H/.local/backups/dev" | tail -1)"
+check "two distinct sets" test "$first_i" != "$second_i"
+run scripts/restore.sh clean "$first_i" PLAN_ONLY=yes
+check "older Infisical id takes the dev backup of its own run" out_has "dev        $first_d"
+run scripts/restore.sh clean latest PLAN_ONLY=yes
+check "latest takes the newest" out_has "dev        $second_d"
+run scripts/restore.sh clean "$first_i" PLAN_ONLY=yes BACKUP_DEV="$second_d"
+check "BACKUP_DEV overrides" out_has "dev        $second_d"
+
+scenario "S19. Plane restore puts back the accounts and sentinel of its dump, and leaves the other environment's alone"
+reset; take_backups
+printf 'PLANE_DEV_ADMIN_EMAIL=a@b\nPLANE_DEV_ADMIN_PASSWORD=devpw\nPLANE_DEV_API_TOKEN=NEWER\nPLANE_PROD_SIM_ADMIN_EMAIL=c@d\nPLANE_PROD_SIM_ADMIN_PASSWORD=prodpw\nPLANE_PROD_SIM_API_TOKEN=KEEPME\n' > "$H/.local/test-accounts.env"
+jq '.name = "newer"' "$H/.local/test-sentinel-dev.json" > "$H/state/t" && cp "$H/state/t" "$H/.local/test-sentinel-dev.json"
+: > "$H/state/calls.log"
+run scripts/restore.sh dev latest CONFIRM=yes
+check "exit 0 (got $RC)" test "$RC" -eq 0
+[[ "$RC" -eq 0 ]] || tail -12 "$OUT"
+grep -qx 'PLANE_DEV_API_TOKEN=devtok' "$H/.local/test-accounts.env"; check "dev token is the dump's" test "$?" -eq 0
+grep -qx 'PLANE_PROD_SIM_API_TOKEN=KEEPME' "$H/.local/test-accounts.env"; check "prod-sim token untouched" test "$?" -eq 0
+check "file stays 0600" test "$(stat -f %Lp "$H/.local/test-accounts.env")" = 600
+check "sentinel is the dump's" jq -e '.name == "n"' "$H/.local/test-sentinel-dev.json"
+
+printf '\nRESULT %s passed, %s failed\n' "$PASSES" "$FAILS"
+[[ "$FAILS" -eq 0 ]]
+
+===== stubs/fakeapi.py =====
+#!/usr/bin/env python3
+"""Fake Infisical HTTP API for the harness. State lives in $H_STATE/*.json so the stubs share it."""
+import json, os, sys, uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlsplit, parse_qs
+S = os.environ["H_STATE"]
+def st():
+    with open(f"{S}/api.json") as f: return json.load(f)
+def put(d):
+    with open(f"{S}/api.json.tmp", "w") as f: json.dump(d, f)
+    os.replace(f"{S}/api.json.tmp", f"{S}/api.json")
+def log(line):
+    with open(f"{S}/calls.log", "a") as f: f.write(line + "\n")
+class H(BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def out(self, code, body):
+        b = json.dumps(body).encode()
+        self.send_response(code); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
+    def do_GET(self):
+        u = urlsplit(self.path); q = parse_qs(u.query); d = st()
+        if u.path == "/api/status": return self.out(200, {"message": "ok"})
+        if u.path == "/api/v1/admin/config": return self.out(200, {"config": {"initialized": d["initialized"]}})
+        if u.path.endswith("/identity-memberships"):
+            ok = "Bearer " + d.get("token", "") == self.headers.get("Authorization", "")
+            return self.out(200 if ok else 401, {"identityMemberships": []} if ok else {"message": "invalid token"})
+        if u.path == "/api/v4/secrets":
+            pid = q["projectId"][0]; view = q.get("viewSecretValue", ["false"])[0] == "true"
+            secs = d["projects"].get(pid, {})
+            out = []
+            for k, v in sorted(secs.items()):
+                item = {"secretKey": k, "version": v["version"], "id": v["id"]}
+                if view: item["secretValue"] = v["value"]
+                out.append(item)
+            log(f"api GET secrets project={pid} view={view}")
+            return self.out(200, {"secrets": out, "imports": []})
+        self.out(404, {"message": "not stubbed " + u.path})
+    def do_POST(self):
+        n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}"); d = st(); u = urlsplit(self.path)
+        if u.path == "/api/v1/admin/bootstrap":
+            log("api POST bootstrap")
+            if d["initialized"]: return self.out(400, {"message": "Instance has already been set up"})
+            d["initialized"] = True; d["token"] = "new." + "e30" + ".sig"; d["org"] = str(uuid.uuid4()); put(d)
+            return self.out(200, {"user": {"email": body["email"]}, "organization": {"id": d["org"], "name": "wayline", "slug": "wayline"}, "identity": {"id": str(uuid.uuid4()), "name": "admin", "credentials": {"token": d["token"]}}})
+        if u.path == "/api/v4/secrets/batch":
+            log(f"api POST secrets/batch n={len(body['secrets'])}")
+            p = d["projects"].setdefault(body["projectId"], {})
+            for s in body["secrets"]: p[s["secretKey"]] = {"value": s["secretValue"], "version": 1, "id": str(uuid.uuid4())}
+            put(d); return self.out(200, {"secrets": []})
+        self.out(404, {"message": "not stubbed"})
+HTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_forever()
+
+===== stubs/fakejob.py =====
+#!/usr/bin/env python3
+"""What a plane-backup Job leaves on the host, from the same YAML. Fake dumps; real manifest shape."""
+import hashlib, json, os, re, sys
+doc = sys.argv[1]; S = os.environ["H_STATE"]; ROOT = os.environ["H_ROOT"]
+def jload(n, d):
+    try:
+        with open(f"{S}/{n}") as f: return json.load(f)
+    except FileNotFoundError: return d
+bid = re.search(r'name: BACKUP_ID, value: "([^"]+)"', doc).group(1)
+env = re.search(r'name: ENV_NAME, value: "([^"]+)"', doc).group(1)
+d = f"{ROOT}/.local/backups/{env}/{bid}"
+os.makedirs(f"{d}/postgres"); os.makedirs(f"{d}/objects", exist_ok=True)
+def w(p, c):
+    with open(f"{d}/{p}", "w") as f: f.write(c)
+fp = lambda s: hashlib.sha256(s.encode()).hexdigest()[:16]
+if env == "infisical":
+    w("postgres/infisical.dump", "fake dump"); w("postgres/rowcounts.tsv", "users\t1\n")
+    with open(f"{ROOT}/.local/secret-zero/ENCRYPTION_KEY") as f: ek = f.read()
+    m = {"schema":1,"kind":"infisical","env":"infisical","id":bid,"created_at":"x","pg_image":"p","server_image":re.search(r'SERVER_IMAGE, value: "([^"]+)"', doc).group(1),"encryption_key_fp":fp(ek),"files":[]}
+    # What the database holds at this moment, so a later restore serves exactly this.
+    with open(f"{d}/fake-api-dump.json", "w") as f: json.dump(jload("api.json", {}), f)
+else:
+    ren = jload("rendered.json", {})[env]
+    w("postgres/plane.dump", "fake dump"); w("postgres/rowcounts.tsv", "users\t1\n")
+    w("objects.lsjson", json.dumps([{"Path": "a/b.txt", "IsDir": False, "MimeType": "text/plain"}]))
+    os.makedirs(f"{d}/objects/a", exist_ok=True); w("objects/a/b.txt", "hello")
+    s = re.search(r'S_SLUG, value: "([^"]*)"', doc).group(1)
+    sentinel = None
+    if s:
+        sentinel = {"environment": env, "slug": s, "project_id": "p", "work_item_id": "w", "name": "n", "asset_id": "a", "sha256": "h"}
+    m = {"schema":1,"kind":"plane","env":env,"id":bid,"created_at":"x","plane_version":"1.4.3","backend_image":"b","pg_image":"p","secret_key_fp":fp(ren["SECRET_KEY"]),"objects":{"count":1,"bytes":5},"encrypted_sentinel":"ok","sentinel":sentinel,"files":[]}
+w("manifest.json", json.dumps(m))
+out = []
+for root, _, files in os.walk(d):
+    for f in files:
+        p = os.path.join(root, f); rel = "./" + os.path.relpath(p, d)
+        if rel == "./fake-api-dump.json": continue
+        with open(p, "rb") as fh: out.append(f"{hashlib.sha256(fh.read()).hexdigest()}  {rel}\n")
+w("SHA256SUMS", "".join(out))
+
+===== stubs/kubectl =====
+#!/usr/bin/env python3
+"""Stub kubectl for the harness: just enough of the API, all state in $H_STATE."""
+import base64, json, os, re, sys, hashlib, time, subprocess
+S = os.environ["H_STATE"]; ROOT = os.environ["H_ROOT"]
+def log(line):
+    with open(f"{S}/calls.log", "a") as f: f.write(line + "\n")
+def jload(n, default):
+    try:
+        with open(f"{S}/{n}") as f: return json.load(f)
+    except FileNotFoundError: return default
+def jsave(n, d):
+    with open(f"{S}/{n}.tmp", "w") as f: json.dump(d, f)
+    os.replace(f"{S}/{n}.tmp", f"{S}/{n}")
+a = sys.argv[1:]
+ns = None; args = []; i = 0
+while i < len(a):
+    if a[i] == "--context": i += 2; continue
+    if a[i] == "-n": ns = a[i+1]; i += 2; continue
+    if a[i].startswith("--namespace"):
+        if "=" in a[i]: ns = a[i].split("=")[1]; i += 1
+        else: ns = a[i+1]; i += 2
+        continue
+    args.append(a[i]); i += 1
+cl = jload("cluster.json", {"exists": False})
+if not cl.get("exists"):
+    if args[:1] != ["config"]:
+        print("no cluster", file=sys.stderr); sys.exit(1)
+cmd = " ".join(args)
+b64 = lambda s: base64.b64encode(s.encode()).decode()
+def fp(s): return hashlib.sha256(s.encode()).hexdigest()[:16]
+api = jload("api.json", {})
+def zero(n):
+    with open(f"{ROOT}/.local/secret-zero/{n}") as f: return f.read()
+def plane_value(env, k):
+    d = jload("rendered.json", {}).get(env)
+    return d.get(k) if d else None
+if args[:2] == ["get", "--raw"]: print("ok"); sys.exit(0)
+if args[0] == "get" and args[1] == "application":
+    name = args[2]; apps = jload("apps.json", {})
+    ap = apps.get(name, {"enabled": None})
+    auto = {"prune": True, "selfHeal": True}
+    if ap.get("enabled") is False: auto["enabled"] = False
+    o = {"metadata": {"name": name}, "spec": {"syncPolicy": {"automated": auto}}, "status": {"sync": {"status": "Synced"}, "health": {"status": "Healthy"}, "operationState": {"phase": "Succeeded"}}}
+    if "jsonpath" in cmd: print("Synced/Healthy", end=""); sys.exit(0)
+    print(json.dumps(o)); sys.exit(0)
+if args[0] == "get" and args[1] == "applications":
+    apps = jload("apps.json", {})
+    names = ["root","alloy","backup-storage","infisical","infisical-operator-dev","infisical-operator-prod-sim","kube-prometheus-stack","loki","metrics-server","monitoring-extras","network-policies","plane-dev","plane-prod-sim","traefik"]
+    items = []
+    for n in names:
+        auto = {"prune": True, "selfHeal": True}
+        if apps.get(n, {}).get("enabled") is False: auto["enabled"] = False
+        items.append({"metadata": {"name": n}, "spec": {"syncPolicy": {"automated": auto}}, "status": {"sync": {"status": "Synced"}, "health": {"status": "Healthy"}}})
+    print(json.dumps({"items": items})); sys.exit(0)
+if args[0] == "patch" and args[1] == "application":
+    name = args[2]; apps = jload("apps.json", {}); p = " ".join(args)
+    apps.setdefault(name, {})["enabled"] = False if '"enabled":false' in p else None
+    jsave("apps.json", apps); log(f"kc patch application {name} {'pause' if '\"enabled\":false' in p else 'resume'}"); sys.exit(0)
+if args[0] == "annotate": sys.exit(0)
+if args[0] == "get" and args[1] == "secret":
+    name = args[2]; env = ns.replace("plane-", "") if ns and ns.startswith("plane-") else None
+    data = None
+    if ns == "infisical" and cl.get("zero_applied"):
+        if name == "infisical-secrets": data = {"ENCRYPTION_KEY": cl["zero_applied"]["ENCRYPTION_KEY"]}
+    elif env:
+        ren = jload("rendered.json", {}).get(env)
+        if ren:
+            m = {"plane-pgdb": {"POSTGRES_USER":"PG_USER","POSTGRES_PASSWORD":"PG_PASSWORD","POSTGRES_DB":"PG_DB"},
+                 "plane-rabbitmq": {"RABBITMQ_DEFAULT_USER":"RABBITMQ_USER","RABBITMQ_DEFAULT_PASS":"RABBITMQ_PASSWORD"},
+                 "plane-doc-store": {"MINIO_ROOT_USER":"SILO_ACCESS_KEY","MINIO_ROOT_PASSWORD":"SILO_SECRET_KEY","AWS_ACCESS_KEY_ID":"SILO_ACCESS_KEY","AWS_SECRET_ACCESS_KEY":"SILO_SECRET_KEY"},
+                 "plane-app-keys": {"SECRET_KEY":"SECRET_KEY","LIVE_SERVER_SECRET_KEY":"LIVE_SERVER_SECRET_KEY"},
+                 "plane-app-env": {"DATABASE_URL":"PG_PASSWORD"}, "plane-live-env": {"REDIS_URL":"PG_DB"}}
+            if name in m: data = {k: ren[v] for k, v in m[name].items()}
+    if data is None:
+        print(f'secret "{name}" not found', file=sys.stderr); sys.exit(1)
+    print(json.dumps({"metadata": {"name": name, "annotations": {}}, "data": {k: b64(v) for k, v in data.items()}})); sys.exit(0)
+if args[0] == "get" and args[1] in ("statefulset", "deployment", "sts", "deploy"):
+    n = args[2]
+    img = {"infisical-postgres": ("postgres", "docker.io/library/postgres:16.15-alpine@sha256:aa"), "infisical": ("infisical-standalone-infisical", "docker.io/infisical/infisical:v0.167.6@sha256:bb"),
+           "plane-pgdb-wl": ("plane-pgdb", "docker.io/library/postgres:15.19-alpine@sha256:cc"), "plane-api-wl": ("plane-api", "docker.io/makeplane/plane-backend:v1.4.3@sha256:dd")}[n]
+    print(json.dumps({"metadata": {"labels": {}}, "spec": {"template": {"metadata": {"labels": {"app.kubernetes.io/version": "1.4.3"}}, "spec": {"containers": [{"name": img[0], "image": img[1]}]}}}})); sys.exit(0)
+if args[0] == "get" and args[1] == "pvc":
+    if len(args) > 2 and args[2] == "backups": print("persistentvolumeclaim/backups"); sys.exit(0)
+    if len(args) > 2 and args[2] == "data-infisical-postgres-0":
+        sys.exit(0 if cl.get("infisical_pvc") else 1)
+    print("persistentvolumeclaim/backups")
+    if ns and ns.startswith("plane-") and cl.get("plane_pvcs"): print("persistentvolumeclaim/data-plane-pgdb-wl-0")
+    sys.exit(0)
+if args[0] == "get" and args[1] == "pods": sys.exit(0)
+if args[0] == "get" and args[1] == "jobs": print(json.dumps({"items": []})); sys.exit(0)
+if args[0] == "get" and args[1] == "job":
+    print(json.dumps({"status": {"conditions": [{"type": jload("jobs.json", {}).get(args[2], "Complete"), "status": "True"}]}})); sys.exit(0)
+if args[0] == "get" and args[1] == "configmap":
+    ca = f"-----BEGIN CERTIFICATE-----cluster-{cl.get('generation', 1)}-----END CERTIFICATE-----"
+    print(ca if "jsonpath" in cmd else json.dumps({"data": {"ca.crt": ca}}), end="")
+    sys.exit(0)
+if args[0] == "get" and args[1] == "namespace": sys.exit(0)
+if args[0] == "logs":
+    job = args[1].split("/")[1]
+    if "guard-objects" in job: print("OBJECTS=0")
+    elif "guard" in job: print("USERS=" + str(jload("cluster.json", {}).get("users_" + (ns or ""), 0)))
+    else: print("job logs ok")
+    sys.exit(0)
+if args[0] == "rollout" or args[0] == "scale":
+    log("kc " + " ".join(args[:3]) + f" ns={ns}" + (" " + args[3] if len(args) > 3 and args[0] == "scale" else ""))
+    if args[0] == "rollout" and "deployment/infisical" in cmd and os.path.exists(f"{S}/fail-server-start"): sys.exit(1)
+    if args[0] == "rollout" and ns == "infisical" and "deployment/infisical" in cmd:
+        d = jload("api.json", {})
+        if os.path.exists(f"{S}/restored-pending"):
+            with open(f"{S}/restored-pending") as f: pending = json.load(f)
+            jsave("api.json", pending); os.remove(f"{S}/restored-pending")
+    sys.exit(0)
+if args[0] == "exec":
+    joined = " ".join(args)
+    if "redis-cli FLUSHALL" in joined: log(f"kc exec redis FLUSHALL ns={ns}"); print("OK"); sys.exit(0)
+    if "valkey-cli FLUSHALL" in joined: log(f"kc exec valkey FLUSHALL ns={ns}"); print("OK"); sys.exit(0)
+    if "rabbitmqctl" in joined: print("celery"); sys.exit(0)
+    if "manage.py shell" in joined:
+        if "SENTINEL=" in joined: print("@@SENTINEL=ok\n@@ROWS=1\n@@UNDECRYPTABLE=")
+        elif "APIToken" in joined: print("@@faketoken")
+        else: print("@@ok")
+        sys.exit(0)
+    sys.exit(0)
+if args[0] == "apply" or args[0] == "create":
+    if args[0] == "create":
+        stdin = sys.stdin.read()
+        name = args[3]
+        print(f"apiVersion: v1\nkind: Secret\nmetadata:\n  name: {name}\n  namespace: {ns}\n")
+        if name == "infisical-secrets":
+            cl["zero_applied"] = {"ENCRYPTION_KEY": re.search(r"^ENCRYPTION_KEY=(.*)$", stdin, re.M).group(1)}
+            jsave("cluster.json", cl)
+        if name == "plane-infisical-identity": log(f"kc publish identity ns={ns} id={stdin.strip().split('=')[1]}")
+        sys.exit(0)
+    doc = sys.stdin.read()
+    m = re.search(r"^  name: (\S+)", doc, re.M); name = m.group(1) if m else "?"
+    kind = (re.search(r"^kind: (\S+)", doc, re.M) or [None, "?"])[1]
+    nsm = re.search(r"^  namespace: (\S+)", doc, re.M); jns = nsm.group(1) if nsm else ns
+    if kind == "Job":
+        log(f"kc apply Job {re.sub(r'-[0-9]{8}t[0-9]{6}z$', '', name)} ns={jns}")
+        fails = jload("fail-jobs.json", [])
+        if any(f in name and (not fl or fl in str(jns)) for f, fl in fails):
+            js = jload("jobs.json", {}); js[name] = "Failed"; jsave("jobs.json", js)
+        if name.startswith("plane-backup"):
+            subprocess.run([sys.executable, os.path.join(os.environ["H_STUBS"], "fakejob.py"), doc], check=True)
+        if name.startswith("plane-restore-") and "guard" not in name and "migrate" not in name and jns == "infisical":
+            # The dump comes back: the fake API now serves what the backup recorded, once the server restarts.
+            bid = re.search(r'name: BACKUP_ID, value: "([^"]+)"', doc).group(1)
+            with open(f"{ROOT}/.local/backups/infisical/{bid}/fake-api-dump.json") as f: dump = json.load(f)
+            jsave("restored-pending", dump)
+    sys.exit(0)
+if args[0] == "delete": sys.exit(0)
+print("stub kubectl: unhandled: " + cmd, file=sys.stderr); sys.exit(99)
+
+===== stubs/terraform =====
+#!/usr/bin/env python3
+"""Stub terraform: records what is asked. $H_STATE/tf-scenario says what plan finds."""
+import json, os, sys
+S = os.environ["H_STATE"]
+def log(l):
+    with open(f"{S}/calls.log", "a") as f: f.write(l + "\n")
+a = [x for x in sys.argv[1:] if not x.startswith("-chdir")]
+sc = open(f"{S}/tf-scenario").read().strip() if os.path.exists(f"{S}/tf-scenario") else "update"
+cmd = a[0]
+state = os.environ["H_ROOT"] + "/.local/terraform/infisical/terraform.tfstate"
+if cmd == "init": sys.exit(0)
+if cmd == "plan":
+    log(f"tf plan scenario={sc}")
+    if sc == "fail": sys.exit(1)
+    if sc == "none": print("No changes."); sys.exit(0)
+    out = [x.split("=", 1)[1] for x in a if x.startswith("-out=")][0]
+    open(out, "w").write(sc)
+    print(f"Plan: scenario {sc}"); sys.exit(2)
+if cmd == "show":
+    sc2 = open(a[-1]).read().strip()
+    upd = {"address": 'infisical_identity_kubernetes_auth.reader["dev"]', "change": {"actions": ["update"]}}
+    extra = []
+    if sc2 == "create": extra = [{"address": 'infisical_project.plane["dev"]', "change": {"actions": ["create"]}}]
+    if sc2 == "replace": extra = [{"address": 'infisical_identity.reader["dev"]', "change": {"actions": ["delete", "create"]}}]
+    print(json.dumps({"resource_changes": [{"address": "x", "change": {"actions": ["no-op"]}}, upd] + extra})); sys.exit(0)
+if cmd == "apply":
+    log("tf apply " + ("saved-plan" if "-auto-approve" not in a else "auto-approve"))
+    open(f"{S}/tf-scenario", "w").write("none")
+    if "-auto-approve" in a:
+        # a fresh instance: new state
+        os.makedirs(os.path.dirname(state), exist_ok=True)
+        json.dump({"serial": 1, "lineage": "new", "resources": [1, 2, 3, 4, 5]}, open(state, "w"))
+    sys.exit(0)
+if cmd == "output":
+    api = json.load(open(f"{S}/api.json"))
+    print(json.dumps({"environment_slug": {"value": "prod"}, "project_ids": {"value": api["project_ids"]}, "project_slugs": {"value": {"dev": "plane-dev", "prod-sim": "plane-prod-sim"}}, "identity_ids": {"value": api["identity_ids"]}})); sys.exit(0)
+print("stub terraform: unhandled", a, file=sys.stderr); sys.exit(99)
+
+===== stubs/kind =====
+#!/usr/bin/env python3
+import json, os, sys
+S = os.environ["H_STATE"]
+def cl():
+    try: return json.load(open(f"{S}/cluster.json"))
+    except FileNotFoundError: return {"exists": False}
+if sys.argv[1:3] == ["get", "clusters"]:
+    if cl().get("exists"): print("plane-platform")
+    sys.exit(0)
+if sys.argv[1:3] == ["delete", "cluster"]:
+    c = cl(); g = c.get("generation", 1)
+    json.dump({"exists": False, "generation": g}, open(f"{S}/cluster.json", "w"))
+    with open(f"{S}/calls.log", "a") as f: f.write("kind delete cluster\n")
+    sys.exit(0)
+sys.exit(0)
+
+===== stubs/docker =====
+#!/bin/sh
+exit 0
+
+===== stubs/up.sh =====
+#!/usr/bin/env bash
+# Stub of scripts/up.sh: makes the cluster, applies secret zero, then the real bootstrap unless stopped.
+source "$(dirname "$0")/lib/common.sh"
+printf 'up.sh UP_STOP_AFTER=%s INFISICAL_RESTORED=%s\n' "${UP_STOP_AFTER:-}" "${INFISICAL_RESTORED:-}" >> "$H_STATE/calls.log"
+if [[ -f "$H_STATE/fail-up" ]]; then rm -f "$H_STATE/fail-up"; die "stub: up.sh fails once"; fi
+python3 - <<'PY'
+import json, os
+S = os.environ["H_STATE"]
+try: c = json.load(open(f"{S}/cluster.json"))
+except FileNotFoundError: c = {"exists": False}
+if not c.get("exists"):
+    c = {"exists": True, "generation": c.get("generation", 0) + 1}
+    json.dump(c, open(f"{S}/cluster.json", "w"))
+    a = json.load(open(f"{S}/api.json"))
+    # A new cluster: Infisical boots empty until something restores it.
+    json.dump(dict(a, initialized=False, token="", projects={}, project_ids=a.get("project_ids"), identity_ids=a.get("identity_ids")), open(f"{S}/api.json", "w"))
+PY
+"$ROOT/scripts/secret-zero.sh" >/dev/null
+[[ "${UP_STOP_AFTER:-}" == traefik ]] && exit 0
+"$ROOT/scripts/infisical-bootstrap.sh"
+
+===== stubs/smoke.py =====
+#!/usr/bin/env python3
+import os, sys
+with open(os.environ["H_STATE"] + "/calls.log", "a") as f: f.write("smoke " + " ".join(sys.argv[1:4]) + "\n")
+sys.exit(int(os.environ.get("H_SMOKE_RC", "0")))
+
+===== rehearse-plane.sh =====
+#!/usr/bin/env bash
+# Runs the exact Job of restore_data from scripts/restore.sh against a scratch database and a scratch bucket
+# in plane-dev. Real data is out of reach: the variables the script uses are renamed, so with no override
+# set -u stops it, and this refuses to apply if any reference to the real names is left.
+source /Users/bek/dev/pr/plane-platform/scripts/lib/common.sh
+source "$ROOT/monitoring/ops/lib.sh"
+set -euo pipefail
+ENVN=dev; NS=plane-dev
+ID="$(ls "$LOCAL_DIR/backups/$ENVN" | grep -E '^[0-9]{8}T[0-9]{6}Z$' | tail -1)"
+JOB="plane-restore-rehearsal-$(date +%s)"
+SCRATCH_DB="rehearse_$(date +%s)"
+SCRATCH_BUCKET="restore-rehearsal-$(date +%s)"
+PG_IMAGE="$(kc -n $NS get statefulset plane-pgdb-wl -o json | jq -r '.spec.template.spec.containers[] | select(.name=="plane-pgdb") | .image')"
+python3 - "$ROOT/scripts/restore.sh" > "$DR/rehearse.tmpl.yaml" <<'PY'
+import re,sys
+s=open(sys.argv[1]).read()
+i=s.index('restore_data() {')
+j=s.index("<<'YAML'", i)
+k=s.index('\n', j)+1
+e=s.index('\nYAML\n', k)
+print(s[k:e])
+PY
+sed -e "s|__JOB__|$JOB|g" -e "s|__NS__|$NS|g" -e "s|__ID__|$ID|g" -e "s|__PG_IMAGE__|$PG_IMAGE|g" -e "s|__RCLONE_IMAGE__|$RCLONE_IMAGE|g" \
+    -e 's/\$POSTGRES_DB/$SCRATCH_DB/g' -e 's/\$BUCKET/$SCRATCH_BUCKET/g' "$DR/rehearse.tmpl.yaml" > "$DR/rehearse.yaml"
+# The env entries for the real names go away; the scratch names come in.
+SCRATCH_DB="$SCRATCH_DB" SCRATCH_BUCKET="$SCRATCH_BUCKET" yq -i '
+  del(.spec.template.spec.initContainers[].env[] | select(.name == "POSTGRES_DB" or .name == "BUCKET")) |
+  del(.spec.template.spec.containers[].env[] | select(.name == "POSTGRES_DB" or .name == "BUCKET")) |
+  .spec.template.spec.initContainers[0].env += [{"name":"SCRATCH_DB","value":strenv(SCRATCH_DB)}] |
+  .spec.template.spec.initContainers[1].env += [{"name":"SCRATCH_BUCKET","value":strenv(SCRATCH_BUCKET)}] |
+  .spec.template.spec.containers[0].env += [{"name":"SCRATCH_BUCKET","value":strenv(SCRATCH_BUCKET)}] |
+  .metadata.labels."app.kubernetes.io/name" = "plane-restore-rehearsal" |
+  .spec.template.metadata.labels."app.kubernetes.io/name" = "plane-restore-rehearsal" |
+  .spec.ttlSecondsAfterFinished = 600
+' "$DR/rehearse.yaml"
+if grep -nE 'POSTGRES_DB|\bBUCKET\b|AWS_S3_BUCKET_NAME' "$DR/rehearse.yaml"; then echo "REFUSING: a real name is left" >&2; exit 1; fi
+grep -q 'SCRATCH_DB' "$DR/rehearse.yaml"
+echo "rehearsal of backup $ID into database $SCRATCH_DB and bucket $SCRATCH_BUCKET"
+rc=0
+run_job "$NS" "$JOB" 600 < "$DR/rehearse.yaml" || rc=$?
+echo "rehearsal job rc=$rc"
+# Cleanup in a second Job with the same names.
+CLEAN="plane-restore-rehearsal-clean-$(date +%s)"
+kc apply -f - >/dev/null <<YAML
+apiVersion: batch/v1
+kind: Job
+metadata: { name: $CLEAN, namespace: $NS, labels: { app.kubernetes.io/name: plane-restore-rehearsal, app.kubernetes.io/component: backup } }
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata: { labels: { app.kubernetes.io/name: plane-restore-rehearsal, app.kubernetes.io/component: backup } }
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 70, runAsGroup: 70, seccompProfile: { type: RuntimeDefault } }
+      volumes: [ { name: work, emptyDir: { sizeLimit: 16Mi } } ]
+      initContainers:
+        - name: db
+          image: $PG_IMAGE
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 25m, memory: 32Mi }, limits: { cpu: 200m, memory: 64Mi } }
+          env:
+            - { name: PGHOST, value: plane-pgdb }
+            - { name: PGUSER, valueFrom: { secretKeyRef: { name: plane-pgdb, key: POSTGRES_USER } } }
+            - { name: PGPASSWORD, valueFrom: { secretKeyRef: { name: plane-pgdb, key: POSTGRES_PASSWORD } } }
+          command: [dropdb, --maintenance-db=postgres, --force, --if-exists, $SCRATCH_DB]
+      containers:
+        - name: bucket
+          image: $RCLONE_IMAGE
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 25m, memory: 32Mi }, limits: { cpu: 200m, memory: 128Mi } }
+          volumeMounts: [ { name: work, mountPath: /work } ]
+          env:
+            - { name: HOME, value: /work }
+            - { name: RCLONE_CONFIG, value: /work/rclone.conf }
+            - { name: RCLONE_CONFIG_DST_TYPE, value: s3 }
+            - { name: RCLONE_CONFIG_DST_PROVIDER, value: Minio }
+            - { name: RCLONE_CONFIG_DST_ENDPOINT, valueFrom: { secretKeyRef: { name: plane-doc-store, key: AWS_S3_ENDPOINT_URL } } }
+            - { name: RCLONE_CONFIG_DST_ACCESS_KEY_ID, valueFrom: { secretKeyRef: { name: plane-doc-store, key: AWS_ACCESS_KEY_ID } } }
+            - { name: RCLONE_CONFIG_DST_SECRET_ACCESS_KEY, valueFrom: { secretKeyRef: { name: plane-doc-store, key: AWS_SECRET_ACCESS_KEY } } }
+          command: [rclone, purge, "dst:$SCRATCH_BUCKET"]
+YAML
+for _ in $(seq 1 40); do s="$(job_state "$NS" "$CLEAN")"; [[ "$s" == running ]] || break; sleep 3; done
+echo "cleanup job: $s"
+kc -n "$NS" get pods -l app.kubernetes.io/name=plane-restore-rehearsal -o name | wc -l
+exit "$rc"
+
+===== rehearse-infisical.sh =====
+#!/usr/bin/env bash
+# A brand-new Infisical in a throwaway namespace: first boot on an empty database, the exact restore Job from
+# scripts/restore.sh, Redis flush, restart, then Terraform with the backup's state against that instance.
+# Terraform state, credentials read from .local are read-only here; state is a scratch copy. emptyDir only, so no PVC.
+export INFISICAL_URL=http://127.0.0.1:18080
+source /Users/bek/dev/pr/plane-platform/scripts/lib/common.sh
+source "$ROOT/monitoring/ops/lib.sh"
+source "$ROOT/infisical/lib/api.sh"
+source "$ROOT/infisical/lib/recovery.sh"
+set -euo pipefail
+X=dr-rehearsal
+DR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr
+TFW="$DR/tf"
+PF=""
+step() { printf '\n--- %s (%s)\n' "$*" "$(date -u +%T)"; }
+result() { printf '%-6s %s\n' "$1" "$2"; }
+pf_stop() { if [[ -n "$PF" ]]; then kill "$PF" 2>/dev/null || true; PF=""; fi; }
+pf_start() {
+  pf_stop
+  kubectl -n "$X" port-forward svc/infisical 18080:8080 >/dev/null 2>&1 &
+  PF=$!
+  for _ in $(seq 1 40); do curl -fsS -m 2 -o /dev/null "$INFISICAL_URL/api/status" 2>/dev/null && return 0; sleep 1; done
+  echo "port-forward did not come up"; return 1
+}
+cleanup() {
+  local rc=$?
+  trap - EXIT
+  pf_stop
+  ia_cleanup
+  rm -rf "$TFW"
+  kc delete namespace "$X" --wait=false --ignore-not-found >/dev/null 2>&1 || true
+  echo "namespace $X deleted, scratch Terraform removed, exit $rc"
+  exit "$rc"
+}
+trap cleanup EXIT
+
+ID="$(recovery_latest_infisical)"
+DIR="$LOCAL_DIR/backups/infisical/$ID"
+SET="$(recovery_set_file "$DIR")"
+step "Backup $ID. Docker VM before: $(docker stats --no-stream --format '{{.MemUsage}}' "$NODE_CONTAINER")"
+kc get namespace "$X" >/dev/null 2>&1 && { echo "namespace $X exists"; exit 1; }
+kc create namespace "$X" >/dev/null
+
+step "Secrets: the same secret zero, in the new namespace"
+for s in infisical-db infisical-redis; do
+  kc -n infisical get secret "$s" -o json | jq --arg x "$X" '{apiVersion, kind, type, data, metadata: {name: .metadata.name, namespace: $x}}' | kc apply -f - >/dev/null
+done
+kc -n infisical get secret infisical-secrets -o json | jq --arg x "$X" '
+  {apiVersion, kind, type, data, metadata: {name: .metadata.name, namespace: $x}}
+  | .data.DB_CONNECTION_URI |= (@base64d | sub("\\.infisical\\.svc"; ".\($x).svc") | @base64)
+  | .data.REDIS_URL |= (@base64d | sub("\\.infisical\\.svc"; ".\($x).svc") | @base64)' | kc apply -f - >/dev/null
+result PASS "three Secrets copied without printing them"
+
+step "Postgres and Redis on emptyDir"
+for f in postgres redis; do
+  X="$X" yq '.metadata.namespace = strenv(X) | del(.metadata.annotations)
+    | (select(.kind == "StatefulSet") | .spec.template.spec.volumes) += [{"name": "data", "emptyDir": {"sizeLimit": "1Gi"}}]
+    | del(select(.kind == "StatefulSet") | .spec.volumeClaimTemplates)' "$ROOT/infisical/manifests/$f.yaml" | kc apply -f - >/dev/null
+done
+kc -n "$X" rollout status statefulset/infisical-postgres --timeout=180s
+kc -n "$X" rollout status statefulset/infisical-redis --timeout=180s
+
+step "Server: the live Deployment's spec, first boot on an empty database"
+kc -n "$X" create serviceaccount infisical-server >/dev/null
+kc -n infisical get deployment infisical -o json | jq --arg x "$X" '
+  {apiVersion, kind, metadata: {name: .metadata.name, namespace: $x}, spec: (.spec | del(.template.metadata.annotations))}' | kc apply -f - >/dev/null
+kc -n "$X" apply -f - >/dev/null <<YAML
+apiVersion: v1
+kind: Service
+metadata: { name: infisical, namespace: $X }
+spec:
+  ports: [ { port: 8080, targetPort: 8080, protocol: TCP } ]
+  selector: { app: infisical-standalone, component: infisical, release: infisical }
+YAML
+kc -n "$X" rollout status deployment/infisical --timeout=300s
+pf_start
+kc -n "$X" exec infisical-postgres-0 -c postgres -- sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -XAtc "select count(*) from infisical_migrations"' | sed 's/^/migrations in the fresh database: /'
+fresh="$(curl -fsS "$INFISICAL_URL/api/v1/admin/config" | jq -r '.config.initialized | tostring')"
+[[ "$fresh" == false ]] && result PASS "fresh server: config.initialized=false" || result FAIL "fresh server says initialized=$fresh"
+
+step "Exact restore Job from scripts/restore.sh, server stopped"
+pf_stop
+kc -n "$X" scale deployment/infisical --replicas=0 >/dev/null
+for _ in $(seq 1 60); do [[ -z "$(kc -n "$X" get pods -l app=infisical-standalone -o name)" ]] && break; sleep 2; done
+python3 - "$ROOT/scripts/restore.sh" > "$DR/ri.tmpl.yaml" <<'PY'
+import sys
+s=open(sys.argv[1]).read()
+i=s.index('restore_infisical_db() {')
+j=s.index("<<'YAML'", i)
+k=s.index('\n', j)+1
+e=s.index('\nYAML\n', k)
+print(s[k:e])
+PY
+JOB="plane-restore-rehearsal-$(date +%s)"
+PG_IMAGE="$(kc -n "$X" get statefulset infisical-postgres -o json | jq -r '.spec.template.spec.containers[0].image')"
+sed -e "s|__JOB__|$JOB|g" -e "s|__NS__|$X|g" -e "s|__ID__|$ID|g" -e "s|__PG_IMAGE__|$PG_IMAGE|g" "$DR/ri.tmpl.yaml" \
+  | yq '.spec.template.spec.volumes[0] = {"name": "backups", "hostPath": {"path": "/backups/infisical", "type": "Directory"}}' > "$DR/ri.yaml"
+run_job "$X" "$JOB" 600 < "$DR/ri.yaml"
+flushed="$(kc -n "$X" exec infisical-redis-0 -c redis -- redis-cli FLUSHALL)"
+[[ "$flushed" == OK ]] && result PASS "Redis flushed" || result FAIL "FLUSHALL answered $flushed"
+kc -n "$X" scale deployment/infisical --replicas=1 >/dev/null
+kc -n "$X" rollout status deployment/infisical --timeout=300s
+pf_start
+
+step "What the restored instance says, read through the API"
+restored="$(curl -fsS "$INFISICAL_URL/api/v1/admin/config" | jq -r '.config.initialized | tostring')"
+[[ "$restored" == true ]] && result PASS "restored server: config.initialized=true" || result FAIL "restored server says initialized=$restored"
+ia_init
+ia_load_admin
+ORG="$(jq -er .organization.id "$ADMIN_FILE")"
+ia_request GET "/api/v2/organizations/$ORG/identity-memberships?limit=1"
+[[ "$IA_STATUS" == 200 ]] && result PASS "the old admin token is accepted: HTTP 200" || result FAIL "admin token: HTTP $IA_STATUS"
+if out="$(recovery_compare_values "$SET")"; then result PASS "every Plane secret decrypts to the recorded value, version and id"; else result FAIL "$out"; fi
+
+login() { # env
+  local jwt id
+  jwt="$(kubectl -n "plane-$1" create token plane-infisical-auth --duration=10m)"
+  id="$(jq -er --arg e "$1" '.identity_ids[$e]' "$MACHINE_FILE")"
+  printf '%s' "$jwt" | jq -Rs --arg id "$id" '{identityId: $id, jwt: .}' \
+    | curl -s -o "$IA_TMP/login" -w '%{http_code}' -m 30 -X POST -H 'Content-Type: application/json' --data-binary @- "$INFISICAL_URL/api/v1/auth/kubernetes-auth/login"
+}
+
+step "Terraform: a scratch copy of the root and the backup's state, against this instance only"
+mkdir -p "$TFW/state"
+cp "$ROOT"/infisical/terraform/*.tf "$ROOT"/infisical/terraform/.terraform.lock.hcl "$TFW/"
+sed -i '' "s|path = \"../../.local/terraform/infisical/terraform.tfstate\"|path = \"$TFW/state/terraform.tfstate\"|" "$TFW/versions.tf"
+grep -F "$TFW/state" "$TFW/versions.tf" >/dev/null
+cp "$DIR/recovery/terraform.tfstate" "$TFW/state/terraform.tfstate"
+export TF_DATA_DIR="$TFW/.data" TF_IN_AUTOMATION=1 TF_INPUT=0 INFISICAL_AUTH_METHOD=token
+INFISICAL_TOKEN="$(ia_admin_token)"; export INFISICAL_TOKEN
+export TF_VAR_infisical_host="$INFISICAL_URL" TF_VAR_org_id="$ORG" TF_VAR_service_account_name=plane-infisical-auth
+terraform -chdir="$TFW" init -input=false -lockfile=readonly -plugin-dir="$LOCAL_DIR/terraform/infisical/.terraform/providers" >/dev/null
+REAL_CA="$(kc -n infisical get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}')"
+openssl req -x509 -newkey ed25519 -nodes -keyout "$IA_TMP/fake.key" -out "$IA_TMP/fake.pem" -subj /CN=not-this-cluster -days 1 2>/dev/null
+FOREIGN_CA="$(cat "$IA_TMP/fake.pem")"
+
+plan() { # ca: prints the exit code, leaves the plan
+  local rc=0
+  TF_VAR_kubernetes_ca_certificate="$1" terraform -chdir="$TFW" plan -lock-timeout=1m -input=false -detailed-exitcode -out="$IA_TMP/p" >/dev/null || rc=$?
+  printf '%s' "$rc"
+}
+actions() { terraform -chdir="$TFW" show -json "$IA_TMP/p" | jq -c '[.resource_changes[] | .change.actions | join("+")] | group_by(.) | map({(.[0]): length}) | add'; }
+
+rc="$(plan "$REAL_CA")"; [[ "$rc" == 0 ]] && result PASS "state from the backup against the restored database, this cluster's CA: no changes" || { result FAIL "plan exit $rc"; actions; }
+code="$(login dev)"; [[ "$code" == 200 ]] && result PASS "control: dev identity logs in with the stored CA, HTTP 200" || result FAIL "control login: HTTP $code"
+
+rc="$(plan "$FOREIGN_CA")"; result INFO "plan with another cluster's CA, exit $rc, actions $(actions)"
+if TF_VAR_kubernetes_ca_certificate="$FOREIGN_CA" terraform -chdir="$TFW" apply -lock-timeout=1m -input=false "$IA_TMP/p" > "$IA_TMP/apply.log" 2>&1; then
+  result FAIL "the API accepted a CA that does not verify the API server"
+else
+  result PASS "the API refuses a CA that does not verify the API server: $(tr -s ' \n' ' ' < "$IA_TMP/apply.log" | grep -oE 'SSL certificate verification failed' | head -1)"
+fi
+
+# A database restored on a new cluster holds a CA that differs from this cluster's, and the API will not store
+# one by request. So make the stored value differ in this throwaway database only: no CA at all.
+kc -n "$X" exec infisical-postgres-0 -c postgres -- sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -XAtc "update identity_kubernetes_auths set \"encryptedKubernetesCaCertificate\" = NULL"' | sed 's/^/throwaway database: /'
+rc="$(plan "$REAL_CA")"; a="$(actions)"; result INFO "restored mode's step: stored CA differs from this cluster's, plan exit $rc, actions $a"
+[[ "$rc" == 2 ]] && result PASS "plan sees the difference" || result FAIL "plan did not see the difference, exit $rc"
+unexpected="$(terraform -chdir="$TFW" show -json "$IA_TMP/p" | jq -r '[.resource_changes[]? | select(.change.actions != ["no-op"] and .change.actions != ["read"] and .change.actions != ["update"]) | .address] | join(", ")')"
+[[ -z "$unexpected" ]] && result PASS "only updates in place, so restored mode would apply this" || result FAIL "restored mode would refuse: $unexpected"
+if TF_VAR_kubernetes_ca_certificate="$REAL_CA" terraform -chdir="$TFW" apply -lock-timeout=1m -input=false "$IA_TMP/p" > "$IA_TMP/apply.log" 2>&1; then
+  result PASS "apply of the saved plan: $(grep -E '^Apply complete' "$IA_TMP/apply.log" | sed 's/\x1b\[[0-9;]*m//g')"
+else
+  result FAIL "apply failed: $(tr -s ' \n' ' ' < "$IA_TMP/apply.log" | cut -c1-400)"
+fi
+code="$(login dev)"; [[ "$code" == 200 ]] && result PASS "dev identity logs in after the refresh, HTTP 200" || result FAIL "login after refresh: HTTP $code"
+code="$(login prod-sim)"; [[ "$code" == 200 ]] && result PASS "prod-sim identity logs in, HTTP 200" || result FAIL "prod-sim login: HTTP $code"
+rc="$(plan "$REAL_CA")"; [[ "$rc" == 0 ]] && result PASS "second plan: no changes" || result FAIL "second plan exit $rc"
+step "Docker VM after: $(docker stats --no-stream --format '{{.MemUsage}}' "$NODE_CONTAINER")"
+kc -n "$X" get pods
+kc -n "$X" exec "$(kc -n "$X" get pod -l app=infisical-standalone -o name | head -1 | cut -d/ -f2)" -- sh -c 'cat /sys/fs/cgroup/memory.peak' | sed 's/^/server memory.peak bytes: /'

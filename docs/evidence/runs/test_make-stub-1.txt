@@ -1,0 +1,91 @@
+=== backup
+PASS  make backup : default env reaches the cluster check
+PASS  make backup ENV=prod-sim : positional env
+PASS  make backup ENV=infisical : infisical
+PASS  make backup ENV=all : all runs each environment
+PASS  make backup ENV=nope : bad env
+PASS  make backup ENV=dev KEEP=x : KEEP reaches the script through the environment
+=== restore
+PASS  make restore ENV=dev : no BACKUP is usage, not a crash
+PASS  make restore ENV=dev BACKUP=latest : BACKUP=latest parses
+PASS  make restore ENV=dev BACKUP=20260101T000000Z : a backup id parses
+PASS  make restore ENV=dev BACKUP=.local/backups/dev/20260101T000000Z : a directory path also works, through basename
+PASS  make restore ENV=infisical BACKUP=latest : infisical parses
+=== rotate
+PASS  make rotate ENV=prod-sim : prod-sim needs CONFIRM, proving the positional
+PASS  make rotate ENV=dev RESUME=yes ROLLBACK=yes : RESUME and ROLLBACK reach it through the environment
+PASS  make rotate ENV=nope : bad env
+=== promote
+PASS  make promote ENV=dev IMAGE=web : IMAGE alone is refused, proving the environment passes
+PASS  make promote ENV=dev IMAGE=web DIGEST=sha256:nope : a bad digest is refused
+PASS  make promote ENV=nope : bad env
+PASS  make promote with IMAGE and DIGEST really edits the overlay: rc
+PASS  promote overlay updated
+PASS  promote wrote the digest to the overlay
+PASS  promote rendered the digest
+=== rollback
+PASS  make rollback ENV=dev : env parses, on main with no promotion
+PASS  make rollback ENV=nope : bad env
+=== logs
+PASS  make logs ENV=dev : no SVC lists workloads
+PASS  SVC=api rc
+PASS  SVC=api finds the -wl workload and follows it
+PASS  ENV reaches the namespace
+=== test-alert and test-load
+PASS  make test-alert ENV=dev : test-alert positional env
+PASS  make test-alert ENV=prod-sim : test-alert prod-sim
+PASS  make test-alert ENV=infisical : test-alert refuses infisical
+PASS  make test-load ENV=dev : test-load dev
+PASS  make test-load ENV=prod-sim : test-load refuses prod-sim
+PASS  make test-load ENV=dev THINK=x : THINK reaches it through the environment
+=== drills
+PASS  make drill-failed-deploy : drill-failed-deploy reaches its preflight
+PASS  make drill-pod-restart : drill-pod-restart default env
+PASS  make drill-pod-restart ENV=prod-sim : drill-pod-restart positional env
+PASS  make drill-pod-restart ENV=nope : drill-pod-restart bad env
+=== gitops-publish, render, images, status, down, destroy
+PASS  gitops-publish rc
+PASS  published
+PASS  gitops-publish really pushed
+PASS  render rc
+PASS  rendered dev
+PASS  render left no change: rendered output matches what is committed
+PASS  status rc
+PASS  status table
+PASS  destroy with no CONFIRM refuses
+PASS  destroy message
+PASS  down rc
+PASS  down message
+PASS  up reaches the real up.sh
+PASS  test-e2e reaches the real test.sh
+=== ci keeps going, and fails if any check failed
+PASS  ci all pass rc
+PASS  ci runs all four in order
+PASS  ci with a failing lint rc
+PASS  ci still ran the rest
+=== help lists every target
+PASS  help lists setup
+PASS  help lists up
+PASS  help lists down
+PASS  help lists destroy
+PASS  help lists status
+PASS  help lists logs
+PASS  help lists test
+PASS  help lists gates
+PASS  help lists test-e2e
+PASS  help lists test-netpol
+PASS  help lists test-alert
+PASS  help lists test-load
+PASS  help lists drill-failed-deploy
+PASS  help lists drill-pod-restart
+PASS  help lists backup
+PASS  help lists restore
+PASS  help lists rotate
+PASS  help lists render
+PASS  help lists images
+PASS  help lists promote
+PASS  help lists rollback
+PASS  help lists gitops-publish
+PASS  help lists ci
+
+SUMMARY: 78 passed, 0 failed

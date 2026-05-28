@@ -1,0 +1,41 @@
+# date: 2026-11-04T21:03:54Z
+
+=== T1: Terminating while a hook runs
+{"t":"21:03:55Z","phase":"Running","retry":null,"finished":false,"operation":true,"sync":"Synced","health":"Healthy","msg":"waiting for completion of hook batch/Job/hook-a","rev":"fa90a60"}
+hook-a before: hook-a   Running   0/1   1s    1s
+[21:03:55Z] kubectl patch application term-a: phase Terminating
+application.argoproj.io/term-a patched
+{"t":"21:03:55Z","phase":"Failed","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated","rev":"fa90a60"}
+hook-a after: hook-a   Terminating   0/1   3s    3s
+-- 40s later, same revision: does it restart by itself?
+{"t":"21:04:37Z","phase":"Failed","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated","rev":"fa90a60"}
+
+=== T2: Terminating during retry backoff (failed hook, retry -1)
+{"t":"21:04:37Z","phase":"Running","retry":1,"finished":true,"operation":true,"sync":"Synced","health":"Healthy","msg":"one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:08PM.","rev":"fa90a60"}
+[21:04:37Z] kubectl patch application term-b: phase Terminating
+application.argoproj.io/term-b patched
+after 1s: {"t":"21:04:37Z","phase":"Failed","retry":1,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated (retried 1 times).","rev":"fa90a60"}
+-- 40s later, same revision: does it restart by itself?
+{"t":"21:05:18Z","phase":"Failed","retry":1,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated (retried 1 times).","rev":"fa90a60"}
+
+=== T3: a newer commit after termination
+[21:05:18Z] pushed e84b446, hard refresh on both
+after 90s:
+term-a {"t":"21:06:54Z","phase":"Failed","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated","rev":"fa90a60"}
+term-b {"t":"21:06:54Z","phase":"Failed","retry":1,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated (retried 1 times).","rev":"fa90a60"}
+--- controller log lines about these apps
+   9 level=info msg="Resuming in-progress operation. phase: Running, message: waiting for completion of hook batch/Job/hook-b" app-namespace=argocd application=term-b project=default
+   5 level=info msg="Resuming in-progress operation. phase: Running, message: waiting for completion of hook batch/Job/hook-a" app-namespace=argocd application=term-a project=default
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=8.394ms project=default syncId=00070-NkjmT
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=6.089666ms project=default syncId=00085-mwEOP
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=5.356125ms project=default syncId=00068-ExuOi
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=3.926958ms project=default syncId=00083-nbreD
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=3.732583ms project=default syncId=00077-WoJMo
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=3.320667ms project=default syncId=00098-IxyVI
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=3.139667ms project=default syncId=00082-GVXLc
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=3.1365ms project=default syncId=00081-KfZvo
+== cleanup
+application.argoproj.io "term-a" deleted from argocd namespace
+application.argoproj.io "term-b" deleted from argocd namespace
+namespace "term-probe" deleted
+scratch repo present after cleanup: no

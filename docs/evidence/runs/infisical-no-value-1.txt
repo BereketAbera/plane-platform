@@ -1,0 +1,66 @@
+# operator #121, on scratch CRs in plane-prod-sim. Each references a key the project does not hold. 2026-11-04T21:33:52Z
+infisicalstaticsecret.secrets.infisical.com/scratch-secretfrom created
+infisicalstaticsecret.secrets.infisical.com/scratch-dotvalue created
+apply exit 0
+
+-- scratch-secretfrom
+{
+  "error": true,
+  "observedGeneration": 1,
+  "generation": 1,
+  "conditions": [
+    {
+      "type": "secrets.infisical.com/LastReconcileAuthMethod",
+      "status": "True",
+      "reason": "OK",
+      "message": "kubernetes"
+    },
+    {
+      "type": "secrets.infisical.com/LastReconcileStatus",
+      "status": "False",
+      "reason": "Error",
+      "message": "Reconciliation failed: failed to render target output: failed to execute template at key \"PROBE\": template: PROBE:1:4: executing \"PROBE\" at <secretFrom \"/\" \"DOES_NOT_EXIST\">: error calling secretFrom:"
+    }
+  ]
+}
+target Secret does not exist
+
+-- scratch-dotvalue
+{
+  "error": false,
+  "observedGeneration": 1,
+  "generation": 1,
+  "conditions": [
+    {
+      "type": "secrets.infisical.com/LastReconcileAuthMethod",
+      "status": "True",
+      "reason": "OK",
+      "message": "kubernetes"
+    },
+    {
+      "type": "secrets.infisical.com/LastReconcileAffectedDeployments",
+      "status": "True",
+      "reason": "OK",
+      "message": "0 deployments were redeployed due to secret changes"
+    },
+    {
+      "type": "secrets.infisical.com/LastReconcileStatus",
+      "status": "True",
+      "reason": "OK",
+      "message": "Reconciliation successful"
+    },
+    {
+      "type": "secrets.infisical.com/LastSuccessfulReconcileAt",
+      "status": "True",
+      "reason": "OK",
+      "message": "2026-11-04T21:33:52Z"
+    }
+  ]
+}
+target Secret exists. PROBE value (scratch, no real secret behind it): <no value>
+
+$ delete both scratch CRs
+infisicalstaticsecret.secrets.infisical.com "scratch-secretfrom" deleted from plane-prod-sim namespace
+infisicalstaticsecret.secrets.infisical.com "scratch-dotvalue" deleted from plane-prod-sim namespace
+Error from server (NotFound): secrets "scratch-secretfrom" not found
+Error from server (NotFound): secrets "scratch-dotvalue" not found

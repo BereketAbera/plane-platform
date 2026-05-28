@@ -1,0 +1,121 @@
+# H46: signals and cleanup on scratch copies of tests/gates/day1.sh (namespace gate-h46-s, gate-h46-f, gate-h46-p). 2026-11-04, about 23:04Z to 23:14Z.
+# These copies were built before one comment was rewritten. Otherwise each is the committed f878bca script with names changed.
+
+## one TERM to the pid, in a redirected kubectl wait
+wait-gate1           #1 rc=143 child-alive-at-kill=yes secs-after-kill=8 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+wait-gate1           #2 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+wait-gate1           #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+## two TERMs to the pid: one in gate 1, one while on_exit's cleanup runs kubectl delete
+double-term #1 first=yes second=yes rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+double-term #2 first=yes second=yes rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+double-term #3 first=yes second=yes rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+## two TERMs: the second as soon as the first's kubectl has ended, so in on_exit's first commands
+worst #1                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #2                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #3                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #4                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #5                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #6                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #7                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+worst #8                   rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+## TERM while the namespace is being created
+claim-create         #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+claim-create         #2 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+claim-create         #3 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+claim-create         #4 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+claim-create         #5 rc=143 child-alive-at-kill=yes secs-after-kill=4 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+## TERM in the docker image rm window, widened to 1s
+cleanup-docker-slow  #1 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+cleanup-docker-slow  #2 rc=143 child-alive-at-kill=yes secs-after-kill=5 closing=yes ns-after=[] --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+## TERM 0 ms and 5 ms after --- Cleanup is printed, unmodified timing
+natural 0ms #1             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 0ms #2             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 0ms #3             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 0ms #4             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 0ms #5             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 0ms #6             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 5ms #1             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 5ms #2             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 5ms #3             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 5ms #4             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 5ms #5             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+natural 5ms #6             rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+## the same with gate 2's pods there, 0 ms
+natural pods #1            rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 9 passed, 0 failed, 0 not run|
+natural pods #2            rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 9 passed, 0 failed, 0 not run|
+## kill path, unremovable repository
+unremovable                rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|--- Left behind: the throwaway .local/git/gate-h46-s.git is not confirmed gone. Delete it by hand: rm -rf .local/git/gate-h46-s.git|
+repo still on disk: yes
+## HUP, with HUP at its default as a terminal gives it
+HUP pid #1                 rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+HUP pid #2                 rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+HUP pid #3                 rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+HUP group #1               rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+HUP group #2               rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+HUP group #3               rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+## signals to the process group, as a terminal or a CI runner sends them
+group INT once #1          rc=130 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run|
+group INT once #2          rc=130 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run|
+group INT twice #1         rc=130 closing=yes ns-after=[Terminating] pods-left=[1] | --- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run|--- Left behind: namespace gate-h46-s is not confirmed gone: namespace/gate-h46-s. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl |
+group INT twice #2         rc=130 closing=yes ns-after=[Terminating] pods-left=[1] | --- Stopped before the summary, exit 130: 0 passed, 0 failed, 0 not run|--- Left behind: namespace gate-h46-s is not confirmed gone: namespace/gate-h46-s. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl |
+group TERM once #1         rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+group TERM once #2         rc=143 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|
+group TERM twice #1        rc=143 closing=yes ns-after=[Terminating] pods-left=[1] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|--- Left behind: namespace gate-h46-s is not confirmed gone: namespace/gate-h46-s. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl |
+group TERM twice #2        rc=143 closing=yes ns-after=[Terminating] pods-left=[1] | --- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run|--- Left behind: namespace gate-h46-s is not confirmed gone: namespace/gate-h46-s. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl |
+group HUP twice #1         rc=129 closing=yes ns-after=[] pods-left=[0] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|
+group HUP twice #2         rc=129 closing=yes ns-after=[Terminating] pods-left=[1] | --- Stopped before the summary, exit 129: 0 passed, 0 failed, 0 not run|--- Left behind: namespace gate-h46-s is not confirmed gone: namespace/gate-h46-s. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl |
+## cleanup report: what the state check can and cannot see, with a fake LOCAL_DIR
+immutable file inside the repository: exit=1
+--- Cleanup
+FAIL  the throwaway .local/git/gate-h46-s.git is not confirmed gone. Delete it by hand: rm -rf .local/git/gate-h46-s.git
+--- Summary: 0 passed, 1 failed
+parent with no permissions: exit=1
+--- Cleanup
+FAIL  the throwaway .local/git/gate-h46-s.git is not confirmed gone. Delete it by hand: rm -rf .local/git/gate-h46-s.git
+--- Summary: 0 passed, 1 failed
+repository there afterwards: yes
+dangling symlink in an immutable parent: exit=1
+--- Cleanup
+FAIL  the throwaway .local/git/gate-h46-s.git is not confirmed gone. Delete it by hand: rm -rf .local/git/gate-h46-s.git
+--- Summary: 0 passed, 1 failed
+nothing there: exit=0
+--- Cleanup
+PASS  namespace gate-h46-s and the throwaway gate-h46-s.git are gone
+--- Summary: 1 passed, 0 failed
+an ordinary repository, removed: exit=0
+--- Cleanup
+PASS  namespace gate-h46-s and the throwaway gate-h46-s.git are gone
+--- Summary: 1 passed, 0 failed
+## a refused run leaves the other run's namespace alone
+refused run: rc=1 closing=yes ns=[Active] marker=[configmap/marker] uid-holder=[75220] expected-holder=[75220]
+# run start on the Docker clock: 2026-11-04T23:09:26.758165879Z
+[1;31mfail[0m pid 75220 is already running the gates in namespace gate-h46-s. Wait for it to finish.
+--- Stopped before the summary, exit 1: 0 passed, 0 failed, 0 not run
+lost the create race: rc=1 closing=yes ns=[Active] marker=[configmap/marker]
+# run start on the Docker clock: 2026-11-04T23:09:27.078795629Z
+Error from server (AlreadyExists): error when creating "STDIN": namespaces "gate-h46-s" already exists
+--- Stopped before the summary, exit 1: 0 passed, 0 failed, 0 not run
+owner dead, the next run takes over: rc=0 ns=[] --- Summary: 1 passed, 0 failed|
+## after all of the above: stray copies of this harness's processes
+SIGNALS-DONE
+after the harness: ns=[] repo-exists=no
+
+## A real refused delete: a finalizer holds the namespace for the real 120s
+normal path: exit=1 seconds=121 ns=[Terminating]
+--- Cleanup
+FAIL  namespace gate-h46-f is not confirmed gone: namespace/gate-h46-f. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl delete namespace gate-h46-f
+--- Summary: 0 passed, 1 failed
+kill path: exit=143 seconds=123 ns=[Terminating]
+--- Gate 1: digest pulls through each path
+--- Stopped before the summary, exit 143: 0 passed, 0 failed, 0 not run
+--- Left behind: namespace gate-h46-f is not confirmed gone: namespace/gate-h46-f. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl delete namespace gate-h46-f
+FINALIZER-DONE
+after the harness: ns=[]
+
+## stdout is a pipe whose reader goes away
+pipe statuses: 141 0
+# Day-1 gates
+# date (UTC): 2026-11-04T23:13:38Z
+# command: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/
+ns after: []
+cleared: []

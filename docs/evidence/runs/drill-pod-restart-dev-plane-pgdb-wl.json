@@ -1,0 +1,47 @@
+{
+  "counts": {
+    "BLOCKED": 0,
+    "FAIL": 0,
+    "PASS": 3
+  },
+  "environment": "dev",
+  "finished_at": "2026-11-04T22:44:43Z",
+  "host": "plane.dev.localhost",
+  "mode": "verify",
+  "result": "PASS",
+  "run_id": "f559fd37",
+  "started_at": "2026-11-04T22:44:43Z",
+  "steps": [
+    {
+      "data": {
+        "instances_status": 200,
+        "web_status": 200
+      },
+      "detail": "web 200, /api/instances/ 200 via plane.dev.localhost",
+      "duration_ms": 25,
+      "name": "reachable",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "expected_sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "work_item_id": "9732dde3-786e-4fa1-b6af-0b5e791f2314"
+      },
+      "detail": "sentinel row and attachment intact",
+      "duration_ms": 250,
+      "name": "sentinel-reread",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_activity": 0.3
+      },
+      "detail": "new work item got its activity in 0.3s",
+      "duration_ms": 383,
+      "name": "job-probe",
+      "status": "PASS"
+    }
+  ],
+  "tool": "tests/e2e/smoke.py"
+}

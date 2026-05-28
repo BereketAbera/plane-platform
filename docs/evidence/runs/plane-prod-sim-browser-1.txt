@@ -1,0 +1,7 @@
+# Built-in browser, no sign-in, nothing typed. 2026-11-04 about 23:30 UTC, during the concurrent load. Tool results copied as read.
+Page http://plane.prod-sim.localhost/          title "Sign up - Plane". Text shows Email, Continue. resource entries 94, cross-origin 0, naming plane.dev.localhost 0, non-2xx: /api/users/me/ 401 (signed out, expected).
+Page http://plane.prod-sim.localhost/god-mode/ title "Admin - Instance Setup & Sign-In". Text shows Email, Password, Sign in (not the first-run setup form, because the admin now exists). resource entries 29, cross-origin 0, naming plane.dev.localhost 0, non-2xx: /api/instances/admins/me/ 401, /api/instances/admins/ 401 (signed out, expected).
+Page http://plane.prod-sim.localhost/spaces/   title "Plane Publish | ...". Text shows Email, Continue, "Powered by Plane Publish". resource entries 50, cross-origin 0, naming plane.dev.localhost 0, non-2xx: /api/users/me/ 401 (signed out, expected).
+Console on /: 41 error entries: React minified #418 repeated, one #423, and one "Failed to load resource" 401. These are the same hydration errors dev logged; not request failures. Root cause not investigated here.
+Console on the last page, patterns "net::", "CORS", "blocked": no entries.
+NOT tested in a browser: sign-in, the app after sign-in, the page editor. No credentials were typed.

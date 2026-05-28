@@ -1,0 +1,102 @@
+# What Argo CD did while InfisicalAuth was unready. From the application controller log and the Application's own status. Captured 2026-11-04T21:45:28Z
+$ controller log lines for plane-dev about sync and retry, 21:11 to 21:31 UTC
+time="2026-11-04T21:17:56Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:18:46Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:18:29Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:18:46Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:18:46Z" level=info msg="Retrying operation with latest revisions. Attempt #3" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:18:46Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=false syncId=00002-WZZWW
+time="2026-11-04T21:18:46Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'Retrying operation with latest revisions. Attempt #3' -> 'one or more tasks are running'" app-namespace=argocd application=plane-dev 
+time="2026-11-04T21:18:48Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00003-wYQWR
+time="2026-11-04T21:18:50Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00004-pcyHY
+time="2026-11-04T21:18:50Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:18:50Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:18:52Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:19:56Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:20:35Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:21:56Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:22:10Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:22:10Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:23:50Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:23:50Z" level=info msg="Retrying operation with latest revisions. Attempt #4" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:23:50Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=false syncId=00021-ULaBp
+time="2026-11-04T21:23:50Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'Retrying operation with latest revisions. Attempt #4' -> 'one or more tasks are running'" app-namespace=argocd application=plane-dev 
+time="2026-11-04T21:23:52Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00022-sOvTW
+time="2026-11-04T21:23:54Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00023-VsEpy
+time="2026-11-04T21:23:54Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:23:54Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:23:56Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:24:01Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:25:44Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:25:56Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:26:05Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:27:03Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:27:56Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:17Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:22Z" level=info msg="Skipping retrying in-progress operation. Attempting again at: 2026-11-04T21:28:54Z" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:54Z" level=info msg="Retrying operation with latest revisions. Attempt #5" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:54Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=false syncId=00040-CUhWa
+time="2026-11-04T21:28:54Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'Retrying operation with latest revisions. Attempt #5' -> 'one or more tasks are running'" app-namespace=argocd application=plane-dev 
+time="2026-11-04T21:28:56Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00041-TaBKJ
+time="2026-11-04T21:28:58Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00042-seExL
+time="2026-11-04T21:29:01Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00043-kIENx
+time="2026-11-04T21:29:03Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00045-bilhn
+time="2026-11-04T21:29:05Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00046-clluS
+time="2026-11-04T21:29:05Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00047-DjSjG
+time="2026-11-04T21:29:06Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00048-oORSG
+time="2026-11-04T21:29:07Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00049-CkVZQ
+time="2026-11-04T21:29:07Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00050-WpBtE
+time="2026-11-04T21:29:08Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00051-RtoFA
+time="2026-11-04T21:29:08Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00052-YeXpn
+time="2026-11-04T21:29:08Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00053-tIZHU
+time="2026-11-04T21:29:08Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00054-Lytaq
+time="2026-11-04T21:29:09Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00055-WOlQE
+time="2026-11-04T21:29:09Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00056-tPkPz
+time="2026-11-04T21:29:09Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00057-byFbT
+time="2026-11-04T21:29:56Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00059-CSuOg
+time="2026-11-04T21:30:09Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00060-LZZEq
+time="2026-11-04T21:30:17Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00061-Lpspv
+time="2026-11-04T21:30:27Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00062-cPCUL
+time="2026-11-04T21:30:27Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00063-cWntD
+time="2026-11-04T21:30:28Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00064-uQQFE
+time="2026-11-04T21:30:42Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00066-OwLUy
+time="2026-11-04T21:30:43Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00067-VdaQd
+time="2026-11-04T21:30:44Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00068-LxUzS
+time="2026-11-04T21:30:44Z" level=info msg=Syncing app-namespace=argocd application=plane-dev project=plane-dev skipHooks=false started=true syncId=00069-DjIAl
+
+# After the bootstrap published the identity Secret at 21:25:44. Argo's retry fires at 21:28:54, 3m10s later. Controller log, 21:28 to 21:31, wave and operation lines
+time="2026-11-04T21:28:54Z" level=info msg="updated 'argocd/plane-dev' operation (phase: Running)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:54Z" level=info msg="Retrying operation with latest revisions. Attempt #5" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:54Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'Retrying operation with latest revisions. Attempt #5' -> 'one or more tasks are running'" app-namespace=argocd application=plane-dev project=plane-dev sy
+time="2026-11-04T21:28:54Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'serviceaccount/plane unchanged'" app-namespace=argocd application=plane-dev kind=ServiceAccount name=plane namespace=plane-dev phase=Sync project=
+time="2026-11-04T21:28:54Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'serviceaccount/plane-infisical-auth unchanged'" app-namespace=argocd application=plane-dev kind=ServiceAccount name=plane-infisical-auth namespace
+time="2026-11-04T21:28:54Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalconnection.secrets.infisical.com/infisical unchanged'" app-namespace=argocd application=plane-dev kind=InfisicalConnection name=infisical
+time="2026-11-04T21:28:56Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'one or more tasks are running' -> 'waiting for healthy state of /ServiceAccount/plane and 2 more resources'" app-namespace=argocd application=plane-dev p
+time="2026-11-04T21:28:56Z" level=info msg="updated 'argocd/plane-dev' operation (phase: Running)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:56Z" level=info msg="Resuming in-progress operation. phase: Running, message: waiting for healthy state of /ServiceAccount/plane and 2 more resources" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:56Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'serviceaccount/plane unchanged' -> 'serviceaccount/plane unchanged'" app-namespace=argocd application=plane-dev kind=Se
+time="2026-11-04T21:28:56Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'serviceaccount/plane-infisical-auth unchanged' -> 'serviceaccount/plane-infisical-auth unchanged'" app-namespace=argocd
+time="2026-11-04T21:28:56Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalconnection.secrets.infisical.com/infisical unchanged' -> 'InfisicalConnection is ready to be used.'" app-names
+time="2026-11-04T21:28:56Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'waiting for healthy state of /ServiceAccount/plane and 2 more resources' -> 'one or more tasks are running'" app-namespace=argocd application=plane-dev p
+time="2026-11-04T21:28:56Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalauth.secrets.infisical.com/infisical unchanged'" app-namespace=argocd application=plane-dev kind=InfisicalAuth name=infisical namespace=p
+time="2026-11-04T21:28:58Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'one or more tasks are running' -> 'waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical'" app-namespace=argocd application=plane-de
+time="2026-11-04T21:28:58Z" level=info msg="updated 'argocd/plane-dev' operation (phase: Running)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:58Z" level=info msg="Resuming in-progress operation. phase: Running, message: waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-04T21:28:58Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalauth.secrets.infisical.com/infisical unchanged' -> 'InfisicalAuth is ready to be used.'" app-namespace=argocd 
+time="2026-11-04T21:28:58Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical' -> 'one or more tasks are running'" app-namespace=argocd application=plane-de
+time="2026-11-04T21:28:58Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalstaticsecret.secrets.infisical.com/plane-pgdb created'" app-namespace=argocd application=plane-dev kind=InfisicalStaticSecret name=plane-
+time="2026-11-04T21:28:58Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalstaticsecret.secrets.infisical.com/plane-live-env created'" app-namespace=argocd application=plane-dev kind=InfisicalStaticSecret name=pl
+time="2026-11-04T21:28:58Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalstaticsecret.secrets.infisical.com/plane-doc-store created'" app-namespace=argocd application=plane-dev kind=InfisicalStaticSecret name=p
+time="2026-11-04T21:28:58Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalstaticsecret.secrets.infisical.com/plane-app-env created'" app-namespace=argocd application=plane-dev kind=InfisicalStaticSecret name=pla
+time="2026-11-04T21:28:58Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalstaticsecret.secrets.infisical.com/plane-rabbitmq created'" app-namespace=argocd application=plane-dev kind=InfisicalStaticSecret name=pl
+time="2026-11-04T21:28:58Z" level=info msg="Adding resource result, status: 'Synced', phase: 'Running', message: 'infisicalstaticsecret.secrets.infisical.com/plane-app-keys created'" app-namespace=argocd application=plane-dev kind=InfisicalStaticSecret name=pl
+
+# The other half of the picture, the operator in plane-dev
+2026-11-04T21:25:44Z	INFO	AuthStrategyResolver	successful authentication with "kubernetes", caching credentials for 42m0s
+
+# The wave -1 gate on the real CRs: their custom Lua message reaches the sync result
+time="2026-11-04T21:29:00Z" level=info msg="Updating operation state. phase: Running -> Running, message: 'one or more tasks are running' -> 'waiting for healthy state of secrets.infisical.com/InfisicalStaticSecret/plane-app-env and 5 more resources'
+time="2026-11-04T21:29:01Z" level=info msg="Resuming in-progress operation. phase: Running, message: waiting for healthy state of secrets.infisical.com/InfisicalStaticSecret/plane-app-env and 5 more resources" app-namespace=argocd application=plane-d
+time="2026-11-04T21:29:01Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalstaticsecret.secrets.infisical.com/plane-app-env created' -> 'Secrets synced'" app-namespace=argocd 
+time="2026-11-04T21:29:01Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalstaticsecret.secrets.infisical.com/plane-app-keys created' -> 'Secrets synced'" app-namespace=argocd
+time="2026-11-04T21:29:01Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalstaticsecret.secrets.infisical.com/plane-doc-store created' -> 'Secrets synced'" app-namespace=argoc
+time="2026-11-04T21:29:01Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalstaticsecret.secrets.infisical.com/plane-live-env created' -> 'Secrets synced'" app-namespace=argocd
+time="2026-11-04T21:29:01Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalstaticsecret.secrets.infisical.com/plane-pgdb created' -> 'Secrets synced'" app-namespace=argocd app
+time="2026-11-04T21:29:01Z" level=info msg="Updating resource result, status: 'Synced' -> 'Synced', phase 'Running' -> 'Succeeded', message 'infisicalstaticsecret.secrets.infisical.com/plane-rabbitmq created' -> 'Secrets synced'" app-namespace=argocd

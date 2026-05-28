@@ -1,0 +1,173 @@
+20:45:31Z  backup-storage | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:45:31Z  network-policies | OutOfSync | Missing | noop | Succeeded | successfully synced (all tasks run)
+20:45:31Z  root | OutOfSync | Healthy | op | Running | -
+20:45:33Z  network-policies | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:45:33Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+20:45:33Z  traefik | - | - | noop | - | -
+20:45:35Z  root | OutOfSync | Healthy | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+20:45:35Z  traefik | OutOfSync | Missing | noop | Succeeded | successfully synced (all tasks run)
+20:45:37Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+20:45:37Z  traefik | OutOfSync | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:45:39Z  traefik | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:46:21Z  metrics-server | - | - | noop | - | -
+20:46:21Z  traefik | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:46:23Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/metrics-server
+20:46:25Z  metrics-server | OutOfSync | Missing | op | Running | -
+20:46:25Z  root | OutOfSync | Healthy | op | Running | waiting for healthy state of argoproj.io/Application/metrics-server
+20:46:27Z  metrics-server | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:46:27Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/metrics-server
+20:47:26Z  kube-prometheus-stack | - | - | noop | - | -
+20:47:26Z  metrics-server | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:47:28Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+20:47:36Z  kube-prometheus-stack | OutOfSync | Healthy | op | Running | -
+20:47:36Z  root | OutOfSync | Healthy | op | Running | waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+20:47:38Z  kube-prometheus-stack | OutOfSync | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:47:38Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+20:47:42Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:47:57Z  kube-prometheus-stack | Synced | Degraded | noop | Succeeded | successfully synced (all tasks run)
+20:47:57Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 8:48PM.
+20:48:56Z  root | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #1
+20:48:58Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+20:49:00Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+20:49:02Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources
+20:49:04Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #2 at 8:50PM.
+20:51:03Z  root | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #2
+20:51:07Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+20:51:09Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+20:51:11Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources
+20:51:13Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #3 at 8:53PM.
+20:54:13Z  network-policies | OutOfSync | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:54:28Z  network-policies | OutOfSync | Healthy | op | Running | -
+20:54:30Z  network-policies | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:55:03Z  network-policies | Synced | Healthy | op | - | -
+20:55:05Z  network-policies | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:55:12Z  root | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #3
+20:55:14Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+20:55:16Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+20:55:18Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources
+20:55:20Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #4 at 8:59PM.
+20:56:12Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | -
+20:56:12Z  wave-probe-parent | OutOfSync | Progressing | op | Running | -
+20:56:14Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | waiting for healthy state of /ConfigMap/early
+20:56:14Z  wave-probe-parent | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a
+20:56:16Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | waiting for completion of hook batch/Job/slow-hook
+20:57:17Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:57:17Z  root | OutOfSync | Healthy | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #4 at 8:59PM.
+20:57:17Z  wave-probe-child-a | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:57:17Z  wave-probe-child-b | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:57:17Z  wave-probe-parent | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:57:19Z  wave-probe-child-a | Synced | Healthy | op | Running | -
+20:57:19Z  wave-probe-parent | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:57:21Z  wave-probe-child-a | Synced | Healthy | op | Running | waiting for healthy state of /ConfigMap/early
+20:57:23Z  wave-probe-child-a | Synced | Healthy | op | Running | waiting for deletion of hook batch/Job/slow-hook
+20:57:25Z  wave-probe-child-a | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/slow-hook
+20:57:25Z  wave-probe-parent | OutOfSync | Progressing | op | Running | -
+20:57:27Z  wave-probe-parent | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a
+20:57:36Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:57:36Z  root | OutOfSync | Progressing | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #4 at 8:59PM.
+20:58:22Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:58:22Z  root | OutOfSync | Healthy | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #4 at 8:59PM.
+20:58:26Z  wave-probe-child-a | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:58:26Z  wave-probe-parent | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:59:02Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:59:02Z  root | OutOfSync | Progressing | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #4 at 8:59PM.
+21:00:19Z  root | OutOfSync | Progressing | op | Running | Retrying operation with latest revisions. Attempt #4
+21:00:23Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+21:00:25Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:00:25Z  root | OutOfSync | Healthy | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+21:00:27Z  root | OutOfSync | Healthy | op | Running | waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources
+21:00:29Z  alloy | - | - | noop | - | -
+21:00:29Z  loki | - | - | noop | - | -
+21:00:29Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+21:00:31Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/alloy and 1 more resources
+21:00:33Z  alloy | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:00:33Z  loki | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:01:03Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:02:46Z  alloy | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:02:46Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/loki
+21:03:38Z  loki | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:03:38Z  monitoring-extras | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:03:40Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/monitoring-extras
+21:03:55Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:03:55Z  term-a | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/hook-a
+21:03:55Z  term-b | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/hook-b
+21:03:57Z  term-a | Synced | Healthy | noop | Failed | Operation terminated
+21:03:59Z  term-b | Synced | Healthy | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:08PM.
+21:04:22Z  infisical | OutOfSync | Healthy | op | Running | -
+21:04:22Z  monitoring-extras | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:04:25Z  infisical | OutOfSync | Progressing | op | Running | waiting for healthy state of /ServiceAccount/infisical-server
+21:04:25Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/infisical
+21:04:27Z  infisical | OutOfSync | Progressing | op | Running | waiting for healthy state of apps/StatefulSet/infisical-postgres and 1 more resources
+21:04:33Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:04:39Z  term-b | Synced | Healthy | noop | Failed | Operation terminated (retried 1 times).
+21:05:02Z  infisical | OutOfSync | Progressing | op | Running | waiting for healthy state of apps/StatefulSet/infisical-postgres
+21:05:53Z  infisical | OutOfSync | Progressing | op | Running | waiting for healthy state of apps/Deployment/infisical
+21:07:10Z  term-a | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/hook-a
+21:07:10Z  term-b | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/hook-b
+21:07:12Z  term-a | Synced | Healthy | noop | Failed | Operation terminated
+21:07:15Z  term-b | Synced | Healthy | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:12PM.
+21:07:55Z  term-b | Synced | Healthy | noop | Failed | Operation terminated (retried 1 times).
+21:08:35Z  term-a | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/hook-a
+21:08:35Z  term-b | Synced | Healthy | op | Running | waiting for completion of hook batch/Job/hook-b
+21:08:37Z  term-a | Synced | Healthy | noop | Succeeded | successfully synced (no more tasks)
+21:08:37Z  term-b | Synced | Healthy | noop | Succeeded | successfully synced (no more tasks)
+21:09:13Z  wave-probe-parent | - | - | noop | - | -
+21:09:15Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | -
+21:09:15Z  wave-probe-parent | OutOfSync | Progressing | op | Running | -
+21:09:17Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | waiting for healthy state of /ConfigMap/early
+21:09:17Z  wave-probe-child-b | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:09:17Z  wave-probe-parent | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a
+21:09:19Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | waiting for completion of hook batch/Job/slow-hook
+21:09:34Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:10:09Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:10:18Z  wave-probe-child-a | OutOfSync | Healthy | op | Running | -
+21:11:00Z  infisical | OutOfSync | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:11:02Z  infisical | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:11:02Z  infisical-operator-dev | OutOfSync | Healthy | op | Running | -
+21:11:02Z  infisical-operator-prod-sim | OutOfSync | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:11:04Z  infisical-operator-dev | OutOfSync | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:11:04Z  infisical-operator-prod-sim | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:11:04Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/infisical-operator-dev and 1 more resources
+21:11:06Z  infisical-operator-dev | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:11:33Z  infisical-operator-dev | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:11:33Z  infisical-operator-prod-sim | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:11:33Z  plane-dev | OutOfSync | Missing | op | Running | -
+21:11:34Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/infisical-operator-prod-sim
+21:11:36Z  plane-dev | OutOfSync | Healthy | op | Running | waiting for healthy state of /ServiceAccount/plane and 2 more resources
+21:11:36Z  root | OutOfSync | Progressing | op | Running | waiting for healthy state of argoproj.io/Application/plane-dev
+21:11:38Z  plane-dev | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:12PM.
+21:11:38Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #5 at 9:16PM.
+21:12:39Z  plane-dev | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #1
+21:12:41Z  plane-dev | OutOfSync | Degraded | op | Running | waiting for healthy state of /ServiceAccount/plane and 2 more resources
+21:12:43Z  plane-dev | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #2 at 9:13PM.
+21:14:43Z  plane-dev | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #2
+21:14:46Z  plane-dev | OutOfSync | Degraded | op | Running | waiting for healthy state of /ServiceAccount/plane and 2 more resources
+21:14:48Z  plane-dev | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #3 at 9:16PM.
+21:14:50Z  root | OutOfSync | Degraded | noop | Failed | Operation terminated (retried 5 times).
+21:15:38Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:15:38Z  root | OutOfSync | Degraded | op | Running | -
+21:15:40Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+21:15:43Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+21:15:45Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources
+21:15:47Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+21:15:49Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/alloy and 1 more resources
+21:15:51Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/monitoring-extras
+21:15:53Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/infisical
+21:15:55Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/infisical-operator-dev and 1 more resources
+21:15:57Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:16PM.
+21:16:14Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:16:56Z  root | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #1
+21:16:59Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+21:17:01Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/traefik
+21:17:03Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources
+21:17:05Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+21:18:46Z  plane-dev | OutOfSync | Degraded | op | Running | Retrying operation with latest revisions. Attempt #3
+21:18:48Z  plane-dev | OutOfSync | Degraded | op | Running | waiting for healthy state of /ServiceAccount/plane and 2 more resources
+21:18:51Z  plane-dev | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #4 at 9:22PM.
+21:21:18Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:21:21Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/alloy and 1 more resources
+21:21:23Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/monitoring-extras
+21:21:25Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/infisical
+21:21:27Z  root | OutOfSync | Degraded | op | Running | waiting for healthy state of argoproj.io/Application/infisical-operator-dev and 1 more resources
+21:21:29Z  root | OutOfSync | Degraded | op | Running | one or more synchronization tasks completed unsuccessfully. Retrying attempt #2 at 9:22PM.
+21:21:52Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)

@@ -1,0 +1,74 @@
+# date: 2026-11-04T20:51:17Z
+# NetworkPolicies in argocd at start:
+allow-dns                       <none>                                                 5m47s
+argocd-application-controller   app.kubernetes.io/name=argocd-application-controller   5m47s
+argocd-redis                    app.kubernetes.io/name=argocd-redis                    5m47s
+argocd-redis-secret-init        app.kubernetes.io/name=argocd-redis-secret-init        5m47s
+argocd-repo-server              app.kubernetes.io/name=argocd-repo-server              5m47s
+argocd-server                   app.kubernetes.io/name=argocd-server                   5m47s
+default-deny                    <none>                                                 5m47s
+
+=== redis
+[20:51:17Z] deleting pod argocd-redis-ff6755697-sx45l
+pod "argocd-redis-ff6755697-sx45l" deleted from argocd namespace
+pod/argocd-redis-ff6755697-jcd8p condition met
+[20:51:28Z] ready: argocd-redis-ff6755697-jcd8p restarts=0
+PONG
+
+=== repo-server: new pod, empty caches, so a hard refresh must fetch Git and a chart over new connections
+[20:51:28Z] deleting pod argocd-repo-server-84d5c84659-xt9fh
+pod "argocd-repo-server-84d5c84659-xt9fh" deleted from argocd namespace
+pod/argocd-repo-server-84d5c84659-jmlnw condition met
+[20:51:40Z] ready: argocd-repo-server-84d5c84659-jmlnw restarts=0
+[20:51:40Z] hard refresh of traefik (chart source plus git values source)
+application.argoproj.io/traefik annotated
+[20:51:55Z] refresh annotation after 18s: 'cleared'
+time="2026-11-04T20:51:51Z" level=info msg=Trace args="[helm pull --destination /tmp/681752c0-0519-4b8f-ac3f-533c12c9b49f --version 3.14.0 --repo https://kubernetes-sigs.github.io/metrics-server/ metrics-server]"  operation_name="
+time="2026-11-04T20:51:51Z" level=info msg=Trace args="[git fetch origin --tags --force --prune]"  operation_name="exec git" time_ms=196.89575000000002
+time="2026-11-04T20:51:55Z" level=info msg=Trace args="[helm pull --destination /tmp/daf84c10-58bb-4342-ad17-daa3594efdd9 --version 42.3.0 --repo https://traefik.github.io/charts traefik]"  operation_name="exec helm" time_ms=13595
+repo-server error lines: 0
+traefik sync=Synced health=Healthy revisions=["42.3.0","5fdf41dd69d12941f49f2e8d342c0429a248e25b"]
+[]
+
+=== application-controller: must rebuild its cluster cache from the API server on 6443, and reach redis and repo-server
+[20:51:56Z] deleting pod argocd-application-controller-0
+pod "argocd-application-controller-0" deleted from argocd namespace
+pod/argocd-application-controller-0 condition met
+[20:52:07Z] ready: argocd-application-controller-0 restarts=0
+[20:52:07Z] controller log lines after restart, first matching:
+time="2026-11-04T20:51:56Z" level=info msg="Processing all cluster shards"
+time="2026-11-04T20:51:56Z" level=info msg="Processing all cluster shards"
+time="2026-11-04T20:51:57Z" level=info msg="Ignore status for all objects"
+time="2026-11-04T20:51:57Z" level=info msg="Ignore status for all objects"
+time="2026-11-04T20:51:57Z" level=info msg="Ignore status for all objects"
+time="2026-11-04T20:51:57Z" level=info msg="Ignore status for all objects"
+reconciliations logged so far: 2
+NAME                    SYNC STATUS   HEALTH STATUS
+backup-storage          Synced        Healthy
+kube-prometheus-stack   Synced        Degraded
+metrics-server          Synced        Healthy
+network-policies        Synced        Healthy
+root                    OutOfSync     Degraded
+traefik                 Synced        Healthy
+
+=== server: API on 6443, redis, repo-server, and traffic from Traefik
+[20:52:22Z] deleting pod argocd-server-6879f6c57b-nmjsr
+pod "argocd-server-6879f6c57b-nmjsr" deleted from argocd namespace
+pod/argocd-server-6879f6c57b-fr2fd condition met
+[20:52:33Z] ready: argocd-server-6879f6c57b-fr2fd restarts=0
+[20:52:33Z] curl http://argocd.localhost/ => 200
+{"Version":"v3.5.7","KubectlVersion":null,"HelmVersion":null,"KustomizeVersion":null}
+
+=== end state
+NAME                                  READY   STATUS    RESTARTS   AGE   IP            NODE                           NOMINATED NODE   READINESS GATES
+argocd-application-controller-0       1/1     Running   0          37s   10.244.0.87   plane-platform-control-plane   <none>           <none>
+argocd-redis-ff6755697-jcd8p          1/1     Running   0          76s   10.244.0.85   plane-platform-control-plane   <none>           <none>
+argocd-repo-server-84d5c84659-jmlnw   1/1     Running   0          65s   10.244.0.86   plane-platform-control-plane   <none>           <none>
+argocd-server-6879f6c57b-fr2fd        1/1     Running   0          11s   10.244.0.88   plane-platform-control-plane   <none>           <none>
+NAME                    SYNC STATUS   HEALTH STATUS
+backup-storage          Synced        Healthy
+kube-prometheus-stack   Synced        Degraded
+metrics-server          Synced        Healthy
+network-policies        Synced        Healthy
+root                    OutOfSync     Degraded
+traefik                 Synced        Healthy

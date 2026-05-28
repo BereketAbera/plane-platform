@@ -1,0 +1,16 @@
+# date: 2026-11-04T20:25:01Z
+# helm template kube-prometheus-stack 92.18.0 twice with helm/values/kube-prometheus-stack.yaml, then diff. Values masked: they are chart-generated secrets.
+129c129
+<   admin-password: <masked>
+---
+>   admin-password: <masked>
+1584c1584
+<         checksum/secret: <masked>
+---
+>         checksum/secret: <masked>
+
+# keys under the Deployment pod template annotations
+- checksum/config
+- checksum/sc-dashboard-provider-config
+- checksum/secret
+- kubectl.kubernetes.io/default-container

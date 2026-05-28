@@ -1,0 +1,46 @@
+# date: 2026-11-04T20:56:10Z
+# controller image: quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+scratch repo at 128efe5
+
+=== Scenario 1: fresh install. Parent holds child-b behind child-a's internal waves and hook
+application.argoproj.io/wave-probe-parent created
+20:56:11Z parent[- | -] child-a[raw health=- sync=- op=no phase=-] child-b[absent]
+20:56:12Z parent[Running | -] child-a[raw health=Healthy sync=OutOfSync op=yes phase=Running] child-b[absent]
+20:56:14Z parent[Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a] child-a[raw health=Healthy sync=OutOfSync op=yes phase=Running] child-b[absent]
+-- hook Job active, reading the override on the live child now
+   raw on the object: {"health":"Healthy","sync":"OutOfSync","operation":true,"phase":"Running","message":"waiting for healthy state of /ConfigMap/early"}
+   what root would read, through argocd admin settings resource-overrides health:
+     STATUS: Progressing
+     MESSAGE: Holding the wave: child sync has not finished
+20:57:17Z parent[Succeeded | successfully synced (all tasks run)] child-a[raw health=Healthy sync=Synced op=no phase=Succeeded] child-b[present run=1]
+20:57:17Z parent[Succeeded | successfully synced (all tasks run)] child-a[raw health=Healthy sync=Synced op=no phase=Succeeded] child-b[present run=1]
+parent final: Succeeded successfully synced (all tasks run)
+job.batch/slow-hook   Complete   1/1   63s   64s
+configmap/child-b-marker     1     1s
+configmap/early              1     66s
+configmap/late               1     1s
+Job window: start=2026-11-04T20:56:13Z completion=2026-11-04T20:57:16Z
+child-b created: 2026-11-04T20:57:16Z
+child-a settled: Synced/Healthy,  STATUS: Healthy  MESSAGE:  
+
+=== Scenario 2: resync. Child-a Synced and Healthy with its hook running, the case the operation check exists for
+scratch repo at 130581c
+[20:57:18Z] refresh child-a first, so its hook is running before the parent looks
+[20:57:23Z] child-a now Synced/Healthy/Running, hook active=1
+   raw on the object: {"health":"Healthy","sync":"Synced","operation":true,"phase":"Running","message":"waiting for deletion of hook batch/Job/slow-hook"}
+   what root would read, through argocd admin settings resource-overrides health:
+     STATUS: Progressing
+     MESSAGE: Holding the wave: child sync has not finished
+[20:57:24Z] refresh the parent, which now sees child-b OutOfSync and starts its own sync
+20:57:24Z parent[- | -] child-a[raw health=Healthy sync=Synced op=yes phase=Running] child-b[present run=1]
+20:57:25Z parent[Running | -] child-a[raw health=Healthy sync=Synced op=yes phase=Running] child-b[present run=1]
+20:57:26Z parent[Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a] child-a[raw health=Healthy sync=Synced op=yes phase=Running] child-b[present run=1]
+20:58:26Z parent[Succeeded | successfully synced (all tasks run)] child-a[raw health=Healthy sync=Synced op=no phase=Succeeded] child-b[present run=2]
+parent final: Succeeded successfully synced (all tasks run)
+Job window: start=2026-11-04T20:57:22Z completion=2026-11-04T20:58:25Z
+== cleanup
+application.argoproj.io "wave-probe-parent" deleted from argocd namespace
+application.argoproj.io "wave-probe-child-a" deleted from argocd namespace
+application.argoproj.io "wave-probe-child-b" deleted from argocd namespace
+namespace "wave-probe" deleted
+scratch repo present after cleanup: no

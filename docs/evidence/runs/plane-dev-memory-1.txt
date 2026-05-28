@@ -1,0 +1,71 @@
+# Memory read from each container's cgroup on the node, peak since that container started. 2026-11-04T23:04:47Z
+
+## 22:36 UTC, pods up 60 minutes, after three smoke runs and the soak start. These pods have since been replaced.
+POD                                      CONTAINER          CURRENT_Mi   PEAK_Mi  LIMIT_Mi     OOM RESTARTS
+iso-dev-controller-manager-85dbfbcb5b-vswbn manager                 24.3      26.9       128       0        0
+plane-admin-wl-57ff9b4b88-7w5qb          plane-admin              6.7      11.1        64       0        0
+plane-api-wl-655ddd4b88-vwcd4            plane-api              173.7     208.2       768       0        0
+plane-beat-worker-wl-c5c96d747-7sdk2     plane-beat-worker      146.7     155.5       256       0        0
+plane-live-wl-7c74478fc5-2hslp           plane-live             282.9     308.7       384       0        0
+plane-minio-wl-0                         plane-minio            102.1     108.6       512       0        0
+plane-pgdb-wl-0                          plane-pgdb             128.3     172.8       512       0        0
+plane-rabbitmq-wl-0                      plane-rabbitmq         135.7     250.2       512       0        0
+plane-redis-wl-0                         plane-redis              4.1      12.2        96       0        0
+plane-space-wl-7c685dc55-v8gsv           plane-space            100.0     111.4       256       0        0
+plane-web-wl-77dd4cf56-7jhnw             plane-web                9.0      14.5        64       0        0
+plane-worker-wl-55c87f6f94-4mfkj         plane-worker           341.5     381.0       768       0        0
+postgres-exporter-79f8bbdffd-p5q9g       postgres-exporter       13.2      17.3        48       0        0
+redis-exporter-5b59d6cb7c-rp2rd          redis-exporter          17.7      19.2        32       0        0
+
+## Now. Pods replaced at 22:53, so this covers two make test-e2e runs and the live restart test.
+POD                                      CONTAINER          CURRENT_Mi   PEAK_Mi  LIMIT_Mi     OOM RESTARTS
+iso-dev-controller-manager-85dbfbcb5b-vswbn manager                 25.8      28.2       128       0        0
+plane-admin-wl-d4dcd654f-vrm8f           plane-admin              4.8       5.3        64       0        0
+plane-api-wl-69447b65-7c5rl              plane-api              174.2     244.3       768       0        0
+plane-beat-worker-wl-c5c96d747-p9dn8     plane-beat-worker      146.6     152.3       256       0        0
+plane-live-wl-5744d85f8b-qdb9d           plane-live             152.9     201.1       384       0        0
+plane-minio-wl-0                         plane-minio            124.7     135.5       512       0        0
+plane-pgdb-wl-0                          plane-pgdb              75.7     116.8       512       0        0
+plane-rabbitmq-wl-0                      plane-rabbitmq         121.8     231.3       512       0        0
+plane-redis-wl-0                         plane-redis             10.2      17.0        96       0        0
+plane-space-wl-6578687c54-2svs9          plane-space             91.7     104.1       256       0        0
+plane-web-wl-66c4bd5b4f-jwcgm            plane-web                4.7       5.4        64       0        0
+plane-worker-wl-55c87f6f94-gv6lw         plane-worker           282.4     323.9       768       0        0
+postgres-exporter-79f8bbdffd-p5q9g       postgres-exporter       15.0      18.9        48       0        0
+redis-exporter-5b59d6cb7c-rp2rd          redis-exporter          13.1      19.2        32       0        0
+
+## kubectl top
+plane-admin-wl-d4dcd654f-vrm8f                1m    4Mi     
+plane-api-wl-69447b65-7c5rl                   6m    168Mi   
+plane-beat-worker-wl-c5c96d747-p9dn8          4m    146Mi   
+plane-live-wl-5744d85f8b-qdb9d                1m    151Mi   
+plane-minio-wl-0                              6m    99Mi    
+plane-pgdb-wl-0                               7m    63Mi    
+plane-rabbitmq-wl-0                           10m   121Mi   
+plane-redis-wl-0                              3m    9Mi     
+plane-space-wl-6578687c54-2svs9               7m    85Mi    
+plane-web-wl-66c4bd5b4f-jwcgm                 1m    4Mi     
+plane-worker-wl-55c87f6f94-gv6lw              2m    282Mi   
+
+## Argo CD controller, with Plane running (a bootstrap unknown)
+POD                                      CONTAINER          CURRENT_Mi   PEAK_Mi  LIMIT_Mi     OOM RESTARTS
+argocd-application-controller-0          application-controller     559.1     731.4       768       0        0
+argocd-repo-server-84d5c84659-jmlnw      repo-server            179.7     269.3       512       0        0
+
+## Whole VM
+VM used 9.58 GiB of 13.63, swap used 0.50 GiB
+plane-platform-control-plane 8.43GiB / 13.63GiB
+
+## OOM kills in the kernel log, by process
+      7 (registry)
+      3 (sh)
+      3 (sleep)
+
+## Quota
+{'limits.memory': '4400Mi/7984Mi', 'persistentvolumeclaims': '5/6', 'pods': '14/24', 'requests.memory': '1516Mi/2732Mi'}
+
+## Volume use in plane-dev
+pvc-plane-minio-vol-plane-minio-wl-0         19M
+pvc-plane-pgdb-vol-plane-pgdb-wl-0           76M
+pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   380K
+pvc-plane-redis-vol-plane-redis-wl-0         8.0K

@@ -1,0 +1,39 @@
+# Would plane-dev pods pass PSA restricted? Server-side dry run, nothing changed. 2026-11-04T22:31:59Z
+$ kubectl label --dry-run=server --overwrite ns plane-dev pod-security.kubernetes.io/enforce=restricted
+namespace/plane-dev labeled (server dry run)
+exit 0
+
+# Effective labels
+{"kubernetes.io/metadata.name":"plane-dev","plane-platform/environment":"dev","plane-platform/managed-by":"terraform","pod-security.kubernetes.io/audit":"restricted","pod-security.kubernetes.io/enforce":"baseline","pod-security.kubernetes.io/warn":"restricted"}
+
+# Identity actually running in each container that has a shell
+deploy/plane-web-wl            uid=101(nginx) gid=101(nginx) groups=101(nginx)
+deploy/plane-admin-wl          uid=101(nginx) gid=101(nginx) groups=101(nginx)
+deploy/plane-space-wl          uid=1000(node) gid=1000(node) groups=1000(node)
+deploy/plane-live-wl           uid=1000(node) gid=1000(node) groups=1000(node)
+deploy/plane-api-wl            uid=1000 gid=1000 groups=1000
+deploy/plane-worker-wl         uid=1000 gid=1000 groups=1000
+deploy/plane-beat-worker-wl    uid=1000 gid=1000 groups=1000
+sts/plane-pgdb-wl              uid=70(postgres) gid=70(postgres) groups=70(postgres)
+sts/plane-redis-wl             uid=999(valkey) gid=1000(valkey) groups=1000(valkey)
+sts/plane-rabbitmq-wl          uid=100(rabbitmq) gid=101(rabbitmq) groups=101(rabbitmq)
+plane-minio-wl-0: distroless, no shell. Pod spec says:
+{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}}
+{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}
+
+# Migrator pod spec (it has finished)
+{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}}
+
+# Which images really are running
+plane-admin-wl-57ff9b4b88-7w5qb docker.io/makeplane/plane-admin@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc6
+plane-api-migrate-1-6hl5z docker.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def
+plane-api-wl-655ddd4b88-vwcd4 docker.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def
+plane-beat-worker-wl-c5c96d747-7sdk2 docker.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def
+plane-live-wl-7c74478fc5-2hslp docker.io/makeplane/plane-live@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c
+plane-minio-wl-0 docker.io/pgsty/silo@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b58
+plane-pgdb-wl-0 docker.io/library/postgres@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce0
+plane-rabbitmq-wl-0 docker.io/library/rabbitmq@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e0762
+plane-redis-wl-0 docker.io/valkey/valkey@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53a
+plane-space-wl-7c685dc55-v8gsv docker.io/makeplane/plane-space@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4ee
+plane-web-wl-77dd4cf56-7jhnw docker.io/makeplane/plane-frontend@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79
+plane-worker-wl-55c87f6f94-4mfkj docker.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def

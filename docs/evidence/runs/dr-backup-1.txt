@@ -1,0 +1,14 @@
+# make backup ENV=infisical, 2026-11-04T22:56:42Z
+/dev/disk3s5   460Gi   415Gi    14Gi    97%    6.9M  152M    4%   /System/Volumes/Data
+drwxr-xr-x@ 2 bek  staff  64 Nov  4 21:40 .local/backups
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261104T225642Z
+[pod/plane-backup-20261104t225642z-tc8tb/postgres] pg_restore: error: could not execute query: ERROR:  out of shared memory
+[pod/plane-backup-20261104t225642z-tc8tb/postgres] HINT:  You might need to increase max_locks_per_transaction.
+[pod/plane-backup-20261104t225642z-tc8tb/postgres] Command was: CREATE INDEX "certificate_requests_20310701_20310801_projectId_createdAt_idx" ON public.certificate_requests_20310701_20310801 USING btree ("projectId", "createdAt");
+[pod/plane-backup-20261104t225642z-tc8tb/postgres] 
+[pod/plane-backup-20261104t225642z-tc8tb/postgres] 
+NAME                                  READY   STATUS   RESTARTS   AGE   IP            NODE                           NOMINATED NODE   READINESS GATES
+plane-backup-20261104t225642z-tc8tb   0/1     Error    0          16s   10.244.0.20   plane-platform-control-plane   <none>           <none>
+make: *** [backup] Error 1
+make backup ENV=infisical  0.43s user 0.26s system 4% cpu 16.465 total
+exit=2

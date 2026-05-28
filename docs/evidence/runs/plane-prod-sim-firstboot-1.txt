@@ -1,0 +1,135 @@
+# First boot of plane-prod-sim, from Prometheus (kube-state-metrics keeps replaced pods within the range). 2026-11-04T23:28:08.753309+00:00
+
+## plane-dev: pods by start time, with the moment each became Ready. Window 4h
+21:03:37 ready -             postgres-exporter-565bbf6cb-rlg2k
+21:03:37 ready 21:03:55   18s redis-exporter-5b59d6cb7c-rp2rd
+21:11:03 ready 21:11:32   29s iso-dev-controller-manager-85dbfbcb5b-vswbn
+21:28:59 ready 21:29:00    1s postgres-exporter-559df864f6-dxfpj
+21:30:12 ready -             isolation-probe-1793827812
+21:32:35 ready 21:33:44   69s plane-api-migrate-1-bzmqw
+21:35:15 ready 21:35:46   31s plane-api-wl-655ddd4b88-vwcd4
+21:35:15 ready 21:42:43  448s plane-admin-wl-57ff9b4b88-7w5qb
+21:35:15 ready 21:35:25   10s plane-worker-wl-55c87f6f94-4mfkj
+21:35:15 ready 21:41:55  400s plane-space-wl-7c685dc55-v8gsv
+21:35:15 ready 21:35:40   25s plane-beat-worker-wl-c5c96d747-7sdk2
+21:35:15 ready 21:38:30  195s plane-live-wl-7c74478fc5-2hslp
+21:35:15 ready 21:42:39  444s plane-web-wl-77dd4cf56-7jhnw
+21:39:14 ready -             isolation-probe-1793828354
+21:46:29 ready -             plane-api-migrate-1-6hl5z
+21:56:42 ready 21:56:43    1s postgres-exporter-79f8bbdffd-p5q9g
+22:40:08 ready 22:40:08    0s plane-api-migrate-1-ksc5d
+22:40:48 ready 22:40:49    1s plane-web-wl-77dd4cf56-cxgcz
+22:40:50 ready 22:40:51    1s plane-admin-wl-57ff9b4b88-dngp4
+22:40:52 ready 22:41:02   10s plane-space-wl-7c685dc55-52gsl
+22:41:03 ready 22:41:23   20s plane-live-wl-7c74478fc5-k5w9g
+22:41:24 ready 22:41:55   31s plane-api-wl-655ddd4b88-lpcmq
+22:41:56 ready 22:42:06   10s plane-worker-wl-55c87f6f94-dhdrg
+22:42:06 ready 22:42:32   26s plane-beat-worker-wl-c5c96d747-kpn59
+22:42:32 ready 22:43:03   31s plane-api-wl-655ddd4b88-2bfh2
+22:43:03 ready 22:43:14   11s plane-worker-wl-55c87f6f94-fnhrq
+22:43:14 ready 22:43:39   25s plane-beat-worker-wl-c5c96d747-45jks
+22:44:25 ready 22:44:31    6s plane-minio-wl-0
+22:44:36 ready 22:44:42    6s plane-pgdb-wl-0
+22:44:45 ready 22:45:06   21s plane-rabbitmq-wl-0
+22:45:16 ready 22:45:17    1s plane-redis-wl-0
+22:45:59 ready 22:46:36   37s plane-api-wl-64bb48f986-694mw
+22:46:00 ready 22:46:16   16s plane-worker-wl-79dc7db6cb-kbxfm
+22:46:00 ready 22:46:11   11s plane-space-wl-755985bb65-s7tgq
+22:46:00 ready 22:46:01    1s plane-admin-wl-5c44d6dc7d-7vmsv
+22:46:00 ready 22:46:00    0s plane-web-wl-868d6bfd86-6ck2j
+22:46:00 ready 22:46:30   30s plane-beat-worker-wl-6959997d75-fgws8
+22:46:00 ready 22:46:20   20s plane-live-wl-5b675fb86f-h9vhv
+22:47:35 ready 22:47:56   21s plane-live-wl-7c74478fc5-h48zx
+22:47:35 ready 22:47:45   10s plane-worker-wl-55c87f6f94-lrcqx
+22:47:35 ready 22:48:01   26s plane-beat-worker-wl-c5c96d747-bqrsc
+22:47:35 ready 22:47:37    2s plane-web-wl-77dd4cf56-xstd6
+22:47:35 ready 22:47:46   11s plane-space-wl-7c685dc55-fmb9q
+22:47:35 ready 22:48:06   31s plane-api-wl-655ddd4b88-j7zmm
+22:47:36 ready 22:47:37    1s plane-admin-wl-57ff9b4b88-6bqfz
+22:51:07 ready -             plane-api-migrate-1-89fdx
+22:51:16 ready 22:51:18    2s plane-admin-wl-d4dcd654f-7p76k
+22:51:16 ready 22:51:27   11s plane-space-wl-6578687c54-crmhb
+22:51:16 ready 22:51:18    2s plane-web-wl-66c4bd5b4f-txb5s
+22:51:16 ready 22:51:36   20s plane-live-wl-5744d85f8b-j8ltw
+22:51:16 ready 22:51:52   36s plane-api-wl-69447b65-2g9n4
+22:52:06 ready 22:52:16   10s plane-worker-wl-847d7dfb7c-hfd7s
+22:52:06 ready 22:52:26   20s plane-live-wl-849f567995-7m8d5
+22:52:06 ready 22:52:31   25s plane-beat-worker-wl-77b96cd4b6-fmdmm
+22:52:06 ready 22:52:41   35s plane-api-wl-8779f95fb-fdcz6
+22:52:06 ready 22:52:07    1s plane-web-wl-6fcd78dd98-qx2qw
+22:52:06 ready 22:52:07    1s plane-admin-wl-5db94778d-m6gzg
+22:52:06 ready 22:52:16   10s plane-space-wl-5c8c797bc7-bhsz2
+22:53:06 ready 22:53:07    1s plane-web-wl-66c4bd5b4f-jwcgm
+22:53:06 ready 22:53:38   32s plane-api-wl-69447b65-7c5rl
+22:53:06 ready 22:53:22   16s plane-space-wl-6578687c54-2svs9
+22:53:06 ready 22:53:37   31s plane-beat-worker-wl-c5c96d747-p9dn8
+22:53:06 ready 22:53:21   15s plane-worker-wl-55c87f6f94-gv6lw
+22:53:07 ready 22:53:27   20s plane-live-wl-5744d85f8b-7qxdc
+22:53:07 ready 22:53:08    1s plane-admin-wl-d4dcd654f-vrm8f
+22:54:48 ready 22:55:08   20s plane-live-wl-5744d85f8b-qdb9d
+22:58:58 ready -             plane-backup-20261104t225855z-6s5fz
+23:13:26 ready -             plane-backup-20261104t231324z-98ktf
+23:17:12 ready -             isolation-probe-1793834232
+23:18:15 ready -             plane-restore-rehearsal-1793834295-dztrb
+23:18:28 ready -             plane-restore-rehearsal-clean-1793834308-xc2mv
+Jobs:
+  plane-api-migrate-1 start 22:51:07 end 22:51:16 9s
+  plane-backup-20261104t225855z start 22:58:58 end 22:59:25 27s
+  plane-backup-20261104t231324z start 23:13:26 end 23:13:34 8s
+  plane-restore-rehearsal-1793834295 start 23:18:15 end 23:18:25 10s
+  plane-restore-rehearsal-clean-1793834308 start 23:18:28 end 23:18:33 5s
+
+## plane-prod-sim: pods by start time, with the moment each became Ready. Window 4h
+21:03:37 ready 21:03:55   18s redis-exporter-5b59d6cb7c-xsw9t
+21:03:37 ready -             postgres-exporter-565bbf6cb-9qnnd
+21:11:02 ready 21:11:33   31s iso-prod-sim-controller-manager-5cc86cc76-nwhb6
+21:29:35 ready 21:29:36    1s postgres-exporter-6944f6db5-mqdtf
+21:30:15 ready -             isolation-probe-1793827815
+21:46:53 ready 21:46:54    1s plane-redis-wl-0
+21:46:55 ready 21:47:01    6s plane-minio-wl-0
+21:46:56 ready 21:47:02    6s plane-pgdb-wl-0
+21:46:56 ready 21:47:16   20s plane-rabbitmq-wl-0
+21:47:17 ready 21:47:17    0s plane-api-migrate-1-8vzxg
+21:48:48 ready 21:49:08   20s plane-live-wl-6c858449df-qbbxx
+21:48:48 ready 21:49:04   16s plane-worker-wl-667f56c7f8-lnv72
+21:48:48 ready 21:49:18   30s plane-beat-worker-wl-5c8845c7d5-cqhpz
+21:48:48 ready 21:48:59   11s plane-admin-wl-8668568c64-7t66l
+21:48:48 ready 21:48:50    2s plane-web-wl-d87c846fd-bq4gc
+21:48:48 ready 21:49:03   15s plane-space-wl-68c595d665-dfct7
+21:48:48 ready 21:49:24   36s plane-api-wl-7f874fd7d8-7hq8s
+21:52:23 ready 21:52:33   10s iso-prod-sim-controller-manager-5cc86cc76-4r45n
+21:56:42 ready 21:56:43    1s postgres-exporter-b6f657c47-p65fl
+22:40:07 ready 22:40:08    1s plane-api-migrate-1-tsxrk
+22:51:07 ready -             plane-api-migrate-1-65669
+22:51:16 ready 22:51:52   36s plane-api-wl-8566bcd789-lc7df
+22:51:16 ready 22:51:27   11s plane-space-wl-54c66d4dcb-zz2nn
+22:51:16 ready 22:51:18    2s plane-web-wl-8fb59c6c9-b4nq8
+22:51:16 ready 22:51:18    2s plane-admin-wl-5d6489d557-vr62j
+22:51:16 ready 22:51:36   20s plane-live-wl-5d5fd749c6-szdzq
+22:59:28 ready -             plane-backup-20261104t225926z-csj5f
+23:13:38 ready -             plane-backup-20261104t231335z-v9jm5
+23:17:14 ready -             isolation-probe-1793834234
+Jobs:
+  plane-api-migrate-1 start 22:51:07 end 22:51:16 9s
+  plane-backup-20261104t225926z start 22:59:27 end 22:59:35 8s
+  plane-backup-20261104t231335z start 23:13:38 end 23:13:46 8s
+
+## Earliest samples of the plane-prod-sim Application in argocd_app_info, and any time it was not Healthy/Synced in 4h
+count_over_time(argocd_app_info{name="plane-prod-sim"}[4h])
+    Healthy OutOfSync samples 5
+    Progressing OutOfSync samples 2
+    Healthy Synced samples 185
+    Progressing Synced samples 2
+    Healthy Synced samples 9
+count_over_time(argocd_app_info{name="plane-prod-sim",health_status!="Healthy"}[4h])
+    Progressing OutOfSync samples 2
+    Progressing Synced samples 2
+count_over_time(argocd_app_info{name="plane-prod-sim",sync_status!="Synced"}[4h])
+    Healthy OutOfSync samples 5
+    Progressing OutOfSync samples 2
+count_over_time(argocd_app_info{name="plane-dev",health_status!="Healthy"}[4h])
+    Degraded OutOfSync samples 13
+    Degraded OutOfSync samples 18
+    Progressing OutOfSync samples 18
+    Progressing Synced samples 12
+    Progressing Synced samples 2

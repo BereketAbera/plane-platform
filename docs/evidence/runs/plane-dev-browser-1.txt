@@ -1,0 +1,13 @@
+# Built-in browser, no sign-in, nothing typed. 2026-11-04 about 22:22 UTC. Tool results copied as read.
+Page http://plane.dev.localhost/          title "Sign up - Plane". Text shows Email field, Continue, Sign up link. Screenshot: plane-dev-browser-signin-1.jpg
+Page http://plane.dev.localhost/god-mode/ title "Admin – Instance Setup & Sign-In". Text shows Email, Password, Sign in.
+Page http://plane.dev.localhost/spaces/   title "Plane Publish | ...". Text shows Email, Continue, "Powered by Plane Publish".
+Network on /: 88 requests listed, every one same-origin. Every asset 200. /api/instances/ 200. /api/users/me/ 401 (signed out, expected).
+performance entries on /god-mode/: 29 resources, 0 cross-origin, non-2xx: /api/instances/admins/me/ 401, /api/instances/admins/ 401 (signed out, expected).
+performance entries on /spaces/:   50 resources, 0 cross-origin, non-2xx: /api/users/me/ 401 (signed out, expected).
+Console, pattern "Failed to load": 4 entries, all "status of 401 (Unauthorized)". Pattern "blocked": none. "CORS": none. "net::": none. "Content Security": none.
+Console, other errors: React minified #418 repeated and one #423 on web and on space (64 error entries in all across the 3 loads). These are hydration errors, not request failures.
+HTML served through Traefik vs the file in the image, sha256 (web):
+  served 85490cc2b0c9b29dab8faabcebdb44e7d1ac3510e25586bce3b50ff8432fd5fc
+  image  85490cc2b0c9b29dab8faabcebdb44e7d1ac3510e25586bce3b50ff8432fd5fc
+So the platform serves the page unchanged. Root cause of #418/#423 not investigated beyond this; web is ssr:false upstream and space is SSR.

@@ -1,0 +1,39 @@
+# date: 2026-11-05T00:39:54Z
+[00:39:54Z] real kindnet: kindnet-gqcpb restarts=0
+[00:39:54Z] before
+  counter: (empty) 
+  heartbeat:  892 00:39:54Z
+  ALERTS: (empty);
+  increase(alloy restarts[15m]): container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr 0 00:39:54Z
+pod/kindnet-failopen-synthetic created
+[00:41:16Z] firing in Prometheus after 81s
+[00:41:16Z] firing webhook at the sink after 0s
+  counter: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic 1 00:41:16Z 
+  heartbeat:  911 00:41:16Z
+  ALERTS: alertname=KindnetSkippedNetworkPolicies,alertstate=firing,component=network,namespace=kube-system,pod=kindnet-failopen-synthetic,severity=critical 1 00:41:16Z;
+  increase(alloy restarts[15m]): container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr 0 00:41:16Z
+[00:41:16Z] stopping the Alloy container in place, restartCount 1, pod alloy-68d8ccc746-n2tbr uid 99403958-a0d4-48bb-b5d9-10c967699b55
+[00:41:32Z] Alloy restarted in the same pod, restartCount 2 after 15s
+[00:42:47Z] 75s after the first in-place restart, with one restart counted
+  counter: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic 1 00:42:47Z 
+  heartbeat:  24 00:42:47Z
+  ALERTS: alertname=KindnetSkippedNetworkPolicies,alertstate=firing,component=network,namespace=kube-system,pod=kindnet-failopen-synthetic,severity=critical 1 00:42:47Z;
+  increase(alloy restarts[15m]): container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr 1.0345029730465998 00:42:47Z
+[00:42:47Z] sink resolved lines so far: 0
+[00:44:47Z] 195s after the first restart
+  counter: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic 1 00:44:48Z 
+  heartbeat:  48 00:44:48Z
+  ALERTS: alertname=KindnetSkippedNetworkPolicies,alertstate=firing,component=network,namespace=kube-system,pod=kindnet-failopen-synthetic,severity=critical 1 00:44:48Z;
+  increase(alloy restarts[15m]): container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr 1.034504162155079 00:44:48Z
+[00:44:48Z] PodRestarting at one restart, firing or not: (empty)
+[00:44:48Z] stopping the Alloy container in place, restartCount 2, pod alloy-68d8ccc746-n2tbr uid 99403958-a0d4-48bb-b5d9-10c967699b55
+[00:45:14Z] Alloy restarted in the same pod, restartCount 3 after 26s
+[00:45:55Z] PodRestarting firing in Prometheus on the second restart after 41s
+[00:45:55Z] PodRestarting firing webhook at the sink after 0s
+  counter: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic 1 00:45:55Z 
+  heartbeat:  18 00:45:55Z
+  ALERTS: alertname=KindnetSkippedNetworkPolicies,alertstate=firing,component=network,namespace=kube-system,pod=kindnet-failopen-synthetic,severity=critical 1 00:45:55Z;alertname=KindnetLogsNotRead,alertstate=pending,component=network,severity=warning 1 00:45:55Z;alertname=PodRestarting,alertstate=firing,component=pod,container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr,severity=warning 1 00:45:55Z;
+  increase(alloy restarts[15m]): container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr 2.0690035678817082 00:45:55Z
+[00:45:55Z] kindnet alert after both restarts: sink resolved lines 0
+[00:45:55Z] deleting the scratch pod, so the count no longer applies
+pod "kindnet-failopen-synthetic" force deleted from kube-system namespace

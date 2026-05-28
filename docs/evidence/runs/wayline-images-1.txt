@@ -1,0 +1,50 @@
+#13 exporting config sha256:b0c7498ede8c5d4613b3c0f8b04c21102f1c84933bc8762b63d63e598517c443 done
+#13 naming to docker.io/wayline-foundation-test/web:1 done
+#13 unpacking to docker.io/wayline-foundation-test/web:1 0.1s done
+#13 DONE 0.7s
+#12 exporting config sha256:1e83e8ef7ebdb39de8b0ff89ad50429ada3104b24d57bc6e4e8dbd8344a9c6db done
+#12 naming to docker.io/wayline-foundation-test/admin:1 done
+#12 unpacking to docker.io/wayline-foundation-test/admin:1 0.0s done
+#12 DONE 0.2s
+== web as uid 101
+GET / 200 text/html
+GET /source 302 -> https://github.com/BereketAbera/plane-platform/tree/bc8bb9110c209e427371793988309a82cfe1e8b9
+GET /some/spa/route 200
+css /assets/globals-Dq5K21je.css
+GET /assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 200 font/woff2 11144
+GET /assets/instrument-sans-latin-wght-normal-BbzFLZTg.woff2 200 font/woff2 30092
+GET /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 200 font/woff2 12108
+GET /assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2 200 font/woff2 15196
+GET /assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2 200 font/woff2 40404
+== admin as uid 101
+GET /god-mode/ 200
+css /god-mode/assets/globals-DdonV-R6.css
+GET /god-mode/assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 200 font/woff2
+GET /god-mode/assets/instrument-sans-latin-wght-normal-BbzFLZTg.woff2 200 font/woff2
+GET /god-mode/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 200 font/woff2
+GET /god-mode/assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2 200 font/woff2
+GET /god-mode/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2 200 font/woff2
+== logs
+wlf-web 3.395MiB / 64MiB
+wlf-admin 3.375MiB / 64MiB
+application-name" content="Wayline"
+<title>Wayline | Simple, extensible, open-source project management tool.</title>
+X-Frame-Options: DENY
+#10 naming to docker.io/wayline-foundation-test/space:1 done
+#10 unpacking to docker.io/wayline-foundation-test/space:1 0.1s done
+#10 DONE 0.5s
+== space as uid 1000 after 2s
+GET /spaces/ 200 text/html; charset=utf-8
+<title>Wayline Publish | Make your Wayline boards public with one-click</title>
+css /spaces/assets/globals-BcM85dgJ.css
+GET /spaces/assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 200 font/woff2
+GET /spaces/assets/instrument-sans-latin-wght-normal-BbzFLZTg.woff2 200 font/woff2
+GET /spaces/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 200 font/woff2
+GET /spaces/assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2 200 font/woff2
+GET /spaces/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2 200 font/woff2
+wlf-space 76.53MiB / 256MiB
+[react-router-serve] http://localhost:3000 (http://172.17.0.5:3000)
+GET /spaces/ 200 - - 14.875 ms
+GET /spaces/ 200 - - 3.574 ms
+GET /spaces/ 200 - - 1.921 ms
+user=1000 size=277989847

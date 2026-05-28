@@ -1,0 +1,195 @@
+# Negative control for scripts/publish-evidence.sh, on a scratch copy of the tree
+# date (UTC): 2026-11-05T00:43:54Z
+# command: python3 -I control.py <scratch dir>. The script is publish-evidence-control-script-1.txt beside this file
+# commit: 0bba707decd8
+# scripts/publish-evidence.sh sha256: 5c866ad3e9aab89f7abddcb16184b0818673e476c7462554851919f2f7a6b58f
+# Output below: source names and counts, never a value. Lines starting with | are what the script printed.
+
+--- 1. First run: a value from each source is replaced
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 8 new or changed, 0 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 19 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  cluster argocd/argocd-initial-admin-secret password: 0 left in the copies
+PASS  cluster argocd/argocd-redis auth: 0 left in the copies
+PASS  cluster monitoring/kps-grafana admin-password: 0 left in the copies
+PASS  cluster monitoring/kps-prometheus-token token: 0 left in the copies
+PASS  cluster plane-dev/plane-app-env DATABASE_URL: 0 left in the copies
+PASS  cluster plane-dev/plane-app-keys SECRET_KEY, in its base64 form: 0 left in the copies
+PASS  cluster plane-dev/plane-pgdb POSTGRES_PASSWORD: 0 left in the copies
+PASS  identifier rule: SECRET_KEY id=<uuid>: 0 left in the copies
+PASS  identifier rule: plane-app-keys uid=<uuid>: 0 left in the copies
+PASS  secret-zero AUTH_SECRET: 0 left in the copies
+PASS  secret-zero DB_PASSWORD: 0 left in the copies
+PASS  secret-zero ENCRYPTION_KEY: 0 left in the copies
+PASS  secret-zero infisical-admin.json .token: 0 left in the copies
+PASS  secret-zero infisical-machine.json .identity_ids.dev: 0 left in the copies
+PASS  test-accounts.env PLANE_DEV_ADMIN_EMAIL: 0 left in the copies
+PASS  test-accounts.env PLANE_DEV_ADMIN_PASSWORD: 0 left in the copies
+PASS  test-accounts.env PLANE_PROD_SIM_API_TOKEN: 0 left in the copies
+PASS  a UUID that gitleaks does not read as a credential: still there (1), not over-redacted
+PASS  ordinary words, a plain URL and a short number: still there (1), not over-redacted
+
+--- 2. File shapes
+PASS  a file over 2 MiB is skipped, with a line naming it
+PASS  a file of exactly 2 MiB is copied
+PASS  a binary file is skipped
+PASS  an image is copied byte for byte
+PASS  a hidden file and a symlink are skipped
+PASS  file types that .gitignore keeps out are skipped
+PASS  a scan directory stays out
+PASS  any other directory keeps its path under runs/
+PASS  an empty file is copied
+
+--- 3. The same input again changes nothing
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 0 new or changed, 8 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 19 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  every copy keeps its hash and modification time, MANIFEST.tsv included
+PASS  the remembered values are unchanged
+PASS  the remembered values have mode 600
+
+--- 4. A gitleaks-shaped token in a raw file fails the script
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 9 in runs/, 1 new or changed, 8 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 19 replacements
+    | [90m3:43AM [33mWRN [1mleaks found: 1
+    |   docs/evidence/runs/planted-token.txt:2 github-pat
+    | fail gitleaks failed on docs/evidence/runs, so do not commit it. Add a value to the scrub, or a narrow rule to .gitleaks.toml if it is a real false positive.
+PASS  exit 1 on a finding (was 1)
+PASS  it names the file, line and rule
+PASS  the output does not hold the token
+PASS  the copy stays in place, uncommitted, because nothing in runs/ is deleted
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 0 new or changed, 8 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 19 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0 once the token is gone from raw and from the copy
+
+--- 5. Cluster not reachable, values remembered from the earlier runs
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   note: the cluster is not reachable, so the scan was limited to local files: test-accounts.env, secret-zero/, and the values earlier runs left in evidence-scrub-values
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 0 new or changed, 8 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 19 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  it says the scan was limited to local files
+PASS  the copies do not change: no cluster value came back
+
+--- 6. Cluster not reachable and nothing remembered: what the limit means
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   note: the cluster is not reachable, so the scan was limited to local files: test-accounts.env, secret-zero/, and the values earlier runs left in evidence-scrub-values
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 2 new or changed, 6 unchanged, 1 images not scrubbed
+    |   scrub: 3 files changed, 10 replacements
+    | [90m3:44AM [33mWRN [1mleaks found: 1
+    |   docs/evidence/runs/planted-cluster.txt:5 jwt
+    | fail gitleaks failed on docs/evidence/runs, so do not commit it. Add a value to the scrub, or a narrow rule to .gitleaks.toml if it is a real false positive.
+PASS  exit 1, gitleaks flags the one value it can recognise (was 1)
+PASS  that one is the service account token
+PASS  7 cluster values stay in the copies, so this check can see them. gitleaks flags 1 of them
+PASS  secret-zero AUTH_SECRET: still replaced from local files
+PASS  secret-zero DB_PASSWORD: still replaced from local files
+PASS  secret-zero ENCRYPTION_KEY: still replaced from local files
+PASS  secret-zero infisical-admin.json .token: still replaced from local files
+PASS  secret-zero infisical-machine.json .identity_ids.dev: still replaced from local files
+PASS  test-accounts.env PLANE_DEV_ADMIN_EMAIL: still replaced from local files
+PASS  test-accounts.env PLANE_DEV_ADMIN_PASSWORD: still replaced from local files
+PASS  test-accounts.env PLANE_PROD_SIM_API_TOKEN: still replaced from local files
+
+--- 7. Cluster back: the copies are made again from raw
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 2 new or changed, 6 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 19 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  no planted value is left (0)
+
+--- 8. A copy whose raw file is gone stays, and loses a value learned later
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 0 new or changed, 7 unchanged, 1 images not scrubbed
+    |   scrub: 5 files changed, 17 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  the copy is still there
+PASS  the value is gone from it
+PASS  MANIFEST.tsv keeps its row
+
+--- 9. A changed raw file overwrites its copy
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   skipped, image scans go to docs/evidence/security/ by hand: scan-images-20260101T000000Z
+    |   skipped, reserved or hidden name: .hidden
+    |   skipped, over 2 MiB: big-1.txt (2097153 bytes)
+    |   skipped, not text: blob.bin
+    |   skipped, not a regular file: link.txt
+    |   skipped, a type that never enters Git: planted.env
+    |   skipped, a type that never enters Git: planted.sql
+    |   files: 8 in runs/, 1 new or changed, 6 unchanged, 1 images not scrubbed
+    |   scrub: 4 files changed, 16 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  the copy has the new bytes
+
+--- 10. Nothing the script printed in any run holds a value
+PASS  0 of 17 planted values in 9 runs' output
+
+--- Scratch tree removed: True
+--- Summary: 0 failed

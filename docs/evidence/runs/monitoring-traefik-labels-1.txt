@@ -1,0 +1,49 @@
+# captured 2026-11-04T22:19:31Z
+
+$ Traefik service label values
+argocd-argocd-server-0042222a373b4ce5f02a@kubernetescrd 22
+infisical-infisical-e12518909886a5f29cb8@kubernetescrd 566
+monitoring-alertmanager-66302ee9e27175082b99@kubernetescrd 6
+monitoring-prometheus-fee5881c234c340f00a9@kubernetescrd 174
+monitoring-grafana-3ad912d6093f64d3080f@kubernetescrd 11876
+plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd 133
+plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd 134
+plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd 134
+plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd 297
+plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd 132
+plane-prod-sim-plane-ingress-05ef5287dfff9a9888ac@kubernetescrd 121
+plane-prod-sim-plane-ingress-1449d306fb3abd2de80f@kubernetescrd 120
+plane-prod-sim-plane-ingress-3de9b3a1ef2bf77f889f@kubernetescrd 119
+plane-prod-sim-plane-ingress-64a8b812e8ac7ded3f3b@kubernetescrd 242
+plane-prod-sim-plane-ingress-9e9aaf0e93d4b21151aa@kubernetescrd 119
+plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd 6
+plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd 4
+
+$ sha256 of each plane-dev and plane-prod-sim route match, first 20 hex, against the labels above
+plane-dev plane-space plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/spaces`)
+plane-dev plane-admin plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/god-mode`)
+plane-dev plane-api plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/api`)
+plane-dev plane-api plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/auth`)
+plane-dev plane-api plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/static/`)
+plane-dev plane-live plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/live`)
+plane-dev plane-minio plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/uploads`)
+plane-dev plane-web plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd  Host(`plane.dev.localhost`) && PathPrefix(`/`)
+plane-prod-sim plane-space plane-prod-sim-plane-ingress-3de9b3a1ef2bf77f889f@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/spaces`)
+plane-prod-sim plane-admin plane-prod-sim-plane-ingress-9e9aaf0e93d4b21151aa@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/god-mode`)
+plane-prod-sim plane-api plane-prod-sim-plane-ingress-64a8b812e8ac7ded3f3b@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/api`)
+plane-prod-sim plane-api plane-prod-sim-plane-ingress-8d37bae94b8675684b07@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/auth`)
+plane-prod-sim plane-api plane-prod-sim-plane-ingress-2b6f50f351e64e760953@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/static/`)
+plane-prod-sim plane-live plane-prod-sim-plane-ingress-1449d306fb3abd2de80f@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/live`)
+plane-prod-sim plane-minio plane-prod-sim-plane-ingress-b1af0143c11c483363ef@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/uploads`)
+plane-prod-sim plane-web plane-prod-sim-plane-ingress-05ef5287dfff9a9888ac@kubernetescrd  Host(`plane.prod-sim.localhost`) && PathPrefix(`/`)
+
+$ dashboard selector, by env
+{"metric":{"env":"dev"},"value":[1793830771.592,"0.45925755830533965"]}
+{"metric":{"env":"prod-sim"},"value":[1793830771.592,"0.39999851852400553"]}
+
+$ tests/load/run.sh API filter: old form and new form, 10m increase
+API filter: service=~"plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd|plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd|plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+filter service=~"plane-dev-.*api.*"
+[]
+filter service=~"plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd|plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd|plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+[{"metric":{},"value":[1793830771.679,"91.57830471365112"]}]

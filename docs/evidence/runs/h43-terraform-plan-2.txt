@@ -1,0 +1,21 @@
+# date: 2026-11-04T23:29:07Z
+module.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical]
+module.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring]
+module.foundation.kubernetes_namespace_v1.this["plane-dev"]: Refreshing state... [id=plane-dev]
+module.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim]
+module.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd]
+module.foundation.kubernetes_config_map_v1_data.coredns[0]: Refreshing state... [id=kube-system/coredns]
+module.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik]
+module.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents]
+module.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-budget]
+module.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-defaults]
+module.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-defaults]
+module.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-budget]
+module.argocd.helm_release.argocd: Refreshing state... [id=argocd]
+module.argocd.helm_release.bootstrap: Refreshing state... [id=argocd-bootstrap]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+plan exit=0

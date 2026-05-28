@@ -1,0 +1,7 @@
+update 1 sent with the client still connected; stored by the debounce after 10.5 s
+update 2 sent, deleting plane-live-wl-5744d85f8b-7qxdc at once: pod "plane-live-wl-5744d85f8b-7qxdc" deleted from plane-dev namespace
+old connection ended 5.1 s after the delete: WsClosed closed code=4205 reason=Reset Connection
+reconnected 21.2 s after the delete, attempts 17 doc bytes 169
+after restart, document holds update 1: True  update 2: False
+description_html holds update 1: True  update 2: False
+new pod: plane-live-wl-5744d85f8b-qdb9d

@@ -1,0 +1,23 @@
+# captured 2026-11-04T22:19:26Z
+
+$ curl http://prometheus.localhost/api/v1/rules, summarised
+rule groups: 30  rules: 199
+health counts: {'alerting/ok': 146, 'recording/ok': 53}
+not ok: []
+max group evaluation seconds: 0.01224825
+firing (1):
+   ('Watchdog', 'none', None, '', '2026-11-04T21:35:26')
+pending (0):
+
+$ promtool on the rules and unit tests, as CI runs them
+Checking rules----.yaml
+  SUCCESS: 0 rules found
+
+Checking rules-plane.yaml
+  SUCCESS: 12 rules found
+
+Checking rules-platform.yaml
+  SUCCESS: 6 rules found
+
+  SUCCESS
+

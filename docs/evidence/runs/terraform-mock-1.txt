@@ -1,0 +1,48 @@
+# date: 2026-11-04T20:23:10Z
+# Mock-provider tests. None exist in the repo, so these ran on a throwaway copy of the tree. Nothing was committed and no cluster was contacted.
+# copy: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/m1-lua/tfmock-1793823790
+
+$ terraform -chdir=infrastructure/terraform/modules/foundation init -backend=false -input=false -plugin-dir=<local provider cache>
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+exit 0
+
+$ terraform -chdir=infrastructure/terraform/modules/foundation test -no-color
+tests/quota.tftest.hcl... in progress
+  run "quota_covers_exporters"... pass
+tests/quota.tftest.hcl... tearing down
+tests/quota.tftest.hcl... pass
+
+Success! 1 passed, 0 failed.
+exit 0
+
+$ terraform -chdir=infrastructure/terraform/modules/argocd init -backend=false -input=false -plugin-dir=<local provider cache>
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+exit 0
+
+$ terraform -chdir=infrastructure/terraform/modules/argocd test -no-color
+tests/values.tftest.hcl... in progress
+  run "values_reach_the_release"... pass
+tests/values.tftest.hcl... tearing down
+tests/values.tftest.hcl... pass
+
+Success! 1 passed, 0 failed.
+exit 0
+
+$ terraform -chdir=infrastructure/terraform/environments/local init -backend=false -input=false -plugin-dir=<local provider cache>
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+exit 0
+
+$ terraform -chdir=infrastructure/terraform/environments/local test -no-color
+tests/root.tftest.hcl... in progress
+  run "whole_root_applies_against_mocks"... pass
+tests/root.tftest.hcl... tearing down
+tests/root.tftest.hcl... pass
+
+Success! 1 passed, 0 failed.
+exit 0

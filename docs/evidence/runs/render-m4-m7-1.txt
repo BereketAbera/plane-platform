@@ -1,0 +1,140 @@
+# 2026-11-04T20:11:02Z scripts/render.sh --check, after editing sources and BEFORE make render. Expected: exit 1
+--- /Users/bek/dev/pr/plane-platform/gitops/environments/dev/manifests.yaml	2026-11-04 22:01:22
++++ /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.lxLbESXGov/dev.yaml	2026-11-04 23:11:02
+@@ -309,6 +309,7 @@
+   name: plane-admin-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -395,6 +396,7 @@
+   name: plane-api-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -494,6 +496,7 @@
+   name: plane-beat-worker-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -594,6 +597,7 @@
+   name: plane-live-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -679,6 +683,7 @@
+   name: plane-space-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -754,6 +759,7 @@
+   name: plane-web-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -840,6 +846,7 @@
+   name: plane-worker-wl
+   namespace: plane-dev
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -964,6 +971,9 @@
+         - /data
+         - --console-address
+         - :9090
++        env:
++        - name: MINIO_PROMETHEUS_AUTH_TYPE
++          value: public
+         envFrom:
+         - secretRef:
+             name: plane-doc-store
+[1;33mwarn[0m dev is out of date: run make render and commit the result
+--- /Users/bek/dev/pr/plane-platform/gitops/environments/prod-sim/manifests.yaml	2026-11-04 22:01:22
++++ /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.lxLbESXGov/prod-sim.yaml	2026-11-04 23:11:02
+@@ -309,6 +309,7 @@
+   name: plane-admin-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -395,6 +396,7 @@
+   name: plane-api-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -494,6 +496,7 @@
+   name: plane-beat-worker-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -594,6 +597,7 @@
+   name: plane-live-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -679,6 +683,7 @@
+   name: plane-space-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -754,6 +759,7 @@
+   name: plane-web-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -840,6 +846,7 @@
+   name: plane-worker-wl
+   namespace: plane-prod-sim
+ spec:
++  progressDeadlineSeconds: 360
+   replicas: 1
+   selector:
+     matchLabels:
+@@ -964,6 +971,9 @@
+         - /data
+         - --console-address
+         - :9090
++        env:
++        - name: MINIO_PROMETHEUS_AUTH_TYPE
++          value: public
+         envFrom:
+         - secretRef:
+             name: plane-doc-store
+[1;33mwarn[0m prod-sim is out of date: run make render and commit the result
+exit=1

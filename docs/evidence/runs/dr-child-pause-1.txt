@@ -1,0 +1,20 @@
+# Does root undo automated.enabled=false on a child? 2026-11-04T23:01:59Z
+{"sync":"Synced","health":"Healthy","op":"Succeeded","automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=false"],"ignore":null}
+before: {"prune":true,"selfHeal":true}
+application.argoproj.io/metrics-server patched
+application.argoproj.io/root annotated
+23:02:04 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:09 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:14 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:19 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:25 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:30 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:35 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:40 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:45 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:50 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:02:55 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+23:03:00 child={"enabled":false,"prune":true,"selfHeal":true} root=["Synced","Healthy","Succeeded"]
+application.argoproj.io/metrics-server patched
+after revert: {"prune":true,"selfHeal":true}
+{"dryRunAutomated":{"enabled":false,"prune":true,"selfHeal":true}}

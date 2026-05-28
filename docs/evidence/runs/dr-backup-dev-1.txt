@@ -1,0 +1,16 @@
+# make backup ENV=dev, 2026-11-04T22:58:55Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261104T225855Z
+[pod/plane-backup-20261104t225855z-6s5fz/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261104t225855z-6s5fz/objects] 2026/11/04 22:59:22 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t225855z-6s5fz/objects] 2026/11/04 22:59:22 ERROR : Local file system at /backups/20261104T225855Z.partial/objects: xattrs not supported - disabling: xattr.LSet /backups/20261104T225855Z.partial/objects/e611fd4c0c124197aa6df5f804e8e76e-smoke.png.8020c7b3.partial user.content-type: operation not supported
+[pod/plane-backup-20261104t225855z-6s5fz/objects] 2026/11/04 22:59:22 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t225855z-6s5fz/objects] 2026/11/04 22:59:22 NOTICE: Local file system at /backups/20261104T225855Z.partial/objects: 0 differences found
+[pod/plane-backup-20261104t225855z-6s5fz/objects] 2026/11/04 22:59:22 NOTICE: Local file system at /backups/20261104T225855Z.partial/objects: 17 matching files
+[pod/plane-backup-20261104t225855z-6s5fz/objects] 2026/11/04 22:59:22 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t225855z-6s5fz/objects] objects: 17 checked
+[pod/plane-backup-20261104t225855z-6s5fz/finalize] finalize: 20261104T225855Z complete
+backup 20261104T225855Z: postgres/plane.dump 763794 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2110 B, postgres/content.tsv 127 B, objects.lsjson 6498 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261104T225855Z
+make backup ENV=$e  0.75s user 0.45s system 3% cpu 30.646 total
+exit=0

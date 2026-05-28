@@ -1,0 +1,75 @@
+2026-11-04T22:13:33Z
+$ scripts/ci/validate-manifests.sh
+[1;34m==>[0m render is up to date
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m helm lint: bootstrap chart
+[1;32m ok[0m helm lint: bootstrap chart
+[1;34m==>[0m kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: rendered Plane
+[1;34m==>[0m kubeconform: platform manifests
+Summary: 132 resources found in 7 files - Valid: 132, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: platform manifests
+[1;34m==>[0m conftest: rendered Plane
+
+1480 tests, 1480 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: rendered Plane
+[1;34m==>[0m conftest: platform manifests
+
+2112 tests, 2112 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform manifests
+[1;34m==>[0m promotion invariant
+[1;32m ok[0m 9 image(s) were recorded for dev under the same name
+[1;32m ok[0m promotion invariant
+[1;34m==>[0m promtool: platform rules
+[1;32m ok[0m 2 rule file(s) valid
+[1;32m ok[0m promtool: platform rules
+[1;34m==>[0m promtool: rule unit tests
+  SUCCESS
+
+[1;32m ok[0m promtool: rule unit tests
+[1;34m==>[0m helm template: platform charts
+[1;32m ok[0m 9 platform chart(s) rendered
+[1;32m ok[0m helm template: platform charts
+[1;34m==>[0m kubeconform: platform charts
+Summary: 194 resources found in 9 files - Valid: 184, Invalid: 0, Errors: 0, Skipped: 10
+[1;32m ok[0m kubeconform: platform charts
+[1;34m==>[0m conftest: platform charts
+WARN - /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.FxoS3fchsK/charts/argocd.yaml - charts - Deployment argocd/argocd-applicationset-controller: container "applicationset-controller" has no memory limit, so set one in helm/values
+
+2716 tests, 2715 passed, 1 warning, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform charts
+[1;34m==>[0m promtool: chart rules
+[1;32m ok[0m 26 rule file(s) valid
+[1;32m ok[0m promtool: chart rules
+[1;34m==>[0m promotion flows with a stub cluster
+[1;32m ok[0m promote-digest-under-another-image
+[1;32m ok[0m promote-digest-never-recorded
+[1;32m ok[0m promote-dev-healthy-and-running
+[1;32m ok[0m promote-dev-out-of-sync
+[1;32m ok[0m promote-dev-degraded
+[1;32m ok[0m promote-dev-application-missing
+[1;32m ok[0m promote-dev-running-another-digest
+[1;32m ok[0m promote-dev-container-not-ready
+[1;32m ok[0m promote-no-cluster-says-skipped
+[1;32m ok[0m promote-override-is-logged
+[1;32m ok[0m promote-override-unused-when-dev-is-fine
+[1;32m ok[0m rollback-rerun-after-failed-publish
+[1;32m ok[0m rollback-prod-sim-with-broken-backup
+[1;32m ok[0m rollback-prod-sim-with-hung-backup
+[1;32m ok[0m rollback-prod-sim-names-the-older-dump
+[1;32m ok[0m rollback-prod-sim-skip-backup
+[1;32m ok[0m rollback-dev-takes-no-dump
+[1;32m ok[0m rollback-leaves-other-staged-files-alone
+[1;32m ok[0m publish-warns-when-ahead-of-origin
+[1;32m ok[0m publish-quiet-when-level-with-origin
+[1;32m ok[0m publish-says-when-origin-is-unknown
+[1;32m ok[0m publish-still-backs-up-prod-sim-change
+[1;32m ok[0m drill-runs-to-a-pass
+[1;32m ok[0m drill-failed-promotion-reverts-nothing-else
+[1;32m ok[0m 24 of 24 promotion flow scenarios passed, with a stub cluster
+[1;32m ok[0m promotion flows with a stub cluster
+[1;32m ok[0m manifests valid
+exit code: 0

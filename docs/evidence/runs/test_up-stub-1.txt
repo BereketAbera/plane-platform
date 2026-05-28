@@ -1,0 +1,124 @@
+=== U1 invalid step
+PASS  invalid UP_STOP_AFTER exits 1
+PASS  lists the steps
+PASS  nothing ran
+=== U2 dirty paths refuse
+PASS  modified gitops/applications/plane-dev.yaml exits 1
+PASS  prints gitops/applications/plane-dev.yaml
+PASS  nothing ran for gitops/applications/plane-dev.yaml
+PASS  modified helm/values/x.yaml exits 1
+PASS  prints helm/values/x.yaml
+PASS  nothing ran for helm/values/x.yaml
+PASS  modified monitoring/x.yaml exits 1
+PASS  prints monitoring/x.yaml
+PASS  nothing ran for monitoring/x.yaml
+PASS  modified infisical/x.yaml exits 1
+PASS  prints infisical/x.yaml
+PASS  nothing ran for infisical/x.yaml
+PASS  untracked file under helm/ exits 1
+PASS  prints untracked
+PASS  prints every dirty path (1)
+PASS  prints every dirty path (2)
+PASS  says Argo reads only commits
+=== U3 dirty elsewhere does not refuse
+PASS  dirty outside Argo paths exits 0
+=== U4 dirty tree with the cluster step only
+PASS  dirty + UP_STOP_AFTER=cluster exits 0
+PASS  only the cluster step ran
+PASS  dirty + UP_STOP_AFTER=publish refuses
+PASS  nothing ran for publish
+=== U5 each stop point
+PASS  stop cluster rc
+PASS  stop cluster calls
+PASS  says how to go on
+PASS  stop publish rc
+PASS  stop publish calls
+PASS  stop terraform rc
+PASS  stop terraform calls
+PASS  stop secret-zero rc
+PASS  stop secret-zero calls
+PASS  stop traefik rc
+PASS  stop traefik calls
+PASS  traefik step curled argocd.localhost
+PASS  traefik stop did not touch infisical
+PASS  traefik stop did not list all Applications
+PASS  stop infisical rc
+PASS  stop infisical calls
+PASS  infisical stop did not list all Applications
+PASS  root is never waited on
+=== U6 full run
+PASS  full run rc
+PASS  full run order
+PASS  final line refuses to call this proof
+PASS  root is never waited on, full run
+PASS  second run also rc 0 (idempotent against stubs)
+=== U7 disk
+PASS  new cluster with 20 GiB refused
+PASS  needs 25
+PASS  nothing ran
+PASS  new cluster with 26 GiB proceeds
+PASS  resume with 20 GiB proceeds
+PASS  resume with 5 GiB refused
+PASS  needs the default
+=== U8 prerequisites
+PASS  docker down refused
+PASS  docker message
+PASS  missing kind refused
+PASS  points at make setup
+=== U9 local image digests
+PASS  dormant with upstream images: no imagetools
+PASS  dormant: no build
+PASS  all present rc
+PASS  all present: no build
+PASS  each digest checked once, deduplicated across environments
+PASS  tag and digest form kept
+PASS  missing, rebuild reproduces: rc 0
+PASS  rebuild comes before publish
+PASS  missing, rebuild differs: rc 1
+PASS  nothing published, no terraform
+PASS  names the missing digest
+PASS  says how to promote
+PASS  says how to promote prod-sim
+PASS  offers the digest-preserving copy
+PASS  rebuild itself fails: stops
+PASS  rebuild failed: nothing published
+=== U10 timeouts name the cause
+PASS  traefik timeout rc
+PASS  traefik timeout message
+PASS  names the failing app
+PASS  no bootstrap after traefik timeout
+PASS  route timeout rc
+PASS  route timeout points at the NodePort policy
+PASS  no bootstrap after route timeout
+PASS  infisical timeout rc
+PASS  infisical timeout message
+PASS  no bootstrap before Infisical answers
+PASS  terraform failure stops
+PASS  no secret-zero after terraform failure
+PASS  secret-zero failure propagates its code
+PASS  no bootstrap after secret-zero failure
+PASS  bootstrap failure propagates
+PASS  no annotate after bootstrap failure
+PASS  cluster failure propagates
+PASS  no publish after cluster failure
+PASS  publish failure propagates
+PASS  no terraform after publish failure
+=== U11 the final wait
+PASS  13 of 14 is not done
+PASS  says how many exist
+PASS  status not printed on failure
+PASS  a Degraded child is not done
+PASS  names it (1)
+PASS  names it (2)
+PASS  a pending refresh is not done
+PASS  turns good after polling
+PASS  polled until good
+=== U12 no secrets
+PASS  full run rc
+PASS  output holds no secret
+PASS  up.sh never asks kubectl for a Secret
+=== U13 through make
+PASS  make up UP_STOP_AFTER=terraform rc
+PASS  make passes UP_STOP_AFTER
+
+SUMMARY: 109 passed, 0 failed

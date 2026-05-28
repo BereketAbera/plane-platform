@@ -1,0 +1,24 @@
+# date: 2026-11-04T23:21:26Z  label: before-builtin-check
+# override present in argocd-cm: False
+# before: KPS Synced Healthy root Synced Healthy
+pod "prometheus-kps-prometheus-0" deleted from monitoring namespace
+[+  2s] CR Available=('False', 'NoPodReady') KPS health=Degraded | root op_open=False phase=Succeeded retryCount=None msg=successfully synced (all tasks run)
+[+  2s] requested a sync of root while KPS reads Degraded: application.argoproj.io/root patched 
+[+  4s] CR Available=('False', 'NoPodReady') KPS health=Degraded | root op_open=True phase=Running retryCount=None msg=
+[+  6s] CR Available=('False', 'NoPodReady') KPS health=Degraded | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+[+  8s] CR Available=('False', 'NoPodReady') KPS health=Degraded | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/traefik
+[+ 10s] CR Available=('False', 'NoPodReady') KPS health=Degraded | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of traefik.io/IngressRoute/argocd-server and 2 more resources
+[+ 12s] CR Available=('False', 'NoPodReady') KPS health=Degraded | root op_open=True phase=Running retryCount=1 msg=one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 11:22PM.
+[+ 17s] CR Available=('True', '') KPS health=Degraded | root op_open=True phase=Running retryCount=1 msg=one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 11:22PM.
+[+ 19s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 11:22PM.
+[+ 72s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=Retrying operation with latest revisions. Attempt #1
+[+ 74s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+[+ 76s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/traefik
+[+ 78s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of traefik.io/IngressRoute/argocd-server and 2 more resources
+[+ 81s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+[+ 83s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/alloy and 1 more resources
+[+ 85s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/monitoring-extras
+[+ 87s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/infisical
+[+ 89s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=1 msg=waiting for healthy state of argoproj.io/Application/infisical-operator-dev and 1 more resources
+[+ 91s] CR Available=('True', '') KPS health=Healthy | root op_open=False phase=Succeeded retryCount=1 msg=successfully synced (all tasks run)
+# summary: Prometheus Available again at +17s; root op closed at +91s; KPS read Degraded=True; root retried=True; root final phase=Succeeded

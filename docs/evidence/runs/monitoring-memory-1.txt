@@ -1,0 +1,138 @@
+# captured 2026-11-04T22:19:26Z
+
+$ peaks.sh: cgroup memory.current and memory.peak per container, read on the node
+NAMESPACE          POD                                            CONTAINER                  CUR_MI  PEAK_MI   LIM_MI RESTARTS LAST
+monitoring         alert-sink-78dcd6dbb4-fxfst                    sink                         10.4     13.6     48Mi        0 -
+monitoring         alertmanager-kps-alertmanager-0                alertmanager                 20.0     22.0     96Mi        0 -
+monitoring         alertmanager-kps-alertmanager-0                config-reloader              17.0     18.3     48Mi        0 -
+monitoring         alloy-7947f8479-kjmxh                          alloy                        80.6     91.0    256Mi        0 -
+monitoring         blackbox-854dd6b7dc-bprdb                      blackbox                     26.2     28.8     48Mi        0 -
+monitoring         kps-grafana-77cb96fc89-v8g6n                   grafana                     316.4    332.9    384Mi        0 -
+monitoring         kps-grafana-77cb96fc89-v8g6n                   grafana-sc-dashboard         82.1    106.4    160Mi        0 -
+monitoring         kps-grafana-77cb96fc89-v8g6n                   grafana-sc-datasources       77.3    105.5    160Mi        0 -
+monitoring         kps-kube-state-metrics-58c95899dd-s8bb4        kube-state-metrics           21.4     22.9     96Mi        0 -
+monitoring         kps-operator-fdc5dfd48-mgtwq                   kube-prometheus-stack        36.9     38.4    128Mi        0 -
+monitoring         loki-0                                         loki                        464.4    640.0    640Mi        1 Error
+monitoring         prometheus-kps-prometheus-0                    config-reloader              18.2     20.8     48Mi        0 -
+monitoring         prometheus-kps-prometheus-0                    prometheus                  477.1    532.1    768Mi        0 -
+monitoring-agents  kps-node-exporter-rtskt                        node-exporter                19.8     21.4     48Mi        0 -
+traefik            traefik-6955f98f54-7z9wr                       traefik                      55.9     62.2    192Mi        0 -
+argocd             argocd-application-controller-0                application-controller      519.3    647.6    768Mi        0 -
+argocd             argocd-redis-ff6755697-jcd8p                   redis                        20.2     29.7     64Mi        0 -
+argocd             argocd-repo-server-84d5c84659-jmlnw            repo-server                 121.3    269.3    512Mi        0 -
+argocd             argocd-server-6879f6c57b-fr2fd                 server                       55.0     93.4    192Mi        0 -
+infisical          infisical-567944c58f-vsrl8                     infisical-standalone-infisical    659.8    821.8      1Gi        0 -
+infisical          infisical-postgres-0                           postgres                    118.6    155.4    256Mi        0 -
+infisical          infisical-redis-0                              redis                        10.5     20.6     96Mi        0 -
+plane-dev          iso-dev-controller-manager-85dbfbcb5b-vswbn    manager                      24.1     26.4    128Mi        0 -
+plane-dev          plane-admin-wl-57ff9b4b88-7w5qb                plane-admin                   4.6      5.4     64Mi        0 -
+plane-dev          plane-api-migrate-1-6hl5z                      plane-api-migrate               -        -    512Mi        0 -
+plane-dev          plane-api-wl-655ddd4b88-vwcd4                  plane-api                   164.3    166.3    768Mi        0 -
+plane-dev          plane-beat-worker-wl-c5c96d747-7sdk2           plane-beat-worker           146.7    155.5    256Mi        0 -
+plane-dev          plane-live-wl-7c74478fc5-2hslp                 plane-live                  186.8    194.3    384Mi        0 -
+plane-dev          plane-minio-wl-0                               plane-minio                  90.8     92.5    512Mi        0 -
+plane-dev          plane-pgdb-wl-0                                plane-pgdb                   47.2    126.2    512Mi        0 -
+plane-dev          plane-rabbitmq-wl-0                            plane-rabbitmq              135.0    201.2    512Mi        0 -
+plane-dev          plane-redis-wl-0                               plane-redis                   3.9     12.2     96Mi        0 -
+plane-dev          plane-space-wl-7c685dc55-v8gsv                 plane-space                  81.1     84.0    256Mi        0 -
+plane-dev          plane-web-wl-77dd4cf56-7jhnw                   plane-web                     4.7     10.2     64Mi        0 -
+plane-dev          plane-worker-wl-55c87f6f94-4mfkj               plane-worker                286.6    325.6    768Mi        0 -
+plane-dev          postgres-exporter-79f8bbdffd-p5q9g             postgres-exporter            11.4     17.0     48Mi        0 -
+plane-dev          redis-exporter-5b59d6cb7c-rp2rd                redis-exporter               17.1     19.2     32Mi        0 -
+plane-prod-sim     iso-prod-sim-controller-manager-5cc86cc76-4r45n manager                      40.1     42.1    128Mi        0 -
+plane-prod-sim     plane-admin-wl-8668568c64-7t66l                plane-admin                   4.5      5.5     64Mi        0 -
+plane-prod-sim     plane-api-migrate-1-8vzxg                      plane-api-migrate               -        -    512Mi        0 -
+plane-prod-sim     plane-api-wl-7f874fd7d8-7hq8s                  plane-api                   160.5    164.4    768Mi        0 -
+plane-prod-sim     plane-beat-worker-wl-5c8845c7d5-cqhpz          plane-beat-worker           151.5    162.4    256Mi        0 -
+plane-prod-sim     plane-live-wl-6c858449df-qbbxx                 plane-live                  165.4    180.1    384Mi        0 -
+plane-prod-sim     plane-minio-wl-0                               plane-minio                  81.7    106.1    512Mi        0 -
+plane-prod-sim     plane-pgdb-wl-0                                plane-pgdb                   51.1    126.5    512Mi        0 -
+plane-prod-sim     plane-rabbitmq-wl-0                            plane-rabbitmq              118.3    222.1    512Mi        0 -
+plane-prod-sim     plane-redis-wl-0                               plane-redis                   4.1     12.8     96Mi        0 -
+plane-prod-sim     plane-space-wl-68c595d665-dfct7                plane-space                  78.1     82.5    256Mi        0 -
+plane-prod-sim     plane-web-wl-d87c846fd-bq4gc                   plane-web                     4.6      5.1     64Mi        0 -
+plane-prod-sim     plane-worker-wl-667f56c7f8-lnv72               plane-worker                260.8    301.9    768Mi        0 -
+plane-prod-sim     postgres-exporter-b6f657c47-p65fl              postgres-exporter            17.7     21.3     48Mi        0 -
+plane-prod-sim     redis-exporter-5b59d6cb7c-xsw9t                redis-exporter               18.0     19.4     32Mi        0 -
+
+$ kubectl top pods -A --containers (monitoring and monitoring-agents)
+POD                                       NAME                     CPU(cores)   MEMORY(bytes)   
+alert-sink-78dcd6dbb4-fxfst               sink                     1m           10Mi            
+alertmanager-kps-alertmanager-0           alertmanager             1m           19Mi            
+alertmanager-kps-alertmanager-0           config-reloader          0m           17Mi            
+alloy-7947f8479-kjmxh                     alloy                    5m           80Mi            
+blackbox-854dd6b7dc-bprdb                 blackbox                 4m           24Mi            
+kps-grafana-77cb96fc89-v8g6n              grafana                  17m          273Mi           
+kps-grafana-77cb96fc89-v8g6n              grafana-sc-dashboard     1m           82Mi            
+kps-grafana-77cb96fc89-v8g6n              grafana-sc-datasources   1m           77Mi            
+kps-kube-state-metrics-58c95899dd-s8bb4   kube-state-metrics       1m           21Mi            
+kps-operator-fdc5dfd48-mgtwq              kube-prometheus-stack    4m           35Mi            
+loki-0                                    loki                     10m          294Mi           
+prometheus-kps-prometheus-0               config-reloader          1m           17Mi            
+prometheus-kps-prometheus-0               prometheus               31m          399Mi           
+POD                       NAME            CPU(cores)   MEMORY(bytes)   
+kps-node-exporter-rtskt   node-exporter   1m           20Mi            
+
+$ kubectl top pod kube-apiserver, etcd
+etcd-plane-platform-control-plane                      etcd                      22m    79Mi     
+kube-apiserver-plane-platform-control-plane            kube-apiserver            172m   1075Mi   
+
+$ docker stats --no-stream
+NAME                                         MEM USAGE / LIMIT     CPU %
+plane-git                                    1.504MiB / 64MiB      0.00%
+plane-registry                               20.2MiB / 128MiB      0.07%
+plane-mirror-docker                          33MiB / 128MiB        0.04%
+plane-mirror-k8s                             25.26MiB / 128MiB     0.00%
+plane-mirror-quay                            28.08MiB / 128MiB     0.00%
+plane-platform-control-plane                 8.414GiB / 13.63GiB   62.44%
+frameflow-minio-1                            280.4MiB / 13.63GiB   0.02%
+wiki-dev-mail                                22.82MiB / 13.63GiB   0.00%
+wiki-dev-redis                               22.2MiB / 13.63GiB    0.10%
+wiki-dev-db                                  35.66MiB / 13.63GiB   0.00%
+supabase_studio_scraping-local-supabase      238.7MiB / 13.63GiB   0.00%
+supabase_pg_meta_scraping-local-supabase     120.8MiB / 13.63GiB   0.18%
+supabase_storage_scraping-local-supabase     129.5MiB / 13.63GiB   0.18%
+supabase_rest_scraping-local-supabase        97.21MiB / 13.63GiB   0.05%
+supabase_realtime_scraping-local-supabase    255.3MiB / 13.63GiB   0.10%
+supabase_inbucket_scraping-local-supabase    13.99MiB / 13.63GiB   0.00%
+supabase_auth_scraping-local-supabase        15.55MiB / 13.63GiB   0.00%
+supabase_kong_scraping-local-supabase        80.02MiB / 13.63GiB   0.00%
+supabase_db_scraping-local-supabase          84.13MiB / 13.63GiB   0.02%
+local-r2-minio-1                             249.5MiB / 13.63GiB   0.03%
+acelab-hatchet-workers-hatchet-dashboard-1   9.062MiB / 13.63GiB   0.00%
+acelab-hatchet-workers-hatchet-engine-1      0B / 0B               0.00%
+acelab-hatchet-workers-postgres-1            74.98MiB / 13.63GiB   0.00%
+
+$ VM /proc/meminfo
+MemTotal:       14294756 kB
+MemAvailable:    3998748 kB
+SwapTotal:       2097148 kB
+SwapFree:        2000724 kB
+
+$ PV sizes
+284K	/var/local-path-provisioner/pvc-1caa4b30-68d2-4a05-967c-34be857d6129_plane-dev_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+8.0K	/var/local-path-provisioner/pvc-3f2f00f9-32b5-4fa8-bbb5-8ac0196f4129_plane-prod-sim_pvc-plane-redis-vol-plane-redis-wl-0
+232K	/var/local-path-provisioner/pvc-4ecbc6b1-55d8-40f9-8fe0-e372ba3e71f6_plane-prod-sim_pvc-plane-minio-vol-plane-minio-wl-0
+272K	/var/local-path-provisioner/pvc-61c58b9d-f625-411d-8bb2-d955c39a00d6_plane-prod-sim_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+73M	/var/local-path-provisioner/pvc-6fcb0c5e-f886-4b88-9c08-621e9e9755cb_plane-prod-sim_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+882M	/var/local-path-provisioner/pvc-77583616-fb41-4e84-9864-2abd5e0c3538_monitoring_storage-loki-0
+75M	/var/local-path-provisioner/pvc-7e53cc45-a69c-493f-a97f-8b75a6be78cb_plane-dev_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+7.0M	/var/local-path-provisioner/pvc-974fedf5-e207-42c1-aa70-613e6fb08206_infisical_data-infisical-redis-0
+304K	/var/local-path-provisioner/pvc-bb4c631d-0466-4b18-b70c-1708ee8a037f_plane-dev_pvc-plane-minio-vol-plane-minio-wl-0
+66M	/var/local-path-provisioner/pvc-e5b3f129-2f45-44ad-8671-317a235a5174_monitoring_prometheus-kps-prometheus-db-prometheus-kps-prometheus-0
+157M	/var/local-path-provisioner/pvc-f2678959-c3b6-4b83-a944-f39f5ac04b3a_infisical_data-infisical-postgres-0
+8.0K	/var/local-path-provisioner/pvc-ffbc0cf8-a81d-4943-964e-4c481b91e6f4_plane-dev_pvc-plane-redis-vol-plane-redis-wl-0
+
+$ df -g on the host
+Filesystem   1G-blocks Used Available Capacity iused     ifree %iused  Mounted on
+/dev/disk3s5       460  416        13    97% 6931218 144532280    5%   /System/Volumes/Data
+
+$ Prometheus TSDB
+prometheus_tsdb_head_series = ["132045"]
+process_resident_memory_bytes{job="kps-prometheus",pod=~"prometheus.*",endpoint="http-web"} = ["489517056"]
+prometheus_tsdb_storage_blocks_bytes = ["0"]
+prometheus_tsdb_wal_storage_size_bytes = ["57871863","18433829"]
+rate(loki_distributor_bytes_received_total[10m]) = ["27648.427537495343"]
+rate(loki_distributor_lines_received_total[10m]) = ["102.67416060689976"]
+sum(loki_discarded_samples_total) = ["2577"]
+sum by (reason) (loki_write_dropped_entries_total) = ["0","3469","0","0","0"]

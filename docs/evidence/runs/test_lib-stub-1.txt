@@ -1,0 +1,77 @@
+--- scenario: no operation returns at once (rc=0)
+    polls=1 patches=0 terminated=0
+PASS  idle: one poll, no patch
+--- scenario: a finished Failed operation is idle (rc=0)
+    polls=1 patches=0 terminated=0
+PASS  Failed: one poll, no patch
+--- scenario: a sync that finishes by itself is never patched (rc=0)
+    polls=5 patches=0 terminated=0
+PASS  finishes by itself: five polls, no patch
+PASS  finishes by itself: no warning
+--- scenario: a sync that finishes just before 180s is never patched (rc=0)
+    polls=60 patches=0 terminated=0
+PASS  finishes at the edge: no patch
+--- scenario: a retry loop is terminated at 180s, then ends (rc=0)
+    [1;33mwarn[0m Application plane-dev has had a sync running for 180s, so terminating it
+    polls=71 patches=1 terminated=1
+    apps=plane-dev
+    patch at 180s: -n argocd patch application plane-dev --type merge -p {"status":{"operationState":{"phase":"Terminating"}}}
+PASS  retry loop: returns 0
+PASS  retry loop: one patch
+PASS  retry loop: not before 180s
+PASS  retry loop: recorded
+PASS  retry loop: warned
+PASS  retry loop: the exact patch
+PASS  retry loop: the right object
+--- scenario: the controller overwrites the patch, so it repeats, warning once (rc=0)
+    [1;33mwarn[0m Application plane-dev has had a sync running for 180s, so terminating it
+    polls=64 patches=3 terminated=1
+PASS  overwritten: returns 0
+PASS  overwritten: three patches, recorded once
+PASS  overwritten: warned once
+--- scenario: Terminating found already, by someone else: waits, does not patch (rc=0)
+    polls=5 patches=0 terminated=0
+PASS  foreign Terminating: no patch
+--- scenario: still Terminating at 300s gives up (rc=1)
+    [1;33mwarn[0m Application plane-dev has had a sync running for 180s, so terminating it
+    [1;31mfail[0m Application plane-dev is still Terminating after 300s, and terminating its sync did not end it
+PASS  gives up: rc 1
+PASS  gives up: says so
+PASS  gives up: did not return
+--- scenario: argo_resume with nothing paused is safe under nounset (rc=0)
+    survived
+PASS  resume on empty arrays
+--- scenario: argo_resume warns about each terminated app once, and only once (rc=0)
+    [1;33mwarn[0m The sync of plane-dev was terminated, and Argo CD will not retry that revision by itself. The next commit starts a new sync: make rollback, or commit and make gitops-publish.
+    [1;33mwarn[0m The sync of root was terminated, and Argo CD will not retry that revision by itself. The next commit starts a new sync: make rollback, or commit and make gitops-publish.
+    survived
+PASS  warned for both, once each
+PASS  names root
+PASS  names the child
+PASS  says what starts the next sync
+PASS  second call is safe
+--- scenario: argo_pause on a child stuck in retry, then argo_resume (rc=0)
+    [1;34m==>[0m Pausing auto-sync: root, then plane-dev
+    [1;33mwarn[0m Application plane-dev has had a sync running for 180s, so terminating it
+    paused: {"enabled":false} {"enabled":false}
+    [1;32m ok[0m auto-sync restored on plane-dev
+    [1;32m ok[0m auto-sync restored on root
+    [1;33mwarn[0m The sync of plane-dev was terminated, and Argo CD will not retry that revision by itself. The next commit starts a new sync: make rollback, or commit and make gitops-publish.
+    resumed: {"prune":true,"selfHeal":true} {"prune":true,"selfHeal":true}
+    phase: Failed
+    {"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}},"status":{"operationState":{"phase":"Succeeded"}}}pause-patch root
+    {"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}},"status":{"operationState":{"phase":"Running"}}}pause-patch plane-dev
+    terminate-patch plane-dev at 180s
+    resume-patch plane-dev
+    resume-patch root
+PASS  end to end rc
+PASS  root paused first
+PASS  child terminated, not died
+PASS  root was idle, so not terminated
+PASS  both paused
+PASS  automated blocks restored verbatim
+PASS  operation ended
+PASS  warned on resume
+PASS  order: root paused first, resumed last
+
+SUMMARY: 34 passed, 0 failed

@@ -1,0 +1,167 @@
+# Foundation bring-up record. Captured 2026-11-04T21:22:31Z on the running cluster.
+# Commands: scripts/up.sh staged with UP_STOP_AFTER, then read-only kubectl and docker.
+working main 88676a0d, published main 88676a0d
+
+== Time per step, from each scripts/up.sh run
+--- bootstrap-up-terraform-1: $ UP_STOP_AFTER=terraform scripts/up.sh
+ ok cluster step finished in 2s
+ ok publish step finished in 0s
+Plan: 14 to add, 0 to change, 0 to destroy.
+ ok terraform step finished in 320s
+exit=0 elapsed=323s
+--- bootstrap-up-secret-zero-1: $ UP_STOP_AFTER=secret-zero scripts/up.sh
+ ok cluster step finished in 2s
+ ok publish step finished in 0s
+No changes. Your infrastructure matches the configuration.
+ ok terraform step finished in 17s
+ ok secret-zero step finished in 2s
+exit=0 elapsed=21s
+--- bootstrap-up-traefik-1: $ UP_STOP_AFTER=traefik scripts/up.sh
+ ok cluster step finished in 2s
+ ok publish step finished in 0s
+No changes. Your infrastructure matches the configuration.
+ ok terraform step finished in 6s
+ ok secret-zero step finished in 0s
+ ok traefik step finished in 0s
+exit=0 elapsed=8s
+--- bootstrap-up-terraform-2: $ UP_STOP_AFTER=terraform scripts/up.sh   (helm upgrade under default-deny: re-runs the Redis secret hook, con
+ ok cluster step finished in 2s
+ ok publish step finished in 0s
+Plan: 0 to add, 1 to change, 0 to destroy.
+module.argocd.helm_release.argocd: Modifications complete after 27s [id=argocd]
+ ok terraform step finished in 35s
+exit=0 elapsed=37s
+
+== Time per child, first boot, from the Application timeline (2s polling, .local/evidence-raw/bootstrap-timeline-1.txt)
+application                    first seen first Synced+Healthy, no op  seconds
+root                           20:45:31   -                            -
+network-policies               20:45:31   20:45:33                     2
+backup-storage                 20:45:31   20:45:31                     0
+traefik                        20:45:33   20:46:21                     48
+metrics-server                 20:46:21   20:47:26                     65
+kube-prometheus-stack          20:47:26   20:57:17                     591
+loki                           21:00:29   21:03:38                     189
+alloy                          21:00:29   21:02:46                     137
+monitoring-extras              21:03:38   21:04:22                     44
+infisical                      21:04:22   21:11:02                     400
+infisical-operator-dev         21:11:02   21:11:33                     31
+infisical-operator-prod-sim    21:11:02   21:11:33                     31
+plane-dev                      21:11:33   -                            -
+
+== Applications now
+NAME                          SYNC STATUS   HEALTH STATUS
+alloy                         Synced        Healthy
+backup-storage                Synced        Healthy
+infisical                     Synced        Healthy
+infisical-operator-dev        Synced        Healthy
+infisical-operator-prod-sim   Synced        Healthy
+kube-prometheus-stack         Synced        Progressing
+loki                          Synced        Healthy
+metrics-server                Synced        Healthy
+monitoring-extras             Synced        Healthy
+network-policies              Synced        Healthy
+plane-dev                     OutOfSync     Degraded
+root                          OutOfSync     Degraded
+traefik                       Synced        Healthy
+
+== Node and VM memory
+NAME                           CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+plane-platform-control-plane   370m         3%       5961Mi          42%         
+node container: 5.826GiB / 13.63GiB CPU 25.26%
+VM used 6.70 GiB of 13.63, available 6.93, swap used 0.01
+sampled every 20s since just before the first terraform apply, 120 samples:
+  first: 20:40:09Z  vm_used=3.39GiB vm_avail=10.24GiB swap_used=0.00GiB node_container=730.8MiB / 13.63GiB
+  highest VM used: 21:19:49Z  vm_used=6.82GiB vm_avail=6.81GiB swap_used=0.01GiB node_container=5.891GiB / 13.63GiB
+  last:  21:22:18Z  vm_used=6.67GiB vm_avail=6.96GiB swap_used=0.01GiB node_container=5.822GiB / 13.63GiB
+
+== Host disk
+/dev/disk3s5       460  409        19    96% 6941664 204725480    3%   /System/Volumes/Data
+docker Images: 20.01GB reclaimable 2.062GB (10%)
+docker Containers: 5.779MB reclaimable 114.7kB (1%)
+docker Local Volumes: 13.16GB reclaimable 1.413GB (10%)
+docker Build Cache: 2.479GB reclaimable 306.8MB
+
+== kubectl top, foundation
+argocd-application-controller-0       56m   247Mi   
+argocd-redis-ff6755697-jcd8p          5m    16Mi    
+argocd-repo-server-84d5c84659-jmlnw   5m    103Mi   
+argocd-server-6879f6c57b-fr2fd        2m    41Mi    
+traefik-6955f98f54-7z9wr   2m    39Mi   
+coredns-589f44dc88-7hw97                               3m    27Mi     
+coredns-589f44dc88-ldh8b                               3m    29Mi     
+etcd-plane-platform-control-plane                      19m   119Mi    
+kindnet-gqcpb                                          5m    25Mi     
+kube-apiserver-plane-platform-control-plane            50m   1076Mi   
+kube-controller-manager-plane-platform-control-plane   25m   103Mi    
+kube-proxy-ns4th                                       1m    23Mi     
+kube-scheduler-plane-platform-control-plane            5m    36Mi     
+metrics-server-8f755d95b-dghbn                         5m    28Mi     
+
+== kubectl top, by namespace
+argocd                 407 MiB in 4 pods
+infisical              825 MiB in 3 pods
+kube-system           1466 MiB in 9 pods
+local-path-storage      17 MiB in 1 pods
+monitoring             734 MiB in 9 pods
+monitoring-agents       16 MiB in 1 pods
+plane-dev               23 MiB in 2 pods
+plane-prod-sim          25 MiB in 2 pods
+traefik                 39 MiB in 1 pods
+
+== Container memory peaks, from cgroup memory.peak since each container started
+argocd       argocd-application-controller-0                      application-controller     current=  258Mi peak=  425Mi limit=768Mi
+argocd       argocd-server-6879f6c57b-fr2fd                       server                     current=   41Mi peak=   83Mi limit=192Mi
+argocd       argocd-repo-server-84d5c84659-jmlnw                  repo-server                current=  112Mi peak=  247Mi limit=512Mi
+argocd       argocd-redis-ff6755697-jcd8p                         redis                      current=   17Mi peak=   25Mi limit=64Mi
+kube-system  metrics-server-8f755d95b-dghbn                       metrics-server             current=   29Mi peak=   33Mi limit=128Mi
+traefik      traefik-6955f98f54-7z9wr                             traefik                    current=   40Mi peak=   45Mi limit=192Mi
+kube-system  coredns-589f44dc88-7hw97                             coredns                    current=   28Mi peak=   32Mi limit=170Mi
+kube-system  coredns-589f44dc88-ldh8b                             coredns                    current=   29Mi peak=   32Mi limit=170Mi
+kube-system  kindnet-gqcpb                                        kindnet-cni                current=   26Mi peak=   29Mi limit=none
+kube-system  kube-proxy-ns4th                                     kube-proxy                 current=   23Mi peak=   25Mi limit=none
+kube-system  etcd-plane-platform-control-plane                    etcd                       current=  157Mi peak=  196Mi limit=none
+kube-system  kube-controller-manager-plane-platform-control-plane kube-controller-manager    current=  104Mi peak=  110Mi limit=none
+kube-system  kube-scheduler-plane-platform-control-plane          kube-scheduler             current=   36Mi peak=   38Mi limit=none
+kube-system  kube-apiserver-plane-platform-control-plane          kube-apiserver             current= 1077Mi peak= 1142Mi limit=none
+
+highest working set sampled on any controller pod, including the one deleted at 20:51: 517Mi (top sampled every 30s; the sampler started at 20:48, and top showed 512Mi at 20:47:46 before that)
+
+== Argo CD pods and restarts
+argocd-application-controller-0 1/1 Running restarts=0 4m40s
+argocd-redis-ff6755697-jcd8p 1/1 Running restarts=0 31m
+argocd-repo-server-84d5c84659-jmlnw 1/1 Running restarts=0 31m
+argocd-server-6879f6c57b-fr2fd 1/1 Running restarts=0 30m
+pods deleted on purpose in the restart test: redis, repo-server, controller, server (argocd-restart-under-policy-1.txt). The controller restarted once more for the 768Mi limit.
+
+== Every pod with a restart
+monitoring kps-grafana-6797b8c945-rfhjg 1/3 OOMKilled restarts=18
+
+== OOM kills in the kernel log, by process and limit
+  16 python uid=472 anon-rss-mib=95
+  10 python uid=472 anon-rss-mib=93
+   2 registry uid=0 anon-rss-mib=0
+   2 python uid=472 anon-rss-mib=94
+
+== Namespaces, labels
+argocd kubernetes.io/metadata.name=argocd,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=baseline,pod-security.kubernetes.io/warn=restricted
+infisical kubernetes.io/metadata.name=infisical,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=baseline,pod-security.kubernetes.io/warn=restri
+monitoring kubernetes.io/metadata.name=monitoring,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=baseline,pod-security.kubernetes.io/warn=rest
+monitoring-agents kubernetes.io/metadata.name=monitoring-agents,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=privileged,pod-security.kuberne
+plane-dev kubernetes.io/metadata.name=plane-dev,plane-platform/environment=dev,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=baseline,pod-sec
+plane-prod-sim kubernetes.io/metadata.name=plane-prod-sim,plane-platform/environment=prod-sim,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=b
+traefik kubernetes.io/metadata.name=traefik,plane-platform/managed-by=terraform,pod-security.kubernetes.io/audit=restricted,pod-security.kubernetes.io/enforce=baseline,pod-security.kubernetes.io/warn=restricted
+
+== Quotas
+plane-dev        plane-budget   persistentvolumeclaims: 1/6, pods: 3/24, requests.memory: 92Mi/2732Mi   limits.memory: 208Mi/7984Mi   42m
+plane-prod-sim   plane-budget   persistentvolumeclaims: 1/6, pods: 3/24, requests.memory: 92Mi/2732Mi   limits.memory: 208Mi/7984Mi   42m
+
+== Terraform drift after the Helm upgrade
+terraform plan -detailed-exitcode: rc=0 (0 means no changes)
+No changes. Your infrastructure matches the configuration.
+
+== Live patches reverted
+{"syncPolicy":{"prune":true,"selfHeal":true},"sync":"Synced","revision":"88676a0d"}
+git: {"prune":true,"selfHeal":true}
+[{"ipBlock":{"cidr":"172.16.0.0/12"}}]
+annotations still set: []
+scratch left behind: namespaces [], applications [], repos []

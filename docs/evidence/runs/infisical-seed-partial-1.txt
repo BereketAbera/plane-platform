@@ -1,0 +1,29 @@
+# Partial state: one key missing. Started 2026-11-04T21:44:45Z
+== before
+       9
+{"error":false,"status":[{"status":"True","message":"Reconciliation successful"}]}
+
+== DELETE LIVE_SERVER_SECRET_KEY from plane-prod-sim
+delete -> 200
+       8
+
+== operator with the key missing, after a nudge
+{"error":true,"status":[{"status":"False","message":"Reconciliation failed: failed to render target output: failed to execute template at key \"LIVE_SERVER_SECRET_KEY\": template: LIVE_SERVER_SECRET_KEY:1:4: executing \"LIVE_S"}]}
+Secret plane-app-keys still exists, keys: LIVE_SERVER_SECRET_KEY,SECRET_KEY
+PASS the Secret kept its last good value: nothing rendered empty
+
+== scripts/infisical-seed.sh
+[1;32m ok[0m dev: all secrets already exist, nothing written
+[1;32m ok[0m prod-sim: secrets written
+seed exit 0
+
+== what changed in the project (ids are not secret)
+< LIVE_SERVER_SECRET_KEY id=<redacted> version=1
+> LIVE_SERVER_SECRET_KEY id=<redacted> version=1
+exit 1
+# finished 2026-11-04T21:44:55Z
+# The exit 1 above is the proof script itself: diff under pipefail ended it before these last checks. Finished by hand below. 2026-11-04T21:45:04Z
+8 keys kept their id and version
+infisicalstaticsecret.secrets.infisical.com/plane-app-keys annotated
+== operator after the seed
+{"error":false,"annotations":["argocd.argoproj.io/sync-wave","kubectl.kubernetes.io/last-applied-configuration"],"status":[{"status":"True","message":"Reconciliation successful"}]}

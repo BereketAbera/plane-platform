@@ -1,0 +1,17 @@
+# date: 2026-11-04T23:15:18Z
+# A scratch pod in kube-system, which has no default-deny, so this shows what the other doors do when NetworkPolicy does not hold them. GET only.
+pod/h17-door-probe created
+pod/h17-door-probe condition met
+podIP=10.244.0.236 hostNetwork=
+traefik.traefik.svc.cluster.local:80          000command terminated with exit code 28
+
+172.24.0.2:30080                              000command terminated with exit code 28
+
+172.24.0.1:80                                 command terminated with exit code 7
+
+host.docker.internal:80                       200
+192.168.65.254:80                             200
+gateway.docker.internal:80                    000command terminated with exit code 28
+
+host.docker.internal resolves to               Non-authoritative answer:  
+pod "h17-door-probe" force deleted from kube-system namespace

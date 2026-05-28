@@ -1,0 +1,23 @@
+# date: 2026-11-04T20:54:11Z
+== source address, read from conntrack on the node during a request
+[20:54:11Z] curl http://argocd.localhost/ rc=0 http=200
+tcp      6 119 TIME_WAIT src=172.24.0.1 dst=172.24.0.2 sport=58424 dport=30080 src=10.244.0.34 dst=172.24.0.1 sport=8000 dport=58424 [ASSURED] mark=0 use=1
+tcp      6 22 TIME_WAIT src=172.24.0.1 dst=172.24.0.2 sport=64542 dport=30080 src=10.244.0.34 dst=172.24.0.1 sport=8000 dport=64542 [ASSURED] mark=0 use=1
+tcp      6 22 TIME_WAIT src=172.24.0.1 dst=172.24.0.2 sport=64554 dport=30080 src=10.244.0.34 dst=172.24.0.1 sport=8000 dport=64554 [ASSURED] mark=0 use=1
+== live policy before
+{"from":[{"ipBlock":{"cidr":"172.16.0.0/12"}},{"ipBlock":{"cidr":"192.168.65.0/24"}}],"ports":[{"port":8000,"protocol":"TCP"},{"port":8443,"protocol":"TCP"}]}
+== pause self-heal on the owning Application, for this test only
+application.argoproj.io/network-policies patched
+== remove 172.16.0.0/12, leaving only 192.168.65.0/24 for NodePort traffic
+networkpolicy.networking.k8s.io/traefik-ingress patched
+{"from":[{"ipBlock":{"cidr":"192.168.65.0/24"}}],"ports":[{"port":8000,"protocol":"TCP"},{"port":8443,"protocol":"TCP"}]}
+[20:54:21Z] curl http://argocd.localhost/ rc=28 http=curl: (28) Operation timed out after 6007 milliseconds with 0 bytes received
+000
+[20:54:27Z] curl http://argocd.localhost/ rc=28 http=curl: (28) Operation timed out after 6007 milliseconds with 0 bytes received
+000
+== restore: self-heal back on, then Argo CD must put the policy back by itself
+application.argoproj.io/network-policies patched
+[20:54:30Z] from-blocks back to 2 after about 6s
+{"from":[{"ipBlock":{"cidr":"172.16.0.0/12"}},{"ipBlock":{"cidr":"192.168.65.0/24"}}],"ports":[{"port":8000,"protocol":"TCP"},{"port":8443,"protocol":"TCP"}]}
+[20:54:33Z] curl http://argocd.localhost/ rc=0 http=200
+network-policies sync=Synced health=Healthy selfHeal=true

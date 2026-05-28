@@ -1,0 +1,41 @@
+# Applying only the ServiceAccounts and Infisical CRs of gitops/environments/prod-sim/manifests.yaml, ahead of root's wave 0. Plane workloads in prod-sim are not started by this. Argo adopts these objects when plane-prod-sim syncs. 2026-11-04T21:29:02Z
+$ yq select kinds | kubectl apply -f -
+     246
+Error from server (BadRequest): error when creating "/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prod-sim-crs.yaml": InfisicalStaticSecret in version "v1beta1" cannot be handled as a InfisicalStaticSecret: strict decoding error: unknown field "automountServiceAccountToken"
+exit 1
+
+# First attempt above failed: yq -N merged the documents. Rerun keeping separators. 2026-11-04T21:29:35Z
+$ yq select kinds | kubectl apply -f -
+10
+serviceaccount/plane created
+serviceaccount/plane-infisical-auth created
+infisicalauth.secrets.infisical.com/infisical created
+infisicalconnection.secrets.infisical.com/infisical created
+infisicalstaticsecret.secrets.infisical.com/plane-app-env created
+infisicalstaticsecret.secrets.infisical.com/plane-app-keys created
+infisicalstaticsecret.secrets.infisical.com/plane-doc-store created
+infisicalstaticsecret.secrets.infisical.com/plane-live-env created
+infisicalstaticsecret.secrets.infisical.com/plane-pgdb created
+infisicalstaticsecret.secrets.infisical.com/plane-rabbitmq created
+exit 0
+
+# Root reached wave 0 and created Application plane-prod-sim. Adoption of the CRs applied by hand above. 2026-11-04T21:48:33Z
+{"sync":"OutOfSync","health":"Healthy","op":{"phase":"Running","message":"waiting for completion of hook batch/Job/plane-api-migrate-1","retryCount":null}}
+InfisicalStaticSecret/plane-app-env uid=4f3d4985-0879-4e83-84b5-cae3557fe8da gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalStaticSecret:plane-prod-sim/plane-app-env
+InfisicalStaticSecret/plane-app-keys uid=<redacted> gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalStaticSecret:plane-prod-sim/plane-app-keys
+InfisicalStaticSecret/plane-doc-store uid=f0fa22c8-e40f-4999-9c21-963d7e276943 gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalStaticSecret:plane-prod-sim/plane-doc-store
+InfisicalStaticSecret/plane-live-env uid=52f6ae08-2c92-477b-9eb9-6e54780c75ac gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalStaticSecret:plane-prod-sim/plane-live-env
+InfisicalStaticSecret/plane-pgdb uid=08da052c-5cda-458d-a7d7-dc5cedd15209 gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalStaticSecret:plane-prod-sim/plane-pgdb
+InfisicalStaticSecret/plane-rabbitmq uid=f4513c25-b4e8-4b6d-859d-3d27808f3e20 gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalStaticSecret:plane-prod-sim/plane-rabbitmq
+InfisicalAuth/infisical uid=086ca9a3-7688-4695-83cc-aadebe1fcada gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalAuth:plane-prod-sim/infisical
+InfisicalConnection/infisical uid=7c7b6ab7-2b96-4d94-a062-e4e592450108 gen=1 created=2026-11-04T21:29:35Z tracking=plane-prod-sim:secrets.infisical.com/InfisicalConnection:plane-prod-sim/infisical
+ServiceAccount/plane created=2026-11-04T21:29:35Z tracking=plane-prod-sim:/ServiceAccount:plane-prod-sim/plane
+ServiceAccount/plane-infisical-auth created=2026-11-04T21:29:35Z tracking=plane-prod-sim:/ServiceAccount:plane-prod-sim/plane-infisical-auth
+{"kind":"InfisicalAuth","name":"infisical","status":"Synced","health":null}
+{"kind":"InfisicalConnection","name":"infisical","status":"Synced","health":null}
+{"kind":"InfisicalStaticSecret","name":"plane-app-env","status":"Synced","health":null}
+{"kind":"InfisicalStaticSecret","name":"plane-app-keys","status":"Synced","health":null}
+{"kind":"InfisicalStaticSecret","name":"plane-doc-store","status":"Synced","health":null}
+{"kind":"InfisicalStaticSecret","name":"plane-live-env","status":"Synced","health":null}
+{"kind":"InfisicalStaticSecret","name":"plane-pgdb","status":"Synced","health":null}
+{"kind":"InfisicalStaticSecret","name":"plane-rabbitmq","status":"Synced","health":null}

@@ -1,0 +1,77 @@
+# make backup ENV=all KEEP=2, with committed scripts: retention must remove backups that hold host-written recovery files. 2026-11-05T00:04:52Z
+.local/backups/dev:
+20261104T225855Z
+20261104T231324Z
+
+.local/backups/infisical:
+20261104T225820Z
+20261104T231305Z
+20261104T231433Z
+
+.local/backups/prod-sim:
+20261104T225926Z
+20261104T231335Z
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T000452Z
+[pod/plane-backup-20261105t000452z-c87x5/postgres] retention: removed 20261104T231305Z
+[pod/plane-backup-20261105t000452z-c87x5/postgres] retention: removed 20261104T225820Z
+[pod/plane-backup-20261105t000452z-c87x5/postgres] postgres: 20261105T000452Z complete, 785 tables counted from a scratch restore
+backup 20261105T000452Z: postgres/infisical.dump 4407319 B, postgres/infisical.toc.txt 942298 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T000452Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261105T000512Z
+[pod/plane-backup-20261105t000512z-ljml5/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t000512z-ljml5/objects] 2026/11/05 00:05:18 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000512z-ljml5/objects] 2026/11/05 00:05:18 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000512z-ljml5/objects] 2026/11/05 00:05:18 NOTICE: Local file system at /backups/20261105T000512Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t000512z-ljml5/objects] 2026/11/05 00:05:18 NOTICE: Local file system at /backups/20261105T000512Z.partial/objects: 34 matching files
+[pod/plane-backup-20261105t000512z-ljml5/objects] 2026/11/05 00:05:18 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000512z-ljml5/objects] objects: 34 checked
+[pod/plane-backup-20261105t000512z-ljml5/finalize] retention: removed 20261104T225855Z
+[pod/plane-backup-20261105t000512z-ljml5/finalize] finalize: 20261105T000512Z complete
+backup 20261105T000512Z: postgres/plane.dump 811511 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2114 B, postgres/content.tsv 127 B, objects.lsjson 12983 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261105T000512Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261105T000523Z
+[pod/plane-backup-20261105t000523z-qp2sl/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t000523z-qp2sl/objects] 2026/11/05 00:05:29 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000523z-qp2sl/objects] 2026/11/05 00:05:29 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000523z-qp2sl/objects] 2026/11/05 00:05:29 NOTICE: Local file system at /backups/20261105T000523Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t000523z-qp2sl/objects] 2026/11/05 00:05:29 NOTICE: Local file system at /backups/20261105T000523Z.partial/objects: 23 matching files
+[pod/plane-backup-20261105t000523z-qp2sl/objects] 2026/11/05 00:05:29 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000523z-qp2sl/objects] objects: 23 checked
+[pod/plane-backup-20261105t000523z-qp2sl/finalize] retention: removed 20261104T225926Z
+[pod/plane-backup-20261105t000523z-qp2sl/finalize] finalize: 20261105T000523Z complete
+backup 20261105T000523Z: postgres/plane.dump 714880 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2103 B, postgres/content.tsv 127 B, objects.lsjson 8825 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261105T000523Z
+[1;32m ok[0m all environments backed up
+exit=0
+.local/backups/dev:
+total 0
+drwxrwxrwx@ 4 bek  staff  128 Nov  5 03:05 .
+drwx------@ 5 bek  staff  160 Nov  5 01:59 ..
+drwx------  9 bek  staff  288 Nov  5 02:13 20261104T231324Z
+drwx------  9 bek  staff  288 Nov  5 03:05 20261105T000512Z
+
+.local/backups/infisical:
+total 0
+drwxrwxrwx@ 4 bek  staff  128 Nov  5 03:05 .
+drwx------@ 5 bek  staff  160 Nov  5 01:59 ..
+drwx------  6 bek  staff  192 Nov  5 02:14 20261104T231433Z
+drwx------  6 bek  staff  192 Nov  5 03:05 20261105T000452Z
+
+.local/backups/prod-sim:
+total 0
+drwxrwxrwx@ 4 bek  staff  128 Nov  5 03:05 .
+drwx------@ 5 bek  staff  160 Nov  5 01:59 ..
+drwx------  9 bek  staff  288 Nov  5 02:13 20261104T231335Z
+drwx------  9 bek  staff  288 Nov  5 03:05 20261105T000523Z
+
+# make restore-clean BACKUP=latest PLAN_ONLY=yes
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T000452Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim
+    dev        20261105T000512Z, SECRET_KEY 4ceb3f709b196ae0, 34 objects
+    prod-sim   20261105T000523Z, SECRET_KEY 77d617b20fb32955, 23 objects
+[1;32m ok[0m the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment
+[1;33mwarn[0m a real run would refuse right now: cluster plane-platform already holds Plane volumes. Run make destroy first.
+[1;32m ok[0m PLAN_ONLY=yes: nothing was changed
+exit=0
