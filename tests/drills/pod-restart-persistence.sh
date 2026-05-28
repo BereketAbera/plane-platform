@@ -65,6 +65,14 @@ set -e
 [[ "$baseline" -eq 0 ]] || abort "sentinel not readable before the drill (smoke exit $baseline). Run make test-e2e ENV=$ENV first."
 pass "sentinel is intact before any restart"
 
+# A worker that has been through cancel_consumer runs normally until its next broker reconnect, which this
+# drill causes, and then consumes nothing. That would read as the broker restart's fault, so stop here.
+worker_log="$(kc -n "$NS" logs deploy/plane-worker-wl --tail=-1)" || abort "cannot read the worker's log"
+if [[ "$worker_log" == *"Canceling queue"* ]]; then
+  abort "the worker has been through cancel_consumer, so it would stop consuming when the broker restarts. Replace it first: kubectl -n $NS delete pod -l app.kubernetes.io/component=worker"
+fi
+pass "no cancel_consumer in the worker's log, so a broker restart tests the broker"
+
 round=0
 for statefulset in $STATEFULSETS; do
   round=$((round + 1))
