@@ -133,10 +133,13 @@ for spelling in ("PROMETHEUS.LOCALHOST", "prometheus.localhost:80", "prometheus.
     refused = (status == "403" and forbidden) or status == "404"
     row("PASS" if refused else "FAIL", "pod respells the host: " + spelling, "403/404", status)
 
-# Doors other than the Service. Being refused or never connecting both mean no data. A pod dialling the
-# NodePort must not be rewritten to a node address, or it would pass the allow list as the host does.
+# A pod dialling the NodePort must not be rewritten to a node address, or it would pass the allow list as the
+# host does. This door answers, so only a 403 with the Traefik body counts, for every UI.
+for host, path in UIS:
+    must_be_refused("pod via NodePort %s:30080: %s%s" % (node_ip, host, path), (node_ip, 30080), host, path)
+
+# Doors other than the Service and the NodePort. Being refused or never connecting both mean no data.
 for label, dial in (
-    ("node NodePort %s:30080" % node_ip, (node_ip, 30080)),
     ("kind gateway %s:80" % gateway, (gateway, 80)),
     ("host.docker.internal:80", ("host.docker.internal", 80)),
     ("Docker Desktop host 192.168.65.254:80", ("192.168.65.254", 80)),

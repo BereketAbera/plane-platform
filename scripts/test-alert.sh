@@ -6,8 +6,9 @@
 #
 # Scaling the API to zero is the injection. Auto-sync must be paused or self-heal undoes that in
 # about 5 seconds, long before for: 1m elapses. A trap scales it back and restores auto-sync on any
-# exit, including Ctrl-C. Each stage has its own deadline, derived from the 15s probe, 15s rule
-# group, for: 1m and group_wait 10s: worst case about 120s to the sink.
+# exit, including Ctrl-C. Each stage has its own deadline, derived from the 5s preStop sleep the old
+# pod still answers through, the 15s probe, 15s rule group, for: 1m and group_wait 10s: worst case
+# about 125s to the sink.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../monitoring/ops/lib.sh
@@ -97,11 +98,17 @@ sink_has() { # status namespace. -R plus fromjson? tolerates a non-JSON line.
     fromjson? | select(.payload.status == $s) | select(any(.payload.alerts[]; .labels.alertname == $a and .labels.namespace == $n))')" ]]
 }
 
-# Every alert naming the other environment, as sorted name|fingerprint pairs, to compare before and
-# after. An alert that was already firing there is unrelated to this drill, so only new ones count.
+# Scaling an api to zero could only reach the other environment through the probes that exercise the api
+# and the frontends that call it, so those are the alerts that would mean the environments are not isolated.
+# Anything else there is unrelated and says nothing about this drill, such as CPUThrottlingHigh on a pod that
+# just started, or an Argo alert carrying dest_namespace.
+ISOLATION_ALERTS='^(PlaneApiDown|PlaneApiDatabaseProbeFailing|PlaneFrontendDown)$'
+
+# Those alerts in the other environment, as sorted name|fingerprint pairs, to compare before and after.
+# One that was already firing there is unrelated to this drill, so only new ones count.
 other_env_alerts() {
-  curl -fsS -m 10 -G "$AM_URL/api/v2/alerts" --data-urlencode 'active=true' | jq -r --arg n "$OTHER_NS" '
-    [.[] | select(.labels.namespace == $n or .labels.dest_namespace == $n) | "\(.labels.alertname)|\(.fingerprint)"] | sort | join(" ")'
+  curl -fsS -m 10 -G "$AM_URL/api/v2/alerts" --data-urlencode 'active=true' | jq -r --arg n "$OTHER_NS" --arg re "$ISOLATION_ALERTS" '
+    [.[] | select(.labels.namespace == $n and (.labels.alertname | test($re))) | "\(.labels.alertname)|\(.fingerprint)"] | sort | join(" ")'
 }
 
 check_isolation() { # baseline
