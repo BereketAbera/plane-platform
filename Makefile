@@ -56,6 +56,10 @@ test-load: ## Run the k6 load test and capture resource use, dev only: make test
 scan-images: ## Scan every image the platform runs and report it all. Fails on a fixable CRITICAL in an image we build, or a missed image. [SCAN_MIN_FREE_GIB=15] [SCAN_FLOOR_GIB=15]
 	@./scripts/ci/scan-images.sh
 
+.PHONY: publish-evidence
+publish-evidence: ## Copy .local/evidence-raw to docs/evidence/runs with secrets scrubbed. Fails on any gitleaks finding
+	@./scripts/publish-evidence.sh
+
 # ---- failure drills -------------------------------------------------------------------------
 .PHONY: drill-failed-deploy drill-pod-restart drill-clean-restore
 drill-failed-deploy: ## A bad image reaches dev through Git, the rollout refuses it, a revert restores it. Dev only
