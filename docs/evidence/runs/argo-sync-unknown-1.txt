@@ -1,0 +1,47 @@
+# Application created 00:35:11Z. ALERTS_FOR_STATE activeAt 00:35:32Z (1793838932). The controller was replaced at 00:36:37Z by terraform apply, and the same activeAt held at 00:37:05Z, 00:49:07Z and 00:50:37Z.
+# date: 2026-11-05T00:50:51Z
+# The manifest:
+# Throwaway: a path that does not exist, so Argo CD cannot render it. The same shape the reviewer measured.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alert-truth-render-failure
+  namespace: argocd
+spec:
+  project: plane-dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plane-dev
+  source:
+    repoURL: git://plane-git/plane-platform.git
+    targetRevision: main
+    path: gitops/alert-truth-path-that-does-not-exist
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+[00:50:51Z] the Application before deleting it:
+  sync Unknown health Healthy operation open: False last op: None None
+  condition ComparisonError Failed to load target state: failed to generate manifest for source 1 of 1: rpc error: code = Unknown desc = gitops/alert-truth-path-that-does-not-exist: app pa
+[00:50:51Z] metric: autosync_enabled=true,container=application-controller,dest_namespace=plane-dev,dest_server=https://kubernetes.default.svc,exported_namespace=argocd,health_status=Healthy,namespace=argocd,pod=argocd-application-controller-0,projec
+[00:50:51Z] ALERTS: alertname=ArgoAppSyncUnknown,alertstate=firing,component=argocd,dest_namespace=plane-dev,severity=warning 1 00:50:51Z;
+[00:50:51Z] every alert naming this Application in the rules API:
+   firing ArgoAppSyncUnknown activeAt 2026-11-05T00:35:32 Argo CD has been unable to compare Application alert-truth-render-failure with Git for 15m, so new commits do not reach it
+[00:50:51Z] at the sink so far:
+2026-11-05T00:50:42Z group=firing alert=firing ArgoAppSyncUnknown alert-truth-render-failure    startsAt=2026-11-05T00:50:32 endsAt=0001-01-01T00:00:00
+[00:50:51Z] deleting alert-truth-render-failure
+application.argoproj.io "alert-truth-render-failure" deleted from argocd namespace
+[00:52:43Z] after 112s, every line at the sink for it:
+2026-11-05T00:50:42Z group=firing alert=firing ArgoAppSyncUnknown alert-truth-render-failure    startsAt=2026-11-05T00:50:32 endsAt=0001-01-01T00:00:00
+2026-11-05T00:52:42Z group=resolved alert=resolved ArgoAppSyncUnknown alert-truth-render-failure    startsAt=2026-11-05T00:50:32 endsAt=2026-11-05T00:52:32
+[00:52:43Z] Application still there? 
+# done
