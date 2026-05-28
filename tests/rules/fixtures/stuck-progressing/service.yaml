@@ -6,6 +6,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: alert-truth-stuck-progressing
+  labels:
+    app.kubernetes.io/part-of: alert-proof
 spec:
   type: LoadBalancer
   allocateLoadBalancerNodePorts: false
