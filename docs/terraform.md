@@ -4,8 +4,9 @@ Terraform owns a small, specific part of this platform: the cluster's foundation
 does not create the cluster. The application it helps deploy, Wayline, is a customized Plane Community Edition v1.4.3
 deployment, not an original product.
 
-**Status of this page.** It describes configuration read from the code. Statements that depend on a real apply carry a
-`VERIFY` marker until [`docs/evidence/`](evidence/README.md) holds the result.
+**Status of this page.** It describes configuration read from the code. Both roots have applied on the real cluster since
+2026-11-04, and the text links those runs. `terraform destroy` has not run, and neither has an apply on a clean host. Statements nothing
+has measured carry a `VERIFY` marker until [`docs/evidence/`](evidence/README.md) holds the result.
 
 ## What Terraform owns
 
@@ -63,8 +64,9 @@ flowchart LR
 | Outputs | `argocd_url`, `namespaces` | `project_ids`, `project_slugs`, `environment_slug`, `identity_ids`. None is secret |
 
 They are separate because their lifecycles differ. The second needs a running Infisical, which the first one's Argo CD
-deploys. Their state files must also die at different times: a fresh Infisical needs fresh state, whichever way the
-cluster went.
+deploys. Their state files also die at different times. `make destroy` removes `.local/terraform/local` with the cluster and keeps
+`.local/terraform/infisical`, because that describes the Infisical database, which a backup can bring back. On a truly fresh
+instance, bootstrap moves it aside.
 
 ### Module contents
 
@@ -116,7 +118,7 @@ Both state files live under `.local/terraform/`, which is gitignored, through a 
 **Why local.**
 
 - There is one operator and one laptop, and the cluster it describes lives on that laptop.
-- State and cluster share a lifecycle. `scripts/destroy.sh` removes both state directories when it deletes the cluster, since state describing a gone cluster would only mislead the next plan.
+- Root `local`'s state and the cluster share a lifecycle. `scripts/destroy.sh` removes `.local/terraform/local` when it deletes the cluster, since state describing a gone cluster would only mislead the next plan. It keeps `.local/terraform/infisical`, because a clean restore needs it (`make restore-clean`).
 - Pass 1 provisions nothing remote, so a remote backend would add a credential and a dependency for no gain.
 
 **What local state costs.** No locking across machines, no history, no backup, and no way to share it. This does not
@@ -139,7 +141,7 @@ only in the environment of a subshell around one `terraform` process.
 | Root | What happens | Do this |
 |---|---|---|
 | `local`, cluster alive | Apply fails because the namespaces exist | Delete the cluster and start again after a backup: `make destroy CONFIRM=yes`, or import each resource |
-| `infisical`, instance alive | Terraform would try to create what exists | Import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days, so `destroy` then `apply` on a live instance probably conflicts |
+| `infisical`, instance alive | Terraform would try to create what exists | Import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days, so `destroy` then `apply` on a live instance probably conflicts. After a restore, `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh` refuses rather than repairs if Terraform wants to create or delete anything |
 | `infisical`, fresh instance | State points at nothing | Bootstrap detects `initialized=false` and moves the old state aside |
 
 ## What reaches the cluster, how
@@ -175,7 +177,9 @@ terraform -chdir=$TF apply ../../../../.local/terraform/local/plan.tfplan
 ```
 
 The provider reads `.local/kubeconfig` from the repository itself, so `KUBECONFIG` is not needed here. Read the plan. After
-a clean apply a second plan should show no changes. [[VERIFY: second plan after apply reports no changes]]
+an apply a second plan shows no changes: seen on the first re-runs on 2026-11-04 ([bootstrap-up-secret-zero-1.txt](evidence/runs/bootstrap-up-secret-zero-1.txt)),
+after the Prometheus health change ([h43-terraform-plan-2.txt](evidence/runs/h43-terraform-plan-2.txt)), and after the controller limit change on
+2026-11-05 ([argo-controller-limit-1.txt](evidence/runs/argo-controller-limit-1.txt)).
 
 ### Root `infisical`
 
@@ -200,7 +204,10 @@ with the subshell:
 ```
 
 Never write the token to a file, a variable with a default, or `terraform.tfvars`.
-[[VERIFY: infisical root plans and applies against the real API; the scripts have seen only a mock]]
+
+This root applies against the real API. On 2026-11-04 bootstrap and Terraform exited 0 in 12s with 10 resources added
+([infisical-bootstrap-1.txt](evidence/runs/infisical-bootstrap-1.txt)), and reruns said "No changes"
+([infisical-idempotency-1.txt](evidence/runs/infisical-idempotency-1.txt), [infisical-idempotency-3.txt](evidence/runs/infisical-idempotency-3.txt)).
 
 ## fmt, validate, tflint
 
@@ -240,7 +247,7 @@ one value", but it only reaches the bootstrap chart. All 13 manifests in `gitops
 
 ## Destroy caveats
 
-**Use `make destroy`, not `terraform destroy`.** `make destroy` deletes the cluster and the state together. See
+**Use `make destroy`, not `terraform destroy`.** `make destroy` deletes the cluster and root `local`'s state together. See
 [install.md](install.md#teardown). `terraform destroy` on root `local` leaves a damaged cluster behind.
 
 ```bash
