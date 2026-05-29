@@ -16,7 +16,7 @@ Three traps were found by reading kind and Docker Desktop sources (critique sect
 | Trap | What happens | Consequence |
 |---|---|---|
 | **kind disables disk protection** | `pkg/cluster/internal/kubeadm/config.go` sets `imageGCHighThresholdPercent: 100` and `evictionHard` with `nodefs.available: "0%"` and `imagefs.available: "0%"` | No image garbage collection and no eviction. Old images stay until removed by hand. A full disk gives write errors, not pod eviction |
-| **The VM cannot see the real limit** | The VM filesystem reports hundreds of free GiB on a sparse disk, while the Mac may have far less | `NodeFilesystem*` alerts will not fire before the Mac runs out. local-path ignores PVC size |
+| **The VM cannot see the real limit** | The VM filesystem reports hundreds of free GiB on a sparse disk, while the Mac may have far less | `NodeFilesystem*` alerts watch the VM disk only, and will not fire before the Mac runs out. `/backups`, Docker Desktop's mount of the Mac, is excluded from node-exporter: it reported 4397 GiB available with 17 GiB free, which sent the percentage rules critical on a healthy cluster (`helm/values/kube-prometheus-stack.yaml`). local-path ignores PVC size |
 | **`Docker.raw` does not shrink by itself** | Docker's docs say space comes back when images are deleted, but not automatically when files are deleted inside running containers | Deleting data inside the VM may not return space to the Mac |
 
 Confirm the first on the running node:
@@ -31,7 +31,8 @@ docker exec "$NODE" grep -E 'imageGC|nodefs|imagefs' /var/lib/kubelet/config.yam
 
 | Symptom | Where |
 |---|---|
-| `only N GiB free on the host, need at least M GiB` | `guard_disk`, from any script. Default floor is 10 GiB. `cluster-up.sh` needs 15, and drills 2 |
+| `only N GiB free on the host, need at least M GiB` | `guard_disk`, from most scripts. The default floor is 10 GiB. On a new cluster `up.sh` needs 25 and `cluster-up.sh` 15. `make test` and the failed-deploy and pod-restart drills need 2, and `make promote`, `make rollback`, `make gitops-publish`, `make render` and `make test-netpol` need 1 |
+| `the host is below N GiB free, so stopping here` | `make scan-images` wants 15 GiB to start and stops below its floor, reporting the rest as not scanned. `SCAN_MIN_FREE_GIB` and `SCAN_FLOOR_GIB` change those. One run stopped at 2 of 35 images this way ([security README](../evidence/security/README.md)) |
 | `fail N GiB free ... 25 GiB is the minimum` | `scripts/prereqs.sh`. 35 GiB is the recommendation |
 | Postgres logs `No space left on device`, or pods fail on writes | The VM's disk could not grow |
 | Image pulls fail with write errors | Same |
@@ -68,7 +69,7 @@ Local services, kept in named volumes outside the cluster:
 docker system df -v | grep plane-platform-local
 ```
 
-Budget, for comparing what you see. Both figures are estimates from critique section 5, made before anything was deployed. Workload images on the node come to about 8.56 GiB unpacked, derived from each gzip layer's size trailer in the registry. Total host growth of 16.7 to 22 GiB adds planning figures for volumes and logs.
+Budget, for comparing what you see. Both figures are estimates from critique section 5, made before anything was deployed. Workload images on the node come to about 8.56 GiB unpacked, derived from each gzip layer's size trailer in the registry. Total host growth of 16.7 to 22 GiB adds planning figures for volumes and logs. [Resource utilization](../resource-utilization.md#disk) adds the caches.
 
 [[MEASURE: actual Docker.raw growth and host free space after a first full install]]
 
@@ -76,7 +77,7 @@ Budget, for comparing what you see. Both figures are estimates from critique sec
 
 Work down this list. Each step costs more than the last.
 
-**1. Old backups.** Retention keeps 3 for dev and 5 for others. To keep fewer on the next run:
+**1. Old backups.** Retention keeps 3 for dev and 5 for others. `make backup ENV=all KEEP=2` removed the older ones on 2026-11-05 ([dr-backup-retention-1.txt](../evidence/runs/dr-backup-retention-1.txt)). To keep fewer on the next run:
 
 ```bash
 make backup ENV=dev KEEP=1
@@ -92,7 +93,11 @@ docker exec "$NODE" crictl rmi --prune
 
 Anything removed is pulled again when next needed. Jobs such as the backup's rclone image and k6 will re-pull from the pull-through caches, so expect a delay. [[VERIFY: crictl rmi --prune leaves running workloads unaffected and frees space inside the VM]]
 
-**3. Trivy cache and other host caches.** `.local/trivy-cache` is rebuildable.
+**3. Trivy cache and other host caches.** `.local/trivy-cache` is rebuildable. Its Java vulnerability database, needed because Infisical's image holds JARs, comes back on the next `make scan-images`:
+
+```bash
+.tools/bin/trivy clean --java-db --cache-dir .local/trivy-cache
+```
 
 **4. Registry blobs and mirrors.** The local registry has delete enabled, but deleted manifests free nothing until garbage collection, and the mirrors hold copies of every pulled blob. Removing a mirror's volume frees space at the cost of re-pulling, and it can hit Docker Hub's quota for images `mirror.gcr.io` does not hold.
 
@@ -103,7 +108,7 @@ docker volume rm plane-platform-local_mirror-quay-data
 docker compose -f infrastructure/local-services/compose.yaml up -d mirror-quay
 ```
 
-Do not do this to `registry-data`. It holds the branded images, and they exist nowhere else until rebuilt. [[VERIFY: removing one mirror volume and restarting it leaves pulls working through the cache]]
+Do not do this to `registry-data`. It holds the branded images that dev's overlay names, and they exist nowhere else until rebuilt, and a rebuild can give other digests. [[VERIFY: removing one mirror volume and restarting it leaves pulls working through the cache]]
 
 **5. Return freed VM space to the Mac.** Docker's FAQ recommends this after deleting data inside containers:
 
@@ -134,7 +139,7 @@ Free space should be above 25 GiB before a first install, and above the 10 GiB f
 | `docker volume prune` | Removes registry, mirror and possibly other projects' data |
 | Lower Docker Desktop's disk limit | Docker's docs warn that this loses every container and image |
 | Delete `Docker.raw` | That removes every container and image on the host, including unrelated projects |
-| Trust `NodeFilesystem*` or `df` inside a pod | They read the sparse VM disk |
+| Trust `NodeFilesystem*` or `df` inside a pod | They read the sparse VM disk. `df` on `/backups` inside a pod reads the Mac with the wrong block size |
 | Delete a Postgres PVC to free space | That is data loss, for a few hundred MiB. Look at images first |
 | Delete from `/var/lib/containerd` directly | It corrupts the store. Use `crictl` |
 | Set `MIN_FREE_DISK_GIB=0` to get past a refusal | The guard exists because a full disk gives write errors in Postgres, not a clean stop |

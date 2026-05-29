@@ -1,6 +1,6 @@
 # Plane application debugging
 
-The platform is up, and Plane itself misbehaves. Wayline is a customized Plane Community Edition v1.4.3 deployment, so most of these behaviours come from upstream code. The facts below were read from upstream source (research notes `plane-app.md`, `plane-helm.md` and critique section 1). Marked ones still need a running system.
+The platform is up, and Plane itself misbehaves. Wayline is a customized Plane Community Edition v1.4.3 deployment, so most of these behaviours come from upstream code. The facts below were read from upstream source (research notes `plane-app.md`, `plane-helm.md` and critique section 1), and a link says where one was checked on the running environments. Marked ones still need a run.
 
 Preamble for raw commands:
 
@@ -64,8 +64,8 @@ Read these two API answers together. **`/api/instances/` is cached in Valkey for
 | Crash at import mentioning `FILE_SIZE_LIMIT` | Value is not bytes. `5MB` crashes Django | Value must be `5242880`, in Infisical's template |
 | `SECRET_KEY` error from `configure_instance` | Key is missing. It is mandatory for the API | Check `plane-app-keys` |
 | Hangs at boot on `.delay()`, or a connection error to RabbitMQ | `register_instance` calls `push_instance_metrics.delay()` unconditionally, so **the API needs RabbitMQ at boot** | Fix RabbitMQ first |
-| Permission errors on `plane/logs` or `static-assets` | Non-root and read-only root need writable paths | Check the hardening patch. [[VERIFY: all Plane workloads run non-root under the hardening patches]] |
-| Slow start under CPU limits | Boot runs migration checks, registration and collectstatic before gunicorn binds | Wait. [[MEASURE: API pod start to Ready, per environment]] |
+| Permission errors on `plane/logs` or `static-assets` | Non-root needs writable paths. Every workload ran as its intended non-root UID on 2026-11-04 ([plane-dev-psa-1.txt](../evidence/runs/plane-dev-psa-1.txt), [plane-prod-sim-host-and-identity-1.txt](../evidence/runs/plane-prod-sim-host-and-identity-1.txt)). Read-only root has not been tried | Check the hardening patch |
+| Slow start under CPU limits | Boot runs migration checks, registration and collectstatic before gunicorn binds. Container start to Ready: 31s in dev ([plane-dev-startup-1.txt](../evidence/runs/plane-dev-startup-1.txt)), and 36s on prod-sim's first boot ([plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)). The budget is 300s | Wait |
 
 Migrator:
 
@@ -96,6 +96,7 @@ kubectl -n "$NS" get pods -l 'app.kubernetes.io/component in (worker,beat)'
 | No `celery` queue at all | `PlaneCeleryQueueMissing`, after 10m | Worker never attached. This is the 4.3 failure, or the worker never started |
 | Messages climbing | `PlaneCeleryBacklog` | Worker is slow or stuck. Concurrency is 2 |
 | Consumers present, nothing processed | None | A consumer shows a connection, not a working loop. Read worker logs |
+| 0 consumers, the worker Ready, `inspect ping` answers pong | `PlaneWorkerNoConsumer` | See [the `cancel_consumer` trap](#the-cancel_consumer-trap) |
 
 Beat is single-replica by design, using `DatabaseScheduler`. Do not scale it.
 
@@ -108,6 +109,30 @@ python3 tests/e2e/smoke.py --env dev --mode verify --job-probe
 Exit codes: 0 all passed, 1 a failure, 2 no failure but something was BLOCKED. Do not read 2 as a pass.
 
 If publishers hang while the queue is fine, check for a memory alarm. See [Memory pressure](memory-pressure.md).
+
+### The `cancel_consumer` trap
+
+A worker that has been through Celery's `cancel_consumer` runs normally until its next broker reconnect. It then consumes nothing, while `inspect ping` still answers pong. In Celery 5.5.3, `cancel_consumer` empties the queue selection, and `add_consumer` attaches a consumer without putting the queue back in it ([harness-celery-selection-source-1.txt](../evidence/runs/harness-celery-selection-source-1.txt)). So nothing shows it until the moment it matters.
+
+Measured in prod-sim on 2026-11-04 ([plane-prod-sim-worker-broker-restart-1.txt](../evidence/runs/plane-prod-sim-worker-broker-restart-1.txt)):
+
+| Worker | Broker restarted | Result |
+|---|---|---|
+| Never cancelled | Yes | Consumer back in 34s, and a new job ran |
+| After cancel, then add | Yes | 0 consumers after 90s, `active_queues` empty, messages parked |
+| Pod replaced | Not needed | Consumer back, 210 parked messages drained, and all 4 probe items got their activity |
+
+`PlaneWorkerNoConsumer` fired for it ([plane-prod-sim-worker-no-consumer-alert-1.txt](../evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). It also failed the first pod restart drill in prod-sim ([drill-pod-restart-prod-sim-20261104T233500Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log)).
+
+The source was this repo's own `tests/e2e/smoke.py --worker-negative-control`. It now replaces the worker after its control, and smoke's step `worker-clean` fails on a worker that has logged the line. The control followed by a broker restart then ran a job ([harness-worker-control-prod-sim-1.txt](../evidence/runs/harness-worker-control-prod-sim-1.txt), and read the note at its top).
+
+```bash
+kubectl -n "$NS" logs deploy/plane-worker-wl -c plane-worker | grep 'Canceling queue'
+kubectl -n "$NS" exec deploy/plane-worker-wl -c plane-worker -- celery -A plane inspect active_queues -t 15
+kubectl -n "$NS" delete pod -l app.kubernetes.io/component=worker
+```
+
+Replacing the pod is the only repair, since Celery has no remote command that restores the selection. It is no drift for Argo CD, though the Application reads `Progressing` until the new pod is ready.
 
 ### Configuration silently empty
 
@@ -131,7 +156,7 @@ This prints key names only. If rows are undecryptable, the database and key do n
 |---|---|
 | Export download link has a doubled path | Bucket is not named `uploads`. `export_task.py` does `.replace('/uploads', '')`. The name is fixed in both environments, and isolation comes from each having its own Silo |
 | Duplicating an asset gives 500, and OAuth avatars fail | `copy_object` and avatars dial the **public host** from inside the API pod. CoreDNS rewrites `plane.*.localhost` to Traefik, and NetworkPolicy must allow API to Traefik. A connection error there is not caught as `ClientError` |
-| Upload rejected | Two limits apply. Traefik's `plane-body-limit` allows 20 MiB, and Plane's `FILE_SIZE_LIMIT` is 5 MiB, in bytes |
+| Upload rejected | Two limits apply. Traefik's `plane-body-limit` allows 20 MiB, and Plane's `FILE_SIZE_LIMIT` is 5 MiB, in bytes. 4.5 MiB passes, and 5 MiB plus one byte gets 400 from the storage policy (smoke steps `large-upload`, `oversize-refused`) |
 | Attachment returns 403 or 404 | Presigned URL host or signature. Check `AWS_S3_ENDPOINT_URL` and Traefik's `/uploads` route |
 | Silo metrics answer 403 | `MINIO_PROMETHEUS_AUTH_TYPE` is not public. This is about scraping, not uploads |
 
@@ -140,9 +165,7 @@ kubectl -n "$NS" exec deploy/plane-api-wl -c plane-api -- python -c "import sock
 kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' | grep -n rewrite
 ```
 
-[[VERIFY: copy_object from the API pod succeeds through the CoreDNS rewrite with a valid signature]]
-
-[[VERIFY: presigned upload, attachment download and export link all work with no bucket-creation Job]]
+These work, with no bucket-creation Job. In both environments, smoke's steps `attachment-upload`, `attachment-download`, `object-in-silo`, `uploads-private`, `asset-duplicate`, `avatar` and `export` pass ([smoke-dev-20261105T001213Z.json](../evidence/runs/smoke-dev-20261105T001213Z.json), [smoke-prod-sim-20261104T235926Z.json](../evidence/runs/smoke-prod-sim-20261104T235926Z.json)). `copy_object` goes through the CoreDNS rewrite: the copied bytes match, and Traefik's PUT counter moved by one per run ([plane-dev-copy-object-path-1.txt](../evidence/runs/plane-dev-copy-object-path-1.txt)). An attachment through a browser's file dialog has not been tried.
 
 The object store is Silo, a MinIO-compatible fork. Official MinIO images no longer pull anonymously. Silo images are distroless, so there is no shell in the pod. Inspect it with `rclone` Jobs, as `scripts/backup.sh` does, not with `kubectl exec`.
 
@@ -157,13 +180,21 @@ An HTTP 101 alone does not prove anything: the Hocuspocus handshake is unauthent
 
 `LIVE_SERVER_SECRET_KEY` is not consumed by anything in v1.4.3, so it is not the cause.
 
-[[VERIFY: /live WebSocket through Traefik's buffering middleware stays open and authenticates, in a two-tab test]]
+The WebSocket works through Traefik's buffering middleware. Smoke held two connections idle for 330s, with pings answered, and then an update got through ([plane-dev-smoke-soak-1.txt](../evidence/runs/plane-dev-smoke-soak-1.txt)). In a real browser on the branded images on 2026-11-05, tab 2 showed what was typed in tab 1 within 2 seconds, and a reload brought it back from the server ([live-dev](../evidence/branding/live-dev/README.md)).
+
+A `live` restart keeps stored edits. An edit still inside the 10-second debounce was not on the server afterwards, and the client took about 21 seconds to reconnect ([plane-dev-live-restart-1.txt](../evidence/runs/plane-dev-live-restart-1.txt)). Whether an open tab sends that edit again has not been tested.
 
 ### Login or rate limit trouble
 
 Auth counters live in Valkey, and retry-heavy tests can trip them. `API_KEY_RATE_LIMIT` defaults to 60 a minute per key, and `api_tokens.allowed_rate_limit` is not read. Requests with an API key are also logged through Celery into `api_activity_logs`, so API-token load writes to the database. `tests/load/` uses session auth for this reason.
 
-Cookie separation between `plane.dev.localhost` and `plane.prod-sim.localhost` has not been confirmed. [[VERIFY: logging in to both hosts at once in one browser keeps sessions apart]]
+Cookies are host-only, with no `Domain` attribute, and a dev session gets 401 on the prod-sim host, over plain HTTP ([plane-dev-cookies-1.txt](../evidence/runs/plane-dev-cookies-1.txt)). Both hosts at once in one real browser has not been tried. [[VERIFY: logging in to both hosts at once in one browser keeps sessions apart]]
+
+### What a browser shows
+
+An old page after a promotion can be the browser's cache. On 2026-11-05 the upstream sign-in page kept showing after the branded images landed, with no error, because nginx in the web and admin images sends `ETag` and `Last-Modified` with no `Cache-Control`. Reload past the cache to tell ([live-dev](../evidence/branding/live-dev/README.md)). The fix is in `apps/wayline/runtime/` and is not in the running images yet.
+
+React errors #418 and #423 in the console are hydration mismatches. They appear on upstream's images as well, and the app works past them. Their cause has not been found ([plane-dev-browser-1.txt](../evidence/runs/plane-dev-browser-1.txt)).
 
 ### Data services
 
@@ -173,7 +204,9 @@ kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli ping
 kubectl -n "$NS" exec plane-rabbitmq-wl-0 -c plane-rabbitmq -- rabbitmq-diagnostics status
 ```
 
-Treat Valkey as a cache. A cold cache after it restarts is normal. [[VERIFY: Plane recovers with no data loss after plane-redis-wl-0 is deleted]]
+Treat Valkey as a cache. A cold cache after it restarts is normal. The pod restart drill deletes each StatefulSet's pod in turn, Valkey's included, and checks the sentinel row, the attachment and a new background job after each: PASS in dev and prod-sim ([drill-pod-restart-dev-20261104T224424Z.log](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log), [drill-pod-restart-prod-sim-20261104T235402Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)).
+
+Valkey logging `Possible SECURITY ATTACK` means something sent HTTP to its port. Here that was the NetworkPolicy matrix's probes, and one direct HTTP request reproduced it ([plane-prod-sim-valkey-security-line-1.txt](../evidence/runs/plane-prod-sim-valkey-security-line-1.txt)).
 
 ## Confirm
 
@@ -183,9 +216,7 @@ make test-e2e ENV=dev
 
 Check the Platform overview dashboard: all four probes green for the environment. Then check that relevant alerts have resolved in `http://alertmanager.localhost`.
 
-[[VERIFY: make test-e2e ENV=dev passes]]
-
-[[VERIFY: make test-e2e ENV=prod-sim passes]]
+`make test-e2e ENV=dev` passed 38 of 38 on the branded images on 2026-11-05 ([smoke-dev-20261105T001213Z.json](../evidence/runs/smoke-dev-20261105T001213Z.json)). `make test-e2e ENV=prod-sim` passed 37 of 37 on upstream images on 2026-11-04 ([smoke-prod-sim-20261104T235926Z.json](../evidence/runs/smoke-prod-sim-20261104T235926Z.json)). They drive the API and the WebSocket, not a browser.
 
 ## What not to do
 
@@ -196,6 +227,7 @@ Check the Platform overview dashboard: all four probes green for the environment
 | Rotate `SECRET_KEY` to fix decryption | It makes things worse, silently |
 | Rename the bucket per environment | It breaks export links |
 | Upgrade RabbitMQ to 4.3 | Celery attaches zero consumers |
+| Run Celery's `cancel_consumer` on a worker you mean to keep | It stops consuming at the next broker reconnect. Replace the pod afterwards |
 | Use `artifacts.plane.so` images | Images come from `docker.io` by digest |
 | Scale beat above 1 | Scheduled tasks would run twice |
 | `FLUSHALL` Valkey as a first move | Cache and rate-limit counters all go at once, and live state with them. It belongs after a restore |
