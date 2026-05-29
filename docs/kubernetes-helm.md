@@ -4,9 +4,9 @@ How Plane gets from an upstream chart to manifests on the cluster, what the plat
 change it safely. Wayline is a customized Plane Community Edition v1.4.3 deployment, not an original product. The chart
 is upstream's `plane-ce` 1.8.6, unmodified.
 
-**Status of this page.** It describes configuration in the code. No Plane workload has been deployed at the time of
-writing. Anything that depends on a real run carries a `VERIFY` or `MEASURE` marker. This is not a claim of
-production readiness.
+**Status of this page.** It describes configuration in the code, and says so where a real run has settled something. On
+2026-11-05 Plane runs in both namespaces, `plane-dev` on the branded images and `plane-prod-sim` on upstream's. What nothing has
+measured yet carries a `VERIFY` or `MEASURE` marker. This is local and production-inspired, and not a claim of production readiness.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one
 node, one API server, one etcd, one CoreDNS, one Traefik, one Infisical server and one Docker VM disk. Failure of any of
@@ -63,7 +63,8 @@ Everything is in `helm/plane/components/hardening/kustomization.yaml`, with one 
 | Remove `tty` and `stdin` | Deployments, StatefulSets | A TTY makes app tools emit colour and CRLF into logs Loki ingests |
 | Add security contexts | All workloads | See below |
 | Add sync-wave annotations | ConfigMaps, Services, StatefulSets, Deployments, routes | See [argocd.md](argocd.md#inside-a-plane-application) |
-| Set `progressDeadlineSeconds: 360` | Deployments | The default 600 delays the Degraded report on a failed rollout. It stays above the longest startup budget of 300 seconds, because image pull and scheduling count against the same deadline |
+| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout, and the failed-deploy drill waits this long plus 120s |
+| Add `preStop: {sleep: {seconds: 5}}` | web, admin, space, live, api | A pod gets SIGTERM as its endpoint starts to go, and Traefik reacts about 2s later, so with no pause a rollout dropped requests: 10 failed of 2,757 samples ([before](evidence/runs/plane-dev-rollout-availability-1.txt)), and 0 of 5,902 across two rollouts with it ([after](evidence/runs/plane-dev-rollout-availability-2.txt)). Sleep needs no shell. Worker and beat have no Service, so they do not need it |
 | Set `MINIO_PROMETHEUS_AUTH_TYPE=public` | Silo | The ServiceMonitor scrapes without credentials, and the default `jwt` answers 403. The ingress routes only `/uploads` to Silo, and a NetworkPolicy limits who reaches port 9000 |
 | Make the migrator a `Sync` hook at wave 2 | Job `plane-api-migrate-1` | Postgres is applied in the Sync phase and `wait_for_db` does not wait, so `PreSync` deadlocks a fresh install |
 | Set `activeDeadlineSeconds: 900` | Migrator | A bad image never fails the Job on its own |
@@ -90,11 +91,14 @@ Every Plane workload gets `runAsNonRoot: true`, `seccompProfile: RuntimeDefault`
 Upstream images are not built for all of this, so workarounds exist. nginx gets `emptyDir` mounts for its cache, run and
 temp paths. Python workloads get `HOME=/tmp`.
 
-`readOnlyRootFilesystem` is not set on Plane workloads. The namespaces enforce PSA `baseline` and warn on `restricted`.
-Contract section 2 keeps prod-sim on `baseline` until a per-workload non-root test passes.
+`readOnlyRootFilesystem` is not set on Plane workloads, and has not been tried. The namespaces enforce PSA `baseline` and warn on
+`restricted`. Contract section 2 keeps prod-sim on `baseline` until a per-workload non-root test passes.
 
-[[VERIFY: all 12 Plane workloads start as the configured non-root UIDs]]
-[[VERIFY: no PSA restricted warnings for Plane pods in either namespace]]
+That test passed on 2026-11-04, on upstream images. Each container with a shell reported the UID above with `id`, and Silo, which has
+no shell, and the finished migrator were read from their pod specs. A server-side dry run of `enforce=restricted` gave no warnings
+in either namespace ([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). The label
+has not moved, and nobody has repeated the dry run on the branded images. They were each started under the chart's UID, memory, CPU and
+security settings before promotion ([smoke.txt](evidence/branding/smoke.txt)).
 
 ## Probes
 
@@ -120,8 +124,9 @@ The reasons are the useful part:
 - **beat's probe proves only that the process exists.** Beat has no ping. The alert on `last_run_at` is the real check. See [monitoring.md](monitoring.md).
 - **worker and beat probes use `exec` with no shell**, because under `sh -c` `pgrep -f` would match the shell's own command line.
 
-[[VERIFY: startup budgets are long enough for each workload on first boot under its CPU limit]]
-[[MEASURE: api time to Ready on first boot]]
+The budgets held. Seconds to Ready with the image already on the node, in dev on 2026-11-04, on upstream images: web and admin 1, worker 10,
+space 10, live 20, beat 25, api 31 ([plane-dev-startup-1.txt](evidence/runs/plane-dev-startup-1.txt)). On the first boot of each environment, under
+the CPU limits, api took 31s in dev and 36s in prod-sim, against a budget of 300s ([plane-prod-sim-firstboot-1.txt](evidence/runs/plane-prod-sim-firstboot-1.txt)).
 
 ## Resources
 
@@ -149,12 +154,19 @@ Two settings keep memory on budget. `GUNICORN_WORKERS=1`, and `CELERY_WORKER_CON
 `-c`, and Celery otherwise forks per CPU the node reports.
 
 The limits sum to about 107 percent of the Docker VM across the whole platform, which is deliberate overcommit (estimate,
-research critique section 4, arithmetic over configured limits plus estimates for the control plane). Bring the two
-environments up serially, because simultaneous first boots are the worst case.
+research critique section 4, arithmetic over configured limits plus estimates for the control plane, before later raises to some
+platform limits). Bring the two environments up serially, because simultaneous first boots are the worst case.
 
-[[MEASURE: actual RSS per Plane workload at idle and under load]]
-[[VERIFY: no OOMKilled pods during first boot of both environments]]
-[[VERIFY: RabbitMQ applies the absolute watermark through conf.d under the cgroup limit]]
+Real use has stayed well inside that so far. With both environments running under both smokes at once, the NetworkPolicy matrices and the
+restart drills, no Plane container passed 66% of its memory limit, with 0 OOM kills. The highest were the worker at 426 of 768 MiB and
+redis-exporter at 21 of 32. VM use peaked at 10.49 GiB of 13.63 ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)).
+The load test has not run. [[MEASURE: actual RSS per Plane workload at idle and under load]]
+
+In dev, the pods from the first boot read 0 OOM kills and 0 restarts ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Prod-sim's
+were replaced before anyone read their counters. [[VERIFY: no OOMKilled pods during first boot of both environments]]
+
+RabbitMQ applies the absolute watermark through `conf.d`: smoke step `broker-memory` reads `{absolute,"256Mi"}` with no alarms, in both environments
+([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)).
 
 ## Quotas and LimitRange
 
@@ -164,13 +176,13 @@ Terraform owns both ([terraform.md](terraform.md)). The calculation is in `infra
 
 | Resource | Hard limit | How derived |
 |---|---:|---|
-| `requests.memory` | 2704Mi | 2 x 896 for Deployments, plus 528 for StatefulSets, plus 384 for extras |
-| `limits.memory` | 7904Mi | 2 x 2560 for Deployments, plus 1632 for StatefulSets, plus 1152 for extras |
-| `pods` | 22 | 2 x 7 Deployments, plus 4 StatefulSets, plus 4 extras |
+| `requests.memory` | 2732Mi | 2 x 896 for Deployments, plus 528 for StatefulSets, plus 412 for extras |
+| `limits.memory` | 7984Mi | 2 x 2560 for Deployments, plus 1632 for StatefulSets, plus 1232 for extras |
+| `pods` | 24 | 2 x 7 Deployments, plus 4 StatefulSets, plus 6 extras |
 | `persistentvolumeclaims` | 6 | 4 StatefulSets, plus the backup PVC, plus one spare for restore drills |
 
-Extras are the Infisical operator, the migrator, a backup Job (128Mi and 256Mi, an estimate until the Job has run) and
-one ad-hoc pod.
+Extras are the Infisical operator, postgres-exporter, redis-exporter, the migrator, a backup Job (128Mi and 256Mi, an estimate:
+the Job has run, and nobody has read its peak) and one ad-hoc pod.
 
 **Why Deployments count twice.** A rolling update surges one extra pod each. A quota that fits only the steady state makes a
 rollout fail with `exceeded quota` while the old pods keep serving, and that looks like a stuck deploy rather than a
@@ -182,8 +194,10 @@ budget problem.
 A quota on `limits.memory` rejects a pod with no limit. These defaults make such a pod admissible and visibly small. The
 largest budgeted container is 768Mi, so going above 1Gi needs a contract change first.
 
-Exporters from `monitoring/manifests/environments/base` also run in Plane namespaces and are not listed in the extras. Pods
-are the tight dimension there: the integration review counted 22 of 22 pods in the worst rollout-plus-backup case.
+All seven Plane Deployments surging at once reached 21 of 24 pods, 2412Mi of 2732Mi requests and 6960Mi of 7984Mi limits, with no
+`FailedCreate` ([plane-dev-rollout-quota-1.txt](evidence/runs/plane-dev-rollout-quota-1.txt)). The quota does not cover every Deployment
+surging, exporters included, with the migrator, a backup and an ad-hoc pod: that is 26 pods, 2760Mi and 8064Mi
+([quota-budget-1.txt](evidence/runs/quota-budget-1.txt), from renders, not a run). A real rollout during a backup has not been run.
 [[VERIFY: a rollout during a backup in one namespace is not rejected by the pods quota]]
 
 ## Storage
@@ -206,11 +220,11 @@ are the tight dimension there: the integration review counted 22 of 22 pods in t
 
 ### Behaviour on kind
 
-- **Requested size is not enforced.** local-path ignores it. A claim can grow past 1Gi until the host runs out. [[VERIFY: a PVC can exceed its requested size on local-path]]
+- **Requested size is not enforced.** local-path ignores it. A claim can grow until the host runs out. Measured on Loki's claim of 2Gi on 2026-11-04: its `wal` directory alone reached 2.2G with no error ([monitoring-loki-replay-1.txt](evidence/runs/monitoring-loki-replay-1.txt)). No Plane claim has been pushed past its size.
 - **The VM cannot see the real disk limit.** Its filesystem reports hundreds of free GiB while the host has far less. kind also sets `evictionHard` to `0%`, so a full disk means write errors, not pod eviction. `guard_disk` is the actual protection.
 - **Volumes survive `make down`,** because the node container is only stopped. [[VERIFY: data survives make down and make up]]
 - **Volumes do not survive `make destroy`.** Deleting the node deletes its volume.
-- **Deleting a pod keeps its PVC.** `tests/drills/pod-restart-persistence.sh` checks this with a data sentinel. [[VERIFY: pod-restart drill passes in dev]]
+- **Deleting a pod keeps its PVC.** `tests/drills/pod-restart-persistence.sh` checks this with a data sentinel. On 2026-11-04 it ended PASS in dev, on upstream images ([dev](evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)). In prod-sim its [first run](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log) ended FAIL on the job probe after the RabbitMQ and Valkey restarts, with the sentinel row and attachment intact in every round. The smoke's worker control had left that worker unable to resume after a broker restart, which `0bba707` fixed in the test. The [second run](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), on a clean worker, ended PASS.
 - **Deleting a StatefulSet or Application keeps its PVCs.** No retention policy is set, and Argo CD does not track `volumeClaimTemplates` claims.
 - **Deleting a namespace or a PVC deletes the data,** because the reclaim policy is `Delete`.
 - **`storageClass` and claim sizes are immutable** in an existing StatefulSet. A change fails at sync. See [how to change a value](#how-to-change-a-value-safely).
@@ -220,7 +234,8 @@ are the tight dimension there: the integration review counted 22 of 22 pods in t
 `gitops/platform/backup-storage` holds a static `hostPath` PV per environment on `/backups/<env>`, reclaim `Retain`, plus
 a PVC named `backups` in each namespace. `/backups` on the node is `.local/backups` on the host, so backups outlive the
 cluster. Pods mount a PVC rather than `hostPath`, so they stay PSA-compatible. See [data-operations.md](data-operations.md).
-[[VERIFY: UID 70 can write /backups/<env> through the VirtioFS mount]]
+UID 70 writes `/backups/<env>` through the VirtioFS mount: `make backup` completed in dev and prod-sim on 2026-11-04
+([dev](evidence/runs/dr-backup-dev-1.txt), [prod-sim](evidence/runs/dr-backup-prod-sim-1.txt)). rclone logs that the mount has no xattrs, and goes on.
 
 ## Ingress and hostnames
 
@@ -248,10 +263,12 @@ because `export_task.py` hardcodes that path. Each environment has its own Silo,
 `copy_object` and OAuth avatars. The CoreDNS rewrite from Terraform sends both hostnames to
 `traefik.traefik.svc.cluster.local`.
 
-[[VERIFY: all route prefixes reach their backend through Traefik in both environments]]
-[[VERIFY: copy_object from the api pod works through the CoreDNS rewrite with a valid signature]]
-[[VERIFY: /live WebSocket works through the buffering middleware]]
-[[VERIFY: presigned uploads work without the deleted bucket Job]]
+All of this ran through Traefik in both environments, on the branded images in dev and upstream's in prod-sim
+([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). Steps `frontends` and
+`routes` cover the prefixes, `asset-duplicate` covers `copy_object` through the CoreDNS rewrite with a valid signature, `realtime-*` covers
+the `/live` WebSocket through the buffering middleware, and `attachment-upload` and `object-in-silo` cover presigned uploads with the bucket Job
+deleted. The smoke drives HTTP and WebSocket with its own client. A real browser session is recorded in
+[live-dev](evidence/branding/live-dev/README.md), for dev only.
 
 ## How to change a value safely
 
@@ -302,7 +319,7 @@ planned migration with a backup. The migrator Job's template is also immutable, 
 recreates it on each sync, so that one is handled.
 
 **Secrets rollouts.** api, worker, beat and live carry `secrets.infisical.com/auto-reload: "true"`, so the operator restarts them
-when a referenced Secret changes. [[VERIFY: operator auto-reload does not fight Argo CD self-heal]]
+when a referenced Secret changes. postgres-exporter carries it too, from `monitoring/manifests`. No rotation has run. [[VERIFY: operator auto-reload does not fight Argo CD self-heal]]
 
 ## How the determinism check works
 
@@ -340,7 +357,9 @@ scripts/render.sh --check
 CI also runs kubeconform in strict mode and conftest against the rendered files. Nothing makes a failing check block a merge
 on this GitHub plan. See [security.md](security.md).
 
-[[VERIFY: scripts/render.sh --check exits 0 in CI on a clean checkout on linux_amd64]]
+`scripts/render.sh --check` exits 0 on a clean checkout on `ubuntu-24.04`, so a render from this Mac matched one from Linux byte for byte: run
+41909741166 at `5fdf41d` on 2026-11-04 ([log](evidence/ci/ci-1-20261104T204614Z-run-41909741166.log)). The commits since then have run it only on
+this Mac, because pushes are on hold.
 
 ## Upgrades
 
