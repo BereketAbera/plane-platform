@@ -5,7 +5,7 @@ What Terraform applies so that Argo CD has something to reconcile. Nothing else 
 | Path | Contents | Applied by |
 |---|---|---|
 | `chart/` | AppProjects `platform`, `plane-dev`, `plane-prod-sim`, and the `root` Application | `helm_release.bootstrap` in `infrastructure/terraform/modules/argocd` |
-| `argocd-route/` | IngressRoute for `argocd.localhost`, wave -8 | The `root` Application, from Git |
+| `argocd-route/` | IngressRoute for `argocd.localhost` and its `node-network-only` Middleware, wave -8 | The `root` Application, from Git |
 
 `chart/` is a local Helm chart, installed as a separate release, because `kubernetes_manifest` needs the CRDs at plan
 time and the Argo CD chart's `extraObjects` cannot share a release with CRDs it installs. The full reasoning is in
