@@ -72,6 +72,7 @@ esac
 
 # Runs inside the api. Verdicts are decided here so each row can name what it dialled. Only 403 with
 # Traefik's own body counts as the middleware, and an unanswered dial on the normal path proves nothing.
+# No apostrophes inside: bash 3.2 reads this heredoc as code while it looks for the closing parenthesis.
 PROBE="$(
   cat <<'PY'
 import http.client
