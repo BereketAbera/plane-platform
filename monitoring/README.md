@@ -57,7 +57,9 @@ cluster.
 (measured: `node_timex_sync_status` 0, `node_timex_maxerror_seconds` 16).
 
 **No CPU limit on small bursty containers.** Sidecars, config reloaders and node-exporter average under
-10m but burst, and `CPUThrottlingHigh` counts any throttled period. A quota only produced false alerts.
+10m but burst, and `CPUThrottlingHigh` counts any throttled period. A quota only produced false alerts. Plane's containers
+keep their limits: each reads over 25% for about 5 minutes after it starts, while its boot is inside the rule's window. That
+goes pending and has not reached the 15m `for:` on any Plane container, so those limits are not wrong.
 
 **Grafana plugins.** Each bundled datasource with a backend runs as its own process in the Grafana
 container, 22 to 35 MiB apiece. All but Prometheus and Loki are disabled, along with anything that
@@ -75,22 +77,72 @@ changes nothing, and PSA baseline refuses the `hostNetwork` pod that would get p
 login: it trusts the node network, and it does not stop a dev `api` reaching `plane.prod-sim.localhost` as any browser
 could. One more door depends on NetworkPolicy. On Docker Desktop, a pod that may dial `host.docker.internal:80`
 (`192.168.65.254`) leaves through the Mac and comes back as the host, so the list admits it: a scratch pod with no egress
-policy read Prometheus that way. No Plane pod has that egress, and the test checks it, but a kindnet that fails open
-would open it.
+policy read Prometheus that way. By policy no Plane pod has that egress. The test checks it from the `api` pods only, and a
+kindnet that fails open would open it. `policy/plane.rego` refuses a route to any of the five that does not name the
+middleware, and a middleware of that name that admits anything else, so dropping either fails CI before it fails at runtime.
 
 **Argo CD sync alerts.** Under `retry.limit: -1` a failing sync never completes: each failed attempt goes back to phase
 Running, `argocd_app_sync_total` does not move, and no condition is set. So `ArgoSyncFailed` also watches for an
 operation still open after 15m, from `argocd_app_info{operation="sync"}`. It cannot tell a retry loop from a wave
 waiting on something that never gets healthy, and neither is healthy at 15m. Root's operation walks every wave, so
-`ArgoRootSyncStuck` covers it at 60m. A bad image in the last wave does not trip either: that sync succeeds on apply,
-and `ArgoAppDegraded` reports it once the rollout misses its deadline.
+`ArgoRootSyncStuck` covers it at 60m. What each failure reads as, and what that reaches:
+
+| Failure | What Argo CD reads | What fires |
+|---|---|---|
+| A commit that cannot render, or a Git that cannot be read | Sync Unknown, health unchanged, no operation, condition `ComparisonError`. Auto-sync runs only from OutOfSync, so nothing retries and the cluster stays on the old commit | `ArgoAppSyncUnknown` at 15m, and nothing else |
+| A bad image in a Plane Deployment | Deployments are wave 3 of 4, so the operation stays open, fails at the 600s deadline, and retries | `ArgoAppDegraded` once Degraded for 5m, `ArgoSyncFailed` at 15m, if nobody reverts |
+| A bad image in a single-wave chart Application | The sync succeeds on apply, which closes the operation, then Degraded at the rollout's deadline | `ArgoAppDegraded`, and `ArgoSyncFailed` never |
+| A chart child with no deadline to miss, such as a stuck StatefulSet | Operation closed, Synced and Progressing, while root waits on it with no retry | The chart's `Kube*` rules at 15m, `ArgoAppStuckProgressing` at 30m, `ArgoRootSyncStuck` at 60m |
+| A Prometheus that cannot start | Progressing, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. Watchdog stops reaching the sink, and nothing watches for that |
+
+On an Application that was rendering, a real commit took longer to read Unknown. The controller looks every 120s
+(`--app-resync`) and ignores the failure for 180s (`--repo-error-grace-period-seconds`), so it took 5m57s, and the alert comes
+about 21m after the commit. Health stayed as it was, no operation opened and nothing was pruned. A file Argo CD cannot parse
+counts only if its text holds `apiVersion:`, `kind:` and `metadata:`. Anything else it ignores, and it reads Synced at that commit.
+
+`tests/drills/failed-deploy-rollback.sh` is the second row cut short: it reverts at the first Degraded, about 10m in. So
+`ArgoSyncFailed` and `ArgoAppDegraded` should go pending, with neither firing unless the revert takes more than 5m. That is
+expected from reading the drill, and not yet measured. The 15m in `ArgoSyncFailed` has margin against a commit that pulls no
+new image (under 2m measured, 58s on promotion `4f622e3` whose layers were already on the node) and against 448s for wave 3
+pulling four images on a first boot. No measured promotion has pulled new layers.
+
+**A Prometheus with no ready pod reads Progressing, not Degraded.** The built-in check reads NoPodReady as Degraded, which
+is every Prometheus start, and on a first boot that failed the root sync and sent it into backoff while the image pulled.
+The cost: root used to retry and re-read the newest commit, and now it waits with no retry. So a fix to
+`gitops/applications/kube-prometheus-stack.yaml` needs root's operation terminated by hand, as
+`infrastructure/terraform/README.md` says under "After a stuck first sync". With Prometheus down, `ArgoRootSyncStuck`
+cannot fire either.
 
 **kindnet's fail-open line.** Alloy tails kindnet's container and counts "skipping network policies", which
 `KindnetSkippedNetworkPolicies` fires on. Its other lines, a heartbeat every 10s, are counted and then dropped, so
-`KindnetLogsNotRead` can say the tail is alive and Loki's volume stays as it was. Two limits. This sees that one line and
-nothing else: the controller's `Run` error is discarded, and it is configured `FailOpen`, so `make test-netpol`, which
-sends real traffic, remains the real check. And if Alloy restarts after the kubelet has rotated that line away, the
-count starts again without it.
+`KindnetLogsNotRead` can say the tail is alive and Loki's volume stays as it was. Its limits:
+
+- It sees that one line and nothing else: the controller's `Run` error is discarded, and it is configured `FailOpen`, so
+  `make test-netpol`, which sends real traffic, remains the real check.
+- The count lives in Alloy's memory, and its read positions on an emptyDir that survives a container restart. So any
+  in-place Alloy restart, such as an OOM kill or a liveness failure, loses the count and never reads the line again, rotated or
+  not. The rule therefore holds the highest count of the last 3d. Past that a forgotten line resolves the alert while kindnet may
+  still be failing open. `retentionSize: 1GiB` can end the hold sooner: the blocks so far came to 90 MiB for about 3h under heavy
+  churn, which would put it near 30h. That is an estimate.
+- It can stick the other way. A count stands for a pod name, not a container, so if kindnet's container restarts in the same pod
+  and comes up healthy, the alert keeps firing while Alloy holds the count, and for 3d after. Once `make test-netpol` passes, run
+  `kubectl -n kube-system delete pod -l app=kindnet`: a count stops applying once its pod has been gone for 5m, and the resolve
+  reached the sink 5m21s after the delete.
+
+**`PrometheusMissingRuleEvaluations` goes pending on a healthy Prometheus, and this is left alone.** No rule group has taken
+more than 1.3s of its 15s or 30s, and the longest gap between two evaluation starts in any group is 30.08s, so nothing is late. The
+Docker VM steps its wall clock, measured on the node against the monotonic clock: forward a few hundred microseconds every 30s,
+and now and then 5 to 13 ms in either direction. Prometheus ticks on the monotonic clock and works out each slot from the wall
+clock. So a step back makes a group evaluate one slot twice, which logs "different value but same timestamp", and a later step
+forward makes it skip one, which counts as missed. Seen live: back 12 ms at 00:34 with those log lines, then forward 25 ms at
+00:50 and exactly one miss in each of the 31 groups within two minutes. The alert goes pending for 5m after each burst. It would
+need a miss every 5m for 15m to fire, and it has not fired once in about 4h. It stays on, because a really slow group would miss
+far more often than that.
+
+**Reading a memory peak.** `memory.peak` includes page cache, so a peak at the limit says little alone. Read `anon` in
+`memory.stat`. Measured on 2026-11-05: Prometheus reached 652 MiB anon of 768Mi at a head compaction, so its limit is now 1024Mi.
+Loki's 640/640 was file cache under the 3.5 MB/s stress test, 553 MiB anon at its worst and 341 MiB since. Infisical Postgres's
+256/256 is file cache as well, 64 MiB anon at most, so neither changed.
 
 ## Sentinels
 
@@ -111,3 +163,17 @@ Grafana login, datasources and every dashboard query, LogQL through Alloy and Lo
 rule to sink. `ArgoSyncFailed` was proved against a real retry loop, and `KindnetSkippedNetworkPolicies` with a
 synthetic line from a scratch pod, each from the source to the sink. `scripts/test-alert.sh`, the drill that scales the
 API to zero, is a separate step.
+
+These were proved from the source to the sink on 2026-11-05 as well. The throwaway Applications and scratch pods are gone:
+
+- `ArgoAppSyncUnknown`, on an Application with a path that does not exist: at the sink 15m31s after it was created, through a
+  controller restart at its 1m26s, and resolved 1m51s after it was deleted.
+- `ArgoAppStuckProgressing`, on an Application reading `tests/rules/fixtures/stuck-progressing`, a LoadBalancer Service kind can
+  never give an address (project `platform`, destination `monitoring`, automated sync, Argo CD's resources finalizer): at the sink
+  30m33s after it was created, through a new commit that synced at its 11m22s without starting `for:` again, and resolved 2m8s
+  after it was deleted. The other Argo rules stayed quiet for it. A commit that could not render was then measured on it, as far
+  as `ArgoAppSyncUnknown` going pending: the paragraph under the table above.
+- `PodRestarting`, quiet on one in-place Alloy restart (`increase` read 1.03) and firing on two (2.07).
+- `KindnetSkippedNetworkPolicies`, on a synthetic line followed by heartbeats as kindnet logs them, in a scratch pod: an in-place
+  Alloy restart took the count out of Prometheus, the old expression went empty, and the alert stayed firing until the pod had
+  been gone for 5m. No real kindnet failure has been seen. If the line is the pod's last when Alloy restarts, it is read again.
