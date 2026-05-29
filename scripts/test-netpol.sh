@@ -3,6 +3,8 @@
 #
 #   scripts/test-netpol.sh
 #   FROM_NS=plane-dev scripts/test-netpol.sh       only rows starting in one namespace
+#   MATRIX=<file> scripts/test-netpol.sh           another matrix, to try a verdict on a target of your own
+#   scripts/test-netpol.sh --selftest              the verdict table, with no cluster
 #
 # kindnet fails open and silently: when its setup breaks it logs one line and lets everything
 # through. So nothing here is believed until a sentinel has shown, in a throwaway namespace, that a
@@ -15,14 +17,39 @@
 # Verdicts:
 #   allow  passes on a completed connection or on connection refused: the packet arrived.
 #   deny   passes ONLY on a timeout. Refused means the packet arrived, so that is a failure.
-#   A DNS failure is INCONCLUSIVE, never a pass. It fails the run as well.
+#   INCONCLUSIVE is never a pass. It says the row could not prove anything, and why.
+#
+# A timeout alone cannot tell a policy from a target that is down or a probe pod with no network. So each probe pod
+# has two references at the same moment, kept in the note column:
+#   the node    dials each target as root, with a bare connect, in the moment before the pod starts and again after it
+#               ends. kindnet's postrouting chain accepts root sockets ahead of its policy queue, so no policy governs
+#               this, and an answer shows the target was up and listening. A target that does not answer leaves its row
+#               INCONCLUSIVE. A row that says it has no reference proves less, and says so.
+#   the pod     looks up a cluster name first and last. A pod that cannot resolve anything has no working network, so
+#               its timeouts prove nothing, including on a row that dials an address and so needs no lookup of its own.
+# Neither can catch loss only on the path from this pod to that target, which reads the same as the policy under test.
+# EndpointSlices, read before and after the rows, catch a Service with no ready endpoint: a timeout or a refusal
+# there comes from the Service, not from a policy or a listener.
+#
+# Exit status, as in scripts/test.sh: 0 every row passed, 1 a row failed or the sentinel did, 2 nothing failed but a row
+# was INCONCLUSIVE. Except that a target outside the cluster proves nothing offline, and must not make an offline run
+# non-zero. Such a row still reads INCONCLUSIVE, and the summary counts it apart.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 
-guard_disk 1
-"$ROOT/scripts/install-tools.sh" yq kubectl >/dev/null
+SELFTEST=no
+if [[ "${1:-}" == --selftest ]]; then
+  SELFTEST=yes
+elif [[ $# -gt 0 ]]; then
+  die "usage: $0 [--selftest]. FROM_NS and MATRIX are read from the environment"
+fi
 
-MATRIX="$ROOT/tests/network-policy-matrix.yaml"
+if [[ "$SELFTEST" == no ]]; then
+  guard_disk 1
+  "$ROOT/scripts/install-tools.sh" yq kubectl >/dev/null
+fi
+
+MATRIX="${MATRIX:-$ROOT/tests/network-policy-matrix.yaml}"
 [[ -f "$MATRIX" ]] || die "$MATRIX does not exist"
 
 # curlimages/curl 8.17.0, 9.7 MiB compressed on arm64. curl's exit codes separate refused (7) from
@@ -32,7 +59,10 @@ CURL_IMAGE="docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472
 SERVER_IMAGE="docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec"
 
 CONNECT_TIMEOUT=4
+WITNESS_TIMEOUT=3
 PARALLEL_PODS="${PARALLEL_PODS:-4}"
+# What every probe pod looks up. Every namespace may reach DNS, or no row anywhere means anything.
+POD_REFERENCE_HOST="kube-dns.kube-system.svc.cluster.local"
 RUN_ID="$(date -u +%H%M%S)"
 SENTINEL_NS="netpol-sentinel-$RUN_ID"
 PROBE_LABEL="plane-platform/netpol-probe"
@@ -41,8 +71,10 @@ mkdir -p "$LOCAL_DIR/evidence-raw"
 EVIDENCE="$LOCAL_DIR/evidence-raw/netpol-$(date -u +%Y%m%dT%H%M%SZ).tsv"
 
 cleanup() {
-  kc delete namespace "$SENTINEL_NS" --ignore-not-found --wait=false >/dev/null 2>&1 || true
-  kc delete pod --all-namespaces -l "$PROBE_LABEL=$RUN_ID" --ignore-not-found --wait=false >/dev/null 2>&1 || true
+  if [[ "$SELFTEST" == no ]]; then
+    kc delete namespace "$SENTINEL_NS" --ignore-not-found --wait=false >/dev/null 2>&1 || true
+    kc delete pod --all-namespaces -l "$PROBE_LABEL=$RUN_ID" --ignore-not-found --wait=false >/dev/null 2>&1 || true
+  fi
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -69,6 +101,27 @@ n=0
 $PROBES
 EOF
 echo DONE'
+
+# Runs on the node, as root. A bare connect, closed at once, so nothing is sent to a port that would log it, as Valkey
+# does an HTTP request. Refused counts as an answer: the target's kernel said so, which a policy's drop never does.
+# shellcheck disable=SC2016  # expanded by the node's shell, not this one
+NODE_WITNESS='n=0
+while read -r id address port; do
+  (
+    if out=$(timeout '"$WITNESS_TIMEOUT"' bash -c "exec 3<>/dev/tcp/$address/$port" 2>&1); then
+      echo "$id ANSWERED"
+    else
+      case "$out" in
+        *refused*) echo "$id ANSWERED" ;;
+        *"not known"* | *"Temporary failure"* | *"No address"*) echo "$id UNRESOLVED" ;;
+        *) echo "$id SILENT" ;;
+      esac
+    fi
+  ) &
+  n=$((n + 1))
+  if [ $((n % 16)) -eq 0 ]; then wait; fi
+done
+wait'
 
 # classify <curl exit code> <time_namelookup> <time_connect> <error message...>
 # Prints CONNECTED, REFUSED, TIMEOUT, DNS or OTHER:<code>.
@@ -281,36 +334,162 @@ load_cases() {
   [[ -z "$bad" ]] || die "malformed matrix rows: $bad"
 }
 
+# scope_of <host>: cluster for a Service name, outside for what is not this platform's and may not be there at all
+# (a public name or address, or Docker Desktop's own host address), and local for the rest (the node, the Git remote).
+scope_of() {
+  case "$1" in
+    *.cluster.local) echo cluster ;;
+    192.168.65.*) echo outside ;;
+    10.* | 127.* | 192.168.* | 172.1[6-9].* | 172.2[0-9].* | 172.3[01].*) echo local ;;
+    *.*) echo outside ;;
+    *) echo local ;;
+  esac
+}
+
+# snapshot_services <before|after>: ready endpoints per Service name, and an address the node can dial for it.
+# The node cannot resolve Service names. A headless Service has no address but its pods'.
+snapshot_services() {
+  local label="$1"
+  kc get endpointslices --all-namespaces -o json >"$WORK/slices-$label.json" || return 1
+  kc get services --all-namespaces -o json >"$WORK/services-$label.json" || return 1
+  yq -p json -oy -r '.items[] | ((.endpoints // []) | map(select(.conditions.ready != false))) as $ready |
+    [.metadata.namespace, .metadata.labels["kubernetes.io/service-name"], ($ready | length | tostring), ($ready[0].addresses[0] // "-")] | join(" ")' \
+    "$WORK/slices-$label.json" >"$WORK/slices-$label" || return 1
+  yq -p json -oy -r '.items[] | [.metadata.namespace, .metadata.name, .spec.clusterIP] | join(" ")' \
+    "$WORK/services-$label.json" >"$WORK/services-$label" || return 1
+  awk -v suffix=.svc.cluster.local '
+    FILENAME ~ /slices-/ { ready[$1 " " $2] += $3; if ($4 != "-" && !(($1 " " $2) in first)) first[$1 " " $2] = $4; next }
+    {
+      key = $1 " " $2
+      address = ($3 == "None" || $3 == "") ? ((key in first) ? first[key] : "-") : $3
+      print $2 "." $1 suffix, ((key in ready) ? ready[key] : 0), address
+    }' "$WORK/slices-$label" "$WORK/services-$label" >"$WORK/service-state-$label"
+}
+
+# Rows with something to dial, as index, address, port. A Service the node has no address for gets no reference.
+witness_targets() {
+  awk -v names="$WORK/service-state-before" '
+    BEGIN { while ((getline line < names) > 0) { split(line, f, " "); address[f[1]] = f[3] } }
+    $6 == "udp" { next }
+    $4 ~ /\.cluster\.local$/ { if (($4 in address) && address[$4] != "-") print $1, address[$4], $5; next }
+    { print $1, $4, $5 }' "$WORK/cases" >"$WORK/witness-targets"
+}
+
+witness_group() { # witness_group <group number> <namespace> <labels> <before|after>
+  local rows="$WORK/witness-rows-$1"
+  awk -v ns="$2" -v l="$3" -v targets="$WORK/witness-targets" '
+    BEGIN { while ((getline line < targets) > 0) { split(line, f, " "); target[f[1]] = line } }
+    $2 == ns && $3 == l && ($1 in target) { print target[$1] }' "$WORK/cases" >"$rows"
+  docker exec -i "$NODE_CONTAINER" bash -c "$NODE_WITNESS" <"$rows" >"$WORK/witness-$1-$4" 2>/dev/null || true
+}
+
 run_group() { # run_group <group number> <namespace> <labels>
   local number="$1" namespace="$2" labels="$3" pod="netpol-$RUN_ID-$1" probes
   probes="$(awk -v ns="$namespace" -v l="$labels" '$2 == ns && $3 == l { print $1, $4, $5 }' "$WORK/cases")"
+  probes="R$number-first $POD_REFERENCE_HOST 53
+$probes
+R$number-last $POD_REFERENCE_HOST 53"
   if ! kc -n "$namespace" get namespace "$namespace" >/dev/null 2>&1; then
     warn "namespace $namespace does not exist"
     return 1
   fi
+  witness_group "$number" "$namespace" "$labels" before
   start_probe_pod "$pod" "$namespace" "$labels" "$probes" || return 1
   collect_probe_pod "$pod" "$namespace" >"$WORK/group-$number.log" || return 1
+  witness_group "$number" "$namespace" "$labels" after
   kc -n "$namespace" delete pod "$pod" --wait=false >/dev/null 2>&1 || true
 }
 
-verdict_for() { # verdict_for <expect> <class> <protocol>
-  local expect="$1" class="$2" protocol="$3"
+# witness_of <group number> <row index>: ANSWERED only if the target answered both before and after the probes, so
+# it was up across them. NONE if neither was asked.
+witness_of() {
+  local before after
+  before="$(awk -v id="$2" '$1 == id { print $2 }' "$WORK/witness-$1-before" 2>/dev/null || true)"
+  after="$(awk -v id="$2" '$1 == id { print $2 }' "$WORK/witness-$1-after" 2>/dev/null || true)"
+  if [[ -z "$before" && -z "$after" ]]; then echo NONE
+  elif [[ "$before" == ANSWERED && "$after" == ANSWERED ]]; then echo ANSWERED
+  elif [[ "$before" == ANSWERED || -z "$before" ]]; then echo "${after:-SILENT}"
+  else echo "$before"
+  fi
+}
+
+# ready_of <host>: the fewest ready endpoints either snapshot saw, or - if this is not a Service that exists.
+ready_of() {
+  awk -v host="$1" '$1 == host { n = (seen == "" || $2 + 0 < n + 0) ? $2 : n; seen = 1 } END { print (seen ? n : "-") }' \
+    "$WORK/service-state-before" "$WORK/service-state-after" 2>/dev/null || echo -
+}
+
+# reference_of <group number>: yes if the pod's own name lookups, first and last, both got an answer. Any class but DNS
+# means the resolver answered, whatever then happened on port 53.
+reference_of() {
+  local which line code lookup connect message class answer=yes
+  for which in first last; do
+    line="$(grep "^RESULT R$1-$which " "$WORK/results" | head -1 || true)"
+    [[ -n "$line" ]] || { answer=no; continue; }
+    read -r _ _ code lookup connect message <<<"$line"
+    # shellcheck disable=SC2086  # the message is deliberately split back into words
+    class="$(classify "$code" "$lookup" "$connect" $message)"
+    case "$class" in
+      DNS | OTHER:*) answer=no ;;
+    esac
+  done
+  echo "$answer"
+}
+
+# decide <expect> <class> <protocol> <scope> <ready endpoints or -> <witness> <pod reference yes|no>
+# Prints verdict|counts or free|what the row shows. free means an INCONCLUSIVE that does not count against the run.
+decide() {
+  local expect="$1" class="$2" protocol="$3" scope="$4" ready="$5" witness="$6" reference="$7"
   if [[ "$protocol" == udp ]]; then
     # For a DNS row, reaching any answer at all from the resolver is the point: the name resolved,
     # and only the lookup needs to pass. Connecting to port 53 afterwards is not under test.
     if [[ "$class" == DNS ]]; then
-      if [[ "$expect" == deny ]]; then echo PASS; else echo FAIL; fi
+      if [[ "$expect" == deny ]]; then echo "PASS|counts|"; else echo "FAIL|counts|"; fi
     else
-      if [[ "$expect" == allow ]]; then echo PASS; else echo FAIL; fi
+      if [[ "$expect" == allow ]]; then echo "PASS|counts|"; else echo "FAIL|counts|"; fi
     fi
     return
   fi
+  local no_endpoint="the Service had no ready endpoint, so this came from the Service and proves nothing about a policy"
+  local outside="nothing outside the cluster answered the node at this moment, so this proves nothing. Not counted against the run"
+  local down="the target did not answer the node either, so this proves nothing about a policy"
   case "$class" in
-    DNS) echo INCONCLUSIVE ;;
-    OTHER:*) echo FAIL ;;
-    CONNECTED | REFUSED) if [[ "$expect" == allow ]]; then echo PASS; else echo FAIL; fi ;;
-    TIMEOUT) if [[ "$expect" == deny ]]; then echo PASS; else echo FAIL; fi ;;
-    *) echo FAIL ;;
+    NOT_RUN) echo "INCONCLUSIVE|counts|the probe gave no result" ;;
+    OTHER:*) echo "FAIL|counts|curl failed in a way that says nothing about the path" ;;
+    DNS)
+      if [[ "$scope" == outside ]]; then
+        echo "INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run"
+      else
+        echo "INCONCLUSIVE|counts|the lookup failed, so nothing was dialled"
+      fi
+      ;;
+    CONNECTED) if [[ "$expect" == allow ]]; then echo "PASS|counts|"; else echo "FAIL|counts|a deny row connected"; fi ;;
+    REFUSED)
+      if [[ "$ready" == 0 ]]; then echo "INCONCLUSIVE|counts|$no_endpoint"
+      elif [[ "$expect" == allow ]]; then echo "PASS|counts|"
+      else echo "FAIL|counts|refused means the packet arrived"
+      fi
+      ;;
+    TIMEOUT)
+      if [[ "$ready" == 0 ]]; then echo "INCONCLUSIVE|counts|$no_endpoint"
+      elif [[ "$reference" != yes ]]; then echo "INCONCLUSIVE|counts|this pod could not resolve a name at the same moment, so it may have had no network at all"
+      elif [[ "$witness" == ANSWERED ]]; then
+        if [[ "$expect" == deny ]]; then
+          echo "PASS|counts|reference: the target answered the node and this pod's DNS answered, at the same moment"
+        else
+          echo "FAIL|counts|the target answered the node at the same moment, so the path to it is blocked"
+        fi
+      elif [[ "$witness" == NONE ]]; then
+        if [[ "$expect" == deny ]]; then
+          echo "PASS|counts|no reference for the target: a timeout alone, which does not show the target was up"
+        else
+          echo "FAIL|counts|no reference for the target, so this may be the target and not the path"
+        fi
+      elif [[ "$scope" == outside ]]; then echo "INCONCLUSIVE|free|$outside"
+      else echo "INCONCLUSIVE|counts|$down"
+      fi
+      ;;
+    *) echo "FAIL|counts|unknown class $class" ;;
   esac
 }
 
@@ -318,6 +497,8 @@ run_matrix() {
   load_cases
   awk '{ print $2, $3 }' "$WORK/cases" | sort -u >"$WORK/groups"
   log "Running $(wc -l <"$WORK/cases" | tr -d ' ') rows from $(wc -l <"$WORK/groups" | tr -d ' ') source identities"
+  snapshot_services before || die "could not read the cluster's Services and EndpointSlices"
+  witness_targets
 
   local number=0 namespace labels
   while read -r namespace labels; do
@@ -327,36 +508,104 @@ run_matrix() {
     if [[ $((number % PARALLEL_PODS)) -eq 0 ]]; then wait; fi
   done <"$WORK/groups"
   wait
+  if ! snapshot_services after; then
+    warn "could not read the Services again, so only the first reading of their endpoints counts"
+    cp "$WORK/service-state-before" "$WORK/service-state-after"
+  fi
 
   cat "$WORK"/group-*.log 2>/dev/null | grep '^RESULT ' >"$WORK/results" || true
 
   printf 'verdict\texpect\tobserved\tfrom\tlabels\tto\tport\tnote\n' >"$EVIDENCE"
-  local passed=0 failed=0 inconclusive=0
-  local index from from_labels host port protocol expect note line code lookup connect message class verdict
+  local passed=0 failed=0 inconclusive=0 free=0 unreferenced=0
+  local index from from_labels host port protocol expect note line code lookup connect message class verdict counts shows
+  local group_number decided
   while read -r index from from_labels host port protocol expect note; do
     line="$(grep "^RESULT $index " "$WORK/results" | head -1 || true)"
     if [[ -z "$line" ]]; then
       class=NOT_RUN
-      verdict=INCONCLUSIVE
     else
       read -r _ _ code lookup connect message <<<"$line"
       # shellcheck disable=SC2086  # the message is deliberately split back into words
       class="$(classify "$code" "$lookup" "$connect" $message)"
-      verdict="$(verdict_for "$expect" "$class" "$protocol")"
     fi
+    group_number="$(awk -v ns="$from" -v l="$from_labels" '$1 == ns && $2 == l { print NR; exit }' "$WORK/groups")"
+    # Not inside the here-string: bash 3.2 expands that with IFS already set, and the functions would inherit it.
+    decided="$(decide "$expect" "$class" "$protocol" "$(scope_of "$host")" "$(ready_of "$host")" \
+      "$(witness_of "$group_number" "$index")" "$(reference_of "$group_number")")"
+    IFS='|' read -r verdict counts shows <<<"$decided"
     case "$verdict" in
       PASS) passed=$((passed + 1)) ;;
       FAIL) failed=$((failed + 1)) ;;
-      *) inconclusive=$((inconclusive + 1)) ;;
+      *) if [[ "$counts" == free ]]; then free=$((free + 1)); else inconclusive=$((inconclusive + 1)); fi ;;
     esac
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$verdict" "$expect" "$class" "$from" "$from_labels" "$host" "$port" "$note" >>"$EVIDENCE"
-    printf '%-13s %-6s %-10s %s %s -> %s:%s\n' "$verdict" "$expect" "$class" "$from" "$from_labels" "$host" "$port"
+    [[ "$shows" != "no reference"* ]] || unreferenced=$((unreferenced + 1))
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$verdict" "$expect" "$class" "$from" "$from_labels" "$host" "$port" "$note${note:+${shows:+; }}$shows" >>"$EVIDENCE"
+    printf '%-13s %-6s %-10s %s %s -> %s:%s%s\n' "$verdict" "$expect" "$class" "$from" "$from_labels" "$host" "$port" "${shows:+  # $shows}"
   done <"$WORK/cases"
 
-  log "PASS $passed, FAIL $failed, INCONCLUSIVE $inconclusive. Evidence: $EVIDENCE"
-  [[ "$failed" -eq 0 && "$inconclusive" -eq 0 ]]
+  log "PASS $passed, FAIL $failed, INCONCLUSIVE $((inconclusive + free)), of which $free need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: $unreferenced. Evidence: $EVIDENCE"
+  if [[ "$failed" -ne 0 ]]; then return 1; fi
+  if [[ "$inconclusive" -ne 0 ]]; then return 2; fi
+  return 0
 }
 
+# Every verdict decide can give, on the case that should give it. Needs no cluster, so CI can run it.
+selftest() {
+  local failures=0 expect class scope ready witness reference want got
+  # expect class scope ready witness reference wanted verdict and whether it counts
+  while read -r expect class scope ready witness reference want; do
+    got="$(decide "$expect" "$class" tcp "$scope" "$ready" "$witness" "$reference")"
+    got="${got%%|*}|$(cut -d'|' -f2 <<<"$got")"
+    if [[ "$got" != "$want" ]]; then
+      printf 'FAIL decide %s %s %s ready=%s witness=%s reference=%s: got %s, want %s\n' "$expect" "$class" "$scope" "$ready" "$witness" "$reference" "$got" "$want"
+      failures=$((failures + 1))
+    fi
+  done <<'TABLE'
+deny TIMEOUT cluster 1 ANSWERED yes PASS|counts
+deny TIMEOUT cluster 1 NONE yes PASS|counts
+deny TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
+deny TIMEOUT cluster 0 ANSWERED yes INCONCLUSIVE|counts
+deny TIMEOUT cluster 1 ANSWERED no INCONCLUSIVE|counts
+deny TIMEOUT outside - ANSWERED yes PASS|counts
+deny TIMEOUT outside - SILENT yes INCONCLUSIVE|free
+deny TIMEOUT outside - UNRESOLVED yes INCONCLUSIVE|free
+deny DNS outside - UNRESOLVED yes INCONCLUSIVE|free
+deny DNS cluster - NONE yes INCONCLUSIVE|counts
+deny CONNECTED cluster 1 ANSWERED yes FAIL|counts
+deny REFUSED cluster 1 ANSWERED yes FAIL|counts
+deny REFUSED cluster 0 ANSWERED yes INCONCLUSIVE|counts
+allow CONNECTED cluster 1 ANSWERED yes PASS|counts
+allow REFUSED cluster 1 ANSWERED yes PASS|counts
+allow REFUSED cluster 0 ANSWERED yes INCONCLUSIVE|counts
+allow TIMEOUT cluster 0 ANSWERED yes INCONCLUSIVE|counts
+allow TIMEOUT cluster 1 ANSWERED yes FAIL|counts
+allow TIMEOUT cluster 1 NONE yes FAIL|counts
+allow TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
+allow TIMEOUT outside - SILENT yes INCONCLUSIVE|free
+allow DNS outside - UNRESOLVED yes INCONCLUSIVE|free
+allow NOT_RUN cluster 1 NONE yes INCONCLUSIVE|counts
+allow OTHER:35 cluster 1 ANSWERED yes FAIL|counts
+TABLE
+  [[ "$(scope_of telemetry.plane.so)" == outside && "$(scope_of 1.1.1.1)" == outside && "$(scope_of 192.168.65.254)" == outside ]] || { echo "FAIL scope_of outside"; failures=$((failures + 1)); }
+  [[ "$(scope_of plane-git)" == local && "$(scope_of 172.24.0.2)" == local && "$(scope_of 10.96.0.1)" == local ]] || { echo "FAIL scope_of local"; failures=$((failures + 1)); }
+  [[ "$(scope_of plane-api.plane-dev.svc.cluster.local)" == cluster ]] || { echo "FAIL scope_of cluster"; failures=$((failures + 1)); }
+  [[ "$failures" -eq 0 ]] || die "selftest: $failures failed"
+  ok "selftest passed"
+}
+
+if [[ "$SELFTEST" == yes ]]; then
+  selftest
+  exit 0
+fi
+
 run_sentinel
-run_matrix || die "network policy matrix did not pass"
-ok "network policy matrix passed"
+status=0
+run_matrix || status=$?
+case "$status" in
+  0) ok "network policy matrix passed" ;;
+  2)
+    warn "nothing failed, but a row could not prove anything. That is not a pass."
+    exit 2
+    ;;
+  *) die "network policy matrix did not pass" ;;
+esac

@@ -33,8 +33,8 @@ logs: ## Tail logs: make logs ENV=dev SVC=api. With no SVC, lists what can be ta
 	@./scripts/logs.sh "$(ENV)" "$(SVC)"
 
 # ---- verification ---------------------------------------------------------------------------
-.PHONY: test test-e2e test-netpol test-alert test-load gates
-test: ## Run gates, network policy matrix, and end-to-end smoke tests in both environments
+.PHONY: test test-e2e test-netpol test-infisical test-routes test-separation test-alert test-load gates
+test: ## Run gates, network policy matrix, Infisical isolation and rendered Secrets, internal routes, smoke in both environments, and their separation
 	@./scripts/test.sh
 
 gates: ## Run the day-1 runtime gates
@@ -45,6 +45,15 @@ test-e2e: ## End-to-end smoke test: make test-e2e ENV=dev
 
 test-netpol: ## Execute the NetworkPolicy allow and deny matrix: make test-netpol [FROM_NS=plane-dev]
 	@./scripts/test-netpol.sh
+
+test-infisical: ## Infisical alone: each environment's identity is refused the other's project, and the rendered Secrets match
+	@./scripts/test.sh infisical
+
+test-routes: ## Who can reach the internal UIs through Traefik: the host can, a Plane api pod cannot
+	@./scripts/test.sh routes
+
+test-separation: ## Real attempts between dev and prod-sim, and what each holds. Needs make test-e2e to have run in both
+	@./scripts/test.sh separation
 
 test-alert: ## Prove alert delivery end to end: make test-alert ENV=dev
 	@./scripts/test-alert.sh "$(ENV)"
@@ -106,7 +115,7 @@ promote: ## Promote images: make promote ENV=dev [IMAGE=web DIGEST=sha256:... [R
 rollback: ## Revert the last promotion for an environment: make rollback ENV=dev [CONFIRM=yes] [SKIP_BACKUP=yes] [ROLLBACK_DUMP_TIMEOUT=<seconds>]
 	@./scripts/rollback.sh "$(ENV)"
 
-gitops-publish: ## Push the current main branch to the local Git remote that Argo CD reads
+gitops-publish: ## Push the current main branch to the local Git remote that Argo CD reads. A prod-sim digest needs dev Synced and Healthy on it: [OVERRIDE_DEV_CHECK="<reason>"] goes ahead anyway and logs why
 	@./scripts/gitops-publish.sh
 
 ci: ## Run every CI check locally, the same scripts as GitHub Actions. Runs them all, then fails if any did
