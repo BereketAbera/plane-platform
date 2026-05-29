@@ -61,9 +61,9 @@ configs:
     # build the pods, so waiting will not help.
     # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Before this, root retried
     # and re-read the newest commit each time. Now it waits with no retry, so a fix to
-    # gitops/applications/kube-prometheus-stack.yaml needs root's operation terminated by hand (infrastructure/
-    # terraform/README.md, "After a stuck first sync"). No alert says so either: with Prometheus down, nothing
-    # evaluates ArgoRootSyncStuck, and the only sign is Watchdog no longer reaching the sink.
+    # gitops/applications/kube-prometheus-stack.yaml needs root's operation terminated by hand, as
+    # infrastructure/terraform/README.md says under "After a stuck first sync". No alert says so either: with
+    # Prometheus down, nothing evaluates ArgoRootSyncStuck, and the only sign is Watchdog no longer reaching the sink.
     resource.customizations.health.monitoring.coreos.com_Prometheus: |
       local hs = {status = "Progressing", message = "Waiting for initialization"}
       if obj.status == nil or obj.status.conditions == nil then
