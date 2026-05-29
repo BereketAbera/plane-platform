@@ -1,6 +1,6 @@
 # 0013. Hybrid branding: overlay, patches and codemod
 
-**Status:** Accepted, 2026-11-04, with measured numbers added 2026-11-05. Runtime validation pending where marked. `apps/wayline/` is committed, and whether the overlays reference its images is the deployment's business, not this record's.
+**Status:** Accepted, 2026-11-04, with measured numbers added 2026-11-05. Runtime validation pending where marked. The images are built, and `plane-dev` runs them since promotion `4f622e3` on 2026-11-05.
 
 ## Context
 
@@ -16,7 +16,7 @@ The aim is a distinct look and name without taking ownership of Plane's code. Pl
 
 All three are React Router 7 on Vite. The design system is CSS variables, so a lot can change through tokens. Structure (auth layout, shell, source link) can change only in source.
 
-Upstream has 5,268 tracked files. As built, 85 are patched and 155 replaced whole by the overlay, nearly all images. The research's estimate before any of this was built was about 20 edited files.
+Upstream has 5,268 tracked files. As built, 86 are patched and 155 replaced whole by the overlay, nearly all images. The research's estimate before any of this was built was about 20 edited files.
 
 ## Decision
 
@@ -32,7 +32,7 @@ A thin layer in `apps/wayline/`, applied on top of the pinned source commit at b
 | Layer | Holds |
 |---|---|
 | Overlay | New files copied in: tokens, fonts, images |
-| Patches | 85 files, +310 -499 lines (measured 2026-11-05), applied with plain `git apply`. A failed hunk stops the build. `--3way` depends on which git objects a machine has, so it moved to a separate rebase path (`patchwork.sh --rebase-from`) |
+| Patches | 86 files, +311 -500 lines (measured 2026-11-05), applied with plain `git apply`. A failed hunk stops the build. `--3way` depends on which git objects a machine has, so it moved to a separate rebase path (`patchwork.sh --rebase-from`) |
 | Codemod | Scripted text replacement at build time. Its output is never committed |
 
 The codemod must never touch SPDX and copyright headers, which are in 3,804 source files.
@@ -44,7 +44,7 @@ Images are published to `localhost:5001/wayline/{web,admin,space,backend}` and a
 | Option | Reach | Why not |
 |---|---|---|
 | Post-build only, editing CSS and images in published images | Colours, radii, density, fonts, images | Cannot restructure anything. It would be a recoloured Plane, which the owner already rejected |
-| Full fork | Everything | Carries 5,268 files to patch 85, and makes each upstream release a merge |
+| Full fork | Everything | Carries 5,268 files to patch 86, and makes each upstream release a merge |
 | Runtime theme (`custom` in Plane's settings) | Two colours, per user | No fonts, radii or layout, and no instance-wide default |
 | No branding, deploy upstream images | None | Would be simplest, but the owner requires a distinct product name |
 
@@ -57,19 +57,27 @@ The numbers that decided this, from research on 2026-11-04:
 | Candidate patch files touched, v1.3.0 to v1.4.0 | 12 of 65 | GitHub commits API per file |
 | Candidate patch files touched, v1.4.0 to v1.4.3 | 1 of 65 | GitHub commits API per file |
 | Patch size, estimated | About 20 files, 150 to 200 changed lines | Estimate, from listing the edits while reading source. Nothing was built. This was far too low |
-| Patch size, as built | 85 files, +310 -499 lines, 139 hunks | `git apply --numstat`, 2026-11-05 |
-| Patches against other upstream refs | `v1.4.2` and `v1.4.0`: 0 of 7 fail. `v1.3.0`: 4 of 7, 14 files. `preview` (1.5.0, unreleased): 7 of 7, 67 files, and `variables.css` is gone | `apps/wayline/checks/upstream-check.sh`, 2026-11-05 |
+| Patch size, as built | 86 files, +311 -500 lines, 140 hunks | `git apply --numstat`, 2026-11-05 |
+| Patches against other upstream refs | `v1.4.2` and `v1.4.0`: 0 of 7 fail. `v1.3.0`: 4 of 7, 14 files. `preview` (1.5.0, unreleased): 7 of 7, 68 files, and `variables.css` is gone | `apps/wayline/checks/upstream-check.sh`, 2026-11-05 |
 | Disk, native build | 1.3 GiB or less on the host, about 1 GiB in the Docker VM | Estimate, from dependency and output sizes |
 | Disk, upstream's three Dockerfiles | About 5 GiB in the Docker VM | Computed from image and layer sizes |
 
 - Each Plane upgrade means re-applying patches. A patch release has needed nothing so far, a minor release a sixth of the patched files, and the next minor line looks like a rework of tokens and most patches. A failed hunk or `overlay.lock` is the signal, and `wayline-upstream-check` gives early warning.
-- A frontend build needs the pinned Node and pnpm toolchain. Peak memory during a build is 3 to 5 GiB, an estimate in `plane-branding.md`, so it should not run alongside a full cluster and a browser. [[MEASURE: peak memory and wall time of make images]]
+- A frontend build needs the pinned Node and pnpm toolchain. Peak memory during a build was estimated at 3 to 5 GiB in `plane-branding.md`. Measured on 2026-11-05 on this Mac, at commit `ffbef80` with the CI settings and a cold turbo cache, the native build took 88s, with a largest process of 1556 MiB and a sampled sum of 1640 MiB ([build-ci-settings.txt](../evidence/branding/build-ci-settings.txt)), and at `1563cbf`, with its turbo cache warm, the whole of `make images` took 34s ([build.txt](../evidence/branding/build.txt)). That ran beside the full cluster. It is not a run on the 2-core arm runner.
 - Replacing `build/` in space keeps upstream's dependencies. An upstream `node_modules` change would need the base digest bumped too.
 - A user choosing Plane's `custom` theme overrides the palette, and keeps Wayline's shapes and type.
 - **AGPL.** Section 13 requires offering Corresponding Source to users who interact over a network. The offer has to include the pinned upstream ref, overlay, patches, codemod, build scripts and Dockerfiles. See [AGPL compliance](../agpl-compliance.md). The source tree and notices keep Plane's name and copyright, even where the UI shows Wayline.
 - The AGPL licenses the code, not the name or mark. Plane's name and logo are treated as off limits in the UI.
-- [[VERIFY: apps/wayline exists and make images builds web, admin, space and backend from the pinned commit]]
-- [[VERIFY: the rendered manifests reference localhost:5001/wayline images by digest in both environments]]
-- [[VERIFY: no upstream brand text remains in the running UI apart from required notices, and copyright headers are intact in the patched tree]]
-- [[VERIFY: the UI exposes a source link that reaches the Corresponding Source]]
-- [[VERIFY: the branded backend image runs migrations and serves the API with the same behaviour as upstream]]
+- `apps/wayline` exists, and `make images` builds web, admin, space and backend from the pinned commit. Digests from `1563cbf` are in [digests.tsv](../evidence/branding/digests.tsv), each read back from the registry ([digests-confirmed.txt](../evidence/branding/digests-confirmed.txt)).
+- The dev manifests reference `localhost:5001/wayline` images by digest since `4f622e3`. Prod-sim's do not until it is promoted. [[VERIFY: the rendered manifests reference localhost:5001/wayline images by digest in both environments]]
+- The leak scan over built output found 0 leaks in 2,117 files, with 350 allowlisted matches, and 0 SPDX or copyright lines were removed from the patched tree ([leak-scan.txt](../evidence/branding/leak-scan.txt), [headers.txt](../evidence/branding/headers.txt)). A real browser session on `plane-dev` on 2026-11-05 showed Wayline's name on the pages it visited ([live-dev](../evidence/branding/live-dev/README.md)). It did not visit every page, and a workspace created before the promotion keeps "Welcome to Plane", because seed text is written once.
+- **The UI exposes a source link, and that link does not reach the Corresponding Source yet.** `/source` answers 302 to the repository at the image's commit, and that target answers 404 to anyone without access, because the repository is private and the commit is unpushed ([smoke.txt](../evidence/branding/smoke.txt)). That must be fixed before anyone else uses an instance. See [AGPL compliance](../agpl-compliance.md).
+- The branded backend runs migrations and serves the API. Against a scratch database it ran 164 migrations and registered an instance, and its control on upstream's image failed 7 checks ([backend-db.txt](../evidence/branding/backend-db.txt)). On the real platform `make test-e2e` passes all 38 steps in `plane-dev` ([smoke](../evidence/runs/smoke-dev-20261105T001213Z.json)), the same steps as on upstream's images. That is the behaviour those steps reach, not all of the API.
+
+## What we found when we ran it
+
+Added 2026-11-05.
+
+- **The patch estimate was far too low.** About 20 files became 86, as the tables above say, and the first scan then failed: 5 CRITICAL findings with a fix, all inherited through `FROM` lines. The derived images now replace those packages, and the scan of the final build passes its policy ([scan evidence](../evidence/security/README.md)). The old bytes stay in the base layers, which a scan does not report.
+- **Thin nginx images inherit upstream's caching.** web and admin send `ETag` and `Last-Modified` with no `Cache-Control`, so after promotion a browser with a cached page kept showing the upstream sign-in page, with no error ([live-dev](../evidence/branding/live-dev/README.md)). Until the images send a `Cache-Control` header, a rollback could do the same.
+- **Hydration errors are upstream's.** React #418 and #423 appear on the web app with these images, and the same two on upstream's in both environments, so branding did not introduce them. Their cause was not found.

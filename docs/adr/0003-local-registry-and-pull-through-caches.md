@@ -47,6 +47,14 @@ Digests are what make a mirror safe to trust: containerd verifies content agains
 - Disk use grows. The Docker Hub set is 2.28 GiB compressed, summed from registry metadata on 2026-11-04. [[MEASURE: on-disk size of the four registry volumes after a full make up]]
 - `mirror.gcr.io` is not complete. Blob fetches for `plane-live` and the Infisical operator returned 404 there during research, so a pull depends on falling through to Docker Hub. containerd's fallback was read in source, not run at this level of the stack. [[VERIFY: an image with blobs absent from mirror.gcr.io completes through the Docker Hub fallback]]
 - **That fallback is anonymous.** No credential is configured, so a blob missing from the mirror can still hit the Hub quota.
-- Gate 1 in `tests/gates/day1.sh` records PASS for digest pulls from `docker.io`, `quay.io` and `localhost:5001`, and for the cache holding blobs ([evidence](../evidence/day1-gates.txt)). That covers one small image per path. It does not cover the full image set or the Hub fallback.
+- Gate 1 in `tests/gates/day1.sh` records PASS for digest pulls from `docker.io`, `quay.io` and `localhost:5001`, and, since 2026-11-04, for containerd having asked each mirror for that digest in that run, read from the mirror's access log ([day1-gates-20261104T231136Z.txt](../evidence/day1-gates-20261104T231136Z.txt)). That covers one small image per path. It does not cover the Hub fallback, and for a layer already on the node it shows the route, not the bytes.
 - The registries speak plain HTTP on the `kind` Docker network, with no authentication. Only `plane-registry` is published to the host, and only on loopback.
 - `make images` and CI differ only in registry prefix. Pass 2 is expected to replace this Compose file with GHCR. That is intent, not configuration.
+
+## What we found when we ran it
+
+Added 2026-11-05.
+
+- The whole image set reached the node under this configuration on 2026-11-04, and the branded images came from `localhost:5001` by digest on 2026-11-05 ([digests](../evidence/branding/digests-confirmed.txt)). Which blobs fell through to Docker Hub was not recorded.
+- Mirror pulls are slow, and the kubelet pulls one image at a time. Wave 3's four images took 175s, 216s, 52s and 5s in turn on the first boot ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt)), which is why `progressDeadlineSeconds` went from 360 to 600.
+- `plane-registry` was OOM-killed at 128m during the first branded pushes. The registry's own memory is not the cause: a push fills the container's cgroup with dirty page cache faster than the disk drains it. On scratch registries 128m was killed in 8 of 17 runs pushing with buildx or all at once, and 512m kept the largest push off the limit entirely, so that is the limit now ([registry-memory-1.txt](../evidence/runs/registry-memory-1.txt)).

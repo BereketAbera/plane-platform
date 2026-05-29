@@ -49,5 +49,13 @@ The last row is the honest cost of this decision. The two-root option is viable.
 - Changing a port mapping, a mount or the node image means deleting and recreating the cluster. `make destroy` does that and takes a backup first unless `SKIP_BACKUP=yes`.
 - `make down` stops the node container and the local services. `make up` starts them again. [[VERIFY: make down followed by make up keeps Plane data in both environments]]
 - The Pass 2 seam is the pair `kubeconfig_path` and `kube_context`. `infrastructure/terraform/environments/{dev,prod}/INTERFACE.md` proposes a separate `cluster` root for Hetzner that produces them. That is an untested contract for a root that does not exist yet.
-- The cluster gets kind's kubelet defaults, including no image garbage collection and no disk-based eviction (research, 2026-11-04, `pkg/cluster/internal/kubeadm/config.go`). So `guard_disk` runs on the host in every script, because the Docker VM reports free space the host does not have.
-- [[VERIFY: scripts/cluster-up.sh is idempotent when run against a running cluster and a stopped node]]
+- The cluster gets kind's kubelet defaults, including no image garbage collection and no disk-based eviction (research, 2026-11-04, `pkg/cluster/internal/kubeadm/config.go`). So `guard_disk` runs on the host in the scripts that write, because the Docker VM reports free space the host does not have. Contract section 11 lists which do not.
+- `scripts/cluster-up.sh` finished in 2s against the running cluster on 2026-11-04 ([bootstrap-up-traefik-1.txt](../evidence/runs/bootstrap-up-traefik-1.txt)). The stopped-node path has not run, because nobody has run `make down`. [[VERIFY: scripts/cluster-up.sh is idempotent when run against a running cluster and a stopped node]]
+
+## What we found when we ran it
+
+Added 2026-11-05.
+
+- Docker gave the `kind` network `172.24.0.0/16` on this host, inside the assumed pool ([traefik-nodeport-source-1.txt](../evidence/runs/traefik-nodeport-source-1.txt)).
+- Each run of the script recreated `plane-git`, because buildx stamped a provenance attestation that gave the same layers a new image ID. `7708cc8` sets `BUILDX_NO_DEFAULT_ATTESTATIONS=1`, since Argo CD reads Git through that container.
+- A disk floor of 15 GiB on every run could strand a platform whose first install had already used the space. So since `7708cc8` a resume needs only the default floor, and 15 GiB applies only when creating a cluster.

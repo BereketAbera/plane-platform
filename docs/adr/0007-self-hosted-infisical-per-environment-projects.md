@@ -1,6 +1,6 @@
 # 0007. Self-hosted Infisical with one project per environment
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked. `infisical/README.md` lists this layer as NOT RUN at the time of writing.
+**Status:** Accepted, 2026-11-04. The layer has run on the real cluster since then, and what that changed is in the last section. Runtime validation pending where still marked.
 
 ## Context
 
@@ -41,12 +41,20 @@ So there is no way on this tier to grant a reader one environment inside a proje
 
 ## Consequences
 
-- **Isolation is per project, not finer.** A reader sees every secret in its own project. [[VERIFY: the plane-dev identity gets 403 reading the plane-prod-sim project]]
+- **Isolation is per project, not finer.** A reader sees every secret in its own project. On 2026-11-04 the `plane-dev` identity got 403 reading the `plane-prod-sim` project, and the reverse, on list, single read and slug lookup ([infisical-isolation-3.txt](../evidence/runs/infisical-isolation-3.txt)).
 - **Both environments share one Infisical server.** An outage stops updates in both, while existing Kubernetes Secrets remain. One `ENCRYPTION_KEY` protects both. This is one more place where namespace separation is not equivalent to independent production clusters.
 - Secret zero moves the problem to the laptop rather than solving it. Kubernetes Secrets are base64 in kind's etcd, unencrypted at rest. Losing `ENCRYPTION_KEY` everywhere loses every secret, even with a database dump.
 - `ALLOW_INTERNAL_IP_CONNECTIONS=true` is required for token review on kind, because `kubernetes.default.svc` resolves to a private address. It relaxes SSRF protection for the whole instance. That is acceptable on a single-user local instance, and needs a new decision for Pass 2.
 - No audit trail of who read what. Secret version history is the only record.
-- The operator polls, since instant updates are paid. `refreshInterval` is 60s, and that is the update latency. Six custom resources polling every 60s per operator should stay inside the rate limit. [[VERIFY: no 429 from Infisical during steady-state polling and first-time seeding]]
-- `InfisicalAuth` stays unready until bootstrap publishes the identity Secret. [[VERIFY: Argo CD waits and recovers, rather than failing the sync permanently, while InfisicalAuth is unready]]
-- First boot runs about 600 migrations under a 1Gi limit and a 640 MiB heap. [[VERIFY: Infisical first boot completes under the 1Gi limit on arm64]]
-- The layer's own memory use is 610 to 990 MiB, an estimate summed from per-component rows in `infisical.md`, anchored on issue #4795. [[MEASURE: RSS of Infisical, its Postgres and Redis, and both operators at idle]]
+- The operator polls, since instant updates are paid. `refreshInterval` is 60s, and that is the update latency. Six custom resources polling every 60s per operator saw no 429 during steady-state polling or first-time seeding ([infisical-rate-limit-1.txt](../evidence/runs/infisical-rate-limit-1.txt)). The reason differs from what this record expected, as the last section says.
+- `InfisicalAuth` stays unready until bootstrap publishes the identity Secret. On 2026-11-04 the sync failed and retried rather than failing for good: the identity was published at 21:25:44 UTC, and the retry landed at 21:28:54 ([infisical-unready-sync-1.txt](../evidence/runs/infisical-unready-sync-1.txt)).
+- First boot runs about 600 migrations under a 1Gi limit and a 640 MiB heap. On arm64 on 2026-11-04 it ran 602 in 11.5s, from container start to Ready in 21s, peaking at 807 MiB with 0 OOM kills ([infisical-firstboot-1.txt](../evidence/runs/infisical-firstboot-1.txt)). Pulling the image took 4m49s before that.
+- The layer's own memory use was estimated at 610 to 990 MiB, summed from per-component rows in `infisical.md`, anchored on issue #4795. Measured at idle on 2026-11-04 by `kubectl top`: server 646 MiB, Postgres 55 MiB, Redis 9 MiB, operators 22 and 38 MiB, about 770 MiB in all ([infisical-memory-1.txt](../evidence/runs/infisical-memory-1.txt)).
+
+## What we found when we ran it
+
+Added 2026-11-05. Nothing in this layer failed at runtime on its first real run, and the boundary held. Three things read differently now.
+
+- **The rate limits in the table above are not enforced on self-hosted.** They were read from the licence file. 240 reads in 4s from one address all answered 200 with no rate-limit headers, and `app.ts` registers the limiter only when `isProductionMode && isCloud` ([infisical-rate-limit-1.txt](../evidence/runs/infisical-rate-limit-1.txt)). So the `Retry-After` handling in the scripts has never run for real.
+- **The server's memory request went from 650Mi to 768Mi,** on measured idle use. Its peak on a second boot was 822 MiB of the 1Gi limit ([infisical-second-boot-1.txt](../evidence/runs/infisical-second-boot-1.txt)).
+- **A restart costs a little.** The API went silent for about 12s when Redis restarted, and reads answered 500 for about 6s when Postgres did ([infisical-restart-1.txt](../evidence/runs/infisical-restart-1.txt)). Existing Kubernetes Secrets stay in place through that.
