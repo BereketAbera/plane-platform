@@ -306,8 +306,8 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
   creating a cluster, `scan-images.sh` for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh`
   and `gitops-publish.sh`.
-  `down.sh`, `destroy.sh`, `logs.sh`, `status.sh` and the read-only CI checks do not call it, so they still work on a full disk.
-  `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
+  `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it, so the first four
+  still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
 
 ## 12. Evidence rule
 

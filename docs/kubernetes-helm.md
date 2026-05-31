@@ -157,9 +157,10 @@ The limits sum to about 107 percent of the Docker VM across the whole platform, 
 research critique section 4, arithmetic over configured limits plus estimates for the control plane, before later raises to some
 platform limits). Bring the two environments up serially, because simultaneous first boots are the worst case.
 
-Real use has stayed well inside that so far. With both environments running under both smokes at once, the NetworkPolicy matrices and the
-restart drills, no Plane container passed 66% of its memory limit, with 0 OOM kills. The highest were the worker at 426 of 768 MiB and
-redis-exporter at 21 of 32. VM use peaked at 10.49 GiB of 13.63 ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)).
+Real use has stayed inside that so far, with 0 OOM kills in any Plane container. Read after both smokes ran at once on 2026-11-04, no Plane
+container was above 66% of its memory limit, and the worker was highest at 426 of 768 MiB. The VM peaked at 10.49 GiB of 13.63 across all the tests
+([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)). The closest any reading came was `live` at 309 of 384 MiB, 80% of its
+limit, in dev earlier that day ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Those are cgroup peaks, which include page cache.
 The load test has not run. [[MEASURE: actual RSS per Plane workload at idle and under load]]
 
 In dev, the pods from the first boot read 0 OOM kills and 0 restarts ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Prod-sim's
