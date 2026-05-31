@@ -132,8 +132,8 @@ cannot fire either.
 **`PrometheusMissingRuleEvaluations` goes pending on a healthy Prometheus, and this is left alone.** No rule group has taken
 more than 1.3s of its 15s or 30s, and the longest gap between two evaluation starts in any group is 30.08s, so nothing is late. The
 Docker VM steps its wall clock, measured on the node against the monotonic clock: forward a few hundred microseconds every 30s,
-and now and then 5 to 13 ms in either direction. Prometheus ticks on the monotonic clock and works out each slot from the wall
-clock. So a step back makes a group evaluate one slot twice, which logs "different value but same timestamp", and a later step
+and by several milliseconds, up to 15, in either direction every 16 minutes. Prometheus ticks on the monotonic clock and works
+out each slot from the wall clock. So a step back makes a group evaluate one slot twice, which logs "different value but same timestamp", and a later step
 forward makes it skip one, which counts as missed. Seen live: back 12 ms at 00:34 with those log lines, then forward 25 ms at
 00:50 and exactly one miss in each of the 31 groups within two minutes. The alert goes pending for 5m after each burst. It would
 need a miss every 5m for 15m to fire, and it has not fired once in about 4h. It stays on, because a really slow group would miss
