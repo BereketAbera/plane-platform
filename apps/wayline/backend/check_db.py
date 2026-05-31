@@ -97,7 +97,9 @@ def check_setup_endpoint():
             undo_setup(email)
     admin = User.objects.get(email=email)
     profile = Profile.objects.get(user=admin)
-    report(profile.has_marketing_email_consent is False, "the new user's profile assumes no marketing consent", f"has_marketing_email_consent={profile.has_marketing_email_consent}")
+    # The model's default, and it passes on upstream's image too, so it says nothing about patches/20-auth.patch, which
+    # changes the onboarding form in the web client. checks/smoke-images.sh reads that default from the built client.
+    report(profile.has_marketing_email_consent is False, "a new profile's model default is no marketing consent. This passes on upstream's image too, so it does not cover the onboarding patch", f"has_marketing_email_consent={profile.has_marketing_email_consent}")
     return admin
 
 
@@ -146,6 +148,21 @@ def check_invitations(admin):
     report("<" not in text.replace("<" + INVITEE + ">", ""), "the text part holds no markup")
     report("Wayline" in text and "Proof" in text, "the text part holds the template's words")
     report(link.replace("&", "&amp;") in html, "the HTML part holds the link, escaped for HTML")
+
+    # The workspace and project invitation tasks also store email.py's result in the invitation's message column.
+    print("\n== The invitation's message column, where those two tasks store email.py's result")
+    marked = Workspace.objects.create(name="Proof <b>marked</b> & co", slug="proof-marked", owner=admin)
+    WorkspaceMember.objects.create(workspace=marked, member=admin, role=20)
+    response = api.post("/api/workspaces/proof-marked/invitations/", body, format="json")
+    report(response.status_code == 200, "POST workspace invitations, for a workspace whose name holds markup", response.status_code)
+    invite = WorkspaceMemberInvite.objects.get(email=INVITEE, workspace=marked)
+    workspace_invitation(INVITEE, marked.id, invite.token, "https://x.test", admin.email)
+    invite.refresh_from_db()
+    stored = invite.message or ""
+    report("<b>marked</b> & co" in stored and "&lt;b&gt;" not in stored, "the column holds decoded raw markup, not escaped text", repr(stored[stored.find("Proof <b>") if "Proof <b>" in stored else 0:][:60]))
+    response = api.get("/api/workspaces/proof-marked/invitations/")
+    served = [row.get("message") for row in response.json() if row.get("email") == INVITEE]
+    report(response.status_code == 200 and served == [stored], "the API serves that column as it is", f"{response.status_code}, {len(served)} row")
 
 
 check_registration()

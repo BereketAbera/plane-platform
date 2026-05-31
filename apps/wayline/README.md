@@ -26,7 +26,12 @@ UPSTREAM commit ──> overlay/ ──> patches/*.patch ──> codemod/rebrand
 | `checks/leak-scan.sh` | Fails on the upstream brand in what the frontends ship and in the rewritten mail templates, except allowlisted entries with reasons. `backend/check_image.py` covers the rest of the backend image, inside the image |
 | `checks/bundle-art.sh` | Fails if upstream's isometric empty states reach a bundle |
 | `checks/font-urls.sh` | Proves from the built CSS that fonts resolve under `/`, `/god-mode/`, `/spaces/` |
-| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts and that X-Forwarded-For behaves. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
+| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts, that X-Forwarded-For behaves, and what a browser may keep: `Cache-Control`, the 4 security headers and 304s. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
+| `checks/cache-names.sh` | Stops the build if a file could reach `assets/` with a name no bundler hashed, because nginx keeps such names for a year |
+| `checks/layer-check.py` | Reads every layer of an image as the registry serves it, including files a later layer hides, and fails if any holds the identifier on upstream's commercially licensed files. `scripts/ci/build-images.sh` runs it after each push. `--report-only` does the same for images we deploy unmodified, and never fails a build on them |
+| `checks/flatten-config.py` | Fails if the flattened backend dropped anything its base's config says. `scripts/ci/build-images.sh` and `checks/smoke-images.sh` run it |
+| `checks/flatten-compare.py` | Compares two images path by path and field by field, read from their registries. Manual, for evidence |
+| `checks/space-regions.mjs` | Lists the packages the bundler inlined into the space server, which `runtime/space-deps.mjs` cannot see. Manual, for evidence |
 | `checks/backend-db.sh` | Runs the backend against a scratch Postgres, Redis and mail server it starts itself: migrations, registration, the setup endpoint, an invitation and a mail read back. `WAYLINE_BASE_CONTROL=yes` also shows the same checks failing on upstream's image. **Manual:** no workflow runs it |
 | `checks/upgrade-check.sh` | `make wayline-upgrade-check`. After a bump, with no build: overlay lock, patches, tokens, contrast, and upstream's Dockerfiles and nginx configs against what was derived from them |
 | `checks/upstream-check.sh` | `make wayline-upstream-check REF=preview`. Dry-runs overlay and patches against another upstream ref and reports the size of the work. A workflow also runs it weekly against `preview` |
@@ -91,27 +96,33 @@ The licence texts are in every image at `/usr/share/licenses/wayline/`, and at `
 | `wayline/web` | `nginx:1.31-alpine` | UID 101 (hardening patch) | pid on `/run`, temp on `/var/cache/nginx`, both emptyDirs |
 | `wayline/admin` | `nginx:1.31-alpine` | UID 101 | Served under `/god-mode/` |
 | `wayline/space` | `makeplane/plane-space:v1.4.3` | UID 1000 | `build/` replaced, proxy-addr 2.0.8, no storybook or tinypool: `runtime/space-deps.mjs` |
-| `wayline/backend` | `makeplane/plane-backend:v1.4.3` | UID 1000 | Templates, strings, upstream's AGPL `email.py`, PyJWT 2.14.0. Used by api, worker, beat, migrator. Label says `AGPL-3.0-only`. The commercially headed original is still in the `FROM` layer, see D12 in `MODIFICATIONS.md` |
+| `wayline/backend` | `scratch`, holding a filesystem derived from `makeplane/plane-backend:v1.4.3` | UID 1000 | Templates, strings, upstream's AGPL `email.py`, PyJWT 2.14.0. Used by api, worker, beat, migrator. Label says `AGPL-3.0-only`. Flattened, so no layer holds the commercially headed original. See D12 in `MODIFICATIONS.md` |
 
 Base digests come from `docker buildx imagetools inspect`, and are written in each Dockerfile with the date. Rebuilding
 the same commit can give a different digest, because file times and OS packages move. A digest, not a rebuild, is the
 identity of a release.
 
-A file replaced or removed in a derived image stays in the `FROM` layers underneath, so it is gone from the container's
-filesystem, and from what `trivy image` reports, but not from the bytes of the image.
+In an image that keeps its `FROM` layers, which is every image here but the backend, a file replaced or removed stays in those layers. It is gone from
+the container's filesystem, and from what `trivy image` reports, but not from the bytes of the image. So the space image still holds
+proxy-addr 2.0.7, storybook and tinypool. The backend is flattened, so PyJWT 2.13.0 and the original `email.py` are in no layer of it.
 
 ### Publishing to GHCR
 
 - **`images.yml` has never run with `apps/wayline` in it.** One pull request is needed to exercise the build-only job,
   and the native arm64 build, GHCR push, scan, prune and the numbers here are unproven until then.
-- Images go only to the local registry or the owner's private GHCR packages, `ghcr.io/bereketabera/wayline`. That is decision
-  D12 (`backend/email-py-decision.txt`, `scripts/publish-gate.sh`), and `images.yml` also requires
-  `github.event.repository.private`, so making the repository public stops publishing until D12 is revisited.
+- Images go only to the local registry or `ghcr.io/bereketabera/wayline`. That is decision D12 (`backend/email-py-decision.txt`,
+  `scripts/publish-gate.sh`, `MODIFICATIONS.md`). The `images.yml` publish job runs that gate first, and fails where publishing is not allowed.
 - Pull requests only build, and never push.
-- A push to main publishes, then scans what it pushed with `scripts/ci/scan-images.sh`, and a failure there stops the prune and
-  the digest bump. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
+- A push to main publishes, walking every layer of each image as it goes, then scans what it pushed with `scripts/ci/scan-images.sh`, and a failure in either stops the prune and
+  the digest bump. A failed walk leaves that image in GHCR, because it reads what was pushed. The backend's own build stops on the same identifier before any push. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
 - `make images` to the local registry uses no GHCR storage and is the path in pass 1.
 - Pruning with `GITHUB_TOKEN` has not been run yet, and may need the package's Actions access set to Admin.
+
+Before the repository is made public, in this order:
+
+1. Publish once, then read each package's visibility on its GitHub page: `web`, `admin`, `space`, `backend`. **This has not been observed, because nothing has been pushed.**
+2. Do this before making the repository public, because GitHub's documentation conflicts. One page says a package a workflow creates takes the repository's visibility. Another says a linked package takes the repository's access permissions and not its visibility. So do not assume either way what a package becomes.
+3. Read them again after making the repository public. The same documentation says a package made public cannot be made private again.
 
 Pruning is a precaution, not a response to a known limit. GitHub's Packages billing page lists 500 MB of storage for private
 packages on Free, and also says "Container image storage and bandwidth for the Container registry is currently free", with at
@@ -136,8 +147,9 @@ layers, that is about 415 MiB for one set (nginx counted once).
    nginx configs and Dockerfiles against what `runtime/` derived from them. Read anything it names.
 5. Run `make images`, which is the only place `backend/edit_strings.py` and `runtime/space-deps.mjs` run. Each states exactly
    what it expects, so its failure names the string or package that moved. If upstream has moved past a dependency this replaces, or
-   a release now carries the AGPL header on `email.py`, delete the replacement rather than updating it. `leak-scan` reports new
-   brand strings, usually a line for `codemod/rebrand.mjs`.
+   a release now carries the AGPL header on `email.py`, delete the replacement rather than updating it, and see whether the backend still needs flattening.
+   `leak-scan` reports new brand strings, usually a line for `codemod/rebrand.mjs`. `checks/flatten-config.py` stops here if the new base's
+   config says something the last stage of `runtime/Dockerfile.backend` does not restate, and `checks/layer-check.py` if a layer holds the commercial identifier.
 6. Run `checks/smoke-images.sh` by hand, with `WAYLINE_EXPECT_REF` set to the commit, and `WAYLINE_BASE_CONTROL=yes checks/backend-db.sh`.
    No workflow runs either.
 7. Look at the app: sign-in, sidebar, board, settings, an empty state, god-mode, a public page.

@@ -8,7 +8,10 @@
 //
 //   node --experimental-vm-modules space-deps.mjs apply     Dockerfile.space, as root, with network
 //   node --experimental-vm-modules space-deps.mjs check     Dockerfile.space and checks/smoke-images.sh
-//   node --experimental-vm-modules space-deps.mjs closure   prints what the server can reach, for evidence
+//   node --experimental-vm-modules space-deps.mjs closure   prints what the server can reach in node_modules, for evidence
+//
+// The closure and the load trace see packages in node_modules only. The bundler inlined others into build/server, where
+// nothing imports them: checks/space-regions.mjs lists those.
 //
 // The flag gives this file V8's own parser for the bundle's import statements, in place of a pattern.
 import { execFileSync } from "node:child_process";
@@ -240,7 +243,7 @@ async function check() {
   console.log("\n== What the server bundle imports");
   const found = closure();
   console.log(`${found.required.size} static imports and ${found.dynamic.size} import() or require() of a package, across ${bundleFiles().length} bundle files`);
-  console.log(`${found.packages.length} packages reachable from them and from ${SERVE}`);
+  console.log(`${found.packages.length} packages in node_modules reachable from them and from ${SERVE}`);
   report(found.missing.length === 0, "every import and required dependency resolves", found.missing.join(", "));
   report(reachesRemoved(found).length === 0, "storybook and tinypool are not reachable");
   report(found.mentions === 0, "no bundle file mentions storybook or tinypool", found.mentions ? `${found.mentions} files` : "");
@@ -292,7 +295,7 @@ if (command === "apply") {
   console.log(`# import() or require() of a package with a literal name:`);
   console.log([...found.dynamic].sort().join("\n"));
   console.log(`# of those, not resolvable here: ${found.unresolved.join(", ") || "none"}`);
-  console.log(`# ${found.packages.length} packages reachable, with what first pulled each in:`);
+  console.log(`# ${found.packages.length} packages in node_modules reachable, with what first pulled each in. Code the bundler inlined is not here: checks/space-regions.mjs lists that:`);
   for (const { name, version, via } of found.packages.sort((a, b) => a.name.localeCompare(b.name))) console.log(`${name}@${version}\t${via}`);
   console.log(`# storybook or tinypool among them: ${reachesRemoved(found).length}`);
   console.log(`# bundle files that mention either name: ${found.mentions}`);
