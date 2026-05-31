@@ -1,0 +1,821 @@
+# Every layer blob of the images this platform deploys, walked for the identifier on upstream's commercially licensed
+# files. Tool: the first version of apps/wayline/checks/layer-check.py, written for this run at 03:51 on 2026-11-05. It read
+# each manifest and blob by digest from the registry, checked each against its digest, and read every tar entry in every
+# layer, including entries inside .gz, .tgz, .zip, .whl, .jar and .tar files. Nothing here read the cluster, or ran a
+# container. That version is not in this repository: at 04:23 another agent replaced the file with its own, which reads
+# blobs through oci_read.py and was not used for anything below. Its source is not kept here, so the commands below show what
+# was run, and repeating them today runs the newer script.
+#
+# Which images: for plane-dev and plane-prod-sim, the image lines in gitops/environments/{dev,prod-sim}/manifests.yaml, read
+# before these runs and again at 3a128e4, where prod-sim still names the same plane-backend digest. For the rest of the platform, inventory.tsv in docs/evidence/security/scan-images-20261104T215437Z, which was
+# not rendered again for this run. Docker Hub images were read through mirror.gcr.io. arm64, the platform's architecture,
+# except plane-live, which was also read for amd64.
+#
+# The dates are when each output file was finished. Exit codes are the command's own, read with no pipe. The command
+# printed its output to a file, copied here unchanged.
+
+
+########## Thu Nov  5 03:53:41 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+exit 0
+searching for 27 bytes: LicenseRef-Plane-... on linux/arm64
+
+== docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+read from mirror.gcr.io/makeplane/plane-live
+index, linux/arm64 manifest sha256:93c8e9528194d4ec8e7929cbcbb43b5924298d5431813832b4c06361341d7c52
+config sha256:bc81a4da4256c4d3b9841a335b2264a905bbb7faf008991b1012a899f22148fb: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/15 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 nested opened: clean
+layer  3/15 sha256:e51951d495a7      1.2 MiB     36 entries, 2 nested opened: clean
+layer  4/15 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/15 sha256:1b9c87270887      0.0 MiB     11 entries, 0 nested opened: clean
+layer  6/15 sha256:dc65df7e4976      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/15 sha256:775138835702      2.9 MiB     16 entries, 6 nested opened: clean
+layer  8/15 sha256:21e95f68a206      0.0 MiB     12 entries, 2 nested opened: clean
+layer  9/15 sha256:6469a0b96738      0.0 MiB      8 entries, 0 nested opened: clean
+layer 10/15 sha256:941e27a97e9d      2.3 MiB   1917 entries, 0 nested opened: clean
+layer 11/15 sha256:c0c6ee800f34      0.0 MiB      5 entries, 0 nested opened: clean
+layer 12/15 sha256:9e0ca41bf63a      0.0 MiB     67 entries, 0 nested opened: clean
+layer 13/15 sha256:dbceabc7a5ae    225.1 MiB  98663 entries, 0 nested opened: clean
+layer 14/15 sha256:8e8b2d54a314      0.0 MiB      4 entries, 0 nested opened: clean
+layer 15/15 sha256:a41c07a57264      0.0 MiB     61 entries, 0 nested opened: clean
+
+== Summary
+clean        0 hit(s) docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+
+
+########## Thu Nov  5 04:04:40 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+exit 0
+searching for 27 bytes: LicenseRef-Plane-... on linux/amd64
+
+== docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+read from mirror.gcr.io/makeplane/plane-live
+index, linux/amd64 manifest sha256:a0c5e26c407c517595931fe4c277b9cc2009cd43260874878cb9c42bd509493e
+config sha256:1d331dc65a6496ea1d93b7997bda3550a909aa7533b025b2264a3b68c60ea994: clean
+15 layers
+layer  1/15 sha256:7b229517ed22      3.7 MiB    515 entries, 2 nested opened: clean
+layer  2/15 sha256:8776aa3d2ba7     53.6 MiB   3073 entries, 6 nested opened: clean
+layer  3/15 sha256:7246d4c6a55d      1.2 MiB     36 entries, 2 nested opened: clean
+layer  4/15 sha256:304511616d6a      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/15 sha256:3c2eeb9d8ca5      0.0 MiB     11 entries, 0 nested opened: clean
+layer  6/15 sha256:6da7e9e9c094      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/15 sha256:5a2e11612c17      2.9 MiB     16 entries, 6 nested opened: clean
+layer  8/15 sha256:d763be54a406      0.0 MiB     12 entries, 2 nested opened: clean
+layer  9/15 sha256:b40c58e534ce      0.0 MiB      8 entries, 0 nested opened: clean
+layer 10/15 sha256:e9ccd7657d97      2.3 MiB   1917 entries, 0 nested opened: clean
+layer 11/15 sha256:163c0c0aa80e      0.0 MiB      5 entries, 0 nested opened: clean
+layer 12/15 sha256:5d7f35dd9619      0.0 MiB     67 entries, 0 nested opened: clean
+layer 13/15 sha256:aa22b5db71fb    232.1 MiB  98675 entries, 0 nested opened: clean
+layer 14/15 sha256:81695eb05a47      0.0 MiB      4 entries, 0 nested opened: clean
+layer 15/15 sha256:4ed36a2ea794      0.0 MiB     64 entries, 0 nested opened: clean
+
+== Summary
+clean        0 hit(s) docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+
+
+########## Thu Nov  5 03:58:05 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py <upstream plane-backend, plane-frontend, plane-admin, plane-space, as named by prod-sim>
+exit 1
+searching for 27 bytes: LicenseRef-Plane-... on linux/arm64
+
+== docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+read from mirror.gcr.io/makeplane/plane-backend
+index, linux/arm64 manifest sha256:aca6508cbd816bd1e6f86a04ef8f9603c4ac225e9160dccd337551258e27425d
+config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151: clean
+20 layers
+layer  1/20 sha256:d8ad8cd72600      4.0 MiB    515 entries, 2 nested opened: clean
+layer  2/20 sha256:c746ec0a997c      0.4 MiB   1101 entries, 2 nested opened: clean
+layer  3/20 sha256:c87aa1e804eb     13.2 MiB   1858 entries, 3 nested opened: clean
+layer  4/20 sha256:be1bf212c5ab      0.0 MiB      8 entries, 0 nested opened: clean
+layer  5/20 sha256:f043ea3ac942      7.5 MiB    970 entries, 6 nested opened: clean
+layer  6/20 sha256:c02fb40c743e      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/20 sha256:339c97cee789      1.5 MiB     36 entries, 2 nested opened: clean
+layer  8/20 sha256:4e7b563da78e      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/20 sha256:6015bd0ae1a1      0.0 MiB      6 entries, 0 nested opened: clean
+layer 10/20 sha256:cb75f56cc560      1.7 MiB   1039 entries, 2 nested opened: clean
+layer 11/20 sha256:0cc0f01ded38     75.6 MiB  22997 entries, 844 nested opened: clean
+layer 12/20 sha256:f21a91bde4b7      0.0 MiB      2 entries, 0 nested opened: clean
+layer 13/20 sha256:cd1e248a64dd      0.6 MiB    779 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 13: code/plane/utils/email.py
+layer 14/20 sha256:82afb6fae256      0.0 MiB     24 entries, 0 nested opened: clean
+layer 15/20 sha256:8b5cf9ef44c8      0.0 MiB      2 entries, 0 nested opened: clean
+layer 16/20 sha256:2971492cd252      0.6 MiB     62 entries, 2 nested opened: clean
+layer 17/20 sha256:a944bb63192a      0.0 MiB      7 entries, 0 nested opened: clean
+layer 18/20 sha256:e4e24f985b56      0.0 MiB      3 entries, 0 nested opened: clean
+layer 19/20 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer 20/20 sha256:e1b4054f2054      0.6 MiB    817 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 20: code/plane/utils/email.py
+
+== docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+read from mirror.gcr.io/makeplane/plane-frontend
+index, linux/arm64 manifest sha256:805dca5bad7835d5bf2309ff0e6b7119858d79415ce9a2f9adbfc02dda32bb45
+config sha256:2c3a11800049b192ae50a32e3b56f58963bb642899b1e5966da1858294f17f06: clean
+11 layers
+layer  1/11 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/11 sha256:1408044c7403      1.9 MiB    694 entries, 3 nested opened: clean
+layer  3/11 sha256:7b9d02243238      0.0 MiB      1 entries, 0 nested opened: clean
+layer  4/11 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 nested opened: clean
+layer  5/11 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 nested opened: clean
+layer  6/11 sha256:567a969e0221      0.0 MiB      2 entries, 0 nested opened: clean
+layer  7/11 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/11 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 nested opened: clean
+layer  9/11 sha256:005b91cfac9c      1.0 MiB     28 entries, 2 nested opened: clean
+layer 10/11 sha256:630fca9edd6c      0.0 MiB      3 entries, 0 nested opened: clean
+layer 11/11 sha256:b5ab6226cd6e     17.9 MiB   1108 entries, 0 nested opened: clean
+
+== docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+read from mirror.gcr.io/makeplane/plane-admin
+index, linux/arm64 manifest sha256:ada4ab963500fe100fe663080cdc29edd8f9c4c5eb3661521dc2f112d0550f4b
+config sha256:f55bb9eef35e92cab7a2ae1b275d56b27c2ba9d61fa8182bbfdfd3967ddd0ea2: clean
+11 layers
+layer  1/11 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/11 sha256:1408044c7403      1.9 MiB    694 entries, 3 nested opened: clean
+layer  3/11 sha256:7b9d02243238      0.0 MiB      1 entries, 0 nested opened: clean
+layer  4/11 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 nested opened: clean
+layer  5/11 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 nested opened: clean
+layer  6/11 sha256:567a969e0221      0.0 MiB      2 entries, 0 nested opened: clean
+layer  7/11 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/11 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 nested opened: clean
+layer  9/11 sha256:005b91cfac9c      1.0 MiB     28 entries, 2 nested opened: clean
+layer 10/11 sha256:32def636ea06      0.0 MiB      3 entries, 0 nested opened: clean
+layer 11/11 sha256:1b9496c96dd0      5.2 MiB    103 entries, 0 nested opened: clean
+
+== docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+read from mirror.gcr.io/makeplane/plane-space
+index, linux/arm64 manifest sha256:634fd66e109cbc7369c8a9b664119ed795f45b6c146ea35043ece857b48ea487
+config sha256:f83a2ccc9cc2fe76bdb5ec67933768cb6dd6979630e2845f7bac3b8e801effd5: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/15 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 nested opened: clean
+layer  3/15 sha256:e51951d495a7      1.2 MiB     36 entries, 2 nested opened: clean
+layer  4/15 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/15 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/15 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 nested opened: clean
+layer  7/15 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 nested opened: clean
+layer  8/15 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 nested opened: clean
+layer  9/15 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 nested opened: clean
+layer 10/15 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 nested opened: clean
+layer 11/15 sha256:525d0c743e46      0.0 MiB     68 entries, 0 nested opened: clean
+layer 12/15 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 nested opened: clean
+layer 13/15 sha256:54085b214fd0      0.0 MiB     61 entries, 0 nested opened: clean
+layer 14/15 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer 15/15 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 nested opened: clean
+
+== Summary
+FAIL         2 hit(s) docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+clean        0 hit(s) docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+clean        0 hit(s) docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+clean        0 hit(s) docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+
+
+########## Thu Nov  5 04:10:58 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py <postgres, rabbitmq, silo, valkey, as named by both environments>
+exit 0
+searching for 27 bytes: LicenseRef-Plane-... on linux/arm64
+
+== docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+read from mirror.gcr.io/library/postgres
+index, linux/arm64 manifest sha256:188e422ad801eaf156d9b9e276064d931553a81f4281a18db98752178dbc061d
+config sha256:97593450ca452bcb2df8308c10f6a7770aac951ab40144d77e4cf9ea2702a86e: clean
+11 layers
+layer  1/11 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/11 sha256:86f5a413c8b2      0.0 MiB     10 entries, 0 nested opened: clean
+layer  3/11 sha256:a66ea26a177c      0.8 MiB     29 entries, 2 nested opened: clean
+layer  4/11 sha256:da6a0ed1ca26      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/11 sha256:5682f6ef14a4      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/11 sha256:6859ff75be1b    103.0 MiB   3410 entries, 2 nested opened: clean
+layer  7/11 sha256:2b41502fec1a      0.0 MiB      6 entries, 0 nested opened: clean
+layer  8/11 sha256:a5b991b88e79      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/11 sha256:0206a141c245      0.0 MiB      4 entries, 0 nested opened: clean
+layer 10/11 sha256:931a12d1ac1c      0.0 MiB      5 entries, 0 nested opened: clean
+layer 11/11 sha256:a250724c1be9      0.0 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+read from mirror.gcr.io/library/rabbitmq
+index, linux/arm64 manifest sha256:b4b0031e94add1d722255065f2a769163f33086ebe07d51b3c8c30f01ee7b3d5
+config sha256:128fa025f555260135cadd602acbc454d65b639ee99a29ff1007244f271196af: clean
+10 layers
+layer  1/10 sha256:6b59a28fa201      3.9 MiB    519 entries, 1 nested opened: clean
+layer  2/10 sha256:45dff9670b7d     36.2 MiB    794 entries, 0 nested opened: clean
+layer  3/10 sha256:16e98ed3490c      6.9 MiB    174 entries, 0 nested opened: clean
+layer  4/10 sha256:5d0b40a29120      2.3 MiB    795 entries, 1 nested opened: clean
+layer  5/10 sha256:09667cdddc7b     17.9 MiB   1832 entries, 11 nested opened: clean
+layer  6/10 sha256:43ebc5ecb8ef      0.0 MiB      3 entries, 0 nested opened: clean
+layer  7/10 sha256:8a8aa96570d0      0.0 MiB      1 entries, 0 nested opened: clean
+layer  8/10 sha256:8622cf0e94dc      0.0 MiB      5 entries, 0 nested opened: clean
+layer  9/10 sha256:994671e2c711      0.0 MiB      4 entries, 0 nested opened: clean
+layer 10/10 sha256:33bcc168ef8f     13.1 MiB   1470 entries, 2 nested opened: clean
+
+== docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+read from mirror.gcr.io/pgsty/silo
+index, linux/arm64 manifest sha256:3d923a0d52eb3cbc9d9160418492f7cc5dcba15a4dfd26dcfafc83ab5c13b008
+config sha256:57c8c05d8c2806cdbd8c4d8131e9e316ed3dd6e78c72d5517e344091d19c6275: clean
+15 layers
+layer  1/15 sha256:f7c03e5221c3      0.1 MiB     90 entries, 1 nested opened: clean
+layer  2/15 sha256:990a9c434e5e      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/15 sha256:39dc083afc39      0.4 MiB   1325 entries, 2 nested opened: clean
+layer  4/15 sha256:bf7a4185f015      0.0 MiB     17 entries, 1 nested opened: clean
+layer  5/15 sha256:2780920e5dbf      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/15 sha256:7c12895b777b      0.0 MiB      2 entries, 0 nested opened: clean
+layer  7/15 sha256:3214acf345c0      0.0 MiB      3 entries, 0 nested opened: clean
+layer  8/15 sha256:52630fc75a18      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/15 sha256:dd64bf2dd177      0.0 MiB      1 entries, 0 nested opened: clean
+layer 10/15 sha256:b839dfae01f6      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/15 sha256:dcaa5a89b0cc      0.0 MiB      3 entries, 0 nested opened: clean
+layer 12/15 sha256:4db96f2c7ae9      0.1 MiB     15 entries, 0 nested opened: clean
+layer 13/15 sha256:044e0ec4f527     30.3 MiB      3 entries, 0 nested opened: clean
+layer 14/15 sha256:11699b6af8a1      0.0 MiB      1 entries, 0 nested opened: clean
+layer 15/15 sha256:aac7d49b3914      0.2 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+read from mirror.gcr.io/valkey/valkey
+index, linux/arm64 manifest sha256:68debcd66a8867ade357c4815a3043bb2812236134ea6f65aa2d30287b42fba6
+config sha256:52cd355e2babdbfc78d1bdd90b228476e2d9e5fa236f1e3c068e44884a2d52a0: clean
+7 layers
+layer  1/7 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/7 sha256:b289ffa95040      0.0 MiB      9 entries, 0 nested opened: clean
+layer  3/7 sha256:5a9086798fa5      0.6 MiB    654 entries, 2 nested opened: clean
+layer  4/7 sha256:317735e8f553     11.7 MiB     22 entries, 0 nested opened: clean
+layer  5/7 sha256:741ca52036ba      0.0 MiB      3 entries, 0 nested opened: clean
+layer  6/7 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer  7/7 sha256:eaeccea8ded5      0.0 MiB      4 entries, 0 nested opened: clean
+
+== Summary
+clean        0 hit(s) docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+clean        0 hit(s) docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+clean        0 hit(s) docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+clean        0 hit(s) docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+
+
+########## Thu Nov  5 03:53:51 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+exit 1
+searching for 27 bytes: LicenseRef-Plane-... on linux/arm64
+
+== localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+read from localhost:5001/wayline/backend
+config sha256:784a52fe28f35329926cc36a04e34ce8b9e9c3a243f17f3ba5052768752233e8: clean
+28 layers
+layer  1/28 sha256:d8ad8cd72600      4.0 MiB    515 entries, 2 nested opened: clean
+layer  2/28 sha256:c746ec0a997c      0.4 MiB   1101 entries, 2 nested opened: clean
+layer  3/28 sha256:c87aa1e804eb     13.2 MiB   1858 entries, 3 nested opened: clean
+layer  4/28 sha256:be1bf212c5ab      0.0 MiB      8 entries, 0 nested opened: clean
+layer  5/28 sha256:f043ea3ac942      7.5 MiB    970 entries, 6 nested opened: clean
+layer  6/28 sha256:c02fb40c743e      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/28 sha256:339c97cee789      1.5 MiB     36 entries, 2 nested opened: clean
+layer  8/28 sha256:4e7b563da78e      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/28 sha256:6015bd0ae1a1      0.0 MiB      6 entries, 0 nested opened: clean
+layer 10/28 sha256:cb75f56cc560      1.7 MiB   1039 entries, 2 nested opened: clean
+layer 11/28 sha256:0cc0f01ded38     75.6 MiB  22997 entries, 844 nested opened: clean
+layer 12/28 sha256:f21a91bde4b7      0.0 MiB      2 entries, 0 nested opened: clean
+layer 13/28 sha256:cd1e248a64dd      0.6 MiB    779 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 13: code/plane/utils/email.py
+layer 14/28 sha256:82afb6fae256      0.0 MiB     24 entries, 0 nested opened: clean
+layer 15/28 sha256:8b5cf9ef44c8      0.0 MiB      2 entries, 0 nested opened: clean
+layer 16/28 sha256:2971492cd252      0.6 MiB     62 entries, 2 nested opened: clean
+layer 17/28 sha256:a944bb63192a      0.0 MiB      7 entries, 0 nested opened: clean
+layer 18/28 sha256:e4e24f985b56      0.0 MiB      3 entries, 0 nested opened: clean
+layer 19/28 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer 20/28 sha256:e1b4054f2054      0.6 MiB    817 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 20: code/plane/utils/email.py
+layer 21/28 sha256:c30c2b20e09a      0.0 MiB     21 entries, 0 nested opened: clean
+layer 22/28 sha256:0280be888312      0.0 MiB     10 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 22: opt/wayline/check_image.py
+layer 23/28 sha256:26efa19115c6      0.0 MiB      5 entries, 0 nested opened: clean
+layer 24/28 sha256:6705cf8a8bfe      0.0 MiB      4 entries, 0 nested opened: clean
+layer 25/28 sha256:3ca6d3f91873      0.0 MiB     10 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 25: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 26/28 sha256:6233f2de23d8      0.0 MiB     49 entries, 0 nested opened: clean
+layer 27/28 sha256:682e7cbebc79      0.1 MiB     43 entries, 0 nested opened: clean
+layer 28/28 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+
+== Summary
+FAIL         4 hit(s) localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+
+
+########## Thu Nov  5 03:53:54 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py <wayline web, admin, space at the digests dev names>
+exit 1
+searching for 27 bytes: LicenseRef-Plane-... on linux/arm64
+
+== localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+read from localhost:5001/wayline/web
+config sha256:a8ae131fcdeb3a460ed60c80e2050730efbe44d8f40da7d72a44fee6d0c367a1: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 nested opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 nested opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 nested opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 nested opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 nested opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 nested opened: clean
+layer  9/15 sha256:986092e40873      1.4 MiB    659 entries, 2 nested opened: clean
+layer 10/15 sha256:5df6a65eacc8      0.0 MiB      3 entries, 0 nested opened: clean
+layer 11/15 sha256:faa2add99015     14.2 MiB   1082 entries, 0 nested opened: clean
+layer 12/15 sha256:77aae00b6b18      0.0 MiB     10 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 12: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 13/15 sha256:77af4b3680c8      0.0 MiB     11 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 13: usr/share/nginx/html/licenses/MODIFICATIONS.txt
+layer 14/15 sha256:ac1e7aa5a601      0.0 MiB      3 entries, 0 nested opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 nested opened: clean
+
+== localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+read from localhost:5001/wayline/admin
+config sha256:3122126c200ab7b20e5ee53c60a17c46b179b30edee87e3590a3ca0698f811f8: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 nested opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 nested opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 nested opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 nested opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 nested opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 nested opened: clean
+layer  9/13 sha256:986092e40873      1.4 MiB    659 entries, 2 nested opened: clean
+layer 10/13 sha256:3e83f3be6fb2      0.0 MiB      3 entries, 0 nested opened: clean
+layer 11/13 sha256:478ae191c79f      3.8 MiB     93 entries, 0 nested opened: clean
+layer 12/13 sha256:676bbca0c018      0.0 MiB     10 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 12: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 nested opened: clean
+
+== localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+read from localhost:5001/wayline/space
+config sha256:963cc36c82a51bb767f85669bd37b93283b9380dc97749860c9a3498922ae484: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 nested opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 nested opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 nested opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 nested opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 nested opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 nested opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 nested opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 nested opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 nested opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 nested opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 nested opened: clean
+layer 16/21 sha256:8f1b33a3f76d      0.0 MiB      4 entries, 0 nested opened: clean
+layer 17/21 sha256:d38237518641      8.1 MiB   1130 entries, 0 nested opened: clean
+layer 18/21 sha256:adb2e9690752      0.0 MiB     10 entries, 0 nested opened: 1 HIT(S)
+  HIT layer 18: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 19/21 sha256:ffb3a51350d3      0.0 MiB      3 entries, 0 nested opened: clean
+layer 20/21 sha256:e0d4879e2a77      0.0 MiB    172 entries, 0 nested opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+
+== Summary
+FAIL         2 hit(s) localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+FAIL         1 hit(s) localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+FAIL         1 hit(s) localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+
+
+########## Thu Nov  5 04:24:10 EAT 2026
+$ xargs python3 -B apps/wayline/checks/layer-check.py <the other 26 targets in that inventory; postgres 15, rabbitmq, silo and valkey appear again here>
+exit 0
+searching for 27 bytes: LicenseRef-Plane-... on linux/arm64
+
+== docker.io/grafana/alloy@sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2
+read from mirror.gcr.io/grafana/alloy
+index, linux/arm64 manifest sha256:a79fc55704dfbba85a6119f6f5df31c7f37b541d1c891452b21a5ba55369d98b
+config sha256:09b0cc677f21a0ca268e9fbdf3919d251205c89348d9b8a22adc09df1abeea06: clean
+1 layers
+layer  1/1 sha256:5b8e625a71ba    152.6 MiB    646 entries, 0 nested opened: clean
+
+== docker.io/grafana/grafana:13.3.0-distroless@sha256:540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
+read from mirror.gcr.io/grafana/grafana
+index, linux/arm64 manifest sha256:e25001cb103b735275e69537ffb651b0195c5e972c2087c388cb05914b3e2440
+config sha256:6d42465a7d36d533012aa778d649a1992e6bd3657abe6d24f073fb0c8eb81386: clean
+25 layers
+layer  1/25 sha256:25a9dec50117      0.1 MiB    100 entries, 2 nested opened: clean
+layer  2/25 sha256:5b3013706a46      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/25 sha256:3854676ccb63      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/25 sha256:375dcc3c52da      0.3 MiB    761 entries, 3 nested opened: clean
+layer  5/25 sha256:9d2753d762cc      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/25 sha256:0f8b424aa0b9      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/25 sha256:d557676654e5      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/25 sha256:d82bc7a76a83      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/25 sha256:68e4cd60e60f      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/25 sha256:0783a66ae749      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/25 sha256:efae86a3fb38      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/25 sha256:411e1c946a02      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/25 sha256:0dab866abc12      0.1 MiB     15 entries, 0 nested opened: clean
+layer 14/25 sha256:b3fc4415b59f      0.0 MiB      3 entries, 0 nested opened: clean
+layer 15/25 sha256:7d6ccb56b347      0.0 MiB      2 entries, 0 nested opened: clean
+layer 16/25 sha256:b7faf7316f8f      0.0 MiB      2 entries, 0 nested opened: clean
+layer 17/25 sha256:15b256434bd9      0.0 MiB     11 entries, 0 nested opened: clean
+layer 18/25 sha256:507a898506cf      0.0 MiB      4 entries, 0 nested opened: clean
+layer 19/25 sha256:1fdad53fb3da      0.0 MiB      3 entries, 0 nested opened: clean
+layer 20/25 sha256:7ce26f25a3f4      0.1 MiB     32 entries, 0 nested opened: clean
+layer 21/25 sha256:4b6cbdc9516b      0.0 MiB      4 entries, 0 nested opened: clean
+layer 22/25 sha256:b6761ad81971      0.0 MiB      5 entries, 0 nested opened: clean
+layer 23/25 sha256:312c72958796    266.9 MiB  13920 entries, 0 nested opened: clean
+layer 24/25 sha256:a160fce9589e    165.0 MiB   2325 entries, 0 nested opened: clean
+layer 25/25 sha256:06da073526e3      0.0 MiB      1 entries, 0 nested opened: clean
+
+== docker.io/grafana/loki@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
+read from mirror.gcr.io/grafana/loki
+index, linux/arm64 manifest sha256:1a779c5f714e795ac698b125fc265ae97292f792a91535fa29726073d03d5580
+config sha256:3f691db8cd2f3312fccbe58bfd8e90094d65e3ae13e565034051fb7abd333618: clean
+18 layers
+layer  1/18 sha256:25a9dec50117      0.1 MiB    100 entries, 2 nested opened: clean
+layer  2/18 sha256:5b3013706a46      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/18 sha256:7e7bfd057be8      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/18 sha256:bf8083c5c1ec      0.3 MiB    761 entries, 3 nested opened: clean
+layer  5/18 sha256:9d2753d762cc      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/18 sha256:2780920e5dbf      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/18 sha256:7c12895b777b      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/18 sha256:3214acf345c0      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/18 sha256:52630fc75a18      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/18 sha256:dd64bf2dd177      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/18 sha256:b839dfae01f6      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/18 sha256:411e1c946a02      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/18 sha256:f769d9bdcbc2      0.1 MiB     15 entries, 0 nested opened: clean
+layer 14/18 sha256:93232882e669     40.0 MiB      3 entries, 0 nested opened: clean
+layer 15/18 sha256:dff2bf781b77      0.0 MiB      3 entries, 0 nested opened: clean
+layer 16/18 sha256:deed880b0671      0.0 MiB      3 entries, 0 nested opened: clean
+layer 17/18 sha256:d9bdb73e3867      0.0 MiB      2 entries, 0 nested opened: clean
+layer 18/18 sha256:5258fe27ad15      0.0 MiB      2 entries, 0 nested opened: clean
+
+== docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c
+read from mirror.gcr.io/infisical/infisical
+index, linux/arm64 manifest sha256:24a2ae073b7ff15a00ac807deec0a028a19796af473adc07d4562c29e220f347
+config sha256:8c9480140f05a52c38b4e2bc21fb2649b0ae75c6d043390b746e2fee760d68b2: clean
+16 layers
+layer  1/16 sha256:2b70e040f7d1     28.8 MiB   3266 entries, 0 nested opened: clean
+layer  2/16 sha256:934509cac9a4      0.0 MiB     18 entries, 0 nested opened: clean
+layer  3/16 sha256:92e47369cc45     53.3 MiB   2971 entries, 0 nested opened: clean
+layer  4/16 sha256:a2610ff45f93      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/16 sha256:18ff07974e95      4.0 MiB   3158 entries, 0 nested opened: clean
+layer  6/16 sha256:4ce59d6c048e    163.7 MiB   4193 entries, 3 nested opened: clean
+layer  7/16 sha256:66f87363a200    129.4 MiB     58 entries, 7 nested opened: clean
+layer  8/16 sha256:4dd34bb23f32      0.0 MiB     12 entries, 0 nested opened: clean
+layer  9/16 sha256:0b5b1c030cd6      8.4 MiB    171 entries, 0 nested opened: clean
+layer 10/16 sha256:e245bc4d7258      0.0 MiB      2 entries, 0 nested opened: clean
+layer 11/16 sha256:5c07cb293a21      0.0 MiB      9 entries, 0 nested opened: clean
+layer 12/16 sha256:4e62ca6a4d83      0.1 MiB    303 entries, 0 nested opened: clean
+layer 13/16 sha256:7a7c0cf18011    162.9 MiB  98736 entries, 11 nested opened: clean
+layer 14/16 sha256:7fa7242f5ae4     20.2 MiB   2489 entries, 0 nested opened: clean
+layer 15/16 sha256:66a4bdef7032      0.0 MiB      3 entries, 0 nested opened: clean
+layer 16/16 sha256:bd9ddc54bea9      0.0 MiB      0 entries, 0 nested opened: clean
+
+== docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa
+read from mirror.gcr.io/infisical/kubernetes-operator
+index, linux/arm64 manifest sha256:00b916a665cf55761084ad8094f9cfe5809e7f02d06e46f265732cd85d9d9df2
+config sha256:09c9238ccd08335cff7385e28bcfd4a2d35937cae029fac7f41ce84b7fbb7f83: clean
+14 layers
+layer  1/14 sha256:401d177fd1e8      0.1 MiB    100 entries, 2 nested opened: clean
+layer  2/14 sha256:c172f21841df      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/14 sha256:617b009a71d6      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/14 sha256:a99dd1dd5eaf      0.2 MiB    761 entries, 3 nested opened: clean
+layer  5/14 sha256:d6b1b89eccac      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/14 sha256:2780920e5dbf      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/14 sha256:7c12895b777b      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/14 sha256:3214acf345c0      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/14 sha256:52630fc75a18      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/14 sha256:dd64bf2dd177      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/14 sha256:b839dfae01f6      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/14 sha256:ebddc55facdc      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/14 sha256:5689407c3340      0.1 MiB     15 entries, 0 nested opened: clean
+layer 14/14 sha256:f45c4cf66b1d     29.5 MiB      1 entries, 0 nested opened: clean
+
+== docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+read from mirror.gcr.io/library/postgres
+index, linux/arm64 manifest sha256:188e422ad801eaf156d9b9e276064d931553a81f4281a18db98752178dbc061d
+config sha256:97593450ca452bcb2df8308c10f6a7770aac951ab40144d77e4cf9ea2702a86e: clean
+11 layers
+layer  1/11 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/11 sha256:86f5a413c8b2      0.0 MiB     10 entries, 0 nested opened: clean
+layer  3/11 sha256:a66ea26a177c      0.8 MiB     29 entries, 2 nested opened: clean
+layer  4/11 sha256:da6a0ed1ca26      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/11 sha256:5682f6ef14a4      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/11 sha256:6859ff75be1b    103.0 MiB   3410 entries, 2 nested opened: clean
+layer  7/11 sha256:2b41502fec1a      0.0 MiB      6 entries, 0 nested opened: clean
+layer  8/11 sha256:a5b991b88e79      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/11 sha256:0206a141c245      0.0 MiB      4 entries, 0 nested opened: clean
+layer 10/11 sha256:931a12d1ac1c      0.0 MiB      5 entries, 0 nested opened: clean
+layer 11/11 sha256:a250724c1be9      0.0 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+read from mirror.gcr.io/library/postgres
+index, linux/arm64 manifest sha256:7a8050e52090c5f77effbe7e0cbed4a0587306776c3f26dc99933a63c619eaf1
+config sha256:c54a696c68013b2f8f42f479e00a2b6ad24c5ef10ee31cdfb8972cec3dad7eb7: clean
+11 layers
+layer  1/11 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/11 sha256:12eb05ec409b      0.0 MiB     10 entries, 0 nested opened: clean
+layer  3/11 sha256:4c61df2d098f      0.8 MiB     29 entries, 2 nested opened: clean
+layer  4/11 sha256:c16ec84c7f8a      0.0 MiB      4 entries, 0 nested opened: clean
+layer  5/11 sha256:3159dc2110dd      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/11 sha256:83a0667f02af    103.8 MiB   3445 entries, 2 nested opened: clean
+layer  7/11 sha256:b17bb49abe22      0.0 MiB      6 entries, 0 nested opened: clean
+layer  8/11 sha256:a5b991b88e79      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/11 sha256:4f775f9c8b66      0.0 MiB      4 entries, 0 nested opened: clean
+layer 10/11 sha256:340c083268fd      0.0 MiB      5 entries, 0 nested opened: clean
+layer 11/11 sha256:b42df618ae2f      0.0 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+read from mirror.gcr.io/library/python
+index, linux/arm64 manifest sha256:4dec53ac220d1cca3d31d40d346e4c2cd3540c1d7eb058ed70a3f94934728cf2
+config sha256:2298bf090077b779e1deae4ed13571de60ead50683e4915b31802473a7314a6d: clean
+4 layers
+layer  1/4 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/4 sha256:d2521f7ab0b8      0.4 MiB   1011 entries, 2 nested opened: clean
+layer  3/4 sha256:498b4afca12c     12.2 MiB   1869 entries, 3 nested opened: clean
+layer  4/4 sha256:feed5edfcc54      0.0 MiB      8 entries, 0 nested opened: clean
+
+== docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+read from mirror.gcr.io/library/rabbitmq
+index, linux/arm64 manifest sha256:b4b0031e94add1d722255065f2a769163f33086ebe07d51b3c8c30f01ee7b3d5
+config sha256:128fa025f555260135cadd602acbc454d65b639ee99a29ff1007244f271196af: clean
+10 layers
+layer  1/10 sha256:6b59a28fa201      3.9 MiB    519 entries, 1 nested opened: clean
+layer  2/10 sha256:45dff9670b7d     36.2 MiB    794 entries, 0 nested opened: clean
+layer  3/10 sha256:16e98ed3490c      6.9 MiB    174 entries, 0 nested opened: clean
+layer  4/10 sha256:5d0b40a29120      2.3 MiB    795 entries, 1 nested opened: clean
+layer  5/10 sha256:09667cdddc7b     17.9 MiB   1832 entries, 11 nested opened: clean
+layer  6/10 sha256:43ebc5ecb8ef      0.0 MiB      3 entries, 0 nested opened: clean
+layer  7/10 sha256:8a8aa96570d0      0.0 MiB      1 entries, 0 nested opened: clean
+layer  8/10 sha256:8622cf0e94dc      0.0 MiB      5 entries, 0 nested opened: clean
+layer  9/10 sha256:994671e2c711      0.0 MiB      4 entries, 0 nested opened: clean
+layer 10/10 sha256:33bcc168ef8f     13.1 MiB   1470 entries, 2 nested opened: clean
+
+== docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84
+read from mirror.gcr.io/library/redis
+index, linux/arm64 manifest sha256:65ccbadf2615449c8e89c1b8108e1e697fc186c71f892cdd573762d226816dec
+config sha256:4683386011b063c80d98ccc0bf1a3ccbbec15d875f97ff15dbdb9e569b30ba8f: clean
+7 layers
+layer  1/7 sha256:7d46ac86a55c      3.8 MiB    520 entries, 1 nested opened: clean
+layer  2/7 sha256:a033cd1240e2      0.0 MiB      9 entries, 0 nested opened: clean
+layer  3/7 sha256:4918c7f44bed      0.2 MiB    642 entries, 1 nested opened: clean
+layer  4/7 sha256:07a0189528bd     11.6 MiB    112 entries, 1 nested opened: clean
+layer  5/7 sha256:8988c5ba9172      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/7 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer  7/7 sha256:614cdbb73d50      0.0 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+read from mirror.gcr.io/library/redis
+index, linux/arm64 manifest sha256:8767d84b0adc89c37a352a17372a5e97bf21bb723890e244c212bb44b9f11177
+config sha256:bc7388e40963525ee0eeef0b4514ae5d097104c024598b5b660003ed092b01fc: clean
+7 layers
+layer  1/7 sha256:14a4754c352f      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/7 sha256:3f7d0b9cf11b      0.0 MiB      9 entries, 0 nested opened: clean
+layer  3/7 sha256:01dc46655aa1      0.2 MiB    646 entries, 2 nested opened: clean
+layer  4/7 sha256:b142fd5f5378     28.6 MiB    144 entries, 2 nested opened: clean
+layer  5/7 sha256:9d097fdb69cd      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/7 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer  7/7 sha256:50a003967af9      0.0 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+read from mirror.gcr.io/oliver006/redis_exporter
+index, linux/arm64 manifest sha256:a5324985e2e4fa853e15b8b4170885ed144cd86637afa765ddaff047f7fa1da1
+config sha256:04ee0acc8f54d7ca8b319665e7e450aaafb3419316d5030b6b1274b34facdfe1: clean
+3 layers
+layer  1/3 sha256:33c466404ab2      3.8 MiB      1 entries, 0 nested opened: clean
+layer  2/3 sha256:3020d87a57f5      0.1 MiB    240 entries, 0 nested opened: clean
+layer  3/3 sha256:433c60f8041f      0.0 MiB      2 entries, 0 nested opened: clean
+
+== docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+read from mirror.gcr.io/pgsty/silo
+index, linux/arm64 manifest sha256:3d923a0d52eb3cbc9d9160418492f7cc5dcba15a4dfd26dcfafc83ab5c13b008
+config sha256:57c8c05d8c2806cdbd8c4d8131e9e316ed3dd6e78c72d5517e344091d19c6275: clean
+15 layers
+layer  1/15 sha256:f7c03e5221c3      0.1 MiB     90 entries, 1 nested opened: clean
+layer  2/15 sha256:990a9c434e5e      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/15 sha256:39dc083afc39      0.4 MiB   1325 entries, 2 nested opened: clean
+layer  4/15 sha256:bf7a4185f015      0.0 MiB     17 entries, 1 nested opened: clean
+layer  5/15 sha256:2780920e5dbf      0.0 MiB      1 entries, 0 nested opened: clean
+layer  6/15 sha256:7c12895b777b      0.0 MiB      2 entries, 0 nested opened: clean
+layer  7/15 sha256:3214acf345c0      0.0 MiB      3 entries, 0 nested opened: clean
+layer  8/15 sha256:52630fc75a18      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/15 sha256:dd64bf2dd177      0.0 MiB      1 entries, 0 nested opened: clean
+layer 10/15 sha256:b839dfae01f6      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/15 sha256:dcaa5a89b0cc      0.0 MiB      3 entries, 0 nested opened: clean
+layer 12/15 sha256:4db96f2c7ae9      0.1 MiB     15 entries, 0 nested opened: clean
+layer 13/15 sha256:044e0ec4f527     30.3 MiB      3 entries, 0 nested opened: clean
+layer 14/15 sha256:11699b6af8a1      0.0 MiB      1 entries, 0 nested opened: clean
+layer 15/15 sha256:aac7d49b3914      0.2 MiB      4 entries, 0 nested opened: clean
+
+== docker.io/traefik@sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748
+read from mirror.gcr.io/library/traefik
+index, linux/arm64 manifest sha256:bde69ad80e54ac1acc94097a7327ab95e953139feedc96dbd75fc6c281d3ee7c
+config sha256:54e1a2de4e1a514d1270ee9b937a1fe94a262a34eb312af48c4fcd3536b07568: clean
+4 layers
+layer  1/4 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/4 sha256:ada4774d3e83      0.4 MiB   1011 entries, 2 nested opened: clean
+layer  3/4 sha256:4dea59ef9761     43.2 MiB      4 entries, 0 nested opened: clean
+layer  4/4 sha256:1eb0b8b07050      0.0 MiB      1 entries, 0 nested opened: clean
+
+== docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+read from mirror.gcr.io/valkey/valkey
+index, linux/arm64 manifest sha256:68debcd66a8867ade357c4815a3043bb2812236134ea6f65aa2d30287b42fba6
+config sha256:52cd355e2babdbfc78d1bdd90b228476e2d9e5fa236f1e3c068e44884a2d52a0: clean
+7 layers
+layer  1/7 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/7 sha256:b289ffa95040      0.0 MiB      9 entries, 0 nested opened: clean
+layer  3/7 sha256:5a9086798fa5      0.6 MiB    654 entries, 2 nested opened: clean
+layer  4/7 sha256:317735e8f553     11.7 MiB     22 entries, 0 nested opened: clean
+layer  5/7 sha256:741ca52036ba      0.0 MiB      3 entries, 0 nested opened: clean
+layer  6/7 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer  7/7 sha256:eaeccea8ded5      0.0 MiB      4 entries, 0 nested opened: clean
+
+== quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+read from quay.io/argoproj/argocd
+index, linux/arm64 manifest sha256:d858fe2b772874df58672a82e82137b53a59a80f5bf7e8b1b0f8a0f29eccb7dd
+config sha256:160654a6cb0cd2d32ddb4602c566f503ba4f3ac59cc09a768e60d0dada6549aa: clean
+16 layers
+layer  1/16 sha256:2113f8d7eb32     38.8 MiB   6588 entries, 81 nested opened: clean
+layer  2/16 sha256:4a7720058461      0.0 MiB      2 entries, 0 nested opened: clean
+layer  3/16 sha256:47d45f57f708     54.3 MiB   8853 entries, 8 nested opened: clean
+layer  4/16 sha256:d53857a5e4c7      0.0 MiB      6 entries, 0 nested opened: clean
+layer  5/16 sha256:bf2c7efc0aa9     17.2 MiB      4 entries, 0 nested opened: clean
+layer  6/16 sha256:4a3d93f11b49      4.6 MiB      4 entries, 0 nested opened: clean
+layer  7/16 sha256:41a86b4dd5b9      4.6 MiB      4 entries, 0 nested opened: clean
+layer  8/16 sha256:99da402d18ac      0.0 MiB      2 entries, 0 nested opened: clean
+layer  9/16 sha256:31767a9ee10b      0.0 MiB      4 entries, 0 nested opened: clean
+layer 10/16 sha256:e09a4cf9072e      0.0 MiB      3 entries, 0 nested opened: clean
+layer 11/16 sha256:259a441e465f      0.0 MiB      7 entries, 0 nested opened: clean
+layer 12/16 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer 13/16 sha256:b31db2b20532      0.0 MiB      6 entries, 0 nested opened: clean
+layer 14/16 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+layer 15/16 sha256:8363f4d0dd68     82.0 MiB      4 entries, 0 nested opened: clean
+layer 16/16 sha256:fb7d0b23988c      0.0 MiB     12 entries, 0 nested opened: clean
+
+== quay.io/kiwigrid/k8s-sidecar:2.14.3@sha256:52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
+read from quay.io/kiwigrid/k8s-sidecar
+index, linux/arm64 manifest sha256:074cd8e08e7501ef2d7de8d1c01f4a013b8f2f6cc7d91bbafbbbef38a65f5227
+config sha256:da65a54cac5eec38d24f44f0a98ee54ae958beaa0b9745c61bb116150c52ae44: clean
+7 layers
+layer  1/7 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 nested opened: clean
+layer  2/7 sha256:2c448cb00407      0.4 MiB   1011 entries, 2 nested opened: clean
+layer  3/7 sha256:8538930762d9     13.0 MiB   1924 entries, 3 nested opened: clean
+layer  4/7 sha256:642973a33012      0.0 MiB      8 entries, 0 nested opened: clean
+layer  5/7 sha256:6e99c86f5f85      0.0 MiB     12 entries, 2 nested opened: clean
+layer  6/7 sha256:37b590346c4d      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/7 sha256:8575cbaa6831      8.5 MiB   3792 entries, 0 nested opened: clean
+
+== quay.io/prometheus-operator/prometheus-config-reloader:v0.94.2@sha256:a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+read from quay.io/prometheus-operator/prometheus-config-reloader
+index, linux/arm64 manifest sha256:c1009676d379f0036c61f4d942fd3a7154c54bcd0b3352482fe37e21d69b5f09
+config sha256:9573fe4de354bd31b160e746ec468429dc4e6bd93419886630a9e758f8881708: clean
+3 layers
+layer  1/3 sha256:edf6c6b1320f      0.8 MiB    436 entries, 0 nested opened: clean
+layer  2/3 sha256:3a02e730f394      0.3 MiB    519 entries, 0 nested opened: clean
+layer  3/3 sha256:e1467983f8f5     11.6 MiB      2 entries, 0 nested opened: clean
+
+== quay.io/prometheus-operator/prometheus-operator:v0.94.2@sha256:c7edf0379b7271ef1705dce258d2bb73820e299cc95559369e9f6fc3321639ec
+read from quay.io/prometheus-operator/prometheus-operator
+index, linux/arm64 manifest sha256:7920559d2184e444ae90c3e616567f8d8c355b6704121c9da3bac7701ca27b7e
+config sha256:040dd6e915a7b7fda4784c6057eba82ce7fc4f2b8251ef8dc5e58fe1fe983554: clean
+3 layers
+layer  1/3 sha256:edf6c6b1320f      0.8 MiB    436 entries, 0 nested opened: clean
+layer  2/3 sha256:3a02e730f394      0.3 MiB    519 entries, 0 nested opened: clean
+layer  3/3 sha256:c37da5969186     18.4 MiB      2 entries, 0 nested opened: clean
+
+== quay.io/prometheus/alertmanager:v0.34.2@sha256:39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b
+read from quay.io/prometheus/alertmanager
+index, linux/arm64 manifest sha256:6d6e6783829a3bce34d010e71e752426bc9cf345726a7c48fa00dfb5e3292a68
+config sha256:fe6f88e15243771d5094cd5ce2c5ccc3b095a28f52f7fbffd9e7c868ebde939a: clean
+7 layers
+layer  1/7 sha256:edf6c6b1320f      0.8 MiB    436 entries, 0 nested opened: clean
+layer  2/7 sha256:3a02e730f394      0.3 MiB    519 entries, 0 nested opened: clean
+layer  3/7 sha256:ecdbbafe25f4     13.2 MiB      2 entries, 0 nested opened: clean
+layer  4/7 sha256:2f264b40941b     21.7 MiB      2 entries, 0 nested opened: clean
+layer  5/7 sha256:1da89713c0e1      0.0 MiB      3 entries, 0 nested opened: clean
+layer  6/7 sha256:9c1b12986e3f      0.0 MiB      6 entries, 0 nested opened: clean
+layer  7/7 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 nested opened: clean
+
+== quay.io/prometheus/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13
+read from quay.io/prometheus/blackbox-exporter
+index, linux/arm64 manifest sha256:bcc3bd71004dcca622fcff5330b36b6c126fc0779145e92b3209c84ce8939a57
+config sha256:608fb26fe6fc7e2efd7ca06dc6ddae147b49d5c086db658421e8031fb3ed9702: clean
+4 layers
+layer  1/4 sha256:edf6c6b1320f      0.8 MiB    436 entries, 0 nested opened: clean
+layer  2/4 sha256:3a02e730f394      0.3 MiB    519 entries, 0 nested opened: clean
+layer  3/4 sha256:788288fa2a26     15.7 MiB      2 entries, 0 nested opened: clean
+layer  4/4 sha256:e609741b1e97      0.0 MiB      3 entries, 0 nested opened: clean
+
+== quay.io/prometheus/node-exporter:v1.12.1-distroless@sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+read from quay.io/prometheus/node-exporter
+index, linux/arm64 manifest sha256:3202bd3924680726befa39b0dc7bc869acfed6ef07af0cd8753b9b870c8cbed0
+config sha256:8e601292667cad0bf167f00a8b4af34260ec3b0940f292c4d6d8c3205a42756a: clean
+15 layers
+layer  1/15 sha256:a2b06b8fe6c0      0.1 MiB     91 entries, 2 nested opened: clean
+layer  2/15 sha256:5b3013706a46      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/15 sha256:8029962f461f      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/15 sha256:9cd8e28f1c22      0.3 MiB    761 entries, 3 nested opened: clean
+layer  5/15 sha256:9d2753d762cc      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/15 sha256:0f8b424aa0b9      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/15 sha256:d557676654e5      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/15 sha256:d82bc7a76a83      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/15 sha256:68e4cd60e60f      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/15 sha256:0783a66ae749      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/15 sha256:efae86a3fb38      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/15 sha256:411e1c946a02      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/15 sha256:77964957095d      0.1 MiB      9 entries, 0 nested opened: clean
+layer 14/15 sha256:61a2ffbba4c0      0.0 MiB      2 entries, 0 nested opened: clean
+layer 15/15 sha256:e27b165a6242     10.8 MiB      3 entries, 0 nested opened: clean
+
+== quay.io/prometheus/prometheus:v3.15.1-distroless@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934
+read from quay.io/prometheus/prometheus
+index, linux/arm64 manifest sha256:301ceaae07c3eaa1748c0adfac7a86fb6b3da2c86e48bde16397ae184164b89d
+config sha256:7fead31c863f3dfa52bab2277145b162d3c6d1cc09314ae5feb29edc422a0a35: clean
+18 layers
+layer  1/18 sha256:25a9dec50117      0.1 MiB    100 entries, 2 nested opened: clean
+layer  2/18 sha256:5b3013706a46      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/18 sha256:7e7bfd057be8      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/18 sha256:bf8083c5c1ec      0.3 MiB    761 entries, 3 nested opened: clean
+layer  5/18 sha256:9d2753d762cc      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/18 sha256:0f8b424aa0b9      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/18 sha256:d557676654e5      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/18 sha256:d82bc7a76a83      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/18 sha256:68e4cd60e60f      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/18 sha256:0783a66ae749      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/18 sha256:efae86a3fb38      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/18 sha256:411e1c946a02      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/18 sha256:f769d9bdcbc2      0.1 MiB     15 entries, 0 nested opened: clean
+layer 14/18 sha256:e1a78dfdd933      0.0 MiB      3 entries, 0 nested opened: clean
+layer 15/18 sha256:39b7e444de08      0.0 MiB      2 entries, 0 nested opened: clean
+layer 16/18 sha256:5f46835125fb     54.4 MiB      3 entries, 0 nested opened: clean
+layer 17/18 sha256:107e656a916d     44.5 MiB      3 entries, 0 nested opened: clean
+layer 18/18 sha256:cc81033e1897      0.0 MiB      1 entries, 0 nested opened: clean
+
+== quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+read from quay.io/prometheuscommunity/postgres-exporter
+index, linux/arm64 manifest sha256:6a3af65923aab6a73a4030724a75f6ba3fda3b437ca514274efea4593638ab7e
+config sha256:d991414f980c03f4bdb5b79e6c83b37aea682c5842bd84091ba7cf2e3689b74a: clean
+3 layers
+layer  1/3 sha256:7a21057f59f5      0.8 MiB    436 entries, 0 nested opened: clean
+layer  2/3 sha256:905e8aa01b13      0.3 MiB    519 entries, 0 nested opened: clean
+layer  3/3 sha256:a3343da398ac      9.3 MiB      2 entries, 0 nested opened: clean
+
+== registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0@sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b
+read from registry.k8s.io/kube-state-metrics/kube-state-metrics
+index, linux/arm64 manifest sha256:92b46557c71ecac53825772e4827dbcd9fca876b1950060f8fb2f2ef0d7a27af
+config sha256:4958a04e95bf9d38669390cd7a338fdafac47467ec655e476649a910eefa539e: clean
+14 layers
+layer  1/14 sha256:7e92c448ce8a      0.1 MiB     91 entries, 2 nested opened: clean
+layer  2/14 sha256:c172f21841df      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/14 sha256:99515e7b4d35      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/14 sha256:99ba982a9142      0.2 MiB    761 entries, 3 nested opened: clean
+layer  5/14 sha256:d6b1b89eccac      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/14 sha256:2780920e5dbf      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/14 sha256:7c12895b777b      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/14 sha256:3214acf345c0      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/14 sha256:52630fc75a18      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/14 sha256:dd64bf2dd177      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/14 sha256:b839dfae01f6      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/14 sha256:ebddc55facdc      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/14 sha256:bdfd7f7e5bf6      0.1 MiB      9 entries, 0 nested opened: clean
+layer 14/14 sha256:884aed1a4ff4     15.7 MiB      1 entries, 0 nested opened: clean
+
+== registry.k8s.io/metrics-server/metrics-server:v0.9.1@sha256:9b0ba1926e1d3089673f45461c3c1416109dea33b3ba3434048defd380df329b
+read from registry.k8s.io/metrics-server/metrics-server
+index, linux/arm64 manifest sha256:4d400733c584c16d8208f565572e33114f3b8149bb6eb36d4712406be6065944
+config sha256:9edf12f63afce0e3096abea21c17d02c8121c8af1cd08d52f97f927898b8d418: clean
+14 layers
+layer  1/14 sha256:401d177fd1e8      0.1 MiB    100 entries, 2 nested opened: clean
+layer  2/14 sha256:c172f21841df      0.0 MiB     17 entries, 1 nested opened: clean
+layer  3/14 sha256:617b009a71d6      0.3 MiB    528 entries, 3 nested opened: clean
+layer  4/14 sha256:a99dd1dd5eaf      0.2 MiB    761 entries, 3 nested opened: clean
+layer  5/14 sha256:d6b1b89eccac      0.0 MiB     17 entries, 1 nested opened: clean
+layer  6/14 sha256:2780920e5dbf      0.0 MiB      1 entries, 0 nested opened: clean
+layer  7/14 sha256:7c12895b777b      0.0 MiB      2 entries, 0 nested opened: clean
+layer  8/14 sha256:3214acf345c0      0.0 MiB      3 entries, 0 nested opened: clean
+layer  9/14 sha256:52630fc75a18      0.0 MiB      2 entries, 0 nested opened: clean
+layer 10/14 sha256:dd64bf2dd177      0.0 MiB      1 entries, 0 nested opened: clean
+layer 11/14 sha256:b839dfae01f6      0.0 MiB      1 entries, 0 nested opened: clean
+layer 12/14 sha256:ebddc55facdc      0.0 MiB      3 entries, 0 nested opened: clean
+layer 13/14 sha256:ec1b04bf2eb2      0.1 MiB     15 entries, 0 nested opened: clean
+layer 14/14 sha256:adeef91cd99b     19.4 MiB      1 entries, 0 nested opened: clean
+
+== Summary
+clean        0 hit(s) docker.io/grafana/alloy@sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2
+clean        0 hit(s) docker.io/grafana/grafana:13.3.0-distroless@sha256:540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
+clean        0 hit(s) docker.io/grafana/loki@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
+clean        0 hit(s) docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c
+clean        0 hit(s) docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa
+clean        0 hit(s) docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+clean        0 hit(s) docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+clean        0 hit(s) docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+clean        0 hit(s) docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+clean        0 hit(s) docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84
+clean        0 hit(s) docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+clean        0 hit(s) docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+clean        0 hit(s) docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+clean        0 hit(s) docker.io/traefik@sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748
+clean        0 hit(s) docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+clean        0 hit(s) quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+clean        0 hit(s) quay.io/kiwigrid/k8s-sidecar:2.14.3@sha256:52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
+clean        0 hit(s) quay.io/prometheus-operator/prometheus-config-reloader:v0.94.2@sha256:a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+clean        0 hit(s) quay.io/prometheus-operator/prometheus-operator:v0.94.2@sha256:c7edf0379b7271ef1705dce258d2bb73820e299cc95559369e9f6fc3321639ec
+clean        0 hit(s) quay.io/prometheus/alertmanager:v0.34.2@sha256:39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b
+clean        0 hit(s) quay.io/prometheus/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13
+clean        0 hit(s) quay.io/prometheus/node-exporter:v1.12.1-distroless@sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+clean        0 hit(s) quay.io/prometheus/prometheus:v3.15.1-distroless@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934
+clean        0 hit(s) quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+clean        0 hit(s) registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0@sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b
+clean        0 hit(s) registry.k8s.io/metrics-server/metrics-server:v0.9.1@sha256:9b0ba1926e1d3089673f45461c3c1416109dea33b3ba3434048defd380df329b
