@@ -4,24 +4,24 @@
 
 Wayline is a customized deployment of open-source Plane Community Edition v1.4.3. It is not an original product. Plane is copyright Plane Software, Inc. and contributors, and licensed under AGPL-3.0-only. This page records what that means here, what is done, and what is not done.
 
-Written 2026-11-04, and reconciled on 2026-11-05 against `apps/wayline/` as committed then. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes.
+Written 2026-11-04, and reconciled on 2026-11-05 against `apps/wayline/` as committed then and the first real browser session on the branded images. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes.
 
-Two kinds of proof are kept apart below. **Built output verified** means it was checked in the build output or by running the image (`docs/evidence/branding/`). **Runtime unverified** means nothing has yet checked it on the deployed platform, and it carries a `VERIFY` marker.
+Two kinds of proof are kept apart below. **Built output verified** means it was checked in the build output or by running the image (`docs/evidence/branding/`). **Seen on `plane-dev`** means it was checked on the deployed platform on 2026-11-05 ([the browser session](evidence/branding/live-dev/README.md)). What neither has checked carries a `VERIFY` marker.
 
 ## Status at a glance
 
 | Item | State on 2026-11-05 |
 |---|---|
 | Modified Plane code in this repository | Committed: `apps/wayline/` holds the upstream pin, overlay, patches, codemod, runtime and checks. Images build from it |
-| Images in the rendered manifests | Unmodified upstream `docker.io/makeplane/*` by digest (`helm/plane/overlays/*/kustomization.yaml`), on 2026-11-05. The branded images exist in the local registry and are not deployed. [[VERIFY: at promotion, update this row]] |
+| Images in the rendered manifests | `plane-dev` runs the four branded images by digest from `localhost:5001/wayline`, built from `1563cbf` and promoted at `4f622e3`, with upstream's `live` image unmodified. `plane-prod-sim` still runs unmodified upstream `docker.io/makeplane/*` by digest (`helm/plane/overlays/*/kustomization.yaml`). [[VERIFY: at promotion, update this row]] |
 | Who can reach the deployment | The owner, on loopback only (`127.0.0.1:80`, `:443`) |
-| `/source` offer | Built output verified: each web image answers it with a 302 to the commit that built it. **Dead today**, because the repository is private and that commit may not be pushed |
+| `/source` offer | Built output verified, and seen on `plane-dev`: the web image answers it with a 302 to the commit that built it. **Dead today**: that target answers 404, because the repository is private and that commit is not pushed |
 | Repository visibility | **Private** (`BereketAbera/plane-platform`). Anonymous requests get 404 (checked 2026-11-05) |
 | `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` at this repository's root | Present. `LICENSE` and `COPYRIGHT.txt` are upstream's text, byte-identical |
-| Licence texts in images | Built output verified: every image has them at `/usr/share/licenses/wayline/`, and the web image serves them at `/licenses/` |
-| Conveying to others | None known. `images.yml` will not push to GHCR until D12 is decided |
+| Licence texts in images | Built output verified: every image has them at `/usr/share/licenses/wayline/`. Seen on `plane-dev`: the web image serves them at `/licenses/` |
+| Conveying to others | None known. Nothing has been pushed to GHCR, because `images.yml` has never run with `apps/wayline`. When it does, D12 allows one destination: private GHCR packages under the owner's account. `publish-gate.sh` refuses any other prefix, and the workflow also requires the repository to be private |
 
-Contract section 5 states the end state: branded images at `localhost:5001/wayline/{web,admin,space,backend}`. Those are modified versions, so everything below applies once they run.
+Contract section 5 states the end state: branded images at `localhost:5001/wayline/{web,admin,space,backend}`. Those are modified versions, and `plane-dev` runs them, so everything below applies now.
 
 ## The licence
 
@@ -46,7 +46,7 @@ The author's reading, to confirm with counsel:
 |---|---|
 | Unmodified upstream images configured through env vars, Helm values, ingress, and NetworkPolicies | Probably not, since it is triggered by modifying the Program. Configuration is unlikely to be modification |
 | Patched or derived images, including frontend bundles rebuilt from patched source and a derived backend image | Yes |
-| Modified version reached only by the owner on loopback | No other users exist to offer it to, so it has no practical effect. The offer is still built, so the design can be tested before Pass 2 |
+| Modified version reached only by the owner on loopback | This is the state today. No other users exist to offer it to, so it has no practical effect. The offer is still built, so the design can be tested before Pass 2 |
 | Modified version reached by anyone else, including a tester or a colleague | **Yes. The offer must work for them** |
 
 Sitting behind a proxy or Cloudflare probably does not change the analysis. The FSF FAQ has an entry on this (`#AGPLProxy`, cited in `plane-branding.md`), and counsel should read it.
@@ -67,18 +67,18 @@ Existing upstream GitHub links in the UI, such as `star-us-link.tsx`, point to u
 
 ### The `/source` offer on each surface
 
-A small "Source code" link, in places that already hold version or footer information. It targets `/source`, an nginx `return 302` in the web runtime image, resolved at image build time to the commit that built the client. Built output verified means the link is in the built bundle and the image answers the redirect. Runtime unverified means no one has clicked it on the deployed platform.
+A small "Source code" link, in places that already hold version or footer information. It targets `/source`, an nginx `return 302` in the web runtime image, resolved at image build time to the commit that built the client. Built output verified means the link is in the built bundle and the image answers the redirect. Nobody has yet followed it to working source on the deployed platform, because of [the private repository](#the-private-repository-caveat).
 
 | Audience | Surface | Where | Built output | Runtime |
 |---|---|---|---|---|
 | Signed-in users | Help menu, above the version line | `patches/30-surfaces.patch`, `help-section/root.tsx` | Verified, and rendered against a stub API | [[VERIFY: source link is visible in the help menu when signed in]] |
-| Before sign-in | Auth footer, replacing the customer logo strip | `patches/20-auth.patch`, `auth-screens/footer.tsx` | Verified, and rendered | [[VERIFY: source link is visible on the sign-in page]] |
-| God-mode admins | Help section, and admin sign-in | `patches/40-admin.patch`, `overlay/.../(home)/auth-split.tsx` | Verified, and rendered at sign-in | [[VERIFY: source link is visible in god-mode and on its sign-in page]] |
-| Anonymous public pages | Corner badge, repurposed | `patches/50-space.patch`, `powered-by.tsx` | Verified | [[VERIFY: source link is visible on a public space page]] |
+| Before sign-in | Auth footer, replacing the customer logo strip | `patches/20-auth.patch`, `auth-screens/footer.tsx` | Verified, and rendered | Seen on `plane-dev` ([screenshot](evidence/branding/live-dev/01-sign-in-dark.jpg)) |
+| God-mode admins | Help section, and admin sign-in | `patches/40-admin.patch`, `overlay/.../(home)/auth-split.tsx` | Verified, and rendered at sign-in | Admin sign-in seen on `plane-dev` ([screenshot](evidence/branding/live-dev/07-admin-sign-in.jpg)). The help section inside god-mode was not opened. [[VERIFY: source link is visible in god-mode and on its sign-in page]] |
+| Anonymous public pages | Corner badge, repurposed | `patches/50-space.patch`, `powered-by.tsx` | Verified | Seen on `/spaces/` on `plane-dev` ([screenshot](evidence/branding/live-dev/09-public-space.jpg)). A published board with real content was not opened |
 | API clients, optional | `Link: <url>; rel="source"` at ingress | Traefik middleware | Not built | [[VERIFY: decide on and test the API source header]] |
-| The route itself | `/source` | `runtime/nginx-web.conf` | Verified by `checks/smoke-images.sh`: 302 to `<repo>/tree/<commit>` | [[VERIFY: /source returns a redirect to the exact deployed commit, from a logged-out browser]] |
+| The route itself | `/source` | `runtime/nginx-web.conf` | Verified by `checks/smoke-images.sh`: 302 to `<repo>/tree/<commit>` | Seen on `plane-dev`: `curl -I` with no session answers 302 to the tree at `1563cbf`, the commit that built the deployed image ([record](evidence/branding/live-dev/README.md)) |
 
-The `/source` path and the Plane routing need to coexist. `source` is a reserved workspace slug in both the frontend and backend lists, and no router link may point at `/source` (`checks/source-links.mjs`). [[VERIFY: Traefik routes /source to the web container in the rendered IngressRoute]]
+The `/source` path and the Plane routing coexist. `source` is a reserved workspace slug in both the frontend and backend lists, and no router link may point at `/source` (`checks/source-links.mjs`). Traefik routes it to the web container: that 302 comes from the branded image, where upstream's image answered 200 with the app's page ([plane-dev-branded-images-1.txt](evidence/runs/plane-dev-branded-images-1.txt)).
 
 ### The private repository caveat
 
@@ -98,7 +98,7 @@ Section 5 applies when modified source is conveyed, and sections 4 to 6 cover co
 | Event | Conveying? | Consequence |
 |---|---|---|
 | Pushing to the local registry | No | |
-| Pushing a modified image to private GHCR with only the owner's access | Probably not. Confirm | `images.yml` would do this on `main`, and is gated on D12 until the owner decides |
+| Pushing a modified image to private GHCR with only the owner's access | Probably not. Confirm | `images.yml` does this on `main`, and is the one destination D12 allows. It has never run with `apps/wayline`, so nothing has been pushed, and GHCR's visibility for a workflow's first package has not been seen |
 | Pushing a modified image to public GHCR | Yes | Section 5 notices, section 6 source |
 | Making this repository public once it holds patches | Yes | Section 5 notices |
 | Handing an image or tarball to anyone | Yes | Same |
@@ -200,9 +200,9 @@ What this platform does:
 
 | Control | Where | State |
 |---|---|---|
-| Create the admin with `is_telemetry_enabled=False`, then check it | `tests/e2e/smoke.py:531-553` | Script exists. [[VERIFY: instance API reports telemetry off after smoke setup in both environments]] |
-| Deny the egress | `gitops/platform/network-policies/plane-{dev,prod-sim}.yaml` (no internet route) | Policy exists. [[VERIFY: matrix rows from api and worker to telemetry.plane.so are denied at runtime]] |
-| A branded default of off | `apps/wayline/patches/40-admin.patch`, `backend/edit_strings.py` | Built output verified: the setup form starts unticked with no `\|\| true`, and instance registration writes false. [[VERIFY: an admin created through the UI on the deployed instance has telemetry off]] |
+| Create the admin with `is_telemetry_enabled=False`, then check it | `step_instance_setup` in `tests/e2e/smoke.py` | PASS: the instance API read telemetry off when each admin was created, on upstream images, in [dev](evidence/runs/smoke-dev-20261104T221730Z.json) and [prod-sim](evidence/runs/smoke-prod-sim-20261104T231359Z.json) |
+| Deny the egress | `gitops/platform/network-policies/plane-{dev,prod-sim}.yaml` (no internet route) | PASS: rows from api and worker to `telemetry.plane.so` time out in [dev](evidence/runs/netpol-20261104T232752Z.tsv) and [prod-sim](evidence/runs/netpol-20261104T233304Z.tsv) |
+| A branded default of off | `apps/wayline/patches/40-admin.patch`, `backend/edit_strings.py` | Built output verified: the setup form starts unticked with no `\|\| true`, and instance registration writes false. God-mode on `plane-dev` shows telemetry off ([screenshot](evidence/branding/live-dev/08-admin-general.jpg)), but for an admin the smoke test created through the API. [[VERIFY: an admin created through the UI on the deployed instance has telemetry off]] |
 
 An instance that already exists keeps its stored setting. In Pass 2 the API may gain outbound paths (SMTP, self-dial), so re-check the egress denial. Infisical's and Grafana's own telemetry are off in `helm/values/`.
 
@@ -210,14 +210,14 @@ An instance that already exists keeps its stored setting. In Pass 2 the API may 
 
 - [x] Root `LICENSE` (AGPL-3.0), `COPYRIGHT.txt` and `NOTICE.md` committed.
 - [x] `apps/wayline` committed and complete, with patches, codemod, overlay, Dockerfiles, and build instructions. Pushing it, and someone else following them, are separate items below.
-- [ ] Upstream headers unchanged by the codemod, by diff against the tag.
-- [ ] `email.py` decision made and recorded (D12), and `apps/wayline/backend/email-py-decision.txt` changed to it.
+- [x] Upstream headers unchanged by the codemod, by diff against the tag. `docs/evidence/branding/headers.txt` reads 0 removed notice lines at `1563cbf`.
+- [x] `email.py` decision made and recorded (D12), and `apps/wayline/backend/email-py-decision.txt` changed to it. This covers the private image. A public image still needs advice first, [above](#the-commercial-header-in-emailpy).
 - [ ] Repository public, or a complete source tarball served. `gitleaks` clean over full history.
 - [ ] A tarball of the patched tree or a mirror of the pinned upstream commit published, and linked from `NOTICE.md`.
 - [ ] The commit each running image names is pushed.
 - [ ] `/source` followed logged out from a browser returns 200, on every surface above, and lands on the deployed commit. `WAYLINE_REQUIRE_PUBLIC_SOURCE=yes apps/wayline/checks/smoke-images.sh` checks the redirect's target.
 - [ ] A person outside the project followed the link and rebuilt, or the attempt is recorded.
-- [ ] Telemetry off and egress denied, on the deployed instance.
+- [x] Telemetry off and egress denied, on the deployed instances, by API and by the matrix, as above. Check again after any new egress in Pass 2, and for an admin made through the UI.
 - [ ] Counsel has read this page.
 
 See [known limitations](known-limitations.md).
