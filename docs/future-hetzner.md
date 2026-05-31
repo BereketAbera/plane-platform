@@ -4,11 +4,11 @@
 
 The migration as a whole is in [`PASS2_HANDOFF.md`](../PASS2_HANDOFF.md). This file covers only root modules, state, and how to tell an implementation meets the contract. Local Terraform is described in [terraform.md](terraform.md).
 
-Written 2026-11-04 against commit `f733b87`. `VERIFY` marks a provider detail from memory that has not been checked against current documentation.
+Written 2026-11-04, and checked against the code again on 2026-11-05. Pass 1 has since run on kind, and none of that says anything about this document's contracts, which remain unbuilt and untested. `VERIFY` marks a provider detail from memory that has not been checked against current documentation.
 
 ## What Terraform does today
 
-So the contract is not misread: in Pass 1, Terraform provisions no infrastructure. The kind CLI creates the cluster, and Docker Compose creates the registry, caches, and Git remote. Terraform creates namespaces, quotas, a CoreDNS rewrite, the Argo CD release, AppProjects, and the root Application inside a cluster that already exists. A separate root configures Infisical. Statements that Terraform provisions servers become true only after Pass 2 implements and runs what is below.
+So the contract is not misread: in Pass 1, Terraform provisions no infrastructure. The kind CLI creates the cluster, and Docker Compose creates the registry, caches, and Git remote. Terraform creates namespaces, quotas, a CoreDNS rewrite, the Argo CD release, AppProjects, and the root Application inside a cluster that already exists. A separate root configures Infisical. Those two roots have applied on kind, and a later run of each reports no changes ([local](evidence/runs/argo-controller-limit-1.txt), [Infisical](evidence/runs/infisical-idempotency-3.txt)). Statements that Terraform provisions servers become true only after Pass 2 implements and runs what is below.
 
 ## Layout
 
@@ -107,6 +107,7 @@ These are changes to existing code. They should land on kind first (Phase 1 in t
 | `gitops/bootstrap/chart/templates/appprojects.yaml` | Declares both Plane projects | One project per cluster |
 | `helm/values/argocd.yaml` | `argocd.localhost`, `server.insecure` | A values file per cluster, passed as `values_file` |
 | `gitops/bootstrap/argocd-route/ingressroute.yaml` | Host and `web` hard-coded | Overlay per cluster |
+| `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml`, `monitoring/manifests/shared/ingress-routes.yaml`, `policy/plane.rego` | Middleware `node-network-only` admits `172.16.0.0/12`, Docker's address pool, and policy requires it on all 5 internal UIs | The real auth layer. On another network the list makes each UI answer 403, and behind a proxy or Tunnel it can no longer tell one client from another |
 
 Known trap from Pass 1: the provider's delete of `kubernetes_config_map_v1_data` removes the `Corefile` key. Do not rely on `terraform destroy` and then keep using a cluster.
 

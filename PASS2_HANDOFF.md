@@ -4,9 +4,11 @@ This document describes everything needed for the Hetzner migration. It is writt
 
 The application is a customized deployment of open-source Plane Community Edition v1.4.3 (AGPL-3.0), under the name Wayline. It is not an original product, and nothing here should present it as one.
 
-Written 2026-11-04, mostly against commit `f733b87`, while Pass 1 was still being integrated and validated. Reconcile it against the final code before use.
+Written 2026-11-04, and corrected on 2026-11-05 against the code at that date and against what real runs showed. Pass 1's validation is not finished, so check [`docs/validation.md`](docs/validation.md) for what has run since. Nothing about Hetzner or Cloudflare in this document has been built or tested.
 
-**Markers.** `VERIFY` is a claim that needs a runtime result or a check against a current primary source. `MEASURE` is a number that must come from a measurement. Anything about Hetzner or Cloudflare that carries `VERIFY` is from the author's memory and was not checked against current documentation. Treat it as a question to answer, not a fact.
+Names such as `critique`, `plane-branding.md` and `cicd-security.md` are the build's research notes. They are not in this repository, so treat what they are cited for as a reading, not a source you can check here.
+
+**Markers.** `VERIFY` is a claim that needs a runtime result or a check against a current primary source. `MEASURE` is a number that must come from a measurement. Anything about Hetzner or Cloudflare that carries `VERIFY` is from the author's memory and was not checked against current documentation. Treat it as a question to answer, not a fact. Results from Pass 1 cite their evidence, and they come from a kind node on a laptop.
 
 **Nothing cloud exists.** No Hetzner or Cloudflare resource, account, token, or Terraform code has been created. `infrastructure/terraform/environments/{dev,prod}` holds only interface documents.
 
@@ -41,10 +43,13 @@ Pass 1 is one kind node on a laptop, with two Plane namespaces. It is a rehearsa
 | Everything else in the cluster | Argo CD | `gitops/applications` |
 | Secret values | Infisical, with secret zero in `.local/secret-zero/` | Scripts |
 
-Runtime status when this was written:
+Runtime status on 2026-11-05, on one laptop, brought up stage by stage rather than by one `make up`:
 
-- The only runtime results are the day-1 gates (digest pulls, kindnet enforcement against a sentinel, `git://` from a pod), captured in [`docs/evidence/day1-gates.txt`](docs/evidence/day1-gates.txt).
-- Plane had not been deployed on this cluster, so no application behaviour below is proven. [[VERIFY: docs/validation.md records the final Pass 1 result of make up and make test]]
+- All 14 Argo CD Applications read Synced and Healthy ([`make status`](docs/evidence/runs/plane-prod-sim-status-1.txt)).
+- `make test-e2e` passes in `plane-dev` on the branded images, 38 steps ([output](docs/evidence/runs/branded-dev-smoke-1.txt)), and in `plane-prod-sim` on upstream images, 37 steps ([JSON](docs/evidence/runs/smoke-prod-sim-20261104T235926Z.json)). The branded images have not reached prod-sim.
+- The NetworkPolicy matrix passes from both Plane namespaces, and real attempts to cross between the environments all failed as they should ([network](docs/evidence/runs/harness-separation-network-1.txt), [state](docs/evidence/runs/harness-separation-state-1.txt)).
+- **NOT RUN:** a clean install, teardown and recreation, a full restore, secret rotation, the failed-deploy drill, a load test, `make test-alert`, and any publish from `images.yml`. [[VERIFY: docs/validation.md records the final Pass 1 result of make up and make test]]
+- **Not pushed:** `origin/main` is at `da7a4c9`, and the branding and everything since are local. The first push that carries `apps/wayline/**` runs a real GHCR publish through `images.yml`, so plan that push.
 - Read [`docs/validation.md`](docs/validation.md) for what actually ran before relying on any "carries over" row below.
 
 The reasons a kind result does not transfer are listed in [known limitations](docs/known-limitations.md#what-pass-1-does-not-prove).
@@ -131,17 +136,18 @@ The Git repository, GHCR, and the Cloudflare account remain shared. That is a de
 | Render and commit | `scripts/render.sh`, `gitops/environments/`, CI render diff | Argo CD syncs plain manifests. No Helm or Kustomize at sync time |
 | Sync waves | Contract section 6 | Ordering is a property of the workloads, including the migrator as a `Sync` hook, never `PreSync` |
 | Secret contract | Contract section 8 | The six Secrets, hex passwords, `FILE_SIZE_LIMIT` in bytes, bucket `uploads`, never rotating `SECRET_KEY` |
-| Workload hardening | `helm/plane/components/hardening` | UIDs, probes, limits, and no service account tokens. Adjust limits only from measurement |
+| Workload hardening | `helm/plane/components/hardening` | UIDs, probes, limits, no service account tokens, a 5-second `preStop` and a 600-second rollout deadline. The `preStop` took failed requests in a rollout from 10 to 0 on kind ([before](docs/evidence/runs/plane-dev-rollout-availability-1.txt), [after](docs/evidence/runs/plane-dev-rollout-availability-2.txt)). The deadline was set by cold image pulls. Adjust limits only from measurement |
+| Application health checks | `helm/values/argocd.yaml` | The Lua that makes sync waves gate, proven on Argo CD v3.5.7 ([waves](docs/evidence/runs/argocd-wave-gating-1.txt)). Run the checks again if Argo CD's version changes |
 | AppProject model | `gitops/bootstrap/chart/templates/appprojects.yaml` | `platform` holds cluster scope, Plane projects hold namespaced workloads. Namespace lists change (section 4.13) |
 | Conftest policy | `policy/` | Still applies to rendered manifests. Host and environment rules need updating |
 | CI scripts | `scripts/ci/*`, `.github/workflows/ci.yml` | No cluster access. Runs the same scripts as `make ci` |
 | Dashboards and alert rules | `monitoring/manifests/shared` | `NodeFilesystem*` alerts should become meaningful, unlike on kind |
-| Backup and restore logic | `scripts/backup.sh`, `scripts/restore.sh` | Dump format, checks, and proofs carry. The destination and how the scripts reach the cluster change (section 4.7) |
+| Backup and restore logic | `scripts/backup.sh`, `scripts/restore.sh`, `infisical/lib/recovery.sh` | Dump format, checks, recovery sets and proofs carry. The destination and how the scripts reach the cluster change (section 4.7) |
 | Pinned versions | `tools.lock`, Terraform lock files, image digests | Lock files gain a platform if CI or nodes need one |
 
 ## 4. What must change, per component
 
-Appendix 13 lists the exact lines. Paths and line numbers are as of commit `f733b87`.
+Appendix 13 lists where each value lives. Other work is still landing, so line numbers move. Search for the value rather than trusting a line.
 
 ### 4.1 kind to real nodes
 
@@ -163,10 +169,10 @@ Hetzner has no managed Kubernetes offering as far as the author knows. [[VERIFY:
 | Item | Pass 1 | Pass 2 action |
 |---|---|---|
 | Plane data | `storageClass: standard` in both overlays' `values.yaml`, four lines each | Set the real class before first sync. `volumeClaimTemplates` are immutable |
-| Infisical data | `storageClassName: standard` at `infisical/manifests/postgres.yaml:124`, `redis.yaml:112` | Same |
+| Infisical data | `storageClassName: standard` in `infisical/manifests/postgres.yaml` and `redis.yaml` | Same |
 | Prometheus, Alertmanager, Loki | Default class | Name the class explicitly, as the Plane overlays do |
 | PVC sizes | `local-path` ignores them. Comments call Loki's `2Gi` "a label" | **Now enforced.** Set real sizes and alert on them. `retentionSize` must stay below volume size |
-| Volume permissions | Non-root writes are expected to work because local-path uses mode 0777 | Block volumes will not have 0777 directories. `infisical/manifests/{postgres,redis}.yaml` set `fsGroup`, but `helm/plane/components/hardening` does not, so Plane's non-root Postgres, Valkey, RabbitMQ, and Silo need it added. [[VERIFY: each Plane data service writes to its volume on the chosen CSI]] |
+| Volume permissions | Non-root writes work here, and local-path uses mode 0777 | Block volumes will not have 0777 directories. `infisical/manifests/{postgres,redis}.yaml` set `fsGroup`, but `helm/plane/components/hardening` does not, so Plane's non-root Postgres, Valkey, RabbitMQ, and Silo need it added. [[VERIFY: each Plane data service writes to its volume on the chosen CSI]] |
 | Scheduling | One node | Block volumes attach to one node in one location. Keep pods and volumes co-located |
 
 The expected driver is the Hetzner Cloud CSI driver, with block volumes as ReadWriteOnce. [[VERIFY: current Hetzner CSI driver name, version, minimum volume size, and arm64 support]]
@@ -177,16 +183,16 @@ Compare Postgres on a network block volume with the server's local disk before c
 
 | Item | Pass 1 | Pass 2 |
 |---|---|---|
-| Branded images | `localhost:5001/wayline/*` by digest | GHCR by digest. `images.yml` already pushes there |
+| Branded images | `localhost:5001/wayline/*` by digest | GHCR by digest. `images.yml` is written to push there and has never run with `apps/wayline`, so that push, its scan, its prune and its digest bump are all untested. D12 limits it to private packages under the owner's account |
 | Local copy step | `scripts/ci/copy-to-local-registry.sh` | Remove. Digests in Git point straight at GHCR |
 | Pull-through caches | `infrastructure/local-services`, `infrastructure/kind/containerd-certs.d` | Remove. Node pulls use real registries |
 | Docker Hub limits | Mitigated through `mirror.gcr.io` | Nodes share a public IP, and anonymous limits apply. Decide: authenticated pulls through kubelet config, a mirror in GHCR, or retain `mirror.gcr.io` as a containerd mirror |
-| Pull auth | None | Public packages need none. Private packages need `imagePullSecrets` on the `plane` ServiceAccount, sourced from Infisical |
+| Pull auth | None | Private packages, which D12 requires today, need `imagePullSecrets` on the `plane` ServiceAccount, sourced from Infisical. Public packages need none, once D12 allows them |
 | Digest kind | Index digests for upstream, one plain manifest for branded (`--provenance=false --sbom=false`) | Keep. On x86, branded builds must become multi-arch and digests change |
 
-In the overlays at this commit, Plane images are still `docker.io/makeplane/*`, not Wayline images, and `apps/wayline/` is partial and uncommitted, with no `images.txt`. Contract section 5 states the intended end state. [[VERIFY: branded images are built, pushed, and referenced in helm/plane/overlays/*/kustomization.yaml]]
+On 2026-11-05 the four branded images are built from `1563cbf` and pushed to the local registry. `helm/plane/overlays/dev/kustomization.yaml` names them, and the prod-sim overlay still names `docker.io/makeplane/*`. `live` stays upstream's image in both. [[VERIFY: branded images are built, pushed, and referenced in helm/plane/overlays/*/kustomization.yaml]]
 
-The GHCR limits noted in `.github/workflows/README.md` apply to a private repository. Public packages are free per `cicd-security.md`. [[VERIFY: current GHCR limits for public and private packages]]
+`.github/workflows/README.md` records what is known about GHCR limits: GitHub's billing page lists a small quota for Packages and says Container registry storage is free for now, and no image has been stored there to test that. [[VERIFY: current GHCR limits for public and private packages]]
 
 ### 4.4 Git daemon to GitHub as Argo's source
 
@@ -197,8 +203,9 @@ The GHCR limits noted in `.github/workflows/README.md` apply to a private reposi
 | Parameterise children | Render `gitops/applications` from a value, or generate per-cluster files (section 4.13). Pick one and make CI check it |
 | Transport | Use HTTPS. The repo-server NetworkPolicy allows 443 to public addresses, not SSH |
 | Credentials | None for a public repository. For a private one, a read-only deploy key or GitHub App held outside Git |
-| Remove the old path | `plane-git` Compose service, `gitops-publish.sh`, and the `9418` egress rule in `gitops/platform/network-policies/argocd.yaml:124-127` |
-| Pre-promotion backup | **Moves.** Today `scripts/gitops-publish.sh:33-38` takes the prod-sim dump before publishing, and that is the only place a promotion merged on GitHub takes one. With GitHub as source, merging deploys directly and the dump does not happen. Contract section 5 requires it. See below |
+| Remove the old path | `plane-git` Compose service, `gitops-publish.sh`, and the `9418` egress rule in `gitops/platform/network-policies/argocd.yaml` |
+| Pre-promotion backup | **Moves.** Today `scripts/gitops-publish.sh` takes the prod-sim dump before publishing, and that is the only place a promotion merged on GitHub takes one. With GitHub as source, merging deploys directly and the dump does not happen. Contract section 5 requires it. See below |
+| Proof on dev before prod | **Moves too, and has no answer yet.** The same publish step refuses a prod-sim digest unless `plane-dev` is Synced and Healthy with it in a ready container (`scripts/lib/dev-check.sh`). That reads one cluster's API. On independent clusters, prod's path has no such credential and must not get one (section 2). See D15 |
 | Detection delay | Argo CD polls. Decide whether a webhook is worth exposing an endpoint. [[MEASURE: time from merge to sync with polling]] |
 | Enforced approval | A public repository on GitHub Free gets protected branches and required reviewers per `cicd-security.md`. [[VERIFY: GitHub plan features for public repositories at migration time]] |
 
@@ -224,8 +231,9 @@ Options for the pre-promotion dump:
 **Recommended starting point: Cloudflare Tunnel**, because it leaves no inbound application port and takes one piece of cloud controller work out of the first iteration. This is the author's judgement, not a test. Whichever is chosen, the same work is required:
 
 - Trust forwarded headers, or uploads get `http://` URLs and Plane's throttle shares one bucket. `SECURE_PROXY_SSL_HEADER` is set in Plane's `settings/production.py`, and presigned URLs use `request.scheme`. Set `ports.web.forwardedHeaders.trustedIPs` in `helm/values/traefik.yaml` to the real proxy source only.
-- Rewrite `traefik-ingress` in `gitops/platform/network-policies/traefik.yaml:51-54`. It allows `172.16.0.0/12` and `192.168.65.0/24`, both specific to Docker.
-- Decide what happens to the websocket path through `/live`. Cloudflare's WebSocket support was read in its docs, and the behaviour through this stack is unproven. [[VERIFY: /live collaboration holds a WebSocket through Cloudflare, Traefik, and the buffering middleware for a 5 minute soak]]
+- Rewrite `traefik-ingress` in `gitops/platform/network-policies/traefik.yaml`. It allows `172.16.0.0/12`, which is specific to Docker. On kind the NodePort source is the kind gateway, measured with conntrack ([source](docs/evidence/runs/traefik-nodeport-source-1.txt)). The policy once also allowed Docker Desktop's `192.168.65.0/24`, and no traffic used it. Expect a different source on real nodes.
+- Change the `node-network-only` Middleware in `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml` and `monitoring/manifests/shared/ingress-routes.yaml`. It admits `172.16.0.0/12`. On another network each internal UI answers 403, and behind a proxy or Tunnel it means nothing, because every request arrives from the proxy. `policy/plane.rego` holds that range too.
+- Decide what happens to the websocket path through `/live`. It held through Traefik and the buffering middleware for a 330-second idle soak on kind ([soak](docs/evidence/runs/plane-dev-smoke-soak-1.txt)). Cloudflare's WebSocket support was read in its docs, and the behaviour through that edge is unproven. [[VERIFY: /live collaboration holds a WebSocket through Cloudflare, Traefik, and the buffering middleware for a 5 minute soak]]
 - Check proxied request size limits against `FILE_SIZE_LIMIT=5242880`. [[VERIFY: Cloudflare request body limit on the chosen plan]]
 
 Tunnel behaviour, client IP header, and pricing are from memory. [[VERIFY: Cloudflare Tunnel current terms, headers, and origin settings]]
@@ -252,7 +260,7 @@ Plane-specific changes:
 | Self-dial | See below |
 | Public hostname | A public `plane.` hostname uses the upstream name. Decide (D9) with [the trademark position](docs/agpl-compliance.md#trademark-position-not-legal-advice) |
 
-**Self-dial problem.** The API calls `copy_object` and fetches OAuth avatars against its own public host. `settings/storage.py` builds the endpoint from `request.scheme` and `request.get_host()` when `USE_MINIO=1`. In Pass 1, CoreDNS rewrites the host to Traefik and everything is plain HTTP. On HTTPS the same code dials `https://<host>`:
+**Self-dial problem.** The API calls `copy_object` and fetches OAuth avatars against its own public host. `settings/storage.py` builds the endpoint from `request.scheme` and `request.get_host()` when `USE_MINIO=1`. In Pass 1, CoreDNS rewrites the host to Traefik and everything is plain HTTP, and that path is measured ([path](docs/evidence/runs/plane-dev-copy-object-path-1.txt)). On HTTPS the same code dials `https://<host>`:
 
 | Option | Effect |
 |---|---|
@@ -270,7 +278,7 @@ Other hosts:
 |---|---|
 | `plane.dev.localhost`, `plane.prod-sim.localhost` | Public, each on its own cluster |
 | `argocd.localhost`, `grafana.localhost`, `infisical.localhost` | Not anonymous. Behind Cloudflare Access or a VPN. Each has its own login, which is not a reason to expose it |
-| `prometheus.localhost`, `alertmanager.localhost` | **No login of their own**, as `monitoring/manifests/shared/ingress-routes.yaml` says. Never public without an auth layer |
+| `prometheus.localhost`, `alertmanager.localhost` | **No login of their own.** Pass 1 has only a source-address allow list, `node-network-only`, which section 4.5 says must change. Never public without an auth layer |
 
 Cloudflare Access availability and limits are from memory. [[VERIFY: Cloudflare Access plan terms for the number of operators]]
 
@@ -288,9 +296,10 @@ Pass 1 writes to `.local/backups` on the laptop through `/backups`, a static hos
 | Key escrow | `ENCRYPTION_KEY` and `SECRET_KEY` must be recoverable without the cluster. The manifest stores only truncated hashes on purpose |
 | Quota | `persistentvolumeclaims` in `modules/foundation/main.tf` counts the backup PVC. Adjust if it goes |
 | Volume snapshots | Useful as a second layer, not a substitute. They share the provider and are crash-consistent only |
-| Restore | `scripts/restore.sh` uses local paths and `http://infisical.localhost` (`:664`). Rewrite both |
+| Recovery set | `infisical/lib/recovery.sh`. Each Infisical backup holds its Terraform state and hashes of secret zero, and each Plane backup holds its test accounts and sentinel. Secret zero is never copied into a backup. Decide what of this belongs off-host, and keep test accounts out of real backups |
+| Restore | `scripts/restore.sh` uses local paths and `http://infisical.localhost`. Rewrite both. `make restore-clean` is the order to keep: Infisical first, then Plane. On kind, only an in-place Infisical restore has run for real ([JSON](docs/evidence/runs/restore-infisical-20261105T001834Z.json)), plus rehearsals in throwaway places |
 
-[[MEASURE: backup duration and size per environment]]
+On kind, with test data, a backup took 11 to 31 seconds per environment, and `make backup ENV=all` took 42 seconds. A Postgres dump was 0.7 to 4.4 MB ([run](docs/evidence/runs/dr-backup-retention-1.txt), [resource-utilization.md](docs/resource-utilization.md#persistent-storage)). Real data will not look like this, so measure again.
 
 [[MEASURE: restore duration to a fresh cluster, as the RTO input]]
 
@@ -302,11 +311,11 @@ Each environment has its own Infisical project in Pass 1, on one shared instance
 
 | Option | Independence | Cost | Note |
 |---|---|---|---|
-| One instance per cluster | Strongest. Each cluster's secrets die with it, so backups matter | Memory on each, estimate 610 to 990 MiB, summed from `infisical.md` rows in critique section 4 | **Recommended default.** Same chart path as Pass 1 |
+| One instance per cluster | Strongest. Each cluster's secrets die with it, so backups matter | Memory on each: 770 MiB quiet for the server, its Postgres and Redis on kind, with the server peaking at 822 MiB ([snapshot](docs/evidence/runs/plane-prod-sim-snapshot-final-1.txt), [memory](docs/evidence/runs/infisical-memory-1.txt)), plus an operator at about 25 MiB | **Recommended default.** Same chart path as Pass 1 |
 | One instance on a separate operations host | Environments share a secret store, which is a shared failure and shared compromise | A third server | Requires Kubernetes Auth to reach each API server across networks, which widens API exposure |
 | Hosted Infisical | Hands custody to a vendor | Plan pricing | The free tier's limits on hosted differ from the self-hosted limits. [[VERIFY: hosted Infisical limits and plan cost]] |
 
-Limits to keep in mind for self-hosted, read in source at v0.167.6: no custom roles or RBAC, no native rotation, zero audit log retention. Per-project isolation with built-in `viewer` is the free-tier boundary, and `scripts/rotate.sh` is a demonstration script, not a rotation system.
+Limits to keep in mind for self-hosted, read in source at v0.167.6: no custom roles or RBAC, no native rotation, zero audit log retention. Per-project isolation with built-in `viewer` is the free-tier boundary. A cross-project read gets a real 403 in both directions on kind ([run](docs/evidence/runs/infisical-isolation-3.txt)). `scripts/rotate.sh` is a demonstration script, not a rotation system, and it has not run yet.
 
 Required changes:
 
@@ -328,13 +337,12 @@ Kindnet enforces policy after DNAT and before SNAT, fails open on setup errors, 
 | Assumption in `gitops/platform/network-policies` | Under a real CNI |
 |---|---|
 | `172.16.0.0/12` is the node network (`traefik.yaml:3-10`, 15 `ipBlock` rules across files) | Replace with the node or private network CIDR. On Hetzner that range may overlap nothing, or everything, depending on the network you create |
-| `192.168.65.0/24` is Docker Desktop's VM subnet | Remove |
-| API server is reached as node IP on 6443 by `ipBlock` | Cilium does not apply CIDR rules to cluster nodes by default, and uses entities such as `kube-apiserver`. Standard `NetworkPolicy` may not express this. [[VERIFY: how Cilium treats ipBlock for the API server and node IPs in the chosen mode]] |
-| NodePort source survives to Traefik | Differs with kube-proxy replacement and tunnel. Retest |
+| API server is reached as node IP on 6443 by `ipBlock`. Measured on kindnet: evaluated after DNAT ([probes](docs/evidence/runs/netpol-real-pods-1.txt)) | Cilium does not apply CIDR rules to cluster nodes by default, and uses entities such as `kube-apiserver`. Standard `NetworkPolicy` may not express this. [[VERIFY: how Cilium treats ipBlock for the API server and node IPs in the chosen mode]] |
+| NodePort source reaches Traefik as the kind gateway, measured | Differs with kube-proxy replacement and tunnel. Retest |
 | `except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16]` on repo-server egress | Still sound if Hetzner private networks use those ranges. Confirm hosts resolve outside them |
 | Kubelet probes bypass policy | CNI-specific. Probes may need host or `remote-node` rules. [[VERIFY: probes pass under default-deny on the chosen CNI]] |
 
-Test tooling is kindnet-specific too. `scripts/test-netpol.sh:177-183` checks `ds/kindnet`, its log line, and nftables tables through `docker exec`. Rewrite those checks. The matrix in `tests/network-policy-matrix.yaml` should run again unchanged except for hosts.
+Test tooling is kindnet-specific too. `scripts/test-netpol.sh` checks `ds/kindnet`, its log line, and nftables tables through `docker exec`, and `tests/gates/day1.sh` uses the node as a witness on each deny. Rewrite those checks. The matrix in `tests/network-policy-matrix.yaml` should run again unchanged except for hosts. `KindnetSkippedNetworkPolicies` and `KindnetLogsNotRead` in `monitoring/manifests/shared/rules-platform.yaml`, and the Alloy pipeline that feeds them, apply only to kindnet.
 
 | CNI question | Note |
 |---|---|
@@ -342,7 +350,7 @@ Test tooling is kindnet-specific too. `scripts/test-netpol.sh:177-183` checks `d
 | Fail-closed behaviour | Confirm what happens when the agent is down. [[VERIFY: behaviour of existing pods and new connections when the CNI agent is stopped]] |
 | Kernel | [[VERIFY: chosen OS image and kernel meet the CNI's requirements]] |
 
-The known cross-environment gap in Pass 1, an API asking Traefik for the other environment's hostname, goes away with separate clusters.
+Two known gaps in Pass 1 go away with separate clusters: an API asking Traefik for the other environment's hostname, and a pod with free egress reaching the internal UIs through `host.docker.internal`, which is specific to Docker Desktop.
 
 ### 4.10 Monitoring retention
 
@@ -352,18 +360,18 @@ The known cross-environment gap in Pass 1, an API asking Traefik for the other e
 | Loki | `retention_period: 72h`, filesystem, 2Gi, 640Mi limit (`helm/values/loki.yaml`) | Object storage backend if retained longer. [[MEASURE: Loki bytes per day per cluster]] |
 | Alertmanager | 24h | Longer, on a real volume, to keep silences |
 | Grafana | No persistence, state from Git | Keep. The password regenerates on each render, per `monitoring/README.md`, so manage it from Infisical or SSO |
-| Log collection | Alloy as a Deployment through the API (`loki.source.kubernetes`) | Re-evaluate on many nodes. Clustering or a DaemonSet may be needed |
+| Log collection | Alloy as a Deployment through the API (`loki.source.kubernetes`). A second copy on 53 streams added 6 to 40 MiB of apiserver RSS on kind ([cost](docs/evidence/runs/monitoring-alloy-apiserver-cost-1.txt)) | Re-evaluate on many nodes. Clustering or a DaemonSet may be needed |
 | Host metrics | node-exporter in `monitoring-agents` | Now reports real disks. Add alerts on volume fill |
 
 Monitoring in each cluster fails with that cluster. An outside check is required (section 4.11).
 
 ### 4.11 Alert routing to real receivers
 
-Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints lines. Nobody is paged.
+Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints lines. Nobody is paged. `make test-alert` has not run there. A temporary rule took 70 seconds from pending to the sink ([path](docs/evidence/runs/monitoring-alert-path-1.txt)), and `PlaneWorkerNoConsumer` fired on a real fault ([record](docs/evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)).
 
 | Task | Detail |
 |---|---|
-| Receivers | Replace `receivers` in `helm/values/kube-prometheus-stack.yaml:171-178`. Choose one per severity (D7). Remove `alert-sink` from prod |
+| Receivers | Replace `receivers` in `helm/values/kube-prometheus-stack.yaml`. Choose one per severity (D7). Remove `alert-sink` from prod |
 | Credentials | Webhook URLs and keys are secrets. They must not be in values in a public repository. Use an Infisical-managed Secret referenced by Alertmanager |
 | Watchdog | Route it to an external dead-man service, so a dead cluster raises an alert from outside. Pass 1 only logs it |
 | Egress | The `alertmanager` policy in `gitops/platform/network-policies/monitoring.yaml` allows egress only to `alert-sink` on 8080, and has no DNS rule of its own in that block. Add a specific rule for the real receiver |
@@ -374,15 +382,16 @@ Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints l
 
 | Item | Pass 1 | Pass 2 |
 |---|---|---|
-| Email | No SMTP config and no egress rule. Password reset and invitations cannot send | Provide SMTP in Infisical and an egress rule. `EMAIL_FROM` defaults to Plane's own address, so replace it |
+| Email | No SMTP config and no egress rule. Password reset and invitations cannot send | Provide SMTP in Infisical and an egress rule. In the branded backend image `EMAIL_FROM` defaults to `noreply@wayline.invalid`, which no mail server will accept, so set it |
 | Signup | Default | Set `ENABLE_SIGNUP` to match the audience |
-| Telemetry | Off through `tests/e2e/smoke.py` and denied by NetworkPolicy | Keep off at admin creation. A hand-made admin gets telemetry on, because the form's parameter at `setup-form.tsx:67` is always true, so egress denial is the backstop. Also keep it denied after adding SMTP egress |
+| Telemetry | Off through `tests/e2e/smoke.py`, and denied by NetworkPolicy, both measured on upstream images ([smoke](docs/evidence/runs/smoke-dev-20261104T221730Z.json), [matrix](docs/evidence/runs/netpol-20261104T232752Z.tsv)). The branded images default it off in the setup form and at registration | Check it for an admin made through the UI, which has not been done. Upstream's images turn it on for a hand-made admin, so egress denial is the backstop. Also keep it denied after adding SMTP egress |
+| HTML caching | The web and admin images sent no `Cache-Control`, so a browser kept showing the old app after a promotion ([record](docs/evidence/branding/live-dev/README.md)). A fix was being built on 2026-11-05 | Confirm the header on the images you deploy, and set Cloudflare's cache rules to match, or a promotion may not reach returning users |
 | `enable_drf_spectacular` | On in dev, off in prod-sim | Off wherever public |
 | Terms, privacy | None | The owner must supply them if others use it |
 
 ### 4.13 Environments: `prod-sim` to `prod`, and split by cluster
 
-Pass 1 assumes both environments in one cluster. `git grep` finds `prod-sim` in 52 tracked files outside docs and rendered manifests.
+Pass 1 assumes both environments in one cluster. On 2026-11-05 `git grep` finds `prod-sim` in 77 tracked files outside docs and rendered manifests.
 
 | Item | Change |
 |---|---|
@@ -394,7 +403,7 @@ Pass 1 assumes both environments in one cluster. `git grep` finds `prod-sim` in 
 | `infisical/terraform/main.tf` | Local map has both environments, and slug `prod` is inside each project already. Run one root per instance |
 | Naming | Rename `prod-sim` to `prod` as one reviewed change. Namespace rename means new PVCs, so do it before any data exists |
 | Promotion | `scripts/promote.sh` compares overlays in one repository, which does not depend on the cluster, since Git is the source. The dev digest record is still the rule |
-| Scripts | `monitoring/ops/lib.sh:17-18`, `tests/e2e/smoke.py:38`, `scripts/status.sh:25`, `scripts/rotate.sh:58` hard-code hosts and context |
+| Scripts and tests | `monitoring/ops/lib.sh`, `tests/e2e/smoke.py`, `tests/separation/`, `tests/routes/internal-routes.sh`, `scripts/status.sh` and `scripts/rotate.sh` hard-code hosts and context |
 
 ## 5. Terraform module interfaces
 
@@ -488,12 +497,12 @@ Do not pick a server type from this document or from memory. Derive it from meas
 
 ### Inputs
 
-Collect from [docs/resource-utilization.md](docs/resource-utilization.md), which holds results from `make status` and `make test-load`:
+Collect from [docs/resource-utilization.md](docs/resource-utilization.md). It holds quiet readings and peaks under smoke tests and drills, on upstream images. `make test-load` has not run, so nothing there is under load:
 
 | Input | Source | Marker |
 |---|---|---|
-| Idle working set per workload | `kubectl top`, Prometheus `container_memory_working_set_bytes` | [[MEASURE: idle working set per pod]] |
-| Peak working set per workload during first boot and load | Prometheus `max_over_time` over the run | [[MEASURE: peak working set per pod]] |
+| Idle working set per workload | `kubectl top`, Prometheus `container_memory_working_set_bytes` | Quiet readings per workload, 2026-11-05T00:03:44Z, in [resource-utilization.md](docs/resource-utilization.md#plane-per-environment). A strict idle capture has not run |
+| Peak working set per workload during first boot and load | Prometheus `max_over_time` over the run. Cgroup peaks under smoke tests and drills are in the same page | [[MEASURE: peak working set per pod]] |
 | CPU p95 per workload under load | `tests/load/run.sh` samples | [[MEASURE: CPU p95 per pod under load]] |
 | Image store size on the node | Node disk, per architecture | [[MEASURE: image filesystem usage on the node]] |
 | Data growth per day | PV usage over time | [[MEASURE: PV growth per day per service]] |
@@ -517,30 +526,30 @@ disk_required   = images + PV totals at chosen retention + container logs + free
 ```
 
 - `target_utilization` is the owner's judgement. 0.7 is a reasonable starting value because it leaves room for a rollout surge, and it has no measurement behind it.
-- Then check limits against the node. Pass 1's limits are deliberately overcommitted, at about 107% of the VM by the critique's estimate. Decide whether that remains acceptable when a real user is affected by an OOM kill.
-- `ResourceQuota` in `modules/foundation/main.tf` computes one surge pod per Deployment. Keep that when adjusting limits.
+- Then check limits against the node. Pass 1's limits are deliberately overcommitted: 15,812 MiB across the cluster against 13,959 MiB in the VM, about 113%. Decide whether that remains acceptable when a real user is affected by an OOM kill.
+- `ResourceQuota` in `modules/foundation/main.tf` computes one surge pod per Deployment. With all seven Plane Deployments rolling at once, the most seen was 21 of 24 pods, with no `FailedCreate` ([rollout](docs/evidence/runs/plane-dev-rollout-quota-1.txt)). Keep that margin when adjusting limits.
 - With more than one node, add the failure case: the remaining nodes must hold the workloads, or state that they will not.
 - Pick the smallest server type that meets all three, and record prices and specs from the current Hetzner page on the same day.
 
 ### Starting estimate
 
-This is an estimate for sanity checking, not a result.
+This is an estimate for sanity checking, not a result. The measured column is one quiet reading from a kind node on upstream images ([snapshot](docs/evidence/runs/plane-prod-sim-snapshot-final-1.txt)), and that node runs two Plane environments.
 
-| Group, one cluster with one Plane environment and its own Infisical | Idle MiB, estimate |
-|---|---:|
-| Plane, one environment | 1,240 to 2,080 |
-| Control plane and node agents | 750 to 1,300 |
-| Container shims and pause, about 42 pods at 5 to 10 MiB | 210 to 420 |
-| Traefik, metrics-server | 80 to 150 |
-| Argo CD | 450 to 700 |
-| Prometheus, Alertmanager, Grafana, operators | 620 to 1,040 |
-| Loki, Alloy | 250 to 500 |
-| Exporters, half of the two-environment figure | 25 |
-| Infisical with its Postgres and Redis, one operator | 610 to 990 |
-| CNI agent (Cilium planning guess from `cicd-security.md`) | 300 to 500 |
-| **Total** | **4,535 to 7,705, about 4.4 to 7.5 GiB** |
+| Group, one cluster with one Plane environment and its own Infisical | Idle MiB, estimate | Measured on kind, 2026-11-05, MiB |
+|---|---:|---|
+| Plane, one environment | 1,240 to 2,080 | 1,108 and 1,187 |
+| Control plane and node agents | 750 to 1,300 | 1,543 for the pods alone, 1,168 of it the API server |
+| Container shims and pause, about 42 pods at 5 to 10 MiB | 210 to 420 | 1,525 for kubelet, containerd, shims and pause together, with 56 pods |
+| Traefik, metrics-server | 80 to 150 | 95 |
+| Argo CD | 450 to 700 | 404 |
+| Prometheus, Alertmanager, Grafana, operators | 620 to 1,040 | 1,182, with two environments to scrape |
+| Loki, Alloy | 250 to 500 | 392 |
+| Exporters, half of the two-environment figure | 25 | 39 |
+| Infisical with its Postgres and Redis, one operator | 610 to 990 | 795 |
+| CNI agent (Cilium planning guess from `cicd-security.md`) | 300 to 500 | Not comparable. kindnet read 31, in the control plane row |
+| **Total** | **4,535 to 7,705, about 4.4 to 7.5 GiB** | Not comparable: 8,331 for the whole two-environment node |
 
-Derived by taking one environment's rows from critique section 4, scaling per-pod overhead to one cluster, and adding the CNI guess. Control plane numbers came from a kind node and will differ by distribution. The critique's rows are themselves estimates anchored on a few measurements of related software on this host and one third-party figure for Plane v1.4.2. No Plane container had run when they were written. Replace all of this with measurement.
+Derived by taking one environment's rows from critique section 4, scaling per-pod overhead to one cluster, and adding the CNI guess. The critique's rows were written before any Plane container ran, so they are estimates anchored on a few measurements of related software on this host and one third-party figure for Plane v1.4.2. The measured control plane is above its estimate, and it comes from a kind node, so it will differ by distribution. Replace all of this with measurement on the target.
 
 ## 8. Security hardening required before real users
 
@@ -548,21 +557,21 @@ Pass 1 makes no claim of production readiness, and neither does this document. A
 
 | Area | Requirement | Pass 1 state |
 |---|---|---|
-| Source offer | Section 9 complete | Private repository, no `/source` route yet |
-| Exposure | No anonymous admin UI. Prometheus and Alertmanager behind auth | Loopback only, no auth |
+| Source offer | Section 9 complete | `/source` answers on the branded images, with a 302 to a private repository, so it ends in a 404 |
+| Exposure | No anonymous admin UI. Prometheus and Alertmanager behind auth | Loopback only. A source-address allow list on the 5 internal UIs, which is not a login |
 | TLS | HTTPS only, `Secure` cookies, HSTS at the edge | None |
 | Origin | No direct origin path, or firewall limited to the edge | Not applicable |
 | Node access | SSH key only, `admin_cidrs` set, API server not public | Not applicable |
 | OS | Unattended security updates, a reboot plan | Docker Desktop VM |
 | Kubernetes | etcd encryption at rest, audit logging on, supported version with a patch cadence | Neither |
-| Pod Security | Move `enforce` from `baseline` to `restricted` per namespace after a per-workload test, except node-exporter | `baseline`, `restricted` as warn and audit |
+| Pod Security | Move `enforce` from `baseline` to `restricted` per namespace after a per-workload test, except node-exporter | `baseline`, `restricted` as warn and audit. A server dry run of `restricted` gives no warnings in either Plane namespace, on upstream images ([dev](docs/evidence/runs/plane-dev-psa-1.txt), [prod-sim](docs/evidence/runs/plane-prod-sim-host-and-identity-1.txt)) |
 | Workloads | Read-only root where possible. `KSV-0014` in `.trivyignore` expires 2027-02-01 | Not read-only |
 | Secrets | Secret zero in escrow, Argo CD initial admin removed, Grafana password managed | Local files, generated passwords |
 | Database | A non-superuser Plane role. `scripts/rotate.sh` notes the role is a shared superuser | Superuser |
 | Argo CD | SSO or named accounts, RBAC, `server.insecure` reviewed | Admin only |
-| Infisical | Re-decide `ALLOW_INTERNAL_IP_CONNECTIONS`, confirm cross-project denial | [[VERIFY: runtime cross-project 403 evidence]] |
-| Network | Default-deny re-proven on the real CNI, fail-closed behaviour known, egress minimal | Design only. [[VERIFY: tests/network-policy-matrix.yaml result on the real CNI]] |
-| Images | Scan gate that blocks. Sign images if the repository is public, since attestations become available | Scans in CI |
+| Infisical | Re-decide `ALLOW_INTERNAL_IP_CONNECTIONS`, confirm cross-project denial | Cross-project reads get 403 both ways on kind ([run](docs/evidence/runs/infisical-isolation-3.txt)) |
+| Network | Default-deny re-proven on the real CNI, fail-closed behaviour known, egress minimal | Matrix passes from both Plane namespaces on kindnet, and that does not transfer. [[VERIFY: tests/network-policy-matrix.yaml result on the real CNI]] |
+| Images | Scan gate that blocks. Sign images if the repository is public, since attestations become available | `make scan-images` fails on a fixable CRITICAL in an image built here, and those pass today ([scans](docs/evidence/security/README.md)). Upstream images still report CRITICAL findings, reported only. `images.yml` has the same step, never yet run |
 | Accepted risks | RabbitMQ 3.13 is out of community support. Re-decide. 4.2.9 is the candidate, 4.3 breaks Celery per upstream | Accepted for Pass 1 |
 | Git | Clean `gitleaks` history before going public, branch protection with required review | Advisory only on GitHub Free private |
 | Terraform | Remote encrypted state with separate keys per environment, lock tested | Local state |
@@ -577,8 +586,8 @@ Read [docs/agpl-compliance.md](docs/agpl-compliance.md). This summary is enginee
 - A modified version must offer its Corresponding Source to all users who interact with it over a network, at no charge. Patched branded images are modified versions.
 - **The repository must be public, or source otherwise offered, before anyone other than the owner uses the instance.** `origin` is private today. A `/source` link to a private repository offers nothing to someone without access.
 - Corresponding Source includes the pinned upstream ref, patches, overlay, codemod, build scripts, and Dockerfiles, not only application code.
-- `/source` must lead to the exact commit of the running build. Automate the value at build time. [[VERIFY: /source resolves to the commit of the deployed digest, from a logged-out browser, on each surface]]
-- Before the first outside user: pass the checklist in [docs/agpl-compliance.md](docs/agpl-compliance.md#checklist-before-the-first-other-user), including the `email.py` header decision and repository `LICENSE` and `NOTICE` files, which do not exist yet.
+- `/source` must lead to the exact commit of the running build. The web image stamps that commit at build time, and on `plane-dev` it answers 302 to the commit that built it, `1563cbf`, which is not pushed. [[VERIFY: /source resolves to the commit of the deployed digest, from a logged-out browser, on each surface]]
+- Before the first outside user: pass the checklist in [docs/agpl-compliance.md](docs/agpl-compliance.md#checklist-before-the-first-other-user). The repository's `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` are in place, and the `email.py` decision (D12) is made for private images. Going public is what remains open.
 
 ## 10. Cost items to price
 
@@ -612,7 +621,7 @@ Each phase has one exit gate. Do not start the next phase until evidence for the
 |---|---|---|
 | 0. Close Pass 1 | Finish validation, resolve markers, measure resources | `docs/validation.md` complete. `docs/resource-utilization.md` has measured values. Every BLOCKED item has a Pass 2 decision |
 | 1. Remove hard-coding, on kind | Parameterise repo URL, hostnames, storage class, per-cluster Applications, foundation environments, CNI-specific tests. Everything stays on kind | `make up` then `make test` on kind give the same results as Phase 0. `make render` diff contains only intended lines |
-| 2. Public source | Clean history, `LICENSE`, `NOTICE`, working `/source`, go public, public GHCR, protect `main`. Point kind's Argo CD at GitHub | `gitleaks` clean over full history. Kind syncs from GitHub. A logged-out browser reaches the exact commit's source |
+| 2. Public source | Clean history, working `/source`, go public, GHCR packages as D12 allows, protect `main`. Point kind's Argo CD at GitHub | `gitleaks` clean over full history. Kind syncs from GitHub. A logged-out browser reaches the exact commit's source |
 | 3. Accounts and state | Owner supplies section 6 items. State buckets created | `terraform init` on each root, against real state. Two concurrent plans prove locking |
 | 4. Dev infrastructure | Network, firewall, servers, Kubernetes, CNI, CSI | Nodes Ready. Policy sentinel: default-deny blocks and allow admits on a new connection. PVC survives pod move and node reboot. Digest pull from each registry path. External port scan shows only intended ports |
 | 5. Dev platform | `modules/foundation`, `modules/argocd`, root Application, Infisical, secrets | All Applications Synced and Healthy. `tests/network-policy-matrix.yaml` executed with zero unexpected results. Cross-project 403 proven |
@@ -645,27 +654,29 @@ Each needs an owner decision before the phase shown. Recommendations are the aut
 | D12 | `email.py` header | Decided for the image on 2026-11-05: it replaces the file with upstream's own AGPL-3.0-only version, pinned by commit, and publishes only to private GHCR packages under the owner's account (`apps/wayline/backend/email-py-decision.txt`). Still open: a public image, because the original stays in its `FROM` layer | Take advice before any public distribution of the backend image, or move to an upstream release that carries the fix. See [docs/agpl-compliance.md](docs/agpl-compliance.md#the-commercial-header-in-emailpy) | 2 |
 | D13 | Plane version at migration | Stay on v1.4.3 or upgrade first | Stay. Change one thing at a time. Security fixes may override this | 1 |
 | D14 | Hosted location and privacy | Hetzner location, data residency | Owner's decision, with legal input if real user data is held | 3 |
+| D15 | How a prod promotion proves itself on dev, with independent clusters | A record dev writes to Git after its checks, a CI status, or a person's review. Pass 1's `scripts/lib/dev-check.sh` asks the one cluster directly, which independent clusters must not allow | A record in Git that dev writes and prod's promotion check reads. Nothing is designed yet | 1 |
 
 ## 13. Appendix: local values hard-coded in the repository
 
-Read at commit `f733b87`. Regenerate before Phase 1:
+Read on 2026-11-05. Files only, because line numbers move. Regenerate before Phase 1:
 
 ```bash
-git grep -n -E 'localhost|plane-git|prod-sim|172\.16\.0\.0|192\.168\.65|storageClass|kind-plane-platform' \
+git grep -n -E 'localhost|plane-git|prod-sim|172\.16\.0\.0|192\.168\.65|storageClass|kind-plane-platform|node-network-only' \
   -- ':!docs' ':!gitops/environments' ':!helm/plane/vendor' ':!PASS2_HANDOFF.md'
 ```
 
 | Value | Where |
 |---|---|
 | `git://plane-git/plane-platform.git` | 13 files in `gitops/applications/`, 14 lines. Default in `environments/local/variables.tf`, `gitops/bootstrap/chart/values.yaml` |
-| Hostnames | `helm/plane/overlays/{dev,prod-sim}/values.yaml:4`, `helm/values/argocd.yaml:6,18`, `helm/values/infisical.yaml:47`, `helm/values/kube-prometheus-stack.yaml:109,144,203`, `gitops/bootstrap/argocd-route/ingressroute.yaml:17`, `infisical/manifests/ingressroute.yaml:16`, `monitoring/manifests/shared/ingress-routes.yaml:10,22,34`, `monitoring/manifests/environments/{dev,prod-sim}/kustomization.yaml`, `infisical/terraform/variables.tf`, `infrastructure/terraform/environments/local/main.tf` |
-| Hostnames in tooling | `monitoring/ops/lib.sh:17-18`, `tests/e2e/smoke.py:38,921`, `scripts/status.sh:25`, `scripts/rotate.sh:58`, `scripts/restore.sh:664`, `scripts/logs.sh:10`, `tests/network-policy-matrix.yaml` |
-| Entry point `web`, plain HTTP | `helm/plane/overlays/*/values.yaml`, all IngressRoutes above, `helm/values/argocd.yaml:89` (`server.insecure`) |
-| `standard` storage class | `helm/plane/overlays/*/values.yaml:37-43`, `infisical/manifests/postgres.yaml:124`, `infisical/manifests/redis.yaml:112` |
-| Docker network CIDRs | `gitops/platform/network-policies/*.yaml`, `scripts/cluster-up.sh:43-44` |
+| Hostnames | `helm/plane/overlays/{dev,prod-sim}/values.yaml`, `helm/values/argocd.yaml`, `helm/values/infisical.yaml`, `helm/values/kube-prometheus-stack.yaml`, `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml`, `monitoring/manifests/shared/ingress-routes.yaml`, `monitoring/manifests/environments/{dev,prod-sim}/kustomization.yaml`, `infisical/terraform/variables.tf`, `infrastructure/terraform/environments/local/main.tf` |
+| Hostnames in tooling | `monitoring/ops/lib.sh`, `tests/e2e/smoke.py`, `tests/separation/`, `tests/routes/internal-routes.sh`, `scripts/status.sh`, `scripts/rotate.sh`, `scripts/restore.sh`, `scripts/logs.sh`, `tests/network-policy-matrix.yaml` |
+| Entry point `web`, plain HTTP | `helm/plane/overlays/*/values.yaml`, all IngressRoutes above, `helm/values/argocd.yaml` (`server.insecure`) |
+| `standard` storage class | `helm/plane/overlays/*/values.yaml`, `infisical/manifests/postgres.yaml`, `infisical/manifests/redis.yaml` |
+| Docker network CIDRs | `gitops/platform/network-policies/*.yaml`, 15 `ipBlock` rules, `scripts/cluster-up.sh` |
+| `node-network-only` allow list on `172.16.0.0/12` | `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml`, `monitoring/manifests/shared/ingress-routes.yaml`, `policy/plane.rego` |
 | `/backups` hostPath | `gitops/platform/backup-storage/*.yaml`, `infrastructure/kind/cluster.yaml.tmpl` |
-| `localhost:5001` | `scripts/promote.sh`, `scripts/ci/copy-to-local-registry.sh`, `Makefile` (`images` target) |
+| `localhost:5001` | `scripts/promote.sh`, `scripts/up.sh`, `scripts/ci/copy-to-local-registry.sh`, `Makefile` (`images` target), `helm/plane/overlays/dev/kustomization.yaml` |
 | arm64 only | `scripts/ci/build-images.sh`, `.github/workflows/images.yml` |
-| Kindnet checks | `scripts/test-netpol.sh:177-183`, `tests/gates/day1.sh` |
-| Alert sink | `helm/values/kube-prometheus-stack.yaml:171-178`, `monitoring/manifests/shared/alert-sink.yaml`, `scripts/test-alert.sh` |
+| Kindnet checks | `scripts/test-netpol.sh`, `tests/gates/day1.sh`, `monitoring/manifests/shared/rules-platform.yaml`, `helm/values/alloy.yaml` |
+| Alert sink | `helm/values/kube-prometheus-stack.yaml`, `monitoring/manifests/shared/alert-sink.yaml`, `scripts/test-alert.sh` |
 | Local Terraform state | `infrastructure/terraform/environments/local/versions.tf`, `infisical/terraform/versions.tf` |
