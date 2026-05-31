@@ -3,7 +3,8 @@
 """Proves the derived backend image from the inside. Run by check-image.sh, in a container with no network.
 
 Prints one PASS or FAIL line per check and exits non-zero on any FAIL. With --build-time, Dockerfile.backend
-runs only the checks that need no Django, so a commercially headed file or a wrong PyJWT stops the image build.
+runs only the checks that need no Django, so a commercially headed file anywhere in the filesystem, or a wrong PyJWT,
+stops the image build.
 """
 import argparse
 import ast
@@ -22,7 +23,8 @@ from pathlib import Path
 
 ROOT = Path("/code")
 OPT = Path("/opt/wayline")
-COMMERCIAL = b"LicenseRef-Plane-Commercial"
+# In two pieces, so that this file, which is in the image, does not hold it. checks/layer-check.py fails on any file that does.
+COMMERCIAL = b"LicenseRef-Plane-" + b"Commercial"
 EMAIL_PY = ROOT / "plane/utils/email.py"
 BRAND = re.compile(r"Plane|plane\.so|plane\.sh|makeplane|planepowers|plane-marketing|mailinblue|imagekit")
 CREDIT = "Built on Plane Community Edition"
@@ -44,15 +46,19 @@ def email_pin():
     return dict(line.split("=", 1) for line in lines if "=" in line and not line.startswith("#"))
 
 
-def check_licence():
-    print(f"\n== Licence headers under {ROOT}")
+def check_licence(scan_root=ROOT):
+    print(f"\n== Licence headers under {scan_root}")
     hits, count = [], 0
-    for path in ROOT.rglob("*"):
-        if path.is_file() and not path.is_symlink():
-            count += 1
-            if COMMERCIAL in path.read_bytes():
-                hits.append(str(path))
-    report(not hits, f"no file under {ROOT} contains {COMMERCIAL.decode()}", str(hits) if hits else f"{count} files read")
+    for directory, subdirectories, names in os.walk(scan_root):
+        if directory == "/":
+            subdirectories[:] = [d for d in subdirectories if d not in ("proc", "sys", "dev")]
+        for name in names:
+            path = Path(directory, name)
+            if path.is_file() and not path.is_symlink():
+                count += 1
+                if COMMERCIAL in path.read_bytes():
+                    hits.append(str(path))
+    report(not hits, f"no file under {scan_root} contains {COMMERCIAL.decode()}", str(hits) if hits else f"{count} files read")
     data = EMAIL_PY.read_bytes()
     report(b"# SPDX-License-Identifier: AGPL-3.0-only\n" in data, f"{EMAIL_PY} carries AGPL-3.0-only")
     pin, digest = email_pin(), hashlib.sha256(data).hexdigest()
@@ -464,8 +470,10 @@ def main():
     parser.add_argument("--build-time", action="store_true", help="only the checks that need no Django")
     args = parser.parse_args()
 
+    # At build time this runs as root in the stage whose whole filesystem is copied into the published image, so it
+    # reads all of it, and a file holding that identifier anywhere stops the image before anything is pushed.
     if args.build_time:
-        check_licence()
+        check_licence(Path("/"))
         check_pyjwt_install()
         print(f"\nRESULT {'FAIL' if failures else 'PASS'}: {failures} failed")
         sys.exit(1 if failures else 0)
