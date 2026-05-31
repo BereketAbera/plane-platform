@@ -233,7 +233,7 @@ Status here is deliberately narrow. [validation.md](validation.md) is authoritat
 | Teardown and recreation | `make destroy`, `make up` | NOT RUN |
 | Load | `make test-load` | NOT RUN |
 
-The day-1 gates are in the [evidence index](evidence/README.md#index). They ran before Plane was deployed, and they do not cover Plane.
+The day-1 gates are in the [evidence index](evidence/README.md#index). They check low-level assumptions about the cluster, and they do not cover Plane.
 
 ### Numbers
 
