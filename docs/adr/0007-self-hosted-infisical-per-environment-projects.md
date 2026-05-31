@@ -16,7 +16,7 @@ An unlicensed self-hosted instance has its own feature set, which differs from I
 | Audit log retention | 0 days |
 | Identities, projects, environments | No limit |
 | Secret versioning | On |
-| Rate limits | 40 secret requests, 60 reads, 200 writes per minute |
+| Rate limits | 40 secret requests, 60 reads, 200 writes per minute. Not enforced when it ran: see the last section |
 
 So there is no way on this tier to grant a reader one environment inside a project. The only available boundary is the project.
 
