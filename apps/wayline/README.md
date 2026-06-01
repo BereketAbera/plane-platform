@@ -106,6 +106,25 @@ In an image that keeps its `FROM` layers, which is every image here but the back
 the container's filesystem, and from what `trivy image` reports, but not from the bytes of the image. So the space image still holds
 proxy-addr 2.0.7, storybook and tinypool. The backend is flattened, so PyJWT 2.13.0 and the original `email.py` are in no layer of it.
 
+### What flattening costs
+
+Disk, for every version after the first, and not push time. Measured on 2026-11-05 in
+[`docs/evidence/branding/flatten-size.txt`](../../docs/evidence/branding/flatten-size.txt), holding the same files and pushing with `docker push` into a new registry on loopback:
+
+| | Unflattened | Flattened |
+|---|---|---|
+| Layers | 28 | 2, one of them BuildKit's empty layer for `WORKDIR` |
+| Compressed size | 106.0 MiB | 97.4 MiB, because no file is stored twice |
+| A registry grows, first version | 106.3 MiB | 97.5 MiB |
+| A registry grows, each later version | 0.25 MiB | 97.5 MiB, because a new version shares no layer with the last |
+| In Docker, unique to one image | 1.3 MB, and 511 MB shared with upstream's image | 479 MB, and nothing shared |
+| `docker push`, first version, 3 runs | 0.93 to 0.99 s | 0.84 to 1.02 s |
+| `docker push`, a later version, 3 runs | 0.73 to 0.74 s | 0.92 to 1.06 s |
+
+Loopback hides the transfer, so on a real network a later version takes as long as its 97.5 MiB does, where it took almost nothing. The build itself copies the
+filesystem and compresses it for each change to the context: 3.2 s and 8.5 s on this Mac. `plane-registry` keeps every version pushed to it, so it now grows by that much per backend build.
+Upstream's backend image stays on any machine that builds this one, because it is a build input, and on any node while an environment still runs it. Its layers go out of use on a node only after every environment there has moved to this image, and kubelet then removes them when it needs the space. That last part was not measured.
+
 ### Publishing to GHCR
 
 - **`images.yml` has never run with `apps/wayline` in it.** One pull request is needed to exercise the build-only job,
@@ -127,10 +146,10 @@ Before the repository is made public, in this order:
 Pruning is a precaution, not a response to a known limit. GitHub's Packages billing page lists 500 MB of storage for private
 packages on Free, and also says "Container image storage and bandwidth for the Container registry is currently free", with at
 least a month's notice before that changes. So the 500 MB should not apply to `ghcr.io` today, but nothing has been stored there
-to confirm it. After the first publish, read the package page. GHCR stores upstream's layers too, because nothing is
-mounted across registries. Compressed arm64 sizes measured on 2026-11-04 with `docker buildx imagetools inspect --raw`: backend
-base 105.9 MiB, nginx base 25.0 MiB. The space base is 255.8 MiB from the research's registry measurement. With about 25 MiB of app
-layers, that is about 415 MiB for one set (nginx counted once).
+to confirm it. After the first publish, read the package page. GHCR stores upstream's layers for space too, because nothing is
+mounted across registries. Compressed arm64 sizes with `docker buildx imagetools inspect --raw`: flattened backend 97.4 MiB
+on 2026-11-05, nginx base 25.0 MiB on 2026-11-04. The space base is 255.8 MiB from the research's registry measurement. With about
+25 MiB of app layers, that is about 405 MiB for one set (nginx counted once), and each further backend version adds about 97 MiB, as below.
 
 ## Upgrading upstream
 
