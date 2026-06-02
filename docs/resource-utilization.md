@@ -5,8 +5,9 @@ CPU, memory, disk and storage for Wayline, a customized Plane Community Edition 
 **What is measured so far.** The measured cells come from the platform running on 2026-11-04 and 2026-11-05, on one
 laptop with Docker Desktop set to 14 GiB. **No clean install and no load test has run.** Their cells are still `MEASURE`
 markers, and every "peak" below means a peak under smoke tests, drills and restarts, not under load. Both Plane
-environments ran upstream images for the Plane readings. The branded images reached `plane-dev` at `4f622e3`, after the last of
-them, so nothing here measures the branded images.
+environments ran upstream images for the Plane readings. The last `plane-dev` reading came before the branded images reached it at
+`4f622e3`, on 2026-11-05T00:09Z. The one later reading, the CPU average at 00:49:30Z, is from prod-sim, which still runs upstream images.
+So nothing here measures the branded images.
 
 The tables keep three kinds of number apart:
 
@@ -200,12 +201,12 @@ Highest `memory.peak` readings outside Plane, and what they changed. Evidence: [
 | kube-apiserver | 1,299 | none | Not limited here |
 | Argo CD application controller | 731 | 768, now 1,024 | Working set reached 630 MiB with both environments up, and little of that was cache. An OOM kill there stalls every sync, so the limit went up ([argo-controller-limit-1.txt](evidence/runs/argo-controller-limit-1.txt)) |
 | Prometheus | 768 | 768, now 1,024 | Touched the limit with 0 OOM kills. Largest working set 688 MiB and RSS 653 MiB, with head series up to 241,366. That left little room, so the limit went up |
-| Loki | 640 | 640 | Touched the limit under a 3.5 MB/s stress test, with anon up to 552 MiB and the rest page cache ([monitoring-loki-limit-2.txt](evidence/runs/monitoring-loki-limit-2.txt)). Largest RSS since that test: 341 MiB. 0 OOM kills. Its one restart was a deliberate `kill -9` |
+| Loki | 640 | 640 | Touched the limit under a 3.5 MB/s stress test, with anon up to 553 MiB and the rest page cache ([monitoring-loki-limit-2.txt](evidence/runs/monitoring-loki-limit-2.txt)). Largest RSS since that test: 341 MiB. 0 OOM kills. Its one restart was a deliberate `kill -9` |
 | Infisical server | 822 | 1,024 | Real use at boot. It read 646 to 687 MiB when quiet, so the request went from 650 to 768 MiB |
 | Infisical Postgres | 256 | 256 | Touched the limit, nearly all page cache: largest RSS 64 MiB. 0 OOM kills |
 | Grafana | 345 | 384 | |
-| Grafana sidecars, each | 106 | 160, up from 96 | They were OOM-killed at 96 MiB on the first boot, before logging a line. Now they watch ConfigMaps only |
-| `plane-registry`, local services | 459 on a scratch registry | 512, up from 128 | Nearly all dirty page cache from a push: anon and swap stayed at or below 32 MiB. [registry-memory-1.txt](evidence/runs/registry-memory-1.txt) has the runs at each limit |
+| Grafana sidecars, each | 106 | 160, up from 96 | They were OOM-killed at 96 MiB on the first boot, about 35 s after starting ([monitoring-grafana-before-1.txt](evidence/runs/monitoring-grafana-before-1.txt)). Now they watch ConfigMaps only |
+| `plane-registry`, local services | 459 on a scratch registry | 512, up from 128 | Nearly all page cache from a push, with dirty pages up to 148 MiB: anon and swap stayed at about 32 MiB or less. [registry-memory-1.txt](evidence/runs/registry-memory-1.txt) has the runs at each limit |
 
 ### Against the VM
 
@@ -268,9 +269,10 @@ script calls `guard_disk`. [[VERIFY: VM filesystem free space reported against h
 node-exporter also excludes the `/backups` mount of the Mac, because its `statfs` gave a wrong size and the percentage rules went
 critical (`helm/values/kube-prometheus-stack.yaml`).
 
-kind also disables image garbage collection and disk-based eviction, per the research reading of kind's kubeadm config.
-So old images stay until removed, and a full disk means write errors rather than evictions.
-[[VERIFY: kubelet config on the node shows imageGCHighThresholdPercent 100 and eviction thresholds at 0%]]
+kind also disables image garbage collection and disk-based eviction. On 2026-11-05 the running kubelet reported
+`imageGCHighThresholdPercent` 100 and `evictionHard` of 0% on `imagefs.available`, `nodefs.available` and `nodefs.inodesFree`
+([node-kubelet-config-1.txt](evidence/runs/node-kubelet-config-1.txt)). So old images stay until removed, and a full disk means
+write errors rather than evictions, which has not been tried.
 
 Do not run `docker system prune -a` to free disk on this host. Research found unrelated containers using a cached MinIO
 image that can no longer be pulled anonymously.
