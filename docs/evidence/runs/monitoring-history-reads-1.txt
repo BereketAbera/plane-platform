@@ -1,0 +1,364 @@
+# date: 2026-11-05T02:01:46Z
+# Read-only. Every line below is an answer from Prometheus at http://prometheus.localhost, through /api/v1/query and
+# /api/v1/query_range. Nothing was injected for this file: it reads what earlier runs left in the TSDB.
+# A query_range at a 15s step reads one sample per step, so the times are good to about 15s, and a first or last time
+# is the first or last step that saw the series. Retention is 3d or 1GiB.
+
+== 0. When this Prometheus started, which is why a firing alert can also show a short pending line just after
+$ query_range process_start_time_seconds{job="kps-prometheus",container="prometheus"}  2026-11-04T20:30:00Z to 2026-11-05T02:01:46Z, step 15s
+  10.244.0.46:9090     started 11-04 20:57:04, in the data from 11-04 20:57:45 to 11-04 21:40:00
+  10.244.0.5:9090      started 11-04 21:35:12, in the data from 11-04 21:35:45 to 11-04 23:26:00
+  10.244.0.11:9090     started 11-04 23:21:27, in the data from 11-04 23:22:00 to 11-04 23:28:45
+  10.244.0.29:9090     started 11-04 23:24:03, in the data from 11-04 23:24:30 to 11-05 00:38:45
+  10.244.0.129:9090    started 11-05 00:34:10, in the data from 11-05 00:34:30 to 11-05 02:01:45
+
+== 1. ALERTS for every project rule, pending and firing, whole window
+$ query_range ALERTS{alertname=~"Plane.*|Argo.*|Kindnet.*|PodRestarting|ContainerMemorySaturation|VmMemoryLow"}  2026-11-04T20:30:00Z to 2026-11-05T02:01:46Z, step 15s
+ArgoAppDegraded                pending  11-04 21:12:15 to 11-04 21:15:30  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:12:15 to 11-04 21:17:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:15:45 to 11-04 21:16:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:16:15 to 11-04 21:19:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                firing   11-04 21:17:15 to 11-04 21:19:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:18:45 to 11-04 21:23:30  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:18:45 to 11-04 21:23:30  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                firing   11-04 21:23:45 to 11-04 21:26:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                firing   11-04 21:23:45 to 11-04 21:26:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:41:45 to 11-04 21:43:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 21:41:45 to 11-04 21:43:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 22:56:15 to 11-04 23:01:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Missing", "instance": "10.244.0.168:8082", "name": "h16-sync-failure-probe", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                firing   11-04 23:01:15 to 11-04 23:06:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Missing", "instance": "10.244.0.168:8082", "name": "h16-sync-failure-probe", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppDegraded                pending  11-04 23:06:15 to 11-04 23:11:00  {"dest_namespace": "plane-dev", "health_status": "Missing", "name": "h16-sync-failure-probe"}
+ArgoAppDegraded                firing   11-04 23:11:15 to 11-04 23:26:00  {"dest_namespace": "plane-dev", "health_status": "Missing", "name": "h16-sync-failure-probe"}
+ArgoAppDegraded                pending  11-04 23:22:45 to 11-04 23:28:30  {"dest_namespace": "plane-dev", "health_status": "Missing", "name": "h16-sync-failure-probe"}
+ArgoAppOutOfSync               pending  11-04 21:05:15 to 11-04 21:12:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Progressing", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:05:15 to 11-04 21:11:30  {"container": "application-controller", "dest_namespace": "infisical", "health_status": "Progressing", "instance": "10.244.0.87:8082", "name": "infisical", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:10:15 to 11-04 21:11:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Progressing", "instance": "10.244.0.87:8082", "name": "wave-probe-parent", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:10:15 to 11-04 21:11:00  {"container": "application-controller", "dest_namespace": "wave-probe", "health_status": "Healthy", "instance": "10.244.0.87:8082", "name": "wave-probe-child-a", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:12:15 to 11-04 21:15:30  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:12:15 to 11-04 21:19:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:15:45 to 11-04 21:16:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:16:15 to 11-04 21:19:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:18:45 to 11-04 21:26:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:18:45 to 11-04 21:26:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:26:15 to 11-04 21:41:30  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:26:15 to 11-04 21:29:30  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:29:15 to 11-04 21:29:30  {"container": "application-controller", "dest_namespace": "monitoring", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "kube-prometheus-stack", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:29:45 to 11-04 21:33:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:33:15 to 11-04 21:40:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:36:15 to 11-04 21:41:30  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:41:45 to 11-04 21:43:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:41:45 to 11-04 21:43:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Degraded", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:43:15 to 11-04 21:47:00  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:43:15 to 11-04 21:47:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:47:15 to 11-04 21:49:00  {"container": "application-controller", "dest_namespace": "plane-prod-sim", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "plane-prod-sim", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 21:49:15 to 11-04 21:50:00  {"container": "application-controller", "dest_namespace": "plane-prod-sim", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "plane-prod-sim", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 22:40:45 to 11-04 22:41:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "plane-dev", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 22:40:45 to 11-04 22:41:00  {"container": "application-controller", "dest_namespace": "plane-prod-sim", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "plane-prod-sim", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 22:56:15 to 11-04 23:06:00  {"container": "application-controller", "dest_namespace": "plane-dev", "health_status": "Missing", "instance": "10.244.0.168:8082", "name": "h16-sync-failure-probe", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 23:00:15 to 11-04 23:00:30  {"container": "application-controller", "dest_namespace": "argocd", "health_status": "Progressing", "instance": "10.244.0.168:8082", "name": "root", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 23:00:15 to 11-04 23:00:30  {"container": "application-controller", "dest_namespace": "monitoring", "health_status": "Healthy", "instance": "10.244.0.168:8082", "name": "monitoring-extras", "namespace": "argocd", "pod": "argocd-application-controller-0"}
+ArgoAppOutOfSync               pending  11-04 23:06:15 to 11-04 23:21:00  {"dest_namespace": "plane-dev", "name": "h16-sync-failure-probe"}
+ArgoAppOutOfSync               pending  11-04 23:15:45 to 11-04 23:16:00  {"dest_namespace": "infisical", "name": "infisical"}
+ArgoAppOutOfSync               firing   11-04 23:21:15 to 11-04 23:28:30  {"dest_namespace": "plane-dev", "name": "h16-sync-failure-probe"}
+ArgoAppOutOfSync               pending  11-05 00:11:45 to 11-05 00:12:00  {"dest_namespace": "plane-dev", "name": "plane-dev"}
+ArgoAppOutOfSync               pending  11-05 00:19:15 to 11-05 00:19:30  {"dest_namespace": "infisical", "name": "infisical"}
+ArgoAppStuckProgressing        pending  11-05 00:38:15 to 11-05 01:08:00  {"dest_namespace": "monitoring", "name": "alert-truth-stuck-progressing"}
+ArgoAppStuckProgressing        pending  11-05 00:41:45 to 11-05 00:43:30  {"dest_namespace": "monitoring", "name": "alloy"}
+ArgoAppStuckProgressing        pending  11-05 00:45:15 to 11-05 00:47:00  {"dest_namespace": "monitoring", "name": "alloy"}
+ArgoAppStuckProgressing        pending  11-05 00:55:15 to 11-05 00:57:00  {"dest_namespace": "monitoring", "name": "alloy"}
+ArgoAppStuckProgressing        firing   11-05 01:08:15 to 11-05 01:18:30  {"dest_namespace": "monitoring", "name": "alert-truth-stuck-progressing"}
+ArgoAppSyncUnknown             pending  11-05 00:35:45 to 11-05 00:50:30  {"dest_namespace": "plane-dev", "name": "alert-truth-render-failure"}
+ArgoAppSyncUnknown             firing   11-05 00:50:45 to 11-05 00:52:30  {"dest_namespace": "plane-dev", "name": "alert-truth-render-failure"}
+ArgoAppSyncUnknown             pending  11-05 01:16:15 to 11-05 01:18:00  {"dest_namespace": "monitoring", "name": "alert-truth-stuck-progressing"}
+ArgoRootSyncStuck              pending  11-04 23:22:45 to 11-04 23:26:30  {"dest_namespace": "argocd", "name": "root"}
+ArgoSyncFailed                 firing   11-04 21:05:15 to 11-04 21:22:00  {"container": "application-controller", "instance": "10.244.0.87:8082", "name": "term-a", "namespace": "argocd", "phase": "Failed", "pod": "argocd-application-controller-0"}
+ArgoSyncFailed                 firing   11-04 21:05:15 to 11-04 21:23:00  {"container": "application-controller", "instance": "10.244.0.87:8082", "name": "term-b", "namespace": "argocd", "phase": "Failed", "pod": "argocd-application-controller-0"}
+ArgoSyncFailed                 firing   11-04 21:15:45 to 11-04 21:19:00  {"container": "application-controller", "instance": "10.244.0.87:8082", "name": "root", "namespace": "argocd", "phase": "Failed", "pod": "argocd-application-controller-0"}
+ArgoSyncFailed                 pending  11-04 23:06:15 to 11-04 23:21:00  {"dest_namespace": "plane-dev", "name": "h16-sync-failure-probe", "phase": "Running"}
+ArgoSyncFailed                 firing   11-04 23:21:15 to 11-04 23:27:00  {"dest_namespace": "plane-dev", "name": "h16-sync-failure-probe", "phase": "Running"}
+ArgoSyncFailed                 pending  11-05 00:11:45 to 11-05 00:14:00  {"dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running"}
+ContainerMemorySaturation      pending  11-04 21:46:30 to 11-04 21:47:45  {"container": "loki", "namespace": "monitoring", "pod": "loki-0"}
+ContainerMemorySaturation      pending  11-04 21:50:00 to 11-04 21:50:15  {"container": "loki", "namespace": "monitoring", "pod": "loki-0"}
+ContainerMemorySaturation      pending  11-04 21:51:30 to 11-04 21:52:15  {"container": "loki", "namespace": "monitoring", "pod": "loki-0"}
+ContainerMemorySaturation      pending  11-04 21:56:30 to 11-04 21:58:15  {"container": "loki", "namespace": "monitoring", "pod": "loki-0"}
+ContainerMemorySaturation      pending  11-05 00:39:00 to 11-05 00:39:15  {"container": "prometheus", "namespace": "monitoring", "pod": "prometheus-kps-prometheus-0"}
+KindnetLogsNotRead             pending  11-04 23:53:45 to 11-04 23:54:00  {}
+KindnetLogsNotRead             pending  11-05 00:45:15 to 11-05 00:45:30  {}
+KindnetLogsNotRead             pending  11-05 00:54:45 to 11-05 00:55:00  {}
+KindnetSkippedNetworkPolicies  firing   11-04 23:11:45 to 11-04 23:12:30  {"namespace": "kube-system", "pod": "kindnet-failopen-synthetic"}
+KindnetSkippedNetworkPolicies  firing   11-04 23:20:15 to 11-04 23:21:00  {"namespace": "kube-system", "pod": "kindnet-failopen-synthetic"}
+KindnetSkippedNetworkPolicies  firing   11-05 00:40:45 to 11-05 00:51:00  {"namespace": "kube-system", "pod": "kindnet-failopen-synthetic"}
+KindnetSkippedNetworkPolicies  firing   11-05 00:53:45 to 11-05 01:03:00  {"namespace": "kube-system", "pod": "kindnet-failopen-synthetic-heartbeat"}
+PlaneApiDatabaseProbeFailing   pending  11-04 21:05:00 to 11-04 21:05:45  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-dev", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 21:05:00 to 11-04 21:05:45  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-prod-sim", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   firing   11-04 21:06:00 to 11-04 21:46:45  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-dev", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   firing   11-04 21:06:00 to 11-04 21:49:30  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-prod-sim", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 21:36:00 to 11-04 21:36:15  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-dev", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 21:36:00 to 11-04 21:36:15  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-prod-sim", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 22:41:45 to 11-04 22:42:00  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-dev", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 22:42:45 to 11-04 22:43:00  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-dev", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 22:44:45 to 11-04 22:44:45  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-dev", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 23:35:30 to 11-04 23:35:30  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-prod-sim", "probe": "api-db"}
+PlaneApiDatabaseProbeFailing   pending  11-04 23:54:30 to 11-04 23:54:30  {"instance": "/api/public/anchor/__probe__/settings/", "namespace": "plane-prod-sim", "probe": "api-db"}
+PlaneApiDown                   pending  11-04 21:05:00 to 11-04 21:05:45  {"instance": "/api/instances/", "namespace": "plane-dev", "probe": "api-instance"}
+PlaneApiDown                   pending  11-04 21:05:00 to 11-04 21:05:45  {"instance": "/api/instances/", "namespace": "plane-prod-sim", "probe": "api-instance"}
+PlaneApiDown                   firing   11-04 21:06:00 to 11-04 21:46:45  {"instance": "/api/instances/", "namespace": "plane-dev", "probe": "api-instance"}
+PlaneApiDown                   firing   11-04 21:06:00 to 11-04 21:49:30  {"instance": "/api/instances/", "namespace": "plane-prod-sim", "probe": "api-instance"}
+PlaneApiDown                   pending  11-04 21:36:00 to 11-04 21:36:15  {"instance": "/api/instances/", "namespace": "plane-dev", "probe": "api-instance"}
+PlaneApiDown                   pending  11-04 21:36:00 to 11-04 21:36:15  {"instance": "/api/instances/", "namespace": "plane-prod-sim", "probe": "api-instance"}
+PlaneApiDown                   pending  11-04 22:41:45 to 11-04 22:42:00  {"instance": "/api/instances/", "namespace": "plane-dev", "probe": "api-instance"}
+PlaneApiDown                   pending  11-04 22:42:45 to 11-04 22:43:00  {"instance": "/api/instances/", "namespace": "plane-dev", "probe": "api-instance"}
+PlaneBackupFailed              firing   11-04 22:57:30 to 11-04 22:58:45  {"container": "kube-state-metrics", "instance": "10.244.0.41:8080", "job_name": "plane-backup-20261104t225642z", "namespace": "infisical", "pod": "kps-kube-state-metrics-58c95899dd-s8bb4", "reason": "BackoffLimitExceeded"}
+PlaneBackupFailed              firing   11-04 22:58:30 to 11-04 22:58:45  {"container": "kube-state-metrics", "instance": "10.244.0.41:8080", "job_name": "plane-backup-20261104t225732z", "namespace": "infisical", "pod": "kps-kube-state-metrics-58c95899dd-s8bb4", "reason": "BackoffLimitExceeded"}
+PlaneCeleryQueueMissing        pending  11-04 21:31:00 to 11-04 21:36:45  {"instance": "10.244.0.240:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneCeleryQueueMissing        pending  11-04 21:48:00 to 11-04 21:49:15  {"instance": "10.244.0.59:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneCeleryQueueMissing        pending  11-04 23:55:00 to 11-04 23:55:15  {"instance": "10.244.0.100:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneFrontendDown              pending  11-04 21:04:45 to 11-04 21:06:30  {"instance": "/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:04:45 to 11-04 21:06:30  {"instance": "/live/health", "namespace": "plane-dev", "probe": "live"}
+PlaneFrontendDown              pending  11-04 21:04:45 to 11-04 21:06:30  {"instance": "/spaces/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:05:00 to 11-04 21:06:45  {"instance": "/god-mode/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:05:00 to 11-04 21:06:45  {"instance": "/spaces/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:05:00 to 11-04 21:06:45  {"instance": "/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:05:00 to 11-04 21:06:45  {"instance": "/god-mode/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:05:00 to 11-04 21:06:45  {"instance": "/live/health", "namespace": "plane-prod-sim", "probe": "live"}
+PlaneFrontendDown              firing   11-04 21:06:45 to 11-04 21:46:45  {"instance": "/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              firing   11-04 21:06:45 to 11-04 21:46:45  {"instance": "/live/health", "namespace": "plane-dev", "probe": "live"}
+PlaneFrontendDown              firing   11-04 21:06:45 to 11-04 21:49:30  {"instance": "/spaces/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              firing   11-04 21:07:00 to 11-04 21:46:45  {"instance": "/god-mode/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              firing   11-04 21:07:00 to 11-04 21:47:00  {"instance": "/spaces/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              firing   11-04 21:07:00 to 11-04 21:49:30  {"instance": "/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              firing   11-04 21:07:00 to 11-04 21:49:30  {"instance": "/god-mode/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              firing   11-04 21:07:00 to 11-04 21:49:30  {"instance": "/live/health", "namespace": "plane-prod-sim", "probe": "live"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/god-mode/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/live/health", "namespace": "plane-dev", "probe": "live"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/spaces/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/god-mode/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/live/health", "namespace": "plane-prod-sim", "probe": "live"}
+PlaneFrontendDown              pending  11-04 21:36:00 to 11-04 21:37:15  {"instance": "/spaces/", "namespace": "plane-prod-sim", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 22:41:15 to 11-04 22:41:15  {"instance": "/live/health", "namespace": "plane-dev", "probe": "live"}
+PlaneFrontendDown              pending  11-04 22:41:15 to 11-04 22:41:15  {"instance": "/spaces/", "namespace": "plane-dev", "probe": "frontend"}
+PlaneFrontendDown              pending  11-04 22:55:00 to 11-04 22:55:00  {"instance": "/live/health", "namespace": "plane-dev", "probe": "live"}
+PlaneFrontendDown              pending  11-05 01:12:30 to 11-05 01:12:30  {"instance": "/live/health", "namespace": "plane-prod-sim", "probe": "live"}
+PlanePostgresDown              pending  11-04 21:30:00 to 11-04 21:30:45  {"container": "postgres-exporter", "instance": "10.244.0.235:9187", "namespace": "plane-dev", "pod": "postgres-exporter-559df864f6-dxfpj"}
+PlanePostgresDown              pending  11-04 21:30:30 to 11-04 21:31:15  {"container": "postgres-exporter", "instance": "10.244.0.246:9187", "namespace": "plane-prod-sim", "pod": "postgres-exporter-6944f6db5-mqdtf"}
+PlanePostgresDown              firing   11-04 21:31:00 to 11-04 21:33:15  {"container": "postgres-exporter", "instance": "10.244.0.235:9187", "namespace": "plane-dev", "pod": "postgres-exporter-559df864f6-dxfpj"}
+PlanePostgresDown              firing   11-04 21:31:30 to 11-04 21:47:45  {"container": "postgres-exporter", "instance": "10.244.0.246:9187", "namespace": "plane-prod-sim", "pod": "postgres-exporter-6944f6db5-mqdtf"}
+PlanePostgresDown              pending  11-04 21:36:00 to 11-04 21:36:45  {"container": "postgres-exporter", "instance": "10.244.0.246:9187", "namespace": "plane-prod-sim", "pod": "postgres-exporter-6944f6db5-mqdtf"}
+PlanePostgresDown              pending  11-04 22:45:30 to 11-04 22:45:45  {"container": "postgres-exporter", "instance": "10.244.0.83:9187", "namespace": "plane-dev", "pod": "postgres-exporter-79f8bbdffd-p5q9g"}
+PlanePostgresDown              pending  11-04 23:36:00 to 11-04 23:36:15  {"container": "postgres-exporter", "instance": "10.244.0.82:9187", "namespace": "plane-prod-sim", "pod": "postgres-exporter-b6f657c47-p65fl"}
+PlanePostgresDown              pending  11-04 23:54:30 to 11-04 23:54:45  {"container": "postgres-exporter", "instance": "10.244.0.82:9187", "namespace": "plane-prod-sim", "pod": "postgres-exporter-b6f657c47-p65fl"}
+PlaneRabbitmqDown              pending  11-04 21:47:30 to 11-04 21:47:45  {"instance": "10.244.0.59:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneRabbitmqDown              pending  11-04 23:50:00 to 11-04 23:50:15  {"instance": "10.244.0.95:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneRabbitmqDown              pending  11-04 23:58:30 to 11-04 23:58:45  {"instance": "10.244.0.103:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneValkeyDown                pending  11-04 21:05:00 to 11-04 21:06:15  {"container": "redis-exporter", "instance": "10.244.0.122:9121", "namespace": "plane-dev", "pod": "redis-exporter-5b59d6cb7c-rp2rd"}
+PlaneValkeyDown                pending  11-04 21:05:30 to 11-04 21:06:15  {"container": "redis-exporter", "instance": "10.244.0.120:9121", "namespace": "plane-prod-sim", "pod": "redis-exporter-5b59d6cb7c-xsw9t"}
+PlaneValkeyDown                firing   11-04 21:06:30 to 11-04 21:47:45  {"container": "redis-exporter", "instance": "10.244.0.120:9121", "namespace": "plane-prod-sim", "pod": "redis-exporter-5b59d6cb7c-xsw9t"}
+PlaneValkeyDown                firing   11-04 21:06:30 to 11-04 21:32:45  {"container": "redis-exporter", "instance": "10.244.0.122:9121", "namespace": "plane-dev", "pod": "redis-exporter-5b59d6cb7c-rp2rd"}
+PlaneValkeyDown                pending  11-04 21:36:00 to 11-04 21:36:45  {"container": "redis-exporter", "instance": "10.244.0.120:9121", "namespace": "plane-prod-sim", "pod": "redis-exporter-5b59d6cb7c-xsw9t"}
+PlaneValkeyDown                pending  11-04 23:55:30 to 11-04 23:55:45  {"container": "redis-exporter", "instance": "10.244.0.120:9121", "namespace": "plane-prod-sim", "pod": "redis-exporter-5b59d6cb7c-xsw9t"}
+PlaneWorkerNoConsumer          pending  11-04 22:30:00 to 11-04 22:30:15  {"instance": "10.244.0.240:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 22:45:30 to 11-04 22:45:45  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 22:57:30 to 11-04 22:57:45  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:00:00 to 11-04 23:00:15  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:27:00 to 11-04 23:27:15  {"instance": "10.244.0.59:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:27:30 to 11-04 23:27:45  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:36:30 to 11-04 23:38:15  {"instance": "10.244.0.92:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          firing   11-04 23:38:30 to 11-04 23:49:15  {"instance": "10.244.0.92:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:50:00 to 11-04 23:50:15  {"instance": "10.244.0.95:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:51:30 to 11-04 23:53:15  {"instance": "10.244.0.96:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          firing   11-04 23:53:30 to 11-04 23:53:45  {"instance": "10.244.0.96:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:57:00 to 11-04 23:57:15  {"instance": "10.244.0.100:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-04 23:58:30 to 11-04 23:58:45  {"instance": "10.244.0.103:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-05 00:13:00 to 11-05 00:13:15  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-05 00:29:30 to 11-05 00:29:45  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-05 00:31:30 to 11-05 00:31:45  {"instance": "10.244.0.103:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-05 00:33:00 to 11-05 00:33:15  {"instance": "10.244.0.127:15692", "namespace": "plane-prod-sim", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-05 01:07:00 to 11-05 01:07:15  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PlaneWorkerNoConsumer          pending  11-05 01:15:00 to 11-05 01:15:15  {"instance": "10.244.0.223:15692", "namespace": "plane-dev", "pod": "plane-rabbitmq-wl-0"}
+PodRestarting                  firing   11-04 21:05:00 to 11-04 21:41:45  {"container": "grafana-sc-dashboard", "instance": "10.244.0.41:8080", "namespace": "monitoring", "pod": "kps-grafana-6797b8c945-rfhjg"}
+PodRestarting                  firing   11-04 21:05:00 to 11-04 21:41:45  {"container": "grafana-sc-datasources", "instance": "10.244.0.41:8080", "namespace": "monitoring", "pod": "kps-grafana-6797b8c945-rfhjg"}
+PodRestarting                  firing   11-04 21:51:00 to 11-04 22:05:15  {"container": "loki", "instance": "10.244.0.41:8080", "namespace": "monitoring", "pod": "loki-0"}
+PodRestarting                  firing   11-04 21:58:30 to 11-04 22:12:45  {"container": "loki", "instance": "10.244.0.41:8080", "namespace": "monitoring", "pod": "loki-0"}
+PodRestarting                  firing   11-04 23:54:00 to 11-05 00:08:15  {"container": "alloy", "instance": "10.244.0.41:8080", "namespace": "monitoring", "pod": "alloy-68d8ccc746-n2tbr"}
+PodRestarting                  firing   11-05 00:45:30 to 11-05 00:59:45  {"container": "alloy", "instance": "10.244.0.41:8080", "namespace": "monitoring", "pod": "alloy-68d8ccc746-n2tbr"}
+# series 109, intervals 169
+# by name, what this window holds:
+#   PlaneApiDown                     firing, pending
+#   PlaneApiDatabaseProbeFailing     firing, pending
+#   PlaneFrontendDown                firing, pending
+#   PlanePodCrashLooping             nothing
+#   PlanePostgresDown                firing, pending
+#   PlaneValkeyDown                  firing, pending
+#   PlaneRabbitmqDown                pending
+#   PlaneMinioDown                   nothing
+#   PlaneWorkerNoConsumer            firing, pending
+#   PlaneCeleryQueueMissing          pending
+#   PlaneCeleryBacklog               nothing
+#   PlaneBackupFailed                firing
+#   PodRestarting                    firing
+#   ContainerMemorySaturation        pending
+#   VmMemoryLow                      nothing
+#   KindnetSkippedNetworkPolicies    firing
+#   KindnetLogsNotRead               pending
+#   ArgoAppOutOfSync                 firing, pending
+#   ArgoAppSyncUnknown               firing, pending
+#   ArgoAppDegraded                  firing, pending
+#   ArgoSyncFailed                   firing, pending
+#   ArgoAppStuckProgressing          firing, pending
+#   ArgoRootSyncStuck                pending
+
+== 2. pg_up against the exporter's own state: `up` and container Ready
+-- plane-dev, first boot
+$ query_range pg_up{namespace="plane-dev"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "postgres-exporter-559df864f6-dxfpj"}: 21:29:30 to 21:32:45 = 0; 21:33:00 to 21:55:00 = 1
+$ query_range up{job="postgres-exporter",namespace="plane-dev"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "postgres-exporter-565bbf6cb-rlg2k"}: 21:05:00 to 21:29:15 = 0
+  {"pod": "postgres-exporter-559df864f6-dxfpj"}: 21:29:30 to 21:55:00 = 1
+$ query_range kube_pod_container_status_ready{container="postgres-exporter",namespace="plane-dev"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "postgres-exporter-559df864f6-dxfpj"}: 21:29:30 to 21:55:00 = 1
+  {"pod": "postgres-exporter-565bbf6cb-rlg2k"}: 21:04:00 to 21:29:15 = 0
+$ query_range kube_pod_container_status_ready{container="plane-pgdb",namespace="plane-dev"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "plane-pgdb-wl-0"}: 21:29:30 to 21:32:45 = 0; 21:33:00 to 21:55:00 = 1
+-- plane-prod-sim, first boot
+$ query_range pg_up{namespace="plane-prod-sim"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "postgres-exporter-6944f6db5-mqdtf"}: 21:30:00 to 21:47:15 = 0; 21:47:30 to 21:47:45 = 1; 21:48:30 to 21:55:00 = 1
+$ query_range up{job="postgres-exporter",namespace="plane-prod-sim"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "postgres-exporter-565bbf6cb-9qnnd"}: 21:05:00 to 21:29:45 = 0
+  {"pod": "postgres-exporter-6944f6db5-mqdtf"}: 21:30:00 to 21:47:45 = 1; 21:48:00 to 21:48:15 = 0; 21:48:30 to 21:55:00 = 1
+$ query_range kube_pod_container_status_ready{container="postgres-exporter",namespace="plane-prod-sim"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "postgres-exporter-565bbf6cb-9qnnd"}: 21:04:00 to 21:29:45 = 0
+  {"pod": "postgres-exporter-6944f6db5-mqdtf"}: 21:30:00 to 21:55:00 = 1
+$ query_range kube_pod_container_status_ready{container="plane-pgdb",namespace="plane-prod-sim"}  2026-11-04T21:00:00Z to 2026-11-04T21:55:00Z, step 15s
+  {"pod": "plane-pgdb-wl-0"}: 21:47:30 to 21:55:00 = 1
+-- plane-dev, Postgres round of drill-pod-restart-dev-20261104T224424Z.log
+$ query_range pg_up{namespace="plane-dev"}  2026-11-04T22:44:30Z to 2026-11-04T22:46:30Z, step 15s
+  {"pod": "postgres-exporter-79f8bbdffd-p5q9g"}: 22:44:30 to 22:45:00 = 1; 22:45:15 to 22:45:30 = 0; 22:45:45 to 22:46:30 = 1
+$ query_range up{job="postgres-exporter",namespace="plane-dev"}  2026-11-04T22:44:30Z to 2026-11-04T22:46:30Z, step 15s
+  {"pod": "postgres-exporter-79f8bbdffd-p5q9g"}: 22:44:30 to 22:46:30 = 1
+$ query_range kube_pod_container_status_ready{container="postgres-exporter",namespace="plane-dev"}  2026-11-04T22:44:30Z to 2026-11-04T22:46:30Z, step 15s
+  {"pod": "postgres-exporter-79f8bbdffd-p5q9g"}: 22:44:30 to 22:46:30 = 1
+$ query_range kube_pod_container_status_ready{container="plane-pgdb",namespace="plane-dev"}  2026-11-04T22:44:30Z to 2026-11-04T22:46:30Z, step 15s
+  {"pod": "plane-pgdb-wl-0"}: 22:44:30 to 22:44:45 = 1
+  {"pod": "plane-pgdb-wl-0"}: 22:45:00 to 22:46:30 = 1
+-- plane-prod-sim, Postgres round of drill-pod-restart-prod-sim-20261104T233500Z.log
+$ query_range pg_up{namespace="plane-prod-sim"}  2026-11-04T23:35:00Z to 2026-11-04T23:37:00Z, step 15s
+  {"pod": "postgres-exporter-b6f657c47-p65fl"}: 23:35:00 to 23:35:30 = 1; 23:35:45 to 23:36:00 = 0; 23:36:15 to 23:37:00 = 1
+$ query_range up{job="postgres-exporter",namespace="plane-prod-sim"}  2026-11-04T23:35:00Z to 2026-11-04T23:37:00Z, step 15s
+  {"pod": "postgres-exporter-b6f657c47-p65fl"}: 23:35:00 to 23:37:00 = 1
+$ query_range kube_pod_container_status_ready{container="postgres-exporter",namespace="plane-prod-sim"}  2026-11-04T23:35:00Z to 2026-11-04T23:37:00Z, step 15s
+  {"pod": "postgres-exporter-b6f657c47-p65fl"}: 23:35:00 to 23:37:00 = 1
+$ query_range kube_pod_container_status_ready{container="plane-pgdb",namespace="plane-prod-sim"}  2026-11-04T23:35:00Z to 2026-11-04T23:37:00Z, step 15s
+  {"pod": "plane-pgdb-wl-0"}: 23:35:00 to 23:35:15 = 1
+  {"pod": "plane-pgdb-wl-0"}: 23:35:30 to 23:35:45 = 0; 23:36:00 to 23:37:00 = 1
+-- plane-prod-sim, Postgres round of drill-pod-restart-prod-sim-20261104T235402Z.log
+$ query_range pg_up{namespace="plane-prod-sim"}  2026-11-04T23:54:10Z to 2026-11-04T23:55:30Z, step 15s
+  {"pod": "postgres-exporter-b6f657c47-p65fl"}: 23:54:10 to 23:54:10 = 1; 23:54:25 to 23:54:40 = 0; 23:54:55 to 23:55:25 = 1
+$ query_range up{job="postgres-exporter",namespace="plane-prod-sim"}  2026-11-04T23:54:10Z to 2026-11-04T23:55:30Z, step 15s
+  {"pod": "postgres-exporter-b6f657c47-p65fl"}: 23:54:10 to 23:55:25 = 1
+$ query_range kube_pod_container_status_ready{container="postgres-exporter",namespace="plane-prod-sim"}  2026-11-04T23:54:10Z to 2026-11-04T23:55:30Z, step 15s
+  {"pod": "postgres-exporter-b6f657c47-p65fl"}: 23:54:10 to 23:55:25 = 1
+$ query_range kube_pod_container_status_ready{container="plane-pgdb",namespace="plane-prod-sim"}  2026-11-04T23:54:10Z to 2026-11-04T23:55:30Z, step 15s
+  {"pod": "plane-pgdb-wl-0"}: 23:54:10 to 23:54:10 = 1
+  {"pod": "plane-pgdb-wl-0"}: 23:54:25 to 23:54:40 = 0; 23:54:55 to 23:55:25 = 1
+
+== 3. The two API probes: every raw sample Prometheus holds, by HTTP status code
+$ query probe_http_status_code{probe=~"api-instance|api-db"}[12h], at 2026-11-05T02:01:46Z
+  plane-dev       api-db        first 11-04 21:04:51 last 11-05 02:01:36 samples  1186 by code {'404': 1181, '500': 1, '503': 4}
+  plane-dev       api-instance  first 11-04 21:04:50 last 11-05 02:01:35 samples  1184 by code {'0': 1, '200': 1012, '404': 167, '503': 4}
+  plane-prod-sim  api-db        first 11-04 21:04:45 last 11-05 02:01:45 samples  1186 by code {'404': 1184, '500': 2}
+  plane-prod-sim  api-instance  first 11-04 21:04:47 last 11-05 02:01:32 samples  1184 by code {'200': 1006, '404': 178}
+  all samples: 4740, by code {'0': 1, '200': 2018, '404': 2710, '500': 3, '503': 8}. 429 appears 0 times.
+  404 on api-instance, and 404 on api-db before Plane came up, is Traefik with no route: the probe fails on it.
+  0 is a probe that got no HTTP answer.
+
+== 4. The two API probes when Postgres was gone, and when the API had no ready pod
+-- plane-dev, Postgres round of the pod restart drill
+$ query_range probe_http_status_code{namespace="plane-dev",probe=~"api-instance|api-db"}  2026-11-04T22:44:30Z to 2026-11-04T22:46:30Z, step 15s
+  {"probe": "api-instance"}: 22:44:30 to 22:46:30 = 200
+  {"probe": "api-db"}: 22:44:30 to 22:44:30 = 404; 22:44:45 to 22:44:45 = 500; 22:45:00 to 22:46:30 = 404
+$ query_range probe_success{namespace="plane-dev",probe=~"api-instance|api-db"}  2026-11-04T22:44:30Z to 2026-11-04T22:46:30Z, step 15s
+  {"probe": "api-instance"}: 22:44:30 to 22:46:30 = 1
+  {"probe": "api-db"}: 22:44:30 to 22:44:30 = 1; 22:44:45 to 22:44:45 = 0; 22:45:00 to 22:46:30 = 1
+-- plane-prod-sim, Postgres round of the pod restart drill
+$ query_range probe_http_status_code{namespace="plane-prod-sim",probe=~"api-instance|api-db"}  2026-11-04T23:35:00Z to 2026-11-04T23:37:00Z, step 15s
+  {"probe": "api-instance"}: 23:35:00 to 23:37:00 = 200
+  {"probe": "api-db"}: 23:35:00 to 23:35:15 = 404; 23:35:30 to 23:35:30 = 500; 23:35:45 to 23:37:00 = 404
+$ query_range probe_success{namespace="plane-prod-sim",probe=~"api-instance|api-db"}  2026-11-04T23:35:00Z to 2026-11-04T23:37:00Z, step 15s
+  {"probe": "api-instance"}: 23:35:00 to 23:37:00 = 1
+  {"probe": "api-db"}: 23:35:00 to 23:35:15 = 1; 23:35:30 to 23:35:30 = 0; 23:35:45 to 23:37:00 = 1
+-- plane-prod-sim, Postgres round of the pod restart drill
+$ query_range probe_http_status_code{namespace="plane-prod-sim",probe=~"api-instance|api-db"}  2026-11-04T23:54:10Z to 2026-11-04T23:55:30Z, step 15s
+  {"probe": "api-instance"}: 23:54:10 to 23:55:25 = 200
+  {"probe": "api-db"}: 23:54:10 to 23:54:10 = 404; 23:54:25 to 23:54:25 = 500; 23:54:40 to 23:55:25 = 404
+$ query_range probe_success{namespace="plane-prod-sim",probe=~"api-instance|api-db"}  2026-11-04T23:54:10Z to 2026-11-04T23:55:30Z, step 15s
+  {"probe": "api-instance"}: 23:54:10 to 23:55:25 = 1
+  {"probe": "api-db"}: 23:54:10 to 23:54:10 = 1; 23:54:25 to 23:54:25 = 0; 23:54:40 to 23:55:25 = 1
+-- plane-dev, the only api pod deleted, twice, plane-dev-startup-1.txt
+$ query_range probe_http_status_code{namespace="plane-dev",probe=~"api-instance|api-db"}  2026-11-04T22:41:00Z to 2026-11-04T22:43:45Z, step 15s
+  {"probe": "api-instance"}: 22:41:00 to 22:41:30 = 200; 22:41:45 to 22:42:00 = 503; 22:42:15 to 22:42:30 = 200; 22:42:45 to 22:43:00 = 503; 22:43:15 to 22:43:45 = 200
+  {"probe": "api-db"}: 22:41:00 to 22:41:30 = 404; 22:41:45 to 22:42:00 = 503; 22:42:15 to 22:42:30 = 404; 22:42:45 to 22:43:00 = 503; 22:43:15 to 22:43:45 = 404
+$ query_range probe_success{namespace="plane-dev",probe=~"api-instance|api-db"}  2026-11-04T22:41:00Z to 2026-11-04T22:43:45Z, step 15s
+  {"probe": "api-instance"}: 22:41:00 to 22:41:30 = 1; 22:41:45 to 22:42:00 = 0; 22:42:15 to 22:42:30 = 1; 22:42:45 to 22:43:00 = 0; 22:43:15 to 22:43:45 = 1
+  {"probe": "api-db"}: 22:41:00 to 22:41:30 = 1; 22:41:45 to 22:42:00 = 0; 22:42:15 to 22:42:30 = 1; 22:42:45 to 22:43:00 = 0; 22:43:15 to 22:43:45 = 1
+$ query_range kube_deployment_status_replicas_available{namespace="plane-dev",deployment="plane-api-wl"}  2026-11-04T22:41:00Z to 2026-11-04T22:43:45Z, step 15s
+  {"deployment": "plane-api-wl"}: 22:41:00 to 22:41:45 = 1; 22:42:00 to 22:42:15 = 0; 22:42:30 to 22:42:45 = 1; 22:43:00 to 22:43:15 = 0; 22:43:30 to 22:43:45 = 1
+
+== 5. Why two chart dashboards read empty in monitoring-dashboards-all-1.txt, captured at 2026-11-04T22:19:19Z
+$ query grafana_build_info{job=~"kps-grafana", instance=~"10.244.0.234:3000"}  at 2026-11-04T22:19:19Z: 0 series
+$ query grafana_build_info{job=~"kps-grafana"}  at 2026-11-04T22:19:19Z: 1 series
+    instance=10.244.0.251:3000 pod=kps-grafana-77cb96fc89-v8g6n
+$ query prometheus_build_info{cluster=~"", job=~"kps-prometheus", instance=~"10.244.0.46:9090"}  at 2026-11-04T22:19:19Z: 0 series
+$ query prometheus_build_info{job=~"kps-prometheus"}  at 2026-11-04T22:19:19Z: 1 series
+    instance=10.244.0.5:9090 pod=prometheus-kps-prometheus-0
+$ query kubelet_volume_stats_available_bytes  at 2026-11-04T22:19:19Z: 0 series
+
+== 6. The "Syncs still open" panel's expression, run on Prometheus directly, not through Grafana
+$ query_range max by (name) (argocd_app_info{operation="sync"})  2026-11-04T20:30:00Z to 2026-11-05T02:01:46Z, step 15s
+  {"name": "h16-sync-failure-probe"}: 22:56:00 to 23:28:15 = 1
+  {"name": "infisical"}: 21:04:45 to 21:11:00 = 1
+  {"name": "kube-prometheus-stack"}: 21:29:00 to 21:29:15 = 1
+  {"name": "monitoring-extras"}: 23:00:00 to 23:00:15 = 1
+  {"name": "plane-dev"}: 21:11:45 to 21:18:00 = 1; 21:18:30 to 21:46:45 = 1; 22:40:30 to 22:40:45 = 1; 22:51:30 to 22:52:15 = 1; 00:11:30 to 00:12:15 = 1
+  {"name": "plane-prod-sim"}: 21:47:00 to 21:49:45 = 1; 22:40:30 to 22:40:45 = 1; 22:51:30 to 22:52:15 = 1
+  {"name": "root"}: 21:04:45 to 21:15:00 = 1; 21:15:45 to 21:18:00 = 1; 21:18:30 to 21:46:45 = 1; 23:00:00 to 23:00:15 = 1; 23:22:00 to 23:23:15 = 1; 23:24:30 to 23:24:45 = 1
+  {"name": "term-b"}: 21:07:15 to 21:08:00 = 1
+  {"name": "wave-probe-child-a"}: 21:09:45 to 21:10:30 = 1
+  {"name": "wave-probe-parent"}: 21:09:45 to 21:10:30 = 1
+
+== 7. What each project rule reads, right now: how many series its selector returns
+# The selector under each rule, with the threshold left off. A rule whose selector has series cannot be silently empty.
+# Empty here means no series at this moment, so the rule can only fire once that state exists.
+  PlaneApiDown                                   2 series   probe_success{probe="api-instance"}
+  PlaneApiDatabaseProbeFailing                   2 series   probe_success{probe="api-db"}
+  PlaneFrontendDown                              8 series   probe_success{probe=~"frontend|live"}
+  PlanePodCrashLooping                           0 series   kube_pod_container_status_waiting_reason{namespace=~"plane-.*",reason="CrashLoopBackOff"}
+  PlanePostgresDown                              2 series   pg_up{namespace=~"plane-.*"}
+  PlaneValkeyDown                                2 series   redis_up{namespace=~"plane-.*"}
+  PlaneRabbitmqDown                              2 series   up{namespace=~"plane-.*",service="plane-rabbitmq-metrics",metrics_path="/metrics"}
+  PlaneMinioDown                                 2 series   up{namespace=~"plane-.*",service="plane-minio",metrics_path="/minio/v2/metrics/cluster"}
+  PlaneWorkerNoConsumer                          2 series   rabbitmq_detailed_queue_consumers{namespace=~"plane-.*",queue="celery"}
+  PlaneCeleryQueueMissing                        2 series   rabbitmq_identity_info{namespace=~"plane-.*",metrics_path="/metrics"}
+  PlaneCeleryBacklog                             2 series   rabbitmq_detailed_queue_messages_ready{namespace=~"plane-.*",queue="celery"}
+  PlaneBackupFailed                             14 series   kube_job_status_failed{namespace=~"plane-.*|infisical",job_name=~"plane-backup-.*"}
+  PodRestarting                                 68 series   kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}
+  ContainerMemorySaturation                     50 series   container_memory_working_set_bytes{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical",container!="",container!="POD"}
+  ContainerMemorySaturation, the limit          71 series   kube_pod_container_resource_limits{resource="memory"}
+  VmMemoryLow                                    1 series   node_memory_MemAvailable_bytes
+  KindnetSkippedNetworkPolicies                  2 series   max_over_time(loki_process_custom_kindnet_netpol_skipped_total[3d])
+  KindnetSkippedNetworkPolicies, the pod         9 series   max_over_time(kube_pod_info{namespace="kube-system"}[5m])
+  KindnetLogsNotRead                             1 series   loki_process_custom_kindnet_log_lines_total
+  ArgoAppOutOfSync                               0 series   argocd_app_info{sync_status="OutOfSync"}
+  ArgoAppSyncUnknown                             0 series   argocd_app_info{sync_status="Unknown"}
+  ArgoAppDegraded                                0 series   argocd_app_info{health_status=~"Degraded|Missing"}
+  ArgoSyncFailed, open operation                 0 series   argocd_app_info{operation="sync",name!="root"}
+  ArgoSyncFailed, completed                      0 series   argocd_app_sync_total{phase=~"Error|Failed"}
+  ArgoAppStuckProgressing                        0 series   argocd_app_info{health_status="Progressing",name!="root"}
+  ArgoRootSyncStuck                              0 series   argocd_app_info{operation="sync",name="root"}
+  All of the Argo rules, the metric itself      14 series   argocd_app_info
+# PlanePodCrashLooping reads one reason of a metric that exists only while a container waits. Every reason held, by namespace group:
+  Plane namespaces: ContainerCreating 15, CreateContainerConfigError 2, PodInitializing 3
+  every namespace: ContainerCreating 26, CrashLoopBackOff 3, CreateContainerConfigError 2, ErrImagePull 2, PodInitializing 5
+# The state of the Applications at this read:
+  argocd_app_info series by sync and health: Synced/Healthy 14

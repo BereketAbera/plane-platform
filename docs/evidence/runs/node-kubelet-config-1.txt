@@ -1,0 +1,17 @@
+# date: 2026-11-05T02:04:40Z
+# Read-only. What the running kubelet on the kind node reports, then the file docs/runbooks/disk-pressure.md tells you to read.
+$ kubectl --context kind-plane-platform get --raw /api/v1/nodes/plane-platform-control-plane/proxy/configz | jq '.kubeletconfig | {imageGCHighThresholdPercent, imageGCLowThresholdPercent, evictionHard}'
+{
+  "imageGCHighThresholdPercent": 100,
+  "imageGCLowThresholdPercent": 80,
+  "evictionHard": {
+    "imagefs.available": "0%",
+    "nodefs.available": "0%",
+    "nodefs.inodesFree": "0%"
+  }
+}
+$ docker exec plane-platform-control-plane grep -E 'imageGC|nodefs|imagefs' /var/lib/kubelet/config.yaml
+  imagefs.available: 0%
+  nodefs.available: 0%
+  nodefs.inodesFree: 0%
+imageGCHighThresholdPercent: 100
