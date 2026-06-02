@@ -12,14 +12,14 @@ The [repository README](../README.md) has the overview, status table, and quick 
 2. The code decides what actually happens.
 3. [evidence/](evidence/README.md) decides what actually happened. A claim about runtime behaviour needs a capture there, with its date and command.
 
-**Result labels**, from [contract section 12](platform-contract.md#12-evidence-rule):
+**Result labels**, from [contract section 12](platform-contract.md#12-evidence-rule), as [validation.md](validation.md#status-values) defines them:
 
 | Label | Meaning |
 |---|---|
-| PASS | Ran, met the expected result, evidence captured |
-| FAIL | Ran, did not meet the expected result, evidence captured |
-| BLOCKED | Could not run, and the blocker is named |
-| NOT RUN | Has not been attempted |
+| PASS | The test ran, met its criterion, and its raw output is in [`docs/evidence/`](evidence/README.md) |
+| FAIL | The test ran and the system misbehaved |
+| BLOCKED | The test could not run or finish because something it depends on failed or is missing. This says nothing about the system under test |
+| NOT RUN | The test was not attempted, or it was attempted and no evidence was captured |
 
 **Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 the open ones are mostly what has not run yet: a clean install, teardown and recreation, a full restore, secret rotation, the failed-deploy drill, the load test, `make test-alert`, and everything about Hetzner and Cloudflare.
 
