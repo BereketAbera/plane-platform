@@ -47,9 +47,9 @@ Runtime status on 2026-11-05, on one laptop, brought up stage by stage rather th
 
 - All 14 Argo CD Applications read Synced and Healthy ([`make status`](docs/evidence/runs/plane-prod-sim-status-1.txt)).
 - `make test-e2e` passes in `plane-dev` on the branded images, 38 steps ([output](docs/evidence/runs/branded-dev-smoke-1.txt)), and in `plane-prod-sim` on upstream images, 37 steps ([JSON](docs/evidence/runs/smoke-prod-sim-20261104T235926Z.json)). The branded images have not reached prod-sim.
-- The NetworkPolicy matrix passes from both Plane namespaces, and real attempts to cross between the environments all failed as they should ([network](docs/evidence/runs/harness-separation-network-1.txt), [state](docs/evidence/runs/harness-separation-state-1.txt)).
+- The NetworkPolicy matrix passes from both Plane namespaces as it stood before `01ab74c`, with no published run of every row, and real attempts to cross between the environments all failed as they should ([network](docs/evidence/runs/harness-separation-network-1.txt), [state](docs/evidence/runs/harness-separation-state-1.txt)).
 - **NOT RUN:** a clean install, teardown and recreation, a full restore, secret rotation, the failed-deploy drill, a load test, `make test-alert`, and any publish from `images.yml`. [[VERIFY: docs/validation.md records the final Pass 1 result of make up and make test]]
-- **Not pushed:** `origin/main` is at `da7a4c9`, and the branding and everything since are local. The first push that carries `apps/wayline/**` runs a real GHCR publish through `images.yml`, so plan that push.
+- **Not pushed:** `origin/main` is at `da7a4c9`, and the branding and everything since are local. The first push that carries `apps/wayline/**` runs a real GHCR publish through `images.yml`, so plan that push, and put D12 (section 12) to the owner first.
 - Read [`docs/validation.md`](docs/validation.md) for what actually ran before relying on any "carries over" row below.
 
 The reasons a kind result does not transfer are listed in [known limitations](docs/known-limitations.md#what-pass-1-does-not-prove).
@@ -147,7 +147,7 @@ The Git repository, GHCR, and the Cloudflare account remain shared. That is a de
 
 ## 4. What must change, per component
 
-Appendix 13 lists where each value lives. Other work is still landing, so line numbers move. Search for the value rather than trusting a line.
+Appendix 13 names the main places each value lives, and its `git grep` gives the full list. Other work is still landing, so line numbers move. Search for the value rather than trusting a line.
 
 ### 4.1 kind to real nodes
 
@@ -157,7 +157,7 @@ Appendix 13 lists where each value lives. Other work is still landing, so line n
 | Kubernetes | v1.36.4 | Exact version pinned. Check support for the Argo CD line in use before changing it |
 | Lifecycle | `make down`, `make up`, `make destroy` | Rewrite. `scripts/down.sh` and `scripts/destroy.sh` assume kind and local state |
 | Architecture | arm64 only | Decide (D3). `scripts/ci/build-images.sh` passes `--platform linux/arm64`, and `.github/workflows/images.yml` runs on `ubuntu-24.04-arm` |
-| Disk protection | kind disables image GC and eviction (critique section 5) | Kubelet defaults return. Size disks so garbage collection and eviction do not fire in normal use |
+| Disk protection | kind disables image GC and eviction, as the running kubelet reports ([config](docs/evidence/runs/node-kubelet-config-1.txt)) | Kubelet defaults return. Size disks so garbage collection and eviction do not fire in normal use |
 | `guard_disk` | Guards the Mac's disk, because the VM cannot see it | Replace with node-level alerts. Keep it for scripts that write to the operator's machine |
 
 Hetzner has no managed Kubernetes offering as far as the author knows. [[VERIFY: whether Hetzner offers managed Kubernetes at migration time]]
@@ -183,14 +183,14 @@ Compare Postgres on a network block volume with the server's local disk before c
 
 | Item | Pass 1 | Pass 2 |
 |---|---|---|
-| Branded images | `localhost:5001/wayline/*` by digest | GHCR by digest. `images.yml` is written to push there and has never run with `apps/wayline`, so that push, its scan, its prune and its digest bump are all untested. D12 limits it to private packages under the owner's account |
+| Branded images | `localhost:5001/wayline/*` by digest | GHCR by digest. `images.yml` is written to push there and has never run with `apps/wayline`, so that push, its scan, its prune and its digest bump are all untested. `apps/wayline/scripts/publish-gate.sh` limits it to the owner's GHCR namespace, and the job fails for anywhere else. The gate does not read visibility, and no package's visibility has been seen |
 | Local copy step | `scripts/ci/copy-to-local-registry.sh` | Remove. Digests in Git point straight at GHCR |
 | Pull-through caches | `infrastructure/local-services`, `infrastructure/kind/containerd-certs.d` | Remove. Node pulls use real registries |
 | Docker Hub limits | Mitigated through `mirror.gcr.io` | Nodes share a public IP, and anonymous limits apply. Decide: authenticated pulls through kubelet config, a mirror in GHCR, or retain `mirror.gcr.io` as a containerd mirror |
-| Pull auth | None | Private packages, which D12 requires today, need `imagePullSecrets` on the `plane` ServiceAccount, sourced from Infisical. Public packages need none, once D12 allows them |
+| Pull auth | None | Private packages need `imagePullSecrets` on the `plane` ServiceAccount, sourced from Infisical, and public packages need none. Read each package's visibility after its first publish, because making the repository public no longer stops publishing (D12) |
 | Digest kind | Index digests for upstream, one plain manifest for branded (`--provenance=false --sbom=false`) | Keep. On x86, branded builds must become multi-arch and digests change |
 
-On 2026-11-05 the four branded images are built from `1563cbf` and pushed to the local registry. `helm/plane/overlays/dev/kustomization.yaml` names them, and the prod-sim overlay still names `docker.io/makeplane/*`. `live` stays upstream's image in both. [[VERIFY: branded images are built, pushed, and referenced in helm/plane/overlays/*/kustomization.yaml]]
+On 2026-11-05 `helm/plane/overlays/dev/kustomization.yaml` names the four branded images built from `1563cbf`, and `plane-dev` runs them. The prod-sim overlay still names `docker.io/makeplane/*`. A later build from `ec45e21`, with the cache header and the flattened backend, is in the local registry and deployed nowhere ([digests](docs/evidence/branding/digests.tsv)). `live` stays upstream's image in both. [[VERIFY: branded images are built, pushed, and referenced in helm/plane/overlays/*/kustomization.yaml]]
 
 `.github/workflows/README.md` records what is known about GHCR limits: GitHub's billing page lists a small quota for Packages and says Container registry storage is free for now, and no image has been stored there to test that. [[VERIFY: current GHCR limits for public and private packages]]
 
@@ -297,7 +297,7 @@ Pass 1 writes to `.local/backups` on the laptop through `/backups`, a static hos
 | Quota | `persistentvolumeclaims` in `modules/foundation/main.tf` counts the backup PVC. Adjust if it goes |
 | Volume snapshots | Useful as a second layer, not a substitute. They share the provider and are crash-consistent only |
 | Recovery set | `infisical/lib/recovery.sh`. Each Infisical backup holds its Terraform state and hashes of secret zero, and each Plane backup holds its test accounts and sentinel. Secret zero is never copied into a backup. Decide what of this belongs off-host, and keep test accounts out of real backups |
-| Restore | `scripts/restore.sh` uses local paths and `http://infisical.localhost`. Rewrite both. `make restore-clean` is the order to keep: Infisical first, then Plane. On kind, only an in-place Infisical restore has run for real ([JSON](docs/evidence/runs/restore-infisical-20261105T001834Z.json)), plus rehearsals in throwaway places |
+| Restore | `scripts/restore.sh` uses local paths, and `infisical/lib/api.sh` defaults to `http://infisical.localhost`. Rewrite both. `make restore-clean` is the order to keep: Infisical first, then Plane. On kind, only an in-place Infisical restore has run for real ([JSON](docs/evidence/runs/restore-infisical-20261105T001834Z.json)), plus rehearsals in throwaway places |
 
 On kind, with test data, a backup took 11 to 31 seconds per environment, and `make backup ENV=all` took 42 seconds. A Postgres dump was 0.7 to 4.4 MB ([run](docs/evidence/runs/dr-backup-retention-1.txt), [resource-utilization.md](docs/resource-utilization.md#persistent-storage)). Real data will not look like this, so measure again.
 
@@ -382,10 +382,10 @@ Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints l
 
 | Item | Pass 1 | Pass 2 |
 |---|---|---|
-| Email | No SMTP config and no egress rule. Password reset and invitations cannot send | Provide SMTP in Infisical and an egress rule. In the branded backend image `EMAIL_FROM` defaults to `noreply@wayline.invalid`, which no mail server will accept, so set it |
+| Email | No SMTP config and no egress rule. Password reset and invitations cannot send | Provide SMTP in Infisical and an egress rule. In the branded backend image `EMAIL_FROM` defaults to `noreply@wayline.invalid`, a reserved domain that real mail servers should not be expected to accept. That is not tested, and only a scratch server has taken it ([mail](docs/evidence/branding/backend-db.txt)), so set it |
 | Signup | Default | Set `ENABLE_SIGNUP` to match the audience |
 | Telemetry | Off through `tests/e2e/smoke.py`, and denied by NetworkPolicy, both measured on upstream images ([smoke](docs/evidence/runs/smoke-dev-20261104T221730Z.json), [matrix](docs/evidence/runs/netpol-20261104T232752Z.tsv)). The branded images default it off in the setup form and at registration | Check it for an admin made through the UI, which has not been done. Upstream's images turn it on for a hand-made admin, so egress denial is the backstop. Also keep it denied after adding SMTP egress |
-| HTML caching | The web and admin images sent no `Cache-Control`, so a browser kept showing the old app after a promotion ([record](docs/evidence/branding/live-dev/README.md)). A fix was being built on 2026-11-05 | Confirm the header on the images you deploy, and set Cloudflare's cache rules to match, or a promotion may not reach returning users |
+| HTML caching | The web and admin images from `1563cbf` send no `Cache-Control`, so a browser kept showing the old app after a promotion ([record](docs/evidence/branding/live-dev/README.md)). The fix is committed at `e885fc0` and built into the images from `ec45e21`, where a browser on a local port got the new page at the next request ([browser](docs/evidence/branding/cache-browser.txt)). It is not promoted, so `plane-dev` still behaves this way on 2026-11-05 | Confirm the header on the images you deploy, and set Cloudflare's cache rules to match, or a promotion may not reach returning users |
 | `enable_drf_spectacular` | On in dev, off in prod-sim | Off wherever public |
 | Terms, privacy | None | The owner must supply them if others use it |
 
@@ -571,7 +571,7 @@ Pass 1 makes no claim of production readiness, and neither does this document. A
 | Argo CD | SSO or named accounts, RBAC, `server.insecure` reviewed | Admin only |
 | Infisical | Re-decide `ALLOW_INTERNAL_IP_CONNECTIONS`, confirm cross-project denial | Cross-project reads get 403 both ways on kind ([run](docs/evidence/runs/infisical-isolation-3.txt)) |
 | Network | Default-deny re-proven on the real CNI, fail-closed behaviour known, egress minimal | Matrix passes from both Plane namespaces on kindnet, and that does not transfer. [[VERIFY: tests/network-policy-matrix.yaml result on the real CNI]] |
-| Images | Scan gate that blocks. Sign images if the repository is public, since attestations become available | `make scan-images` fails on a fixable CRITICAL in an image built here, and those pass today ([scans](docs/evidence/security/README.md)). Upstream images still report CRITICAL findings, reported only. `images.yml` has the same step, never yet run |
+| Images | Scan gate that blocks. Sign images if the repository is public, since attestations become available | `make scan-images` fails on a fixable CRITICAL in an image built here. The images from `1563cbf` pass it as of 2026-11-04T23:58Z, with HIGH findings left, backend 4 and space 30, each with a fix not taken ([scans](docs/evidence/security/README.md)). Upstream images reported CRITICAL findings in the only complete scan, on 2026-11-04T21:54Z, reported only. `images.yml` has the same step, never yet run |
 | Accepted risks | RabbitMQ 3.13 is out of community support. Re-decide. 4.2.9 is the candidate, 4.3 breaks Celery per upstream | Accepted for Pass 1 |
 | Git | Clean `gitleaks` history before going public, branch protection with required review | Advisory only on GitHub Free private |
 | Terraform | Remote encrypted state with separate keys per environment, lock tested | Local state |
@@ -587,7 +587,7 @@ Read [docs/agpl-compliance.md](docs/agpl-compliance.md). This summary is enginee
 - **The repository must be public, or source otherwise offered, before anyone other than the owner uses the instance.** `origin` is private today. A `/source` link to a private repository offers nothing to someone without access.
 - Corresponding Source includes the pinned upstream ref, patches, overlay, codemod, build scripts, and Dockerfiles, not only application code.
 - `/source` must lead to the exact commit of the running build. The web image stamps that commit at build time, and on `plane-dev` it answers 302 to the commit that built it, `1563cbf`, which is not pushed. [[VERIFY: /source resolves to the commit of the deployed digest, from a logged-out browser, on each surface]]
-- Before the first outside user: pass the checklist in [docs/agpl-compliance.md](docs/agpl-compliance.md#checklist-before-the-first-other-user). The repository's `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` are in place, and the `email.py` decision (D12) is made for private images. Going public is what remains open.
+- Before the first outside user: pass the checklist in [docs/agpl-compliance.md](docs/agpl-compliance.md#checklist-before-the-first-other-user). The repository's `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` are in place. Agents applied the `email.py` replacement and the flattening, and the owner's decision on them (D12) is still open, as is going public.
 
 ## 10. Cost items to price
 
@@ -651,14 +651,14 @@ Each needs an owner decision before the phase shown. Recommendations are the aut
 | D9 | Public hostname and name | `plane.` vs. a Wayline-named host | Wayline-named host, since the upstream name is not licensed for branding | 2 |
 | D10 | Repository visibility | Public, or a separate source offer | Public | 2 |
 | D11 | Object storage for uploads | Silo in cluster, external S3 | Silo first, since `uploads` is constrained by Plane code | 6 |
-| D12 | `email.py` header | Decided for the image on 2026-11-05: it replaces the file with upstream's own AGPL-3.0-only version, pinned by commit, and publishes only to private GHCR packages under the owner's account (`apps/wayline/backend/email-py-decision.txt`). Still open: a public image, because the original stays in its `FROM` layer | Take advice before any public distribution of the backend image, or move to an upstream release that carries the fix. See [docs/agpl-compliance.md](docs/agpl-compliance.md#the-commercial-header-in-emailpy) | 2 |
+| D12 | `email.py` header | Applied by agents, and the owner's decision is still open: the owner has not reviewed it, and no legal reviewer has. The image replaces the file with upstream's own AGPL-3.0-only version, pinned by commit, and the code at HEAD flattens it. It publishes only to the local registry or the owner's GHCR namespace, with a job failure otherwise and no check on visibility (`apps/wayline/backend/email-py-decision.txt`, `apps/wayline/scripts/publish-gate.sh`). The backend image `plane-dev` runs, from `1563cbf`, still holds the original in two `FROM` layers until the flattened one is promoted | Review what the agents did before the first push to `main` that carries `apps/wayline/**`, because that push publishes. Take advice before any public distribution of the backend image, or move to an upstream release that carries the fix. See [docs/agpl-compliance.md](docs/agpl-compliance.md#the-commercial-header-in-emailpy) | 2 |
 | D13 | Plane version at migration | Stay on v1.4.3 or upgrade first | Stay. Change one thing at a time. Security fixes may override this | 1 |
 | D14 | Hosted location and privacy | Hetzner location, data residency | Owner's decision, with legal input if real user data is held | 3 |
 | D15 | How a prod promotion proves itself on dev, with independent clusters | A record dev writes to Git after its checks, a CI status, or a person's review. Pass 1's `scripts/lib/dev-check.sh` asks the one cluster directly, which independent clusters must not allow | A record in Git that dev writes and prod's promotion check reads. Nothing is designed yet | 1 |
 
 ## 13. Appendix: local values hard-coded in the repository
 
-Read on 2026-11-05. Files only, because line numbers move. Regenerate before Phase 1:
+Read on 2026-11-05. These are the main places, with files only because line numbers move, and they are not a complete list. The `git grep` below is the full list, so run it before Phase 1:
 
 ```bash
 git grep -n -E 'localhost|plane-git|prod-sim|172\.16\.0\.0|192\.168\.65|storageClass|kind-plane-platform|node-network-only' \
@@ -668,14 +668,14 @@ git grep -n -E 'localhost|plane-git|prod-sim|172\.16\.0\.0|192\.168\.65|storageC
 | Value | Where |
 |---|---|
 | `git://plane-git/plane-platform.git` | 13 files in `gitops/applications/`, 14 lines. Default in `environments/local/variables.tf`, `gitops/bootstrap/chart/values.yaml` |
-| Hostnames | `helm/plane/overlays/{dev,prod-sim}/values.yaml`, `helm/values/argocd.yaml`, `helm/values/infisical.yaml`, `helm/values/kube-prometheus-stack.yaml`, `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml`, `monitoring/manifests/shared/ingress-routes.yaml`, `monitoring/manifests/environments/{dev,prod-sim}/kustomization.yaml`, `infisical/terraform/variables.tf`, `infrastructure/terraform/environments/local/main.tf` |
-| Hostnames in tooling | `monitoring/ops/lib.sh`, `tests/e2e/smoke.py`, `tests/separation/`, `tests/routes/internal-routes.sh`, `scripts/status.sh`, `scripts/rotate.sh`, `scripts/restore.sh`, `scripts/logs.sh`, `tests/network-policy-matrix.yaml` |
+| Hostnames | `helm/plane/overlays/{dev,prod-sim}/values.yaml`, `helm/values/argocd.yaml`, `helm/values/infisical.yaml`, `helm/values/kube-prometheus-stack.yaml`, `gitops/bootstrap/argocd-route/ingressroute.yaml`, `gitops/platform/network-policies/infisical.yaml`, `infisical/manifests/ingressroute.yaml`, `monitoring/manifests/shared/ingress-routes.yaml`, `monitoring/manifests/environments/{dev,prod-sim}/kustomization.yaml`, `infisical/terraform/variables.tf`, `infrastructure/terraform/environments/local/main.tf`, `policy/plane.rego` |
+| Hostnames in tooling | `monitoring/ops/lib.sh`, `infisical/lib/api.sh`, `tests/e2e/smoke.py`, `tests/separation/`, `tests/routes/internal-routes.sh`, `tests/drills/*.sh`, `tests/network-policy-matrix.yaml`, `scripts/prereqs.sh`, `scripts/status.sh`, `scripts/rotate.sh`, `scripts/up.sh`, `scripts/logs.sh`, `scripts/ci/negative-controls.sh` |
 | Entry point `web`, plain HTTP | `helm/plane/overlays/*/values.yaml`, all IngressRoutes above, `helm/values/argocd.yaml` (`server.insecure`) |
 | `standard` storage class | `helm/plane/overlays/*/values.yaml`, `infisical/manifests/postgres.yaml`, `infisical/manifests/redis.yaml` |
 | Docker network CIDRs | `gitops/platform/network-policies/*.yaml`, 15 `ipBlock` rules, `scripts/cluster-up.sh` |
 | `node-network-only` allow list on `172.16.0.0/12` | `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml`, `monitoring/manifests/shared/ingress-routes.yaml`, `policy/plane.rego` |
 | `/backups` hostPath | `gitops/platform/backup-storage/*.yaml`, `infrastructure/kind/cluster.yaml.tmpl` |
-| `localhost:5001` | `scripts/promote.sh`, `scripts/up.sh`, `scripts/ci/copy-to-local-registry.sh`, `Makefile` (`images` target), `helm/plane/overlays/dev/kustomization.yaml` |
+| `localhost:5001` | `scripts/promote.sh`, `scripts/up.sh`, `scripts/restore.sh`, `scripts/destroy.sh`, `scripts/ci/build-images.sh`, `scripts/ci/copy-to-local-registry.sh`, `scripts/ci/scan-images.sh`, `scripts/ci/scan-images-report.py`, `tests/e2e/smoke.py`, `tests/gates/day1.sh`, `policy/tests/environments_test.rego`, `.github/workflows/images.yml`, `Makefile` (`images` target), `helm/plane/overlays/dev/kustomization.yaml` |
 | arm64 only | `scripts/ci/build-images.sh`, `.github/workflows/images.yml` |
 | Kindnet checks | `scripts/test-netpol.sh`, `tests/gates/day1.sh`, `monitoring/manifests/shared/rules-platform.yaml`, `helm/values/alloy.yaml` |
 | Alert sink | `helm/values/kube-prometheus-stack.yaml`, `monitoring/manifests/shared/alert-sink.yaml`, `scripts/test-alert.sh` |
