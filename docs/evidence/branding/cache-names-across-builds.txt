@@ -1,0 +1,89 @@
+# Which names in the web and admin images are really content-hashed, before nginx is told so. Recorded Thu Nov  5 05:02:03 EAT 2026, on the images built from ec45e212ee6185d286762a753913c253dac51358.
+
+$ # web: every file outside assets/, in the build output. None has its content's hash in its name by this build: workbox-9f2f79cf.js comes from public/, as it stands. So all get no-cache
+./favicon/android-chrome-192x192.png
+./favicon/android-chrome-512x512.png
+./favicon/site.webmanifest
+./icons/icon-192x192.png
+./icons/icon-348x348.png
+./icons/icon-512x512.png
+./index.html
+./manifest.json
+./plane-logos/plane-mobile-pwa.png
+./site.webmanifest.json
+./sw.js
+./sw.js.map
+./workbox-9f2f79cf.js
+./workbox-9f2f79cf.js.map
+
+$ # admin: the same
+./.well-known/appspecific/com.chrome.devtools.json
+./favicon/android-chrome-192x192.png
+./favicon/android-chrome-512x512.png
+./index.html
+./site.webmanifest.json
+
+$ # is there a public/assets, where an unhashed file would come from? Upstream source at the pinned commit
+ls: .build/plane-src/apps/admin/public/assets: No such file or directory
+ls: .build/plane-src/apps/web/public/assets: No such file or directory
+
+$ # how many files under assets/, by extension. web, then admin
+   3 css
+   2 gif
+   1 ico
+  29 jpg
+ 909 js
+  29 png
+  24 svg
+   9 ttf
+  41 webp
+   4 woff
+   9 woff2
+   2 css
+   2 gif
+   1 ico
+  48 js
+   5 png
+   8 svg
+   4 woff
+   9 woff2
+
+$ # names under assets/ that the rule in nginx-web.conf does not take. web, then admin
+none
+none
+
+$ # names with a counter after the 8 characters. The bundler adds it, and they are tested below like any other. web, then admin
+layout-B0czO7QJ2.js
+layout-B78OiLMF2.js
+layout-D05C_Fz52.js
+layout-D2bodxFU2.js
+page-BZ8fZDVK2.js
+page-Coab7WTi2.js
+page-DBaFOFNc2.js
+page-DcDNbDoZ2.js
+power-k-B5QBFj08.js
+none
+
+$ # the test: a name that stands for its content never has two contents. sha256 of every file under assets/ in eight independent web builds and eight admin builds: this one, the six earlier ones in the local registry, and upstream's own, whose code differs. A name with more than one content would be a counterexample
+web 1242134361ff: 1060 files
+admin 1242134361ff: 79 files
+web 1563cbfbe895: 1060 files
+admin 1563cbfbe895: 79 files
+web 283b51ae3e33: 1060 files
+admin 283b51ae3e33: 79 files
+web 8195e1b020d6: 1060 files
+admin 8195e1b020d6: 79 files
+web 8e328a065450: 1060 files
+admin 8e328a065450: 79 files
+web efb5af9d6e75: 1066 files
+admin efb5af9d6e75: 79 files
+web final localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5: 1060 files
+admin final localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1: 79 files
+web upstream: 1086 files
+admin upstream: 89 files
+web: 2474 different names over all those builds, 2474 different name and content pairs. Names with more than one content:
+(end of that list)
+admin: 238 different names over all those builds, 238 different name and content pairs. Names with more than one content:
+(end of that list)
+
+# What this does not prove: it can only find a counterexample among these builds. The rule still reads a name, so what keeps an unhashed name out of assets/ is cache-names.sh, which stops the build if public/assets exists.

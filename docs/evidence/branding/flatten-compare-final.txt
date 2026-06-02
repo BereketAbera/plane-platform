@@ -1,0 +1,231 @@
+# The final backend against its own derived stage, built from the same commit and context. No file may differ. Config differs on purpose: the derived stage is never published, and sets no labels, user or INSTANCE_CHANGELOG_URL.
+
+# Thu Nov  5 05:01:48 EAT 2026
+$ docker buildx build --platform linux/arm64 --provenance=false --sbom=false --target derived ... -f apps/wayline/runtime/Dockerfile.backend .build/wayline-dist/backend, pushed to a scratch registry
+# exit 0
+
+# Thu Nov  5 05:01:54 EAT 2026
+$ python3 -B apps/wayline/checks/flatten-compare.py --list /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wl/final-fs.tsv localhost:5055/final/derived@sha256:1955cc7a53542eb68430b560eba33dfde77bcda5d4597846445b84a7044d7ce6 localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+
+== localhost:5055/final/derived@sha256:1955cc7a53542eb68430b560eba33dfde77bcda5d4597846445b84a7044d7ce6
+read from localhost:5055/final/derived
+28 layers, 2 of them empty, 106.0 MiB compressed
+-- totals of a, localhost:5055/final/derived@sha256:1955cc7a53542eb68430b560eba33dfde77bcda5d4597846445b84a7044d7ce6
+paths 28235: {"dir": 6801, "file": 20810, "symlink": 624}
+bytes in regular files 296899927
+empty directories 141
+setuid or setgid or sticky 2: ['tmp', 'var/tmp']
+hard link groups 111, holding 365 paths
+with xattrs 0
+
+== localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+read from localhost:5001/wayline/backend
+2 layers, 1 of them empty, 97.4 MiB compressed
+-- totals of b, localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+paths 28235: {"dir": 6801, "file": 20810, "symlink": 624}
+bytes in regular files 296899927
+empty directories 141
+setuid or setgid or sticky 2: ['tmp', 'var/tmp']
+hard link groups 111, holding 365 paths
+with xattrs 0
+
+== Filesystem: b against a
+DIFFERS etc: mtime 1793216001 to 1793842313
+DIFFERS tmp: mtime 1769548774 to 1793842313
+28235 paths in both, 0 only in a, 0 only in b, 2 differ, 0 hard link groups differ
+differences by attribute: {"type": 0, "mode": 0, "uid": 0, "gid": 0, "size": 0, "target": 0, "device": 0, "xattrs": 0, "sha256": 0, "mtime": 2}
+
+== Config: b against a
+same ArgsEscaped: true
+same Cmd: ["./bin/docker-entrypoint-api.sh"]
+same Entrypoint: null
+DIFFERS Env:
+  a ["PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "GPG_KEY=<redacted>", "PYTHON_VERSION=3.12.12", "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4", "PYTHONDONTWRITEBYTECODE=1", "PYTHONUNBUFFERED=1", "PIP_DISABLE_PIP_VERSION_CHECK=1", "INSTANCE_CHANGELOG_URL=https://sites.plane.so/pages/691ef037bcfe416a902e48cb55f59891/"]
+  b ["PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "GPG_KEY=<redacted>", "PYTHON_VERSION=3.12.12", "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4", "PYTHONDONTWRITEBYTECODE=1", "PYTHONUNBUFFERED=1", "PIP_DISABLE_PIP_VERSION_CHECK=1", "INSTANCE_CHANGELOG_URL="]
+same ExposedPorts: {"8000/tcp": {}}
+same Healthcheck: null
+DIFFERS Labels:
+  a null
+  b {"org.opencontainers.image.description": "Customized Plane Community Edition backend", "org.opencontainers.image.licenses": "AGPL-3.0-only", "org.opencontainers.image.revision": "ec45e212ee6185d286762a753913c253dac51358", "org.opencontainers.image.source": "https://github.com/BereketAbera/plane-platform", "org.opencontainers.image.title": "wayline-backend"}
+same OnBuild: null
+same Shell: null
+same StopSignal: null
+DIFFERS User:
+  a null
+  b "1000"
+same Volumes: null
+same WorkingDir: "/code"
+
+RESULT different: 0 paths on one side only, 2 paths differ, 0 hard link groups differ, 3 config fields differ
+# exit 1
+
+
+# The final backend against the unflattened image the platform runs in dev, from commit 1563cbf. Every difference here comes from the source changed since, and README.md explains each.
+
+# Thu Nov  5 05:01:56 EAT 2026
+$ python3 -B apps/wayline/checks/flatten-compare.py localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+
+== localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+read from localhost:5001/wayline/backend
+28 layers, 2 of them empty, 106.0 MiB compressed
+-- totals of a, localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+paths 28235: {"dir": 6801, "file": 20810, "symlink": 624}
+bytes in regular files 296893950
+empty directories 141
+setuid or setgid or sticky 2: ['tmp', 'var/tmp']
+hard link groups 111, holding 365 paths
+with xattrs 0
+
+== localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+read from localhost:5001/wayline/backend
+2 layers, 1 of them empty, 97.4 MiB compressed
+-- totals of b, localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+paths 28235: {"dir": 6801, "file": 20810, "symlink": 624}
+bytes in regular files 296899927
+empty directories 141
+setuid or setgid or sticky 2: ['tmp', 'var/tmp']
+hard link groups 111, holding 365 paths
+with xattrs 0
+
+== Filesystem: b against a
+DIFFERS code/plane/api/views/issue.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/forgot_password_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/issue_activities_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/magic_link_code_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/project_add_user_email_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/project_invitation_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/user_activation_email_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/user_deactivation_email_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/user_email_update_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/workspace_invitation_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/bgtasks/workspace_seed_task.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/db/management/commands/test_email.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/license/api/views/admin.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/license/api/views/configuration.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/license/management/commands/register_instance.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/license/utils/instance_value.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/seeds/data/cycles.json: mtime 1793836470 to 1793842310
+DIFFERS code/plane/seeds/data/issues.json: mtime 1793836470 to 1793842310
+DIFFERS code/plane/seeds/data/pages.json: mtime 1793836470 to 1793842310
+DIFFERS code/plane/seeds/data/projects.json: mtime 1793836470 to 1793842310
+DIFFERS code/plane/settings/openapi.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/static/logos: mtime 1793836148 to 1793842310
+DIFFERS code/plane/static/logos/Logo.png: mtime 1793836147 to 1793842285
+DIFFERS code/plane/utils: mtime 1793836148 to 1793842310
+DIFFERS code/plane/utils/constants.py: mtime 1793836470 to 1793842310
+DIFFERS code/plane/utils/email.py: mtime 1793836147 to 1793842285
+DIFFERS code/requirements/base.txt: mtime 1793836470 to 1793842310
+DIFFERS code/templates/admin/base_site.html: mtime 1793836470 to 1793842310
+DIFFERS code/templates/base.html: mtime 1793836470 to 1793842310
+DIFFERS etc: mtime 1793216001 to 1793842313
+DIFFERS opt: mtime 1793836148 to 1793842310
+DIFFERS opt/wayline: mtime 1793836470 to 1793842310
+DIFFERS opt/wayline/Logo.png: mtime 1793836147 to 1793842285
+DIFFERS opt/wayline/check_db.py: size 7986 to 9671, sha256 8762c1c0302d9f85ee416839484768a447be921e7c1837db9ef0b307ac1bfa6b to b8e87e1ea522e58950b6b0294872c352511e80febbecf1a4f5603634a8edaed9, mtime 1793836147 to 1793842285
+DIFFERS opt/wayline/check_image.py: size 27420 to 28081, sha256 193d548e3acc985ced9bdcf8d131f8a2a896194b56699038139943031ee029ae to 4e2dec04f6cbb2ea8ea51044206ae8448edbe422515f4b98b72ed09cacaf4be8, mtime 1793836147 to 1793842285
+DIFFERS opt/wayline/edit_strings.py: mtime 1793836147 to 1793842285
+DIFFERS opt/wayline/edited-files.txt: mtime 1793836470 to 1793842310
+DIFFERS opt/wayline/pyjwt-requirements.txt: mtime 1793836147 to 1793842285
+DIFFERS opt/wayline/vendor: mtime 1793836148 to 1793842310
+DIFFERS opt/wayline/vendor/email.py: mtime 1793836147 to 1793842285
+DIFFERS opt/wayline/vendor/email.py.pin: size 687 to 691, sha256 18be2860111430a3f4bd173108acb2ebbf90ca8c4f865b8b553dbc9b84c646ac to b0f7ab3633de0ac41ea285062d8cd265f403c7d347bb97654982090309676505, mtime 1793836147 to 1793842285
+DIFFERS tmp: mtime 1769548774 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__init__.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/__init__.cpython-312.pyc: sha256 95d42e5f2daf63533b22c32cead40b379e507d3a1f3390ab9a5df6476b2c655a to 9e74a48dfd4da3338a2979bf9d1b6cb78e68df27de188956bb13730618282589, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/algorithms.cpython-312.pyc: sha256 090ec53d1d63762fb3e8d3437aa15bcd742983a6dfab2b82d8b9b7b722f112b6 to fb63bc24ef8f7f09b43d80fe574de4353c1356b6cc211de76edfce10a3995b6f, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/api_jwk.cpython-312.pyc: sha256 62790d464d520c8a59e27c64343afaab6d7a94b3d87ed7e95300b9c199f7130d to 2672c25a6ed077ed5b06c280289ed4862d73d37d0cce33d249e70afd43afcd7e, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/api_jws.cpython-312.pyc: sha256 fc620a85d3c6c908d4b19ec496539c8b24cae241b1b2019cb8816eebdb3d19cb to cc40b1be1267c6e0a6e9b2594b84cac429c4a5e1a5694b57e004ee4a63888b03, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/api_jwt.cpython-312.pyc: sha256 3d7c64a51ecca7a749121edf9395c4436bf608d7057b7129bd29ab91f2df03ea to b90b7d1cd1222caa7ad3e8c9b2b6f8ee873f9195613bab28eeb2e6eae3984703, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/exceptions.cpython-312.pyc: sha256 d942b7f045636d538ded7fe1ec352154ba53f48e1a6c4bcd85fc655fc7fb3589 to 93e3649f8da4e6816122cff4a84011e704d4a00b367a6a58f0620658d0cf7fb5, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/help.cpython-312.pyc: sha256 aab29ef67d32913cd653f013916ada37f52653e9d9996ab83f82aa364491a816 to 1b40d5f31d1c5e80841f241a9d6137f18f1a0c87211ff92702f9ac1961fafbb4, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/jwk_set_cache.cpython-312.pyc: sha256 0490d1cef0c2a1dacbd1d3bd69e46aa8b54a6ce7872b20c321214ad5a2db034a to 72217ee09acb347234a6502f3157639dd694540e192d20a0cc873d369e828dc5, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/jwks_client.cpython-312.pyc: sha256 576bec7645775e6afaedb669225a0c671e65eb09d841d532fc67163dcc44c098 to 0514131c733e9d51f434792dedad8ef651c742fe3c4e55d264ee1c6ee0880b61, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/types.cpython-312.pyc: sha256 96a58a84fa0813b636570c46d4cc305ab3e2c76a751092c1003316db4449a82e to e161e6d1aa239c90ff2ce4e0cbc76b9f98e5e216824eb9375622715f71619d91, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/utils.cpython-312.pyc: sha256 43023784a0480a351187cfa54c87beb662812183544442d8d429b582e64e04d3 to 93e8b54fe70972092eb9cb749a1599676e4727aa5e255afa19d37b43787a2cc9, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/__pycache__/warnings.cpython-312.pyc: sha256 c2e45a37aa93f2b1b1975cc24ebf6749f65872915a212a83fc63028327f8e2c0 to 7413b9506425a414b9d472c7ed1bfa9faaf71bf28db7e589dec5436f0c19f777, mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/algorithms.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/api_jwk.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/api_jws.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/api_jwt.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/exceptions.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/help.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/jwk_set_cache.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/jwks_client.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/py.typed: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/types.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/utils.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/jwt/warnings.py: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/INSTALLER: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/METADATA: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/RECORD: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/REQUESTED: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/WHEEL: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/licenses: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/licenses/AUTHORS.rst: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/licenses/LICENSE: mtime 1793836472 to 1793842313
+DIFFERS usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info/top_level.txt: mtime 1793836472 to 1793842313
+DIFFERS usr/share: mtime 1793836149 to 1793842310
+DIFFERS usr/share/licenses: mtime 1793836149 to 1793842310
+DIFFERS usr/share/licenses/wayline: mtime 1793836148 to 1793842310
+DIFFERS usr/share/licenses/wayline/COPYRIGHT.txt: mtime 1793836147 to 1793842285
+DIFFERS usr/share/licenses/wayline/LICENSE.txt: mtime 1793836147 to 1793842285
+DIFFERS usr/share/licenses/wayline/MODIFICATIONS.txt: size 15066 to 18438, sha256 b6c9aa47e6fcdb096e7411fed1bebde6c50699448f80449f8ca4436fd261d81d to fca3e1145a4d7c81bc0754494ee3780a45c12f5cb3da9765df95c0c7951f405d, mtime 1793836147 to 1793842285
+DIFFERS usr/share/licenses/wayline/NOTICE.txt: size 4605 to 4860, sha256 3a003f9db3c66f844df2a24d47f89e361199667848b590abac5e49137b15922b to 99c86f99557a231badf3ed4f38b9d4b7650b53f1816c66f984025bb30c2c89f9, mtime 1793836147 to 1793842285
+DIFFERS usr/share/licenses/wayline/OFL-InstrumentSans.txt: mtime 1793836147 to 1793842285
+DIFFERS usr/share/licenses/wayline/OFL-JetBrainsMono.txt: mtime 1793836147 to 1793842285
+28235 paths in both, 0 only in a, 0 only in b, 89 differ, 0 hard link groups differ
+differences by attribute: {"type": 0, "mode": 0, "uid": 0, "gid": 0, "size": 5, "target": 0, "device": 0, "xattrs": 0, "sha256": 17, "mtime": 89}
+
+== Config: b against a
+same ArgsEscaped: true
+same Cmd: ["./bin/docker-entrypoint-api.sh"]
+same Entrypoint: null
+same Env: ["PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "GPG_KEY=<redacted>", "PYTHON_VERSION=3.12.12", "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4", "PYTHONDONTWRITEBYTECODE=1", "PYTHONUNBUFFERED=1", "PIP_DISABLE_PIP_VERSION_CHECK=1", "INSTANCE_CHANGELOG_URL="]
+same ExposedPorts: {"8000/tcp": {}}
+same Healthcheck: null
+DIFFERS Labels:
+  a {"org.opencontainers.image.description": "Customized Plane Community Edition backend", "org.opencontainers.image.licenses": "AGPL-3.0-only", "org.opencontainers.image.revision": "1563cbfbe89536541c041ec59f241edeab3740c2", "org.opencontainers.image.source": "https://github.com/BereketAbera/plane-platform", "org.opencontainers.image.title": "wayline-backend"}
+  b {"org.opencontainers.image.description": "Customized Plane Community Edition backend", "org.opencontainers.image.licenses": "AGPL-3.0-only", "org.opencontainers.image.revision": "ec45e212ee6185d286762a753913c253dac51358", "org.opencontainers.image.source": "https://github.com/BereketAbera/plane-platform", "org.opencontainers.image.title": "wayline-backend"}
+same OnBuild: null
+same Shell: null
+same StopSignal: null
+same User: "1000"
+same Volumes: null
+same WorkingDir: "/code"
+
+RESULT different: 0 paths on one side only, 89 paths differ, 0 hard link groups differ, 1 config fields differ
+# exit 1
+
+# Thu Nov  5 05:01:58 EAT 2026
+$ git diff --stat 1563cbfbe89536541c041ec59f241edeab3740c2 ec45e212ee6185d286762a753913c253dac51358 -- apps/wayline/backend apps/wayline/runtime/Dockerfile.backend apps/wayline/MODIFICATIONS.md NOTICE.md LICENSE COPYRIGHT.txt
+ NOTICE.md                                  | 13 +++---
+ apps/wayline/MODIFICATIONS.md              | 58 +++++++++++++++---------
+ apps/wayline/backend/check_db.py           | 19 +++++++-
+ apps/wayline/backend/check_image.py        | 30 ++++++++-----
+ apps/wayline/backend/email-py-decision.txt |  2 +-
+ apps/wayline/backend/vendor/email.py.pin   |  2 +-
+ apps/wayline/runtime/Dockerfile.backend    | 71 +++++++++++++++++++++---------
+ 7 files changed, 131 insertions(+), 64 deletions(-)
+# exit 0
+
+
+# Does any .pyc go stale from the copy? On the image it replaces, then on the final one. pyc-stale.py reads each .pyc header and stats its source.
+# Thu Nov  5 05:01:58 EAT 2026
+$ docker run --rm -i --network none --user 0 --entrypoint python localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c - <pyc-stale.py
+python 3.12.12: 4752 .pyc match their source's time and size, 0 do not, 0 are hash-based, 0 have no source
+# exit 0
+# Thu Nov  5 05:02:01 EAT 2026
+$ docker run --rm -i --network none --user 0 --entrypoint python localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e - <pyc-stale.py
+python 3.12.12: 4752 .pyc match their source's time and size, 0 do not, 0 are hash-based, 0 have no source
+# exit 0
+
+# What the differences above are, read by the agent that ran this:
+# - check_db.py, check_image.py, email.py.pin, MODIFICATIONS.txt, NOTICE.txt: changed in the source since 1563cbf, as the git diff --stat above shows.
+# - The 12 jwt/__pycache__/*.pyc: same size, different sha256 and time. pip compiled them again in this build, and a .pyc records its source's time. The source files are the same bytes.
+# - 70 of the other 72 paths, time only: files and directories the first stage copies or edits at build time, so they carry this build's time. Their bytes are the same.
+# - The last 2, the directories etc and tmp, differ in time in every comparison, for the reason in flatten-compare-4add277c.txt.
+# - Labels: only the revision differs, which is the commit each image was built from.

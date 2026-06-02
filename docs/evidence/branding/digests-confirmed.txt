@@ -1,5 +1,5 @@
-# Each digest as the registry states it, with docker buildx imagetools inspect, against .build/digests.tsv
-web 1563cbfbe895 sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb match
-admin 1563cbfbe895 sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c match
-space 1563cbfbe895 sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a match
-backend 1563cbfbe895 sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c match
+# Each digest as the registry states it, with docker buildx imagetools inspect, against .build/digests.tsv. Thu Nov  5 05:02:12 EAT 2026
+web ec45e212ee61 sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 match
+admin ec45e212ee61 sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 match
+space ec45e212ee61 sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2 match
+backend ec45e212ee61 sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e match

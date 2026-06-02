@@ -1,0 +1,83 @@
+# Thu Nov  5 04:58:41 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py
+searching 4 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+gate: a hit fails
+
+== localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+read from localhost:5001/wayline/web
+config sha256:2512c32c91ac1ef60607c8fb19bca68634971ccb367c205bb04422fc90a66b21: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/15 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/15 sha256:de7def043304      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:2d63facf31ae     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:bacf0696430f      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/15 sha256:ea59b6da95d3      0.0 MiB     11 entries, 0 archives opened: clean
+layer 14/15 sha256:25f0b8477cc1      0.0 MiB      3 entries, 0 archives opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+read from localhost:5001/wayline/admin
+config sha256:b3355e32ee222ec62b393619a8090fb45f3698a469613135da205eef7af6642a: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/13 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/13 sha256:c6f1064967b5      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:cde5f93d87b0      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:65e14095fb9f      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+read from localhost:5001/wayline/space
+config sha256:c6368ad9c44582b7098b3c355c2bf9d7da5512c1f2d838e97405c66b5781cf4a: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
+layer 16/21 sha256:ae189a22c60b      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:6bbad6c347f6      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:8102066a55ab      0.0 MiB     10 entries, 0 archives opened: clean
+layer 19/21 sha256:8a46a5e16f2c      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:dcb8e86db80f      0.0 MiB    172 entries, 0 archives opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+read from localhost:5001/wayline/backend
+config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d: clean
+2 layers
+layer  1/2 sha256:390d08785ed2     97.4 MiB  28235 entries, 845 archives opened: clean
+layer  2/2 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s) localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+clean        0 hit(s) localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+clean        0 hit(s) localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+clean        0 hit(s) localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+# exit 0
+

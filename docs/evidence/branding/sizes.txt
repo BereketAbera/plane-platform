@@ -1,11 +1,11 @@
-image	compressed_mib_in_registry	docker_image_size_bytes	user
-web	40.7	42709477	101
-admin	30.3	31778123	101
-space	263.9	276761130	1000
-backend	106.1	111213948	1000
+image	layers	compressed_mib_in_registry	docker_image_size_bytes	user
+web	15	40.7	42713645	101
+admin	13	30.3	31780231	101
+space	21	263.9	276762401	1000
+backend	2	97.4	102165778	1000
 
 # build contexts
 5.0M	.build/wayline-dist/admin/
-224K	.build/wayline-dist/backend/
+232K	.build/wayline-dist/backend/
  24M	.build/wayline-dist/space/
  28M	.build/wayline-dist/web/

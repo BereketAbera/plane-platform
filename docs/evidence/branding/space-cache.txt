@@ -1,0 +1,93 @@
+# The space image's caching, reviewed by test. Recorded Thu Nov  5 05:06:03 EAT 2026, on localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2, run as UID 1000 with 256m and 0.25 CPU, on a local port.
+
+$ curl -s -D - -o /dev/null http://127.0.0.1:18107/spaces/
+HTTP/1.1 200 OK
+content-type: text/html; charset=utf-8
+x-frame-options: SAMEORIGIN
+Vary: Accept-Encoding
+Date: Thu, 05 Nov 2026 02:06:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+$ curl -s -D - -o /dev/null http://127.0.0.1:18107/spaces/assets/globals-BbMWYMN9.css
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: public, max-age=31536000, immutable
+Last-Modified: Thu, 05 Nov 2026 01:57:56 GMT
+ETag: W/"2e162-1a1a96d50a0"
+Content-Type: text/css; charset=UTF-8
+Content-Length: 188770
+Vary: Accept-Encoding
+Date: Thu, 05 Nov 2026 02:06:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+$ curl -s -D - -o /dev/null -H 'If-None-Match: W/"2e162-1a1a96d50a0"' http://127.0.0.1:18107/spaces/assets/globals-BbMWYMN9.css
+HTTP/1.1 304 Not Modified
+Accept-Ranges: bytes
+Cache-Control: public, max-age=31536000, immutable
+Last-Modified: Thu, 05 Nov 2026 01:57:56 GMT
+ETag: W/"2e162-1a1a96d50a0"
+Date: Thu, 05 Nov 2026 02:06:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+$ curl -s -D - -o /dev/null http://127.0.0.1:18107/spaces/assets/missing-AbCd1234.js
+HTTP/1.1 200 OK
+content-type: text/html; charset=utf-8
+referrer-policy: origin-when-cross-origin
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+x-content-type-options: nosniff
+x-dns-prefetch-control: on
+Vary: Accept-Encoding
+Date: Thu, 05 Nov 2026 02:06:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+$ curl -s -D - -o /dev/null http://127.0.0.1:18107/spaces/site.webmanifest.json
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: public, max-age=0
+Last-Modified: Thu, 05 Nov 2026 01:57:56 GMT
+ETag: W/"213-1a1a96d50a0"
+Content-Type: application/json; charset=UTF-8
+Content-Length: 531
+Vary: Accept-Encoding
+Date: Thu, 05 Nov 2026 02:06:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+$ # where those come from, in the image: upstream's serve command
+123:    import_express2.default.static(import_node_path.default.join(build.assetsBuildDirectory, "assets"), {
+124:      immutable: true,
+125:      maxAge: "1y"
+128:  app.use(build.publicPath, import_express2.default.static(build.assetsBuildDirectory));
+129:  app.use(import_express2.default.static("public", { maxAge: "1h" }));
+
+# In a real browser, the browser pane of the Claude desktop app, Chrome/152.0.7977.167: open /spaces/, count its GET lines in docker logs, run fetch('/spaces/', {cache:'default'}) three times, count again.
+# What the fetches returned:
+{"loc":"http://127.0.0.1:18107","ua":"Chrome/152.0.7977.167","out":[{"i":0,"status":200,"cc":null,"etag":null,"lastModified":null,"title":"<title>Wayline Publish | Make y"},{"i":1,"status":200,"cc":null,"etag":null,"lastModified":null,"title":"<title>Wayline Publish | Make y"},{"i":2,"status":200,"cc":null,"etag":null,"lastModified":null,"title":"<title>Wayline Publish | Make y"}]}
+wl-final-space GET /spaces/ lines before the fetches: 3
+wl-final-space GET /spaces/ lines after the fetches: 6
+# So all three fetches reached the server. The same three fetches on the previous web image reached nginx zero times: cache-browser.txt. So this method does see a browser reusing a page.
+
+# Result, read by the agent that ran this: the HTML has no Cache-Control, no Expires, no ETag and no Last-Modified, so this browser has nothing to compute a lifetime from, and asks every time. No patch was made, because the brief says to patch only on a real problem and this test shows none. Hashed files are immutable, by upstream's serve command. A missing hashed file is answered by the server with HTML and no Cache-Control. checks/smoke-images.sh fails if any of this moves. Not tested: Safari and Firefox. HTTP lets a cache use heuristics with no Last-Modified too, so this is what this browser does, not what every browser must do.
+
+$ docker logs wl-final-space, the requests above
+🌐 i18next is made possible by our own product, Locize — consider 
+[react-router-serve] http://localhost:3000 (http://172.17.0.10:3000)
+GET /spaces/ 200 - - 53.819 ms
+GET /spaces/ 200 - - 88.791 ms
+GET /spaces/ 200 - - 6.803 ms
+GET /api/users/me/ 404 - - 89.916 ms
+GET /api/instances/ 404 - - 3.614 ms
+GET /spaces/ 200 - - 9.583 ms
+GET /spaces/ 200 - - 200.494 ms
+GET /spaces/ 200 - - 2.191 ms
+GET /spaces/ 200 - - 2.869 ms
+GET /spaces/ 200 - - 16.394 ms
+GET /spaces/ 200 - - 13.508 ms
+GET /spaces/ 200 - - 27.213 ms
+GET /spaces/assets/missing-AbCd1234.js 200 - - 2.221 ms

@@ -1,4 +1,4 @@
-# Thu Nov  5 02:54:35 EAT 2026 on the tree built from commit 1563cbfbe89536541c041ec59f241edeab3740c2, run directly and gated on exit code. Node v22.22.2
+# Thu Nov  5 04:58:30 EAT 2026, on the images built from commit ec45e212ee6185d286762a753913c253dac51358, each gate run directly and gated on its exit code. Node v22.22.2
 token-diff exit 0
 contrast exit 0
 leak-scan exit 0
@@ -9,8 +9,27 @@ font-urls-admin exit 0
 bundle-art-admin exit 0
 font-urls-space exit 0
 bundle-art-space exit 0
+cache-names-web exit 0
+cache-names-admin exit 0
+layer-check exit 0
+flatten-config exit 0
 smoke-images exit 0
 smoke containers left: 0
+check-image exit 0
 backend-db exit 0
 backend-db containers left: 0
-gates failed: 0
+gates failed so far: 0
+upgrade-check, isolated copy exit 0
+upstream-check-v1.4.2 exit 0
+upstream-check-v1.4.0 exit 0
+upstream-check-v1.3.0 exit 0
+upstream-check-preview exit 0
+lint-shellcheck exit 0
+lint-actionlint exit 0
+lint-zizmor exit 0
+lint-hadolint exit 0
+lint-py_compile exit 0
+lint-node-check exit 0
+lint-trivy-config exit 0
+lint-gitleaks exit 0
+lint-gitleaks-files exit 0

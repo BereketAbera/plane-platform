@@ -1,6 +1,5 @@
-# scripts/ci/build-images.sh localhost:5001/wayline, Docker's part, directly after the native build in build.txt.
-warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so web's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/web:1563cbfbe895 from 1563cbfbe89536541c041ec59f241edeab3740c2
+# scripts/ci/build-images.sh localhost:5001/wayline, Docker's part, directly after the native build in build.txt. Each image is pushed, walked by layer-check.py, and the backend compared by flatten-config.py, before any digest is recorded.
+==> Building localhost:5001/wayline/web:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.web
@@ -8,7 +7,7 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so web's /s
 #1 DONE 0.0s
 
 #2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
-#2 DONE 1.3s
+#2 DONE 1.6s
 
 #3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 #3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
@@ -22,29 +21,29 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so web's /s
 #5 DONE 0.0s
 
 #6 [1/8] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
-#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 0.0s done
+#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
 #6 DONE 0.0s
 
 #7 [internal] load build context
-#7 transferring context: 27.16MB 0.2s done
-#7 DONE 0.3s
+#7 transferring context: 27.17MB 0.5s done
+#7 DONE 0.5s
 
-#8 [4/8] COPY client/ /usr/share/nginx/html/
+#8 [2/8] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
 #8 CACHED
 
-#9 [5/8] COPY licenses/ /usr/share/licenses/wayline/
+#9 [3/8] COPY nginx.conf /etc/nginx/nginx.conf
 #9 CACHED
 
-#10 [2/8] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+#10 [4/8] COPY client/ /usr/share/nginx/html/
 #10 CACHED
 
-#11 [3/8] COPY nginx.conf /etc/nginx/nginx.conf
+#11 [5/8] COPY licenses/ /usr/share/licenses/wayline/
 #11 CACHED
 
 #12 [6/8] COPY licenses/ /usr/share/nginx/html/licenses/
 #12 CACHED
 
-#13 [7/8] RUN test -n "1563cbfbe89536541c041ec59f241edeab3740c2"   && sed -i "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/1563cbfbe89536541c041ec59f241edeab3740c2|" /etc/nginx/nginx.conf   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
+#13 [7/8] RUN test -n "ec45e212ee6185d286762a753913c253dac51358"   && sed -i "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/ec45e212ee6185d286762a753913c253dac51358|" /etc/nginx/nginx.conf   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
 #13 DONE 0.2s
 
 #14 [8/8] RUN chown -R 101:101 /run /var/cache/nginx
@@ -52,21 +51,46 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so web's /s
 
 #15 exporting to image
 #15 exporting layers 0.0s done
-#15 exporting manifest sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb done
-#15 exporting config sha256:a8ae131fcdeb3a460ed60c80e2050730efbe44d8f40da7d72a44fee6d0c367a1 done
-#15 naming to localhost:5001/wayline/web:1563cbfbe895 done
+#15 exporting manifest sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 done
+#15 exporting config sha256:2512c32c91ac1ef60607c8fb19bca68634971ccb367c205bb04422fc90a66b21 0.0s done
+#15 naming to localhost:5001/wayline/web:ec45e212ee61 done
 #15 pushing layers
-#15 pushing layers 0.6s done
-#15 pushing manifest for localhost:5001/wayline/web:1563cbfbe895@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
-#15 pushing manifest for localhost:5001/wayline/web:1563cbfbe895@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb done
-#15 DONE 0.7s
+#15 pushing layers 0.7s done
+#15 pushing manifest for localhost:5001/wayline/web:ec45e212ee61@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+#15 pushing manifest for localhost:5001/wayline/web:ec45e212ee61@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 0.0s done
+#15 DONE 0.8s
 
 #16 resolving provenance for metadata file
 #16 DONE 0.0s
-time=2026-11-05T02:54:23.023+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
- ok localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
-warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so admin's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/admin:1563cbfbe895 from 1563cbfbe89536541c041ec59f241edeab3740c2
+time=2026-11-05T04:58:01.556+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+gate: a hit fails
+
+== localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+read from localhost:5001/wayline/web
+config sha256:2512c32c91ac1ef60607c8fb19bca68634971ccb367c205bb04422fc90a66b21: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/15 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/15 sha256:de7def043304      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:2d63facf31ae     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:bacf0696430f      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/15 sha256:ea59b6da95d3      0.0 MiB     11 entries, 0 archives opened: clean
+layer 14/15 sha256:25f0b8477cc1      0.0 MiB      3 entries, 0 archives opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s) localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+ ok localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so admin's /source link answers 404 until it is pushed
+==> Building localhost:5001/wayline/admin:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.admin
@@ -87,24 +111,21 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so admin's 
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
-#6 [internal] load build context
+#6 [1/6] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
 #6 DONE 0.0s
 
-#7 [1/6] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
-#7 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#7 [internal] load build context
+#7 transferring context: 5.03MB 0.0s done
 #7 DONE 0.0s
 
-#6 [internal] load build context
-#6 transferring context: 5.03MB 0.0s done
-#6 DONE 0.0s
-
-#8 [4/6] COPY client/ /usr/share/nginx/html/god-mode/
+#8 [3/6] COPY nginx.conf /etc/nginx/nginx.conf
 #8 CACHED
 
-#9 [2/6] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+#9 [4/6] COPY client/ /usr/share/nginx/html/god-mode/
 #9 CACHED
 
-#10 [3/6] COPY nginx.conf /etc/nginx/nginx.conf
+#10 [2/6] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
 #10 CACHED
 
 #11 [5/6] COPY licenses/ /usr/share/licenses/wayline/
@@ -115,21 +136,44 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so admin's 
 
 #13 exporting to image
 #13 exporting layers 0.0s done
-#13 exporting manifest sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c done
-#13 exporting config sha256:3122126c200ab7b20e5ee53c60a17c46b179b30edee87e3590a3ca0698f811f8 done
-#13 naming to localhost:5001/wayline/admin:1563cbfbe895 done
+#13 exporting manifest sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 done
+#13 exporting config sha256:b3355e32ee222ec62b393619a8090fb45f3698a469613135da205eef7af6642a done
+#13 naming to localhost:5001/wayline/admin:ec45e212ee61 done
 #13 pushing layers
 #13 pushing layers 0.6s done
-#13 pushing manifest for localhost:5001/wayline/admin:1563cbfbe895@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
-#13 pushing manifest for localhost:5001/wayline/admin:1563cbfbe895@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c done
+#13 pushing manifest for localhost:5001/wayline/admin:ec45e212ee61@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+#13 pushing manifest for localhost:5001/wayline/admin:ec45e212ee61@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 done
 #13 DONE 0.7s
 
 #14 resolving provenance for metadata file
 #14 DONE 0.0s
-time=2026-11-05T02:54:24.736+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
- ok localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
-warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so space's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/space:1563cbfbe895 from 1563cbfbe89536541c041ec59f241edeab3740c2
+time=2026-11-05T04:58:03.697+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+gate: a hit fails
+
+== localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+read from localhost:5001/wayline/admin
+config sha256:b3355e32ee222ec62b393619a8090fb45f3698a469613135da205eef7af6642a: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/13 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/13 sha256:c6f1064967b5      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:cde5f93d87b0      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:65e14095fb9f      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s) localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+ ok localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so space's /source link answers 404 until it is pushed
+==> Building localhost:5001/wayline/space:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.space
@@ -140,7 +184,7 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so space's 
 #2 DONE 0.3s
 
 #3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
-#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e 0.0s done
 #3 CACHED
 
 #4 [internal] load metadata for docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
@@ -151,21 +195,18 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so space's 
 #5 DONE 0.0s
 
 #6 [1/7] FROM docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
-#6 resolve docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 done
+#6 resolve docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 0.0s done
 #6 CACHED
 
 #7 [internal] load build context
-#7 ...
+#7 transferring context: 23.33MB 0.3s done
+#7 DONE 0.3s
 
 #8 [2/7] RUN rm -rf /app/apps/space/build
-#8 DONE 0.2s
-
-#7 [internal] load build context
-#7 transferring context: 23.32MB 0.2s done
-#7 DONE 0.2s
+#8 DONE 0.4s
 
 #9 [3/7] COPY build/ /app/apps/space/build/
-#9 DONE 0.1s
+#9 DONE 0.2s
 
 #10 [4/7] COPY licenses/ /usr/share/licenses/wayline/
 #10 DONE 0.0s
@@ -174,62 +215,93 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so space's 
 #11 DONE 0.0s
 
 #12 [6/7] RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "apply"]
-#12 0.236 proxy-addr tarball: 5670 bytes, integrity sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==
-#12 1.623 removed storybook@10.4.6 and tinypool@2.1.0, 21 links to them and 19 .bin shims
-#12 1.767 replaced proxy-addr@2.0.7 with proxy-addr@2.0.8, 2 links repointed
-#12 DONE 1.8s
+#12 0.324 proxy-addr tarball: 5670 bytes, integrity sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==
+#12 1.328 removed storybook@10.4.6 and tinypool@2.1.0, 21 links to them and 19 .bin shims
+#12 1.522 replaced proxy-addr@2.0.7 with proxy-addr@2.0.8, 2 links repointed
+#12 DONE 1.6s
 
 #13 [7/7] RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "check"]
-#13 0.230 
-#13 0.230 == What the server bundle imports
-#13 0.417 30 static imports and 25 import() or require() of a package, across 533 bundle files
-#13 0.417 131 packages reachable from them and from @react-router/serve
-#13 0.417 PASS every import and required dependency resolves
-#13 0.417 PASS storybook and tinypool are not reachable
-#13 0.417 PASS no bundle file mentions storybook or tinypool
-#13 0.418 note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
-#13 0.418 
-#13 0.418 == What is gone from the store
-#13 0.419 PASS storybook is gone
-#13 0.420 PASS tinypool is gone
-#13 0.420 PASS proxy-addr@2.0.7 is gone
-#13 0.616 PASS nothing links to them
-#13 0.616 
-#13 0.616 == proxy-addr, as express resolves it
-#13 0.674 PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
-#13 0.675 PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
-#13 0.675 PASS a plain IPv4 subnet still trusts its own addresses
-#13 0.675 
-#13 0.675 == X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
-#13 0.687 PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
-#13 0.690 PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
-#13 0.691 PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
-#13 0.691 
-#13 0.691 space-deps: 0 failed
+#13 0.239 
+#13 0.239 == What the server bundle imports
+#13 0.413 30 static imports and 25 import() or require() of a package, across 533 bundle files
+#13 0.413 131 packages in node_modules reachable from them and from @react-router/serve
+#13 0.413 PASS every import and required dependency resolves
+#13 0.413 PASS storybook and tinypool are not reachable
+#13 0.413 PASS no bundle file mentions storybook or tinypool
+#13 0.414 note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+#13 0.414 
+#13 0.414 == What is gone from the store
+#13 0.414 PASS storybook is gone
+#13 0.415 PASS tinypool is gone
+#13 0.416 PASS proxy-addr@2.0.7 is gone
+#13 0.623 PASS nothing links to them
+#13 0.623 
+#13 0.623 == proxy-addr, as express resolves it
+#13 0.666 PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+#13 0.667 PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+#13 0.667 PASS a plain IPv4 subnet still trusts its own addresses
+#13 0.667 
+#13 0.667 == X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+#13 0.678 PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+#13 0.681 PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+#13 0.682 PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
+#13 0.682 
+#13 0.682 space-deps: 0 failed
 #13 DONE 0.7s
 
 #14 exporting to image
 #14 exporting layers
-#14 exporting layers 0.6s done
-#14 exporting manifest sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a done
-#14 exporting config sha256:963cc36c82a51bb767f85669bd37b93283b9380dc97749860c9a3498922ae484 done
-#14 naming to localhost:5001/wayline/space:1563cbfbe895 done
+#14 exporting layers 0.5s done
+#14 exporting manifest sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2 done
+#14 exporting config sha256:c6368ad9c44582b7098b3c355c2bf9d7da5512c1f2d838e97405c66b5781cf4a done
+#14 naming to localhost:5001/wayline/space:ec45e212ee61 done
 #14 pushing layers
 #14 pushing layers 0.7s done
-#14 pushing manifest for localhost:5001/wayline/space:1563cbfbe895@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
-#14 pushing manifest for localhost:5001/wayline/space:1563cbfbe895@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a done
-#14 DONE 1.3s
+#14 pushing manifest for localhost:5001/wayline/space:ec45e212ee61@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+#14 pushing manifest for localhost:5001/wayline/space:ec45e212ee61@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2 done
+#14 DONE 1.2s
 
 #15 resolving provenance for metadata file
 #15 DONE 0.0s
-time=2026-11-05T02:54:29.770+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
- ok localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
-warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so backend's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/backend:1563cbfbe895 from 1563cbfbe89536541c041ec59f241edeab3740c2
+time=2026-11-05T04:58:09.110+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+gate: a hit fails
+
+== localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+read from localhost:5001/wayline/space
+config sha256:c6368ad9c44582b7098b3c355c2bf9d7da5512c1f2d838e97405c66b5781cf4a: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
+layer 16/21 sha256:ae189a22c60b      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:6bbad6c347f6      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:8102066a55ab      0.0 MiB     10 entries, 0 archives opened: clean
+layer 19/21 sha256:8a46a5e16f2c      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:dcb8e86db80f      0.0 MiB    172 entries, 0 archives opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s) localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+ ok localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so backend's /source link answers 404 until it is pushed
+==> Building localhost:5001/wayline/backend:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.backend
-#1 transferring dockerfile: 2.73kB done
+#1 transferring dockerfile: 4.44kB done
 #1 DONE 0.0s
 
 #2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
@@ -246,73 +318,113 @@ warn 1563cbfbe89536541c041ec59f241edeab3740c2 is not on origin/main, so backend'
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
-#6 [1/9] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
-#6 resolve docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 0.0s done
+#6 [derived 1/9] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#6 resolve docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 done
 #6 DONE 0.0s
 
 #7 [internal] load build context
-#7 transferring context: 170.71kB done
+#7 transferring context: 176.69kB done
 #7 DONE 0.0s
 
-#8 [5/9] COPY --chmod=0644 wayline/vendor/email.py /code/plane/utils/email.py
+#8 [stage-1 1/2] COPY --from=derived / /
 #8 CACHED
 
-#9 [2/9] COPY templates/ /code/templates/
+#9 [derived 4/9] COPY wayline/Logo.png /code/plane/static/logos/Logo.png
 #9 CACHED
 
-#10 [3/9] COPY wayline/ /opt/wayline/
+#10 [derived 6/9] COPY licenses/ /usr/share/licenses/wayline/
 #10 CACHED
 
-#11 [4/9] COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+#11 [derived 9/9] RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
 #11 CACHED
 
-#12 [6/9] COPY licenses/ /usr/share/licenses/wayline/
+#12 [derived 5/9] COPY --chmod=0644 wayline/vendor/email.py /code/plane/utils/email.py
 #12 CACHED
 
-#13 [7/9] RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
-#13 0.285 edit_strings: 37 edits applied to 25 files
-#13 DONE 0.3s
+#13 [derived 8/9] RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
+#13 CACHED
 
-#14 [8/9] RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
-#14 1.520 Collecting PyJWT==2.14.0 (from -r /opt/wayline/pyjwt-requirements.txt (line 4))
-#14 1.881   Downloading pyjwt-2.14.0-py3-none-any.whl (32 kB)
-#14 1.913 Installing collected packages: PyJWT
-#14 1.913   Attempting uninstall: PyJWT
-#14 1.915     Found existing installation: PyJWT 2.13.0
-#14 1.917     Uninstalling PyJWT-2.13.0:
-#14 1.929       Successfully uninstalled PyJWT-2.13.0
-#14 1.950 Successfully installed PyJWT-2.14.0
-#14 DONE 2.0s
+#14 [derived 3/9] COPY wayline/ /opt/wayline/
+#14 CACHED
 
-#15 [9/9] RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
-#15 0.388 
-#15 0.388 == Licence headers under /code
-#15 0.425 PASS no file under /code contains LicenseRef-Plane-Commercial 707 files read
-#15 0.425 PASS /code/plane/utils/email.py carries AGPL-3.0-only
-#15 0.425 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
-#15 0.425 
-#15 0.425 == PyJWT as installed
-#15 0.428 PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
-#15 0.450 PASS one copy installed: ['2.14.0']
-#15 1.157 PASS pip check No broken requirements found.
-#15 1.157 
-#15 1.157 RESULT PASS: 0 failed
-#15 DONE 1.2s
+#15 [derived 2/9] COPY templates/ /code/templates/
+#15 CACHED
 
-#16 exporting to image
-#16 exporting layers 0.0s done
-#16 exporting manifest sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c done
-#16 exporting config sha256:784a52fe28f35329926cc36a04e34ce8b9e9c3a243f17f3ba5052768752233e8 done
-#16 naming to localhost:5001/wayline/backend:1563cbfbe895 done
-#16 pushing layers
-#16 pushing layers 0.6s done
-#16 pushing manifest for localhost:5001/wayline/backend:1563cbfbe895@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
-#16 pushing manifest for localhost:5001/wayline/backend:1563cbfbe895@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c done
-#16 DONE 0.7s
+#16 [derived 7/9] RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
+#16 CACHED
 
-#17 resolving provenance for metadata file
-#17 DONE 0.0s
-time=2026-11-05T02:54:34.842+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
- ok localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+#17 [stage-1 2/2] WORKDIR /code
+#17 CACHED
+
+#18 exporting to image
+#18 exporting layers done
+#18 exporting manifest sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e done
+#18 exporting config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d done
+#18 naming to localhost:5001/wayline/backend:ec45e212ee61 done
+#18 pushing layers
+#18 pushing layers 0.6s done
+#18 pushing manifest for localhost:5001/wayline/backend:ec45e212ee61@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+#18 pushing manifest for localhost:5001/wayline/backend:ec45e212ee61@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e done
+#18 DONE 0.7s
+
+#19 resolving provenance for metadata file
+#19 DONE 0.0s
+time=2026-11-05T04:58:13.470+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+gate: a hit fails
+
+== localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+read from localhost:5001/wayline/backend
+config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d: clean
+2 layers
+layer  1/2 sha256:390d08785ed2     97.4 MiB  28235 entries, 845 archives opened: clean
+layer  2/2 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s) localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
+base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
+built localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e, config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d
+
+== Env
+PASS GPG_KEY is the base's value
+PASS INSTANCE_CHANGELOG_URL is ours, as the Dockerfile means it
+PASS LANG is the base's value
+PASS PATH is the base's value
+PASS PIP_DISABLE_PIP_VERSION_CHECK is the base's value
+PASS PYTHONDONTWRITEBYTECODE is the base's value
+PASS PYTHONUNBUFFERED is the base's value
+PASS PYTHON_SHA256 is the base's value
+PASS PYTHON_VERSION is the base's value
+
+== Labels
+PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
+PASS org.opencontainers.image.licenses is set AGPL-3.0-only
+PASS org.opencontainers.image.revision is set ec45e212ee6185d286762a753913c253dac51358
+PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
+PASS org.opencontainers.image.title is set wayline-backend
+
+== User
+PASS User is 1000, where the base says None '1000'
+
+== Everything else
+PASS Cmd is the base's ["./bin/docker-entrypoint-api.sh"]
+PASS Entrypoint is the base's null
+PASS WorkingDir is the base's "/code"
+PASS ExposedPorts is the base's {"8000/tcp": {}}
+PASS Volumes is the base's null
+PASS StopSignal is the base's null
+PASS Healthcheck is the base's null
+PASS Shell is the base's null
+PASS OnBuild is the base's null
+PASS ArgsEscaped is the base's true
+PASS every config field has a rule here
+
+== Layers
+PASS the image shares no layer with the base, other than the empty one 2 layers
+PASS architecture is the base's arm64
+PASS os is the base's linux
+
+RESULT PASS: 0 failed
+ ok localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
  ok digests recorded in .build/digests.tsv
-build-images.sh exit 0

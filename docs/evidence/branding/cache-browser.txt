@@ -1,0 +1,57 @@
+# The stale page, in a real browser. Recorded Thu Nov  5 05:06:03 EAT 2026. The browser pane of the Claude desktop app, Chromium, Chrome/152.0.7977.167. Each image ran
+# as UID 101 with the chart's security settings and tmpfs mounts, on a local port, with no ingress. On each origin, in this order:
+#   1. open the page, 2. run fetch(<page>, {cache:'default'}) three times, which uses the browser's HTTP cache as a navigation does, and read nginx's access log,
+#   3. change the title in index.html inside the container, as a promotion changes that file under the same URL, 4. fetch once more, and read the log.
+# Previous images: web 73a48d643f87 on 18103, admin 279dfd7f06cc on 18106. Final images: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 on 18104, localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 on 18105.
+# The JSON below is what the browser tool returned. The log lines are status codes of the browser's requests for that page, from docker logs.
+
+== Before the fetches
+wl-final-web-old browser requests for the page before the fetches: 200
+wl-final-web browser requests for the page before the fetches: 200
+wl-final-admin-old browser requests for the page before the fetches: 200
+wl-final-admin browser requests for the page before the fetches: 200
+wl-final-space GET /spaces/ lines before the fetches: 3
+
+== Step 2, previous web image
+{"loc":"http://127.0.0.1:18103","ua":"Chrome/152.0.7977.167","out":[{"i":0,"status":200,"cc":null,"etag":"\"6aebbfcf-18f1\"","title":"<title>Wayline | Simple, extens"},{"i":1,"status":200,"cc":null,"etag":"\"6aebbfcf-18f1\"","title":"<title>Wayline | Simple, extens"},{"i":2,"status":200,"cc":null,"etag":"\"6aebbfcf-18f1\"","title":"<title>Wayline | Simple, extens"}]}
+
+== Step 2, final web image
+{"loc":"http://127.0.0.1:18104","ua":"Chrome/152.0.7977.167","out":[{"i":0,"status":200,"cc":"no-cache","etag":"\"6aebdc6c-18f1\"","title":"<title>Wayline | Simple, extens"},{"i":1,"status":200,"cc":"no-cache","etag":"\"6aebdc6c-18f1\"","title":"<title>Wayline | Simple, extens"},{"i":2,"status":200,"cc":"no-cache","etag":"\"6aebdc6c-18f1\"","title":"<title>Wayline | Simple, extens"}]}
+
+== Step 2, previous admin image
+{"loc":"http://127.0.0.1:18106","ua":"Chrome/152.0.7977.167","out":[{"i":0,"status":200,"cc":null,"etag":"\"6aebbfcf-10b7\"","title":"<title>Wayline | Simple, extens"},{"i":1,"status":200,"cc":null,"etag":"\"6aebbfcf-10b7\"","title":"<title>Wayline | Simple, extens"},{"i":2,"status":200,"cc":null,"etag":"\"6aebbfcf-10b7\"","title":"<title>Wayline | Simple, extens"}]}
+
+== Step 2, final admin image
+{"loc":"http://127.0.0.1:18105","ua":"Chrome/152.0.7977.167","out":[{"i":0,"status":200,"cc":"no-cache","etag":"\"6aebdc6c-10b7\"","title":"<title>Wayline | Simple, extens"},{"i":1,"status":200,"cc":"no-cache","etag":"\"6aebdc6c-10b7\"","title":"<title>Wayline | Simple, extens"},{"i":2,"status":200,"cc":"no-cache","etag":"\"6aebdc6c-10b7\"","title":"<title>Wayline | Simple, extens"}]}
+
+== After those fetches, and step 3
+wl-final-web-old browser requests for the page after the fetches: 200
+wl-final-web browser requests for the page after the fetches: 200 304 304 304
+wl-final-admin-old browser requests for the page after the fetches: 200
+wl-final-admin browser requests for the page after the fetches: 200 304 304 304
+wl-final-space GET /spaces/ lines after the fetches: 6
+after the change, what the servers answer directly, with curl:
+18103/: <title>PROMOTED Wayline | Simpl
+18104/: <title>PROMOTED Wayline | Simpl
+18106/god-mode/: <title>PROMOTED Wayline | Simpl
+18105/god-mode/: <title>PROMOTED Wayline | Simpl
+
+== Step 4: what the browser now gets, with the servers already answering PROMOTED
+previous web:   {"loc":"http://127.0.0.1:18103","status":200,"cc":null,"etag":"\"6aebbfcf-18f1\"","title":"<title>Wayline | Simple, extens"}
+final web:      {"loc":"http://127.0.0.1:18104","status":200,"cc":"no-cache","etag":"\"6aebe466-18fa\"","title":"<title>PROMOTED Wayline | Simpl"}
+previous admin: {"loc":"http://127.0.0.1:18106","status":200,"cc":null,"etag":"\"6aebbfcf-10b7\"","title":"<title>Wayline | Simple, extens"}
+final admin:    {"loc":"http://127.0.0.1:18105","status":200,"cc":"no-cache","etag":"\"6aebe466-10c0\"","title":"<title>PROMOTED Wayline | Simpl"}
+
+== After step 4
+wl-final-web-old, status of every browser request for the page: 200
+wl-final-web, status of every browser request for the page: 200 304 304 304 200
+wl-final-admin-old, status of every browser request for the page: 200
+wl-final-admin, status of every browser request for the page: 200 304 304 304 200
+
+== A hashed file on the final web image, fetched twice more after the page loaded it
+{"css":"http://127.0.0.1:18104/assets/root-x-5l0bdG.css","cc":"public, max-age=31536000, immutable","status":200}
+nginx saw, for that file, the page load and nothing more:
+/assets/root-x-5l0bdG.css 200
+
+# Read: on the previous images the browser never asked after the first load, and kept the old page while the server had the new one, which is the defect in live-dev/README.md. On the final images it asked every time, ETag saved the bytes until the file changed, and it had the new page at the next request.
+# Not tested: Safari and Firefox, a browser behind the ingress on plane-dev, and a real promotion, which is not part of this work.

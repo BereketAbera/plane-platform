@@ -1,0 +1,91 @@
+# The lint set on apps/wayline, scripts/ci/build-images.sh and images.yml, at commit baeaa4bc0f892b0382abbe9e56005d7e6bd00ce1. Not the whole of scripts/ci/lint.sh, which runs terraform init in directories other agents use, and not scripts/ci/security.sh, which reads the whole tree other agents are editing.
+
+# Thu Nov  5 04:55:42 EAT 2026
+$ shellcheck --external-sources --source-path=SCRIPTDIR --severity=warning apps/wayline/backend/assemble.sh apps/wayline/backend/check-image.sh apps/wayline/backend/render-logo.sh apps/wayline/checks/backend-db.sh apps/wayline/checks/bundle-art.sh apps/wayline/checks/cache-names.sh apps/wayline/checks/font-urls.sh apps/wayline/checks/leak-scan.sh apps/wayline/checks/roundtrip.sh apps/wayline/checks/smoke-images.sh apps/wayline/checks/upgrade-check.sh apps/wayline/checks/upstream-check.sh apps/wayline/scripts/apply.sh apps/wayline/scripts/assemble-backend.sh apps/wayline/scripts/build.sh apps/wayline/scripts/fetch.sh apps/wayline/scripts/lib.sh apps/wayline/scripts/overlay-lock.sh apps/wayline/scripts/patchwork.sh apps/wayline/scripts/prune-ghcr.sh apps/wayline/scripts/publish-gate.sh apps/wayline/scripts/save-patch.sh apps/wayline/scripts/sync-overlay.sh scripts/ci/build-images.sh
+# exit 0
+
+# Thu Nov  5 04:55:44 EAT 2026
+$ actionlint -color=false .github/workflows/images.yml
+# exit 0
+
+# Thu Nov  5 04:55:44 EAT 2026
+$ zizmor --offline --no-progress --strict-collection .github/workflows/images.yml
+ INFO zizmor: 🌈 zizmor v1.32.0
+ INFO audit: zizmor: 🌈 completed .github/workflows/images.yml
+No findings to report. Good job! (1 suppressed)
+# exit 0
+
+# Thu Nov  5 04:55:44 EAT 2026
+$ hadolint --failure-threshold warning apps/wayline/runtime/Dockerfile.admin apps/wayline/runtime/Dockerfile.backend apps/wayline/runtime/Dockerfile.space apps/wayline/runtime/Dockerfile.web
+apps/wayline/runtime/Dockerfile.backend:29 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.backend:33 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.space:28 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+# exit 0
+
+# Thu Nov  5 04:55:45 EAT 2026
+$ python3 -m py_compile apps/wayline/backend/check_db.py apps/wayline/backend/check_image.py apps/wayline/backend/edit_strings.py apps/wayline/backend/vendor/email.py apps/wayline/checks/flatten-compare.py apps/wayline/checks/flatten-config.py apps/wayline/checks/layer-check.py apps/wayline/checks/oci_read.py
+# exit 0
+
+# Thu Nov  5 04:55:45 EAT 2026
+$ node --check apps/wayline/checks/space-regions.mjs
+# exit 0
+
+# Thu Nov  5 04:55:45 EAT 2026
+$ trivy config --cache-dir /Users/bek/dev/pr/plane-platform/.local/trivy-cache --ignorefile .trivyignore --exit-code 1 --severity HIGH,CRITICAL --skip-dirs apps/wayline/overlay apps/wayline
+2026-11-05T04:55:45+03:00	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-11-05T04:55:45+03:00	INFO	[checks-client] Using existing checks from cache	path="/Users/bek/dev/pr/plane-platform/.local/trivy-cache/policy/content"
+2026-11-05T04:55:46+03:00	INFO	Detected config files	num=4
+
+Report Summary
+
+┌────────────────────────────┬────────────┬───────────────────┐
+│           Target           │    Type    │ Misconfigurations │
+├────────────────────────────┼────────────┼───────────────────┤
+│ runtime/Dockerfile.admin   │ dockerfile │         0         │
+├────────────────────────────┼────────────┼───────────────────┤
+│ runtime/Dockerfile.backend │ dockerfile │         1         │
+├────────────────────────────┼────────────┼───────────────────┤
+│ runtime/Dockerfile.space   │ dockerfile │         0         │
+├────────────────────────────┼────────────┼───────────────────┤
+│ runtime/Dockerfile.web     │ dockerfile │         0         │
+└────────────────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+runtime/Dockerfile.backend (dockerfile)
+=======================================
+Tests: 20 (SUCCESSES: 19, FAILURES: 1)
+Failures: 1 (HIGH: 0, CRITICAL: 1)
+
+DS-0031 (CRITICAL): Possible exposure of secret env "GPG_KEY" in ENV
+════════════════════════════════════════
+Passing secrets via `build-args` or envs or copying secret files can leak them out
+
+See https://avd.aquasec.com/misconfig/ds-0031
+────────────────────────────────────────
+ runtime/Dockerfile.backend:59-67
+────────────────────────────────────────
+  59 ┌ ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  60 │     LANG=C.UTF-8 \
+  61 │     GPG_KEY=${CPYTHON_RELEASE_SIGNER} \
+  62 │     PYTHON_VERSION=3.12.12 \
+  63 │     PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4 \
+  64 │     PYTHONDONTWRITEBYTECODE=1 \
+  65 │     PYTHONUNBUFFERED=1 \
+  66 │     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  67 └     INSTANCE_CHANGELOG_URL=
+────────────────────────────────────────
+
+
+# exit 1
+
+# Thu Nov  5 04:55:46 EAT 2026
+$ gitleaks dir --config .gitleaks.toml --redact --no-banner --exit-code 1 --log-level warn apps/wayline
+# exit 0
+
+# Thu Nov  5 04:55:46 EAT 2026
+$ gitleaks dir --config .gitleaks.toml --redact --no-banner --exit-code 1 --log-level warn scripts/ci/build-images.sh
+# exit 0
+

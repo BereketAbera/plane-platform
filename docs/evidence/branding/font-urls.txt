@@ -1,0 +1,15 @@
+# Thu Nov  5 04:58:33 EAT 2026
+$ apps/wayline/checks/font-urls.sh web
+ ok web: 5 font URLs under /assets/, all files present, brand values present
+# exit 0
+
+# Thu Nov  5 04:58:34 EAT 2026
+$ apps/wayline/checks/font-urls.sh admin
+ ok admin: 5 font URLs under /god-mode/assets/, all files present, brand values present
+# exit 0
+
+# Thu Nov  5 04:58:34 EAT 2026
+$ apps/wayline/checks/font-urls.sh space
+ ok space: 5 font URLs under /spaces/assets/, all files present, brand values present
+# exit 0
+

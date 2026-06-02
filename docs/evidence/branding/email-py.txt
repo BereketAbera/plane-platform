@@ -1,24 +1,28 @@
-# D12: plane/utils/email.py in the backend image, built from commit 1563cbfbe89536541c041ec59f241edeab3740c2. Recorded Thu Nov  5 02:56:53 EAT 2026.
+# D12: plane/utils/email.py in the backend image, built from commit ec45e212ee6185d286762a753913c253dac51358. Recorded Thu Nov  5 05:02:13 EAT 2026.
 
-$ # the file in upstream's base image, makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+$ # the file in upstream's image, makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, which the build downloads as an input
 # SPDX-FileCopyrightText: 2023-present Plane Software, Inc.
 # SPDX-License-Identifier: LicenseRef-Plane-Commercial
 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc  /code/plane/utils/email.py
 /code/plane/utils/email.py
-exit 0
+grep exit 0
 
-$ # the file in the derived image, localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+$ # the file in the published image, localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
 # Copyright (c) 2023-present Plane Software, Inc. and contributors
 # SPDX-License-Identifier: AGPL-3.0-only
-# See the LICENSE file for details.
 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda  /code/plane/utils/email.py
--rw-r--r--    1 root     root          2117 Nov  4 23:49 /code/plane/utils/email.py
-grep -rl LicenseRef-Plane-Commercial /code:
+-rw-r--r--    1 root     root          2117 Nov  5 01:31 /code/plane/utils/email.py
+
+$ # that identifier anywhere in the published filesystem, as root, every top-level directory but proc, sys and dev
+reading: /bin /code /etc /home /lib /media /mnt /opt /root /run /sbin /srv /tmp /usr /var 
+grep: /usr/bin/pinentry: No such file or directory
 grep exit 1 (1 means no file matched)
+regular files anywhere with the sha256 of the original:
+0
 
 $ # the pin, and the vendored file against upstream, fetched again now with gh api
 # Upstream's own AGPL-3.0-only copy of apps/api/plane/utils/email.py, kept byte for byte in vendor/email.py and
-# copied over the v1.4.3 file by runtime/Dockerfile.backend. Decision D12 in PASS2_HANDOFF.md.
+# copied over the v1.4.3 file by runtime/Dockerfile.backend. D12 in apps/wayline/MODIFICATIONS.md.
 # assemble.sh and check_image.py read sha256 from here. To check it against upstream:
 #   gh api 'repos/makeplane/plane/contents/apps/api/plane/utils/email.py?ref=<commit>' -H 'Accept: application/vnd.github.raw+json'
 repository=makeplane/plane
@@ -28,18 +32,15 @@ commit=86d9b158fa4edd0c5deebb29367b5dd9b821716f
 blob=4fe3709e1d9065b5e16696a200e567c9301c2b4c
 sha256=620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
 fetched=2026-11-05
+gh api exit 0
 cmp exit 0
 
-$ # everywhere else in the derived image's filesystem that string appears: our own check and notice, as text, no code header
-/opt/wayline/check_image.py
-/usr/share/licenses/wayline/MODIFICATIONS.txt
-grep exit 0
-
-$ # the base layers are still in the derived image, which is why the original file is still in its bytes
-base layers: 20; derived layers: 28; derived starts with every base layer, in order: True
+$ # the layers, as the registry serves them. layer-check.txt walks them
+base layers: 20; published layers: 2: [('sha256:390d08785ed27074f3b361a3a718d7b2f425a23b64a8b27119b23a76e1c7fc57', 102161763), ('sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1', 32)]
+layers shared with the base, other than the empty one: []
 
 $ # the license label and revision in the image config
-AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
+AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
 
 $ # the decision
-replace-with-upstream-agpl-private-ghcr-only
+replace-with-upstream-agpl-flattened
