@@ -1,0 +1,33 @@
+# Python decides whether a .pyc is stale from its source's time and size, so this asks that of every .pyc in the image.
+import os
+import struct
+import sys
+
+fresh = stale = hashed = orphan = 0
+stale_paths = []
+for root in ("/usr/local/lib/python3.12", "/code"):
+    for directory, _, names in os.walk(root):
+        if os.path.basename(directory) != "__pycache__":
+            continue
+        for name in names:
+            if not name.endswith(".pyc"):
+                continue
+            path = os.path.join(directory, name)
+            with open(path, "rb") as handle:
+                header = handle.read(16)
+            flags, mtime, size = struct.unpack("<III", header[4:16])
+            source = os.path.join(os.path.dirname(directory), name.split(".")[0] + ".py")
+            if flags & 1:
+                hashed += 1
+            elif not os.path.exists(source):
+                orphan += 1
+            else:
+                stat = os.stat(source)
+                if int(stat.st_mtime) & 0xFFFFFFFF == mtime and stat.st_size & 0xFFFFFFFF == size:
+                    fresh += 1
+                else:
+                    stale += 1
+                    stale_paths.append(path)
+print(f"python {sys.version.split()[0]}: {fresh} .pyc match their source's time and size, {stale} do not, {hashed} are hash-based, {orphan} have no source")
+for path in stale_paths[:20]:
+    print("stale", path)
