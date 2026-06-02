@@ -23,6 +23,9 @@ import stat
 import sys
 import tarfile
 
+# A __pycache__ beside this file would make the source read as changed, and scripts/ci/build-images.sh would refuse it.
+sys.dont_write_bytecode = True
+
 from oci_read import CHUNK, EMPTY_LAYER, Image, Unreadable
 
 ATTRIBUTES = ("type", "mode", "uid", "gid", "size", "target", "device", "xattrs", "sha256", "mtime")

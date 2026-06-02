@@ -40,8 +40,8 @@ COPY --from=derived / /
 
 ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
 ARG WAYLINE_SOURCE_REF
-# The public fingerprint of CPython's release signing key, which the base image sets in GPG_KEY. It goes through a build
-# argument only because the secret scanner reads a KEY=<hex> line as a credential, and it is not one.
+# The public fingerprint of CPython's release signing key, which the base image sets in GPG_KEY and no running code reads.
+# It goes through a build argument only because the secret scanner reads a KEY=<hex> line as a credential, and it is not one.
 ARG CPYTHON_RELEASE_SIGNER=7169605F62C751356D054A26A821E680E5FA6305
 
 LABEL org.opencontainers.image.title="wayline-backend" \
@@ -57,9 +57,11 @@ LABEL org.opencontainers.image.title="wayline-backend" \
 # upstream's own fallback; and the UID, the same as the hardening patches, where upstream's image runs as root and
 # chmods /code to allow this.
 ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-    LANG=C.UTF-8 \
-    GPG_KEY=${CPYTHON_RELEASE_SIGNER} \
-    PYTHON_VERSION=3.12.12 \
+    LANG=C.UTF-8
+# trivy config reads this name as a secret. It is the public fingerprint above, so its rule stays on for every other line.
+# trivy:ignore:DS-0031
+ENV GPG_KEY=${CPYTHON_RELEASE_SIGNER}
+ENV PYTHON_VERSION=3.12.12 \
     PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
