@@ -13,7 +13,7 @@ APP=plane-dev
 
 Every Application sets `retry.limit: -1`. Finite retries would strand an app on first boot, because automated sync never reattempts a failed commit.
 
-The cost is how a failure looks. Argo CD v3.5.7 handles a failed attempt with retries left by setting the phase **back to `Running`**, setting `finishedAt`, and appending to the message. Measured on 2026-11-04 on a throwaway Application that its project refuses, in a loop of 30 minutes ([h16-throwaway-1.txt](../evidence/runs/h16-throwaway-1.txt)):
+The cost is how a failure looks. Argo CD v3.5.7 handles a failed attempt with retries left by setting the phase **back to `Running`**, setting `finishedAt`, and appending to the message. Measured on 2026-11-04 on a throwaway Application that its project refuses, in a loop of 30 minutes ([h16-throwaway-1.txt](../evidence/runs/h16-throwaway-1.txt), and [h16-fire-1.txt](../evidence/runs/h16-fire-1.txt) for the end of the loop):
 
 | Field | Value |
 |---|---|
@@ -50,16 +50,16 @@ The root loops the same way. A comment in `root-application.yaml` notes that a D
 
 ## What fires for which failure
 
-Read from `monitoring/manifests/shared/rules-platform.yaml`. The last column says what has really been seen. [Monitoring](../monitoring.md#platform) has each alert on its own.
+Read from `monitoring/manifests/shared/rules-platform.yaml`. The last column says what has really run, with the status words from [validation](../validation.md#status-values). [Monitoring](../monitoring.md#platform) has each alert on its own.
 
-| Failure | What Argo CD reads | What fires | Run? |
+| Failure | What Argo CD reads | What fires | Status |
 |---|---|---|---|
-| A commit that cannot render, or a Git that cannot be read | Sync `Unknown`, health unchanged, no operation, condition `ComparisonError` | `ArgoAppSyncUnknown` at 15m, and nothing else | Yes, on a throwaway ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)) |
-| A sync refused or failing, under retry | Phase `Running`, `retryCount` climbing | `ArgoAppDegraded` at 5m if health reads `Degraded` or `Missing`, `ArgoAppOutOfSync` and `ArgoSyncFailed` at 15m | Yes, on a throwaway ([h16-fire-1.txt](../evidence/runs/h16-fire-1.txt)) |
+| A commit that cannot render, or a Git that cannot be read | Sync `Unknown`, health unchanged, no operation, condition `ComparisonError` | `ArgoAppSyncUnknown` after 15m of reading Unknown, about 21m after a commit on an Application that was rendering, and nothing else | PASS on a throwaway only, whose path never existed ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)). That proves the path, not the timing from a real commit, which has not fired |
+| A sync refused or failing, under retry | Phase `Running`, `retryCount` climbing | `ArgoAppDegraded` at 5m if health reads `Degraded` or `Missing`, `ArgoAppOutOfSync` and `ArgoSyncFailed` at 15m | PASS on a throwaway only ([h16-fire-1.txt](../evidence/runs/h16-fire-1.txt)) |
 | A bad image in a Plane Deployment | Deployments are wave 3 of 4, so the operation stays open, fails at the 600s deadline, and retries | `ArgoAppDegraded` once Degraded for 5m, `ArgoSyncFailed` at 15m, if nobody reverts | **NOT RUN.** Read from the rules. The failed-deploy drill reverts at the first Degraded, about 10m in, so `ArgoSyncFailed` and `ArgoAppDegraded` are expected to go pending, with neither firing unless the revert takes more than 5m |
 | A bad image in a single-wave chart Application | The sync succeeds on apply, which closes the operation, then `Degraded` at the rollout's deadline | `ArgoAppDegraded`, and `ArgoSyncFailed` never | NOT RUN |
-| A chart child with no deadline to miss, such as a stuck StatefulSet | Operation closed, `Synced` and `Progressing`, while a root sync waits on it with no retry | The chart's `Kube*` rules at 15m, `ArgoAppStuckProgressing` at 30m, `ArgoRootSyncStuck` at 60m | `ArgoAppStuckProgressing` fired on a throwaway on 2026-11-05 (`argo-stuck-progressing-1.txt`, in `.local/evidence-raw/`, not yet published). The rest are not run |
-| A Prometheus that cannot start | `Progressing`, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. `Watchdog` stops reaching the sink, and nothing watches for that | The `Progressing` read, yes ([h43-repro-after-1.txt](../evidence/runs/h43-repro-after-1.txt)). The rest is read from the code |
+| A chart child with no deadline to miss, such as a stuck StatefulSet | Operation closed, `Synced` and `Progressing`, while a root sync waits on it with no retry | The chart's `Kube*` rules at 15m, `ArgoAppStuckProgressing` at 30m, `ArgoRootSyncStuck` at 60m | `ArgoAppStuckProgressing`: PASS on a throwaway only, on 2026-11-05 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt), and the run's own `argo-stuck-progressing-1.txt`, in `.local/evidence-raw/`, not yet published). The rest: NOT RUN |
+| A Prometheus that cannot start | `Progressing`, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. `Watchdog` stops reaching the sink, and nothing watches for that | The `Progressing` read: PASS ([h43-repro-after-1.txt](../evidence/runs/h43-repro-after-1.txt)). The rest: NOT RUN, read from the code |
 
 ## Diagnosis
 
@@ -74,8 +74,10 @@ One Application:
 
 ```bash
 kubectl -n argocd get application "$APP" -o json | jq '{sync: .status.sync.status, health: .status.health, op: .status.operationState | {phase, retryCount, finishedAt, message}, conditions: .status.conditions}'
-kubectl -n argocd get application "$APP" -o json | jq -r '.status.resources[] | select(.status != "Synced" or (.health.status // "Healthy") != "Healthy") | "\(.kind)/\(.name) \(.status) \(.health.status // "-") \(.health.message // "")"'
+kubectl -n argocd get application "$APP" -o json | jq -r '.status.resources[] | select(.hook != true and (.status != "Synced" or (.health.status // "Healthy") != "Healthy")) | "\(.kind)/\(.name) \(.status) \(.health.status // "-") \(.health.message // "")"'
 ```
+
+A hook has no sync status, so that filter leaves hooks out: `plane-api-migrate-1` would otherwise print as `null` on a healthy Application. [Migrator hook will not finish](#migrator-hook-will-not-finish) covers the hook.
 
 Which results failed in the last attempt:
 
@@ -110,7 +112,9 @@ If `gitops-publish` refuses, see the note on non-fast-forward in [Failed deploy]
 
 ### A commit that cannot render
 
-Argo CD cannot compare with Git, so sync reads `Unknown` and health stays as it was. Auto-sync runs only from `OutOfSync`, so no operation opens, nothing retries, and the cluster stays on the old commit. Only `ArgoAppSyncUnknown` fires, after 15m ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)).
+Argo CD cannot compare with Git, so sync reads `Unknown` and health stays as it was. Auto-sync runs only from `OutOfSync`, so no operation opens, nothing retries, and the cluster stays on the old commit.
+
+Only `ArgoAppSyncUnknown` fires, after 15m of reading Unknown. A throwaway whose path never existed read Unknown from the start and reached the sink at 15m ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)). An Application that was rendering takes longer, because the controller ignores the failure for 180s and looks every 120s. A real commit read Unknown 5m57s after it, with the object it had deployed still there, so `rules-platform.yaml` puts the alert about 21m after the commit. That run stopped at pending, when the commit was taken out, so the 21m has not been seen (`argo-sync-unknown-2.txt`, in `.local/evidence-raw/`, not yet published).
 
 ```bash
 kubectl -n argocd get application "$APP" -o jsonpath='{.status.conditions}{"\n"}'
@@ -163,7 +167,7 @@ There is no need to end the root's operation. Apply the child's own file, as it 
 kubectl -n argocd apply -f gitops/applications/<child>.yaml
 ```
 
-Measured with a scratch parent holding on a 60-second hook: the child started in the same second and was `Synced` and `Healthy` within a second. When the parent's wave came, it adopted the child in place, with the same UID and a tracking annotation added ([argocd-early-child-1.txt](../evidence/runs/argocd-early-child-1.txt)). That was a scratch parent, not a real child. Objects inside an Application adopt the same way: prod-sim's ServiceAccounts and Infisical CRs were applied by hand 19 minutes before root reached wave 0, and kept their UIDs ([infisical-prod-sim-crs-1.txt](../evidence/runs/infisical-prod-sim-crs-1.txt)).
+Measured with a scratch parent holding on a 60-second hook: the child started in the same second and was `Synced` and `Healthy` within a second. When the parent's wave came, it adopted the child in place, with the same UID and a tracking annotation added ([argocd-early-child-1.txt](../evidence/runs/argocd-early-child-1.txt)). That was a scratch parent, not a real child. Objects inside an Application adopt the same way: prod-sim's ServiceAccounts and Infisical CRs were applied by hand 17 minutes before root reached wave 0, and kept their UIDs ([infisical-prod-sim-crs-1.txt](../evidence/runs/infisical-prod-sim-crs-1.txt)).
 
 ### First install: Degraded or waiting
 
@@ -230,7 +234,7 @@ If a script terminated a sync before it stopped, auto-sync being back is not eno
 
 ### Argo CD itself is unwell
 
-- The repo-server limit is 512 MiB, with concurrent renders capped at 2. Its peak was 259 MiB with all 8 chart Applications hard-refreshed at once, and 0 errors ([argocd-render-load-1.txt](../evidence/runs/argocd-render-load-1.txt)).
+- The repo-server limit is 512 MiB, with concurrent renders capped at 2. Its peak was 247 MiB in the test with all 8 chart Applications hard-refreshed at once, with 0 errors ([argocd-render-load-1.txt](../evidence/runs/argocd-render-load-1.txt)), and the highest read on that pod was 269 MiB ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt)).
 - The controller's limit is 1 GiB. Its peak was 731 MiB with Plane running ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt)). An OOM kill there stalls every sync. See [Memory pressure](memory-pressure.md).
 - The controller has a liveness probe on purpose, with 5-minute slack, so a wedged controller restarts instead of hanging silently.
 - Each Argo pod comes back under default-deny, and a new repo server fetches Git and charts on new connections ([argocd-restart-under-policy-1.txt](../evidence/runs/argocd-restart-under-policy-1.txt)).

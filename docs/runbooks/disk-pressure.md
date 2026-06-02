@@ -25,7 +25,7 @@ Confirm the first on the running node:
 docker exec "$NODE" grep -E 'imageGC|nodefs|imagefs' /var/lib/kubelet/config.yaml
 ```
 
-[[VERIFY: the node's kubelet config shows imageGCHighThresholdPercent 100 and 0% eviction thresholds]]
+On 2026-11-05 the running kubelet reported `imageGCHighThresholdPercent` 100 and `evictionHard` of 0% on `imagefs.available`, `nodefs.available` and `nodefs.inodesFree`, and the command above printed the same ([node-kubelet-config-1.txt](../evidence/runs/node-kubelet-config-1.txt)).
 
 ## Symptoms
 
