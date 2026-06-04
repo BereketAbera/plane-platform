@@ -635,6 +635,29 @@ def branded_images(text: str) -> dict[str, dict[str, str]]:
     return branded
 
 
+def rollout_unfinished(deployment: dict) -> str | None:
+    """Why pods of an older template may still be serving, or why the new ones may not be yet. None if neither.
+    The spec names what should run, and only these fields say it does. kubectl rollout status reads the same ones."""
+    spec, status = deployment.get("spec", {}), deployment.get("status", {})
+    wanted = spec.get("replicas", 1)
+    observed, generation = status.get("observedGeneration", 0), deployment.get("metadata", {}).get("generation", 0)
+    if observed < generation:
+        return f"the controller has read generation {observed} of {generation}"
+    updated, replicas, available = status.get("updatedReplicas", 0), status.get("replicas", 0), status.get("availableReplicas", 0)
+    if updated != wanted:
+        return f"{updated} of {wanted} replicas have the new template"
+    if replicas != updated:
+        return f"{replicas - updated} old replicas are still there"
+    if available != updated:
+        return f"{available} of {updated} new replicas are available"
+    return None
+
+
+def parse_time(text: str) -> dt.datetime:
+    """Kubernetes and this script write a trailing Z, which fromisoformat does not read before Python 3.11."""
+    return dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+
 def configured_source_repo() -> str:
     """Where /source points. The Dockerfile holds the default, and scripts/ci/build-images.sh passes the same variable."""
     override = os.environ.get("WAYLINE_SOURCE_REPO")
@@ -1148,13 +1171,17 @@ class Smoke:
         return sum(1 for activity in results if activity.get("verb") == "created")
 
     def replace_worker(self, data: dict) -> None:
-        """cancel_consumer empties Celery's queue selection, and add_consumer attaches a consumer without putting
-        the queue back in it. Such a worker runs normally until its next broker reconnect. It then builds its
-        consumer from the empty selection and consumes nothing, while inspect ping still answers pong.
+        """Why the control ends in a new pod: cancel_consumer empties Celery's queue selection, and no remote command
+        restores it. add_consumer attaches a consumer without putting the queue back, because in Celery 5.5.3
+        add_task_queue reaches select_add only for a queue it has never heard of. Such a worker runs normally until its
+        next broker reconnect. It then builds its consumer from the empty selection and consumes nothing, while inspect
+        ping still answers pong.
 
-        Celery 5.5.3 has no remote control command that restores the selection: add_task_queue reaches select_add
-        only for a queue it has never heard of. A new pod has a clean selection, and deleting a pod is no drift for
-        Argo CD, though the Application reads Progressing until the replacement is ready.
+        So the selection has to start again, and a new pod does that with no signal into a running worker and no
+        restart count. Remote control's shutdown does not restore it either: it ends the process, and the container
+        that follows adds to the restart count PodRestarting reads. This was run in prod-sim with a broker restart
+        after it, and the worker came back and consumed (harness-worker-control-prod-sim-1.txt). Deleting a pod is no
+        drift for Argo CD, though the Application reads Progressing until the replacement is ready.
         """
         self.cluster.in_namespace("delete", "pod", "-l", WORKER_SELECTOR, "--wait=true", "--timeout=120s", timeout=150)
         self.cluster.in_namespace("rollout", "status", "deployment/plane-worker-wl", "--timeout=180s", timeout=200)
@@ -1584,7 +1611,8 @@ class Smoke:
 
     def step_branding_overlay(self, data: dict) -> str:
         """Whether there is anything to check, and whether what Git names is what is running. Everything after this
-        checks a running image, so a rollout still on its way must not read as a broken one."""
+        checks a running image, so a rollout still on its way must not read as a broken one. The pod template alone
+        cannot show that: Argo CD applies it as the rollout starts, while the old pods still serve."""
         path = overlay_path(self.args.env)
         branded = branded_images(path.read_text())
         self.state["branded"] = branded
@@ -1600,15 +1628,19 @@ class Smoke:
         for component, entry in sorted(branded.items()):
             want = f"{entry['newName']}@{entry.get('digest')}"
             for name in BRANDED_WORKLOADS.get(component, []):
-                containers = deployments.get(name, {}).get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
+                deployment = deployments.get(name, {})
+                containers = deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
                 images = [container["image"] for container in containers]
                 data[name] = images
+                unfinished = rollout_unfinished(deployment)
                 if want not in images:
-                    problems.append(f"{name} runs {images}, and the overlay names {want}")
+                    problems.append(f"{name} is set to {images}, and the overlay names {want}")
+                elif unfinished:
+                    problems.append(f"{name} is set to the overlay's image, and {unfinished}")
         if problems:
             raise StepBlocked("what is running is not what the overlay names, so a check here would say nothing "
                               f"about this overlay. Is the rollout finished? {'; '.join(problems)}")
-        return f"{', '.join(sorted(branded))} run the digests in {path.relative_to(ROOT)}"
+        return f"{', '.join(sorted(branded))} run the digests in {path.relative_to(ROOT)}, with every rollout finished"
 
     def step_branding_web(self, data: dict) -> str:
         self.require_branded("web")
@@ -1733,7 +1765,7 @@ class Smoke:
                 f"registered with what its form sent, so {instance.get('instance_name')!r} now says nothing about the "
                 "image. The first smoke after a clean install checks the registered name and telemetry default")
         since = branded_backend_since(self.args.env)
-        registered = dt.datetime.fromisoformat((instance.get("created_at") or "").replace("Z", "+00:00"))
+        registered = parse_time(instance.get("created_at") or "")
         if since is None:
             raise StepBlocked("Git cannot say when the Wayline backend reached this overlay, so this cannot tell who registered the instance")
         if registered < since:
@@ -1748,11 +1780,37 @@ class Smoke:
             raise StepFailed("; ".join(problems))
         return "before setup, the instance this image registered is named Wayline, with telemetry off"
 
+    def drop_older_sentinel(self, data: dict) -> str:
+        """make destroy keeps the record, and this run found no admin in this database and made the first one, so the
+        database is new and cannot hold it. Reusing it would fail the first smoke after every clean install, the one
+        run that can read branding-fresh-install.
+
+        A database lost under the namespace that wrote the record looks the same from here, and that must stay a
+        failure. Only there is the namespace older than the record, because make destroy takes the namespace with it.
+        Not caught: a record a restore brought onto a newer cluster, if that database is then lost."""
+        old = json.loads(self.sentinel_path.read_text())
+        namespace = json.loads(self.cluster.run("get", "namespace", self.cluster.namespace, "-o", "json"))
+        created = namespace["metadata"]["creationTimestamp"]
+        data["older_sentinel"] = {key: old.get(key) for key in ("slug", "work_item_id", "created_at")}
+        data["namespace_created_at"] = created
+        if parse_time(created) < parse_time(old["created_at"]):
+            raise StepFailed(f"this run found the instance not set up, and namespace {self.cluster.namespace}, created "
+                             f"{created}, is older than sentinel {old['slug']}, written {old['created_at']}. So this "
+                             f"database held that record and no longer does: data was lost. If it was reset on purpose, "
+                             f"remove {self.sentinel_path} and run this again")
+        self.sentinel_path.unlink()
+        return (f"Replaced {self.sentinel_path.name}: this run found the instance not set up, so this new database cannot "
+                f"hold sentinel {old['slug']}, written {old['created_at']}. ")
+
     def step_sentinel_create(self, data: dict) -> str:
-        """A long-lived record that drills and restores re-read. It is never recreated silently:
-        a missing sentinel means data was lost, so that must stay a failure."""
+        """A long-lived record that drills and restores re-read. It is never recreated silently: a missing sentinel
+        means data was lost, so that must stay a failure. This step needs instance-setup to have passed, and verify
+        mode never runs it, so a restored database, which holds the record and is set up, never reaches the replacement."""
+        replaced = ""
         if self.sentinel_path.exists() and not self.args.reset_sentinel:
-            return f"reusing existing sentinel {self.sentinel_path.name}"
+            if self.state["instance"].get("is_setup_done") is not False:
+                return f"reusing existing sentinel {self.sentinel_path.name}"
+            replaced = self.drop_older_sentinel(data)
         slug = f"sentinel-{self.run_id}"
         self.create_workspace(f"Sentinel {self.run_id}", slug)
         project_id = self.create_project(slug, "Sentinel")["id"]
@@ -1766,7 +1824,19 @@ class Smoke:
                   "sha256": sha256(content), "created_at": now_iso()}
         write_private(self.sentinel_path, json.dumps(record, indent=2) + "\n")
         data.update(record)
-        return f"created {work_item_id}"
+        return f"{replaced}Created {work_item_id}"
+
+    def sentinel_refused(self, status: int, record: dict) -> str:
+        """Plane gives an API key the same answer for a workspace that is not there and for a bad token, so ask what
+        else this token can read."""
+        me = self.http.get("/api/v1/users/me/", session=False, headers=self.api()).status
+        if me != 200:
+            return (f"sentinel workspace {record['slug']} answered {status}, and /api/v1/users/me/ with the same token "
+                    f"answered {me}: the user or token row is gone, or the token is not this database's")
+        return (f"sentinel workspace {record['slug']} answered {status} to a token that works, so this account has no "
+                f"such workspace and this database does not hold the record: data was lost, or {self.sentinel_path.name}, "
+                f"written {record.get('created_at')}, is from an older database. If this environment was installed after "
+                "that, remove the file and run the full smoke test")
 
     def step_sentinel_reread(self, data: dict) -> str:
         if not self.sentinel_path.exists():
@@ -1777,7 +1847,7 @@ class Smoke:
         response = self.retrying_get(f"{base}/work-items/{record['work_item_id']}/", session=False,
                                      headers=self.api())
         if response.status in (401, 403):
-            raise StepFailed(f"API token refused with {response.status}: the user or token row is gone")
+            raise StepFailed(self.sentinel_refused(response.status, record))
         if response.status == 404:
             raise StepFailed("sentinel work item is gone: database content was lost")
         item = expect(response, 200).json()
@@ -1985,6 +2055,40 @@ def selftest() -> int:
         with contextlib.redirect_stdout(io.StringIO()):
             smoke.run("blocked", lambda _: (_ for _ in ()).throw(StepBlocked("no")))
         assert smoke.overall() == "BLOCKED"
+
+    # Pods of an older template can still serve, whatever the template says now.
+    finished = {"metadata": {"generation": 2}, "spec": {"replicas": 1},
+                "status": {"observedGeneration": 2, "updatedReplicas": 1, "replicas": 1, "availableReplicas": 1}}
+    assert rollout_unfinished(finished) is None
+    for field, value, reason in (("observedGeneration", 1, "generation"), ("updatedReplicas", 0, "new template"),
+                                 ("replicas", 2, "old replicas"), ("availableReplicas", 0, "available")):
+        assert reason in rollout_unfinished({**finished, "status": {**finished["status"], field: value}}), field
+
+    # The sentinel a clean install finds from before it, with HTTP and kubectl stubbed. It says nothing about Plane.
+    def sentinel_run(found: dict, namespace_created: str) -> tuple[Smoke, str, dict]:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sentinel.json"
+            path.write_text(json.dumps({"slug": "sentinel-old", "work_item_id": "old", "created_at": "2026-05-01T00:00:00Z"}))
+            smoke = Smoke(parse_args(["--accounts", f"{directory}/a.env", "--sentinel", str(path)]))
+            smoke.state["instance"] = found
+            smoke.cluster.run = lambda *_, **__: json.dumps({"metadata": {"creationTimestamp": namespace_created}})
+            smoke.create_workspace = lambda *_: None
+            smoke.create_project = lambda *_: {"id": "new-project"}
+            smoke.create_work_item = lambda *_: "new"
+            smoke.upload_attachment = lambda *_: "new-asset"
+            with contextlib.redirect_stdout(io.StringIO()) as printed:
+                smoke.run("sentinel-create", smoke.step_sentinel_create)
+            return smoke, printed.getvalue(), json.loads(path.read_text())
+
+    newer, older = "2026-06-01T00:00:00Z", "2026-04-01T00:00:00Z"
+    _, printed, record = sentinel_run({"is_setup_done": False}, newer)
+    assert printed.startswith("PASS") and "Replaced" in printed and "sentinel-old" in printed and record["work_item_id"] == "new", printed
+    for found in ({"is_setup_done": True}, {}):
+        _, printed, record = sentinel_run(found, newer)
+        assert "reusing existing sentinel" in printed and record["work_item_id"] == "old", printed
+    smoke, printed, record = sentinel_run({"is_setup_done": False}, older)
+    assert printed.startswith("FAIL") and "data was lost" in printed and record["work_item_id"] == "old", printed
+    assert smoke.overall() == "FAIL"
 
     # A tiny server that plays Hocuspocus, so the client's framing runs over a real socket. It knows
     # nothing of Plane, and a pass here says nothing about the real server.
