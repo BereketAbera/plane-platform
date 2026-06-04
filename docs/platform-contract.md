@@ -46,7 +46,8 @@ Secret and each sits beside the data it reads. Application `monitoring-extras` d
 The non-root condition on `plane-prod-sim` was met on 2026-11-04, on upstream images: each container ran as its configured
 UID, and a server-side dry run of `enforce=restricted` gave no warnings
 ([plane-prod-sim-host-and-identity-1.txt](evidence/runs/plane-prod-sim-host-and-identity-1.txt),
-[plane-dev-psa-1.txt](evidence/runs/plane-dev-psa-1.txt)). Moving the label is a Terraform change that nobody has made.
+[plane-dev-psa-1.txt](evidence/runs/plane-dev-psa-1.txt)). Containers with no shell were read from their pod specs, and prod-sim's finished
+migrator on 2026-11-05 ([cluster-readings-1.txt](evidence/runs/cluster-readings-1.txt)). Moving the label is a Terraform change that nobody has made.
 
 metrics-server is the one platform workload outside this table. It runs in `kube-system`, which kubeadm
 creates, so Terraform does not create or label it. That namespace also holds kind's own CoreDNS, kindnet
@@ -80,7 +81,8 @@ also allowed until then, was removed in `2d77243`.
 **Internal UIs.** The five hosts that are not Plane's carry Middleware `node-network-only`: an `ipAllowList` of exactly
 `172.16.0.0/12` with no `ipStrategy`, so Traefik reads the socket address and not a header. Traefik refuses a Middleware from
 another namespace, so `monitoring`, `argocd` and `infisical` each hold a copy. A pod arrives from `10.244.0.0/16` and gets 403.
-`policy/plane.rego` refuses a route to these hosts that does not name the Middleware, or a Middleware of that name that admits
+`policy/plane.rego` refuses a route that does not name the Middleware if it uses one of these hosts or their Services, or sits in
+one of those namespaces. It also refuses a TCP or UDP route beside or to an internal UI, and a Middleware of that name that admits
 anything else. `tests/routes/internal-routes.sh` runs both sides. This is a source-address check, not a login.
 
 CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to
@@ -109,8 +111,9 @@ Rule: if `git grep` finds the same resource under two owners, it is a bug. CI ch
   writer is `make gitops-publish`, which pushes from the working repo to that path.
 - **GitHub** (`origin`, private `BereketAbera/plane-platform`) runs CI. Argo CD does not read it in Pass 1.
 - **Branded images:** `localhost:5001/wayline/{web,admin,space,backend}`, always referenced `@sha256:` by digest.
-  `kind load` is forbidden: it cannot work with this host's containerd image store (kind #3795). `plane-dev` has run them
-  since promotion `4f622e3` on 2026-11-05. `plane-prod-sim` runs upstream's until it is promoted. `live` stays upstream's in both.
+  `kind load` is forbidden: it is reported to fail on this host's containerd image store (kind #3795), and that was not reproduced
+  here, because nothing calls it. `plane-dev` has run them since promotion `4f622e3` and `plane-prod-sim` since `0af8956`, both on
+  2026-11-05. `live` stays upstream's in both.
 - **Upstream images:** by index digest from `docker.io`, never `artifacts.plane.so`. Pulls go through
   the pull-through caches declared in `infrastructure/kind/containerd-certs.d/`.
 - **Plane manifests are rendered and committed.** `helm/plane/` holds the Kustomize overlay over the vendored
@@ -120,9 +123,11 @@ Rule: if `git grep` finds the same resource under two owners, it is a bug. CI ch
   `helm/values/` via a `$values` ref.
 - **Promotion:** `make promote ENV=dev` or `make promote ENV=prod-sim`. Prod-sim accepts only a digest recorded for dev under
   the same image (`scripts/ci/check-promoted-digests.sh`), refuses unless `plane-dev` is Synced and Healthy with that digest in a
-  ready container (`scripts/lib/dev-check.sh`), and takes a Postgres dump first. `make gitops-publish` asks the same of a prod-sim
-  digest that arrives through a merged pull request. `OVERRIDE_DEV_CHECK="<reason>"` goes past the `plane-dev` check and is logged,
-  `SKIP_BACKUP=yes` skips the dump, and with no cluster in reach the check is skipped and the commit message says so.
+  ready container (`scripts/lib/dev-check.sh`), and takes a Postgres dump first. For a prod-sim digest that arrives through a merged
+  pull request, `make gitops-publish` repeats the `plane-dev` check and the dump. It does not run `check-promoted-digests.sh`: that
+  runs in `scripts/promote.sh` and in CI, and a check in CI cannot block a merge on this plan. `OVERRIDE_DEV_CHECK="<reason>"` goes
+  past the `plane-dev` check and is logged, `SKIP_BACKUP=yes` skips the dump, and with no cluster in reach the check is skipped and
+  the commit message says so.
 - **Rollback:** `make rollback ENV=<env>` is a `git revert` and a publish with `SKIP_BACKUP=yes` and `SKIP_DEV_CHECK`, so it needs
   neither a healthy `plane-dev` nor a working backup. Prod-sim gets one best-effort dump first, limited to 300s. Images roll back,
   and schemas do not.
@@ -186,7 +191,7 @@ after the bootstrap for all 14 Applications, each Synced and Healthy.
   The earlier value, 360, failed web, admin and space on that first boot and held the sync until a retry. That event was read live
   and is not in a saved file. 600 stays above the longest startup budget, 300s.
 - `preStop: {sleep: {seconds: 5}}` on web, admin, space, live and api. A pod gets SIGTERM as its endpoint starts to go, and Traefik
-  reacts about 2s later. Without the pause a rollout failed 10 of 2,757 samples, and with it 0 of 5,902 across two rollouts
+  can still send it requests for a moment. Without the pause a rollout failed 10 of 2,757 samples, and with it 0 of 5,902 across two rollouts
   ([before](evidence/runs/plane-dev-rollout-availability-1.txt), [after](evidence/runs/plane-dev-rollout-availability-2.txt)).
 
 ## 7. Argo CD projects
@@ -202,7 +207,8 @@ rendered manifests of an environment under any project but its own. That check r
 this GitHub plan.
 
 Both Plane environments sync automatically with self-heal. The prod-sim control point is the Git change,
-not the sync button. Drills that inject failure must pause self-heal first or Argo reverts them in seconds.
+not the sync button. A drill that changes live objects behind Git's back must pause self-heal first, or Argo CD reverts the change within
+seconds. A failure delivered through a commit keeps self-heal on, because the bad state is then what Git asks for.
 
 ## 8. Secret contract
 
@@ -287,8 +293,9 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
 ## 11. Make interface
 
 `make setup up status test logs backup restore down` plus `destroy`, `render`, `promote`, `rollback`, `rotate`, `restore-clean`,
-`ci`, `images`, `gitops-publish`, `gates`, `test-e2e`, `test-netpol`, `test-alert`, `test-load`, `scan-images`, `publish-evidence`,
-`drill-failed-deploy`, `drill-pod-restart`, `drill-clean-restore`, `wayline-upgrade-check`, `wayline-upstream-check`.
+`ci`, `images`, `gitops-publish`, `gates`, `test-e2e`, `test-netpol`, `test-infisical`, `test-routes`, `test-separation`, `test-alert`,
+`test-load`, `scan-images`, `publish-evidence`, `drill-failed-deploy`, `drill-pod-restart`, `drill-clean-restore`,
+`drill-clean-restore-harness`, `wayline-upgrade-check`, `wayline-upstream-check`.
 `make help` lists them. Options are passed as `make <target> NAME=value`.
 
 - `make down` stops the cluster and **keeps all data**. `make up` resumes it.
@@ -304,8 +311,8 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
   back into a clean environment, Infisical first.
 - Scripts that write to the cluster, a registry or the disk check free host disk through `guard_disk`, because the Docker VM
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
-  creating a cluster, `scan-images.sh` for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh`
-  and `gitops-publish.sh`.
+  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB. `scan-images.sh`
+  asks for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh` and `gitops-publish.sh`.
   `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it, so the first four
   still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
 
@@ -357,14 +364,18 @@ Each line settles a place where the code and this file disagreed, by changing th
 | 2026-11-04 | 2 | Exporters run in the Plane namespaces, and metrics-server in `kube-system`. The code always did this | `monitoring/manifests/environments/base/exporters.yaml`, `gitops/applications/metrics-server.yaml` |
 | 2026-11-04 | 3 | `172.16.0.0/12` is the measured NodePort source, and `192.168.65.0/24` is gone | `2d77243`, [traefik-nodeport-source-1.txt](evidence/runs/traefik-nodeport-source-1.txt) |
 | 2026-11-04 | 3 | `node-network-only` on the five internal UIs | `fee3947`, [routes-after-3.txt](evidence/runs/routes-after-3.txt) |
-| 2026-11-04 | 4, 8 | A seventh Secret, `plane-infisical-identity`, written by a script. The code always did this | `scripts/infisical-bootstrap.sh`, [infisical-rendered-secrets-2.txt](evidence/runs/infisical-rendered-secrets-2.txt) |
+| 2026-11-05 | 3 | The allow list is required by namespace and Service as well as host, and no TCP or UDP route may sit beside an internal UI | `91bf4b3`, `policy/plane.rego` |
+| 2026-11-04 | 4, 8 | A seventh Secret, `plane-infisical-identity`, written by a script. The code always did this | `scripts/infisical-bootstrap.sh`, [infisical-bootstrap-1.txt](evidence/runs/infisical-bootstrap-1.txt) |
 | 2026-11-04 | 5 | Prod-sim also needs `plane-dev` to have proven the digest, recorded under the same image | `3a67ba0`, `scripts/lib/dev-check.sh`, `scripts/ci/check-promoted-digests.sh` |
+| 2026-11-04 | 5 | `make gitops-publish` repeats the `plane-dev` check and the dump, and not the check of what dev recorded | `3a67ba0`, `scripts/gitops-publish.sh` |
 | 2026-11-04 | 6 | The whole root wave list, including root's second source | `gitops/applications/*.yaml`, `gitops/bootstrap/argocd-route/ingressroute.yaml` |
 | 2026-11-04 | 6 | Application health needs no `.operation` and Synced, and root retries with `refresh: true` | `615e97c`, [argocd-wave-gating-1.txt](evidence/runs/argocd-wave-gating-1.txt) |
 | 2026-11-04 | 6 | A Prometheus with no ready pod reads Progressing | `40403db`, [h43-lua-runtime-1.txt](evidence/runs/h43-lua-runtime-1.txt) |
 | 2026-11-04 | 6 | `progressDeadlineSeconds: 600`, was 360 | `4b33f75` |
 | 2026-11-04 | 6 | `preStop` sleep of 5s on the five Deployments behind a Service | `2aefba1` |
 | 2026-11-04 | 7 | A policy rule holds each Plane Application to its own project | `b19fe26`, `policy/gitops.rego` |
+| 2026-11-04 | 7 | Only a change behind Git's back needs self-heal paused. The code always did this | `tests/drills/failed-deploy-rollback.sh` |
 | 2026-11-04 | 9 | The Silo pin is newer than upstream's. The code always did this | `helm/plane/overlays/*/kustomization.yaml`, [ADR 0005](adr/0005-minio-compatible-silo.md) |
 | 2026-11-04 | 10 | Quota 2732Mi, 7984Mi, 24 pods, with the exporters budgeted. It was 2704Mi, 7904Mi, 22 pods | `bc8bb91`, [quota-budget-1.txt](evidence/runs/quota-budget-1.txt) |
 | 2026-11-05 | 11 | `guard_disk` is not in every script, on purpose, and the target list is complete | `scripts/`, `Makefile` |
+| 2026-11-05 | 11 | A new cluster's disk checks take `ALLOW_LOW_DISK`, and the 10 GiB floor does not | `1fb4707`, `scripts/lib/up-checks.sh` |
