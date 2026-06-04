@@ -10,6 +10,7 @@
 #     secret_zero                sha256 of each file in .local/secret-zero. Secret zero stays where it
 #                                is, at 0700, and is never copied into a backup. Without it a dump
 #                                is unreadable, so the two must be kept apart and both kept.
+#     admin                      Who the admin token belongs to and when it ends. Never the token.
 #     identity                   Organization, project and identity ids.
 #     plane_secrets              For each Plane secret: truncated hash of its value, version and id.
 #
@@ -22,12 +23,18 @@
 # A hash truncated to 16 hex characters of a value of at least 80 random bits is safe beside the dump,
 # as the fingerprints in the manifests are. PG_USER, PG_DB and RABBITMQ_USER are not random, and not secret.
 
-# Needed to log in to, or to trust, the restored instance. Nothing else can stand in for them.
-RECOVERY_ZERO_REQUIRED="ENCRYPTION_KEY AUTH_SECRET infisical-admin.json"
-# The database keeps no copy of these, so a new one works: Postgres and Redis start empty and take
-# whatever the Secret says, the UI password is only a way in if the token is lost, and bootstrap
-# rewrites the machine file.
-RECOVERY_ZERO_OPTIONAL="DB_PASSWORD REDIS_PASSWORD infisical-admin-password infisical-machine.json"
+# Needed to read or to trust the restored instance. Nothing else can stand in for them.
+RECOVERY_ZERO_REQUIRED="ENCRYPTION_KEY AUTH_SECRET"
+# A restore can do without these. Postgres and Redis start empty and take whatever the Secret says, so a new
+# password works, and bootstrap rewrites the machine file. The admin token expires, and the file can be lost: with
+# the keys and the dump, the first admin's password mints another, and without the password a person who has it
+# can. So those two decide how a restore logs in, and neither decides whether it can start. See
+# recovery_admin_plan. The checksum says which file belongs to this dump, because a token minted after the dump is
+# not in it, and the server has the last word on any token.
+RECOVERY_ZERO_OPTIONAL="infisical-admin.json infisical-admin-password DB_PASSWORD REDIS_PASSWORD infisical-machine.json"
+# Backups are kept by count, and no schedule says how old that count gets, so this is how long a backup is
+# assumed to stay in use. It only decides when to warn about a token ending.
+BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 RECOVERY_TF_STATE="$LOCAL_DIR/terraform/infisical/terraform.tfstate"
 # Rendered Secret, key, and the Infisical secret it must hold. From helm/plane/overlays/*/infisical.yaml.
 RECOVERY_RENDERED="
@@ -91,7 +98,7 @@ recovery_secret_table() { # env
 # Writes recovery/ into a finished Infisical backup. Returns non-zero if the set is incomplete: the dump
 # is still good for an in-place restore, but a clean restore will refuse it.
 recovery_write_infisical() { # backup-dir
-  local dir="$1" rec="$1/recovery" zero='{}' name state_json=null identity=null secrets=null env table complete=true
+  local dir="$1" rec="$1/recovery" zero='{}' name state_json=null identity=null secrets=null env table complete=true admin=null problem
   mkdir -p "$rec"
   chmod 700 "$rec"
 
@@ -118,7 +125,11 @@ recovery_write_infisical() { # backup-dir
   done
 
   # The values are read back from Infisical itself, not from what an operator last rendered.
-  if [[ -s "$ADMIN_FILE" && -s "$MACHINE_FILE" ]]; then
+  problem="$(ia_admin_problem)"
+  if [[ -n "$problem" ]]; then
+    warn "$problem, so nothing can read the secrets back and this backup cannot serve a clean restore"
+    complete=false
+  elif [[ -s "$MACHINE_FILE" ]]; then
     ia_init
     ia_load_admin
     identity="$(jq -c '{organization: .organization.id, project_ids: .project_ids, identity_ids: .identity_ids}' "$MACHINE_FILE")"
@@ -133,18 +144,22 @@ recovery_write_infisical() { # backup-dir
     done
     ia_cleanup
   else
-    warn "no admin or machine file in $SECRET_ZERO_DIR, so this backup cannot serve a clean restore"
+    warn "no machine file in $SECRET_ZERO_DIR, so this backup cannot serve a clean restore"
     complete=false
+  fi
+  if [[ -s "$ADMIN_FILE" ]]; then
+    admin="$(jq -c --argjson exp "$(ia_file_token_exp "$ADMIN_FILE")" '{email, organization, identity, token_exp: $exp}' "$ADMIN_FILE")"
   fi
 
   jq -n --arg backup "${dir##*/}" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson complete "$complete" \
-    --argjson zero "$zero" --argjson state "$state_json" --argjson identity "$identity" --argjson secrets "$secrets" '{
+    --argjson zero "$zero" --argjson state "$state_json" --argjson identity "$identity" --argjson secrets "$secrets" --argjson admin "$admin" '{
       schema: 1,
       backup: $backup,
       created_at: $at,
       complete: $complete,
       secret_zero: {location: ".local/secret-zero", files: $zero},
       terraform_state: $state,
+      admin: $admin,
       identity: $identity,
       plane_secrets: $secrets
     }' > "$rec/set.json"
@@ -153,6 +168,39 @@ recovery_write_infisical() { # backup-dir
   # Asks the file rather than the flag: errexit is off in a function called from `||`.
   jq -e '.complete and .terraform_state != null and .identity != null
     and (.plane_secrets | has("dev") and has("prod-sim"))' "$rec/set.json" >/dev/null
+}
+
+# Before the dump, so the token a backup names is a row in that dump. A token minted after it is not, and a restore
+# of that dump would then have to mint another.
+recovery_prepare_admin() {
+  local rc=0
+  ia_init
+  ia_ensure_admin "$(jq -r '.organization.id // empty' "$MACHINE_FILE" 2>/dev/null || true)" || rc=$?
+  ia_cleanup
+  if [[ "$rc" -ne 0 ]]; then
+    warn "$(ia_admin_problem), and nothing here could replace it. The dump goes ahead, and its recovery set will not be whole."
+    ia_print_sign_in_steps "make backup ENV=infisical"
+  fi
+}
+
+# Retention for Infisical, from the host, and only once the backup just taken has a complete recovery set, so a run
+# of backups that cannot finish theirs removes nothing. Only a complete set counts toward KEEP, so the newest one
+# cannot go. A backup with no complete set is kept while it is newer than the oldest set kept, since an in-place
+# restore can still use its dump, and goes after that.
+recovery_prune_infisical() { # keep
+  local keep="$1" root="$LOCAL_DIR/backups/infisical" id complete=0
+  for id in $(recovery_ids infisical | LC_ALL=C sort -r); do
+    if recovery_set_complete "$root/$id"; then
+      complete=$((complete + 1))
+      if [[ "$complete" -gt "$keep" ]]; then
+        rm -rf -- "${root:?}/$id" || warn "retention could not remove $id"
+        ok "retention: removed $id, past the newest $keep complete sets"
+      fi
+    elif [[ "$complete" -ge "$keep" ]]; then
+      rm -rf -- "${root:?}/$id" || warn "retention could not remove $id"
+      ok "retention: removed $id, which has no complete recovery set and is older than every set kept"
+    fi
+  done
 }
 
 # Writes recovery/ into a finished Plane backup. Best effort apart from the seal: a missing accounts
@@ -281,60 +329,232 @@ recovery_locate_zero() { # name sha256
   return 1
 }
 
+# A helper and not a case inside the "$(...)" that calls it: bash 3.2, which macOS ships, reads the ) of a case
+# pattern as the end of the substitution. bash -n passes it, and it fails only when that line runs.
+recovery_zero_hint() { # name
+  case "$1" in
+    ENCRYPTION_KEY) printf 'Without it the dump is unreadable: restore the file from your off-machine copy.' ;;
+    AUTH_SECRET) printf 'Without it nothing this instance signed can be verified: restore the file from your off-machine copy. See infisical/README.md, section Recovery.' ;;
+    *) printf 'See infisical/README.md, section Recovery.' ;;
+  esac
+}
+
 # Prints one line per problem that would stop a clean restore, and returns 1 if there is any.
 recovery_check_zero() { # set-file
-  local set_file="$1" name sha problems=0 where token exp
+  local set_file="$1" name sha problems=0
   for name in $RECOVERY_ZERO_REQUIRED; do
     sha="$(jq -r --arg n "$name" '.secret_zero.files[$n].sha256 // ""' "$set_file")"
     if [[ -z "$sha" ]]; then
       printf 'the recovery set names no %s\n' "$name"
       problems=1
     elif ! recovery_locate_zero "$name" "$sha" >/dev/null; then
-      printf '%s with the content this backup needs is not in %s or any archive in it. %s\n' "$name" "$SECRET_ZERO_DIR" \
-        "$(case "$name" in
-          ENCRYPTION_KEY) printf 'Without it the dump is unreadable: restore the file from your off-machine copy.' ;;
-          AUTH_SECRET) printf 'Without it the admin token in the database cannot be verified. See infisical/README.md, section Recovery.' ;;
-          *) printf 'See infisical/README.md, section Recovery.' ;;
-        esac)"
+      printf '%s with the content this backup needs is not in %s or any archive in it. %s\n' "$name" "$SECRET_ZERO_DIR" "$(recovery_zero_hint "$name")"
       problems=1
     fi
   done
-  sha="$(jq -r '.secret_zero.files["infisical-admin.json"].sha256 // ""' "$set_file")"
-  if [[ -n "$sha" ]] && where="$(recovery_locate_zero infisical-admin.json "$sha")"; then
-    token="$(jq -er '.token' "$where" 2>/dev/null || true)"
-    exp="$(printf '%s' "$token" | ia_token_exp)"
-    if [[ "$exp" -gt 0 && "$exp" -le "$(date +%s)" ]]; then
-      printf 'the admin token recorded with this backup has expired, so nothing could log in after the restore. See infisical/README.md, section Recovery.\n'
-      problems=1
-    fi
-  fi
   return "$problems"
 }
 
+# ------ How a restore logs in ---------------------------------------------------------------------------------
+
+RECOVERY_ADMIN_MODE=""          # token: the file this backup names is here and has not ended
+                                # mint: it is not, and a password is here to make another with
+                                # sign-in: neither, so a person has to, after Infisical is back
+RECOVERY_ADMIN_WHY=""           # Why not token
+RECOVERY_ADMIN_TOKEN_FILE=""    # Where the file this backup names is, in place or in an archive, if it can log in
+RECOVERY_ADMIN_PASSWORD_FILE="" # The password to try: the one this backup names, or whatever is in place
+RECOVERY_ADMIN_EXP=0
+# shellcheck disable=SC2034 # scripts/restore.sh reads it.
+RECOVERY_ADMIN_OUTCOME=""       # What recovery_admin_after_restore did, for the record
+
+# Decides from the files alone, so it can run before anything is touched. Not in a command substitution: it sets these.
+recovery_admin_plan() { # set-file
+  local set_file="$1" sha where="" exp
+  RECOVERY_ADMIN_MODE=""
+  RECOVERY_ADMIN_WHY=""
+  RECOVERY_ADMIN_TOKEN_FILE=""
+  RECOVERY_ADMIN_PASSWORD_FILE=""
+  RECOVERY_ADMIN_EXP=0
+  sha="$(jq -r '.secret_zero.files["infisical-admin-password"].sha256 // ""' "$set_file")"
+  if [[ -n "$sha" ]]; then RECOVERY_ADMIN_PASSWORD_FILE="$(recovery_locate_zero infisical-admin-password "$sha" || true)"; fi
+  if [[ -z "$RECOVERY_ADMIN_PASSWORD_FILE" && -s "$ADMIN_PASSWORD_FILE" ]]; then RECOVERY_ADMIN_PASSWORD_FILE="$ADMIN_PASSWORD_FILE"; fi
+
+  sha="$(jq -r '.secret_zero.files["infisical-admin.json"].sha256 // ""' "$set_file")"
+  if [[ -n "$sha" ]]; then where="$(recovery_locate_zero infisical-admin.json "$sha" || true)"; fi
+  if [[ -n "$where" ]]; then
+    exp="$(ia_file_token_exp "$where")"
+    RECOVERY_ADMIN_EXP="$exp"
+    if [[ "$exp" -le 0 || "$exp" -gt $(($(date +%s) + IA_TOKEN_MARGIN_SECONDS)) ]]; then
+      RECOVERY_ADMIN_MODE=token
+      RECOVERY_ADMIN_TOKEN_FILE="$where"
+      return 0
+    fi
+    RECOVERY_ADMIN_WHY="the admin token this backup names ends at $(ia_date "$exp")"
+  else
+    RECOVERY_ADMIN_WHY="the infisical-admin.json this backup names is not on this machine"
+  fi
+  if [[ -n "$RECOVERY_ADMIN_PASSWORD_FILE" ]]; then RECOVERY_ADMIN_MODE=mint; else RECOVERY_ADMIN_MODE=sign-in; fi
+}
+
+recovery_admin_plan_text() { # What the plan says. After recovery_admin_plan.
+  case "$RECOVERY_ADMIN_MODE" in
+    token) printf 'the file this backup names, ending %s' "$(ia_date "$RECOVERY_ADMIN_EXP")" ;;
+    mint) printf '%s. Once the database is back, this signs in with %s, mints another and records it' "$RECOVERY_ADMIN_WHY" "${RECOVERY_ADMIN_PASSWORD_FILE#"$SECRET_ZERO_DIR"/}" ;;
+    *) printf '%s, and no password is on this machine. This restores Infisical, then stops with sign-in steps, and resumes with the replacement' "$RECOVERY_ADMIN_WHY" ;;
+  esac
+  if [[ -s "$ADMIN_TOKEN_DROP" ]]; then printf '. %s is there, and is tried first' "${ADMIN_TOKEN_DROP##*/}"; fi
+}
+
+# Says so when a token ends inside the time a backup is expected to stay in use. Why a restore does not depend on
+# it is in recovery_admin_plan, and what is left to lose depends on the password being there.
+recovery_warn_token_horizon() { # exp password-file-or-empty
+  local exp="$1" password="$2" now
+  now="$(date +%s)"
+  [[ "$exp" -gt 0 ]] || return 0
+  [[ "$exp" -le $((now + BACKUP_RETENTION_DAYS * 86400)) ]] || return 0
+  if [[ -n "$password" ]]; then
+    warn "the admin token ends at $(ia_date "$exp"), inside the $BACKUP_RETENTION_DAYS days a backup is expected to stay in use. A restore after that signs in with ${password##*/} and mints another, so keep that file. Before then, RENEW_ADMIN_TOKEN=yes scripts/infisical-bootstrap.sh and a new backup move the date."
+  else
+    warn "the admin token ends at $(ia_date "$exp"), inside the $BACKUP_RETENTION_DAYS days a backup is expected to stay in use, and no password is on this machine. A restore after that stops after Infisical for a person to sign in."
+  fi
+}
+
+# Follows the record of replacements. True if the file with the second checksum descends from the file with the first.
+recovery_admin_descends() { # old-sha new-sha
+  local at="$1" want="$2" next hops=0
+  [[ -s "$ADMIN_TOKEN_LEDGER" ]] || [[ "$at" == "$want" ]] || return 1
+  while [[ "$hops" -lt 50 ]]; do
+    if [[ "$at" == "$want" ]]; then return 0; fi
+    next="$(jq -r --arg old "$at" 'select(.old_sha256 == $old) | .new_sha256' "$ADMIN_TOKEN_LEDGER" 2>/dev/null | tail -1)"
+    [[ -n "$next" ]] || return 1
+    at="$next"
+    hops=$((hops + 1))
+  done
+  return 1
+}
+
+# Puts one file where it belongs, keeping what it replaces. For a file found only in an archive.
+recovery_put_back() { # name where archive
+  local name="$1" where="$2" archive="$3"
+  if [[ -e "$SECRET_ZERO_DIR/$name" ]]; then
+    mkdir -p "$archive"
+    mv "$SECRET_ZERO_DIR/$name" "$archive/"
+  fi
+  cp "$where" "$SECRET_ZERO_DIR/.$name.tmp"
+  chmod 600 "$SECRET_ZERO_DIR/.$name.tmp"
+  mv "$SECRET_ZERO_DIR/.$name.tmp" "$SECRET_ZERO_DIR/$name"
+  ok "put back $name from ${where#"$SECRET_ZERO_DIR"/}"
+}
+
+# The server now answers with the restored database, so ask it. Leaves in $ADMIN_FILE a token it accepts, trying in
+# turn: the file this backup names, a token a person left, what is in place, and a password login. Returns 0 with
+# what it did in RECOVERY_ADMIN_OUTCOME, or 3 if a person has to sign in. Needs ia_init. The caller prints the steps,
+# because only it knows what command goes on from there.
+# shellcheck disable=SC2034 # scripts/restore.sh reads RECOVERY_ADMIN_OUTCOME.
+recovery_admin_after_restore() { # set-file
+  local set_file="$1" org named have why archive rc=0
+  org="$(jq -r '.identity.organization' "$set_file")"
+  named="$(jq -r '.secret_zero.files["infisical-admin.json"].sha256 // ""' "$set_file")"
+  RECOVERY_ADMIN_OUTCOME=""
+  recovery_admin_plan "$set_file"
+  archive="$SECRET_ZERO_DIR/archive-pre-restore-$(date -u +%Y%m%dT%H%M%SZ)"
+  if [[ "$RECOVERY_ADMIN_MODE" == token && "$RECOVERY_ADMIN_TOKEN_FILE" != "$ADMIN_FILE" ]]; then
+    recovery_put_back infisical-admin.json "$RECOVERY_ADMIN_TOKEN_FILE" "$archive"
+  fi
+  # The dump holds this password's hash, so the file should hold this password, in place as on a clean restore.
+  if [[ -n "$RECOVERY_ADMIN_PASSWORD_FILE" && "$RECOVERY_ADMIN_PASSWORD_FILE" != "$ADMIN_PASSWORD_FILE" ]]; then
+    recovery_put_back infisical-admin-password "$RECOVERY_ADMIN_PASSWORD_FILE" "$archive"
+    RECOVERY_ADMIN_PASSWORD_FILE="$ADMIN_PASSWORD_FILE"
+  fi
+
+  ia_adopt_dropped_token "the restored instance had no usable token, and a person made one" "$org" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    RECOVERY_ADMIN_OUTCOME="replaced with the token a person made, and recorded in ${ADMIN_TOKEN_LEDGER##*/}"
+    return 0
+  fi
+
+  why="$(ia_admin_problem)"
+  if [[ -z "$why" ]]; then
+    jq -er '"Authorization: Bearer " + .token' "$ADMIN_FILE" > "$IA_TMP/auth"
+    if ia_token_accepted "$org"; then
+      have="$(recovery_sha256 "$ADMIN_FILE")"
+      if [[ "$have" == "$named" ]]; then
+        RECOVERY_ADMIN_OUTCOME="the file this backup names, and the server accepts it"
+      else
+        jq -cn --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg old "$named" --arg new "$have" --argjson exp "$(ia_file_token_exp "$ADMIN_FILE")" \
+          '{at: $at, method: "accepted-in-place", why: "not the file the backup names, and the restored server accepts it", old_sha256: $old, new_sha256: $new, token_exp: $exp}' >> "$ADMIN_TOKEN_LEDGER"
+        chmod 600 "$ADMIN_TOKEN_LEDGER"
+        RECOVERY_ADMIN_OUTCOME="a file this backup does not name, and the server accepts it. Recorded in ${ADMIN_TOKEN_LEDGER##*/}"
+      fi
+      return 0
+    fi
+    why="the restored server answers HTTP $IA_STATUS to the token in ${ADMIN_FILE##*/}"
+  fi
+
+  rc=0
+  if [[ -n "$RECOVERY_ADMIN_PASSWORD_FILE" ]]; then
+    ia_mint_admin_token "$why" "$org" "$RECOVERY_ADMIN_PASSWORD_FILE" || rc=$?
+    if [[ "$rc" -eq 0 ]]; then
+      RECOVERY_ADMIN_OUTCOME="$why, so it was replaced after a password login, and recorded in ${ADMIN_TOKEN_LEDGER##*/}"
+      return 0
+    fi
+  fi
+  warn "$why, and no password here could replace it"
+  return 3
+}
+
 # Puts back any secret-zero file the recovery set names that is only in an archive. What it replaces
-# goes to a new archive first, so nothing is lost.
+# goes to a new archive first, so nothing is lost. An admin token that has ended stays where it is: the
+# plan already says what happens instead, and it would only put a dead token over a live one.
 recovery_reinstate_zero() { # set-file
-  local set_file="$1" name sha where archive=""
+  local set_file="$1" name sha where archive
+  archive="$SECRET_ZERO_DIR/archive-pre-restore-$(date -u +%Y%m%dT%H%M%SZ)"
   for name in $RECOVERY_ZERO_REQUIRED $RECOVERY_ZERO_OPTIONAL; do
     sha="$(jq -r --arg n "$name" '.secret_zero.files[$n].sha256 // ""' "$set_file")"
     [[ -n "$sha" ]] || continue
     where="$(recovery_locate_zero "$name" "$sha" || true)"
     if [[ -z "$where" ]]; then
-      warn "the $name this backup was taken with is not on this machine. A new one works, because the database keeps no copy"
+      case "$name" in
+        infisical-admin.json | infisical-admin-password) ;; # The plan said what this means.
+        *) warn "the $name this backup was taken with is not on this machine. A new one works, because the database keeps no copy" ;;
+      esac
       continue
     fi
     [[ "$where" != "$SECRET_ZERO_DIR/$name" ]] || continue
-    if [[ -e "$SECRET_ZERO_DIR/$name" ]]; then
-      [[ -n "$archive" ]] || archive="$SECRET_ZERO_DIR/archive-pre-restore-$(date -u +%Y%m%dT%H%M%SZ)"
-      mkdir -p "$archive"
-      mv "$SECRET_ZERO_DIR/$name" "$archive/"
+    if [[ "$name" == infisical-admin.json ]]; then
+      recovery_admin_plan "$set_file"
+      [[ "$RECOVERY_ADMIN_MODE" == token ]] || continue
     fi
-    cp "$where" "$SECRET_ZERO_DIR/.$name.tmp"
-    chmod 600 "$SECRET_ZERO_DIR/.$name.tmp"
-    mv "$SECRET_ZERO_DIR/.$name.tmp" "$SECRET_ZERO_DIR/$name"
-    ok "put back $name from ${where#"$SECRET_ZERO_DIR"/}"
+    recovery_put_back "$name" "$where" "$archive"
   done
 }
+
+# ------ Versions ----------------------------------------------------------------------------------------------
+
+# The version in an image reference's tag, without a leading v, or nothing if the tag is not a version.
+recovery_image_version() { # reference, as in docker.io/infisical/infisical:v0.167.6@sha256:...
+  local tag="${1%%@*}"
+  case "$tag" in
+    *:*) tag="${tag##*:}" ;;
+    *) return 0 ;;
+  esac
+  case "$tag" in
+    */*) ;;
+    v[0-9]* | [0-9]*) printf '%s' "${tag#v}" ;;
+  esac
+}
+
+recovery_git_infisical_image() { # What Git deploys. The chart joins repository:tag, and the digest travels in the tag.
+  yq -r '.infisical.image.repository + ":" + .infisical.image.tag' "$ROOT/helm/values/infisical.yaml"
+}
+
+# True if the first version is newer than the second. Unknown on either side is not a reason to refuse.
+recovery_version_newer() { # version version
+  [[ -n "$1" && -n "$2" && "$1" != "$2" ]] || return 1
+  [[ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -1)" == "$1" ]]
+}
+
+# ------ Terraform and test files ------------------------------------------------------------------------------
 
 # Terraform state and database are a pair: state from any other moment plans to create or delete.
 recovery_install_tf_state() { # backup-dir
@@ -350,6 +570,28 @@ recovery_install_tf_state() { # backup-dir
   chmod 600 "$RECOVERY_TF_STATE.tmp"
   mv "$RECOVERY_TF_STATE.tmp" "$RECOVERY_TF_STATE"
   ok "Terraform state of infisical/terraform now matches this backup"
+}
+
+# Bootstrap rewrites the machine file from Terraform, but a restore reads it to prove the values before that. What
+# it holds is in the backup's Terraform state, so a lost one costs nothing.
+recovery_rebuild_machine_file() { # backup-dir
+  local dir="$1" org
+  [[ ! -s "$MACHINE_FILE" ]] || return 0
+  [[ -f "$dir/recovery/terraform.tfstate" ]] || return 0
+  org="$(jq -c '.identity.organization | {id: ., name: null, slug: null}' "$(recovery_set_file "$dir")")"
+  if jq --argjson org "$org" '{
+      organization: $org,
+      environment_slug: .outputs.environment_slug.value,
+      project_ids: .outputs.project_ids.value,
+      project_slugs: .outputs.project_slugs.value,
+      identity_ids: .outputs.identity_ids.value
+    }' "$dir/recovery/terraform.tfstate" > "$MACHINE_FILE.tmp"; then
+    chmod 600 "$MACHINE_FILE.tmp"
+    mv "$MACHINE_FILE.tmp" "$MACHINE_FILE"
+    ok "rebuilt ${MACHINE_FILE##*/} from this backup's Terraform state"
+  else
+    rm -f "$MACHINE_FILE.tmp"
+  fi
 }
 
 # The accounts and the sentinel that belong to a restored Plane dump, because a later smoke test logs in

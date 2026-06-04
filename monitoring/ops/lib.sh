@@ -183,6 +183,25 @@ argo_resume() {
   ARGO_TERMINATED_APPS=()
 }
 
+# For a run that follows a hard stop. SIGKILL or a power cut runs no trap, so an automated block can still hold
+# enabled:false, and only this run knows to look. Puts back every one it finds, root last, in the same shape as
+# argo_resume: the block without `enabled`. Prints each name. Never fails the script.
+argo_unpause_all() {
+  local json name spec
+  json="$(kc -n argocd get applications -o json 2>/dev/null)" || return 0
+  for name in $(jq -r --arg root "$ARGO_ROOT_APP" '
+      [.items[] | select(.spec.syncPolicy.automated.enabled == false) | .metadata.name]
+      | map(select(. != $root)) + map(select(. == $root)) | .[]' <<<"$json"); do
+    spec="$(jq -c --arg n "$name" '.items[] | select(.metadata.name == $n) | .spec.syncPolicy.automated | del(.enabled)' <<<"$json")"
+    if kc -n argocd patch application "$name" --type json \
+      -p "[{\"op\":\"replace\",\"path\":\"/spec/syncPolicy/automated\",\"value\":$spec}]" >/dev/null; then
+      printf '%s\n' "$name"
+    else
+      warn "COULD NOT RESTORE auto-sync on $name. Run: kubectl -n argocd patch application $name --type json -p '[{\"op\":\"replace\",\"path\":\"/spec/syncPolicy/automated\",\"value\":$spec}]'"
+    fi
+  done
+}
+
 # ------ Plane shell -----------------------------------------------------------------------------
 # Runs Python in the API pod and returns only the lines this code marks, because Django logging
 # shares stdout. The code is passed as an argument, so it must never carry a secret.

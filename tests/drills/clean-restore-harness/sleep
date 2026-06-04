@@ -1,0 +1,4 @@
+#!/bin/bash
+# Stub sleep for tests/drills/clean-restore-harness.sh, so waits that poll a stub do not take real time. A wait's
+# limit is in SECONDS, and that still counts real time.
+exec /bin/sleep 0.02

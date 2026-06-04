@@ -17,7 +17,7 @@ setup: ## Check prerequisites and install pinned CLIs into .tools/bin
 	@./scripts/install-tools.sh
 	@./scripts/prereqs.sh
 
-up: ## Create or resume the whole platform (idempotent). [UP_STOP_AFTER=<step>], see scripts/up.sh
+up: ## Create or resume the whole platform (idempotent). [UP_STOP_AFTER=<step>] [ALLOW_LOW_DISK="<reason>"], see scripts/up.sh
 	@./scripts/up.sh
 
 down: ## Stop the cluster and keep ALL data (make up resumes it)
@@ -70,15 +70,18 @@ publish-evidence: ## Copy .local/evidence-raw to docs/evidence/runs with secrets
 	@./scripts/publish-evidence.sh
 
 # ---- failure drills -------------------------------------------------------------------------
-.PHONY: drill-failed-deploy drill-pod-restart drill-clean-restore
+.PHONY: drill-failed-deploy drill-pod-restart drill-clean-restore drill-clean-restore-harness
 drill-failed-deploy: ## A bad image reaches dev through Git, the rollout refuses it, a revert restores it. Dev only
 	@./tests/drills/failed-deploy-rollback.sh
 
 drill-pod-restart: ## Restart each StatefulSet pod and prove the data survives: make drill-pod-restart ENV=dev
 	@./tests/drills/pod-restart-persistence.sh "$(ENV)"
 
-drill-clean-restore: ## Back up, DELETE THE CLUSTER, restore everything and prove it: make drill-clean-restore CONFIRM=yes [BACKUP=<id|latest> SKIP_BACKUP=yes] [PLAN_ONLY=yes] [SKIP_E2E=yes]
+drill-clean-restore: ## Back up, DELETE THE CLUSTER, restore everything and prove it: make drill-clean-restore CONFIRM=yes [BACKUP=<id|latest> SKIP_BACKUP=yes] [PLAN_ONLY=yes] [SKIP_E2E=yes] [LOSE_CLUSTER=yes] [ALLOW_LOW_DISK="<reason>"]
 	@./tests/drills/clean-restore.sh
+
+drill-clean-restore-harness: ## The order and refusals of a clean restore, with kubectl, kind, docker, Terraform and the API stubbed. Touches no cluster, and proves no platform: [ONLY="S1 S20"]
+	@./tests/drills/clean-restore-harness.sh
 
 # ---- data -----------------------------------------------------------------------------------
 .PHONY: backup restore restore-clean rotate
@@ -88,7 +91,7 @@ backup: ## Back up an environment: make backup ENV=dev|prod-sim|infisical|all [K
 restore: ## Restore: make restore ENV=dev BACKUP=<backup-id|latest> [CONFIRM=yes]
 	@./scripts/restore.sh "$(ENV)" "$(BACKUP)"
 
-restore-clean: ## Bring the whole platform back into a clean environment: make restore-clean BACKUP=<infisical-backup-id|latest> [PLAN_ONLY=yes] [ENVS=dev]
+restore-clean: ## Bring the whole platform back into a clean environment: make restore-clean BACKUP=<infisical-backup-id|latest> [PLAN_ONLY=yes] [ENVS=dev] [ALLOW_LOW_DISK="<reason>"] [ALLOW_NO_SENTINEL=yes] [ALLOW_NEWER_INFISICAL_BACKUP=yes]. Exits 2 if a proof could not run or a person must sign in
 	@./scripts/restore.sh clean "$(BACKUP)"
 
 rotate: ## Rotate a database credential through Infisical: make rotate ENV=dev [RESUME=yes|ROLLBACK=yes] [CONFIRM=yes]

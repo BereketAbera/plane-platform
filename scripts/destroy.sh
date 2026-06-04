@@ -2,7 +2,8 @@
 # Delete the cluster, which destroys all Plane and Infisical data still inside it.
 # Takes a backup first, and refuses to run without explicit confirmation.
 # Backups, secret zero and the Terraform state of infisical/terraform always survive, because a clean
-# restore needs them. The local registry, caches and Git remote survive unless PURGE=yes.
+# restore needs them. The local registry, caches and Git remote survive unless PURGE=yes, and the registry
+# holds the only copy of images built here: see "What a clean restore cannot bring back" in infisical/README.md.
 source "$(dirname "$0")/lib/common.sh"
 
 if [[ "${CONFIRM:-}" != "yes" ]]; then
@@ -38,5 +39,11 @@ rm -f "$LOCAL_DIR/restore-clean.state"
 if [[ "${PURGE:-}" == "yes" ]]; then
   log "PURGE=yes: removing local services and their volumes"
   docker compose -f "$ROOT/infrastructure/local-services/compose.yaml" down --volumes 2>&1 | tail -2
+  if grep -l 'localhost:5001/' "$ROOT"/gitops/environments/*/manifests.yaml >/dev/null 2>&1; then
+    warn "Git deploys images from the local registry, which is gone now. make restore-clean PLAN_ONLY=yes names them and the ways to bring them back."
+  fi
 fi
 ok "cluster deleted. Next: 'make restore-clean BACKUP=latest' to bring everything back, or 'make up' for an empty platform."
+if [[ "${SKIP_BACKUP:-}" != "yes" ]]; then
+  log "BACKUP=latest now names the backup just taken. If what was deleted held nothing you want, name an older one with BACKUP=<id>, and PLAN_ONLY=yes shows what each holds."
+fi
