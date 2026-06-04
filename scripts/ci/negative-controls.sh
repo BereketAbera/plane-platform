@@ -87,7 +87,21 @@ plant_thanos_default_without_digest() { yq -i 'del(.prometheusOperator.thanosIma
 plant_internal_route_without_allow_list() {
   replace_first monitoring/manifests/shared/ingress-routes.yaml '(match: Host\(`prometheus\.localhost`\)\n\s+kind: Rule\n)\s+middlewares:\n\s+- name: node-network-only\n' '\1'
 }
+plant_ui_route_under_another_host() {
+  replace_first monitoring/manifests/shared/ingress-routes.yaml '(match: )Host\(`prometheus\.localhost`\)(\n\s+kind: Rule\n)\s+middlewares:\n\s+- name: node-network-only\n' '\1Host(`metrics.localhost`)\2'
+}
+plant_ui_route_under_host_regexp() {
+  replace_first infisical/manifests/ingressroute.yaml '(match: )Host\(`infisical\.localhost`\)(\n\s+)middlewares:\n\s+- name: node-network-only\n\s+' '\1HostRegexp(`^infisical[.]localhost$`)\2'
+}
+plant_tcp_route_to_a_ui() {
+  printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRouteTCP\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  entryPoints: [web]\n  routes:\n    - match: HostSNI(`*`)\n      services:\n        - { name: kps-prometheus, port: 9090 }\n' >gitops/platform/network-policies/planted.yaml
+}
 plant_allow_list_opened() { replace_first gitops/bootstrap/argocd-route/ingressroute.yaml '172\.16\.0\.0/12' '0.0.0.0/0'; }
+plant_thanos_base_image_without_digest() { yq -i '.prometheus.prometheusSpec.thanos.baseImage = "quay.io/thanos/thanos"' helm/values/kube-prometheus-stack.yaml; }
+# The expression before this one read nearly 2 on one restart, at an offset the 30s tests did not reach.
+plant_pod_restarting_that_extrapolates() {
+  python3 -B -c 'import re; p="monitoring/manifests/shared/rules-platform.yaml"; s=open(p).read(); t,c=re.subn(r"(alert: PodRestarting\n\s+)expr: \|\n\s+max_over_time\(([^\n]*)\[15m\]\)\n[^\n]*\n\s+>= 2\n", r"\1expr: increase(\2[15m]) > 1.5\n", s); assert c==1; open(p,"w").write(t)'
+}
 plant_invalid_alert_expression() {
   replace_first monitoring/manifests/shared/rules-plane.yaml 'expr: probe_success\{probe="api-instance"\} == 0' 'expr: probe_success{probe="api-instance"} ==== 0'
 }
@@ -196,10 +210,15 @@ control bitnami-chart-in-terraform lint.sh "no Bitnami reference FAILED" plant_b
 CONTROL_SKIP_CHARTS=no control chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_chart_image_without_digest
 CONTROL_SKIP_CHARTS=no control bitnami-subchart-turned-on validate-manifests.sh "nothing from Bitnami" plant_bitnami_subchart_enabled
 CONTROL_SKIP_CHARTS=no control thanos-default-without-digest validate-manifests.sh "--thanos-default-base-image=" plant_thanos_default_without_digest
+CONTROL_SKIP_CHARTS=no control thanos-base-image-without-digest validate-manifests.sh "spec.thanos.baseImage is" plant_thanos_base_image_without_digest
 control internal-route-without-allow-list validate-manifests.sh "so it must name the node-network-only middleware" plant_internal_route_without_allow_list
+control ui-route-under-another-host validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_under_another_host
+control ui-route-under-a-host-regexp validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_under_host_regexp
+control tcp-route-to-a-ui validate-manifests.sh "is not allowed beside an internal UI" plant_tcp_route_to_a_ui
 control allow-list-opened-to-everyone validate-manifests.sh "must be an ipAllowList of exactly" plant_allow_list_opened
 control invalid-alert-expression validate-manifests.sh "promtool: platform rules FAILED" plant_invalid_alert_expression
 control alert-that-fires-late validate-manifests.sh "promtool: rule unit tests FAILED" plant_alert_that_fires_late
+control pod-restarting-that-extrapolates validate-manifests.sh "promtool: rule unit tests FAILED" plant_pod_restarting_that_extrapolates
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action

@@ -93,6 +93,14 @@ deny contains msg if {
 # routes by Host header, so a route to one of these with no allow list lets that pod read every metric and silence
 # alerts. monitoring/manifests/shared/ingress-routes.yaml has the reasoning, and tests/routes/internal-routes.sh
 # proves it at runtime. A missing Middleware fails closed, with a 404, so naming it is the part to check.
+#
+# A route reaches a UI through its backend, and the host is only how it is spelled: the same Service under another
+# host, under no host, or under a HostRegexp serves the same UI. So the namespace and the Service each decide, and the
+# host is kept for a route that names one of these hosts with a backend of its own.
+internal_namespaces := {"argocd", "monitoring", "infisical"}
+
+internal_services := {"argocd-server", "kps-grafana", "kps-prometheus", "kps-alertmanager", "infisical"}
+
 internal_hosts := {
 	"argocd.localhost",
 	"grafana.localhost",
@@ -103,14 +111,43 @@ internal_hosts := {
 
 allow_list := "node-network-only"
 
-# Traefik matches hosts in any case, and a HostRegexp would escape the dots.
 deny contains msg if {
 	input.kind == "IngressRoute"
 	some route in input.spec.routes
+	needs_allow_list(route)
+	not names_allow_list(route)
+	msg := sprintf("%s: route %q is in a namespace that holds an internal UI, or names one by Service or host, so it must name the %s middleware", [identity, route.match, allow_list])
+}
+
+needs_allow_list(_) if internal_namespaces[object.get(input.metadata, "namespace", "")]
+
+needs_allow_list(route) if names_internal_service(route)
+
+# Traefik matches hosts in any case, and a HostRegexp would escape the dots.
+needs_allow_list(route) if {
 	some host in internal_hosts
 	contains(replace(lower(route.match), `\`, ""), host)
-	not names_allow_list(route)
-	msg := sprintf("%s: route %q serves %s, so it must name the %s middleware", [identity, route.match, host, allow_list])
+}
+
+names_internal_service(route) if {
+	some service in route.services
+	internal_services[service.name]
+}
+
+# A TCP router comes before every HTTP router on its entry point, as above, and this Middleware is an HTTP one, so
+# nothing could hold the allow list on it.
+deny contains msg if {
+	input.kind in {"IngressRouteTCP", "IngressRouteUDP"}
+	internal_namespaces[object.get(input.metadata, "namespace", "")]
+	msg := sprintf("%s: %s is not allowed beside an internal UI, because it would have no %s middleware", [identity, input.kind, allow_list])
+}
+
+deny contains msg if {
+	input.kind in {"IngressRouteTCP", "IngressRouteUDP"}
+	not internal_namespaces[object.get(input.metadata, "namespace", "")]
+	some route in input.spec.routes
+	names_internal_service(route)
+	msg := sprintf("%s: %s must not reach an internal UI, because it would have no %s middleware", [identity, input.kind, allow_list])
 }
 
 names_allow_list(route) if {

@@ -84,6 +84,14 @@ test_thanos_sidecar_image_checked if {
 	count(charts.deny) == 0 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"version": "v0.42.5"}}}
 }
 
+test_thanos_sidecar_base_image_checked if {
+	# The input the old test used, deleted with its exception.
+	count(charts.deny) == 1 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"baseImage": "x"}}}
+	count(charts.deny) == 1 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"baseImage": "quay.io/thanos/thanos", "version": "v0.30.0"}}}
+	count(charts.deny) == 1 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"baseImage": "quay.io/thanos/thanos:v0.42.5", "sha": "abc"}}}
+	count(charts.deny) == 0 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"baseImage": pinned}}}
+}
+
 test_thanos_ruler_image_checked if {
 	count(charts.deny) == 1 with input as {"kind": "ThanosRuler", "metadata": {"name": "t"}, "spec": {"image": "quay.io/thanos/thanos:v0.42.5"}}
 	count(charts.deny) == 0 with input as {"kind": "ThanosRuler", "metadata": {"name": "t"}, "spec": {"image": pinned}}
