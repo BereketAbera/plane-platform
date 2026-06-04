@@ -1,0 +1,108 @@
+# PodRestarting, in its own file for its evaluation_interval. promtool evaluates alerts at that step, whatever a group's
+# interval says, so rules.test.yaml's 15s can only reach 0s and 15s past a 30s scrape. What this rule has to survive is
+# every offset between two scrapes, because on a real cluster that offset depends on the target and on the rule file.
+# scripts/ci/negative-controls.sh puts increase() back and requires this file to fail.
+rule_files:
+  - rules-platform.yaml
+evaluation_interval: 1s
+tests:
+  # A series with only two samples, the case extrapolation reads highest. increase() gave 1 at 10m30s, 1.5 at 10m45s,
+  # 1.83 at 10m55s and 1.97 at 10m59s for this one restart.
+  - name: one restart on a series two samples old stays quiet at every offset from the scrape
+    interval: 30s
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="young-1",container="c",uid="u"}'
+        values: '_x20 0 1 1x60'
+    alert_rule_test:
+      - { eval_time: 10m30s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m31s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m35s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m40s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m45s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m46s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m50s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m55s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 10m59s, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 11m, alertname: PodRestarting, exp_alerts: [] }
+      - { eval_time: 11m29s, alertname: PodRestarting, exp_alerts: [] }
+    promql_expr_test:
+      # The rule's own expression, without the threshold, reads exactly 1 at the offset that worried increase() most.
+      - expr: max_over_time(kube_pod_container_status_restarts_total[15m]) - min_over_time(kube_pod_container_status_restarts_total[15m])
+        eval_time: 10m59s
+        exp_samples:
+          - labels: '{namespace="monitoring",pod="young-1",container="c",uid="u"}'
+            value: 1
+  - name: one restart on an old series stays quiet at every offset, and two restarts fire at once and hold for 15m
+    interval: 30s
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="once-1",container="c",uid="u"}'
+        values: '0x40 1x60'
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="twice-1",container="c",uid="u"}'
+        values: '0x20 1x6 2x60'
+    alert_rule_test:
+      # once-1 restarted at 20m30s. Its offsets are read here, with twice-1 still firing from 14m.
+      - eval_time: 13m59s
+        alertname: PodRestarting
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: twice-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring/twice-1 container c restarted more than once in 15m" }
+      - eval_time: 20m45s
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: twice-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring/twice-1 container c restarted more than once in 15m" }
+      - eval_time: 20m59s
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: twice-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring/twice-1 container c restarted more than once in 15m" }
+      # twice-1's last 0 was at 10m. At 25m it has left the window, so what is left is one restart.
+      - eval_time: 24m59s
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: twice-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring/twice-1 container c restarted more than once in 15m" }
+      - eval_time: 25m
+        alertname: PodRestarting
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: PodRestarting
+        exp_alerts: []
+  - name: two restarts count only while both are inside the 15m window
+    interval: 30s
+    input_series:
+      # Restarts 14m apart, at 5m30s and 19m30s.
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="apart-14m",container="c",uid="u"}'
+        values: '0x10 1x27 2x40'
+      # Restarts 16m apart, at 5m30s and 21m30s.
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="apart-16m",container="c",uid="u"}'
+        values: '0x10 1x31 2x40'
+    alert_rule_test:
+      - eval_time: 19m45s
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: apart-14m, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring/apart-14m container c restarted more than once in 15m" }
+      # The second restart of apart-16m shows here, with the first already out of the window, and apart-14m has gone quiet.
+      - eval_time: 21m30s
+        alertname: PodRestarting
+        exp_alerts: []
+  - name: a crash loop fires, even on a young series, and a namespace outside the list does not
+    interval: 30s
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="plane-dev",pod="loop-1",container="c",uid="u"}'
+        values: '_x4 0 1 2 3 4x20'
+      - series: 'kube_pod_container_status_restarts_total{namespace="kube-system",pod="loop-2",container="c",uid="u"}'
+        values: '0 1 2 3 4x20'
+    alert_rule_test:
+      - eval_time: 2m59s
+        alertname: PodRestarting
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: plane-dev, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "plane-dev/loop-1 container c restarted more than once in 15m" }

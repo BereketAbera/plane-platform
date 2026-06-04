@@ -7,10 +7,15 @@ spec:
     - name: platform.workloads
       interval: 30s
       rules:
-        # increase() extrapolates to the ends of its window, so one restart reads just over 1 (1.024 measured)
-        # and up to 1.5 on a series a few samples old. Two restarts read 2 or more, so 1.5 separates them.
+        # Reads the samples as they are: one restart is 1 and two are 2, whatever the series' age and wherever the
+        # evaluation falls between two scrapes. increase() cannot do that. It extrapolates towards the ends of its window,
+        # so on a series with only two samples one restart reads up to nearly 2 (1.97 in promtool), and how close it gets
+        # depends on how long after the scrape the group evaluates. tests/rules/pod-restarting.test.yaml walks those offsets.
         - alert: PodRestarting
-          expr: increase(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m]) > 1.5
+          expr: |
+            max_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m])
+              - min_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m])
+              >= 2
           labels: { severity: warning, component: pod }
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} restarted more than once in 15m"
@@ -89,8 +94,11 @@ spec:
         # silently stays on the old commit with none of the other rules here matching. Measured on a throwaway with
         # a path that does not exist: Unknown, Healthy, no operation, condition ComparisonError. max_over_time rides
         # out a controller restart, as for ArgoSyncFailed below. On an Application that was rendering, the controller
-        # ignores the failure for 180s (--repo-error-grace-period-seconds) and looks every 120s (--app-resync): a real
-        # commit read Unknown 5m57s after it, with its object still there, so this fires about 21m after the commit.
+        # looks every 120 to 180s (--app-resync 120s, --app-resync-jitter 60s), and from the first look that fails it
+        # ignores the failure for 180s (--repo-error-grace-period-seconds). One real commit read Unknown 5m57s after it,
+        # with its object still there. That is one sample, and with for: it makes about 21m from commit to alert. By
+        # reading, the slowest case is up to 180s to the first look and up to 360s to a look past the grace: about 9m to
+        # Unknown, so up to about 24m.
         - alert: ArgoAppSyncUnknown
           expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{sync_status="Unknown"}[2m])) == 1
           for: 15m
@@ -122,7 +130,8 @@ spec:
         # 15m if nobody reverts. Only a single-wave chart Application closes on apply: this rule never sees it, and
         # ArgoAppDegraded reports it once the rollout misses its deadline.
         # tests/drills/failed-deploy-rollback.sh reverts at the first Degraded, about 10m in, and ArgoAppDegraded
-        # needs 5m of that, so what should show is this rule and ArgoAppDegraded pending, with neither firing unless
+        # needs 5m of that. So what should show is this rule pending throughout, ArgoAppStuckProgressing pending beside
+        # it on the same series for those first 10m, then ArgoAppDegraded pending in its place, with none firing unless
         # the revert takes more than 5m. That is expected, not measured: the drill has not been run with these rules.
         #
         # max_over_time rides out a missed scrape, as when the controller is slow to restart, and aggregating
@@ -137,7 +146,10 @@ spec:
         # A child whose objects never turn healthy, with no operation left open. A single-wave chart child closes
         # its operation on apply, then reads Synced and Progressing for as long as a StatefulSet or DaemonSet stays
         # unready, and neither of those has a deadline that would turn it Degraded. Root waits on it with no retry.
-        # Longest measured on a first boot: about 10m for kube-prometheus-stack, pulling images. It includes open
+        # On the first boot measured, kube-prometheus-stack took about 10m to its first Healthy, pulling images. It then
+        # kept falling back while Grafana's sidecars were being OOM-killed, and each Healthy lasted 19 to 40s, inside
+        # the 2m window. So this expression read true for all 25m of that which has metrics, and the same state ran about
+        # 42m in the timeline. That was a real fault, and the 30m has margin only against the 10m. It includes open
         # operations too, so that one opening does not start for: again. Root is left out: it only repeats its child.
         - alert: ArgoAppStuckProgressing
           expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{health_status="Progressing",name!="root"}[2m])) == 1
@@ -152,6 +164,9 @@ spec:
         # - Operation closed and Degraded, as for a Deployment past its deadline: ArgoAppDegraded at 5m.
         # - Operation closed and Progressing, as for a stuck StatefulSet in a chart: the chart's
         #   KubeStatefulSetReplicasMismatch at 15m, ArgoAppStuckProgressing at 30m.
+        # - Healthy but not Synced, which the override in helm/values/argocd.yaml reads as Progressing for root only:
+        #   ArgoAppSyncUnknown or ArgoAppOutOfSync at 15m, by its sync status. ArgoAppStuckProgressing stays quiet, because
+        #   the child's own series still says Healthy.
         # - A Prometheus that cannot start: nothing, because nothing evaluates rules. Only the sink notices, when
         #   Watchdog stops arriving every 5 minutes, and nothing watches for that.
         - alert: ArgoRootSyncStuck
