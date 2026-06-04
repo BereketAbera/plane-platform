@@ -33,7 +33,7 @@ Digests are what make a mirror safe to trust: containerd verifies content agains
 
 | Alternative | Why not |
 |---|---|
-| `kind load docker-image` | Fails on this host, as above |
+| `kind load docker-image` | Reported to fail on this image store, as above. Not reproduced here, because nothing calls it |
 | `docker image save --platform` piped to `kind load image-archive` | Reportedly fails on images with attestations |
 | Disable Docker's containerd image store | Changes the whole host, including unrelated containers |
 | Registry inside the cluster | Lost on `kind delete cluster`, and cannot serve images the cluster needs in order to start |
@@ -55,6 +55,6 @@ Digests are what make a mirror safe to trust: containerd verifies content agains
 
 Added 2026-11-05.
 
-- The whole image set reached the node under this configuration on 2026-11-04, and the branded images came from `localhost:5001` by digest on 2026-11-05 ([digests](../evidence/branding/digests-confirmed.txt)). Which blobs fell through to Docker Hub was not recorded.
+- The whole image set reached the node under this configuration on 2026-11-04, and the branded images came from `localhost:5001` by digest on 2026-11-05 ([running pods](../evidence/runs/cluster-readings-2.txt)). Which blobs fell through to Docker Hub was not recorded.
 - Mirror pulls are slow, and the kubelet pulls one image at a time. Wave 3's four images took 175s, 216s, 52s and 5s in turn on the first boot ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt)), which is why `progressDeadlineSeconds` went from 360 to 600.
 - `plane-registry` was OOM-killed at 128m during the first branded pushes. The registry's own memory is not the cause: a push fills the container's cgroup with dirty page cache faster than the disk drains it. On scratch registries 128m was killed in 8 of 17 runs pushing with buildx or all at once, and 512m kept the largest push off the limit entirely, so that is the limit now ([registry-memory-1.txt](../evidence/runs/registry-memory-1.txt)).
