@@ -78,8 +78,10 @@ login: it trusts the node network, and it does not stop a dev `api` reaching `pl
 could. One more door depends on NetworkPolicy. On Docker Desktop, a pod that may dial `host.docker.internal:80`
 (`192.168.65.254`) leaves through the Mac and comes back as the host, so the list admits it: a scratch pod with no egress
 policy read Prometheus that way. By policy no Plane pod has that egress. The test checks it from the `api` pods only, and a
-kindnet that fails open would open it. `policy/plane.rego` refuses a route to any of the five that does not name the
-middleware, and a middleware of that name that admits anything else, so dropping either fails CI before it fails at runtime.
+kindnet that fails open would open it. `policy/plane.rego` requires the middleware on every IngressRoute in `argocd`,
+`monitoring` or `infisical`, on a route from anywhere to any of the five Services, and on a route that names any of the five
+hosts, because the same Service under another host is the same UI. It refuses TCP and UDP routes there, which could not carry
+this middleware, and a middleware of that name that admits anything else. So dropping either fails CI before it fails at runtime.
 
 **Argo CD sync alerts.** Under `retry.limit: -1` a failing sync never completes: each failed attempt goes back to phase
 Running, `argocd_app_sync_total` does not move, and no condition is set. So `ArgoSyncFailed` also watches for an
@@ -93,18 +95,29 @@ waiting on something that never gets healthy, and neither is healthy at 15m. Roo
 | A bad image in a Plane Deployment | Deployments are wave 3 of 4, so the operation stays open, fails at the 600s deadline, and retries | `ArgoAppDegraded` once Degraded for 5m, `ArgoSyncFailed` at 15m, if nobody reverts |
 | A bad image in a single-wave chart Application | The sync succeeds on apply, which closes the operation, then Degraded at the rollout's deadline | `ArgoAppDegraded`, and `ArgoSyncFailed` never |
 | A chart child with no deadline to miss, such as a stuck StatefulSet | Operation closed, Synced and Progressing, while root waits on it with no retry | The chart's `Kube*` rules at 15m, `ArgoAppStuckProgressing` at 30m, `ArgoRootSyncStuck` at 60m |
+| A child that is Healthy but not Synced | The override in `helm/values/argocd.yaml` reads it as Progressing, so root waits on it with no retry, while the child's own series still says Healthy | `ArgoAppSyncUnknown` or `ArgoAppOutOfSync` at 15m, by its sync status, `ArgoRootSyncStuck` at 60m, and `ArgoAppStuckProgressing` never |
 | A Prometheus that cannot start | Progressing, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. Watchdog stops reaching the sink, and nothing watches for that |
 
-On an Application that was rendering, a real commit took longer to read Unknown. The controller looks every 120s
-(`--app-resync`) and ignores the failure for 180s (`--repo-error-grace-period-seconds`), so it took 5m57s, and the alert comes
-about 21m after the commit. Health stayed as it was, no operation opened and nothing was pruned. A file Argo CD cannot parse
-counts only if its text holds `apiVersion:`, `kind:` and `metadata:`. Anything else it ignores, and it reads Synced at that commit.
+On an Application that was rendering, a real commit took longer to read Unknown. The controller looks every 120 to 180s
+(`--app-resync` 120s, `--app-resync-jitter` 60s), and from the first look that fails it ignores the failure for 180s
+(`--repo-error-grace-period-seconds`). One real commit read Unknown after 5m57s, which is one sample, and that run stopped at
+pending. With the rule's 15m it makes about 21m from commit to alert. By reading `controller/state.go`, the slowest case is up to
+180s to the first look and up to 360s to a look past the grace: about 9m to Unknown, so up to about 24m. Health stayed as it was,
+no operation opened and nothing was pruned. A file Argo CD cannot parse counts only if its text holds `apiVersion:`, `kind:` and
+`metadata:`. Anything else it ignores, and it reads Synced at that commit.
 
 `tests/drills/failed-deploy-rollback.sh` is the second row cut short: it reverts at the first Degraded, about 10m in. So
-`ArgoSyncFailed` and `ArgoAppDegraded` should go pending, with neither firing unless the revert takes more than 5m. That is
-expected from reading the drill, and not yet measured. The 15m in `ArgoSyncFailed` has margin against a commit that pulls no
-new image (under 2m measured, 58s on promotion `4f622e3` whose layers were already on the node) and against 448s for wave 3
-pulling four images on a first boot. No measured promotion has pulled new layers.
+`ArgoSyncFailed` should stay pending throughout, `ArgoAppStuckProgressing` should be pending beside it on the same series for
+those first 10m, and `ArgoAppDegraded` should then go pending in its place, with none firing unless the revert takes more than
+5m. That is expected from reading the drill and from a unit test of those series, and not yet measured. The 15m in
+`ArgoSyncFailed` has margin against a commit that pulls no new image (under 2m measured, 58s on promotion `4f622e3` whose layers
+were already on the node) and against 448s for wave 3 pulling four images on a first boot. No measured promotion has pulled new
+layers.
+
+The 30m in `ArgoAppStuckProgressing` has margin against a chart pulling its images: kube-prometheus-stack took about 10m to its
+first Healthy on the first boot measured. It would have fired later on that same boot, and rightly. Grafana's sidecars were being
+OOM-killed, each Healthy lasted 19 to 40s, inside the rule's 2m window, and the expression read true for all 25m that have metrics,
+about 42m in the timeline.
 
 **A Prometheus with no ready pod reads Progressing, not Degraded.** The built-in check reads NoPodReady as Degraded, which
 is every Prometheus start, and on a first boot that failed the root sync and sent it into backoff while the image pulled.
@@ -140,9 +153,31 @@ need a miss every 5m for 15m to fire, and it has not fired once in about 4h. It 
 far more often than that.
 
 **Reading a memory peak.** `memory.peak` includes page cache, so a peak at the limit says little alone. Read `anon` in
-`memory.stat`. Measured on 2026-11-05: Prometheus reached 652 MiB anon of 768Mi at a head compaction, so its limit is now 1024Mi.
-Loki's 640/640 was file cache under the 3.5 MB/s stress test, 553 MiB anon at its worst and 341 MiB since. Infisical Postgres's
-256/256 is file cache as well, 64 MiB anon at most, so neither changed.
+`memory.stat`, and read `memory.events` at the pod cgroup when one container carries the pod's whole limit. There the pod and the
+container have the same `memory.max`, the pod also charges the pause container, so the pod nearly always gets there first and the
+container's own `max` says little. Loki's pod counts 58271 at its own limit against 660 at its containers', and 0 for the one
+running now. The pod's count also keeps what a container that has gone saw. Prometheus has a second limited container, so its own
+limit comes first. Measured on 2026-11-05 (`limits-pod-cgroup-1.txt` in the evidence):
+
+| Pod | `memory.max` in MiB, pod and container | `max` at the pod, and at the container | OOM kills | Highest anon | Limit |
+|---|---|---|---:|---|---|
+| Prometheus, before 00:34Z | 816, 768 | that pod is gone, 688 | 0 | 652 MiB (85%), at a head compaction with 241k head series | Raised to 1024Mi |
+| Prometheus, since | 1072, 1024 | 0, 0 | 0 | 566 MiB (55%), at the WAL replay after that restart | |
+| Loki | 640, 640 | 58931, 0 | 0 | 553 MiB (86%) in a stress test, then 480 in its WAL replay, and 341 (53%) since | Kept at 640Mi |
+| Infisical Postgres | 256, 256 | 4227 and later 5066, 0 | 0 | 64 MiB (25%) | Kept at 256Mi |
+
+Prometheus's limit moved because it came that close with nothing stressing it on purpose. Loki came as close, and that was not file cache:
+anon reached 553 MiB, with file down to 13 MiB at the tightest. It stays for other reasons. That test pushed 3.5 MB/s with 8
+concurrent queries, about 490 times the mean rate since (7.2 KB/s) and 40 times the busiest 5 minutes (87 KB/s), which took anon to
+244 MiB. `GOMEMLIMIT` 560MiB held, and there was no OOM kill and no failed push or query, although queries slowed to 19s at the
+median. The 553 is from the container the test then ended with `kill -9`, and the container's `max` of 0 is from the one after it.
+
+Each count went with about 63 pages of direct reclaim in both pods, so it counts reclaim, and an OOM kill is a separate counter,
+which reads 0 for the whole of each pod. cAdvisor's `container_memory_failcnt` reads 0 here, so the count has no history. Usage
+bounds it: Loki's pod was last over 560 MiB at 21:59:25Z and last over 450 MiB at 22:25:55Z, and the count stood still from 01:36Z
+on, so as far as 30s samples can say, its 58931 belong to that test and its replay. Raise Loki if the count moves again with no test
+running, or if real load takes anon near `GOMEMLIMIT`. Postgres's count does move in ordinary use, 839 in five minutes while its
+cache filled, with anon under 65 MiB. That is file cache being reclaimed, so nothing needs changing.
 
 ## Sentinels
 
@@ -173,7 +208,10 @@ These were proved from the source to the sink on 2026-11-05 as well. The throwaw
   30m33s after it was created, through a new commit that synced at its 11m22s without starting `for:` again, and resolved 2m8s
   after it was deleted. The other Argo rules stayed quiet for it. A commit that could not render was then measured on it, as far
   as `ArgoAppSyncUnknown` going pending: the paragraph under the table above.
-- `PodRestarting`, quiet on one in-place Alloy restart (`increase` read 1.03) and firing on two (2.07).
+- `PodRestarting`, on in-place Alloy restarts, under the expression it had then: quiet on one (`increase` read 1.03) and firing on
+  two (2.07). That expression could still fire on one restart, on a series with only two samples, so the rule now takes the highest
+  sample less the lowest. Run over the same history, that is true for the same spans, 00:45:30Z to 00:59:30Z for Alloy, and for
+  nothing else. It has not yet fired live from the rule itself.
 - `KindnetSkippedNetworkPolicies`, on a synthetic line followed by heartbeats as kindnet logs them, in a scratch pod: an in-place
   Alloy restart took the count out of Prometheus, the old expression went empty, and the alert stayed firing until the pod had
   been gone for 5m. No real kindnet failure has been seen. If the line is the pod's last when Alloy restarts, it is read again.
