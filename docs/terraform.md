@@ -118,7 +118,7 @@ Both state files live under `.local/terraform/`, which is gitignored, through a 
 **Why local.**
 
 - There is one operator and one laptop, and the cluster it describes lives on that laptop.
-- Root `local`'s state and the cluster share a lifecycle. `scripts/destroy.sh` removes `.local/terraform/local` when it deletes the cluster, since state describing a gone cluster would only mislead the next plan. It keeps `.local/terraform/infisical`, because a clean restore needs it (`make restore-clean`).
+- Root `local`'s state and the cluster share a lifecycle. `scripts/destroy.sh` removes `.local/terraform/local` when it deletes the cluster, since state describing a gone cluster would only mislead the next plan. A cluster lost any other way leaves that state behind, and since `1fb4707` `make up` moves it aside when no cluster exists. `destroy.sh` keeps `.local/terraform/infisical`, because a clean restore needs it (`make restore-clean`).
 - Pass 1 provisions nothing remote, so a remote backend would add a credential and a dependency for no gain.
 
 **What local state costs.** No locking across machines, no history, no backup, and no way to share it. This does not
