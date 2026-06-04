@@ -4,7 +4,7 @@ The platform runs two deployments of customized Plane Community Edition v1.4.3: 
 
 **Namespace separation is not equivalent to independent production clusters.** `prod-sim` is a rehearsal of production practices. It is not production, and it is not isolated the way production would be. This page says exactly what is separate, what is shared, and how that fails.
 
-On 2026-11-05 Plane runs in both: `make test-e2e` passes in `dev` with 38 steps on the branded images ([smoke](evidence/runs/smoke-dev-20261105T001213Z.json)) and in `prod-sim` with 37 steps on upstream images ([smoke](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). No digest has been promoted to `prod-sim` yet, and none of the failure scenarios below has been forced. Statements here describe configuration unless a link to evidence says otherwise, and what nothing has measured carries a marker.
+On 2026-11-05 Plane runs in both, on the same final branded build ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)). The published `make test-e2e` runs predate that build: `dev` passed 38 steps on the build from `1563cbf` ([smoke](evidence/runs/smoke-dev-20261105T001213Z.json)), and `prod-sim` passed 37 steps on upstream images ([smoke](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). None of the failure scenarios below has been forced, except scenario 11 for the length of one restore. Statements here describe configuration unless a link to evidence says otherwise, and what nothing has measured carries a marker.
 
 ## At a glance
 
@@ -50,7 +50,7 @@ On 2026-11-04, on upstream images in both, real pods with `hostNetwork=false` tr
 | Own database and object store | Different Postgres system identifiers, Valkey run ids and bucket creation times, and 10 distinct volumes | [state 2](evidence/runs/plane-prod-sim-separation-state-2.txt) |
 | Nothing connected across | Every Postgres, Valkey and AMQP client is a pod in the same namespace, and conntrack shows 0 flows joining the environments | Same |
 | Own credentials | 13 keys differ, and 7 are the same by design, such as the bucket name and the database user. The other environment's password or key gets `password authentication failed`, `ACCESS_REFUSED` or `InvalidAccessKeyId`, and each environment's own is accepted | Same |
-| Own Infisical project | Each reader gets 403 on the other project, in both directions. A login with one environment's ServiceAccount token as the other's identity gets 401, `K8s namespace not allowed`, which is the login an `InfisicalAuth` naming the wrong identity would make. Operators have no rights in the other namespace | [isolation](evidence/runs/infisical-isolation-3.txt), [RBAC](evidence/runs/infisical-rbac-1.txt) |
+| Own Infisical project | Each reader gets 403 on the other project, in both directions. A login with one environment's ServiceAccount token as the other's identity gets 401, `K8s namespace not allowed`, which is the login an `InfisicalAuth` naming the wrong identity would make. A scratch `InfisicalAuth` in `plane-dev` that reached for prod-sim's account and identity read `IsReady: False`, because the operator could not fetch the other namespace's Secret. One holding the prod-sim id in a Secret of its own namespace has not been applied. Operators have no rights in the other namespace | [isolation](evidence/runs/infisical-isolation-3.txt), [RBAC](evidence/runs/infisical-rbac-1.txt) |
 | Data stays put, both directions | A marker created in one environment is found there and not in the other: by SQL, by a `pg_dump` scan of every table (7 lines against 0), by the API (403 and 404) and by S3 HEAD (200 and 404) | [state 2](evidence/runs/plane-prod-sim-separation-state-2.txt) |
 | No overlap anywhere | 0 shared slugs, ids, API tokens, session keys or object keys | Same |
 | Sessions do not cross | The other host answers an API key with 403, the same as a made-up key, and a session cookie with 401. The admin password is refused, a presigned link gets 403, and CORS refuses the other origin | Same, [host and identity](evidence/runs/plane-prod-sim-host-and-identity-1.txt) |
@@ -63,6 +63,7 @@ On 2026-11-04, on upstream images in both, real pods with `hostNetwork=false` tr
 - Each `api` pod still reaches the other host's public HTTP surface through Traefik. It gets 401 on `/api/users/me/` and 403 listing the bucket. See [the known gap](#the-known-gap-api-to-traefik-to-anywhere).
 - Valkey has no password in either environment, so NetworkPolicy is its only control. No run had kindnet failing open, which would remove it for both.
 - Every attempt came from a pod as configured. Nothing tried a container escape, or root on the node, which kindnet's rules do not evaluate.
+- Accounts outside the two namespaces can read both environments' Secrets: Traefik's and the Prometheus operator's chart roles list them in every namespace, and Argo CD's controller can do anything ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)).
 - Prod-sim's Infisical CRs were applied by hand before root's wave 0, so this is not the result of a clean install ([infisical-prod-sim-crs-1.txt](evidence/runs/infisical-prod-sim-crs-1.txt)).
 
 ### Intended differences
@@ -74,7 +75,7 @@ The two overlays are almost identical. Apart from names and hostnames, these are
 | `env.enable_drf_spectacular` | `true`, serves `/api/schema/` | `false` | Scripted testing in dev. No debug surface in prod-sim |
 | CPU request on api, worker, postgres, rabbitmq | Component default | `100m` | Scheduler weight, so the tiers prod-sim depends on win when dev competes. Memory is unchanged |
 | k6 load-test NetworkPolicy | Present | Absent | Load tests run only in dev |
-| Image digests | Current build. On 2026-11-05, the branded images built from `1563cbf` | Whatever was last promoted. On 2026-11-05, upstream's, until the first promotion | The point of having two environments |
+| Image digests | Current build. On 2026-11-05, the branded images built from `ec45e21` | Whatever was last promoted. On 2026-11-05, the same images, since `0af8956` | The point of having two environments |
 
 ## What is shared
 
@@ -135,11 +136,7 @@ make rollback ENV=prod-sim CONFIRM=yes        # reverts the last promotion of pr
 | Pull request review | Process only | GitHub Free on a private repo has no required reviewers or protected branches. Anyone with write access can merge their own pull request or push to `main` |
 | The local registry holds the digest | `scripts/promote.sh` | Skipped with `SKIP_REGISTRY_CHECK=yes` |
 
-No digest has been promoted to prod-sim yet. On GitHub, `promote-prod-sim.yml` refused an invented digest ([run 41905513020](evidence/ci/ci-6-20261104T201931Z-run-41905513020.log)), and the same check now also refuses a digest recorded under another image ([negative controls](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). The rest of this flow has run only against a stubbed `kubectl` ([make ci](evidence/ci/ci-2-20261104T225907Z-make-ci.log)).
-
-[[VERIFY: promoting a digest never recorded for dev is refused, and a promoted digest reaches prod-sim unchanged]]
-
-[[VERIFY: make promote ENV=prod-sim produces a backup before the commit]]
+`make promote ENV=prod-sim` ran for real on 2026-11-05 at `0af8956`, with `plane-dev` running the same digests. Its backup Job ran from 02:20:27 to 02:20:37 UTC, the commit followed at 02:20:40, and the pods then ran those digests unchanged ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)). On GitHub, `promote-prod-sim.yml` refused an invented digest ([run 41905513020](evidence/ci/ci-6-20261104T201931Z-run-41905513020.log)), and the same check now also refuses a digest recorded under another image ([negative controls](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). The pull request path and rollback have run only against a stubbed `kubectl` ([make ci](evidence/ci/ci-2-20261104T225907Z-make-ci.log)).
 
 [[VERIFY: make rollback ENV=prod-sim restores the previous digest through git revert with auto-sync still on]]
 
@@ -162,7 +159,7 @@ So:
 
 ### Failure scenarios
 
-None of these failures has been forced on the real platform. Each describes what the configuration implies, and a row says so where a static check or a measurement bears on it. The drills that do exist are listed in [validation.md](validation.md).
+None of these failures has been forced on the real platform, except scenario 11, for the length of the restore noted under the table. Each describes what the configuration implies, and a row says so where a static check or a measurement bears on it. The drills that do exist are listed in [validation.md](validation.md).
 
 | # | Trigger | What happens to `prod-sim` | With a separate cluster |
 |---|---|---|---|
@@ -216,7 +213,7 @@ flowchart LR
 
 **What the attacker gets.** The other environment's public HTTP surface, the same as a browser on the laptop has. No direct database, cache, or queue access. A compromised dev api would still need valid credentials to do anything that requires login in prod-sim.
 
-**The reach used to be wider, and the wider part is closed.** Until 2026-11-04 the same path gave an api pod read access to all metrics for both environments, and Alertmanager's API, which can silence alerts: each internal UI answered it with 200 ([routes-before-1.txt](evidence/runs/routes-before-1.txt)). Now each of the five internal hosts carries Middleware `node-network-only`, an allow list of `172.16.0.0/12`, and Traefik answers an api pod with 403, through the Service and the NodePort, and with a spoofed `X-Forwarded-For` or a respelled host. From the host each still answers 200 ([routes-after-3.txt](evidence/runs/routes-after-3.txt)). A Middleware that is missing fails closed, with a 404 ([h17-fail-closed-1.txt](evidence/runs/h17-fail-closed-1.txt)).
+**The reach used to be wider, and the wider part is closed.** Until 2026-11-04 the same path gave an api pod read access to all metrics for both environments, and Alertmanager's API, which can silence alerts: each internal UI answered it with 200 ([routes-before-1.txt](evidence/runs/routes-before-1.txt)). Now each of the five internal hosts carries Middleware `node-network-only`, an allow list of `172.16.0.0/12`, and Traefik answers an api pod with 403, through the Service and the NodePort. Spoofed forwarding headers on Prometheus and Alertmanager, and a respelled Prometheus host, got 403 too. From the host each still answers 200 ([routes-after-3.txt](evidence/runs/routes-after-3.txt)). A Middleware that is missing fails closed, with a 404 ([h17-fail-closed-1.txt](evidence/runs/h17-fail-closed-1.txt)).
 
 **That list has a limit.** It reads a source address and trusts the node network. On Docker Desktop, a scratch pod with free egress read Prometheus through `host.docker.internal:80`, because that leaves through the Mac and returns as the host ([h17-doors-free-egress-2.txt](evidence/runs/h17-doors-free-egress-2.txt)). Plane api pods time out on that door, but only NetworkPolicy holds it, so a kindnet that fails open would open it.
 
