@@ -97,8 +97,8 @@ spec:
         # looks every 120 to 180s (--app-resync 120s, --app-resync-jitter 60s), and from the first look that fails it
         # ignores the failure for 180s (--repo-error-grace-period-seconds). One real commit read Unknown 5m57s after it,
         # with its object still there. That is one sample, and with for: it makes about 21m from commit to alert. By
-        # reading, the slowest case is up to 180s to the first look and up to 360s to a look past the grace: about 9m to
-        # Unknown, so up to about 24m.
+        # reading, the first look that fails only starts the grace and a later one has to land past it, so it can take
+        # up to about 9m to read Unknown, which makes up to about 24m.
         - alert: ArgoAppSyncUnknown
           expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{sync_status="Unknown"}[2m])) == 1
           for: 15m

@@ -101,10 +101,10 @@ waiting on something that never gets healthy, and neither is healthy at 15m. Roo
 On an Application that was rendering, a real commit took longer to read Unknown. The controller looks every 120 to 180s
 (`--app-resync` 120s, `--app-resync-jitter` 60s), and from the first look that fails it ignores the failure for 180s
 (`--repo-error-grace-period-seconds`). One real commit read Unknown after 5m57s, which is one sample, and that run stopped at
-pending. With the rule's 15m it makes about 21m from commit to alert. By reading `controller/state.go`, the slowest case is up to
-180s to the first look and up to 360s to a look past the grace: about 9m to Unknown, so up to about 24m. Health stayed as it was,
-no operation opened and nothing was pruned. A file Argo CD cannot parse counts only if its text holds `apiVersion:`, `kind:` and
-`metadata:`. Anything else it ignores, and it reads Synced at that commit.
+pending. With the rule's 15m it makes about 21m from commit to alert. By reading `controller/state.go` and `appcontroller.go`, the
+first look that fails only starts the grace and a later one has to land past it, so it can take up to about 9m to read Unknown,
+which makes up to about 24m. Health stayed as it was, no operation opened and nothing was pruned. A file Argo CD cannot parse counts
+only if its text holds `apiVersion:`, `kind:` and `metadata:`. Anything else it ignores, and it reads Synced at that commit.
 
 `tests/drills/failed-deploy-rollback.sh` is the second row cut short: it reverts at the first Degraded, about 10m in. So
 `ArgoSyncFailed` should stay pending throughout, `ArgoAppStuckProgressing` should be pending beside it on the same series for
@@ -115,9 +115,9 @@ were already on the node) and against 448s for wave 3 pulling four images on a f
 layers.
 
 The 30m in `ArgoAppStuckProgressing` has margin against a chart pulling its images: kube-prometheus-stack took about 10m to its
-first Healthy on the first boot measured. It would have fired later on that same boot, and rightly. Grafana's sidecars were being
-OOM-killed, each Healthy lasted 19 to 40s, inside the rule's 2m window, and the expression read true for all 25m that have metrics,
-about 42m in the timeline.
+first Healthy on the first boot measured. With Prometheus up throughout, it would have fired later on that same boot, and rightly.
+Grafana's sidecars were being OOM-killed, each Healthy lasted 19 to 40s, inside the rule's 2m window, and the expression read true
+for all 25m that have metrics, about 42m in the timeline.
 
 **A Prometheus with no ready pod reads Progressing, not Degraded.** The built-in check reads NoPodReady as Degraded, which
 is every Prometheus start, and on a first boot that failed the root sync and sent it into backoff while the image pulled.
@@ -208,10 +208,12 @@ These were proved from the source to the sink on 2026-11-05 as well. The throwaw
   30m33s after it was created, through a new commit that synced at its 11m22s without starting `for:` again, and resolved 2m8s
   after it was deleted. The other Argo rules stayed quiet for it. A commit that could not render was then measured on it, as far
   as `ArgoAppSyncUnknown` going pending: the paragraph under the table above.
-- `PodRestarting`, on in-place Alloy restarts, under the expression it had then: quiet on one (`increase` read 1.03) and firing on
-  two (2.07). That expression could still fire on one restart, on a series with only two samples, so the rule now takes the highest
-  sample less the lowest. Run over the same history, that is true for the same spans, 00:45:30Z to 00:59:30Z for Alloy, and for
-  nothing else. It has not yet fired live from the rule itself.
+- `PodRestarting`, from two scratch pods with real restart counters, on the rule as it reads now, the highest sample less the
+  lowest: the pod that restarted once read 1 and stayed quiet. The pod that restarted twice read 2, reached the sink 15s after the
+  scrape that showed its second restart, and resolved 14m later. The `increase` above 1.5 it replaced read 1.58 on the first pod, at
+  an instant query 17s past a scrape. This group evaluates 5.1s past that scrape, so here it would have read about 1.17, and another
+  phase would have fired. That earlier rule was quiet on one in-place Alloy restart (1.03) and fired on two (2.07), and the rule now
+  is true for that same span, 00:45:30Z to 00:59:30Z.
 - `KindnetSkippedNetworkPolicies`, on a synthetic line followed by heartbeats as kindnet logs them, in a scratch pod: an in-place
   Alloy restart took the count out of Prometheus, the old expression went empty, and the alert stayed firing until the pod had
   been gone for 5m. No real kindnet failure has been seen. If the line is the pod's last when Alloy restarts, it is read again.
