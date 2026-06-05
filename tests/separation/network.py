@@ -265,6 +265,7 @@ def direction(source_env: str, target_env: str) -> None:
         return pod, moment, probe(source_ns, pod, container, kind, [POSITIVE_CONTROL, *other_targets]), source_pods[pod]
 
     reference = named(target_pods, "plane-api-wl")
+    reference_moment = now()
     with concurrent.futures.ThreadPoolExecutor(len(SOURCES) + 1) as pool:
         from_the_target_side = pool.submit(probe, target_ns, reference, "plane-api", "python", other_targets)
         batches = list(pool.map(run_source, SOURCES))
@@ -283,7 +284,7 @@ def direction(source_env: str, target_env: str) -> None:
     report.say(f"\n## {label}: reference, a pod inside {target_ns} dialled the same targets at the same time. {now()}")
     for result in from_the_target_side.result():
         want = "CONNECTED" if result["name"] in OWN_ALLOWED else "TIMEOUT"
-        judge(result, want, row(now(), f"{target_env}->{target_env}", target_ns, reference, target_ips[reference],
+        judge(result, want, row(reference_moment, f"{target_env}->{target_env}", target_ns, reference, target_ips[reference],
                                 bool(target_pods[reference]["spec"].get("hostNetwork")), result))
 
     report.say(f"\n## {label}: reference, the source pods with a data-tier rule dial their own environment. {now()}")
