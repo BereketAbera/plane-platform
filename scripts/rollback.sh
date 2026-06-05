@@ -13,6 +13,8 @@
 #   rollback. SKIP_BACKUP=yes leaves it out, and ROLLBACK_DUMP_TIMEOUT sets the limit in seconds.
 # - A revert that never reached Argo CD is published by the next run, instead of a second promotion
 #   being reverted.
+# - A later change beside an image line makes the revert conflict in the rendered file. That file is
+#   generated, so rendering replaces it and the rollback goes on. A conflict in the overlay stops it.
 #
 # This rolls back images, not the database: migrations are forward-only, and old code starts
 # against the newer schema with no warning. The dump taken before a prod-sim promotion is the
