@@ -18,7 +18,7 @@ conf="$WAYLINE/runtime/nginx-$app.conf"
 [[ -d "$client/assets" ]] || die "nothing to read at $client/assets, build it first"
 
 # The rule's file name part, read from the config, so this cannot disagree with it.
-rule="$(perl -ne 'print $1 if m{^\s*"~\^(?:/god-mode)?/assets/(.*?)\$"}' "$conf")"
+rule="$(perl -ne 'print $1 if m{^\s*"~\^\([0-9|]+\):(?:/god-mode)?/assets/(.*?)\$"}' "$conf")"
 [[ -n "$rule" ]] || die "found no rule for assets/ in $conf"
 
 [[ ! -e "$SRC/apps/$app/public/assets" ]] \
