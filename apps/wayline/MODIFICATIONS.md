@@ -6,7 +6,8 @@ form and the license statement.
 - **Upstream:** <https://github.com/makeplane/plane>, tag `v1.4.3`, commit
   `37a15d99231042b3ff5a4401fed479fdbec9effe`. Copyright 2023-present Plane Software, Inc. and contributors.
   AGPL-3.0.
-- **Modified by:** Bereket Abera, 2026-11-04 to 2026-11-05.
+- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), 2026-11-04 to
+  2026-11-05. His name on the work does not mean he reviewed each change, and the D12 section below says what he has not reviewed.
 - **Modified version's name:** Wayline, a customized deployment of Plane Community Edition, not an
   original product.
 - **License of the modifications:** AGPL-3.0-only.
@@ -45,7 +46,8 @@ Most of this is appearance and text. These are the changes that alter what the s
 | Onboarding's `has_marketing_email_consent` starts false. Upstream's starts true, and is sent even when the checkbox is hidden | `patches/20-auth.patch` |
 | The plain-text part of mail decodes HTML character references, and style blocks are stripped in linear time, because `plane/utils/email.py` is upstream's later version. See the D12 section below | `backend/vendor/email.py` |
 | The workspace and project invitation tasks also store that helper's result in the invitation's `message` column, which the API serves. So that field now holds decoded raw markup where it held escaped text: a workspace named `<b>x</b>` is stored as `<b>x</b>`, not `&lt;b&gt;x&lt;/b&gt;`. No frontend reads it | `backend/vendor/email.py`, proved by `backend/check_db.py` |
-| Web and admin tell browsers what they may keep: `Cache-Control: no-cache` on HTML and everything else without a content hash in its name, so a promotion or a rollback is seen at the next request, and a year and `immutable` on the bundler's hashed files. Upstream's config sends no `Cache-Control`, so a browser reuses HTML unasked for about a tenth of the file's age | `runtime/nginx-web.conf`, `runtime/nginx-admin.conf` |
+| Web and admin tell browsers what they may keep: a year and `immutable` on a success for the bundler's hashed files, and `Cache-Control: no-cache` on every error, on HTML and on everything else without a content hash in its name, so a browser holding HTML from these images sees a promotion or a rollback at the next request. Upstream's config sends no `Cache-Control`, so a browser reuses HTML unasked for about a tenth of the file's age. That is the limit on the above: a browser still holding HTML from an image without the header reuses it unasked until that time runs out, which for upstream's `index.html` was about 17.5 h at the time of writing, on 2026-11-05, and grows with the file's age. A rollback to any digest built before `e885fc0` brings back the header-less HTML | `runtime/nginx-web.conf`, `runtime/nginx-admin.conf` |
+| Web and admin ignore a `Range` header and answer with the whole file, because nginx sends its 416 with what it had already set for a 200. No file they serve needs part of a file. Their redirects for a directory asked for without its slash are relative, because an absolute one names port 3000, which the ingress does not serve | `runtime/nginx-web.conf`, `runtime/nginx-admin.conf` |
 | The backend image has PyJWT 2.14.0 in place of 2.13.0. The space image has proxy-addr 2.0.8 in place of 2.0.7, and does not have storybook or tinypool. See the dependency section below | `backend/pyjwt-requirements.txt`, `runtime/space-deps.mjs` |
 
 ## Files, by group
@@ -113,9 +115,9 @@ All of these arrive through the `FROM` lines, and were CRITICAL findings with a 
 | `wayline/space` | proxy-addr | 2.0.7 to 2.0.8, CVE-2026-90711 | Tarball checked against the npm registry's `integrity`, installed beside the old store entry, and express's link repointed. Same dependencies |
 | `wayline/space` | storybook 10.4.6, tinypool 2.1.0 | Removed, CVE-2026-114125, CVE-2026-104848, CVE-2026-104849 | Development tools. `runtime/space-deps.mjs` refuses to remove them if the server bundle or anything it reaches can import them |
 
-The backend image is flattened, so PyJWT 2.13.0 is in none of its layers. The space image is not flattened, so there these replace or remove files in the container's filesystem only, and the old versions are still bytes in the `FROM` layers underneath. Other development packages in the space image, such as the rest of `@storybook/*`, `vite` and `typescript`, are left for now, because no CRITICAL finding names them and this change stays small. `vite` does have HIGH and MEDIUM findings.
+The backend image is flattened, so PyJWT 2.13.0 is in none of its layers. The space image is not flattened, so there these replace or remove files in the container's filesystem only, and the old versions are still bytes in the `FROM` layers underneath. Other development packages in the space image, such as the rest of `@storybook/*`, `vite`, `typescript`, `brace-expansion`, `toml` and `webpack-dev-middleware`, are left for now, because no CRITICAL finding names them and this change stays small. `vite` does have HIGH and MEDIUM findings, and so does `brace-expansion`. `toml` and `webpack-dev-middleware` have HIGH findings.
 
-The space image has other HIGH findings, left as they are. Some are in packages its server loads from `node_modules`: axios, body-parser, compression, follow-redirects and react-router. Others are in code the bundler inlined into `build/server/index.js`, where nothing imports it, so `runtime/space-deps.mjs` cannot see it: markdown-it 14.2.0, nanoid 3.3.8, prosemirror-view 1.40.0 and source-map-js 1.2.1, with a MEDIUM in @tiptap/core 2.26.3. `checks/space-regions.mjs` lists what was inlined. The web and admin client bundles hold some of these libraries too, and no image scan can see them there. Nobody has checked whether any of these findings can be reached in a way that matters.
+The space image has other HIGH findings, left as they are. Some are in packages its server loads from `node_modules`: axios, body-parser, compression, follow-redirects and react-router. Others are in code the bundler inlined into `build/server/index.js`, where nothing imports it, so `runtime/space-deps.mjs` cannot see it: markdown-it 14.2.0, nanoid 3.3.8, prosemirror-view 1.40.0 and source-map-js 1.2.1, with a MEDIUM in @tiptap/core 2.26.3. `checks/space-regions.mjs` lists what was inlined. The rest are in the development packages above, which the server does not load: vite 8.0.16, brace-expansion 5.0.7, toml 4.3.0 and webpack-dev-middleware 6.1.3. The web and admin client bundles hold some of these libraries too, and no image scan can see them there. Nobody has checked whether any of these findings can be reached in a way that matters.
 
 Left on purpose: `plane` module and `X-Plane-*` headers, the "New at Plane" choice label in
 `db/models/workspace.py`, because changing it would call for a migration, and the GitHub releases check in
@@ -125,7 +127,7 @@ demo content and activity rows.
 ### Runtime and build (`runtime/`, `scripts/`, `checks/`)
 
 New files, not derived from upstream except as stated: thin Dockerfiles, `runtime/nginx-{web,admin}.conf` (modified
-from `apps/{web,admin}/nginx/nginx.conf`: pid on `/run`, two workers, no rate-limit zone, `Cache-Control` by file name, `/source` on web), the build
+from `apps/{web,admin}/nginx/nginx.conf`: pid on `/run`, two workers, no rate-limit zone, `Cache-Control` by status and file name, no byte ranges, relative redirects, `/source` on web), the build
 and authoring scripts, and the checks. Upstream's own Dockerfiles are not used.
 
 ## Preserved
@@ -149,11 +151,16 @@ pinned by commit, and the image is flattened, so what is published holds that ve
 
 **Who chose this.** No person did. An AI coding agent implementing this image chose to replace the file, under the
 owner's rule: "Do not use commercial-only Plane features or assets without authorization." The agent coordinating the work then required
-the flattening, under the same rule.
+the flattening, under the same rule. The agent coordinating the work also removed the requirement that the repository be private,
+because no layer holds the original, and the owner has not reviewed that.
 
 **What the owner has and has not seen.** The agent told the owner after the fact that the file was replaced. The owner has not reviewed
 that choice or the flattening, and has not authorized the original file. No lawyer or other legal reviewer has looked at
 any of this, so this section records what was done and is not a legal claim either way.
+
+**What the owner should confirm**, before the first push that carries this directory, because that push publishes:
+
+- [ ] This section, all of it: the file replaced, the image flattened, and publishing with no requirement that the repository be private.
 
 - `backend/vendor/email.py` is upstream's file at `86d9b158fa4edd0c5deebb29367b5dd9b821716f`, the newest commit that touches it,
   unchanged. `backend/vendor/email.py.pin` records the commit, blob and sha256. It fits v1.4.3: 11 modules import from it,
@@ -162,8 +169,10 @@ any of this, so this section records what was done and is not a legal claim eith
   build if any file in that stage's filesystem holds the identifier, or if this file is not that AGPL-3.0-only version.
 - The last stage is `FROM scratch` and copies that filesystem, so the published image has one layer holding it, and an empty
   layer BuildKit adds for `WORKDIR`. `checks/flatten-compare.py` compared this copy with the unflattened image, path by path.
-- `checks/layer-check.py` reads every layer of each image we build as the registry serves it, and fails if any holds the
-  identifier. `scripts/ci/build-images.sh` runs it after each push and records no digest for an image that fails.
+- `checks/layer-check.py` reads every layer of each image we build as a registry serves it, opening archives by their first
+  bytes, and fails if any holds the identifier in any case or in UTF-16, the original's sha256, or bytecode at its path.
+  `scripts/ci/build-images.sh` runs it in a throwaway registry before publishing anything, and again on what it published, and
+  records no digest for an image that fails.
 - **Upstream's image is still a build input.** The build downloads `makeplane/plane-backend:v1.4.3` from Docker Hub as a
   local input to derive this image. It is not republished, and the published image holds no layer from it. This says no more
   than that, and does not say anything is legally cleared.

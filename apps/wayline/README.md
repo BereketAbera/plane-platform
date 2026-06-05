@@ -26,10 +26,11 @@ UPSTREAM commit ──> overlay/ ──> patches/*.patch ──> codemod/rebrand
 | `checks/leak-scan.sh` | Fails on the upstream brand in what the frontends ship and in the rewritten mail templates, except allowlisted entries with reasons. `backend/check_image.py` covers the rest of the backend image, inside the image |
 | `checks/bundle-art.sh` | Fails if upstream's isometric empty states reach a bundle |
 | `checks/font-urls.sh` | Proves from the built CSS that fonts resolve under `/`, `/god-mode/`, `/spaces/` |
-| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts, that X-Forwarded-For behaves, and what a browser may keep: `Cache-Control`, the 4 security headers and 304s. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
+| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts, that X-Forwarded-For behaves, nginx's redirects, and what a browser may keep: `Cache-Control` on every kind of response including errors for a real hashed name, the 4 security headers and 304s. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
 | `checks/cache-names.sh` | Stops the build if a file could reach `assets/` with a name no bundler hashed, because nginx keeps such names for a year |
-| `checks/layer-check.py` | Reads every layer of an image as the registry serves it, including files a later layer hides, and fails if any holds the identifier on upstream's commercially licensed files. `scripts/ci/build-images.sh` runs it after each push. `--report-only` does the same for images we deploy unmodified, and never fails a build on them |
-| `checks/flatten-config.py` | Fails if the flattened backend dropped anything its base's config says. `scripts/ci/build-images.sh` and `checks/smoke-images.sh` run it |
+| `checks/layer-check.py` | Reads every layer of an image as a registry serves it, including files a later layer hides, and fails if any holds the identifier on upstream's commercially licensed files in any case or in UTF-16, the original file's sha256, or bytecode at its path. It opens archives by their first bytes, not their names, and an image with something it could not open exits 2. `scripts/ci/build-images.sh` runs it before publishing anything and again on what it published. `--report-only` does the same for images we deploy unmodified, and never fails a build on them |
+| `checks/layer-check-cases.py` | Tests `layer-check.py` on layers it makes in memory, and with `--registry` as real images through the command. Manual |
+| `checks/flatten-config.py` | Fails if the flattened backend dropped anything its base's config says. `scripts/ci/build-images.sh` runs it before publishing anything, and `checks/smoke-images.sh` on what was published |
 | `checks/flatten-compare.py` | Compares two images path by path and field by field, read from their registries. Manual, for evidence |
 | `checks/space-regions.mjs` | Lists the packages the bundler inlined into the space server, which `runtime/space-deps.mjs` cannot see. Manual, for evidence |
 | `checks/backend-db.sh` | Runs the backend against a scratch Postgres, Redis and mail server it starts itself: migrations, registration, the setup endpoint, an invitation and a mail read back. `WAYLINE_BASE_CONTROL=yes` also shows the same checks failing on upstream's image. **Manual:** no workflow runs it |
@@ -132,10 +133,16 @@ Upstream's backend image stays on any machine that builds this one, because it i
 - Images go only to the local registry or `ghcr.io/bereketabera/wayline`. That is decision D12 (`backend/email-py-decision.txt`,
   `scripts/publish-gate.sh`, `MODIFICATIONS.md`). The `images.yml` publish job runs that gate first, and fails where publishing is not allowed.
 - Pull requests only build, and never push.
-- A push to main publishes, walking every layer of each image as it goes, then scans what it pushed with `scripts/ci/scan-images.sh`, and a failure in either stops the prune and
-  the digest bump. A failed walk leaves that image in GHCR, because it reads what was pushed. The backend's own build stops on the same identifier before any push. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
+- A push to main walks every layer of each image in a throwaway registry on the runner, and publishes only when all four pass, copying each by digest. It then walks each again as GHCR serves it, scans what it published with `scripts/ci/scan-images.sh`, and a failure in either stops the prune and the digest bump. An image that fails the first walk or the config check reaches nobody. One that fails the second walk stays in GHCR, with no digest recorded. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
+- `make images` does the same with the local registry in place of GHCR, so the throwaway registry, the walks and the copy by digest have run here. On GitHub they have not: the `network=host` the publish job gives its builder was tried on this Mac with a builder of that kind, on one image, and the copy to GHCR with its login has never run.
 - `make images` to the local registry uses no GHCR storage and is the path in pass 1.
 - Pruning with `GITHUB_TOKEN` has not been run yet, and may need the package's Actions access set to Admin.
+
+**Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the repository's owner, Bereket Abera, has not reviewed that. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
+
+What the owner should confirm, before the first push that carries `apps/wayline`, because that push publishes:
+
+- [ ] D12 in `MODIFICATIONS.md`, all of it: `email.py` replaced with upstream's later AGPL-3.0-only version, the backend flattened, and publishing with no requirement that the repository be private. Agents did all three, the owner has not reviewed any of them, and no lawyer or other legal reviewer has looked at them.
 
 Before the repository is made public, in this order:
 
