@@ -709,6 +709,7 @@ steps_file="$(mktemp "$LOCAL_DIR/.restore-steps.XXXXXX")"
 secret_tmp=""
 sentinel_tmp=""
 INFISICAL_STOPPED=no
+ANYTHING_CHANGED=no # Until a refusal has passed, a failure is a refusal.
 
 record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contract requires.
   printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$steps_file"
@@ -749,7 +750,13 @@ on_exit() {
     0) ok "restore of $BACKUP_ID into $ENV_NAME complete. Evidence: $evidence" ;;
     2) warn "the data of $BACKUP_ID is back in $ENV_NAME, and these proofs could not run, so this is not a pass: $not_run. ALLOW_NO_SENTINEL=yes accepts that. Evidence: $evidence" ;;
     "$EXIT_NEEDS_SIGN_IN") warn "the data of $BACKUP_ID is back in $ENV_NAME, and nothing here can log in to prove it, as the steps above say. Evidence: $evidence" ;;
-    *) warn "restore of $BACKUP_ID into $ENV_NAME FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: $evidence" ;;
+    *)
+      if [[ "$ANYTHING_CHANGED" == no ]]; then
+        warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. Nothing was changed. Evidence: $evidence"
+      else
+        warn "restore of $BACKUP_ID into $ENV_NAME FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: $evidence"
+      fi
+      ;;
   esac
   exit "$rc"
 }
@@ -1217,6 +1224,7 @@ restore_plane() {
   refuse_if_not_empty "$users" "$objects"
 
   # ----- Past this line the environment is being changed. -----
+  ANYTHING_CHANGED=yes
   argo_pause "$APP"
   log "Stopping the apps"
   for deployment in $APP_DEPLOYMENTS; do
@@ -1430,6 +1438,7 @@ restore_infisical() {
   refuse_if_not_empty "$users" 0
 
   # ----- Past this line the environment is being changed. -----
+  ANYTHING_CHANGED=yes
   recovery_install_tf_state "$backup_dir"
   if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
 
