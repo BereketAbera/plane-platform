@@ -116,10 +116,10 @@ deny contains msg if {
 	some route in input.spec.routes
 	needs_allow_list(route)
 	not names_allow_list(route)
-	msg := sprintf("%s: route %q is in a namespace that holds an internal UI, or names one by Service or host, so it must name the %s middleware", [identity, route.match, allow_list])
+	msg := sprintf("%s: route %q sits in a namespace that holds an internal UI or states none, or names a UI by Service or host, so it must name the %s middleware", [identity, route.match, allow_list])
 }
 
-needs_allow_list(_) if internal_namespaces[object.get(input.metadata, "namespace", "")]
+needs_allow_list(_) if beside_internal_ui
 
 needs_allow_list(route) if names_internal_service(route)
 
@@ -128,6 +128,11 @@ needs_allow_list(route) if {
 	some host in internal_hosts
 	contains(replace(lower(route.match), `\`, ""), host)
 }
+
+beside_internal_ui if internal_namespaces[input.metadata.namespace]
+
+# Argo CD places an object with no namespace in its Application's destination, which can be one of these.
+beside_internal_ui if not input.metadata.namespace
 
 names_internal_service(route) if {
 	some service in route.services
@@ -138,13 +143,13 @@ names_internal_service(route) if {
 # nothing could hold the allow list on it.
 deny contains msg if {
 	input.kind in {"IngressRouteTCP", "IngressRouteUDP"}
-	internal_namespaces[object.get(input.metadata, "namespace", "")]
+	beside_internal_ui
 	msg := sprintf("%s: %s is not allowed beside an internal UI, because it would have no %s middleware", [identity, input.kind, allow_list])
 }
 
 deny contains msg if {
 	input.kind in {"IngressRouteTCP", "IngressRouteUDP"}
-	not internal_namespaces[object.get(input.metadata, "namespace", "")]
+	not beside_internal_ui
 	some route in input.spec.routes
 	names_internal_service(route)
 	msg := sprintf("%s: %s must not reach an internal UI, because it would have no %s middleware", [identity, input.kind, allow_list])
