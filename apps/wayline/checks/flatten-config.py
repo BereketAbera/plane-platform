@@ -12,8 +12,8 @@ else is allowed. It also fails if the image shares a layer with the base, other 
     flatten-config.py <built image>                     must name a digest
     flatten-config.py --base-config <file> <built image>    the base's config from a file, for a negative control
 
-scripts/ci/build-images.sh runs this after pushing the backend, before it records any digest, and so does
-checks/smoke-images.sh. Exits 0 if nothing is dropped, 1 if something is, and 2 if an image cannot be read.
+scripts/ci/build-images.sh runs this on the backend in its throwaway registry, before it publishes anything, and so does
+checks/smoke-images.sh on what was published. Exits 0 if nothing is dropped, 1 if something is, and 2 if an image cannot be read.
 """
 import argparse
 import json
