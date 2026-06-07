@@ -1,0 +1,848 @@
+# Errors for a real hashed name, before and after the fix. Recorded Thu Nov  5 06:01:37 EAT 2026. The final images are from commit b2ba58723fe736f2ce56a972f9d396ce24416461.
+# Previous: web localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 on port 18207, admin localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 on 18208, both from commit ec45e21.
+# Final: web localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b on 18205, admin localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb on 18206.
+# Each ran as UID 101 with the chart's security settings and tmpfs mounts, on a local port, with no ingress.
+
+# Part 1. A real browser: the browser pane of the Claude desktop app, Chromium, Chrome/152.0.7977.167. The JSON below is what the browser tool returned, previous image first on each row pair. fetch(<path>, {cache:'default'}) uses the browser's HTTP cache as a page's own requests do.
+
+wl-cerr-web chmod 000 audio-icon-CTamvKZ-.png exit 0
+wl-cerr-web-old chmod 000 audio-icon-CTamvKZ-.png exit 0
+wl-cerr-admin chmod 000 gitea-logo-BAYfzmEl.svg exit 0
+wl-cerr-admin-old chmod 000 gitea-logo-BAYfzmEl.svg exit 0
+18205/assets/audio-icon-CTamvKZ-.png direct with curl: 403
+18207/assets/audio-icon-CTamvKZ-.png direct with curl: 403
+18206/god-mode/assets/gitea-logo-BAYfzmEl.svg direct with curl: 403
+18208/god-mode/assets/gitea-logo-BAYfzmEl.svg direct with curl: 403
+
+== Step 1. The hashed file is unreadable, and curl reads 403. The browser fetches it once
+{"loc":"http://127.0.0.1:18207","ua":"Chrome/152.0.7977.167","u":"/assets/audio-icon-CTamvKZ-.png","status":403,"cc":"public, max-age=31536000, immutable"}
+{"loc":"http://127.0.0.1:18205","ua":"Chrome/152.0.7977.167","u":"/assets/audio-icon-CTamvKZ-.png","status":403,"cc":"no-cache"}
+{"loc":"http://127.0.0.1:18208","ua":"Chrome/152.0.7977.167","u":"/god-mode/assets/gitea-logo-BAYfzmEl.svg","status":403,"cc":"public, max-age=31536000, immutable"}
+{"loc":"http://127.0.0.1:18206","ua":"Chrome/152.0.7977.167","u":"/god-mode/assets/gitea-logo-BAYfzmEl.svg","status":403,"cc":"no-cache"}
+
+wl-cerr-web chmod 644 exit 0
+wl-cerr-web-old chmod 644 exit 0
+wl-cerr-admin chmod 644 exit 0
+wl-cerr-admin-old chmod 644 exit 0
+18205/assets/audio-icon-CTamvKZ-.png direct with curl, restored: 200
+18207/assets/audio-icon-CTamvKZ-.png direct with curl, restored: 200
+18206/god-mode/assets/gitea-logo-BAYfzmEl.svg direct with curl, restored: 200
+18208/god-mode/assets/gitea-logo-BAYfzmEl.svg direct with curl, restored: 200
+
+== Step 2. The mode is restored, and curl reads 200. The browser fetches it twice more, with cache: 'default'
+{"loc":"http://127.0.0.1:18207","u":"/assets/audio-icon-CTamvKZ-.png","out":[{"i":0,"status":403,"cc":"public, max-age=31536000, immutable"},{"i":1,"status":403,"cc":"public, max-age=31536000, immutable"}]}
+{"loc":"http://127.0.0.1:18205","u":"/assets/audio-icon-CTamvKZ-.png","out":[{"i":0,"status":200,"cc":"public, max-age=31536000, immutable"},{"i":1,"status":200,"cc":"public, max-age=31536000, immutable"}]}
+{"loc":"http://127.0.0.1:18208","u":"/god-mode/assets/gitea-logo-BAYfzmEl.svg","out":[{"i":0,"status":403,"cc":"public, max-age=31536000, immutable"},{"i":1,"status":403,"cc":"public, max-age=31536000, immutable"}]}
+{"loc":"http://127.0.0.1:18206","u":"/god-mode/assets/gitea-logo-BAYfzmEl.svg","out":[{"i":0,"status":200,"cc":"public, max-age=31536000, immutable"},{"i":1,"status":200,"cc":"public, max-age=31536000, immutable"}]}
+
+== Step 3. On other hashed files: a POST and then a GET, a Range past the end and then two plain GETs. Then the page twice, and a directory without its slash, with cache: 'no-store'
+{"loc":"http://127.0.0.1:18207","post":{"status":405,"cc":"public, max-age=31536000, immutable","bytes":559},"getAfterPost":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":12703},"rangePastEnd":{"status":416,"cc":"public, max-age=31536000, immutable, public, max-age=31536000, immutable","bytes":599},"getAfterRange":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":9681},"getAgain":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":9681},"html":[{"status":200,"cc":"no-cache"},{"status":200,"cc":"no-cache"}],"redirect":"TypeError: Failed to fetch"}
+{"loc":"http://127.0.0.1:18205","post":{"status":405,"cc":"no-cache","bytes":559},"getAfterPost":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":12703},"rangePastEnd":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":9681},"getAfterRange":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":9681},"getAgain":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":9681},"html":[{"status":200,"cc":"no-cache"},{"status":200,"cc":"no-cache"}],"redirect":{"url":"http://127.0.0.1:18205/licenses/","status":200,"redirected":true}}
+{"loc":"http://127.0.0.1:18208","post":{"status":405,"cc":"public, max-age=31536000, immutable","bytes":559},"getAfterPost":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":1064},"rangePastEnd":{"status":416,"cc":"public, max-age=31536000, immutable, public, max-age=31536000, immutable","bytes":599},"getAfterRange":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":14032},"getAgain":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":14032},"html":[{"status":200,"cc":"no-cache"},{"status":200,"cc":"no-cache"}],"redirect":"TypeError: Failed to fetch"}
+{"loc":"http://127.0.0.1:18206","post":{"status":405,"cc":"no-cache","bytes":559},"getAfterPost":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":1064},"rangePastEnd":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":14032},"getAfterRange":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":14032},"getAgain":{"status":200,"cc":"public, max-age=31536000, immutable","bytes":14032},"html":[{"status":200,"cc":"no-cache"},{"status":200,"cc":"no-cache"}],"redirect":{"url":"http://127.0.0.1:18206/god-mode/","status":200,"redirected":true}}
+
+# What reached nginx, from docker logs, read after those steps: method, path, status, bytes, referer.
+== wl-cerr-web: every request that reached nginx for these paths. A request with a referer came from the browser, and one with - came from curl
+GET / 200 6385 -
+GET / 200 6385 -
+GET / 200 6385 -
+GET /assets/audio-icon-CTamvKZ-.png 403 153 -
+GET /assets/audio-icon-CTamvKZ-.png 403 555 http://127.0.0.1:18205/
+GET / 200 6385 -
+GET /assets/audio-icon-CTamvKZ-.png 200 10369 -
+GET /assets/audio-icon-CTamvKZ-.png 200 10369 http://127.0.0.1:18205/
+POST /assets/css-icon-CCUROALf.png 405 559 http://127.0.0.1:18205/
+GET /assets/css-icon-CCUROALf.png 200 12703 http://127.0.0.1:18205/
+GET /assets/csv-icon-DF5Z4ezZ.png 200 9681 http://127.0.0.1:18205/
+GET / 304 0 http://127.0.0.1:18205/
+GET / 304 0 http://127.0.0.1:18205/
+GET /licenses 301 169 http://127.0.0.1:18205/
+GET /licenses/ 200 889 http://127.0.0.1:18205/
+GET / 200 6385 -
+== wl-cerr-web-old: every request that reached nginx for these paths. A request with a referer came from the browser, and one with - came from curl
+GET / 200 6385 -
+GET / 200 6385 -
+GET / 200 6385 -
+GET /assets/audio-icon-CTamvKZ-.png 403 153 -
+GET /assets/audio-icon-CTamvKZ-.png 403 555 http://127.0.0.1:18207/
+GET / 200 6385 -
+GET /assets/audio-icon-CTamvKZ-.png 200 10369 -
+POST /assets/css-icon-CCUROALf.png 405 559 http://127.0.0.1:18207/
+GET /assets/css-icon-CCUROALf.png 200 12703 http://127.0.0.1:18207/
+GET /assets/csv-icon-DF5Z4ezZ.png 416 599 http://127.0.0.1:18207/
+GET /assets/csv-icon-DF5Z4ezZ.png 200 9681 http://127.0.0.1:18207/
+GET / 304 0 http://127.0.0.1:18207/
+GET / 304 0 http://127.0.0.1:18207/
+GET /licenses 301 169 http://127.0.0.1:18207/
+GET / 200 6385 -
+== wl-cerr-admin: every request that reached nginx for these paths. A request with a referer came from the browser, and one with - came from curl
+GET /god-mode/ 200 4279 -
+GET /god-mode/ 200 4279 -
+GET /god-mode/ 200 4279 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 403 153 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 403 555 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/ 200 4279 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 200 2138 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 200 2138 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/ 200 4279 -
+POST /god-mode/assets/gitlab-logo-BL2xQyij.svg 405 559 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/assets/gitlab-logo-BL2xQyij.svg 200 1064 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/assets/github-black-DmZ70PA_.png 200 14032 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/ 304 0 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/ 304 0 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode 301 169 http://127.0.0.1:18206/god-mode/general/
+GET /god-mode/ 200 4279 http://127.0.0.1:18206/god-mode/general/
+== wl-cerr-admin-old: every request that reached nginx for these paths. A request with a referer came from the browser, and one with - came from curl
+GET /god-mode/ 200 4279 -
+GET /god-mode/ 200 4279 -
+GET /god-mode/ 200 4279 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 403 153 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 403 555 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/ 200 4279 -
+GET /god-mode/assets/gitea-logo-BAYfzmEl.svg 200 2138 -
+POST /god-mode/assets/gitlab-logo-BL2xQyij.svg 405 559 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/assets/gitlab-logo-BL2xQyij.svg 200 1064 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/assets/github-black-DmZ70PA_.png 416 599 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/assets/github-black-DmZ70PA_.png 200 14032 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/ 304 0 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/ 304 0 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode 301 169 http://127.0.0.1:18208/god-mode/general/
+GET /god-mode/ 200 4279 -
+
+# Read: on the previous images the browser kept the 403 after the server recovered, and sent nothing more for that file: no line with a referer follows the 403. On the final images it asked again and had the file, and then, as the name allows, did not ask for the second fetch.
+# On the previous images Chromium did not keep the 405 from a POST or the 416 from a Range request: the next plain GET reached nginx in both cases. So the kept error shown here is the 403. The 416 and the doubled headers are still gone on the final images, where the same Range gets the file.
+# A directory without its slash: the previous images redirect a browser to port 3000, which fails. The final ones stay on the page's own origin and port. /licenses goes through location / on web and /god-mode on admin.
+# Not tested: Safari and Firefox, a browser behind the ingress on plane-dev, and a Range request from anything but fetch.
+
+# Part 2. The same with curl: one real hashed file on each of the four, each response's status and the headers that matter here.
+
+# Thu Nov  5 05:59:03 EAT 2026
+=================== wl-cerr-web-old, port 18207
+$ probe.sh: one real hashed file, with curl, each response's status and the headers that matter here
+file: /assets/AppProgressBar-dLKnKtpU.js, 6941 bytes
+
+--- GET
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- GET with its ETag
+HTTP/1.1 304 Not Modified
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- Range 0-0
+HTTP/1.1 206 Partial Content
+Content-Length: 1
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes 0-0/6941
+
+--- Range two parts
+HTTP/1.1 206 Partial Content
+Content-Length: 224
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range past the end
+HTTP/1.1 416 Requested Range Not Satisfiable
+Content-Length: 197
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes */6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD, Range past the end
+HTTP/1.1 416 Requested Range Not Satisfiable
+Content-Length: 197
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes */6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Range old and Range past the end
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- POST
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- PUT
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- DELETE
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- OPTIONS
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Match wrong: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Unmodified-Since old: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+chmod 000 exit 0
+
+--- unreadable
+HTTP/1.1 403 Forbidden
+Content-Length: 153
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+chmod 644 exit 0
+
+--- readable again
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- missing hashed
+HTTP/1.1 200 OK
+Content-Length: 6385
+Cache-Control: no-cache
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- URI too long: 414
+HTTP/1.1 414 Request-URI Too Large
+Content-Length: 177
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /licenses, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://127.0.0.1:3000/licenses/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /licenses, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://plane.dev.localhost:3000/licenses/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /assets, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://127.0.0.1:3000/assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /assets, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://plane.dev.localhost:3000/assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /source, no Host header given
+HTTP/1.1 302 Moved Temporarily
+Content-Length: 145
+Location: https://github.com/BereketAbera/plane-platform/tree/ec45e212ee6185d286762a753913c253dac51358
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /source, Host plane.dev.localhost
+HTTP/1.1 302 Moved Temporarily
+Content-Length: 145
+Location: https://github.com/BereketAbera/plane-platform/tree/ec45e212ee6185d286762a753913c253dac51358
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+=================== wl-cerr-web, port 18205
+$ probe.sh: one real hashed file, with curl, each response's status and the headers that matter here
+file: /assets/AppProgressBar-dLKnKtpU.js, 6941 bytes
+
+--- GET
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- GET with its ETag
+HTTP/1.1 304 Not Modified
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range 0-0
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range two parts
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range past the end
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD, Range past the end
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Range old and Range past the end
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- POST
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- PUT
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- DELETE
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- OPTIONS
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- If-Match wrong: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- If-Unmodified-Since old: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+chmod 000 exit 0
+
+--- unreadable
+HTTP/1.1 403 Forbidden
+Content-Length: 153
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+chmod 644 exit 0
+
+--- readable again
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- missing hashed
+HTTP/1.1 200 OK
+Content-Length: 6385
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- URI too long: 414
+HTTP/1.1 414 Request-URI Too Large
+Content-Length: 177
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /licenses, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /licenses/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /licenses, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /licenses/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /assets, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /assets, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /source, no Host header given
+HTTP/1.1 302 Moved Temporarily
+Content-Length: 145
+Location: https://github.com/BereketAbera/plane-platform/tree/b2ba58723fe736f2ce56a972f9d396ce24416461
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /source, Host plane.dev.localhost
+HTTP/1.1 302 Moved Temporarily
+Content-Length: 145
+Location: https://github.com/BereketAbera/plane-platform/tree/b2ba58723fe736f2ce56a972f9d396ce24416461
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+=================== wl-cerr-admin-old, port 18208
+$ probe.sh: one real hashed file, with curl, each response's status and the headers that matter here
+file: /god-mode/assets/404-De9tSrE1.js, 1135 bytes
+
+--- GET
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- GET with its ETag
+HTTP/1.1 304 Not Modified
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- Range 0-0
+HTTP/1.1 206 Partial Content
+Content-Length: 1
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes 0-0/1135
+
+--- Range two parts
+HTTP/1.1 206 Partial Content
+Content-Length: 224
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range past the end
+HTTP/1.1 416 Requested Range Not Satisfiable
+Content-Length: 197
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes */1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD, Range past the end
+HTTP/1.1 416 Requested Range Not Satisfiable
+Content-Length: 197
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes */1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Range old and Range past the end
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- POST
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- PUT
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- DELETE
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- OPTIONS
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Match wrong: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Unmodified-Since old: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+chmod 000 exit 0
+
+--- unreadable
+HTTP/1.1 403 Forbidden
+Content-Length: 153
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+chmod 644 exit 0
+
+--- readable again
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- missing hashed
+HTTP/1.1 200 OK
+Content-Length: 4279
+Cache-Control: no-cache
+X-Frame-Options: DENY
+Accept-Ranges: bytes
+
+--- URI too long: 414
+HTTP/1.1 414 Request-URI Too Large
+Content-Length: 177
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://127.0.0.1:3000/god-mode/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://plane.dev.localhost:3000/god-mode/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode/assets, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://127.0.0.1:3000/god-mode/assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode/assets, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: http://plane.dev.localhost:3000/god-mode/assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+=================== wl-cerr-admin, port 18206
+$ probe.sh: one real hashed file, with curl, each response's status and the headers that matter here
+file: /god-mode/assets/404-De9tSrE1.js, 1135 bytes
+
+--- GET
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- GET with its ETag
+HTTP/1.1 304 Not Modified
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range 0-0
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range two parts
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range past the end
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- HEAD, Range past the end
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- If-Range old and Range past the end
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- POST
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- PUT
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- DELETE
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- OPTIONS
+HTTP/1.1 405 Not Allowed
+Content-Length: 157
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- If-Match wrong: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- If-Unmodified-Since old: 412
+HTTP/1.1 412 Precondition Failed
+Content-Length: 173
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+chmod 000 exit 0
+
+--- unreadable
+HTTP/1.1 403 Forbidden
+Content-Length: 153
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+chmod 644 exit 0
+
+--- readable again
+HTTP/1.1 200 OK
+Content-Length: 1135
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- missing hashed
+HTTP/1.1 200 OK
+Content-Length: 4279
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- URI too long: 414
+HTTP/1.1 414 Request-URI Too Large
+Content-Length: 177
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /god-mode/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /god-mode/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode/assets, no Host header given
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /god-mode/assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+--- /god-mode/assets, Host plane.dev.localhost
+HTTP/1.1 301 Moved Permanently
+Content-Length: 169
+Location: /god-mode/assets/
+Cache-Control: no-cache
+X-Frame-Options: DENY
+
+# Part 3. What else was tried for the 416, on the previous web image with only its nginx config changed, in scratch containers. nginx looks at a range after add_header has run, with status 200, and its range filter then ends the request, so the headers go through add_header twice. a.conf is the map keyed on status with byte ranges still on.
+
+=== a: map "$status:$uri", pattern anchored to 200, 206 and 304
+--- Range past the end
+HTTP/1.1 416 Requested Range Not Satisfiable
+Content-Length: 197
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes */6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range 0-0
+HTTP/1.1 206 Partial Content
+Content-Length: 1
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Content-Range: bytes 0-0/6941
+
+=== c: a, with volatile in the map, so the second pass reads 416
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- Range: bytes=999999999-
+HTTP/1.1 416 Requested Range Not Satisfiable
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Cache-Control: no-cache
+X-Frame-Options: DENY
+--- Range: bytes=0-0
+HTTP/1.1 206 Partial Content
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+=== variant d: >     error_page 416 /50x.html; 
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- Range: bytes=999999999-
+HTTP/1.1 416 Requested Range Not Satisfiable
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+--- Range: bytes=0-0
+HTTP/1.1 206 Partial Content
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+--- no Range
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=31536000, immutable
+=== variant e: >     add_header Cache-Control $wayline_cache_control; 
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- Range: bytes=999999999-
+HTTP/1.1 416 Requested Range Not Satisfiable
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+X-Frame-Options: DENY
+--- Range: bytes=0-0
+HTTP/1.1 206 Partial Content
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+--- no Range
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=31536000, immutable
+=== variant f: >   map "$status:$http_range:$uri" $wayline_cache_control { >     "~^(200|206|304)::/assets/[^/]+-[A-Za-z0-9_-]{8}[0-9]*\.[A-Za-z0-9]+$"  "public, max-age=31536000, immut 
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- Range: bytes=999999999-
+HTTP/1.1 416 Requested Range Not Satisfiable
+Cache-Control: no-cache
+X-Frame-Options: DENY
+Cache-Control: no-cache
+X-Frame-Options: DENY
+--- Range: bytes=0-0
+HTTP/1.1 206 Partial Content
+Cache-Control: no-cache
+X-Frame-Options: DENY
+--- no Range
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=31536000, immutable
+=== variant g: >     "~^(200|304):/assets/[^/]+-[A-Za-z0-9_-]{8}[0-9]*\.[A-Za-z0-9]+$"  "public, max-age=31536000, immutable" 
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+--- Range: bytes=999999999-
+HTTP/1.1 416 Requested Range Not Satisfiable
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+--- Range: bytes=0-0
+HTTP/1.1 206 Partial Content
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+--- no Range
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=31536000, immutable
+
+=== b: a, with max_ranges 0 and absolute_redirect off. What the final images use
+--- Range 0-0
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+--- Range past the end
+HTTP/1.1 200 OK
+Content-Length: 6941
+Cache-Control: public, max-age=31536000, immutable
+X-Frame-Options: DENY
+
+# Read: d, an error page, and e, Cache-Control without always, leave the year on the 416. c and f change the value but leave every header doubled, and f also takes the year off a good range. g shows nothing in the pattern ever reads 206: without it, a 206 still has the year, because the map saw 200. Only max_ranges 0 removes the 416, and it costs nothing here: neither image holds audio, video or a PDF, and its largest file is about 2 MiB.

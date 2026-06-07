@@ -1,7 +1,32 @@
-# Thu Nov  5 04:58:46 EAT 2026
-$ env WAYLINE_EXPECT_REF=ec45e212ee6185d286762a753913c253dac51358 apps/wayline/checks/smoke-images.sh
+# Thu Nov  5 05:55:33 EAT 2026
+$ env WAYLINE_EXPECT_REF=b2ba58723fe736f2ce56a972f9d396ce24416461 apps/wayline/checks/smoke-images.sh
+Unable to find image 'localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b' locally
+localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b: Pulling from wayline/web
+986092e40873: Pulling fs layer
+bdf13b123409: Pulling fs layer
+52be770b5106: Pulling fs layer
+a65484573877: Pulling fs layer
+d29a383d7292: Pulling fs layer
+a73296237da3: Pulling fs layer
+8f75bcea531d: Pulling fs layer
+986092e40873: Already exists
+bdf13b123409: Already exists
+52be770b5106: Already exists
+a65484573877: Already exists
+d29a383d7292: Already exists
+a73296237da3: Already exists
+8f75bcea531d: Already exists
+986092e40873: Pull complete
+52be770b5106: Pull complete
+a65484573877: Pull complete
+d29a383d7292: Pull complete
+a73296237da3: Pull complete
+8f75bcea531d: Pull complete
+bdf13b123409: Pull complete
+Digest: sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+Status: Downloaded newer image for localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
 
-== web: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+== web: localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS / title names Wayline
@@ -14,9 +39,9 @@ PASS font /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
 PASS SPA route /some-workspace/projects/ status: 200
 PASS SPA route serves index.html: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
-/source -> 302 https://github.com/BereketAbera/plane-platform/tree/ec45e212ee6185d286762a753913c253dac51358
+/source -> 302 https://github.com/BereketAbera/plane-platform/tree/b2ba58723fe736f2ce56a972f9d396ce24416461
 PASS /source is a 302 to the repository at a commit
-PASS /source names commit ec45e212ee6185d286762a753913c253dac51358
+PASS /source names commit b2ba58723fe736f2ce56a972f9d396ce24416461
 NOTE /source target, followed logged out, answers 404. 404 is expected while the repository is private or the commit is unpushed
 PASS /licenses/LICENSE.txt status: 200
 PASS /licenses/LICENSE.txt content type: text/plain
@@ -168,6 +193,52 @@ PASS the directory /assets/: X-Frame-Options: 1
 PASS the directory /assets/: X-Content-Type-Options: 1
 PASS the directory /assets/: Strict-Transport-Security: 1
 PASS the directory /assets/: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png unreadable: status: 403
+PASS js-icon-lKS6TT2t.png unreadable: Cache-Control: no-cache
+PASS js-icon-lKS6TT2t.png unreadable: X-Frame-Options: 1
+PASS js-icon-lKS6TT2t.png unreadable: X-Content-Type-Options: 1
+PASS js-icon-lKS6TT2t.png unreadable: Strict-Transport-Security: 1
+PASS js-icon-lKS6TT2t.png unreadable: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png readable again: status: 200
+PASS js-icon-lKS6TT2t.png readable again: Cache-Control: public, max-age=31536000, immutable
+PASS js-icon-lKS6TT2t.png readable again: X-Frame-Options: 1
+PASS js-icon-lKS6TT2t.png readable again: X-Content-Type-Options: 1
+PASS js-icon-lKS6TT2t.png readable again: Strict-Transport-Security: 1
+PASS js-icon-lKS6TT2t.png readable again: X-XSS-Protection: 1
+PASS POST to js-icon-lKS6TT2t.png: status: 405
+PASS POST to js-icon-lKS6TT2t.png: Cache-Control: no-cache
+PASS POST to js-icon-lKS6TT2t.png: X-Frame-Options: 1
+PASS POST to js-icon-lKS6TT2t.png: X-Content-Type-Options: 1
+PASS POST to js-icon-lKS6TT2t.png: Strict-Transport-Security: 1
+PASS POST to js-icon-lKS6TT2t.png: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png with If-Match another ETag: status: 412
+PASS js-icon-lKS6TT2t.png with If-Match another ETag: Cache-Control: no-cache
+PASS js-icon-lKS6TT2t.png with If-Match another ETag: X-Frame-Options: 1
+PASS js-icon-lKS6TT2t.png with If-Match another ETag: X-Content-Type-Options: 1
+PASS js-icon-lKS6TT2t.png with If-Match another ETag: Strict-Transport-Security: 1
+PASS js-icon-lKS6TT2t.png with If-Match another ETag: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999-: status: 200
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999-: Cache-Control: public, max-age=31536000, immutable
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999-: X-Frame-Options: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999-: X-Content-Type-Options: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999-: Strict-Transport-Security: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999-: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=999999999- is the whole file: 17e06db9bf84b903499333b0b8b8c60b0a5dabd4cc5c38651fecc00b142a0f17  -
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0: status: 200
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0: Cache-Control: public, max-age=31536000, immutable
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0: X-Frame-Options: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0: X-Content-Type-Options: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0: Strict-Transport-Security: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0 is the whole file: 17e06db9bf84b903499333b0b8b8c60b0a5dabd4cc5c38651fecc00b142a0f17  -
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1: status: 200
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1: Cache-Control: public, max-age=31536000, immutable
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1: X-Frame-Options: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1: X-Content-Type-Options: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1: Strict-Transport-Security: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1: X-XSS-Protection: 1
+PASS js-icon-lKS6TT2t.png with Range bytes=0-0,1-1 is the whole file: 17e06db9bf84b903499333b0b8b8c60b0a5dabd4cc5c38651fecc00b142a0f17  -
+PASS js-icon-lKS6TT2t.png offers no ranges: 0
 PASS not hashed 50x.html: status: 200
 PASS not hashed 50x.html: Cache-Control: no-cache
 PASS not hashed 50x.html: X-Frame-Options: 1
@@ -324,18 +395,38 @@ PASS a missing licence: X-Frame-Options: 1
 PASS a missing licence: X-Content-Type-Options: 1
 PASS a missing licence: Strict-Transport-Security: 1
 PASS a missing licence: X-XSS-Protection: 1
+PASS /licenses with Host plane.dev.localhost: status: 301
+PASS /licenses with Host plane.dev.localhost: Location: /licenses/
+PASS /assets with Host plane.dev.localhost: status: 301
+PASS /assets with Host plane.dev.localhost: Location: /assets/
 PASS onboarding form's marketing consent default: confirm_password:void 0,has_marketing_email_consent:!1
 uid in container: 101
 PASS web carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 4.426MiB / 64MiB
+memory after these requests: 11.16MiB / 64MiB
 PASS web logs show no permission or fatal errors
 
-== web: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+== web: localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS web also runs without the chart's emptyDirs
+Unable to find image 'localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb' locally
+localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb: Pulling from wayline/admin
+bdf13b123409: Pulling fs layer
+96878e3f966a: Pulling fs layer
+c6aa4516629b: Pulling fs layer
+7c85ca6ce807: Pulling fs layer
+c6aa4516629b: Already exists
+7c85ca6ce807: Already exists
+bdf13b123409: Already exists
+96878e3f966a: Already exists
+c6aa4516629b: Pull complete
+7c85ca6ce807: Pull complete
+bdf13b123409: Pull complete
+96878e3f966a: Pull complete
+Digest: sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+Status: Downloaded newer image for localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
 
-== admin: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+== admin: localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS /god-mode/ answers 200 after about 1 s
 PASS /god-mode/ title names Wayline
@@ -467,6 +558,52 @@ PASS the directory /god-mode/assets/: X-Frame-Options: 1
 PASS the directory /god-mode/assets/: X-Content-Type-Options: 1
 PASS the directory /god-mode/assets/: Strict-Transport-Security: 1
 PASS the directory /god-mode/assets/: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js unreadable: status: 403
+PASS 404-De9tSrE1.js unreadable: Cache-Control: no-cache
+PASS 404-De9tSrE1.js unreadable: X-Frame-Options: 1
+PASS 404-De9tSrE1.js unreadable: X-Content-Type-Options: 1
+PASS 404-De9tSrE1.js unreadable: Strict-Transport-Security: 1
+PASS 404-De9tSrE1.js unreadable: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js readable again: status: 200
+PASS 404-De9tSrE1.js readable again: Cache-Control: public, max-age=31536000, immutable
+PASS 404-De9tSrE1.js readable again: X-Frame-Options: 1
+PASS 404-De9tSrE1.js readable again: X-Content-Type-Options: 1
+PASS 404-De9tSrE1.js readable again: Strict-Transport-Security: 1
+PASS 404-De9tSrE1.js readable again: X-XSS-Protection: 1
+PASS POST to 404-De9tSrE1.js: status: 405
+PASS POST to 404-De9tSrE1.js: Cache-Control: no-cache
+PASS POST to 404-De9tSrE1.js: X-Frame-Options: 1
+PASS POST to 404-De9tSrE1.js: X-Content-Type-Options: 1
+PASS POST to 404-De9tSrE1.js: Strict-Transport-Security: 1
+PASS POST to 404-De9tSrE1.js: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js with If-Match another ETag: status: 412
+PASS 404-De9tSrE1.js with If-Match another ETag: Cache-Control: no-cache
+PASS 404-De9tSrE1.js with If-Match another ETag: X-Frame-Options: 1
+PASS 404-De9tSrE1.js with If-Match another ETag: X-Content-Type-Options: 1
+PASS 404-De9tSrE1.js with If-Match another ETag: Strict-Transport-Security: 1
+PASS 404-De9tSrE1.js with If-Match another ETag: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js with Range bytes=999999999-: status: 200
+PASS 404-De9tSrE1.js with Range bytes=999999999-: Cache-Control: public, max-age=31536000, immutable
+PASS 404-De9tSrE1.js with Range bytes=999999999-: X-Frame-Options: 1
+PASS 404-De9tSrE1.js with Range bytes=999999999-: X-Content-Type-Options: 1
+PASS 404-De9tSrE1.js with Range bytes=999999999-: Strict-Transport-Security: 1
+PASS 404-De9tSrE1.js with Range bytes=999999999-: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js with Range bytes=999999999- is the whole file: 5fc192d7f57f2c465c3a3bba4a7aef0516f8e29336e12b24d27fdb6c51c0077c  -
+PASS 404-De9tSrE1.js with Range bytes=0-0: status: 200
+PASS 404-De9tSrE1.js with Range bytes=0-0: Cache-Control: public, max-age=31536000, immutable
+PASS 404-De9tSrE1.js with Range bytes=0-0: X-Frame-Options: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0: X-Content-Type-Options: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0: Strict-Transport-Security: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0 is the whole file: 5fc192d7f57f2c465c3a3bba4a7aef0516f8e29336e12b24d27fdb6c51c0077c  -
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1: status: 200
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1: Cache-Control: public, max-age=31536000, immutable
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1: X-Frame-Options: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1: X-Content-Type-Options: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1: Strict-Transport-Security: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1: X-XSS-Protection: 1
+PASS 404-De9tSrE1.js with Range bytes=0-0,1-1 is the whole file: 5fc192d7f57f2c465c3a3bba4a7aef0516f8e29336e12b24d27fdb6c51c0077c  -
+PASS 404-De9tSrE1.js offers no ranges: 0
 PASS not hashed site.webmanifest.json: status: 200
 PASS not hashed site.webmanifest.json: Cache-Control: no-cache
 PASS not hashed site.webmanifest.json: X-Frame-Options: 1
@@ -509,12 +646,38 @@ PASS /god-mode/assets/404-De9tSrE1.js with its ETag: X-Frame-Options: 1
 PASS /god-mode/assets/404-De9tSrE1.js with its ETag: X-Content-Type-Options: 1
 PASS /god-mode/assets/404-De9tSrE1.js with its ETag: Strict-Transport-Security: 1
 PASS /god-mode/assets/404-De9tSrE1.js with its ETag: X-XSS-Protection: 1
+PASS /god-mode with Host plane.dev.localhost: status: 301
+PASS /god-mode with Host plane.dev.localhost: Location: /god-mode/
+PASS /god-mode/assets with Host plane.dev.localhost: status: 301
+PASS /god-mode/assets with Host plane.dev.localhost: Location: /god-mode/assets/
 uid in container: 101
 PASS admin carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 3.523MiB / 64MiB
+memory after these requests: 3.547MiB / 64MiB
 PASS admin logs show no permission or fatal errors
+Unable to find image 'localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872' locally
+localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872: Pulling from wayline/space
+048efbb2aec9: Pulling fs layer
+57489b1b1dc8: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+9ff94fdc7f01: Pulling fs layer
+f04eb5addea5: Pulling fs layer
+1f6a4955a66e: Pulling fs layer
+4f4fb700ef54: Already exists
+9ff94fdc7f01: Already exists
+048efbb2aec9: Already exists
+f04eb5addea5: Already exists
+1f6a4955a66e: Already exists
+57489b1b1dc8: Already exists
+9ff94fdc7f01: Pull complete
+4f4fb700ef54: Pull complete
+048efbb2aec9: Pull complete
+f04eb5addea5: Pull complete
+1f6a4955a66e: Pull complete
+57489b1b1dc8: Pull complete
+Digest: sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+Status: Downloaded newer image for localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
 
-== space: localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+== space: localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
 run as uid 1000, memory 256m, cpus 0.25, cap-drop ALL, no-new-privileges
 PASS /spaces/ answers 200 after about 9 s
 PASS /spaces/ title names Wayline
@@ -539,7 +702,7 @@ PASS a missing hashed file under /spaces/assets/ has no Cache-Control: 0
 PASS /spaces/assets/globals-BbMWYMN9.css with its ETag: 304
 uid in container: 1000
 PASS space carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 74.95MiB / 256MiB
+memory after these requests: 145.6MiB / 256MiB
 PASS space logs show no permission or fatal errors
 
 == What the server bundle imports
@@ -571,9 +734,9 @@ PASS space-deps.mjs check exit 0
 
 0 failure(s) in the frontend images
 
-== backend: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+== backend: localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
 == docker image inspect
-id=sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+id=sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
 == base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 == manage.py check
@@ -755,7 +918,7 @@ PASS backend check-image.sh exit 0
 PASS backend carries the licence texts in /usr/share/licenses/wayline
 PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
 base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
-built localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e, config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d
+built localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4, config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea
 
 == Env
 PASS GPG_KEY is the base's value
@@ -771,7 +934,7 @@ PASS PYTHON_VERSION is the base's value
 == Labels
 PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
 PASS org.opencontainers.image.licenses is set AGPL-3.0-only
-PASS org.opencontainers.image.revision is set ec45e212ee6185d286762a753913c253dac51358
+PASS org.opencontainers.image.revision is set b2ba58723fe736f2ce56a972f9d396ce24416461
 PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
 PASS org.opencontainers.image.title is set wayline-backend
 

@@ -1,4 +1,4 @@
-# Strings the review named, read from the built output of commit ec45e212ee6185d286762a753913c253dac51358.
+# Strings the review named, read from the built output of commit b2ba58723fe736f2ce56a972f9d396ce24416461.
 mailto:the source repository               files in web, admin, space client: 0
 Join our community of active creators      files in web, admin, space client: 0
 Learn more about projects                  files in web, admin, space client: 0
@@ -8,7 +8,7 @@ placeholder:`/source`                      files in web, admin, space client: 0
 # Marketing consent in onboarding, in the built web client. false minifies to !1, and upstream's true to !0
    2 has_marketing_email_consent:!1
 
-# Where the onboarding form defines its default, in the built web client, then in upstream's image, makeplane/plane-frontend@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5. The check in smoke-images.sh
+# Where the onboarding form defines its default, in the built web client, then in upstream's image, makeplane/plane-frontend@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5. The check in smoke-images.sh reads this line
 confirm_password:void 0,has_marketing_email_consent:!1
 confirm_password:void 0,has_marketing_email_consent:!0
 
@@ -16,19 +16,31 @@ confirm_password:void 0,has_marketing_email_consent:!0
    1 is_telemetry_enabled:!1
 
 # Image labels
-web AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
-admin AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
-space AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
-backend AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
+web AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
+admin AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
+space AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
+backend AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
 
-# Text that ships at /usr/share/licenses/wayline/MODIFICATIONS.txt, in each image. Lines naming a project lead, then the who-chose lines
-web: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
-admin: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
-space: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
-backend: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
-147:**What is done.** The notice is not edited. The backend image replaces the file with upstream's own AGPL-3.0-only version,
-150:**Who chose this.** No person did. An AI coding agent implementing this image chose to replace the file, under the
-154:**What the owner has and has not seen.** The agent told the owner after the fact that the file was replaced. The owner has not reviewed
+# Text that ships at /usr/share/licenses/wayline/, in each image, against the source files: cmp exit 0 means the same bytes
+web: MODIFICATIONS.txt cmp exit 0, NOTICE.txt cmp exit 0
+admin: MODIFICATIONS.txt cmp exit 0, NOTICE.txt cmp exit 0
+space: MODIFICATIONS.txt cmp exit 0, NOTICE.txt cmp exit 0
+backend: MODIFICATIONS.txt cmp exit 0, NOTICE.txt cmp exit 0
+
+# Who did the work and who chose, as it ships in MODIFICATIONS.txt, then NOTICE.txt, from the backend image
+9:- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), 2026-11-04 to
+10:  2026-11-05. His name on the work does not mean he reviewed each change, and the D12 section below says what he has not reviewed.
+152:**Who chose this.** No person did. An AI coding agent implementing this image chose to replace the file, under the
+153:owner's rule: "Do not use commercial-only Plane features or assets without authorization." The agent coordinating the work then required
+154:the flattening, under the same rule. The agent coordinating the work also removed the requirement that the repository be private,
+155:because no layer holds the original, and the owner has not reviewed that.
+157:**What the owner has and has not seen.** The agent told the owner after the fact that the file was replaced. The owner has not reviewed
+161:**What the owner should confirm**, before the first push that carries this directory, because that push publishes:
+
+9:- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), from
+10:  2026-11-04. His name on the work does not mean he reviewed each change.
+13:  original product. "Plane" and its logos belong to their owners, and nothing here implies endorsement.
+51:  person. The owner has not reviewed it, and no legal review has happened. See D12 in `apps/wayline/MODIFICATIONS.md`.
 
 # Libraries with findings in the source lockfiles, by name, in what the web and admin clients ship. Files under assets/ holding each string. trivy sees none of these, because these are bundled static files with no package metadata
 markdown-it          web 1, admin 0

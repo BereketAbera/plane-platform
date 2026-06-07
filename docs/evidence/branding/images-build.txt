@@ -1,5 +1,5 @@
-# scripts/ci/build-images.sh localhost:5001/wayline, Docker's part, directly after the native build in build.txt. Each image is pushed, walked by layer-check.py, and the backend compared by flatten-config.py, before any digest is recorded.
-==> Building localhost:5001/wayline/web:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
+# scripts/ci/build-images.sh localhost:5001/wayline, Docker's part, directly after the native build in build.txt. Each image goes to the throwaway registry and is walked by layer-check.py, and the backend compared by flatten-config.py. Then all four are copied by digest and walked again, before any digest is recorded.
+==> Building localhost:5001/wayline/web:b2ba58723fe7 from b2ba58723fe736f2ce56a972f9d396ce24416461
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.web
@@ -7,10 +7,10 @@
 #1 DONE 0.0s
 
 #2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
-#2 DONE 1.6s
+#2 DONE 1.0s
 
 #3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
-#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e 0.0s done
 #3 CACHED
 
 #4 [internal] load metadata for docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
@@ -21,54 +21,55 @@
 #5 DONE 0.0s
 
 #6 [1/8] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
-#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 0.0s done
 #6 DONE 0.0s
 
 #7 [internal] load build context
-#7 transferring context: 27.17MB 0.5s done
-#7 DONE 0.5s
+#7 transferring context: 27.17MB 0.4s done
+#7 DONE 0.4s
 
 #8 [2/8] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
 #8 CACHED
 
 #9 [3/8] COPY nginx.conf /etc/nginx/nginx.conf
-#9 CACHED
+#9 DONE 0.1s
 
 #10 [4/8] COPY client/ /usr/share/nginx/html/
-#10 CACHED
+#10 DONE 0.2s
 
 #11 [5/8] COPY licenses/ /usr/share/licenses/wayline/
-#11 CACHED
+#11 DONE 0.0s
 
 #12 [6/8] COPY licenses/ /usr/share/nginx/html/licenses/
-#12 CACHED
+#12 DONE 0.0s
 
-#13 [7/8] RUN test -n "ec45e212ee6185d286762a753913c253dac51358"   && sed -i "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/ec45e212ee6185d286762a753913c253dac51358|" /etc/nginx/nginx.conf   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
+#13 [7/8] RUN test -n "b2ba58723fe736f2ce56a972f9d396ce24416461"   && sed -i "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/b2ba58723fe736f2ce56a972f9d396ce24416461|" /etc/nginx/nginx.conf   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
 #13 DONE 0.2s
 
 #14 [8/8] RUN chown -R 101:101 /run /var/cache/nginx
 #14 DONE 0.2s
 
 #15 exporting to image
-#15 exporting layers 0.0s done
-#15 exporting manifest sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 done
-#15 exporting config sha256:2512c32c91ac1ef60607c8fb19bca68634971ccb367c205bb04422fc90a66b21 0.0s done
-#15 naming to localhost:5001/wayline/web:ec45e212ee61 done
+#15 exporting layers
+#15 exporting layers 0.5s done
+#15 exporting manifest sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b done
+#15 exporting config sha256:5d87703a89040730b9635e542d3b01e82ea41632f87e818072625f0fc2dbed0a done
 #15 pushing layers
 #15 pushing layers 0.7s done
-#15 pushing manifest for localhost:5001/wayline/web:ec45e212ee61@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
-#15 pushing manifest for localhost:5001/wayline/web:ec45e212ee61@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5 0.0s done
-#15 DONE 0.8s
+#15 pushing manifest for localhost:5059/wayline/web:b2ba58723fe7@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+#15 pushing manifest for localhost:5059/wayline/web:b2ba58723fe7@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b done
+#15 DONE 1.3s
 
 #16 resolving provenance for metadata file
 #16 DONE 0.0s
-time=2026-11-05T04:58:01.556+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
-searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+time=2026-11-05T05:52:57.660+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
 gate: a hit fails
 
-== localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
-read from localhost:5001/wayline/web
-config sha256:2512c32c91ac1ef60607c8fb19bca68634971ccb367c205bb04422fc90a66b21: clean
+== localhost:5059/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+read from localhost:5059/wayline/web
+config sha256:5d87703a89040730b9635e542d3b01e82ea41632f87e818072625f0fc2dbed0a: clean
 15 layers
 layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
 layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
@@ -79,18 +80,18 @@ layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: 
 layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
 layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
 layer  9/15 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
-layer 10/15 sha256:de7def043304      0.0 MiB      3 entries, 0 archives opened: clean
-layer 11/15 sha256:2d63facf31ae     14.2 MiB   1082 entries, 0 archives opened: clean
-layer 12/15 sha256:bacf0696430f      0.0 MiB     10 entries, 0 archives opened: clean
-layer 13/15 sha256:ea59b6da95d3      0.0 MiB     11 entries, 0 archives opened: clean
-layer 14/15 sha256:25f0b8477cc1      0.0 MiB      3 entries, 0 archives opened: clean
+layer 10/15 sha256:52be770b5106      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:a65484573877     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:d29a383d7292      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/15 sha256:a73296237da3      0.0 MiB     11 entries, 0 archives opened: clean
+layer 14/15 sha256:8f75bcea531d      0.0 MiB      3 entries, 0 archives opened: clean
 layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
 
 == Summary
-clean        0 hit(s) localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
- ok localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
-warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so admin's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/admin:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
+clean        0 hit(s)   0 not opened localhost:5059/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+ ok web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b passed, not published yet
+warn b2ba58723fe736f2ce56a972f9d396ce24416461 is not on origin/main, so admin's /source link answers 404 until it is pushed
+==> Building localhost:5001/wayline/admin:b2ba58723fe7 from b2ba58723fe736f2ce56a972f9d396ce24416461
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.admin
@@ -111,49 +112,52 @@ warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so admin's 
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
-#6 [1/6] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
-#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#6 [internal] load build context
 #6 DONE 0.0s
 
-#7 [internal] load build context
-#7 transferring context: 5.03MB 0.0s done
+#7 [1/6] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#7 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
 #7 DONE 0.0s
 
-#8 [3/6] COPY nginx.conf /etc/nginx/nginx.conf
+#6 [internal] load build context
+#6 transferring context: 5.03MB 0.0s done
+#6 DONE 0.0s
+
+#8 [2/6] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
 #8 CACHED
 
-#9 [4/6] COPY client/ /usr/share/nginx/html/god-mode/
-#9 CACHED
+#9 [3/6] COPY nginx.conf /etc/nginx/nginx.conf
+#9 DONE 0.0s
 
-#10 [2/6] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
-#10 CACHED
+#10 [4/6] COPY client/ /usr/share/nginx/html/god-mode/
+#10 DONE 0.0s
 
 #11 [5/6] COPY licenses/ /usr/share/licenses/wayline/
-#11 CACHED
+#11 DONE 0.0s
 
 #12 [6/6] RUN chown -R 101:101 /run /var/cache/nginx
 #12 DONE 0.1s
 
 #13 exporting to image
-#13 exporting layers 0.0s done
-#13 exporting manifest sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 done
-#13 exporting config sha256:b3355e32ee222ec62b393619a8090fb45f3698a469613135da205eef7af6642a done
-#13 naming to localhost:5001/wayline/admin:ec45e212ee61 done
+#13 exporting layers 0.1s done
+#13 exporting manifest sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb done
+#13 exporting config sha256:b7064489b2940fdfee56be6905243de8ee786ed235c084aaaa72abfb7f8ed595 done
 #13 pushing layers
 #13 pushing layers 0.6s done
-#13 pushing manifest for localhost:5001/wayline/admin:ec45e212ee61@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
-#13 pushing manifest for localhost:5001/wayline/admin:ec45e212ee61@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 done
-#13 DONE 0.7s
+#13 pushing manifest for localhost:5059/wayline/admin:b2ba58723fe7@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+#13 pushing manifest for localhost:5059/wayline/admin:b2ba58723fe7@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb done
+#13 DONE 0.8s
 
 #14 resolving provenance for metadata file
 #14 DONE 0.0s
-time=2026-11-05T04:58:03.697+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
-searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+time=2026-11-05T05:53:00.165+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
 gate: a hit fails
 
-== localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
-read from localhost:5001/wayline/admin
-config sha256:b3355e32ee222ec62b393619a8090fb45f3698a469613135da205eef7af6642a: clean
+== localhost:5059/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+read from localhost:5059/wayline/admin
+config sha256:b7064489b2940fdfee56be6905243de8ee786ed235c084aaaa72abfb7f8ed595: clean
 13 layers
 layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
 layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
@@ -164,16 +168,16 @@ layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: 
 layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
 layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
 layer  9/13 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
-layer 10/13 sha256:c6f1064967b5      0.0 MiB      3 entries, 0 archives opened: clean
-layer 11/13 sha256:cde5f93d87b0      3.8 MiB     93 entries, 0 archives opened: clean
-layer 12/13 sha256:65e14095fb9f      0.0 MiB     10 entries, 0 archives opened: clean
+layer 10/13 sha256:7c85ca6ce807      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:96878e3f966a      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:c6aa4516629b      0.0 MiB     10 entries, 0 archives opened: clean
 layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
 
 == Summary
-clean        0 hit(s) localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
- ok localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
-warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so space's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/space:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
+clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+ ok admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb passed, not published yet
+warn b2ba58723fe736f2ce56a972f9d396ce24416461 is not on origin/main, so space's /source link answers 404 until it is pushed
+==> Building localhost:5001/wayline/space:b2ba58723fe7 from b2ba58723fe736f2ce56a972f9d396ce24416461
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.space
@@ -188,25 +192,28 @@ warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so space's 
 #3 CACHED
 
 #4 [internal] load metadata for docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
-#4 DONE 0.0s
+#4 DONE 1.1s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
 #6 [1/7] FROM docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
-#6 resolve docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 0.0s done
+#6 resolve docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 done
 #6 CACHED
+
+#7 [internal] load build context
+#7 ...
+
+#8 [2/7] RUN rm -rf /app/apps/space/build
+#8 DONE 0.3s
 
 #7 [internal] load build context
 #7 transferring context: 23.33MB 0.3s done
 #7 DONE 0.3s
 
-#8 [2/7] RUN rm -rf /app/apps/space/build
-#8 DONE 0.4s
-
 #9 [3/7] COPY build/ /app/apps/space/build/
-#9 DONE 0.2s
+#9 DONE 0.3s
 
 #10 [4/7] COPY licenses/ /usr/share/licenses/wayline/
 #10 DONE 0.0s
@@ -215,61 +222,61 @@ warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so space's 
 #11 DONE 0.0s
 
 #12 [6/7] RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "apply"]
-#12 0.324 proxy-addr tarball: 5670 bytes, integrity sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==
-#12 1.328 removed storybook@10.4.6 and tinypool@2.1.0, 21 links to them and 19 .bin shims
-#12 1.522 replaced proxy-addr@2.0.7 with proxy-addr@2.0.8, 2 links repointed
-#12 DONE 1.6s
+#12 0.251 proxy-addr tarball: 5670 bytes, integrity sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==
+#12 1.996 removed storybook@10.4.6 and tinypool@2.1.0, 21 links to them and 19 .bin shims
+#12 2.138 replaced proxy-addr@2.0.7 with proxy-addr@2.0.8, 2 links repointed
+#12 DONE 2.2s
 
 #13 [7/7] RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "check"]
-#13 0.239 
-#13 0.239 == What the server bundle imports
-#13 0.413 30 static imports and 25 import() or require() of a package, across 533 bundle files
-#13 0.413 131 packages in node_modules reachable from them and from @react-router/serve
-#13 0.413 PASS every import and required dependency resolves
-#13 0.413 PASS storybook and tinypool are not reachable
-#13 0.413 PASS no bundle file mentions storybook or tinypool
-#13 0.414 note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
-#13 0.414 
-#13 0.414 == What is gone from the store
-#13 0.414 PASS storybook is gone
-#13 0.415 PASS tinypool is gone
-#13 0.416 PASS proxy-addr@2.0.7 is gone
-#13 0.623 PASS nothing links to them
-#13 0.623 
-#13 0.623 == proxy-addr, as express resolves it
-#13 0.666 PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
-#13 0.667 PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
-#13 0.667 PASS a plain IPv4 subnet still trusts its own addresses
-#13 0.667 
-#13 0.667 == X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
-#13 0.678 PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
-#13 0.681 PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
-#13 0.682 PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
-#13 0.682 
-#13 0.682 space-deps: 0 failed
+#13 0.169 
+#13 0.169 == What the server bundle imports
+#13 0.375 30 static imports and 25 import() or require() of a package, across 533 bundle files
+#13 0.375 131 packages in node_modules reachable from them and from @react-router/serve
+#13 0.375 PASS every import and required dependency resolves
+#13 0.376 PASS storybook and tinypool are not reachable
+#13 0.376 PASS no bundle file mentions storybook or tinypool
+#13 0.376 note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+#13 0.376 
+#13 0.376 == What is gone from the store
+#13 0.377 PASS storybook is gone
+#13 0.377 PASS tinypool is gone
+#13 0.377 PASS proxy-addr@2.0.7 is gone
+#13 0.641 PASS nothing links to them
+#13 0.641 
+#13 0.641 == proxy-addr, as express resolves it
+#13 0.694 PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+#13 0.695 PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+#13 0.696 PASS a plain IPv4 subnet still trusts its own addresses
+#13 0.696 
+#13 0.696 == X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+#13 0.709 PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+#13 0.712 PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+#13 0.713 PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
+#13 0.713 
+#13 0.713 space-deps: 0 failed
 #13 DONE 0.7s
 
 #14 exporting to image
 #14 exporting layers
 #14 exporting layers 0.5s done
-#14 exporting manifest sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2 done
-#14 exporting config sha256:c6368ad9c44582b7098b3c355c2bf9d7da5512c1f2d838e97405c66b5781cf4a done
-#14 naming to localhost:5001/wayline/space:ec45e212ee61 done
+#14 exporting manifest sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872 done
+#14 exporting config sha256:809f57d203b41f2b18b1342d940ac4a820ab8667b37e02659f9d73e127dd2ae8 done
 #14 pushing layers
-#14 pushing layers 0.7s done
-#14 pushing manifest for localhost:5001/wayline/space:ec45e212ee61@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
-#14 pushing manifest for localhost:5001/wayline/space:ec45e212ee61@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2 done
-#14 DONE 1.2s
+#14 pushing layers 1.3s done
+#14 pushing manifest for localhost:5059/wayline/space:b2ba58723fe7@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+#14 pushing manifest for localhost:5059/wayline/space:b2ba58723fe7@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872 done
+#14 DONE 1.8s
 
 #15 resolving provenance for metadata file
 #15 DONE 0.0s
-time=2026-11-05T04:58:09.110+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
-searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+time=2026-11-05T05:53:07.983+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
 gate: a hit fails
 
-== localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
-read from localhost:5001/wayline/space
-config sha256:c6368ad9c44582b7098b3c355c2bf9d7da5512c1f2d838e97405c66b5781cf4a: clean
+== localhost:5059/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+read from localhost:5059/wayline/space
+config sha256:809f57d203b41f2b18b1342d940ac4a820ab8667b37e02659f9d73e127dd2ae8: clean
 21 layers
 layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
 layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
@@ -286,18 +293,18 @@ layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: 
 layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
 layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
 layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
-layer 16/21 sha256:ae189a22c60b      0.0 MiB      4 entries, 0 archives opened: clean
-layer 17/21 sha256:6bbad6c347f6      8.1 MiB   1130 entries, 0 archives opened: clean
-layer 18/21 sha256:8102066a55ab      0.0 MiB     10 entries, 0 archives opened: clean
-layer 19/21 sha256:8a46a5e16f2c      0.0 MiB      3 entries, 0 archives opened: clean
-layer 20/21 sha256:dcb8e86db80f      0.0 MiB    172 entries, 0 archives opened: clean
+layer 16/21 sha256:9ff94fdc7f01      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:57489b1b1dc8      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:048efbb2aec9      0.0 MiB     10 entries, 0 archives opened: clean
+layer 19/21 sha256:f04eb5addea5      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:1f6a4955a66e      0.0 MiB    172 entries, 0 archives opened: clean
 layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
 
 == Summary
-clean        0 hit(s) localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
- ok localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
-warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so backend's /source link answers 404 until it is pushed
-==> Building localhost:5001/wayline/backend:ec45e212ee61 from ec45e212ee6185d286762a753913c253dac51358
+clean        0 hit(s)   0 not opened localhost:5059/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+ ok space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872 passed, not published yet
+warn b2ba58723fe736f2ce56a972f9d396ce24416461 is not on origin/main, so backend's /source link answers 404 until it is pushed
+==> Building localhost:5001/wayline/backend:b2ba58723fe7 from b2ba58723fe736f2ce56a972f9d396ce24416461
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.backend
@@ -308,11 +315,11 @@ warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so backend'
 #2 DONE 0.3s
 
 #3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
-#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e 0.0s done
 #3 CACHED
 
 #4 [internal] load metadata for docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
-#4 DONE 0.0s
+#4 DONE 1.3s
 
 #5 [internal] load .dockerignore
 #5 transferring context: 2B done
@@ -323,68 +330,90 @@ warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so backend'
 #6 DONE 0.0s
 
 #7 [internal] load build context
-#7 transferring context: 176.69kB done
+#7 transferring context: 178.83kB done
 #7 DONE 0.0s
 
-#8 [stage-1 1/2] COPY --from=derived / /
+#8 [derived 2/9] COPY templates/ /code/templates/
 #8 CACHED
 
-#9 [derived 4/9] COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+#9 [derived 3/9] COPY wayline/ /opt/wayline/
 #9 CACHED
 
-#10 [derived 6/9] COPY licenses/ /usr/share/licenses/wayline/
+#10 [derived 4/9] COPY wayline/Logo.png /code/plane/static/logos/Logo.png
 #10 CACHED
 
-#11 [derived 9/9] RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
+#11 [derived 5/9] COPY --chmod=0644 wayline/vendor/email.py /code/plane/utils/email.py
 #11 CACHED
 
-#12 [derived 5/9] COPY --chmod=0644 wayline/vendor/email.py /code/plane/utils/email.py
-#12 CACHED
+#12 [derived 6/9] COPY licenses/ /usr/share/licenses/wayline/
+#12 DONE 0.0s
 
-#13 [derived 8/9] RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
-#13 CACHED
+#13 [derived 7/9] RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
+#13 0.361 edit_strings: 37 edits applied to 25 files
+#13 DONE 0.4s
 
-#14 [derived 3/9] COPY wayline/ /opt/wayline/
-#14 CACHED
+#14 [derived 8/9] RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
+#14 1.686 Collecting PyJWT==2.14.0 (from -r /opt/wayline/pyjwt-requirements.txt (line 4))
+#14 2.176   Downloading pyjwt-2.14.0-py3-none-any.whl (32 kB)
+#14 2.208 Installing collected packages: PyJWT
+#14 2.208   Attempting uninstall: PyJWT
+#14 2.210     Found existing installation: PyJWT 2.13.0
+#14 2.213     Uninstalling PyJWT-2.13.0:
+#14 2.225       Successfully uninstalled PyJWT-2.13.0
+#14 2.248 Successfully installed PyJWT-2.14.0
+#14 DONE 2.3s
 
-#15 [derived 2/9] COPY templates/ /code/templates/
-#15 CACHED
+#15 [derived 9/9] RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
+#15 0.406 
+#15 0.406 == Licence headers under /
+#15 4.899 PASS no file under / contains LicenseRef-Plane-Commercial 20811 files read
+#15 4.899 PASS /code/plane/utils/email.py carries AGPL-3.0-only
+#15 4.899 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+#15 4.899 
+#15 4.899 == PyJWT as installed
+#15 4.908 PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
+#15 4.938 PASS one copy installed: ['2.14.0']
+#15 5.895 PASS pip check No broken requirements found.
+#15 5.895 
+#15 5.895 RESULT PASS: 0 failed
+#15 DONE 6.0s
 
-#16 [derived 7/9] RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
-#16 CACHED
+#16 [stage-1 1/2] COPY --from=derived / /
+#16 DONE 3.5s
 
 #17 [stage-1 2/2] WORKDIR /code
-#17 CACHED
+#17 DONE 0.5s
 
 #18 exporting to image
-#18 exporting layers done
-#18 exporting manifest sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e done
-#18 exporting config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d done
-#18 naming to localhost:5001/wayline/backend:ec45e212ee61 done
+#18 exporting layers
+#18 exporting layers 7.9s done
+#18 exporting manifest sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 done
+#18 exporting config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea done
 #18 pushing layers
-#18 pushing layers 0.6s done
-#18 pushing manifest for localhost:5001/wayline/backend:ec45e212ee61@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
-#18 pushing manifest for localhost:5001/wayline/backend:ec45e212ee61@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e done
-#18 DONE 0.7s
+#18 pushing layers 1.0s done
+#18 pushing manifest for localhost:5059/wayline/backend:b2ba58723fe7@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+#18 pushing manifest for localhost:5059/wayline/backend:b2ba58723fe7@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 done
+#18 DONE 8.9s
 
 #19 resolving provenance for metadata file
 #19 DONE 0.0s
-time=2026-11-05T04:58:13.470+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
-searching 1 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+time=2026-11-05T05:53:39.513+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
 gate: a hit fails
 
-== localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
-read from localhost:5001/wayline/backend
-config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d: clean
+== localhost:5059/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+read from localhost:5059/wayline/backend
+config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea: clean
 2 layers
-layer  1/2 sha256:390d08785ed2     97.4 MiB  28235 entries, 845 archives opened: clean
+layer  1/2 sha256:2b650e1472a5     97.4 MiB  28235 entries, 854 archives opened: clean
 layer  2/2 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
 
 == Summary
-clean        0 hit(s) localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+clean        0 hit(s)   0 not opened localhost:5059/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
 PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
 base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
-built localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e, config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d
+built localhost:5059/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4, config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea
 
 == Env
 PASS GPG_KEY is the base's value
@@ -400,7 +429,7 @@ PASS PYTHON_VERSION is the base's value
 == Labels
 PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
 PASS org.opencontainers.image.licenses is set AGPL-3.0-only
-PASS org.opencontainers.image.revision is set ec45e212ee6185d286762a753913c253dac51358
+PASS org.opencontainers.image.revision is set b2ba58723fe736f2ce56a972f9d396ce24416461
 PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
 PASS org.opencontainers.image.title is set wayline-backend
 
@@ -426,5 +455,120 @@ PASS architecture is the base's arm64
 PASS os is the base's linux
 
 RESULT PASS: 0 failed
- ok localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+ ok backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 passed, not published yet
+#1 [internal] pushing localhost:5001/wayline/web
+#1 0.000 copying sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b from localhost:5059/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b to localhost:5001/wayline/web
+#1 0.238 pushing sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b to localhost:5001/wayline/web:b2ba58723fe7
+#1 DONE 0.2s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+read from localhost:5001/wayline/web
+config sha256:5d87703a89040730b9635e542d3b01e82ea41632f87e818072625f0fc2dbed0a: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/15 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/15 sha256:52be770b5106      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:a65484573877     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:d29a383d7292      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/15 sha256:a73296237da3      0.0 MiB     11 entries, 0 archives opened: clean
+layer 14/15 sha256:8f75bcea531d      0.0 MiB      3 entries, 0 archives opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+ ok localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+#1 [internal] pushing localhost:5001/wayline/admin
+#1 0.000 copying sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb from localhost:5059/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb to localhost:5001/wayline/admin
+#1 0.127 pushing sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb to localhost:5001/wayline/admin:b2ba58723fe7
+#1 DONE 0.1s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+read from localhost:5001/wayline/admin
+config sha256:b7064489b2940fdfee56be6905243de8ee786ed235c084aaaa72abfb7f8ed595: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/13 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/13 sha256:7c85ca6ce807      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:96878e3f966a      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:c6aa4516629b      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+ ok localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+#1 [internal] pushing localhost:5001/wayline/space
+#1 0.000 copying sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872 from localhost:5059/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872 to localhost:5001/wayline/space
+#1 0.158 pushing sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872 to localhost:5001/wayline/space:b2ba58723fe7
+#1 DONE 0.2s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+read from localhost:5001/wayline/space
+config sha256:809f57d203b41f2b18b1342d940ac4a820ab8667b37e02659f9d73e127dd2ae8: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
+layer 16/21 sha256:9ff94fdc7f01      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:57489b1b1dc8      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:048efbb2aec9      0.0 MiB     10 entries, 0 archives opened: clean
+layer 19/21 sha256:f04eb5addea5      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:1f6a4955a66e      0.0 MiB    172 entries, 0 archives opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+ ok localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+#1 [internal] pushing localhost:5001/wayline/backend
+#1 0.000 copying sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 from localhost:5059/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 to localhost:5001/wayline/backend
+#1 1.294 pushing sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 to localhost:5001/wayline/backend:b2ba58723fe7
+#1 DONE 1.3s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+read from localhost:5001/wayline/backend
+config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea: clean
+2 layers
+layer  1/2 sha256:2b650e1472a5     97.4 MiB  28235 entries, 854 archives opened: clean
+layer  2/2 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+ ok localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
  ok digests recorded in .build/digests.tsv

@@ -1,6 +1,6 @@
-# apps/wayline/checks/upstream-check.sh against other upstream refs, on Thu Nov  5 05:04:31 EAT 2026, at commit 83ba5d28327fc4957be17bb4431928cb43ceaf0d. A ref that does not fit is an answer, not a failure.
+# apps/wayline/checks/upstream-check.sh against other upstream refs, at commit b2ba58723fe736f2ce56a972f9d396ce24416461. A ref that does not fit is an answer, not a failure.
 
-# Thu Nov  5 05:04:31 EAT 2026
+# Thu Nov  5 05:57:23 EAT 2026
 $ apps/wayline/checks/upstream-check.sh v1.4.2
 upstream v1.4.2 at 5f7d92784c403f76284f0f16718f320221dc7fec, version 1.4.2
 overlay: 155 files replace upstream paths: 0 gone upstream, 0 changed upstream
@@ -15,8 +15,7 @@ token-diff: clean
 patches: 0 of 7 fail, 0 files need a rebase
 # exit 0
 
-
-# Thu Nov  5 05:05:38 EAT 2026
+# Thu Nov  5 05:57:45 EAT 2026
 $ apps/wayline/checks/upstream-check.sh v1.4.0
 upstream v1.4.0 at 917b23a6c16d93fc00cef67900eff2755e8b13f7, version 1.4.0
 overlay: 155 files replace upstream paths: 0 gone upstream, 0 changed upstream
@@ -31,8 +30,7 @@ token-diff: clean
 patches: 0 of 7 fail, 0 files need a rebase
 # exit 0
 
-
-# Thu Nov  5 05:06:05 EAT 2026
+# Thu Nov  5 05:58:08 EAT 2026
 $ apps/wayline/checks/upstream-check.sh v1.3.0
 upstream v1.3.0 at cf696d200d3e222390a01ba20e833eb11a5ed881, version 1.3.0
 overlay: 155 files replace upstream paths: 0 gone upstream, 0 changed upstream
@@ -47,8 +45,7 @@ token-diff: clean
 patches: 4 of 7 fail, 14 files need a rebase
 # exit 0
 
-
-# Thu Nov  5 05:06:35 EAT 2026
+# Thu Nov  5 05:58:30 EAT 2026
 $ apps/wayline/checks/upstream-check.sh preview
 upstream preview at 618d0eb74658329a6f6e92434ac54231422c5b96, version 1.5.0
 overlay: 155 files replace upstream paths: 45 gone upstream, 3 changed upstream

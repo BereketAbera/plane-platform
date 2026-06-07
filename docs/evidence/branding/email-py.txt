@@ -1,4 +1,4 @@
-# D12: plane/utils/email.py in the backend image, built from commit ec45e212ee6185d286762a753913c253dac51358. Recorded Thu Nov  5 05:02:13 EAT 2026.
+# D12: plane/utils/email.py in the backend image, built from commit b2ba58723fe736f2ce56a972f9d396ce24416461. Recorded Thu Nov  5 05:59:17 EAT 2026.
 
 $ # the file in upstream's image, makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, which the build downloads as an input
 # SPDX-FileCopyrightText: 2023-present Plane Software, Inc.
@@ -7,17 +7,20 @@ $ # the file in upstream's image, makeplane/plane-backend:v1.4.3@sha256:9b75bf46
 /code/plane/utils/email.py
 grep exit 0
 
-$ # the file in the published image, localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+$ # the file in the published image, localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
 # Copyright (c) 2023-present Plane Software, Inc. and contributors
 # SPDX-License-Identifier: AGPL-3.0-only
 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda  /code/plane/utils/email.py
 -rw-r--r--    1 root     root          2117 Nov  5 01:31 /code/plane/utils/email.py
 
-$ # that identifier anywhere in the published filesystem, as root, every top-level directory but proc, sys and dev
+$ # that identifier anywhere in the published filesystem, in any case, as root, every top-level directory but proc, sys and dev, then the original's sha256
 reading: /bin /code /etc /home /lib /media /mnt /opt /root /run /sbin /srv /tmp /usr /var 
-grep: /usr/bin/pinentry: No such file or directory
 grep exit 1 (1 means no file matched)
 regular files anywhere with the sha256 of the original:
+0
+bytecode under /code named email*:
+0
+any bytecode under /code:
 0
 
 $ # the pin, and the vendored file against upstream, fetched again now with gh api
@@ -36,11 +39,10 @@ gh api exit 0
 cmp exit 0
 
 $ # the layers, as the registry serves them. layer-check.txt walks them
-base layers: 20; published layers: 2: [('sha256:390d08785ed27074f3b361a3a718d7b2f425a23b64a8b27119b23a76e1c7fc57', 102161763), ('sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1', 32)]
-layers shared with the base, other than the empty one: []
+published layers: 2 [('sha256:2b650e1472a5d399631923dc7c161a91459f65da1d989f66faaa5c3340d00a52', 102162574), ('sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1', 32)]
 
 $ # the license label and revision in the image config
-AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
+AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
 
 $ # the decision
 replace-with-upstream-agpl-flattened

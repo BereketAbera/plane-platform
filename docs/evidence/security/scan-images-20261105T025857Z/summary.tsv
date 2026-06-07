@@ -1,0 +1,6 @@
+image	sources	ours	scanned	os	os_end_of_life	architecture	critical	critical_fixable	high	high_fixable	medium	medium_fixable	low	low_fixable	unknown	unknown_fixable	why_not_scanned
+localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb	built	yes	yes	alpine 3.24.3	no	arm64	0	0	0	0	0	0	0	0	0	0	
+localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4	built	yes	yes	alpine 3.23.7	no	arm64	0	0	4	4	11	11	2	2	0	0	
+localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872	built	yes	yes	alpine 3.24.3	no	arm64	0	0	30	30	22	22	5	5	0	0	
+localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b	built	yes	yes	alpine 3.24.3	no	arm64	0	0	0	0	0	0	0	0	0	0	
+wayline-source-lockfiles	wayline	no	yes	none	no		1	1	31	31	24	24	7	7	0	0	

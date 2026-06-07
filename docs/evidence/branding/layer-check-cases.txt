@@ -1,0 +1,214 @@
+# checks/layer-check.py on cases that must hit, must be clean, and must read as incomplete, at commit b2ba58723fe736f2ce56a972f9d396ce24416461. The first section runs each case through the Walk, and the second pushes each to a scratch registry as a real image and runs the command on it, so it reads the exit code. Then the zstd paths, and real images.
+
+# Thu Nov  5 06:00:54 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check-cases.py --registry localhost:5058    # a scratch registry, in memory
+python 3.14.6, zstd read by compression.zstd
+
+== Each case through the Walk, in this process
+PASS a clean file: clean, expected clean
+PASS the replacement's bytes: clean, expected clean
+PASS a pyc at another path: clean, expected clean
+PASS a pyc of another name under code/: clean, expected clean
+PASS the identifier in a plain file: hit, expected hit. x/y.py: the identifier
+PASS lower case: hit, expected hit. x/y.py: the identifier
+PASS upper case: hit, expected hit. x/y.py: the identifier
+PASS UTF-16-LE: hit, expected hit. x/y.txt: the identifier in UTF-16
+PASS UTF-16-BE: hit, expected hit. x/y.txt: the identifier in UTF-16
+PASS UTF-16 with a BOM, lower case: hit, expected hit. x/y.txt: the identifier in UTF-16
+PASS across two reads: hit, expected hit. x/big.bin: the identifier
+PASS in UTF-16 across two reads: hit, expected hit. x/big.bin: the identifier in UTF-16
+PASS gz named x.body: hit, expected hit. x.body!gzip: the identifier
+PASS gz named .gz: hit, expected hit. x.gz!gzip: the identifier
+PASS bz2 with no suffix: hit, expected hit. x!bzip2: the identifier
+PASS xz named .txt: hit, expected hit. x.txt: the identifier; x.txt!xz: the identifier
+PASS tar named .dat: hit, expected hit. x.dat: the identifier; x.dat!email.py: the identifier
+PASS zip named .dat: hit, expected hit. x.dat!y.py: the identifier
+PASS tar.gz named .png: hit, expected hit. x.png!gzip: the identifier; x.png!gzip!email.py: the identifier
+PASS zipapp after a #! line: hit, expected hit. app!__main__.py: the identifier
+PASS nested to the limit: hit, expected hit. x!gzip!gzip!gzip: the identifier
+PASS in an entry's name: hit, expected hit. x/LicenseRef-Plane-Commercial.txt: the identifier
+PASS in a PAX header: hit, expected hit. clean/name.txt: the identifier
+PASS email pyc under code/: hit, expected hit. code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS email_x pyc under code/, with ./: hit, expected hit. ./code/plane/__pycache__/email_x.cpython-312.pyc: bytecode at the original's path
+PASS email pyc under code/, in a tar: hit, expected hit. x.dat!code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS nested past the limit: incomplete, expected incomplete. x!gzip!gzip!gzip: nested deeper than 3
+PASS lz4, which this cannot open: incomplete, expected incomplete. x: lz4, which this cannot open
+PASS gzip magic and nothing after: incomplete, expected incomplete. x.gz: could not open it as gzip: Compressed file ended before the end-of-stream marker was reached
+PASS x.tar.zst: hit, expected hit. x.tar.zst!zstd: the identifier; x.tar.zst!zstd!email.py: the identifier
+PASS zstd named .bin: hit, expected hit. x.bin: the identifier; x.bin!zstd: the identifier
+PASS zstd cut short: incomplete, expected incomplete. x.bin: could not open it as zstd: Compressed file ended before the end-of-stream marker was reached
+PASS the original's sha256 under another name: hit, expected hit. x/renamed.txt: the sha256 of the original
+PASS the original's sha256 in a gz named x.body: hit, expected hit. x.body!gzip: the sha256 of the original
+PASS zstd with nothing to read it: a layer is zstd and there is no zstd binary to read it with
+
+== Each case as a real image in localhost:5058, through the command
+PASS a clean file: exit 0, expected 0 localhost:5058/layer-check-cases/0@sha256:db7b69d8cedfc0cf5ae3a73e649b4f0cd8d05a72a97e81b44f28c293324c4564
+PASS the replacement's bytes: exit 0, expected 0 localhost:5058/layer-check-cases/1@sha256:d04ce09818ecf3ddaf510173bac2edf6ef0242744696dcdc56146b4090035106
+PASS a pyc at another path: exit 0, expected 0 localhost:5058/layer-check-cases/2@sha256:110d28203fa08fbe563dbe8b4b27719d0b87ef77a2e7e2217e8d829b164eb3ab
+PASS a pyc of another name under code/: exit 0, expected 0 localhost:5058/layer-check-cases/3@sha256:766ff57fbacfd403efbb19c2f311548ddc38080f1c1682251ee7f99f6e985d13
+PASS the identifier in a plain file: exit 1, expected 1 localhost:5058/layer-check-cases/4@sha256:be26b1aa55323a3d448c0969f0b43cd66d855982310d2164d763ddef30ec3061
+     HIT layer 1 of 1: x/y.py: the identifier
+PASS lower case: exit 1, expected 1 localhost:5058/layer-check-cases/5@sha256:7227a7d2beb74ad1e4eae41e68b0924d080d4da61f6ed723fb0e1051d3ef64c5
+     HIT layer 1 of 1: x/y.py: the identifier
+PASS upper case: exit 1, expected 1 localhost:5058/layer-check-cases/6@sha256:9ffefe6dbf54088491264562f8a18f7addb34ac1d59e4cf952eb7101321d7cb4
+     HIT layer 1 of 1: x/y.py: the identifier
+PASS UTF-16-LE: exit 1, expected 1 localhost:5058/layer-check-cases/7@sha256:c08066eb02a55a7efeb89f43008708dfa60afba4afe0b3220ce75d9a62d8501e
+     HIT layer 1 of 1: x/y.txt: the identifier in UTF-16
+PASS UTF-16-BE: exit 1, expected 1 localhost:5058/layer-check-cases/8@sha256:25f96ab1f62b120862c30c27608eafae3920e72bb2ab82bfdd9aa1bb52dba6c2
+     HIT layer 1 of 1: x/y.txt: the identifier in UTF-16
+PASS UTF-16 with a BOM, lower case: exit 1, expected 1 localhost:5058/layer-check-cases/9@sha256:1722d618751472a38b30f08061f3939eb6555095a337dbef4475ce498bed654f
+     HIT layer 1 of 1: x/y.txt: the identifier in UTF-16
+PASS across two reads: exit 1, expected 1 localhost:5058/layer-check-cases/10@sha256:da7f7643b88ac45b69e00d4af4d759f2b4d5d8d4cdd4304335743660b683ab8d
+     HIT layer 1 of 1: x/big.bin: the identifier
+PASS in UTF-16 across two reads: exit 1, expected 1 localhost:5058/layer-check-cases/11@sha256:2d50f747aa1686ed55a0f65adef78e97fea7ef0041b13be74aaa39f479dd2c80
+     HIT layer 1 of 1: x/big.bin: the identifier in UTF-16
+PASS gz named x.body: exit 1, expected 1 localhost:5058/layer-check-cases/12@sha256:261bc5ad209cff86fd320e0905777b829723df37b53b05aacac7c6069b796ef3
+     HIT layer 1 of 1: x.body!gzip: the identifier
+PASS gz named .gz: exit 1, expected 1 localhost:5058/layer-check-cases/13@sha256:7966f4f3124437f40bd98b0ac936483147bb38ae4af6a96c2dd1650536f90daa
+     HIT layer 1 of 1: x.gz!gzip: the identifier
+PASS bz2 with no suffix: exit 1, expected 1 localhost:5058/layer-check-cases/14@sha256:22baa14685881da6ade04c8092beac482f779e29fbd43f8ff97ecd99d1d053d1
+     HIT layer 1 of 1: x!bzip2: the identifier
+PASS xz named .txt: exit 1, expected 1 localhost:5058/layer-check-cases/15@sha256:7068ac55e62396bf47e9fce1ecb09309b3a630f514cf875d09e10edf8287a987
+     HIT layer 1 of 1: x.txt: the identifier
+     HIT layer 1 of 1: x.txt!xz: the identifier
+PASS tar named .dat: exit 1, expected 1 localhost:5058/layer-check-cases/16@sha256:e84639b75902ea9f0a3d257bf7289a69a4ba97a68c2ed94f0efdf0eb68b4bfe5
+     HIT layer 1 of 1: x.dat: the identifier
+     HIT layer 1 of 1: x.dat!email.py: the identifier
+PASS zip named .dat: exit 1, expected 1 localhost:5058/layer-check-cases/17@sha256:507ead350430d1f1aaf158c237b2ed7cc83c5f6d7d0cae1df57df3289fb9b366
+     HIT layer 1 of 1: x.dat!y.py: the identifier
+PASS tar.gz named .png: exit 1, expected 1 localhost:5058/layer-check-cases/18@sha256:7d52e5d70413a53928bf79a7ec11ae2423c65e2d4855ba08f07739be74cf5f43
+     HIT layer 1 of 1: x.png!gzip: the identifier
+     HIT layer 1 of 1: x.png!gzip!email.py: the identifier
+PASS zipapp after a #! line: exit 1, expected 1 localhost:5058/layer-check-cases/19@sha256:822bb3b04fadb55565aa5d67916523e535d44011e9a7547134ea2a3cf12d8d2d
+     HIT layer 1 of 1: app!__main__.py: the identifier
+PASS nested to the limit: exit 1, expected 1 localhost:5058/layer-check-cases/20@sha256:844a3af2bc889455c7a35221b041ab39d6a09b276f0515cc17e1f51377c6283f
+     HIT layer 1 of 1: x!gzip!gzip!gzip: the identifier
+PASS in an entry's name: exit 1, expected 1 localhost:5058/layer-check-cases/21@sha256:d9c4f28df94c90116dc66fa9cb5959e5ce0edd97e1dbcb625e325b4608d85bf7
+     HIT layer 1 of 1: x/LicenseRef-Plane-Commercial.txt: the identifier
+PASS in a PAX header: exit 1, expected 1 localhost:5058/layer-check-cases/22@sha256:e14ef83772aa005956c1f53af92a8ccee0bb32a5273484891c22ecbb75116a80
+     HIT layer 1 of 1: clean/name.txt: the identifier
+PASS email pyc under code/: exit 1, expected 1 localhost:5058/layer-check-cases/23@sha256:3df80c11d95cd98ddef36ad35afd0e3ae8cf907c9160db72287d8f2d0bd50a36
+     HIT layer 1 of 1: code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS email_x pyc under code/, with ./: exit 1, expected 1 localhost:5058/layer-check-cases/24@sha256:8dd4d6514e49150d0011ae64ad669bca21884b077f00c54ff758fc84364822e1
+     HIT layer 1 of 1: ./code/plane/__pycache__/email_x.cpython-312.pyc: bytecode at the original's path
+PASS email pyc under code/, in a tar: exit 1, expected 1 localhost:5058/layer-check-cases/25@sha256:38441025c892d7e7576cef8f524a61ad1e266252f3714e1129dbbdfb84e047c8
+     HIT layer 1 of 1: x.dat!code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS nested past the limit: exit 2, expected 2 localhost:5058/layer-check-cases/26@sha256:82963dc6077256ac5384f714dfb70842edd97cfe4b15bff2e9b0c3f997ffabe5
+     NOT OPENED layer 1 of 1: x!gzip!gzip!gzip: nested deeper than 3
+PASS lz4, which this cannot open: exit 2, expected 2 localhost:5058/layer-check-cases/27@sha256:0ae4c0b892957a46e48da13914b7c38debc00e570710326fa92c3551a25d730d
+     NOT OPENED layer 1 of 1: x: lz4, which this cannot open
+PASS gzip magic and nothing after: exit 2, expected 2 localhost:5058/layer-check-cases/28@sha256:4c733cc1db6cd34aa9e2f33a4a10a2a4740346955300aa007c38b212f68a36cf
+     NOT OPENED layer 1 of 1: x.gz: could not open it as gzip: Compressed file ended before the end-of-stream marker was reached
+PASS x.tar.zst: exit 1, expected 1 localhost:5058/layer-check-cases/29@sha256:4c896b526b2f7c66271558463722a7fe3a5b34f3abd886c5aaf574ee77073176
+     HIT layer 1 of 1: x.tar.zst!zstd: the identifier
+     HIT layer 1 of 1: x.tar.zst!zstd!email.py: the identifier
+PASS zstd named .bin: exit 1, expected 1 localhost:5058/layer-check-cases/30@sha256:34bc2da9f3ba5d29c7021a753b942f655ea0e0ba2fb9e300537d61322cf12acc
+     HIT layer 1 of 1: x.bin: the identifier
+     HIT layer 1 of 1: x.bin!zstd: the identifier
+PASS zstd cut short: exit 2, expected 2 localhost:5058/layer-check-cases/31@sha256:f270963ac1eef86249a56b9a4a1dcf794e890fc6d430e125500b8f40bdd66f38
+     NOT OPENED layer 1 of 1: x.bin: could not open it as zstd: Compressed file ended before the end-of-stream marker was reached
+
+layer-check-cases: 0 wrong
+# exit 0
+
+# Thu Nov  5 06:00:57 EAT 2026
+$ python3 -B -c "..." # the same cases with the standard library's zstd hidden, which is what a Python before 3.14 sees: the zstd binary reads it
+python 3.14.6, zstd read by the zstd binary, if there is one
+PASS x.tar.zst: hit, expected hit. x.tar.zst!zstd: the identifier; x.tar.zst!zstd!email.py: the identifier
+PASS zstd named .bin: hit, expected hit. x.bin: the identifier; x.bin!zstd: the identifier
+PASS zstd cut short: incomplete, expected incomplete. x.bin: could not open it as zstd: zstd exited 1
+PASS zstd with nothing to read it: a layer is zstd and there is no zstd binary to read it with
+layer-check-cases: 0 wrong
+# exit 0
+
+# Thu Nov  5 06:00:57 EAT 2026
+$ /usr/bin/python3 -B apps/wayline/checks/layer-check-cases.py    # the oldest Python on this machine
+Python 3.9.6
+python 3.9.6, zstd read by the zstd binary, if there is one
+layer-check-cases: 0 wrong
+# exit 0
+
+# Thu Nov  5 06:00:57 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py --report-only makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743    # upstream's real file: the identifier and the sha256 must both hit
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+report only: a hit is information, and does not fail
+
+== makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+read from mirror.gcr.io/makeplane/plane-backend
+index, linux/arm64 manifest sha256:aca6508cbd816bd1e6f86a04ef8f9603c4ac225e9160dccd337551258e27425d
+config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151: clean
+20 layers
+layer  1/20 sha256:d8ad8cd72600      4.0 MiB    515 entries, 2 archives opened: clean
+layer  2/20 sha256:c746ec0a997c      0.4 MiB   1101 entries, 2 archives opened: clean
+layer  3/20 sha256:c87aa1e804eb     13.2 MiB   1858 entries, 3 archives opened: clean
+layer  4/20 sha256:be1bf212c5ab      0.0 MiB      8 entries, 0 archives opened: clean
+layer  5/20 sha256:f043ea3ac942      7.5 MiB    970 entries, 6 archives opened: clean
+layer  6/20 sha256:c02fb40c743e      0.0 MiB      1 entries, 0 archives opened: clean
+layer  7/20 sha256:339c97cee789      1.5 MiB     36 entries, 2 archives opened: clean
+layer  8/20 sha256:4e7b563da78e      0.0 MiB      2 entries, 0 archives opened: clean
+layer  9/20 sha256:6015bd0ae1a1      0.0 MiB      6 entries, 0 archives opened: clean
+layer 10/20 sha256:cb75f56cc560      1.7 MiB   1039 entries, 2 archives opened: clean
+layer 11/20 sha256:0cc0f01ded38     75.6 MiB  22997 entries, 853 archives opened: clean
+layer 12/20 sha256:f21a91bde4b7      0.0 MiB      2 entries, 0 archives opened: clean
+layer 13/20 sha256:cd1e248a64dd      0.6 MiB    779 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 13 of 20: code/plane/utils/email.py: the identifier, the sha256 of the original
+layer 14/20 sha256:82afb6fae256      0.0 MiB     24 entries, 0 archives opened: clean
+layer 15/20 sha256:8b5cf9ef44c8      0.0 MiB      2 entries, 0 archives opened: clean
+layer 16/20 sha256:2971492cd252      0.6 MiB     62 entries, 2 archives opened: clean
+layer 17/20 sha256:a944bb63192a      0.0 MiB      7 entries, 0 archives opened: clean
+layer 18/20 sha256:e4e24f985b56      0.0 MiB      3 entries, 0 archives opened: clean
+layer 19/20 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 20/20 sha256:e1b4054f2054      0.6 MiB    817 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 20 of 20: code/plane/utils/email.py: the identifier, the sha256 of the original
+
+== Summary
+HIT          2 hit(s)   0 not opened makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+# exit 0
+
+# Thu Nov  5 06:02:04 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c    # the image from 1563cbf, unflattened: the gate must fail
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+read from localhost:5001/wayline/backend
+config sha256:784a52fe28f35329926cc36a04e34ce8b9e9c3a243f17f3ba5052768752233e8: clean
+28 layers
+layer  1/28 sha256:d8ad8cd72600      4.0 MiB    515 entries, 2 archives opened: clean
+layer  2/28 sha256:c746ec0a997c      0.4 MiB   1101 entries, 2 archives opened: clean
+layer  3/28 sha256:c87aa1e804eb     13.2 MiB   1858 entries, 3 archives opened: clean
+layer  4/28 sha256:be1bf212c5ab      0.0 MiB      8 entries, 0 archives opened: clean
+layer  5/28 sha256:f043ea3ac942      7.5 MiB    970 entries, 6 archives opened: clean
+layer  6/28 sha256:c02fb40c743e      0.0 MiB      1 entries, 0 archives opened: clean
+layer  7/28 sha256:339c97cee789      1.5 MiB     36 entries, 2 archives opened: clean
+layer  8/28 sha256:4e7b563da78e      0.0 MiB      2 entries, 0 archives opened: clean
+layer  9/28 sha256:6015bd0ae1a1      0.0 MiB      6 entries, 0 archives opened: clean
+layer 10/28 sha256:cb75f56cc560      1.7 MiB   1039 entries, 2 archives opened: clean
+layer 11/28 sha256:0cc0f01ded38     75.6 MiB  22997 entries, 853 archives opened: clean
+layer 12/28 sha256:f21a91bde4b7      0.0 MiB      2 entries, 0 archives opened: clean
+layer 13/28 sha256:cd1e248a64dd      0.6 MiB    779 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 13 of 28: code/plane/utils/email.py: the identifier, the sha256 of the original
+layer 14/28 sha256:82afb6fae256      0.0 MiB     24 entries, 0 archives opened: clean
+layer 15/28 sha256:8b5cf9ef44c8      0.0 MiB      2 entries, 0 archives opened: clean
+layer 16/28 sha256:2971492cd252      0.6 MiB     62 entries, 2 archives opened: clean
+layer 17/28 sha256:a944bb63192a      0.0 MiB      7 entries, 0 archives opened: clean
+layer 18/28 sha256:e4e24f985b56      0.0 MiB      3 entries, 0 archives opened: clean
+layer 19/28 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 20/28 sha256:e1b4054f2054      0.6 MiB    817 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 20 of 28: code/plane/utils/email.py: the identifier, the sha256 of the original
+layer 21/28 sha256:c30c2b20e09a      0.0 MiB     21 entries, 0 archives opened: clean
+layer 22/28 sha256:0280be888312      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 22 of 28: opt/wayline/check_image.py: the identifier
+layer 23/28 sha256:26efa19115c6      0.0 MiB      5 entries, 0 archives opened: clean
+layer 24/28 sha256:6705cf8a8bfe      0.0 MiB      4 entries, 0 archives opened: clean
+layer 25/28 sha256:3ca6d3f91873      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 25 of 28: usr/share/licenses/wayline/MODIFICATIONS.txt: the identifier
+layer 26/28 sha256:6233f2de23d8      0.0 MiB     49 entries, 0 archives opened: clean
+layer 27/28 sha256:682e7cbebc79      0.1 MiB     43 entries, 0 archives opened: clean
+layer 28/28 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+HIT          4 hit(s)   0 not opened localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+# exit 1

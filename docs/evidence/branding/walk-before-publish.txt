@@ -1,0 +1,157 @@
+# scripts/ci/build-images.sh walks before it publishes. Each stop below was run on purpose, on Thu Nov  5 06:02:11 EAT 2026, in a clone of commit 8f4a35304eacf244f89164e40e2a6971aa82166a with the real build contexts, stamped with the clone's own commit.
+# Only scratch registries receive anything. The target is a registry on localhost:5058, new for each section, and the real .build/digests.tsv is not read or written by any of this.
+
+$ # 1. the walk fails on the first image. A shim gives layer-check.py a needle the web image really holds, so this exercises the script and no real finding
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+searching 1 image(s) on linux/arm64 for 5 bytes in any case, also as UTF-16: nginx
+  HIT config sha256:620adcb1fd2d3bfa009112e922c2d2df21e51db769f215ef0a67a912a4c3f9c6: the identifier
+  HIT layer 2 of 15: etc/apk/keys/nginx_signing.rsa.pub: the identifier
+  HIT layer 2 of 15: etc/apk/world: the identifier
+HIT        1247 hit(s)   0 not opened localhost:5059/wayline/web@sha256:1182aef04e5fdb5fe7a8453c6f04ee7a89a22d6df026d0a633c8858e2a8ca89e
+fail web@sha256:1182aef04e5fdb5fe7a8453c6f04ee7a89a22d6df026d0a633c8858e2a8ca89e failed the layer check, so nothing is published and no digest is recorded
+build-images.sh exit 1
+what the target registry holds: {"repositories":[]}
+a digests file written: no
+throwaway registry containers left: 0
+
+$ # 2. the config check fails on the last image, with the first three already walked. A shim stands in for flatten-config.py
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/web@sha256:ea6ab8b6b202f4ff399ed0bb2a5af4e222f16cb961f9181a6ee4750db6a52f0e
+ ok web@sha256:ea6ab8b6b202f4ff399ed0bb2a5af4e222f16cb961f9181a6ee4750db6a52f0e passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:8e7b2eb5ee07176760798c8eff45ec8ddb298090d40fd550b6927303ce8c51bf
+ ok admin@sha256:8e7b2eb5ee07176760798c8eff45ec8ddb298090d40fd550b6927303ce8c51bf passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/space@sha256:c6e93379a9704c45e08849dfe794de26df34c52461649ede190f4934f488c413
+ ok space@sha256:c6e93379a9704c45e08849dfe794de26df34c52461649ede190f4934f488c413 passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/backend@sha256:d6e6af06e92a212d8bd67389b263038d6018dac70144559dcb762074a81534a2
+FAIL a shim stands in for flatten-config.py, to exercise the script
+fail backend@sha256:d6e6af06e92a212d8bd67389b263038d6018dac70144559dcb762074a81534a2 dropped config from its base, so nothing is published and no digest is recorded. Restate it in runtime/Dockerfile.b
+build-images.sh exit 1
+what the target registry holds: {"repositories":[]}
+a digests file written: no
+throwaway registry containers left: 0
+
+$ # 3. the second walk fails, on what was published. A shim passes the throwaway registry and fails anything else, so this shows the limit: that image stays where it was copied
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/web@sha256:cac07e3ebef53733ea0406e5b37322bb02e6dcdba51d8df86b49be52d0ba947c
+ ok web@sha256:cac07e3ebef53733ea0406e5b37322bb02e6dcdba51d8df86b49be52d0ba947c passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:c3f6321438a89e827a7e47f41ee184aed6a8f53619619f42a028392a63a4b537
+ ok admin@sha256:c3f6321438a89e827a7e47f41ee184aed6a8f53619619f42a028392a63a4b537 passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/space@sha256:a7c39ac2393dc88449a6786e9d3799993ed3fe67f991dcb7c465b5139ed82e99
+ ok space@sha256:a7c39ac2393dc88449a6786e9d3799993ed3fe67f991dcb7c465b5139ed82e99 passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/backend@sha256:d32090955740bd40ae114a87cb4c826aa79ffa031171d310fdae492bff8a6e94
+RESULT PASS: 0 failed
+ ok backend@sha256:d32090955740bd40ae114a87cb4c826aa79ffa031171d310fdae492bff8a6e94 passed, not published yet
+HIT shim: fails anything but the throwaway registry
+fail localhost:5058/refusal/web@sha256:cac07e3ebef53733ea0406e5b37322bb02e6dcdba51d8df86b49be52d0ba947c failed the layer check where it was published, so no digest is recorded. It is still in that reg
+build-images.sh exit 1
+what the target registry holds: {"repositories":["refusal/web"]}
+a digests file written: no
+throwaway registry containers left: 0
+
+$ # 4. the throwaway registry cannot start, because its port is taken: WAYLINE_STAGING_PORT=5001, the real local registry
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+fail could not start the throwaway registry on port 5001. WAYLINE_STAGING_PORT chooses another
+build-images.sh exit 1
+what the target registry holds: {"repositories":[]}
+a digests file written: no
+throwaway registry containers left: 0
+
+$ # 5. PUSH=no, which pull requests use: builds all four, starts no throwaway registry, publishes nothing, writes no digests
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+build-images.sh exit 0
+==> Building ghcr.io/bereketabera/wayline/web:69df9d4858cc from 69df9d4858cc4d2ac942aae4682b19f98ede4c4f
+==> Building ghcr.io/bereketabera/wayline/admin:69df9d4858cc from 69df9d4858cc4d2ac942aae4682b19f98ede4c4f
+==> Building ghcr.io/bereketabera/wayline/space:69df9d4858cc from 69df9d4858cc4d2ac942aae4682b19f98ede4c4f
+==> Building ghcr.io/bereketabera/wayline/backend:69df9d4858cc from 69df9d4858cc4d2ac942aae4682b19f98ede4c4f
+a digests file written: no
+a throwaway registry started: 0
+
+$ # 6. nothing failing, all four, to a scratch target. The digests are what the builder reported in the throwaway registry, the same after the copy
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/web@sha256:2f4313423116cd8d1a12f1053c260d6c9829ee069398a666c901c5dff4a339f7
+ ok web@sha256:2f4313423116cd8d1a12f1053c260d6c9829ee069398a666c901c5dff4a339f7 passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:ba414c3326b814c3aa5d44f498d592c7bf3f406dd287f604c1a4808b931bba62
+ ok admin@sha256:ba414c3326b814c3aa5d44f498d592c7bf3f406dd287f604c1a4808b931bba62 passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/space@sha256:320d2311b7b12afbfc3f8095cdaff5efd7d6314cab50ed940675bffe4d42fb2b
+ ok space@sha256:320d2311b7b12afbfc3f8095cdaff5efd7d6314cab50ed940675bffe4d42fb2b passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/backend@sha256:50d2abcf7ce65f3f421598a46186675e5393809dba8f09765f6ae199e4cf1df7
+RESULT PASS: 0 failed
+ ok backend@sha256:50d2abcf7ce65f3f421598a46186675e5393809dba8f09765f6ae199e4cf1df7 passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5058/ok/web@sha256:2f4313423116cd8d1a12f1053c260d6c9829ee069398a666c901c5dff4a339f7
+ ok localhost:5058/ok/web@sha256:2f4313423116cd8d1a12f1053c260d6c9829ee069398a666c901c5dff4a339f7
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5058/ok/admin@sha256:ba414c3326b814c3aa5d44f498d592c7bf3f406dd287f604c1a4808b931bba62
+ ok localhost:5058/ok/admin@sha256:ba414c3326b814c3aa5d44f498d592c7bf3f406dd287f604c1a4808b931bba62
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5058/ok/space@sha256:320d2311b7b12afbfc3f8095cdaff5efd7d6314cab50ed940675bffe4d42fb2b
+ ok localhost:5058/ok/space@sha256:320d2311b7b12afbfc3f8095cdaff5efd7d6314cab50ed940675bffe4d42fb2b
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5058/ok/backend@sha256:50d2abcf7ce65f3f421598a46186675e5393809dba8f09765f6ae199e4cf1df7
+ ok localhost:5058/ok/backend@sha256:50d2abcf7ce65f3f421598a46186675e5393809dba8f09765f6ae199e4cf1df7
+ ok digests recorded in <scratch>/refusal-digests.tsv
+build-images.sh exit 0
+what the target registry holds: {"repositories":["ok/admin","ok/backend","ok/space","ok/web"]}
+a digests file written: yes
+web	sha256:2f4313423116cd8d1a12f1053c260d6c9829ee069398a666c901c5dff4a339f7
+admin	sha256:ba414c3326b814c3aa5d44f498d592c7bf3f406dd287f604c1a4808b931bba62
+space	sha256:320d2311b7b12afbfc3f8095cdaff5efd7d6314cab50ed940675bffe4d42fb2b
+backend	sha256:50d2abcf7ce65f3f421598a46186675e5393809dba8f09765f6ae199e4cf1df7
+throwaway registry containers left: 0
+web, imagetools inspect at the target: sha256:2f4313423116cd8d1a12f1053c260d6c9829ee069398a666c901c5dff4a339f7 application/vnd.oci.image.manifest.v1+json
+admin, imagetools inspect at the target: sha256:ba414c3326b814c3aa5d44f498d592c7bf3f406dd287f604c1a4808b931bba62 application/vnd.oci.image.manifest.v1+json
+space, imagetools inspect at the target: sha256:320d2311b7b12afbfc3f8095cdaff5efd7d6314cab50ed940675bffe4d42fb2b application/vnd.oci.image.manifest.v1+json
+backend, imagetools inspect at the target: sha256:50d2abcf7ce65f3f421598a46186675e5393809dba8f09765f6ae199e4cf1df7 application/vnd.oci.image.manifest.v1+json
+
+Docker image names left from the throwaway registry: 0
+
+$ # 7. what the publish job in images.yml gives its builder, as far as this Mac can show it: docker-container with network=host, one image, admin, to a scratch target. Not GitHub, not GHCR
+$ docker buildx create --name wl2-ci --driver docker-container --driver-opt network=host
+wl2-ci
+exit 0
+Name:          wl2-ci
+Driver:        docker-container
+Name:                  wl2-ci0
+Driver Options:        network="host"
+BuildKit version:      v0.34.2
+warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:2068041dfa4d28be7d78878f9f1b3232a6caef580ab93c0cea4a2d3dc6ca6b9c
+ ok admin@sha256:2068041dfa4d28be7d78878f9f1b3232a6caef580ab93c0cea4a2d3dc6ca6b9c passed, not published yet
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+clean        0 hit(s)   0 not opened localhost:5058/ci/admin@sha256:2068041dfa4d28be7d78878f9f1b3232a6caef580ab93c0cea4a2d3dc6ca6b9c
+ ok localhost:5058/ci/admin@sha256:2068041dfa4d28be7d78878f9f1b3232a6caef580ab93c0cea4a2d3dc6ca6b9c
+ ok digests recorded in <scratch>/refusal-digests.tsv
+build-images.sh exit 0
+what the target registry holds: {"repositories":["ci/admin"]}
+a digests file written: yes
+admin	sha256:2068041dfa4d28be7d78878f9f1b3232a6caef580ab93c0cea4a2d3dc6ca6b9c
+throwaway registry containers left: 0
+wl2-ci removed
+docker buildx rm exit 0
+
+# the real .build/digests.tsv, unchanged by all of the above:
+web	sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+admin	sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+space	sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+backend	sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+# scratch containers left: 0
+
+# Before the build commit, in scratch: the first try, with the throwaway registry on a port Docker picked, 61885. The push to it hung for about two minutes and failed, and the registry logged no request. From inside Docker's VM, that port refused a connection, and from the Mac it answered 200, so the port is now fixed.
+--- A: --push
+127.0 error: failed to do request: Head "https://localhost:61885/v2/w/tiny/blobs/sha256:460008b4174137889949aa94d299ee3e9d613e784d08e1040f6c
+127.0 error: failed to do request: Head "https://localhost:61885/v2/w/tiny/blobs/sha256:8781e7d432d4f3f72603f3211be6d4c4764d6bcfde3a6d1408fa
+ERROR: failed to build: failed to solve: DeadlineExceeded: failed to push localhost:61885/w/tiny:a: failed to do request: Head "https://loca
+# Inside the VM, in a container with --network host: wget of 127.0.0.1:5001 answered 200, and of 127.0.0.1:61885 said connection refused. With curl on the Mac, 61885 answered 200.
