@@ -292,58 +292,127 @@ tests:
         alertname: ArgoSyncFailed
         exp_alerts: []
   # What the wave layout implies for a bad image in a Plane Deployment: wave 3 of 4, so the operation stays open past
-  # the rollout's 600s deadline. tests/drills/failed-deploy-rollback.sh is the second Application here, by reading.
-  - name: a bad image in a Plane Deployment reaches ArgoSyncFailed at 15m, and a revert at the first Degraded beats it
+  # the rollout's 600s deadline. plane-prod-sim stands for nobody reverting. plane-dev is
+  # tests/drills/failed-deploy-rollback.sh, which runs only against plane-dev: its first Degraded is at 10m, and the
+  # operation's last open sample is at 13m, which is the latest that stays under ArgoSyncFailed. The next test crosses it.
+  - name: a bad image in a Plane Deployment reaches ArgoAppDegraded 5m after the first Degraded and ArgoSyncFailed at 15m, and a revert whose last open sample is at 13m beats both
     interval: 1m
     input_series:
-      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}'
-        values: '1x9 stale'
-      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}'
-        values: '_x10 1x30'
       - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",sync_status="Synced",health_status="Progressing",operation="sync"}'
         values: '1x9 stale'
       - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",sync_status="Synced",health_status="Degraded",operation="sync"}'
+        values: '_x10 1x30'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '1x9 stale'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}'
         values: '_x10 1x3 stale'
-      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",sync_status="Synced",health_status="Healthy"}'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Healthy"}'
         values: '_x14 1x30'
     alert_rule_test:
-      - eval_time: 14m
+      - eval_time: 14m45s
         alertname: ArgoSyncFailed
         exp_alerts: []
-      - eval_time: 14m
+      - eval_time: 14m45s
         alertname: ArgoAppDegraded
         exp_alerts: []
+      - eval_time: 15m
+        alertname: ArgoAppDegraded
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppDegraded, name: plane-prod-sim, dest_namespace: plane-prod-sim, health_status: Degraded, severity: critical, component: argocd }
+            exp_annotations: { summary: Application plane-prod-sim is Degraded }
+      - eval_time: 15m
+        alertname: ArgoSyncFailed
+        exp_alerts:
+          - exp_labels: { alertname: ArgoSyncFailed, name: plane-prod-sim, dest_namespace: plane-prod-sim, phase: Running, severity: critical, component: argocd }
+            exp_annotations:
+              summary: Application plane-prod-sim has had a sync Running for 15m
+              description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
       - eval_time: 17m
         alertname: ArgoSyncFailed
         exp_alerts:
-          - exp_labels: { alertname: ArgoSyncFailed, name: plane-dev, dest_namespace: plane-dev, phase: Running, severity: critical, component: argocd }
+          - exp_labels: { alertname: ArgoSyncFailed, name: plane-prod-sim, dest_namespace: plane-prod-sim, phase: Running, severity: critical, component: argocd }
             exp_annotations:
-              summary: Application plane-dev has had a sync Running for 15m
+              summary: Application plane-prod-sim has had a sync Running for 15m
               description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
       - eval_time: 17m
         alertname: ArgoAppDegraded
         exp_alerts:
-          - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, dest_namespace: plane-dev, health_status: Degraded, severity: critical, component: argocd }
-            exp_annotations: { summary: Application plane-dev is Degraded }
-    # plane-prod-sim is the drill's path: the two lists in the comment on ArgoSyncFailed and in monitoring/README.md.
+          - exp_labels: { alertname: ArgoAppDegraded, name: plane-prod-sim, dest_namespace: plane-prod-sim, health_status: Degraded, severity: critical, component: argocd }
+            exp_annotations: { summary: Application plane-prod-sim is Degraded }
+    # plane-dev is the drill's path: the lists in the comment on ArgoSyncFailed and in monitoring/README.md.
     promql_expr_test:
-      - expr: count by (alertname, alertstate) (ALERTS{name="plane-prod-sim"})
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-dev"})
         eval_time: 9m
         exp_samples:
           - labels: '{alertname="ArgoAppStuckProgressing", alertstate="pending"}'
             value: 1
           - labels: '{alertname="ArgoSyncFailed", alertstate="pending"}'
             value: 1
-      - expr: count by (alertname, alertstate) (ALERTS{name="plane-prod-sim"})
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-dev"})
         eval_time: 13m
         exp_samples:
           - labels: '{alertname="ArgoAppDegraded", alertstate="pending"}'
             value: 1
           - labels: '{alertname="ArgoSyncFailed", alertstate="pending"}'
             value: 1
-      - expr: count by (alertname, alertstate) (ALERTS{name="plane-prod-sim"})
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-dev"})
         eval_time: 17m
         exp_samples: []
+  # The same drill at the real 30s scrape, either side of the margin on ArgoSyncFailed. max_over_time holds the expression
+  # 2m past the operation's last open sample, and for: needs it true at 15m, so a last sample after 13m fires it. So a
+  # first Degraded at 10m leaves about 3m, and one at 11m about 2m. plane-dev closes 4m after its first Degraded, with its
+  # last open sample at 13m30s. closes-sooner is the same drill closing 3m30s after it, with its last at 13m. Neither holds
+  # Degraded for ArgoAppDegraded's 5m. This also holds what shows around the first Degraded: ArgoAppStuckProgressing keeps
+  # its own 2m window, so all three are pending from 10m until 2m after the last Progressing sample.
+  - name: a revert closing 4m after the first Degraded is too late for ArgoSyncFailed, and one closing 3m30s after it is not
+    interval: 30s
+    input_series:
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '1x19 stale'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}'
+        values: '_x20 1x7 stale'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Healthy"}'
+        values: '_x28 1x40'
+      - series: 'argocd_app_info{name="closes-sooner",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '1x19 stale'
+      - series: 'argocd_app_info{name="closes-sooner",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}'
+        values: '_x20 1x6 stale'
+      - series: 'argocd_app_info{name="closes-sooner",dest_namespace="plane-dev",sync_status="Synced",health_status="Healthy"}'
+        values: '_x27 1x40'
+    alert_rule_test:
+      - eval_time: 14m45s
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: ArgoSyncFailed
+        exp_alerts:
+          - exp_labels: { alertname: ArgoSyncFailed, name: plane-dev, dest_namespace: plane-dev, phase: Running, severity: critical, component: argocd }
+            exp_annotations:
+              summary: Application plane-dev has had a sync Running for 15m
+              description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
+      - eval_time: 15m
+        alertname: ArgoAppDegraded
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+    promql_expr_test:
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-dev"})
+        eval_time: 11m15s
+        exp_samples:
+          - labels: '{alertname="ArgoAppDegraded", alertstate="pending"}'
+            value: 1
+          - labels: '{alertname="ArgoAppStuckProgressing", alertstate="pending"}'
+            value: 1
+          - labels: '{alertname="ArgoSyncFailed", alertstate="pending"}'
+            value: 1
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-dev"})
+        eval_time: 11m30s
+        exp_samples:
+          - labels: '{alertname="ArgoAppDegraded", alertstate="pending"}'
+            value: 1
+          - labels: '{alertname="ArgoSyncFailed", alertstate="pending"}'
+            value: 1
   # What the timeline of the first boot showed for kube-prometheus-stack: the operation closed on apply, then Synced
   # and Progressing while root waited. Nothing else in this file reads that state.
   - name: a child Progressing with its operation closed fires ArgoAppStuckProgressing at 30m, and root does not
