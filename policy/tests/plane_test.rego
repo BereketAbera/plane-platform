@@ -291,6 +291,22 @@ test_a_route_with_no_namespace_counts_as_beside_a_ui if {
 	count(plane.deny) == 1 with input as route_with_none
 	tcp_with_none := {"kind": "IngressRouteTCP", "metadata": {"name": "x"}, "spec": {"routes": [{"match": "HostSNI(`*`)", "services": [{"name": "loki", "port": 3100}]}]}}
 	count(plane.deny) == 1 with input as tcp_with_none
+	no_metadata := {"kind": "IngressRoute", "spec": {"routes": [{"match": "Host(`logs.localhost`)", "services": [{"name": "loki", "port": 3100}]}]}}
+	count(plane.deny) == 1 with input as no_metadata
+}
+
+# A blank `namespace:` reads as null, and Argo CD takes any of these for no namespace at all.
+test_a_blank_or_null_namespace_counts_as_beside_a_ui if {
+	every namespace in ["", null, false, 0] {
+		ingress_denied := plane.deny with input as route_to(namespace, "Host(`logs.localhost`)", {"name": "loki", "port": 3100}, [])
+		count(ingress_denied) == 1
+		tcp_denied := plane.deny with input as {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": namespace}, "spec": {"routes": [{"match": "HostSNI(`*`)", "services": [{"name": "loki", "port": 3100}]}]}}
+		count(tcp_denied) == 1
+		udp_denied := plane.deny with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": namespace}, "spec": {"routes": [{"services": [{"name": "loki", "port": 3100}]}]}}
+		count(udp_denied) == 1
+		allowed := plane.deny with input as route_to(namespace, "Host(`logs.localhost`)", {"name": "loki", "port": 3100}, [{"name": "node-network-only"}])
+		count(allowed) == 0
+	}
 }
 
 test_an_internal_host_on_a_backend_of_its_own_still_needs_the_allow_list if {

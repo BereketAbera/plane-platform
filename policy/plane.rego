@@ -131,8 +131,14 @@ needs_allow_list(route) if {
 
 beside_internal_ui if internal_namespaces[input.metadata.namespace]
 
-# Argo CD places an object with no namespace in its Application's destination, which can be one of these.
-beside_internal_ui if not input.metadata.namespace
+# Argo CD places an object with no namespace in its Application's destination, which can be one of these. It reads the
+# field as a string, so a blank, a null or anything else that is not a string is no namespace to it either.
+beside_internal_ui if not states_a_namespace
+
+states_a_namespace if {
+	is_string(input.metadata.namespace)
+	input.metadata.namespace != ""
+}
 
 names_internal_service(route) if {
 	some service in route.services
