@@ -136,11 +136,11 @@ spec:
         # tests/drills/failed-deploy-rollback.sh, on plane-dev, reverts at the first Degraded, about 10 to 11m in, because
         # the Deployment is applied after the migrator hook. Two margins then run. ArgoAppDegraded fires once Degraded has
         # held 5m. This rule fires if the operation is still open just past 13m from its start, because max_over_time holds
-        # it true for 2m after its last open sample, and that leaves about 2 to 3m from the first Degraded. A retry backs
-        # off from 30s, doubling, and goes through the hook again, so the revert may not fit, and then this rule fires in
-        # the drill. Until then, what should show is this rule pending, ArgoAppStuckProgressing pending on the same series
-        # until 2m after its last Progressing sample, and ArgoAppDegraded pending from the first Degraded, so all three for
-        # about 90s. That is expected, not measured: the drill has not been run with these rules.
+        # it true for 2m after its last open sample, and that leaves about 2 to 3m from the first Degraded, an estimate. A
+        # retry backs off from 30s, doubling, and goes through the hook again, so the revert may not fit, and then this rule
+        # fires in the drill. Until then, what should show is this rule pending, ArgoAppStuckProgressing pending on the
+        # same series until 2m after its last Progressing sample, and ArgoAppDegraded pending from the first Degraded, so
+        # all three for about 90s. That is expected, not measured: the drill has not been run with these rules.
         #
         # max_over_time rides out a missed scrape, as when the controller is slow to restart, and aggregating
         # drops the pod and instance labels that a restart changes. Either would otherwise start for: again.

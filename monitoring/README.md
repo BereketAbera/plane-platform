@@ -81,10 +81,10 @@ policy read Prometheus that way. By policy no Plane pod has that egress. The tes
 kindnet that fails open would open it. `policy/plane.rego` requires the middleware on every IngressRoute in `argocd`,
 `monitoring` or `infisical`, on a route from anywhere to any of the five Services, and on a route that names any of the five
 hosts, because the same Service under another host is the same UI. It refuses TCP and UDP routes there, which could not carry
-this middleware, and a middleware of that name that admits anything else. `policy/gitops.rego` refuses a document that wraps
-others, with a kind ending in `List` or a top-level `items` array, because conftest reads only the outer one and Argo CD applies
-only what is inside. So dropping either fails CI before it fails at runtime, for a route in a file CI reads, and
-`scripts/ci/lib-manifests.sh` and `validate-manifests.sh` say which those are.
+this middleware, and a middleware of that name that admits anything else. So dropping either fails CI before it fails at runtime,
+for a route in a file CI reads: `scripts/ci/lib-manifests.sh` and `validate-manifests.sh` say which. `policy/gitops.rego` also
+refuses a document that wraps others, with a kind ending in `List` or a top-level `items` array, because conftest reads only the
+outer one and Argo CD applies only what is inside.
 
 **Argo CD sync alerts.** Under `retry.limit: -1` a failing sync never completes: each failed attempt goes back to phase
 Running, `argocd_app_sync_total` does not move, and no condition is set. So `ArgoSyncFailed` also watches for an
@@ -102,8 +102,8 @@ waiting on something that never gets healthy, and neither is healthy at 15m. Roo
 | A Prometheus that cannot start | Progressing, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. Watchdog stops reaching the sink, and nothing watches for that |
 
 On an Application that was rendering, a real commit took longer to read Unknown. The controller's looks were measured 120 to 289s
-apart, median 193s, across all 14 Applications (`--app-resync` 120s, `--app-resync-jitter` 60s), because a resync is skipped when
-the previous look landed later in its jitter. From the first look that fails it ignores the failure for 180s
+apart, median 193s, across all 14 Applications (`--app-resync` 120s, `--app-resync-jitter` 60s, and `review-alerts-3-1.txt` in the
+evidence), because a resync is skipped when the previous look landed later in its jitter. From the first look that fails it ignores the failure for 180s
 (`--repo-error-grace-period-seconds`). One real commit read Unknown after 5m57s, which is one sample, and that run stopped at
 pending. With the rule's 15m it makes about 21m from commit to alert, an estimate. By reading `controller/state.go` and
 `appcontroller.go`, the first look that fails only starts the grace and a later one has to land past it. By reading the repo server,
@@ -115,8 +115,8 @@ it ignores, and it reads Synced at that commit.
 `tests/drills/failed-deploy-rollback.sh` is the second row cut short, on `plane-dev`: it reverts at the first Degraded, about 10 to
 11m in, because the Deployment is applied after the migrator hook. Two margins then run, and they differ. `ArgoAppDegraded` fires
 once Degraded has held 5m. `ArgoSyncFailed` fires if the operation is still open just past 13m from its start, because
-`max_over_time` holds it true for 2m after its last open sample, and that leaves about 2 to 3m from the first Degraded. A retry
-backs off from 30s, doubling, and goes through the hook again, so the revert may not fit, and then `ArgoSyncFailed` fires in the
+`max_over_time` holds it true for 2m after its last open sample, and that leaves about 2 to 3m from the first Degraded, an estimate.
+A retry backs off from 30s, doubling, and goes through the hook again, so the revert may not fit, and then `ArgoSyncFailed` fires in the
 drill. Until then it should stay pending, `ArgoAppStuckProgressing` should be pending on the same series until 2m after its last
 Progressing sample, and `ArgoAppDegraded` should be pending from the first Degraded, so all three for about 90s. That is expected
 from reading the drill and from unit tests of those series, either side of the 13m, and not yet measured. The 15m in
@@ -175,7 +175,7 @@ limit comes first. Measured on 2026-11-05 (`limits-pod-cgroup-1.txt` in the evid
 | Prometheus, before 00:34Z | 816, an estimate from 768 plus its config reloader's 48, and 768 | that pod is gone, 688 | 0 | 652 MiB (85%), at a head compaction with 241k head series | Raised to 1024Mi |
 | Prometheus, since | 1072, 1024 | 0, 0 | 0 | 566 MiB (55%), at the WAL replay after that restart | |
 | Loki | 640, 640 | 58931, 0 | 0 | 553 MiB (86%) in a stress test, then 480 in its WAL replay, and 341 (53%) since 22:10Z | Kept at 640Mi |
-| Infisical Postgres | 256, 256 | 4227 at 02:06:47Z, 5066 at 02:18:42Z, then 876 in the pod that replaced it, and 0 | 0 | 64 MiB (25%) | Kept at 256Mi |
+| Infisical Postgres | 256, 256 | 4227 at 02:06:47Z and 5066 at 02:18:42Z, with 0 at the container, then 876 in the pod that replaced it, with 2 | 0 | 64 MiB (25%) | Kept at 256Mi |
 
 Prometheus's limit moved because it came that close with nothing stressing it on purpose. Loki came as close, and that was not file cache:
 anon reached 553 MiB, with file down to 13 MiB at the tightest. It stays for other reasons. That test pushed 3.5 MB/s with 8 query
