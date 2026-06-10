@@ -8,7 +8,7 @@
 # about 5 seconds, long before for: 1m elapses. A trap scales it back and restores auto-sync on any
 # exit, including Ctrl-C. Each stage has its own deadline, derived from the 5s preStop sleep the old
 # pod still answers through, the 15s probe, 15s rule group, for: 1m and group_wait 10s: worst case
-# about 125s to the sink.
+# about 105s to the sink, by adding those up, and not yet measured.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../monitoring/ops/lib.sh
