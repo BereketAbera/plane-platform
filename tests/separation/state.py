@@ -19,7 +19,7 @@ import subprocess
 import sys
 from urllib.parse import parse_qs, urlsplit
 
-from common import ENVS, NOT_CREDENTIALS as SAME_BY_DESIGN, OTHER, ROOT, SECRET_NAMES, Blocked, Report, credential_values, kubectl, must, now, read_secrets, require_environments
+from common import ENVS, NOT_CREDENTIALS as SAME_BY_DESIGN, OTHER, ROOT, SECRET_NAMES, Blocked, Report, attempts_printed, credential_values, kubectl, must, now, read_secrets, require_environments
 
 sys.path.insert(0, str(ROOT / "tests" / "e2e"))
 import smoke  # noqa: E402  the project's own client: real HTTP through Traefik, no new protocol code
@@ -188,6 +188,7 @@ attempt("other environment's rabbitmq password", lambda: rabbit(given["amqp"]))
 attempt("own silo keys", lambda: silo(os.environ["AWS_ACCESS_KEY_ID"], os.environ["AWS_SECRET_ACCESS_KEY"]))
 attempt("other environment's silo keys", lambda: silo(given["s3_key"], given["s3_secret"]))
 """
+CREDENTIAL_ATTEMPT_NAMES = re.findall(r'^attempt\("([^"]+)"', CREDENTIAL_ATTEMPTS, flags=re.M)
 
 
 def credentials() -> None:
@@ -220,9 +221,12 @@ def credentials() -> None:
                  "amqp": other["plane-rabbitmq"]["RABBITMQ_DEFAULT_PASS"],
                  "s3_key": other["plane-doc-store"]["AWS_ACCESS_KEY_ID"],
                  "s3_secret": other["plane-doc-store"]["AWS_SECRET_ACCESS_KEY"]}
-        printed = run_in_api(env, CREDENTIAL_ATTEMPTS, given)
-        for line in printed.splitlines():
-            record = json.loads(line)
+        printed = attempts_printed(run_in_api(env, CREDENTIAL_ATTEMPTS, given), "attempt")
+        for name in CREDENTIAL_ATTEMPT_NAMES:
+            record = printed.get(name)
+            if record is None:
+                report.block(f"{ENVS[env]}: {name}: the exec exited 0 and printed no result for it, so it says nothing either way")
+                continue
             say(f"{ENVS[env]} {json.dumps(record)}")
             if record["attempt"].startswith("own"):
                 check(record["verdict"] == "ACCEPTED", f"{ENVS[env]}: {record['attempt']} is accepted")
