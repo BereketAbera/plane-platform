@@ -367,8 +367,8 @@ load_cases() {
 # (a public name or address, or Docker Desktop's own host address), and local for the rest (the node, the Git remote,
 # and the .localhost hosts, which CoreDNS rewrites to Traefik).
 #
-# A row to a .svc or .localhost name cannot pass yet. Only .cluster.local names get an address in witness_targets, and a name in
-# ready_of, so the node is asked for a name it cannot resolve, and a deny row ends INCONCLUSIVE and counted on a healthy policy.
+# A deny row to a .svc or .localhost name cannot pass yet. Only .cluster.local names get an address in witness_targets, and a name
+# in ready_of, so the node is asked for a name it cannot resolve, and the row ends INCONCLUSIVE and counted on a healthy policy.
 # That fails safe, and no row in the matrix has one: name a Service in full, as <name>.<namespace>.svc.cluster.local.
 scope_of() {
   case "$1" in
