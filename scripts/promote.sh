@@ -19,10 +19,17 @@
 # COMMIT=no leaves the change uncommitted and unpublished, for CI, which turns it into a pull
 # request. SKIP_REGISTRY_CHECK=yes skips the local registry lookup, for CI and failure drills.
 # DIGESTS_FILE overrides .build/digests.tsv.
+#
+# With a commit it publishes, and a publish that fails or is refused leaves the commit on main, where
+# it goes out with the next publish of any kind. Run this again to publish it: the plan is empty then,
+# and this still publishes, because the overlay holding a digest does not mean Argo CD has read it. It
+# takes the commit lock in lib/commit-lock.sh from before its first edit until the commit.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=lib/dev-check.sh
 source "$(dirname "$0")/lib/dev-check.sh"
+# shellcheck source=lib/commit-lock.sh
+source "$(dirname "$0")/lib/commit-lock.sh"
 
 usage() { die "usage: $0 dev|prod-sim [IMAGE=name DIGEST=sha256:... [REPO=repository]] [CONFIRM=yes] [SKIP_BACKUP=yes] [COMMIT=no] [OVERRIDE_DEV_CHECK=reason]"; }
 
@@ -60,6 +67,8 @@ git rev-parse -q --verify HEAD >/dev/null || die "the repository has no commits,
 if [[ "$COMMIT" == yes ]]; then
   # gitops-publish pushes main, so a promotion committed anywhere else would never reach Argo CD.
   [[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "promote from main, or use COMMIT=no"
+  # A commit here would finish that revert, whatever state it is in.
+  [[ ! -e "$(git rev-parse --git-path REVERT_HEAD)" ]] || die "a revert is under way in this checkout, so this changed nothing. Finish it or clear it first: git status shows what it left."
 fi
 
 WORK="$(mktemp -d)"
@@ -67,10 +76,12 @@ applied=no
 cleanup() {
   local status=$?
   rm -rf "$WORK"
-  # Never leave a half-promoted overlay behind. The paths were clean when this script started.
+  # Never leave a half-promoted overlay behind. The paths were clean when the commit lock was taken.
   if [[ "$applied" == yes && "$status" -ne 0 ]]; then
-    git restore --source=HEAD --staged --worktree -- "$OVERLAY" "$RENDERED" || true
+    restore_from_head "$OVERLAY" "$RENDERED" ||
+      warn "$OVERLAY and $RENDERED still hold this promotion, uncommitted, because git could not write the index. Once it can: git restore --source=HEAD --staged --worktree -- $OVERLAY $RENDERED. Then run this again."
   fi
+  release_commit_lock
 }
 trap cleanup EXIT
 
@@ -147,7 +158,13 @@ else
   done <"$DIGESTS_FILE"
 fi
 
+# A publish that failed or was refused leaves its promotion on main, and that is one way to an empty
+# plan. So this publishes before it says anything, and that does nothing if main is published already.
 if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then
+    "$ROOT/scripts/gitops-publish.sh" ||
+      die "$ENV's overlay already holds these digests, but main could not be published, so Argo CD has not read them. They leave with the next publish of any kind. Fix the cause and run this again, or withdraw them with make rollback ENV=$ENV."
+  fi
   ok "$ENV already runs these digests, nothing to promote"
   exit 0
 fi
@@ -193,6 +210,11 @@ if [[ "$ENV" == prod-sim ]]; then
   fi
 fi
 
+# From here to the commit nobody else's commit may run, or it would take this half-made change with it.
+# The dump above took minutes, so the check at the top may be stale, and the restore in cleanup
+# relies on it.
+take_commit_lock
+[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes, made since this started. Nothing was promoted."
 applied=yes
 subject_parts=""
 trailers="Promote-Env: $ENV"
@@ -205,7 +227,7 @@ while read -r name repo tag digest; do
   trailers+=$'\n'"Promote-Image: $short=$reference"
 done <"$PLAN"
 
-"$ROOT/scripts/render.sh"
+"$ROOT/scripts/render.sh" || die "rendering the promotion failed, so nothing was committed or published"
 
 [[ -z "$DEV_CHECK" ]] || trailers+=$'\n'"Promote-Dev-Check: $DEV_CHECK"
 
@@ -220,11 +242,21 @@ if [[ "$COMMIT" != yes ]]; then
   exit 0
 fi
 
-git add -- "$OVERLAY" "$RENDERED"
-git commit --quiet --file "$message_file" -- "$OVERLAY" "$RENDERED"
+git_when_index_free add -- "$OVERLAY" "$RENDERED" || die "could not stage the promotion, so nothing was committed or published"
+git_when_index_free commit --quiet --file "$message_file" -- "$OVERLAY" "$RENDERED" || die "could not commit the promotion, so nothing was published"
 applied=no
+release_commit_lock
 ok "committed $(git rev-parse --short HEAD): $subject"
 
-# Any backup this promotion needs has already happened above. The plane-dev check runs once more in
-# there on purpose, so a local promotion and a merged one meet the same check at the same door.
-SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh"
+# A promotion of prod-sim took its dump above, or was told not to. A promotion of dev took none, and
+# main may hold a merged promotion of prod-sim that leaves with it, so that publish decides for itself.
+# The plane-dev check runs once more in there on purpose, so a local promotion and a merged one meet
+# the same check at the same door.
+publish_status=0
+if [[ "$ENV" == prod-sim ]]; then
+  SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh" || publish_status=$?
+else
+  "$ROOT/scripts/gitops-publish.sh" || publish_status=$?
+fi
+[[ "$publish_status" -eq 0 ]] ||
+  die "$(git log -1 --format='%h %s') stays on main, and Argo CD has not read it. It leaves with the next publish of any kind. Fix the cause and run this again, which publishes it, or withdraw it with make rollback ENV=$ENV."

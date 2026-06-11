@@ -4,7 +4,7 @@
 # a cluster or the real Git remote: KUBECONFIG, the bare repository and every tool on PATH belong to
 # the clone. It runs what is on disk, so it tests a change before it is committed.
 #
-#   scripts/ci/test-promotion-flows.sh           every scenario, about three minutes
+#   scripts/ci/test-promotion-flows.sh           every scenario, about six minutes
 #   scripts/ci/test-promotion-flows.sh rollback  only the scenarios whose name contains "rollback"
 #
 # The repository's overlays are no input here. make promote changes them for real, and prod-sim level
@@ -17,6 +17,10 @@
 source "$(dirname "$0")/../lib/common.sh"
 
 "$ROOT/scripts/install-tools.sh" helm kustomize yq >/dev/null
+
+# Their stub clusters are not a promotion. On GitHub, each scenario with no cluster in reach would write
+# to the job's summary that the plane-dev check was skipped.
+unset GITHUB_STEP_SUMMARY
 
 FILTER="${1:-}"
 WORK="$(mktemp -d)"
@@ -43,7 +47,36 @@ mkdir -p "$CLONE/.tools/bin" "$CLONE/.local"
 for tool in "$ROOT"/.tools/bin/* "$ROOT"/.tools/bin/.[!.]*; do
   [[ -e "$tool" ]] && ln -sf "$tool" "$CLONE/.tools/bin/$(basename "$tool")"
 done
-rm -f "$CLONE/.tools/bin/kubectl"
+rm -f "$CLONE/.tools/bin/kubectl" "$CLONE/.tools/bin/kustomize"
+
+# The real one, unless $STUB/kustomize-mode says to fail a build, or to leave .git/index.lock behind
+# after the last build of a render, as a git add running at that moment would. With -after-edit it waits
+# for an edit, so the render.sh --check before promote's edit passes. $STUB/index-lock-seconds lets the
+# lock go that much later. Otherwise it stays until the scenario removes it.
+cat >"$CLONE/.tools/bin/kustomize" <<STUB_KUSTOMIZE
+#!/usr/bin/env bash
+mode="\$(cat "\$STUB/kustomize-mode" 2>/dev/null || true)"
+if [[ "\$1" == edit ]]; then touch "\$STUB/kustomize-edited"; fi
+armed=no
+case "\$mode" in
+  fail | lock) armed=yes ;;
+  *-after-edit) if [[ -e "\$STUB/kustomize-edited" ]]; then armed=yes; fi ;;
+esac
+if [[ "\$1" == build && "\$armed" == yes && "\$mode" == fail* ]]; then
+  echo "stub kustomize: failing as told" >&2
+  exit 1
+fi
+"$ROOT/.tools/bin/kustomize" "\$@"
+status=\$?
+if [[ "\$1" == build && "\$*" == *overlays/prod-sim* && "\$armed" == yes && "\$mode" == lock* ]]; then
+  touch "\$CLONE/.git/index.lock"
+  if [[ -e "\$STUB/index-lock-seconds" ]]; then
+    (sleep "\$(cat "\$STUB/index-lock-seconds")"; rm -f "\$CLONE/.git/index.lock") >/dev/null 2>&1 &
+  fi
+fi
+exit "\$status"
+STUB_KUSTOMIZE
+chmod +x "$CLONE/.tools/bin/kustomize"
 
 cat >"$CLONE/.tools/bin/kubectl" <<'STUB_KUBECTL'
 #!/usr/bin/env bash
@@ -80,11 +113,20 @@ cat >"$CLONE/scripts/backup.sh" <<'STUB_BACKUP'
 #!/usr/bin/env bash
 echo "$*" >>"$STUB/backup-calls"
 git -C "$CLONE" status --porcelain -- helm gitops >>"$STUB/backup-saw-changes"
-case "$(cat "$STUB/backup-mode")" in
-  ok)
+# A dump takes minutes, and other work must not wait that long on the commit lock.
+if [[ -d "$CLONE/.git/agent-commit.lockdir" ]]; then echo held >>"$STUB/backup-saw-lock"; fi
+mode="$(cat "$STUB/backup-mode")"
+case "$mode" in
+  ok | dev-goes-bad | someone-commits | someone-edits)
     id="$(date -u +%Y%m%dT%H%M%SZ)"
     mkdir -p "$CLONE/.local/backups/$1/$id"
     echo '{}' >"$CLONE/.local/backups/$1/$id/manifest.json"
+    # What can happen while a dump runs: a rollout starts in dev, or other work goes on in this checkout.
+    case "$mode" in
+      dev-goes-bad) echo Synced/Degraded >"$STUB/app-status" ;;
+      someone-commits) git -C "$CLONE" commit --quiet --allow-empty -m 'committed during the dump' ;;
+      someone-edits) printf '# an edit made during the dump\n' >>"$CLONE/helm/plane/overlays/$1/kustomization.yaml" ;;
+    esac
     ;;
   hang) sleep 300 ;;
   *) echo "stub backup: failing as told" >&2; exit 1 ;;
@@ -143,6 +185,12 @@ for index in 0 1 2 3; do
 done
 BASE_AHEAD="$(fixture_commit 'fixture: dev ahead of prod-sim by four images')"
 
+# Pushing all of history takes a second, which would be a quarter of the time of a scenario. So the bare
+# repository of each one borrows these objects, and publish-creates-the-bare-repository pushes for real.
+HISTORY="$WORK/history.git"
+git init --quiet --bare "$HISTORY"
+git -C "$CLONE" push --quiet "$HISTORY" "$BASE_AHEAD:refs/heads/history"
+
 admin_digest() { yq -r '.images[] | select(.name | test("plane-admin$")) | .digest' "$CLONE/$PROD_SIM_OVERLAY"; }
 web_digest_in() { yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' "$CLONE/$1"; }
 web_image() { # A pod list with one ready container running this digest of web, or one not yet ready.
@@ -180,10 +228,16 @@ STUB_CURL
 }
 
 reset_clone() { # reset_clone <commit to start from>
+  # Whatever a scenario that failed halfway left behind.
+  rm -f "$CLONE/.git/index.lock" "$CLONE/.git/hooks/pre-commit"
+  rmdir "$CLONE/.git/agent-commit.lockdir" 2>/dev/null || true
+  git -C "$CLONE" revert --quit 2>/dev/null || true
+  git -C "$CLONE" checkout --quiet --force -B main "$1"
   git -C "$CLONE" reset --quiet --hard "$1"
   git -C "$CLONE" update-ref -d refs/remotes/origin/main 2>/dev/null || true
-  git -C "$CLONE" clean --quiet -fd -- helm gitops
-  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls" "$STUB/backup-saw-changes" "$STUB/kubectl-calls" "$STUB/curl-calls"
+  git -C "$CLONE" clean --quiet -fd -- helm gitops docs
+  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls" "$STUB/backup-saw-changes" "$STUB/backup-saw-lock" "$STUB/kubectl-calls" "$STUB/curl-calls" \
+    "$STUB/kustomize-mode" "$STUB/kustomize-edited" "$STUB/index-lock-seconds" "$STUB/lock-at-commit" "$STUB/lock-at-push"
   echo statefulset.apps/plane-pgdb-wl >"$STUB/prod-sim-database"
   rm -f "$CLONE/.tools/bin/curl"
   touch "$CLONE/.local/kubeconfig"
@@ -192,11 +246,14 @@ reset_clone() { # reset_clone <commit to start from>
   echo ok >"$STUB/backup-mode"
   web_image "$DIGEST_A" true
   : >"$OUT"
-  # A published main to start from, as a running platform has. Quiet about origin, which a clone lacks.
-  (cd "$CLONE" && ./scripts/gitops-publish.sh) >/dev/null 2>&1 || die "the starting state could not be published"
+  # A published main to start from, as a running platform has.
+  git init --quiet --bare --initial-branch=main "$BARE"
+  echo "$HISTORY/objects" >"$BARE/objects/info/alternates"
+  git --git-dir="$BARE" update-ref refs/heads/main "$1"
 }
 
-in_clone() { (cd "$CLONE" && "$@") >"$OUT" 2>&1; }
+# stdin is not a terminal, whoever runs this, so a script that asks refuses instead of waiting.
+in_clone() { (cd "$CLONE" && "$@") >"$OUT" 2>&1 </dev/null; }
 # The drill copies its output through tee, which can outlive it by a moment.
 run_drill() {
   local status=0
@@ -214,6 +271,18 @@ published() { git --git-dir="$BARE" rev-parse refs/heads/main; }
 reverts_on_main() { git -C "$CLONE" log --format=%B "$BASE..HEAD" | grep -c '^This reverts commit' || true; }
 backup_calls() { if [[ -e "$STUB/backup-calls" ]]; then wc -l <"$STUB/backup-calls" | tr -d ' '; else echo 0; fi; }
 OVERRIDE_LOG="$CLONE/.local/evidence-raw/promotion-overrides.log"
+argo_reads_web() { git --git-dir="$BARE" show "refs/heads/main:helm/plane/overlays/$1/kustomization.yaml" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest'; } # argo_reads_web <env>
+nothing_in_progress() { [[ ! -e "$CLONE/.git/REVERT_HEAD" && ! -e "$CLONE/.git/MERGE_MSG" && ! -d "$CLONE/.git/agent-commit.lockdir" ]]; }
+helm_and_gitops_clean() { [[ -z "$(git -C "$CLONE" status --porcelain -- helm gitops)" ]]; }
+staged_names() { git -C "$CLONE" diff --cached --name-only | LC_ALL=C sort | tr '\n' ' '; }
+failing_hook() { # failing_hook <hook path>
+  printf '#!/bin/sh\necho "hook: no" >&2\nexit 1\n' >"$1"
+  chmod +x "$1"
+}
+one_pod() { # one_pod <more metadata> <phase> <container statuses> <containers>: a pod list holding just this pod
+  printf '{"items":[{"metadata":{"name":"web-1"%s},"status":{"phase":"%s","containerStatuses":[%s]},"spec":{"containers":[%s]}}]}\n' "$1" "$2" "$3" "$4" >"$STUB/pods.json"
+}
+web_container() { printf '{"name":"web","image":"docker.io/makeplane/plane-frontend:v1.4.3@%s"}' "$1"; }
 
 expect() { # expect <description> <command...>: one assertion inside a scenario
   local what="$1"
@@ -404,6 +473,7 @@ rollback_prod_sim_with_broken_backup() {
   expect "it says the dump failed" said "best-effort dump failed"
   expect "it says how it published" said "Publishing with SKIP_BACKUP=yes"
   expect "only its own attempt, no second from the publish" equal "$(backup_calls)" 1
+  expect "the attempt did not hold the commit lock" [ ! -e "$STUB/backup-saw-lock" ]
   expect "published" equal "$(published)" "$(head_commit)"
   expect "prod-sim is back" not_equal_digest "$promoted"
 }
@@ -484,6 +554,8 @@ rollback_dev_takes_no_dump() {
   expect "no dump" [ ! -e "$STUB/backup-calls" ]
   expect "published" equal "$(published)" "$(head_commit)"
   expect "dev is back" equal "$(web_digest_in "$DEV_OVERLAY")" "$(git -C "$CLONE" show "$BASE:$DEV_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest')"
+  expect "no waiver: only a rollback of prod-sim has one" not_said "plane-dev check not run"
+  expect "nothing logged" [ ! -e "$OVERRIDE_LOG" ]
 }
 rollback_leaves_other_staged_files_alone() {
   local status=0
@@ -746,7 +818,8 @@ prod_sim_not_deployed() {
   expect "published" equal "$(published)" "$(head_commit)"
 }
 dev_change_needs_no_dev_check() {
-  # A fix for a broken dev has to be able to reach dev.
+  # A fix for a broken dev has to be able to reach dev, when nothing is waiting for prod-sim.
+  # publish-names-the-prod-sim-commit-a-dev-change-waits-behind is what happens when something is.
   local status=0
   echo OutOfSync/Degraded >"$STUB/app-status"
   promote_dev "$DIGEST_A" || status=$?
@@ -853,6 +926,7 @@ four_images_through_make() {
   expect "dev was asked by the promotion and again by the publish" equal "$(grep -c 'get pods -o json' "$STUB/kubectl-calls")" 2
   expect "one dump" equal "$(backup_calls)" 1
   expect "the dump came before any change" [ ! -s "$STUB/backup-saw-changes" ]
+  expect "the dump did not hold the commit lock" [ ! -e "$STUB/backup-saw-lock" ]
   expect "published" equal "$(published)" "$(head_commit)"
   in_clone ./scripts/ci/check-promoted-digests.sh || status=$?
   expect "the invariant CI checks holds" [ "$status" -eq 0 ]
@@ -1008,6 +1082,939 @@ drill_failed_promotion_reverts_nothing_else() {
   expect "no revert" equal "$(reverts_on_main)" 0
 }
 
+# ---- what the pods in plane-dev have to show
+refused_by_the_pods() { # The promotion of $DIGEST_A stops at what $STUB/pods.json shows.
+  local status=0
+  promote_prod_sim COMMIT=no || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "no ready container in namespace plane-dev runs $DIGEST_A"
+  expect "no overlay change" helm_and_gitops_clean
+}
+terminating_pod_proves_nothing() {
+  promote_dev "$DIGEST_A"
+  one_pod ',"deletionTimestamp":"2026-11-05T00:00:00Z"' Running '{"name":"web","ready":true}' "$(web_container "$DIGEST_A")"
+  refused_by_the_pods
+}
+pod_not_running_proves_nothing() {
+  promote_dev "$DIGEST_A"
+  one_pod '' Failed '{"name":"web","ready":true}' "$(web_container "$DIGEST_A")"
+  refused_by_the_pods
+}
+ready_sibling_proves_nothing() {
+  promote_dev "$DIGEST_A"
+  one_pod '' Running '{"name":"web","ready":false},{"name":"sidecar","ready":true}' \
+    "$(web_container "$DIGEST_A"),{\"name\":\"sidecar\",\"image\":\"docker.io/fixture/sidecar@$DIGEST_B\"}"
+  refused_by_the_pods
+}
+
+# ---- what a promotion refuses before it touches anything
+failure_drill_digest_stays_out_of_prod_sim() {
+  local status=0
+  promote_dev "$BAD_DIGEST"
+  web_image "$BAD_DIGEST" true
+  promote_prod_sim COMMIT=no || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "is the failure-drill digest and may not reach prod-sim"
+  expect "no overlay change" helm_and_gitops_clean
+}
+promote_stops_when_the_dump_fails() {
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  echo fail >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "backup failed, nothing was promoted"
+  expect "it tried once" equal "$(backup_calls)" 1
+  expect "nothing moved" changes_nothing_since "$before"
+}
+publish_stops_when_the_dump_fails() {
+  local status=0
+  merged_prod_sim_promotion
+  echo fail >"$STUB/backup-mode"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "backup failed, nothing was published"
+  expect "it asked plane-dev first" said "passed: plane-dev was Synced and Healthy"
+  expect "nothing was published" equal "$(published)" "$PUBLISHED_BEFORE"
+}
+promote_prod_sim_needs_confirmation() {
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "prod-sim needs CONFIRM=yes when not run from a terminal"
+  expect "no dump" equal "$(backup_calls)" 0
+  expect "nothing moved" changes_nothing_since "$before"
+}
+rollback_prod_sim_needs_confirmation() {
+  local status=0 before
+  promote_prod_sim_committed
+  before="$(head_commit)"
+  in_clone ./scripts/rollback.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "prod-sim needs CONFIRM=yes when not run from a terminal"
+  expect "no dump" equal "$(backup_calls)" 0
+  expect "nothing moved" changes_nothing_since "$before"
+}
+promote_refuses_a_dirty_overlay() {
+  local status=0 before
+  before="$(head_commit)"
+  printf '# an edit in progress\n' >>"$CLONE/$DEV_OVERLAY"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "has uncommitted changes"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the edit is still there" grep -q 'an edit in progress' "$CLONE/$DEV_OVERLAY"
+}
+rollback_refuses_a_dirty_overlay() {
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  printf '# an edit in progress\n' >>"$CLONE/$DEV_OVERLAY"
+  rollback dev || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "has uncommitted changes"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the edit is still there" grep -q 'an edit in progress' "$CLONE/$DEV_OVERLAY"
+}
+promote_refuses_off_main() {
+  local status=0 before
+  git -C "$CLONE" checkout --quiet -B elsewhere
+  before="$(head_commit)"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "promote from main, or use COMMIT=no"
+  expect "no commit" equal "$(head_commit)" "$before"
+  in_clone env SKIP_REGISTRY_CHECK=yes COMMIT=no ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A"
+  expect "COMMIT=no works anywhere, for CI" equal "$(web_digest_in "$DEV_OVERLAY")" "$DIGEST_A"
+}
+rollback_refuses_off_main() {
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  git -C "$CLONE" checkout --quiet -B elsewhere
+  before="$(head_commit)"
+  rollback dev || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "roll back from main"
+  expect "no commit" equal "$(head_commit)" "$before"
+}
+promote_refuses_while_a_revert_is_under_way() {
+  # A commit would finish that revert, in whatever state it is.
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  git -C "$CLONE" revert --no-commit HEAD
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "a revert is under way"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the revert is still as it was" [ -e "$CLONE/.git/REVERT_HEAD" ]
+}
+write_digests_file() { # write_digests_file <image to leave out> <image to give a bad digest>
+  local image repo
+  mkdir -p "$CLONE/.build"
+  : >"$CLONE/.build/digests.tsv"
+  for image in web admin space backend; do
+    repo="$image"
+    [[ "$image" != "$1" ]] || continue
+    if [[ "$image" == "$2" ]]; then
+      printf '%s\tlocalhost:5001/wayline/%s\tsha256:short\n' "$image" "$repo" >>"$CLONE/.build/digests.tsv"
+    else
+      printf '%s\tlocalhost:5001/wayline/%s\t%s\n' "$image" "$repo" "$DIGEST_A" >>"$CLONE/.build/digests.tsv"
+    fi
+  done
+}
+promote_takes_a_whole_digests_file() {
+  local status=0 before
+  before="$(head_commit)"
+  write_digests_file "" ""
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev || status=$?
+  expect "the promotion works" [ "$status" -eq 0 ]
+  expect "four images moved, each with its repository" equal "$(images_of "$DEV_OVERLAY" | grep -c "localhost:5001/wayline/.* $DIGEST_A")" 4
+  expect "one commit" equal "$(git -C "$CLONE" rev-list --count "$before..HEAD")" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+promote_refuses_a_partial_digests_file() {
+  local status=0 before
+  before="$(head_commit)"
+  write_digests_file space ""
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "does not name every image"
+  expect "nothing moved" changes_nothing_since "$before"
+}
+promote_refuses_a_malformed_digests_file() {
+  local status=0 before
+  before="$(head_commit)"
+  write_digests_file "" admin
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "bad digest for admin"
+  expect "nothing moved" changes_nothing_since "$before"
+}
+promote_checks_its_arguments() {
+  local status before
+  before="$(head_commit)"
+  status=0
+  in_clone ./scripts/promote.sh dev IMAGE=web DIGEST=sha256:short || status=$?
+  expect "a short digest is refused" [ "$status" -ne 0 ]
+  expect "and says why" said "DIGEST must be sha256"
+  status=0
+  in_clone ./scripts/promote.sh dev IMAGE=web || status=$?
+  expect "an image with no digest is refused" [ "$status" -ne 0 ]
+  expect "and says why" said "IMAGE and DIGEST go together"
+  status=0
+  in_clone ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A" "REPO=not a repository" || status=$?
+  expect "a bad repository is refused" [ "$status" -ne 0 ]
+  expect "and says why" said "REPO is not a repository name"
+  status=0
+  in_clone ./scripts/promote.sh dev IMAGE=no-such-image DIGEST="$DIGEST_A" || status=$?
+  expect "an unknown image is refused" [ "$status" -ne 0 ]
+  expect "and says why" said "no image matching 'no-such-image'"
+  expect "nothing moved" changes_nothing_since "$before"
+}
+promote_refuses_an_ambiguous_image() {
+  local status=0 before
+  set_image dev fixture.invalid/plane-frontend "docker.io/fixture/other@$DIGEST_B"
+  commit_a_change_to_helm 'a second image with that last segment'
+  in_clone ./scripts/gitops-publish.sh
+  before="$(head_commit)"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "'web' matches more than one image"
+  expect "nothing moved" changes_nothing_since "$before"
+}
+
+# ---- a promotion that fails after it has edited the overlay
+promote_render_failure_puts_the_overlay_back() {
+  local status=0 before
+  before="$(head_commit)"
+  echo "someone's work" >"$CLONE/docs/staged-by-someone.txt"
+  git -C "$CLONE" add docs/staged-by-someone.txt
+  echo fail-after-edit >"$STUB/kustomize-mode"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "rendering the promotion failed"
+  expect "the kustomize edit did happen" [ -e "$STUB/kustomize-edited" ]
+  expect "nothing moved" changes_nothing_since "$before"
+  expect "someone's work is still staged" equal "$(staged_names)" "docs/staged-by-someone.txt "
+  expect "the commit lock is free" nothing_in_progress
+}
+promote_commit_failure_puts_the_overlay_back() {
+  local status=0 before
+  before="$(head_commit)"
+  failing_hook "$CLONE/.git/hooks/pre-commit"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "could not commit the promotion"
+  expect "git's own words" said "hook: no"
+  expect "nothing moved" changes_nothing_since "$before"
+  expect "the commit lock is free" nothing_in_progress
+  rm -f "$CLONE/.git/hooks/pre-commit"
+  promote_dev "$DIGEST_A"
+  expect "a second run works" equal "$(published)" "$(head_commit)"
+}
+promote_waits_out_a_git_add() {
+  echo lock-after-edit >"$STUB/kustomize-mode"
+  echo 2 >"$STUB/index-lock-seconds"
+  promote_dev "$DIGEST_A"
+  expect "the promotion got through" equal "$(published)" "$(head_commit)"
+  expect "and is dev's" equal "$(argo_reads_web dev)" "$DIGEST_A"
+}
+promote_says_what_to_do_when_the_index_stays_held() {
+  local status=0 before
+  before="$(head_commit)"
+  echo lock-after-edit >"$STUB/kustomize-mode"
+  in_clone env INDEX_LOCK_WAIT=1 SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "could not stage the promotion"
+  expect "it says the overlay still holds it" said "still hold this promotion"
+  expect "and the way out" said "git restore --source=HEAD --staged --worktree -- helm/plane/overlays/dev gitops/environments/dev/manifests.yaml"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the commit lock is free" nothing_in_progress
+  rm -f "$CLONE/.git/index.lock" "$STUB/kustomize-mode"
+  git -C "$CLONE" restore --source=HEAD --staged --worktree -- helm/plane/overlays/dev gitops/environments/dev/manifests.yaml
+  promote_dev "$DIGEST_A"
+  expect "the way out works" equal "$(published)" "$(head_commit)"
+}
+promote_rechecks_the_overlay_after_the_dump() {
+  # The dump took minutes. Cleanup restores these paths, so an edit made meanwhile must stop this.
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  echo someone-edits >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "made since this started"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the edit is still there" grep -q 'an edit made during the dump' "$CLONE/$PROD_SIM_OVERLAY"
+  expect "the commit lock is free" nothing_in_progress
+}
+
+# ---- the commit lock, which agents hold when they commit in this checkout
+lock_probes() { # Hooks that note whether the lock is held at the commit and at the push.
+  printf '#!/bin/sh\nif [ -d "$CLONE/.git/agent-commit.lockdir" ]; then echo held >"$STUB/lock-at-commit"; fi\n' >"$CLONE/.git/hooks/pre-commit"
+  printf '#!/bin/sh\nif [ -d "$CLONE/.git/agent-commit.lockdir" ]; then echo held >"$STUB/lock-at-push"; fi\n' >"$BARE/hooks/pre-receive"
+  chmod +x "$CLONE/.git/hooks/pre-commit" "$BARE/hooks/pre-receive"
+}
+promote_holds_the_commit_lock_for_its_commit() {
+  lock_probes
+  promote_dev "$DIGEST_A"
+  expect "held at the commit" [ -e "$STUB/lock-at-commit" ]
+  expect "not at the publish" [ ! -e "$STUB/lock-at-push" ]
+  expect "free at the end" nothing_in_progress
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_holds_the_commit_lock_for_its_commit() {
+  promote_dev "$DIGEST_A"
+  lock_probes
+  rollback dev
+  expect "held at the commit" [ -e "$STUB/lock-at-commit" ]
+  expect "not at the publish" [ ! -e "$STUB/lock-at-push" ]
+  expect "free at the end" nothing_in_progress
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+someone_commits_until_this_waits() { # Someone else's commit holds the lock, and ends once the script says it waits.
+  mkdir "$CLONE/.git/agent-commit.lockdir"
+  (
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+      if grep -qF 'Waiting for .git/agent-commit.lockdir' "$OUT"; then
+        rmdir "$CLONE/.git/agent-commit.lockdir"
+        exit 0
+      fi
+      sleep 1
+    done
+  ) >/dev/null 2>&1 &
+  SOMEONE=$!
+}
+promote_waits_for_the_commit_lock() {
+  someone_commits_until_this_waits
+  promote_dev "$DIGEST_A"
+  kill "$SOMEONE" 2>/dev/null || true
+  expect "it says what it waits for" said "Waiting for .git/agent-commit.lockdir"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_waits_for_the_commit_lock() {
+  promote_dev "$DIGEST_A"
+  someone_commits_until_this_waits
+  rollback dev
+  kill "$SOMEONE" 2>/dev/null || true
+  expect "it says what it waits for" said "Waiting for .git/agent-commit.lockdir"
+  expect "one revert" equal "$(reverts_on_main)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+promote_gives_up_on_a_commit_lock_left_behind() {
+  local status=0 before
+  before="$(head_commit)"
+  mkdir "$CLONE/.git/agent-commit.lockdir"
+  in_clone env COMMIT_LOCK_WAIT=2 SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason and the way out" said "rmdir .git/agent-commit.lockdir"
+  expect "nothing moved" changes_nothing_since "$before"
+  expect "it is not this script's to remove" [ -d "$CLONE/.git/agent-commit.lockdir" ]
+}
+rollback_gives_up_on_a_commit_lock_left_behind() {
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  mkdir "$CLONE/.git/agent-commit.lockdir"
+  in_clone env COMMIT_LOCK_WAIT=2 ./scripts/rollback.sh dev || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason and the way out" said "rmdir .git/agent-commit.lockdir"
+  expect "nothing moved" changes_nothing_since "$before"
+  expect "it is not this script's to remove" [ -d "$CLONE/.git/agent-commit.lockdir" ]
+}
+
+# ---- a promotion whose publish failed: the commit stays on main, and a false green must not follow
+promote_again_publishes_after_a_refused_push() {
+  local status=0 argo_before
+  argo_before="$(argo_reads_web prod-sim)"
+  dev_runs_its_overlay
+  failing_hook "$BARE/hooks/pre-receive"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "it says the commit stays" said "stays on main, and Argo CD has not read it"
+  expect "and how it can leave" said "It leaves with the next publish of any kind"
+  expect "Argo CD still reads the old digest" equal "$(argo_reads_web prod-sim)" "$argo_before"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a second run with the push still refused does not exit 0" [ "$status" -ne 0 ]
+  expect "and it does not say all is well" not_said "already runs these digests"
+  expect "it says what happened" said "main could not be published"
+  rm -f "$BARE/hooks/pre-receive"
+  status=0
+  rm -f "$STUB/backup-calls"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a run with the push working succeeds" [ "$status" -eq 0 ]
+  expect "and published" equal "$(published)" "$(head_commit)"
+  expect "Argo CD reads the new digest" equal "$(argo_reads_web prod-sim)" "$(web_digest_in "$DEV_OVERLAY")"
+  expect "this run took its own dump before the digest moved" equal "$(backup_calls)" 1
+}
+promote_again_publishes_after_a_refused_check() {
+  # A rollout starting during the dump is enough: the publish repeats the check after it.
+  local status=0 argo_before
+  argo_before="$(argo_reads_web prod-sim)"
+  dev_runs_its_overlay
+  echo dev-goes-bad >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "Application plane-dev is Synced/Degraded"
+  expect "it says the commit stays" said "stays on main, and Argo CD has not read it"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a second run with dev still bad does not exit 0" [ "$status" -ne 0 ]
+  expect "and it does not say all is well" not_said "already runs these digests"
+  expect "Argo CD still reads the old digest" equal "$(argo_reads_web prod-sim)" "$argo_before"
+  echo ok >"$STUB/backup-mode"
+  echo Synced/Healthy >"$STUB/app-status"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a run with dev healthy succeeds" [ "$status" -eq 0 ]
+  expect "it says the check passed" said "passed: plane-dev was Synced and Healthy"
+  expect "and published" equal "$(published)" "$(head_commit)"
+}
+promote_dev_again_publishes_after_a_refused_push() {
+  local status=0
+  failing_hook "$BARE/hooks/pre-receive"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "it says the commit stays" said "stays on main, and Argo CD has not read it"
+  rm -f "$BARE/hooks/pre-receive"
+  promote_dev "$DIGEST_A"
+  expect "the second run publishes it" equal "$(published)" "$(head_commit)"
+  expect "Argo CD reads it" equal "$(argo_reads_web dev)" "$DIGEST_A"
+}
+promote_commit_no_publishes_nothing() {
+  # CI has no bare repository to speak of, and turns the change into a pull request.
+  merged_prod_sim_promotion
+  in_clone env SKIP_REGISTRY_CHECK=yes COMMIT=no ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A"
+  expect "it says so" said "dev already runs these digests"
+  expect "nothing was published" equal "$(published)" "$PUBLISHED_BEFORE"
+  expect "no dump" equal "$(backup_calls)" 0
+}
+
+# ---- a dev change on main with a prod-sim promotion waiting, because a publish is all of main
+promote_dev_takes_the_dump_a_carried_prod_sim_change_needs() {
+  merged_prod_sim_promotion
+  promote_dev "$DIGEST_B"
+  expect "it says what moves" said "promote(prod-sim): plane-frontend"
+  expect "it took the dump" equal "$(backup_calls)" 1
+  expect "the dump did not hold the commit lock" [ ! -e "$STUB/backup-saw-lock" ]
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+promote_dev_stops_when_a_carried_dump_fails() {
+  local status=0
+  merged_prod_sim_promotion
+  echo fail >"$STUB/backup-mode"
+  promote_dev "$DIGEST_B" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "backup failed, nothing was published"
+  expect "it says the commit stays" said "stays on main, and Argo CD has not read it"
+  expect "nothing was published" equal "$(published)" "$PUBLISHED_BEFORE"
+}
+publish_names_what_a_dev_change_waits_behind() {
+  local status=0 pending
+  merged_prod_sim_promotion
+  pending="$(git -C "$CLONE" log -1 --format='%h %s')"
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  promote_dev "$DIGEST_B" || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "it names the commit" said "held behind what moves prod-sim: $pending"
+  expect "and the way past it" said "OVERRIDE_DEV_CHECK"
+  expect "and says the dev commit stays" said "stays on main, and Argo CD has not read it"
+  expect "nothing was published" equal "$(published)" "$PUBLISHED_BEFORE"
+  # What it says works: the fix for dev gets out, and prod-sim does not move.
+  rollback prod-sim
+  expect "the rest of main is out" equal "$(published)" "$(head_commit)"
+  expect "with dev's change" equal "$(argo_reads_web dev)" "$DIGEST_B"
+  expect "and prod-sim where it was" equal "$(argo_reads_web prod-sim)" "$(git -C "$CLONE" show "$BASE:$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest')"
+}
+publish_refusal_of_prod_sim_alone_says_nothing_of_dev() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is OutOfSync/Degraded"
+  expect "no word of a dev change" not_said "held behind"
+}
+
+# ---- a rollback of dev has no business moving prod-sim
+rollback_dev_stops_before_moving_prod_sim() {
+  local status=0 before pending
+  merged_prod_sim_promotion
+  before="$(head_commit)"
+  pending="$(git -C "$CLONE" log -1 --format='%h %s')"
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone ./scripts/rollback.sh dev || status=$?
+  expect "a stop" [ "$status" -ne 0 ]
+  expect "it names the commit" said "$pending"
+  expect "and the way out" said "OVERRIDE_DEV_CHECK"
+  expect "and says nothing changed" said "Nothing changed"
+  expect "no revert" equal "$(head_commit)" "$before"
+  expect "nothing was published" equal "$(published)" "$PUBLISHED_BEFORE"
+  expect "no dump" equal "$(backup_calls)" 0
+  expect "it asked the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+  expect "nothing logged" [ ! -e "$OVERRIDE_LOG" ]
+  expect "nothing left behind" nothing_in_progress
+}
+rollback_chain_after_a_refused_promotion() {
+  # Each step a normal command. prod-sim's promotion is refused at its publish because dev went bad during
+  # the dump, and its commit stays on main. Then the operator rolls dev back, as dev is what looks broken.
+  local status=0 dev_before prod_sim_before pending
+  dev_before="$(argo_reads_web dev)"
+  prod_sim_before="$(argo_reads_web prod-sim)"
+  promote_dev "$DIGEST_A"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the promotion is refused at its publish" [ "$status" -ne 0 ]
+  expect "it says the commit stays and how it leaves" said "It leaves with the next publish of any kind"
+  pending="$(git -C "$CLONE" log -1 --format='%h %s')"
+  echo ok >"$STUB/backup-mode"
+
+  status=0
+  in_clone ./scripts/rollback.sh dev || status=$?
+  expect "the rollback of dev stops" [ "$status" -ne 0 ]
+  expect "it names the commit" said "$pending"
+  expect "no revert yet" equal "$(reverts_on_main)" 0
+  expect "prod-sim did not take the digest" equal "$(argo_reads_web prod-sim)" "$prod_sim_before"
+
+  rollback prod-sim
+  expect "withdrawing it publishes" equal "$(published)" "$(head_commit)"
+  expect "and moves nothing in prod-sim" equal "$(argo_reads_web prod-sim)" "$prod_sim_before"
+
+  in_clone ./scripts/rollback.sh dev
+  expect "now dev rolls back" equal "$(argo_reads_web dev)" "$dev_before"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "prod-sim never moved" equal "$(argo_reads_web prod-sim)" "$prod_sim_before"
+}
+rollback_dev_override_keeps_the_checks() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone make rollback ENV=dev OVERRIDE_DEV_CHECK="prod-sim has to have it today" || status=$?
+  expect "it goes on" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "the stop's override is logged" grep -q 'rollback.sh.overridden.*prod-sim has to have it today.*rollback of dev carries' "$OVERRIDE_LOG"
+  expect "plane-dev was still asked" grep -q 'gitops-publish.sh.overridden.*prod-sim has to have it today.*OutOfSync/Degraded' "$OVERRIDE_LOG"
+  expect "no waiver" not_said "plane-dev check not run"
+  expect "the dump was still taken" equal "$(backup_calls)" 1
+}
+rollback_dev_rerun_stops_too() {
+  # An earlier run's revert that never got out, and a prod-sim change that has joined it since.
+  local status=0 revert
+  promote_dev "$DIGEST_A"
+  failing_hook "$BARE/hooks/pre-receive"
+  rollback dev || status=$?
+  expect "the publish failed" [ "$status" -ne 0 ]
+  rm -f "$BARE/hooks/pre-receive"
+  revert="$(head_commit)"
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
+  commit_a_change_to_helm 'a digest changed by hand'
+  status=0
+  rollback dev || status=$?
+  expect "a stop" [ "$status" -ne 0 ]
+  expect "it names the commit" said "a digest changed by hand"
+  expect "nothing was published" [ "$(published)" != "$revert" ]
+  expect "the revert did not leave" [ "$(argo_reads_web dev)" == "$DIGEST_A" ]
+}
+rollback_dev_goes_on_past_what_does_not_move_prod_sim() {
+  local status=0
+  promote_dev "$DIGEST_A"
+  printf 'commonAnnotations:\n  flow-test: "yes"\n' >>"$CLONE/$PROD_SIM_OVERLAY"
+  commit_a_change_to_helm 'a change to the prod-sim overlay that is no image'
+  in_clone ./scripts/rollback.sh dev || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "the other change is called out" said "that are not images"
+}
+rollback_dev_goes_on_when_a_promotion_was_withdrawn() {
+  # A promotion and its revert, both unpublished, move nothing.
+  local status=0
+  merged_prod_sim_promotion
+  git -C "$CLONE" revert --no-edit HEAD >/dev/null
+  in_clone ./scripts/rollback.sh dev || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "no dump" equal "$(backup_calls)" 0
+}
+
+# ---- a rollback that stops undoes only what it started
+a_later_change_conflicts_in_the_overlay() {
+  promote_prod_sim_committed
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
+  commit_a_change_to_helm 'a digest changed by hand, so not a promotion'
+}
+someone_has_staged_work() {
+  echo "someone's new file" >"$CLONE/docs/staged-by-someone.txt"
+  echo "someone's edit" >>"$CLONE/README.md"
+  git -C "$CLONE" add docs/staged-by-someone.txt README.md
+}
+someones_work_is_still_there() {
+  expect "someone's work is still staged" equal "$(staged_names)" "README.md docs/staged-by-someone.txt "
+  expect "the new file is on disk" [ -e "$CLONE/docs/staged-by-someone.txt" ]
+  expect "the edit is on disk" grep -q "someone's edit" "$CLONE/README.md"
+}
+rollback_conflict_keeps_someones_staged_work() {
+  local status=0
+  a_later_change_conflicts_in_the_overlay
+  someone_has_staged_work
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "it says nothing changed" said "Nothing changed"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  someones_work_is_still_there
+}
+rollback_conflict_with_a_partly_staged_file() {
+  # git revert --abort cannot get past a file with staged and unstaged edits.
+  local status=0
+  a_later_change_conflicts_in_the_overlay
+  echo "staged edit" >>"$CLONE/README.md"
+  git -C "$CLONE" add README.md
+  echo "unstaged edit" >>"$CLONE/README.md"
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "it says nothing changed" said "Nothing changed"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  expect "the file is as it was" equal "$(git -C "$CLONE" status --porcelain -- README.md)" "MM README.md"
+  status=0
+  rollback prod-sim || status=$?
+  expect "a second run stops for the same reason" said "the revert conflicts with a later change"
+  expect "not for what the first left" not_said "uncommitted changes"
+}
+rollback_render_failure_keeps_someones_staged_work() {
+  local status=0 before
+  promote_prod_sim_committed
+  before="$(head_commit)"
+  someone_has_staged_work
+  echo fail >"$STUB/kustomize-mode"
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "rendering after the revert failed"
+  expect "it says nothing changed" said "Nothing changed"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  someones_work_is_still_there
+}
+rollback_commit_failure_can_run_again() {
+  local status=0 before
+  promote_prod_sim_committed
+  before="$(head_commit)"
+  failing_hook "$CLONE/.git/hooks/pre-commit"
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "could not commit the revert"
+  expect "git's own words" said "hook: no"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  rm -f "$CLONE/.git/hooks/pre-commit"
+  rollback prod-sim
+  expect "a second run finishes it" equal "$(reverts_on_main)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_waits_out_a_git_add() {
+  promote_prod_sim_committed
+  echo lock >"$STUB/kustomize-mode"
+  echo 2 >"$STUB/index-lock-seconds"
+  rollback prod-sim
+  expect "the rollback got through" equal "$(reverts_on_main)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_says_what_to_do_when_the_index_stays_held() {
+  local status=0 before
+  promote_prod_sim_committed
+  before="$(head_commit)"
+  echo lock >"$STUB/kustomize-mode"
+  in_clone env INDEX_LOCK_WAIT=1 CONFIRM=yes SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "could not stage the revert"
+  expect "it does not claim nothing changed" not_said "Nothing changed"
+  expect "it says the revert is still here" said "The revert is still in this checkout"
+  expect "and the way out" said "git restore --source=HEAD --staged --worktree -- $PROD_SIM_RENDERED"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the commit lock is free" [ ! -d "$CLONE/.git/agent-commit.lockdir" ]
+  rm -f "$CLONE/.git/index.lock" "$STUB/kustomize-mode"
+  status=0
+  in_clone env CONFIRM=yes SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim || status=$?
+  expect "a second run does not make it worse" [ "$status" -ne 0 ]
+  expect "it says a revert is under way" said "is under way in this checkout"
+  expect "and how to clear it" said "git revert --quit"
+  # What it says works.
+  git -C "$CLONE" restore --source=HEAD --staged --worktree -- "$PROD_SIM_RENDERED" helm/plane/overlays/prod-sim/kustomization.yaml
+  git -C "$CLONE" revert --quit
+  rollback prod-sim
+  expect "after that it works" equal "$(reverts_on_main)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_says_when_the_revert_cannot_start() {
+  # A held index before the revert is no conflict, whatever else it is.
+  local status=0 before
+  promote_prod_sim_committed
+  before="$(head_commit)"
+  touch "$CLONE/.git/index.lock"
+  in_clone env INDEX_LOCK_WAIT=1 CONFIRM=yes SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim || status=$?
+  rm -f "$CLONE/.git/index.lock"
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "git could not start the revert"
+  expect "git's own words" said "index.lock"
+  expect "no talk of a conflict" not_said "conflicts with a later change"
+  expect "it says nothing changed" said "Nothing changed"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+}
+rollback_says_a_promotion_put_back_by_hand_is_undone() {
+  local status=0 before
+  promote_prod_sim_committed
+  git -C "$CLONE" show "$BASE:$PROD_SIM_OVERLAY" >"$CLONE/$PROD_SIM_OVERLAY"
+  commit_a_change_to_helm 'prod-sim image put back by hand'
+  before="$(head_commit)"
+  rollback prod-sim || status=$?
+  expect "it succeeds" [ "$status" -eq 0 ]
+  expect "it says so" said "is already undone"
+  expect "no new commit" equal "$(head_commit)" "$before"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  expect "what put it back reached Argo CD" equal "$(published)" "$before"
+  status=0
+  rollback prod-sim || status=$?
+  expect "a second run says the same" said "is already undone"
+  expect "and succeeds" [ "$status" -eq 0 ]
+  expect "still no new commit" equal "$(head_commit)" "$before"
+}
+promotion_that_added_a_file() {
+  promote_dev "$DIGEST_A"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim
+  echo note >"$CLONE/docs/added-with-the-promotion.txt"
+  git -C "$CLONE" add -- helm gitops docs/added-with-the-promotion.txt
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh
+}
+rollback_promotion_that_added_a_file() {
+  local status=0
+  promotion_that_added_a_file
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "the file went with it" [ ! -e "$CLONE/docs/added-with-the-promotion.txt" ]
+  expect "in the revert" equal "$(git -C "$CLONE" show --name-status --format= HEAD -- docs/added-with-the-promotion.txt | cut -c1)" D
+  expect "the revert is finished" nothing_in_progress
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_promotion_whose_added_file_is_gone() {
+  local status=0
+  promotion_that_added_a_file
+  git -C "$CLONE" rm --quiet docs/added-with-the-promotion.txt
+  git -C "$CLONE" commit --quiet -m 'that file goes'
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "one revert" equal "$(reverts_on_main)" 1
+  expect "the revert is finished" nothing_in_progress
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_refuses_an_edit_in_a_file_the_promotion_touched() {
+  # Stopping puts back every path the revert can touch, so it must not start with someone's edit in one.
+  local status=0 before
+  promotion_that_added_a_file
+  before="$(head_commit)"
+  rm -f "$STUB/backup-calls"
+  echo "someone's edit" >>"$CLONE/docs/added-with-the-promotion.txt"
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "uncommitted changes"
+  expect "no dump spent on it" equal "$(backup_calls)" 0
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the edit is still there" grep -q "someone's edit" "$CLONE/docs/added-with-the-promotion.txt"
+  expect "the revert did not start" nothing_in_progress
+}
+rollback_rechecks_after_the_dump() {
+  local status=0 before
+  promote_prod_sim_committed
+  before="$(head_commit)"
+  echo someone-edits >"$STUB/backup-mode"
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "uncommitted changes"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the edit is still there" grep -q 'an edit made during the dump' "$CLONE/$PROD_SIM_OVERLAY"
+  expect "the revert did not start" nothing_in_progress
+}
+
+rollback_leaves_the_other_render_as_git_has_it() {
+  # render.sh writes both environments. A stale render of the other one is not this rollback's to commit,
+  # and left on disk it would make the next promotion of that environment refuse.
+  local status=0
+  promote_dev "$DIGEST_A"
+  printf '# a hand edit\n' >>"$CLONE/$PROD_SIM_RENDERED"
+  git -C "$CLONE" add -- gitops
+  git -C "$CLONE" commit --quiet -m 'a hand edit of the render'
+  rollback dev || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  expect "the other render is not in the revert" equal "$(git -C "$CLONE" show --name-only --format= HEAD | grep -c prod-sim || true)" 0
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+
+# ---- which promotion, and which dump
+rollback_finds_a_subject_only_promotion() {
+  # A squash merge on GitHub may drop the trailer but keeps the subject.
+  local status=0 promoted
+  promote_dev "$DIGEST_A"
+  promote_prod_sim COMMIT=no
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -m 'promote(prod-sim): plane-frontend aaaaaaaaaaaa'
+  promoted="$(head_commit)"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "of that commit" grep -qF "This reverts commit $promoted" <(git -C "$CLONE" log -1 --format=%B)
+  expect "prod-sim is back" not_equal_digest "$DIGEST_A"
+}
+rollback_finds_a_trailer_only_promotion() {
+  local status=0 promoted
+  promote_dev "$DIGEST_A"
+  promote_prod_sim COMMIT=no
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -m 'bring web to prod-sim' -m 'Promote-Env: prod-sim'
+  promoted="$(head_commit)"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "of that commit" grep -qF "This reverts commit $promoted" <(git -C "$CLONE" log -1 --format=%B)
+}
+rollback_second_attempt_names_the_dump_from_before_the_promotion() {
+  # The first attempt's own dump holds what the bad promotion left, and it is the newest there is.
+  local status=0 older conflict first_dump
+  older=20260101T000000Z
+  mkdir -p "$CLONE/.local/backups/prod-sim/$older"
+  echo '{}' >"$CLONE/.local/backups/prod-sim/$older/manifest.json"
+  a_later_change_conflicts_in_the_overlay
+  conflict="$(head_commit)"
+  sleep 1
+  rollback prod-sim || status=$?
+  expect "the first attempt stops" [ "$status" -ne 0 ]
+  first_dump="$(find "$CLONE/.local/backups/prod-sim" -mindepth 1 -maxdepth 1 -type d ! -name "$older" -exec basename {} \;)"
+  expect "and took a dump" [ -n "$first_dump" ]
+  git -C "$CLONE" revert --no-edit "$conflict" >/dev/null
+  sleep 1
+  rollback prod-sim
+  expect "it names the older dump" said "BACKUP=$older"
+  expect "not the first attempt's" not_said "BACKUP=$first_dump"
+}
+rollback_says_when_no_dump_is_older() {
+  promote_prod_sim_committed
+  sleep 1
+  rollback prod-sim
+  expect "it took a dump of its own" equal "$(backup_calls)" 1
+  expect "it says none predates the promotion" said "no finished dump older than"
+  expect "and names none" not_said "BACKUP=2"
+}
+rollback_skips_an_unfinished_dump() {
+  local older=20260101T000000Z unfinished=20260102T000000Z
+  mkdir -p "$CLONE/.local/backups/prod-sim/$older" "$CLONE/.local/backups/prod-sim/$unfinished"
+  echo '{}' >"$CLONE/.local/backups/prod-sim/$older/manifest.json"
+  promote_prod_sim_committed
+  rollback prod-sim
+  expect "it names the finished one" said "BACKUP=$older"
+}
+
+# ---- publish: what it sends, and what its warning says
+publish_creates_the_bare_repository() {
+  local status=0
+  rm -rf "${BARE:?}"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it says so" said "created $BARE"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "a first publish has nothing to compare, so it asks the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+}
+publish_sends_what_it_checked() {
+  # A dump takes minutes, and a commit made meanwhile has not been checked.
+  local status=0 checked
+  merged_prod_sim_promotion
+  checked="$(head_commit)"
+  echo someone-commits >"$STUB/backup-mode"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "a commit did land during the dump" [ "$(head_commit)" != "$checked" ]
+  expect "it stays for the next publish" equal "$(published)" "$checked"
+}
+publish_warning_leaves_dev_out_when_it_only_moves_an_image() {
+  local status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes COMMIT=no ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A"
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  printf 'commonAnnotations:\n  flow-test: "yes"\n' >>"$CLONE/$PROD_SIM_OVERLAY"
+  commit_a_change_to_helm 'a change to the prod-sim overlay alone'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "dev is not in it" said "they reach prod-sim with this push"
+}
+publish_warning_says_when_its_list_is_cut() {
+  local status=0 n
+  for n in 1 2 3 4 5 6 7 8 9 10 11 12 13; do printf 'note\n' >"$CLONE/helm/plane/components/hardening/zz-note-$n.txt"; done
+  printf -- '---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: flow-test\nautomountServiceAccountToken: false\n' >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml"
+  commit_a_change_to_helm 'many paths'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "ten paths named" equal "$(grep -c '^       helm/plane' "$OUT")" 10
+  expect "and the rest counted" said "and 4 more"
+}
+publish_warning_says_nothing_of_more_when_all_are_named() {
+  local status=0
+  printf -- '---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: flow-test\nautomountServiceAccountToken: false\n' >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml"
+  commit_a_change_to_helm 'one path'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it names the path" said "helm/plane/components/hardening/serviceaccounts.yaml"
+  expect "no count" not_said " more"
+}
+publish_warning_says_when_no_source_changed() {
+  local status=0
+  printf '# a hand edit\n' >>"$CLONE/$PROD_SIM_RENDERED"
+  git -C "$CLONE" add -- gitops
+  git -C "$CLONE" commit --quiet -m 'a hand edit of the render'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it says so" said "The render changed with no source change"
+  expect "and promises no list" not_said "Changed under helm/plane:"
+}
+publish_warns_when_a_digest_by_hand_breaks_the_invariant() {
+  # dev runs it, so the plane-dev check is content, but it is admin's digest under web.
+  local status=0 admin
+  admin="$(admin_digest)"
+  dev_runs_its_overlay
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-admin:v0@$admin"
+  commit_a_change_to_helm 'by hand, not through promote: web takes the admin digest'
+  one_pod '' Running '{"name":"admin","ready":true}' "{\"name\":\"admin\",\"image\":\"docker.io/fixture/plane-admin:v0@$admin\"}"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "the check of plane-dev passes" said "passed: plane-dev was Synced and Healthy"
+  expect "the warning" said "in a way make promote would refuse"
+  expect "and why" said "recorded for dev under another image"
+}
+publish_quiet_about_the_invariant_for_a_promotion() {
+  local status=0
+  promote_dev "$DIGEST_A"
+  promote_prod_sim
+  expect "no warning" not_said "in a way make promote would refuse"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+step_summary_says_the_check_was_skipped() {
+  # This script clears the variable for every other scenario, so this one sets it.
+  local status=0
+  promote_dev "$DIGEST_A"
+  echo down >"$STUB/cluster"
+  in_clone env GITHUB_STEP_SUMMARY="$STUB/step-summary" SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim || status=$?
+  expect "the promotion goes ahead" [ "$status" -eq 0 ]
+  expect "the job summary says so" grep -q 'The plane-dev check was skipped' "$STUB/step-summary"
+  rm -f "$STUB/step-summary"
+}
+
 scenario promote-digest-under-another-image digest_under_another_image
 scenario promote-digest-never-recorded digest_never_recorded
 scenario promote-dev-healthy-and-running dev_healthy_and_running
@@ -1066,6 +2073,76 @@ scenario publish-merged-four-images-checks-each four_images_merged_checks_each "
 scenario rollback-four-images-together four_images_roll_back_together "$BASE_AHEAD"
 scenario drill-runs-to-a-pass drill_runs_to_a_pass
 scenario drill-failed-promotion-reverts-nothing-else drill_failed_promotion_reverts_nothing_else
+scenario promote-refuses-a-terminating-pod terminating_pod_proves_nothing
+scenario promote-refuses-a-pod-not-running pod_not_running_proves_nothing
+scenario promote-refuses-a-ready-sibling ready_sibling_proves_nothing
+scenario promote-refuses-the-failure-drill-digest failure_drill_digest_stays_out_of_prod_sim
+scenario promote-stops-when-the-dump-fails promote_stops_when_the_dump_fails
+scenario publish-stops-when-the-dump-fails publish_stops_when_the_dump_fails
+scenario promote-prod-sim-needs-confirmation promote_prod_sim_needs_confirmation
+scenario rollback-prod-sim-needs-confirmation rollback_prod_sim_needs_confirmation
+scenario promote-refuses-a-dirty-overlay promote_refuses_a_dirty_overlay
+scenario rollback-refuses-a-dirty-overlay rollback_refuses_a_dirty_overlay
+scenario promote-refuses-off-main promote_refuses_off_main
+scenario rollback-refuses-off-main rollback_refuses_off_main
+scenario promote-refuses-while-a-revert-is-under-way promote_refuses_while_a_revert_is_under_way
+scenario promote-takes-a-whole-digests-file promote_takes_a_whole_digests_file
+scenario promote-refuses-a-partial-digests-file promote_refuses_a_partial_digests_file
+scenario promote-refuses-a-malformed-digests-file promote_refuses_a_malformed_digests_file
+scenario promote-checks-its-arguments promote_checks_its_arguments
+scenario promote-refuses-an-ambiguous-image promote_refuses_an_ambiguous_image
+scenario promote-render-failure-puts-the-overlay-back promote_render_failure_puts_the_overlay_back
+scenario promote-commit-failure-puts-the-overlay-back promote_commit_failure_puts_the_overlay_back
+scenario promote-waits-out-a-git-add promote_waits_out_a_git_add
+scenario promote-says-what-to-do-when-the-index-stays-held promote_says_what_to_do_when_the_index_stays_held
+scenario promote-rechecks-the-overlay-after-the-dump promote_rechecks_the_overlay_after_the_dump
+scenario promote-holds-the-commit-lock-for-its-commit promote_holds_the_commit_lock_for_its_commit
+scenario rollback-holds-the-commit-lock-for-its-commit rollback_holds_the_commit_lock_for_its_commit
+scenario promote-waits-for-the-commit-lock promote_waits_for_the_commit_lock
+scenario rollback-waits-for-the-commit-lock rollback_waits_for_the_commit_lock
+scenario promote-gives-up-on-a-commit-lock-left-behind promote_gives_up_on_a_commit_lock_left_behind
+scenario rollback-gives-up-on-a-commit-lock-left-behind rollback_gives_up_on_a_commit_lock_left_behind
+scenario promote-again-publishes-after-a-refused-push promote_again_publishes_after_a_refused_push "$BASE_AHEAD"
+scenario promote-again-publishes-after-a-refused-check promote_again_publishes_after_a_refused_check "$BASE_AHEAD"
+scenario promote-dev-again-publishes-after-a-refused-push promote_dev_again_publishes_after_a_refused_push
+scenario promote-commit-no-publishes-nothing promote_commit_no_publishes_nothing
+scenario promote-dev-takes-the-dump-a-carried-prod-sim-change-needs promote_dev_takes_the_dump_a_carried_prod_sim_change_needs
+scenario promote-dev-stops-when-a-carried-dump-fails promote_dev_stops_when_a_carried_dump_fails
+scenario publish-names-the-prod-sim-commit-a-dev-change-waits-behind publish_names_what_a_dev_change_waits_behind
+scenario publish-refusal-of-prod-sim-alone-says-nothing-of-dev publish_refusal_of_prod_sim_alone_says_nothing_of_dev
+scenario rollback-dev-stops-before-moving-prod-sim rollback_dev_stops_before_moving_prod_sim
+scenario rollback-chain-after-a-refused-promotion rollback_chain_after_a_refused_promotion
+scenario rollback-dev-override-keeps-the-checks rollback_dev_override_keeps_the_checks
+scenario rollback-dev-rerun-stops-too rollback_dev_rerun_stops_too
+scenario rollback-dev-goes-on-past-what-does-not-move-prod-sim rollback_dev_goes_on_past_what_does_not_move_prod_sim
+scenario rollback-dev-goes-on-when-a-promotion-was-withdrawn rollback_dev_goes_on_when_a_promotion_was_withdrawn
+scenario rollback-conflict-keeps-someones-staged-work rollback_conflict_keeps_someones_staged_work
+scenario rollback-conflict-with-a-partly-staged-file rollback_conflict_with_a_partly_staged_file
+scenario rollback-render-failure-keeps-someones-staged-work rollback_render_failure_keeps_someones_staged_work
+scenario rollback-commit-failure-can-run-again rollback_commit_failure_can_run_again
+scenario rollback-waits-out-a-git-add rollback_waits_out_a_git_add
+scenario rollback-says-what-to-do-when-the-index-stays-held rollback_says_what_to_do_when_the_index_stays_held
+scenario rollback-says-when-the-revert-cannot-start rollback_says_when_the_revert_cannot_start
+scenario rollback-says-a-promotion-put-back-by-hand-is-undone rollback_says_a_promotion_put_back_by_hand_is_undone
+scenario rollback-promotion-that-added-a-file rollback_promotion_that_added_a_file
+scenario rollback-promotion-whose-added-file-is-gone rollback_promotion_whose_added_file_is_gone
+scenario rollback-refuses-an-edit-in-a-file-the-promotion-touched rollback_refuses_an_edit_in_a_file_the_promotion_touched
+scenario rollback-rechecks-after-the-dump rollback_rechecks_after_the_dump
+scenario rollback-leaves-the-other-render-as-git-has-it rollback_leaves_the_other_render_as_git_has_it
+scenario rollback-finds-a-subject-only-promotion rollback_finds_a_subject_only_promotion
+scenario rollback-finds-a-trailer-only-promotion rollback_finds_a_trailer_only_promotion
+scenario rollback-second-attempt-names-the-dump-from-before-the-promotion rollback_second_attempt_names_the_dump_from_before_the_promotion
+scenario rollback-says-when-no-dump-is-older rollback_says_when_no_dump_is_older
+scenario rollback-skips-an-unfinished-dump rollback_skips_an_unfinished_dump
+scenario publish-creates-the-bare-repository publish_creates_the_bare_repository
+scenario publish-sends-what-it-checked publish_sends_what_it_checked
+scenario publish-warning-leaves-dev-out-when-it-only-moves-an-image publish_warning_leaves_dev_out_when_it_only_moves_an_image
+scenario publish-warning-says-when-its-list-is-cut publish_warning_says_when_its_list_is_cut
+scenario publish-warning-says-nothing-of-more-when-all-are-named publish_warning_says_nothing_of_more_when_all_are_named
+scenario publish-warning-says-when-no-source-changed publish_warning_says_when_no_source_changed
+scenario publish-warns-when-a-digest-by-hand-breaks-the-invariant publish_warns_when_a_digest_by_hand_breaks_the_invariant
+scenario publish-quiet-about-the-invariant-for-a-promotion publish_quiet_about_the_invariant_for_a_promotion
+scenario promote-no-cluster-writes-the-job-summary step_summary_says_the_check_was_skipped
 
 [[ $((passed + failed)) -gt 0 ]] || die "no scenario matches '$FILTER'"
 [[ "$failed" -eq 0 ]] || die "$failed of $((passed + failed)) promotion flow scenarios failed"

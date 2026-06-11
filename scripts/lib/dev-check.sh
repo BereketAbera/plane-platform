@@ -6,6 +6,34 @@
 
 DEV_CHECK_LOG="$LOCAL_DIR/evidence-raw/promotion-overrides.log"
 DEV_CHECK=""
+PROD_SIM_MANIFESTS=gitops/environments/prod-sim/manifests.yaml
+
+# Does a publish from <old> to <new> move an image in prod-sim? It reads the render, because that is
+# what Argo CD reads. An <old> that is empty or unknown here, as on the first publish, moves nothing.
+# grep reads to the end, not -q. With -q it stops at the first match, git dies of SIGPIPE on a large
+# diff, and under pipefail the pipeline reads as no match.
+prod_sim_digests_move() { # prod_sim_digests_move <old> <new>
+  [[ -n "$1" ]] && git cat-file -e "$1" 2>/dev/null &&
+    git diff "$1" "$2" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+].*@sha256:' >/dev/null
+}
+
+# The digests on added lines. An image that was only removed brings nothing to prove.
+prod_sim_digests_added() { # prod_sim_digests_added <old> <new>
+  git diff "$1" "$2" -- "$PROD_SIM_MANIFESTS" | sed -n 's/^+.*@\(sha256:[a-f0-9]\{64\}\).*/\1/p' | sort -u
+}
+
+# The commits behind that move, newest first, to name in a message. A merge shows no diff of its own.
+commits_moving_prod_sim() { # commits_moving_prod_sim <old> <new>
+  local commits
+  commits="$(git log -G'@sha256:' --format='%h %s' "$1..$2" -- "$PROD_SIM_MANIFESTS")"
+  printf '%s\n' "${commits:-a merge since ${1:0:12}}"
+}
+
+override_reason() { # override_reason <reason>: on one line, for the log and a commit message
+  local reason
+  reason="$(tr -s '[:space:]' ' ' <<<"$1")"
+  printf '%s' "${reason% }"
+}
 
 refuse_unproven_dev() { # refuse_unproven_dev <what did not happen>
   die "plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK=\"<reason>\", which is logged. $1"
@@ -64,8 +92,7 @@ check_dev_proven() {
 
   while read -r problem; do warn "$problem"; done <<<"$problems"
   [[ -n "${OVERRIDE_DEV_CHECK:-}" ]] || return 1
-  reason="$(tr -s '[:space:]' ' ' <<<"$OVERRIDE_DEV_CHECK")"
-  reason="${reason% }"
+  reason="$(override_reason "$OVERRIDE_DEV_CHECK")"
   record_dev_check overridden "$reason" "$(tr '\n' ';' <<<"$problems")" "$@"
   DEV_CHECK="overridden: $reason"
   warn "OVERRIDE_DEV_CHECK: going ahead anyway. Logged in ${DEV_CHECK_LOG#"$ROOT"/}: $reason"
