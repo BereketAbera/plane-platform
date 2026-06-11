@@ -10,8 +10,8 @@
 # The local registry reaches nobody, so it is always allowed. Any other prefix depends on
 # backend/email-py-decision.txt, which is D12 in MODIFICATIONS.md, and only the owner's GHCR namespace is on the list. The
 # decision this knows about is that the backend image replaces upstream's commercially headed email.py and is flattened, so
-# no layer holds the original. checks/layer-check.py proves that on each image after it is pushed. A pending or unknown
-# decision publishes nowhere.
+# no layer holds the original. scripts/ci/build-images.sh walks each image with checks/layer-check.py before anything is
+# published, and again on what was published. A pending or unknown decision publishes nowhere.
 set -euo pipefail
 
 prefix="${1:?usage: publish-gate.sh <registry-prefix>}"
