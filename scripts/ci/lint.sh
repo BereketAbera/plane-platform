@@ -70,8 +70,12 @@ no_bitnami() {
 }
 
 python_compile_all() {
-  # PYTHONPYCACHEPREFIX keeps __pycache__ out of the tree.
-  python_files | PYTHONPYCACHEPREFIX="$(mktemp -d)" xargs python3 -m py_compile
+  # PYTHONPYCACHEPREFIX keeps __pycache__ out of the tree, and the folder goes when this is done.
+  local cache status=0
+  cache="$(mktemp -d)"
+  python_files | PYTHONPYCACHEPREFIX="$cache" xargs python3 -m py_compile || status=$?
+  rm -rf "$cache"
+  return "$status"
 }
 
 smoke_self_check() {
