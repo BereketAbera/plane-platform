@@ -49,21 +49,26 @@ for tool in "$ROOT"/.tools/bin/* "$ROOT"/.tools/bin/.[!.]*; do
 done
 rm -f "$CLONE/.tools/bin/kubectl" "$CLONE/.tools/bin/kustomize"
 
-# The real one, unless $STUB/kustomize-mode says to fail a build, or to leave .git/index.lock behind
-# after the last build of a render, as a git add running at that moment would. With -after-edit it waits
-# for an edit, so the render.sh --check before promote's edit passes. $STUB/index-lock-seconds lets the
-# lock go that much later. Otherwise it stays until the scenario removes it.
+# The real one, unless $STUB/kustomize-mode says to fail a build, to end the script that is rendering as
+# Ctrl-C would, or to leave .git/index.lock behind after the last build of a render, as a git add running
+# at that moment would. With -after-edit it waits for an edit, so the render.sh --check before promote's
+# edit passes. $STUB/index-lock-seconds lets the lock go that much later. Otherwise it stays until the
+# scenario removes it.
 cat >"$CLONE/.tools/bin/kustomize" <<STUB_KUSTOMIZE
 #!/usr/bin/env bash
 mode="\$(cat "\$STUB/kustomize-mode" 2>/dev/null || true)"
 if [[ "\$1" == edit ]]; then touch "\$STUB/kustomize-edited"; fi
 armed=no
 case "\$mode" in
-  fail | lock) armed=yes ;;
+  fail | lock | end) armed=yes ;;
   *-after-edit) if [[ -e "\$STUB/kustomize-edited" ]]; then armed=yes; fi ;;
 esac
 if [[ "\$1" == build && "\$armed" == yes && "\$mode" == fail* ]]; then
   echo "stub kustomize: failing as told" >&2
+  exit 1
+fi
+if [[ "\$1" == build && "\$armed" == yes && "\$mode" == end* ]]; then
+  kill -TERM "\$(ps -o ppid= -p "\$PPID" | tr -d ' ')" "\$PPID"
   exit 1
 fi
 "$ROOT/.tools/bin/kustomize" "\$@"
@@ -432,7 +437,7 @@ rollback_rerun_after_failed_publish() {
   status=0
   rollback dev || status=$?
   expect "the failed publish is reported" [ "$status" -ne 0 ]
-  expect "the operator is told what a re-run does" said "it publishes that revert and reverts nothing else"
+  expect "the operator is told what a re-run does" said "it publishes that and reverts nothing else"
   revert="$(head_commit)"
   expect "one revert on main" equal "$(reverts_on_main)" 1
   expect "it is the revert of the newest promotion" grep -qF "This reverts commit $second" <(git -C "$CLONE" log -1 --format=%B)
@@ -554,7 +559,7 @@ rollback_dev_takes_no_dump() {
   expect "no dump" [ ! -e "$STUB/backup-calls" ]
   expect "published" equal "$(published)" "$(head_commit)"
   expect "dev is back" equal "$(web_digest_in "$DEV_OVERLAY")" "$(git -C "$CLONE" show "$BASE:$DEV_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest')"
-  expect "no waiver: only a rollback of prod-sim has one" not_said "plane-dev check not run"
+  expect "no waiver: only a rollback of prod-sim has one" not_said "SKIP_DEV_CHECK"
   expect "nothing logged" [ ! -e "$OVERRIDE_LOG" ]
 }
 rollback_leaves_other_staged_files_alone() {
@@ -1160,13 +1165,15 @@ rollback_prod_sim_needs_confirmation() {
 }
 promote_refuses_a_dirty_overlay() {
   local status=0 before
+  promote_dev "$DIGEST_A"
   before="$(head_commit)"
-  printf '# an edit in progress\n' >>"$CLONE/$DEV_OVERLAY"
-  promote_dev "$DIGEST_A" || status=$?
+  printf '# an edit in progress\n' >>"$CLONE/$PROD_SIM_OVERLAY"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
   expect "a refusal" [ "$status" -ne 0 ]
   expect "the reason" said "has uncommitted changes"
+  expect "before it spends a dump" equal "$(backup_calls)" 0
   expect "no commit" equal "$(head_commit)" "$before"
-  expect "the edit is still there" grep -q 'an edit in progress' "$CLONE/$DEV_OVERLAY"
+  expect "the edit is still there" grep -q 'an edit in progress' "$CLONE/$PROD_SIM_OVERLAY"
 }
 rollback_refuses_a_dirty_overlay() {
   local status=0 before
@@ -1300,6 +1307,16 @@ promote_render_failure_puts_the_overlay_back() {
   expect "the kustomize edit did happen" [ -e "$STUB/kustomize-edited" ]
   expect "nothing moved" changes_nothing_since "$before"
   expect "someone's work is still staged" equal "$(staged_names)" "docs/staged-by-someone.txt "
+  expect "the commit lock is free" nothing_in_progress
+}
+promote_ended_halfway_puts_the_overlay_back() {
+  local status=0 before
+  before="$(head_commit)"
+  echo end-after-edit >"$STUB/kustomize-mode"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "it did not succeed" [ "$status" -ne 0 ]
+  expect "the kustomize edit did happen" [ -e "$STUB/kustomize-edited" ]
+  expect "nothing moved" changes_nothing_since "$before"
   expect "the commit lock is free" nothing_in_progress
 }
 promote_commit_failure_puts_the_overlay_back() {
@@ -1612,6 +1629,8 @@ rollback_dev_rerun_stops_too() {
   revert="$(head_commit)"
   set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
   commit_a_change_to_helm 'a digest changed by hand'
+  # plane-dev has proven it, so the publish itself would let it through. Dev's rollback still may not.
+  web_image "$DIGEST_B" true
   status=0
   rollback dev || status=$?
   expect "a stop" [ "$status" -ne 0 ]
@@ -1709,6 +1728,7 @@ rollback_commit_failure_can_run_again() {
   expect "a refusal" [ "$status" -ne 0 ]
   expect "the reason" said "could not commit the revert"
   expect "git's own words" said "hook: no"
+  expect "it says nothing changed" said "Nothing changed"
   expect "no commit" equal "$(head_commit)" "$before"
   expect "the revert is gone" nothing_in_progress
   expect "helm and gitops are clean" helm_and_gitops_clean
@@ -1716,6 +1736,19 @@ rollback_commit_failure_can_run_again() {
   rollback prod-sim
   expect "a second run finishes it" equal "$(reverts_on_main)" 1
   expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_ended_halfway_puts_the_revert_back() {
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  someone_has_staged_work
+  echo end >"$STUB/kustomize-mode"
+  rollback dev || status=$?
+  expect "it did not succeed" [ "$status" -ne 0 ]
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the revert is gone" nothing_in_progress
+  expect "helm and gitops are clean" helm_and_gitops_clean
+  someones_work_is_still_there
 }
 rollback_waits_out_a_git_add() {
   promote_prod_sim_committed
@@ -1900,14 +1933,12 @@ rollback_second_attempt_names_the_dump_from_before_the_promotion() {
   first_dump="$(find "$CLONE/.local/backups/prod-sim" -mindepth 1 -maxdepth 1 -type d ! -name "$older" -exec basename {} \;)"
   expect "and took a dump" [ -n "$first_dump" ]
   git -C "$CLONE" revert --no-edit "$conflict" >/dev/null
-  sleep 1
   rollback prod-sim
   expect "it names the older dump" said "BACKUP=$older"
   expect "not the first attempt's" not_said "BACKUP=$first_dump"
 }
 rollback_says_when_no_dump_is_older() {
   promote_prod_sim_committed
-  sleep 1
   rollback prod-sim
   expect "it took a dump of its own" equal "$(backup_calls)" 1
   expect "it says none predates the promotion" said "no finished dump older than"
@@ -2092,6 +2123,7 @@ scenario promote-refuses-a-malformed-digests-file promote_refuses_a_malformed_di
 scenario promote-checks-its-arguments promote_checks_its_arguments
 scenario promote-refuses-an-ambiguous-image promote_refuses_an_ambiguous_image
 scenario promote-render-failure-puts-the-overlay-back promote_render_failure_puts_the_overlay_back
+scenario promote-ended-halfway-puts-the-overlay-back promote_ended_halfway_puts_the_overlay_back
 scenario promote-commit-failure-puts-the-overlay-back promote_commit_failure_puts_the_overlay_back
 scenario promote-waits-out-a-git-add promote_waits_out_a_git_add
 scenario promote-says-what-to-do-when-the-index-stays-held promote_says_what_to_do_when_the_index_stays_held
@@ -2120,6 +2152,7 @@ scenario rollback-conflict-keeps-someones-staged-work rollback_conflict_keeps_so
 scenario rollback-conflict-with-a-partly-staged-file rollback_conflict_with_a_partly_staged_file
 scenario rollback-render-failure-keeps-someones-staged-work rollback_render_failure_keeps_someones_staged_work
 scenario rollback-commit-failure-can-run-again rollback_commit_failure_can_run_again
+scenario rollback-ended-halfway-puts-the-revert-back rollback_ended_halfway_puts_the_revert_back
 scenario rollback-waits-out-a-git-add rollback_waits_out_a_git_add
 scenario rollback-says-what-to-do-when-the-index-stays-held rollback_says_what_to_do_when_the_index_stays_held
 scenario rollback-says-when-the-revert-cannot-start rollback_says_when_the_revert_cannot_start
