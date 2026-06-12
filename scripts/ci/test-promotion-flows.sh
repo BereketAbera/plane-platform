@@ -537,6 +537,23 @@ rollback_prod_sim_past_a_later_change_beside_the_image() {
   in_clone ./scripts/render.sh --check || status=$?
   expect "the render is current" [ "$status" -eq 0 ]
 }
+rollback_dev_past_a_later_change_beside_the_image() {
+  # The same for the other environment, whose rollback drills use.
+  local status=0
+  promote_dev "$DIGEST_A"
+  sed -i.bak 's/imagePullPolicy, value: IfNotPresent/imagePullPolicy, value: Never/' "$CLONE/helm/plane/components/hardening/kustomization.yaml"
+  rm -f "$CLONE/helm/plane/components/hardening/kustomization.yaml.bak"
+  commit_a_change_to_helm 'a later change beside the image line'
+  in_clone ./scripts/gitops-publish.sh
+  rollback dev || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "it says why it went on" said "conflicts only in gitops/environments/dev/manifests.yaml"
+  expect "dev's image is back" [ "$(web_digest_in "$DEV_OVERLAY")" != "$DIGEST_A" ]
+  expect "the later change stays" grep -q 'imagePullPolicy: Never' "$CLONE/gitops/environments/dev/manifests.yaml"
+  expect "published" equal "$(published)" "$(head_commit)"
+  in_clone ./scripts/render.sh --check || status=$?
+  expect "the render is current" [ "$status" -eq 0 ]
+}
 rollback_stops_on_a_conflict_in_the_overlay() {
   local status=0 before
   promote_prod_sim_committed
@@ -1220,17 +1237,14 @@ promote_refuses_while_a_revert_is_under_way() {
   expect "the revert is still as it was" [ -e "$CLONE/.git/REVERT_HEAD" ]
 }
 write_digests_file() { # write_digests_file <image to leave out> <image to give a bad digest>
-  local image repo
+  local image digest
   mkdir -p "$CLONE/.build"
   : >"$CLONE/.build/digests.tsv"
   for image in web admin space backend; do
-    repo="$image"
     [[ "$image" != "$1" ]] || continue
-    if [[ "$image" == "$2" ]]; then
-      printf '%s\tlocalhost:5001/wayline/%s\tsha256:short\n' "$image" "$repo" >>"$CLONE/.build/digests.tsv"
-    else
-      printf '%s\tlocalhost:5001/wayline/%s\t%s\n' "$image" "$repo" "$DIGEST_A" >>"$CLONE/.build/digests.tsv"
-    fi
+    digest="$DIGEST_A"
+    [[ "$image" != "$2" ]] || digest=sha256:short
+    printf '%s\tlocalhost:5001/wayline/%s\t%s\n' "$image" "$image" "$digest" >>"$CLONE/.build/digests.tsv"
   done
 }
 promote_takes_a_whole_digests_file() {
@@ -2063,6 +2077,7 @@ scenario rollback-prod-sim-with-hung-backup rollback_prod_sim_with_hung_backup
 scenario rollback-prod-sim-names-the-older-dump rollback_prod_sim_names_the_older_dump
 scenario rollback-prod-sim-skip-backup rollback_prod_sim_skip_backup
 scenario rollback-prod-sim-past-a-later-change-beside-the-image rollback_prod_sim_past_a_later_change_beside_the_image
+scenario rollback-dev-past-a-later-change-beside-the-image rollback_dev_past_a_later_change_beside_the_image
 scenario rollback-stops-on-a-conflict-in-the-overlay rollback_stops_on_a_conflict_in_the_overlay
 scenario rollback-dev-takes-no-dump rollback_dev_takes_no_dump
 scenario rollback-leaves-other-staged-files-alone rollback_leaves_other_staged_files_alone
