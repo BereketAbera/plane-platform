@@ -31,6 +31,18 @@ release_commit_lock() {
   fi
 }
 
+# A git operation someone left unfinished here. A commit of named paths would finish a revert in whatever
+# state it is, and git refuses one during a merge or a cherry-pick. Prints its marker, or nothing.
+git_operation_under_way() {
+  local state
+  for state in REVERT_HEAD MERGE_HEAD CHERRY_PICK_HEAD; do
+    if [[ -e "$(git rev-parse --git-path "$state")" ]]; then
+      printf '%s\n' "$state"
+      return 0
+    fi
+  done
+}
+
 # Waits for no longer than INDEX_LOCK_WAIT seconds. If the file is still there then, git's own error
 # says what it is and what to do about it.
 wait_for_index() {

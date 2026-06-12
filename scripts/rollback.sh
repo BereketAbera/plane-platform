@@ -60,9 +60,17 @@ REVERT_HEAD_FILE="$(git rev-parse --git-path REVERT_HEAD)"
 if [[ "$ENV" == dev ]]; then OTHER_RENDERED=gitops/environments/prod-sim/manifests.yaml; else OTHER_RENDERED=gitops/environments/dev/manifests.yaml; fi
 
 [[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "roll back from main: gitops-publish pushes main"
-if [[ -e "$REVERT_HEAD_FILE" ]]; then
-  die "a revert of $(git log -1 --format='%h %s' REVERT_HEAD) is under way in this checkout, so this changed nothing. If it is an earlier run's, git status shows what it left: put those paths back with git restore --source=HEAD --staged --worktree -- <path>, run git revert --quit, then run this again."
-fi
+# So any revert in this checkout from here on is this run's, and stopping can clear it.
+refuse_what_is_under_way() {
+  local under_way
+  under_way="$(git_operation_under_way)"
+  if [[ "$under_way" == REVERT_HEAD ]]; then
+    die "a revert of $(git log -1 --format='%h %s' REVERT_HEAD) is under way in this checkout, so this changed nothing. If it is an earlier run's, git status shows what it left: put those paths back with git restore --source=HEAD --staged --worktree -- <path>, run git revert --quit, then run this again."
+  elif [[ -n "$under_way" ]]; then
+    die "$under_way says a git operation is under way in this checkout, and a revert cannot be committed beside it, so this changed nothing. Finish it or abort it first."
+  fi
+}
+refuse_what_is_under_way
 [[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"
 
 # A squash merge on GitHub may drop the trailer but keeps the subject, so match either.
@@ -206,7 +214,8 @@ reverting=no
 # whatever else is staged in this checkout, and fails outright on a file with staged and unstaged edits.
 undo_revert() {
   restore_from_head "${revert_paths[@]}" || return 1
-  git revert --quit || return 1
+  # Not when the revert never started, because --quit forgets any git operation under way.
+  if [[ -e "$REVERT_HEAD_FILE" ]]; then git revert --quit || return 1; fi
   reverting=no
 }
 
@@ -236,6 +245,7 @@ trap 'exit 143' TERM
 # It is generated and rendered next, so a conflict there means nothing and must not hold up this path.
 # A conflict anywhere else stops it. The dump above took minutes, so the checks at the top may be stale.
 take_commit_lock
+refuse_what_is_under_way
 refuse_edits_in_the_way
 other_render_was_clean=no
 if [[ -z "$(git status --porcelain -- "$OTHER_RENDERED")" ]]; then other_render_was_clean=yes; fi

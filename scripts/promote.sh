@@ -67,9 +67,14 @@ git rev-parse -q --verify HEAD >/dev/null || die "the repository has no commits,
 if [[ "$COMMIT" == yes ]]; then
   # gitops-publish pushes main, so a promotion committed anywhere else would never reach Argo CD.
   [[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "promote from main, or use COMMIT=no"
-  # A commit here would finish that revert, whatever state it is in.
-  [[ ! -e "$(git rev-parse --git-path REVERT_HEAD)" ]] || die "a revert is under way in this checkout, so this changed nothing. Finish it or clear it first: git status shows what it left."
 fi
+refuse_what_is_under_way() { # With no commit to make, it does not matter.
+  local under_way
+  [[ "$COMMIT" == yes ]] || return 0
+  under_way="$(git_operation_under_way)"
+  [[ -z "$under_way" ]] || die "$under_way says a git operation is under way in this checkout, so this changed nothing. Finish it or clear it first: git status shows what it left."
+}
+refuse_what_is_under_way
 
 WORK="$(mktemp -d)"
 applied=no
@@ -217,6 +222,7 @@ fi
 # The dump above took minutes, so the check at the top may be stale, and the restore in cleanup
 # relies on it.
 take_commit_lock
+refuse_what_is_under_way
 [[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes, made since this started. Nothing was promoted."
 applied=yes
 subject_parts=""
