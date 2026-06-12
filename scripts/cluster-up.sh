@@ -42,7 +42,11 @@ else
   sed "s|__REPO_ROOT__|$ROOT|g" "$ROOT/infrastructure/kind/cluster.yaml.tmpl" > "$LOCAL_DIR/kind-cluster.yaml"
   kind create cluster --config "$LOCAL_DIR/kind-cluster.yaml" --kubeconfig "$KUBECONFIG" --wait 120s
 fi
-kind export kubeconfig --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG" >/dev/null 2>&1
+# Its error goes through when it fails, and kind prints a line to stderr when it does not.
+if ! kind_export_error="$(kind export kubeconfig --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG" 2>&1 >/dev/null)"; then
+  printf '%s\n' "$kind_export_error" >&2
+  die "kind cannot read the node of cluster $CLUSTER_NAME, as it says above. After a stop during kind create, this means the node never finished, and only removing it goes on from there: make destroy CONFIRM=yes SKIP_BACKUP=yes, then run this again. If this cluster ever ran and holds data, read docker logs $NODE_CONTAINER first, because that command deletes it."
+fi
 
 # NetworkPolicies allow node-sourced traffic from Docker's default pool, because the exact /16
 # differs per machine. A custom daemon pool would silently break them, so stop here instead.

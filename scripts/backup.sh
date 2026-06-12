@@ -7,14 +7,19 @@
 #
 # Postgres: pg_dump -Fc with the same image as the server, then a restore of that dump into a scratch
 # database, so the row counts come from the dump itself and every backup is proven restorable.
-# Objects: rclone copy plus a downloading check. Plane only.
+# Objects: rclone copy plus a downloading check. Plane only. The manifest records how many rows the dump marks as
+# uploaded and how many of those have no object in this backup, which is what a restore's GATE2 refuses, so a plan
+# can say so before a delete.
 # Keys: only a truncated hash of SECRET_KEY or ENCRYPTION_KEY goes in the manifest, never the key.
 # Dumps hold password hashes and plaintext API tokens, so the backup root is kept at 0700.
 # Recovery set: after the Job, this script adds recovery/ to the backup from the host, because that is
 # where those files live. See infisical/lib/recovery.sh. Infisical exits non-zero if its set is not
 # whole, and keeps the dump: an in-place restore can use it, a clean restore cannot.
-# Retention: Plane's runs in the Job. Infisical's runs from here, once its set is complete, and only a
-# complete set counts toward KEEP, so a run of failures cannot remove the backup a clean restore needs.
+# Retention: Plane's runs in the Job, and it never removes the newest backup that holds users, so backups of an
+# empty environment cannot push out the last real one. Infisical's runs from here, once its set is complete, and
+# only a complete set counts toward KEEP, so a run of failures cannot remove the backup a clean restore needs.
+# While a clean restore is under way an environment it has not finished is empty or partly restored, and a backup of
+# that is worse than none, so this refuses it unless ALLOW_BACKUP_DURING_RESTORE=yes. One it has finished goes ahead.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../monitoring/ops/lib.sh
@@ -25,7 +30,7 @@ source "$ROOT/infisical/lib/api.sh"
 source "$ROOT/infisical/lib/recovery.sh"
 trap ia_cleanup EXIT
 
-accept_assignments "ENV KEEP" "$@"
+accept_assignments "ENV KEEP ALLOW_BACKUP_DURING_RESTORE" "$@"
 target="${ENV:-}"
 for arg in "$@"; do case "$arg" in *=*) ;; *) target="$arg" ;; esac; done
 [[ -n "$target" ]] || die "usage: $0 dev|prod-sim|infisical|all"
@@ -42,6 +47,17 @@ if [[ "$target" == all ]]; then
 fi
 
 select_env "$target"
+
+if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
+  if grep -qx "done $ENV_NAME" "$RESTORE_CLEAN_MARKER"; then
+    warn "a clean restore is still marked as under way ($RESTORE_CLEAN_MARKER), and it has finished $ENV_NAME, so this backup goes ahead. A newer complete set stops BACKUP=latest from resuming that restore, and the refusal says what to run."
+  elif [[ "${ALLOW_BACKUP_DURING_RESTORE:-}" == yes ]]; then
+    warn "a clean restore is under way ($RESTORE_CLEAN_MARKER), and it has not finished $ENV_NAME. Backing it up anyway, because ALLOW_BACKUP_DURING_RESTORE=yes."
+  else
+    die "a clean restore is under way ($RESTORE_CLEAN_MARKER), and it has not finished $ENV_NAME, which is empty or partly restored. A backup of that would become the newest, and could push out the one that holds the data. Nothing was changed. Finish the restore, with the same make restore-clean. If this is before make destroy, pass SKIP_BACKUP=yes to that. To back up what is there anyway: ALLOW_BACKUP_DURING_RESTORE=yes."
+  fi
+fi
+
 guard_disk
 need_cluster
 
@@ -209,6 +225,16 @@ spec:
               psql -XAt -d "$POSTGRES_DB" -c 'SHOW server_version' > "$D/postgres/server_version.txt"
               pg_dump --version > "$D/postgres/pg_dump_version.txt"
               echo "postgres: $(wc -l < "$D/postgres/rowcounts.tsv") tables counted from a scratch restore"
+              # For the comparison below, from the same query as a restore's GATE2, on what this dump holds. If the
+              # query fails on a later schema, this backup records no result: better that than no backup.
+              if psql -XAt -v ON_ERROR_STOP=1 -d "$V" \
+                -c "SELECT asset FROM file_assets WHERE is_uploaded AND NOT is_deleted AND deleted_at IS NULL" \
+                > "$D/postgres/uploaded-keys.unsorted"; then
+                LC_ALL=C sort "$D/postgres/uploaded-keys.unsorted" > "$D/postgres/uploaded-keys.txt"
+              else
+                echo "postgres: could not list the uploaded assets, so this backup records no result for them" >&2
+              fi
+              rm -f "$D/postgres/uploaded-keys.unsorted"
         # After the dump, so every asset row has its object. Extra objects are harmless.
         - name: objects
           image: __RCLONE_IMAGE__
@@ -243,6 +269,17 @@ spec:
               rclone check "src:$BUCKET" "$D/objects" --one-way --download --combined "$D/objects.check"
               rclone lsjson -R --metadata "src:$BUCKET" > "$D/objects.lsjson"
               echo "objects: $(wc -l < "$D/objects.check") checked"
+              # GATE2 begin. A restore's GATE2, made here on what a restore would have: the rows in this dump and the
+              # objects in this backup. It stays a record and not a failure, because a backup with one dangling row
+              # still holds everything else, and is better than none. The manifest carries the count for a plan.
+              if [ -f "$D/postgres/uploaded-keys.txt" ]; then
+                rclone lsf -R --files-only "$D/objects" > "$D/.objects.list"
+                LC_ALL=C sort "$D/.objects.list" > "$D/.objects.sorted"
+                LC_ALL=C comm -23 "$D/postgres/uploaded-keys.txt" "$D/.objects.sorted" > "$D/postgres/uploaded-missing.txt"
+                rm -f "$D/.objects.list" "$D/.objects.sorted"
+                echo "GATE2: $(wc -l < "$D/postgres/uploaded-keys.txt") rows marked uploaded, $(wc -l < "$D/postgres/uploaded-missing.txt") with no object in this backup"
+              fi
+              # GATE2 end
       containers:
         - name: finalize
           image: __PG_IMAGE__
@@ -291,6 +328,13 @@ spec:
               else
                 SENTINEL=null
               fi
+              # UPLOADED begin
+              if [ -f postgres/uploaded-missing.txt ]; then
+                UPLOADED="{\"rows\": $(wc -l < postgres/uploaded-keys.txt | tr -d ' '), \"missing\": $(wc -l < postgres/uploaded-missing.txt | tr -d ' ')}"
+              else
+                UPLOADED=null
+              fi
+              # UPLOADED end
               cat > manifest.json <<JSON
               {
                 "schema": 1,
@@ -306,6 +350,7 @@ spec:
                 "secret_key_fp": "$FP",
                 "excluded_table_data": ["api_activity_logs", "webhook_logs", "email_notification_logs"],
                 "objects": {"count": $OBJECTS, "bytes": $OBJECT_BYTES},
+                "uploaded_objects": $UPLOADED,
                 "encrypted_sentinel": "$ENCRYPTED",
                 "sentinel": $SENTINEL,
                 "files": [$FILES]
@@ -316,10 +361,25 @@ spec:
               cd /backups
               mv "$D" "$F" # the final name appears only after everything above succeeded
 
-              # Keep the newest $KEEP finished backups, never touching anything else in this folder.
-              ls -1 | grep -E '^[0-9]{8}T[0-9]{6}Z$' | sort -r | awk -v k="$KEEP" 'NR > k' | while read -r old; do
-                if [ -f "$old/manifest.json" ]; then rm -rf -- "/backups/$old"; echo "retention: removed $old"; fi
+              # Keep the newest $KEEP finished backups, never touching anything else in this folder, and never the
+              # newest one that holds users: a run of backups of an empty environment must not push that one out.
+              # RETENTION begin
+              HOLDS_USERS=""
+              for old in $(ls -1 | grep -E '^[0-9]{8}T[0-9]{6}Z$' | sort -r); do
+                if [ -f "$old/manifest.json" ] && awk -F '\t' '$1 == "users" && $2 + 0 > 0 { found = 1 } END { exit !found }' "$old/postgres/rowcounts.tsv"; then
+                  HOLDS_USERS="$old"
+                  break
+                fi
               done
+              ls -1 | grep -E '^[0-9]{8}T[0-9]{6}Z$' | sort -r | awk -v k="$KEEP" 'NR > k' | while read -r old; do
+                if [ "$old" = "$HOLDS_USERS" ]; then
+                  echo "retention: kept $old past KEEP=$KEEP, the newest backup that holds users"
+                elif [ -f "$old/manifest.json" ]; then
+                  rm -rf -- "/backups/$old"
+                  echo "retention: removed $old"
+                fi
+              done
+              # RETENTION end
               find /backups -maxdepth 1 -type d -name '*.partial' -mtime +1 -exec rm -rf {} +
               echo "finalize: $BACKUP_ID complete"
 YAML
@@ -464,6 +524,16 @@ kc -n "$NS" get jobs -l app.kubernetes.io/name=plane-backup -o json \
   | while read -r old_job; do kc -n "$NS" delete job "$old_job" >/dev/null; done
 
 jq -r '"backup \(.id): " + ([.files[] | "\(.path) \(.bytes) B"] | join(", "))' "$final/manifest.json"
+if [[ "$ENV_NAME" != infisical ]]; then
+  # Both are worth saying at the time, because from here on this backup is what BACKUP=latest names.
+  if [[ "$(awk -F '\t' '$1 == "users" { print $2 }' "$final/postgres/rowcounts.tsv")" == 0 ]]; then
+    warn "this backup holds 0 users, so it looks like a backup of an empty platform, and BACKUP=latest now names it. Retention keeps the newest backup that holds users."
+  fi
+  uploaded_missing="$(jq -r '.uploaded_objects.missing // 0' "$final/manifest.json")"
+  if [[ "$uploaded_missing" != 0 ]]; then
+    warn "this backup has $uploaded_missing rows marked uploaded with no object, listed in .local/backups/$ENV_NAME/$ID/postgres/uploaded-missing.txt. A restore of it would fail its GATE2, so a plan and make restore refuse it. Fix those rows or put the objects back, and back up again."
+  fi
+fi
 [[ "$recovery_failed" == no ]] || die "the dump in .local/backups/$ENV_NAME/$ID is good, but its recovery set is not whole, as the warnings above say. An in-place restore can use it, and make restore-clean will refuse it. Retention did not run, so no older backup was removed."
 if [[ "$ENV_NAME" == infisical ]]; then
   recovery_admin_plan "$(recovery_set_file "$final")"

@@ -25,7 +25,8 @@
 # override the waits, for a slow first image pull. Nothing here prints a secret: credentials stay
 # in .local/secret-zero and .local/test-accounts.env.
 # ALLOW_LOW_DISK="<reason>" goes past the check for a new cluster, and the reason is logged in
-# .local/evidence-raw/low-disk-overrides.log. It does not go past the 10 GiB floor every script checks.
+# .local/evidence-raw/low-disk-overrides.log. It does not go past the floor every script checks, 10 GiB unless
+# MIN_FREE_DISK_GIB=<n> lowers it, and guard_disk logs a value below 10 in the same file.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=lib/up-checks.sh
@@ -151,11 +152,13 @@ ensure_local_images() {
 These digests are still missing, because the rebuild produced different ones:
 $missing
 Nothing was published. Either promote what was just built (.build/digests.tsv), which commits the new
-digests to main. The second line is only needed if prod-sim references them, and takes SKIP_BACKUP=yes
-if prod-sim holds no data yet:
+digests to main. The second line is only needed if prod-sim references them:
     make promote ENV=dev
     make promote ENV=prod-sim CONFIRM=yes
     make up
+On an empty cluster, as make up UP_STOP_AFTER=cluster leaves, prod-sim holds no data to back up and plane-dev
+cannot have proven a digest, so the second line is:
+    make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="restoring into an empty cluster"
 Or keep the exact digests, by copying them from the registry that has them:
     scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
     scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline prod-sim

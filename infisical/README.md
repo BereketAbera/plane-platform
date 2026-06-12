@@ -52,7 +52,7 @@ Everything Infisical needs before it can answer lives in `.local/secret-zero/` (
 | `infisical-admin-token.new` | A token a person made by hand after a sign-in, one line. There only until a script has checked it against the server and moved it into place | |
 | `infisical-admin-replaced.log` | One line for each time `infisical-admin.json` was replaced: when, why, how, and the sha256 of the file before and after. No token | Nothing depends on it. It is the record |
 | `archive-token-<time>/` | The `infisical-admin.json` a replacement took over from, so a restore can still find it by checksum | |
-| `infisical-machine.json` | Project and identity ids. Not secret | Rerun bootstrap. A restore rebuilds it from the backup's Terraform state |
+| `infisical-machine.json` | Project and identity ids. Not secret | Rerun bootstrap. A restore rebuilds it from the backup's Terraform state when it is lost, or names other ids than the backup does, and keeps the old one in `archive-pre-restore-<time>/` |
 | `rotation-<env>/` | Both passwords, only while a rotation is stopped partway | Rotation cannot be resumed automatically |
 
 `secret-zero.sh` reuses existing files and restores a missing one from the cluster if it can. It refuses to replace a differing `ENCRYPTION_KEY` in the cluster without `CONFIRM=yes`, and replaces the whole set only with `REGENERATE=yes CONFIRM=yes`, which archives the old files first. Regenerating is meant for an empty database: Postgres keeps its old password until its volume is recreated.
@@ -148,7 +148,7 @@ make drill-clean-restore CONFIRM=yes LOSE_CLUSTER=yes   # the same, deleting wit
 make drill-clean-restore-harness                 # the logic, against stubs. Touches nothing and proves no platform
 ```
 
-It exits 0 when everything is proven, 1 when something failed, and 2 when nothing failed but a proof could not run or a person has to act, which is not a pass. With 2 the restore stays marked as under way, and the same command goes on from there.
+It exits 0 when everything is proven, 1 when something failed, and 2 when nothing failed but a proof could not run or a person has to act, which is not a pass. With 2 the restore stays marked as under way, and the same command goes on from there. Only `scripts/restore.sh` itself exits with these: the numbers are the script's, and make itself exits 2 on any of them, and prints which, as in `make: *** [restore-clean] Error 1`. So after `make restore-clean`, read what happened from its evidence: `jq '.result, .not_run' .local/evidence-raw/restore-clean-*.json`.
 
 What a backup holds beyond the dump. `recovery/set.json` is the last thing written, and an Infisical backup without a whole one cannot serve a clean restore:
 
@@ -160,10 +160,11 @@ What a backup holds beyond the dump. `recovery/set.json` is the last thing writt
 | Project and identity ids | `recovery/set.json` | |
 | Each Plane secret: truncated hash, version and id | `recovery/set.json` | Read back from the API at backup time. Proves which `SECRET_KEY` this dump can render, before anything is deleted or created |
 | Test accounts and sentinel | `recovery/` of each Plane backup, that environment's lines only | They are rows in that dump. A later `make test-e2e` signs in with them |
+| How many rows the dump marks as uploaded, and how many of those have no object in this backup | `uploaded_objects` in each Plane manifest, and the rows in `postgres/uploaded-missing.txt` | The same comparison as a restore's GATE2, which has no override and runs with the data already replaced. So a plan can refuse before a delete. It stays a record and not a failure, because the backup still holds everything else |
 
 The sequence, all of it in `scripts/restore.sh`:
 
-1. **Check, with nothing touched.** Every checksum, the keys the set names, that each Plane backup was taken with the `SECRET_KEY` this Infisical backup holds, and that Git does not deploy an older Infisical than the dump came from. Then everything `make up` would stop on, by the same code: uncommitted changes under `gitops`, `helm`, `monitoring` and `infisical`, digests the local registry cannot serve, and free disk. Refuses a cluster that holds data. The plan prints what each backup holds, in rows and objects, and warns if a Plane backup has 0 users, or records a sentinel when its dump counts 0 workspaces.
+1. **Check, with nothing touched.** Every checksum, the keys the set names, that each Plane backup was taken with the `SECRET_KEY` this Infisical backup holds, that it records no row marked uploaded with no object, and that Git does not deploy an older Infisical than the dump came from. Then everything `make up` would stop on, by the same code: uncommitted changes under `gitops`, `helm`, `monitoring` and `infisical`, digests the local registry cannot serve, and free disk. Refuses a cluster that holds data, or one it cannot read. The plan prints what each backup holds, in rows and objects, and warns if a Plane backup has 0 users, records a sentinel when its dump counts 0 workspaces, or is older than another backup with the same `SECRET_KEY`, which it names with the option that picks it.
 2. **`make up` as far as Traefik.** With no cluster at the start, `.local/terraform/local` describes one that is gone, so it first moves aside to `local.stale-<time>`, and says so. `make destroy` removes it, but a cluster lost any other way leaves it behind. Plane stays at wave -2, because it has no identity Secret yet, so nothing can read or render a value.
 3. **Wait for the fresh server to finish its migrations, then replace its database.** This pauses auto-sync on `infisical` only, stops the server, restores into a second database, checks the row counts, renames it into place, flushes Redis and starts the server. Root is left alone: its sync is waiting for Plane, and terminating it would stop Argo CD retrying that revision. Then something here has to be able to log in: see [How a restore logs in](#how-a-restore-logs-in).
 4. **`make up` from there, with bootstrap in restored mode.** Same credentials. Terraform updates the CA in Kubernetes Auth and nothing else; there is no stored token reviewer to refresh, because the login token reviews itself. Identity Secrets are published and no value is written. The operators render the old values, Plane's data services initialize with them, and it waits for all Applications, the first time through.
@@ -171,20 +172,36 @@ The sequence, all of it in `scripts/restore.sh`:
 
 Restored mode refuses rather than repairs. A fresh instance, a token the server rejects, Terraform wanting to create or delete anything, or a missing secret each mean the database and the local files are not a pair, and generating anything would only hide that. A token that has merely ended, or a file that is gone, says nothing about the pair, and step 3 has already dealt with those by the time restored mode runs.
 
-While a clean restore is under way, `.local/restore-clean.state` records it. A plain `make up` then refuses to bootstrap a fresh instance, which would create new secrets, and `make destroy` clears the file.
+While a clean restore is under way, `.local/restore-clean.state` records it. A plain `make up` then refuses to bootstrap a fresh instance, which would create new secrets, and `make destroy` clears the file. So does finishing it. Removing the file by hand ends it and deletes nothing, which is the way out when the platform here is what you want to keep.
+
+That file has no age limit, and exit 2 keeps it with the platform up and in use, so what it names can be overtaken. A resume refuses, and changes nothing, when:
+
+| What happened since | What it says | Ways on |
+|---|---|---|
+| `BACKUP=latest`, and a newer complete set exists | Names both | `BACKUP=<the id under way>` resumes it. `make destroy CONFIRM=yes SKIP_BACKUP=yes` starts over, and with a cluster here that deletes it |
+| `BACKUP=latest`, no cluster, and it would now choose newer Plane backups | Names both. Nothing that run finished still counts, so neither does what it chose | The same |
+| Retention or a person removed a backup it names | Names it | `make destroy CONFIRM=yes SKIP_BACKUP=yes`, or remove the file if the platform here stays |
+| `BACKUP_DEV`, `BACKUP_PROD_SIM` or `ENVS` differ from what it started with | Names both | The same |
+| An environment it has not finished holds other users or objects than its backup | Both counts. The same users and no more objects, or no users and no more objects, is that backup part way through, and goes on | `ALLOW_RESUME_OVERWRITE=yes`, recorded as a FAIL with what was there. `make backup ENV=<env> ALLOW_BACKUP_DURING_RESTORE=yes` keeps it first. A target with the same counts and other rows is not caught |
+
+While that file is there, `make backup` refuses an environment the restore has not finished, which is empty or partly restored, and goes ahead with a warning for one it has. `ALLOW_BACKUP_DURING_RESTORE=yes` goes past it, and `make destroy` needs `SKIP_BACKUP=yes` then.
 
 ### Refusals and their overrides
 
 | Refused, before anything is touched | Way past it | What that costs |
 |---|---|---|
-| A cluster that holds data | `make destroy CONFIRM=yes SKIP_BACKUP=yes`, then `make restore-clean BACKUP=<id>`, which the refusal prints. Without `SKIP_BACKUP=yes`, `make destroy` backs up what is there now, and `BACKUP=latest` then names that | The cluster |
+| A cluster that holds data, or that kubectl cannot read, so this cannot tell what it holds | `make destroy CONFIRM=yes SKIP_BACKUP=yes`, then `make restore-clean BACKUP=<id>`, which the refusal prints. Without `SKIP_BACKUP=yes`, `make destroy` backs up what is there now, and `BACKUP=latest` then names that. If kubectl was only failing for a moment, run it again | The cluster |
 | Uncommitted changes under the paths Argo CD reads | Commit or stash them, and keep those paths still until the run ends. `make up` runs twice inside it | |
 | Digests the registry cannot serve | See [What a clean restore cannot bring back](#what-a-clean-restore-cannot-bring-back) | |
-| Too little disk | Free space, or `ALLOW_LOW_DISK="<reason>"`, which `up.sh` and `cluster-up.sh` honour too, and each logs in `.local/evidence-raw/low-disk-overrides.log`. `yes` is refused: it says nothing | A later `guard_disk` can still stop the run at its 10 GiB floor, which has no override, and it resumes from there |
+| A registry that does not answer, with a cluster here. So the drill never deletes on a plan that could not see the digests. With no cluster it is a note, and `up.sh` starts it and checks then | `make up UP_STOP_AFTER=cluster` starts it, and touches no data | |
+| A Plane backup that records rows marked uploaded with no object | `BACKUP_DEV` or `BACKUP_PROD_SIM` to another, or `ENVS` to leave that environment out. A backup from before this records nothing, and is not refused for it | That environment is not this backup |
+| Too little disk | Free space, or `ALLOW_LOW_DISK="<reason>"`, which `up.sh` and `cluster-up.sh` honour too, and each logs in `.local/evidence-raw/low-disk-overrides.log`. `yes` and blanks are refused: they say nothing | A later `guard_disk` can still stop the run at its 10 GiB floor, which `ALLOW_LOW_DISK` does not go past, and it resumes from there. `MIN_FREE_DISK_GIB=<n>` lowers that floor, and a value below 10 is logged in the same file. A full disk gives write errors in Postgres, not a clean stop |
 | A dump from a newer Infisical than will run on it | Deploy that version, or `ALLOW_NEWER_INFISICAL_BACKUP=yes` | That server refuses to start on the dump until a newer image is deployed |
 | A key the set names is not on this machine | Put it back. Without `ENCRYPTION_KEY` the dump is unreadable | |
 
 **The disk check.** `make up` asks for 25 GiB to create a cluster, and `cluster-up.sh` alone for 15. Before a delete the drill and the plan compute what would be free after it: what is free now, plus 93% of the kind volume as `docker system df -v` measures it, which reads lower than `du` in the node and so errs towards refusing. 93% is what a 273 MB volume returned within 15s, and a 12 GB volume has not been measured, so the drill prints what really came back. A run that passes this check does not stop at `up.sh`'s check for a new cluster: if less comes back than the check counted on, the drill hands `up.sh` a logged reason saying so, since the cluster is gone by then and stopping protects nothing. `scripts/lib/up-checks.sh` says what the numbers are based on: the node's volume at 12.94 GiB by `du`, the 10 GiB floor later scripts check, and about 2 over.
+
+A plan has a restore to do after `make up`, and that checks the floor too, so it counts what is still to pull. With no registry or mirror volumes that is a first install's 17.75 GiB, plus the floor, so 27.75. An empty cluster that stays, as `make up UP_STOP_AFTER=cluster` leaves one, creates nothing and still has its 12.94 GiB to pull, so it asks for 22.94, or 27.75 with no volumes. A resume on a cluster that stays cannot tell how much it has pulled, and has only the floor.
 
 ### How a restore logs in
 
@@ -193,14 +210,15 @@ The admin token is a Token Auth token with an `exp` 90 days out, and every backu
 | The file this backup names | Password | What happens |
 |---|---|---|
 | Here, in place or in an archive, not ended | | Put in place if it was archived. The server accepts it, and nothing is replaced |
-| Ended, or not on this machine | Here | The plan warns. After the database is back it signs in, mints a token for the instance admin identity, moves the old file to `archive-token-<time>/`, and records it in `infisical-admin-replaced.log` and in the run's evidence |
+| Ended, or not on this machine | The one this backup names by checksum, in place or in an archive | The plan warns. After the database is back it signs in, mints a token for the instance admin identity, moves the old file to `archive-token-<time>/`, and records it in `infisical-admin-replaced.log` and in the run's evidence |
+| Ended, or not on this machine | Another, by checksum | It may not be the one this dump holds, so it counts as unknown. The plan warns, and after the database is back this tries it. The server has the last word, as after the last resort below. If it refuses, this is the row below. A trailing newline does not make another password, because the login route trims it |
 | Ended, or not on this machine | Not here | The plan warns. It restores Infisical, then stops with exit 2 and exact sign-in steps. Running the same command again takes the replacement, does not restore Infisical again, and goes on |
 
 The server has the last word on any token, because a token minted after a dump is not in that dump. So a token in place that the server refuses goes the same way as one that has ended, and restored mode, which runs next, still refuses a token the server rejects.
 
 The checksum keeps its meaning. It names the file that belongs to this dump, and that file is kept. A token written over `infisical-admin.json` by hand does not pass as that file: it is either accepted by the restored server, which is recorded with both checksums, or it is not, which is treated like no token at all.
 
-In place the same applies, with the check moved ahead of the stop: with no token and no password `make restore ENV=infisical` refuses while the instance can still be signed in to. If its Postgres is lost there is nothing to sign in to, so `ALLOW_NO_ADMIN_TOKEN=yes` restores it and then stops with the steps and exit 3.
+In place the same applies, with the check moved ahead of the stop: with no token and no password, or only a password this backup does not name, `make restore ENV=infisical` refuses while the instance can still be signed in to. If its Postgres is lost there is nothing to sign in to, so `ALLOW_NO_ADMIN_TOKEN=yes` restores it, tries any password that is here, and stops with the steps and exit 3 if that does not work. A backup with no complete set is looked at the same way, by what its unfinished set names, or by what is in place if it has none, and after the swap it signs in the same way. It then has nothing to compare values with, so it exits 2.
 
 A backup also gets ahead of this. A token that has ended is replaced before the dump, so the token the set names is a row in that dump. A backup or a plan warns when the token ends within 30 days (`BACKUP_RETENTION_DAYS`), which is an assumption: backups are kept by count, and with no schedule nothing says how old that count gets.
 
@@ -223,7 +241,13 @@ Run on the live instance on 2026-11-05, in place, with a generated password and 
 
 ### After a hard stop
 
-"Run it again" also holds after SIGKILL or a power cut, which run no trap. With `.local/restore-clean.state` still there, the next run first removes any restore Job left with no client, puts back any `automated` block that holds `enabled: false`, root last, and scales Infisical and the Plane Deployments to Git's replicas. Each is recorded as a `repair-*` step. It refuses instead if another restore is still running. The wait for all Applications only runs until it has passed once, because a Plane environment part way through its restore could never satisfy it. After that the restore goes straight to the environments that are not done, and waits at the end.
+"Run it again" also holds after SIGKILL or a power cut, which run no trap. With `.local/restore-clean.state` still there, the next run first removes any restore Job left with no client, the migrator's among them, puts back any `automated` block that holds `enabled: false`, root last, and scales Infisical and the Plane Deployments to Git's replicas. Each is recorded as a `repair-*` step. It refuses instead if another restore of this checkout is still running, however it was started. The wait for all Applications only runs until it has passed once, because a Plane environment part way through its restore could never satisfy it. After that the restore goes straight to the environments that are not done, and waits at the end.
+
+### When the client ends and the Job does not
+
+A restore Job runs in the cluster, so Ctrl-C, SIGTERM or a kubectl error while the client polls ends only the client. A Job that carried on would go on to replace Infisical's database or drop Plane's, under a server the client had already started, after it had already said FAILED. So on any exit the client first removes this run's restore Jobs that have not finished, with `--cascade=foreground`, so their pods are gone when that returns. Then it flushes Infisical's Redis, because the database may be the restored one by then, starts the server and puts auto-sync back, root last. The run says the environment may hold the old data, the backup's, or a part of it, and running it again restores it.
+
+If a Job cannot be removed, or kubectl cannot say whether it runs, nothing starts: the server or apps stay down, auto-sync stays paused, and it prints what to run, in order. A clean restore that resumes does all of that by itself.
 
 ### What a clean restore cannot bring back
 
@@ -234,9 +258,11 @@ So a plan lists each digest the registry cannot serve, by the same check as `mak
 ```bash
 # If GHCR has those digests, which keeps them exact. Needs docker login ghcr.io. Has not run: see docs/known-limitations.md
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
-# Otherwise rebuild and promote, which commits new digests
+scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline prod-sim
+# Otherwise rebuild and promote, which commits new digests. On that empty cluster plane-dev cannot have proven one
 make images
 make promote ENV=dev
+make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="restoring into an empty cluster"
 # Then, either way
 make restore-clean BACKUP=<id>
 ```
@@ -247,7 +273,9 @@ The same goes for what the mirrors hold, except that they fetch it again by them
 
 ### Retention
 
-Plane's runs in its backup Job. Infisical's runs from the host, once the backup just taken has a complete recovery set, so a run of backups that cannot finish theirs removes nothing, and only a complete set counts toward `KEEP`, so the newest complete one cannot go. A backup with no complete set is kept while it is newer than the oldest set kept, since an in-place restore can still use its dump, and goes after that.
+Plane's runs in its backup Job, and keeps the newest `KEEP` backups and, past that, the newest one whose `postgres/rowcounts.tsv` counts users above 0, so a run of backups of an empty environment cannot push out the last one that holds anything. Infisical's runs from the host, once the backup just taken has a complete recovery set, so a run of backups that cannot finish theirs removes nothing, and only a complete set counts toward `KEEP`, so the newest complete one cannot go. A backup with no complete set is kept while it is newer than the oldest set kept, since an in-place restore can still use its dump, and goes after that.
+
+In place, `make restore ENV=<env> BACKUP=latest` warns if that backup holds 0 users and the environment holds some, and names the newest backup that has them, because a `CONFIRM=yes` would otherwise take real data away with exit 0. It also refuses a backup that records rows marked uploaded with no object, before anything stops.
 
 ### Why these details
 
@@ -341,6 +369,7 @@ In the order that blocks the most:
 
 1. **The destroying run: `make drill-clean-restore CONFIRM=yes`, and `LOSE_CLUSTER=yes`.** Everything above stops short of deleting the cluster. Nothing has yet shown the sequence on a real new cluster with a new CA, Plane's data services initializing with the old values, `make restore` of a Plane environment against its real database and bucket, Terraform on a state moved aside, or how much of a 12 GB kind volume reaches the host and how soon: 93% was measured on 273 MB.
 1. These have run only on stubs: the repair after a hard stop, the stop for a sign-in and its resume in a clean restore, an admin token that has really ended, a backup replacing one before its dump, a registry that cannot serve a digest, and the disk arithmetic against a real delete. Password login after a restore, and the sign-in stop in place, ran for real.
+1. These too, from the second review: a client that ends during a Job and removes it with `--cascade=foreground`, every refusal of a resume, and a kubectl error read as "cannot tell what it holds". The Plane backup Job's new lines, for its retention and its comparison of uploaded rows, ran as written on BusyBox with a stub rclone, on fake folders (`dr-job-lines-busybox-1.txt`), and in the harness. No real Job has run them, and the query they use has run only in a restore's Job and by hand on a dump: 23 of 34 rows in dev and 28 of 41 in prod-sim marked uploaded, none with no object (`dr-gate2-real-backups-1.txt`).
 1. The sign-in steps by hand. Their labels come from this image's frontend build, and the password route behind them ran through the API. `scripts/ci/copy-to-local-registry.sh` has never run, and nobody has checked that GHCR holds these digests.
 1. Everything in `rotate.sh` against real Postgres: socket trust, 127.0.0.1 trust versus pod-IP password checks, the probe route, the error window, and the Infisical backup it now takes at the end.
 2. Argo CD and the operator's template annotations during a rotation (critique gate 8). The first sync is covered: `postgres-exporter` was patched once when `plane-pgdb` appeared and not again, and `monitoring-extras` stayed Synced. `rotate.sh` restarts by hand if the annotation is missing and reports a generation change as FAIL.

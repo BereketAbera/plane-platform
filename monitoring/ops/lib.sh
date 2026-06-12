@@ -56,12 +56,20 @@ fill() {
   printf '%s\n' "$out"
 }
 
-job_state() { # namespace job. Prints ok, failed or running.
-  kc -n "$1" get job "$2" -o json | jq -r '
+JOB_STATE_JQ='
     (.status.conditions // []) as $c
     | if any($c[]; .type == "Complete" and .status == "True") then "ok"
       elif any($c[]; .type == "Failed" and .status == "True") then "failed"
       else "running" end'
+
+job_state() { # namespace job. Prints ok, failed or running.
+  kc -n "$1" get job "$2" -o json | jq -r "$JOB_STATE_JQ"
+}
+
+# For a Job that may never have been created: prints nothing if it is not there. Non-zero only if kubectl could
+# not say, which is not the same as no such Job.
+job_state_if_any() { # namespace job
+  kc -n "$1" get job "$2" --ignore-not-found -o json | jq -r "$JOB_STATE_JQ"
 }
 
 # run_job <namespace> <job> <timeout-seconds>, with the manifest on stdin. A Job and not kubectl
@@ -181,6 +189,16 @@ argo_resume() {
     i=$((i - 1))
   done
   ARGO_TERMINATED_APPS=()
+}
+
+# For a caller that has to leave auto-sync paused: what to run later, root last, in the same shape as argo_resume.
+argo_print_resume_steps() {
+  local i
+  i=$((${#ARGO_PAUSED_APPS[@]} - 1))
+  while [[ $i -ge 0 ]]; do
+    printf "    kubectl -n argocd patch application %s --type json -p '[{\"op\":\"replace\",\"path\":\"/spec/syncPolicy/automated\",\"value\":%s}]'\n" "${ARGO_PAUSED_APPS[$i]}" "${ARGO_PAUSED_SPECS[$i]}" >&2
+    i=$((i - 1))
+  done
 }
 
 # For a run that follows a hard stop. SIGKILL or a power cut runs no trap, so an automated block can still hold

@@ -1,6 +1,15 @@
 #!/bin/bash
 # Stub curl for tests/drills/clean-restore-harness.sh. The scripts name some hosts outright, and on this machine those
 # would reach the real cluster. Each goes to the fake API instead. Anything else outside 127.0.0.1 is refused.
+# A scenario can make it fail as a network does: $H_STATE/curl-fail holds one regular expression per line.
+if [[ -s "$H_STATE/curl-fail" ]]; then
+  while IFS= read -r pattern; do
+    if [[ -n "$pattern" && "$*" =~ $pattern ]]; then
+      printf 'stub curl: failing, as the scenario asked\n' >&2
+      exit 7
+    fi
+  done <"$H_STATE/curl-fail"
+fi
 args=()
 for a in "$@"; do
   case "$a" in
