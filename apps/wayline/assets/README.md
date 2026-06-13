@@ -1,7 +1,7 @@
 # Wayline assets
 
-`generate.mjs` draws every image and web manifest into `../overlay` at upstream's file names and pixel
-dimensions, so no application code changes. The outputs are committed, so a build needs none of the tools
+`generate.mjs` draws every image and web manifest into `../overlay` at upstream's file names and, apart from the
+spinners and `auth/unauthorized.svg`, upstream's pixel dimensions, so no application code changes. The outputs are committed, so a build needs none of the tools
 below. Only regenerating does.
 
 ```sh
