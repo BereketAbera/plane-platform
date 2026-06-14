@@ -20,6 +20,7 @@ Secret store for both Plane environments. Infisical Community Edition v0.167.6 r
 | `../scripts/restore.sh clean` | `make restore-clean`. Brings the whole platform back, this first |
 | `../scripts/lib/up-checks.sh` | What `make up` stops on, so a restore and the drill can ask the same before a delete |
 | `../tests/drills/clean-restore-harness.sh` | `make drill-clean-restore-harness`. The logic of all this against stubs. Its first lines say what that does and does not prove |
+| `../tests/drills/clean-restore-mutants.sh` | Its negative control: takes one line at a time out of a copy of the scripts, and says which the harness notices |
 
 ## Bootstrap order
 
@@ -160,7 +161,7 @@ What a backup holds beyond the dump. `recovery/set.json` is the last thing writt
 | Project and identity ids | `recovery/set.json` | |
 | Each Plane secret: truncated hash, version and id | `recovery/set.json` | Read back from the API at backup time. Proves which `SECRET_KEY` this dump can render, before anything is deleted or created |
 | Test accounts and sentinel | `recovery/` of each Plane backup, that environment's lines only | They are rows in that dump. A later `make test-e2e` signs in with them |
-| How many rows the dump marks as uploaded, and how many of those have no object in this backup | `uploaded_objects` in each Plane manifest, and the rows in `postgres/uploaded-missing.txt` | The same comparison as a restore's GATE2, which has no override and runs with the data already replaced. So a plan can refuse before a delete. It stays a record and not a failure, because the backup still holds everything else |
+| How many rows the dump marks as uploaded, and how many of those have no object in this backup | `uploaded_objects` in each Plane manifest, and the rows in `postgres/uploaded-missing.txt` | The same comparison as a restore's GATE2, which has no override and runs with the data already replaced. So a plan can refuse before a delete. It stays a record and not a failure, because the backup still holds everything else. If the comparison itself cannot run, the manifest holds `null` and a plan says "not recorded" |
 
 The sequence, all of it in `scripts/restore.sh`:
 
@@ -245,7 +246,7 @@ Run on the live instance on 2026-11-05, in place, with a generated password and 
 
 ### When the client ends and the Job does not
 
-A restore Job runs in the cluster, so Ctrl-C, SIGTERM or a kubectl error while the client polls ends only the client. A Job that carried on would go on to replace Infisical's database or drop Plane's, under a server the client had already started, after it had already said FAILED. So on any exit the client first removes this run's restore Jobs that have not finished, with `--cascade=foreground`, so their pods are gone when that returns. Then it flushes Infisical's Redis, because the database may be the restored one by then, starts the server and puts auto-sync back, root last. The run says the environment may hold the old data, the backup's, or a part of it, and running it again restores it.
+A restore Job runs in the cluster, so Ctrl-C, SIGTERM, a closed terminal or a kubectl error while the client polls ends only the client. A Job that carried on would go on to replace Infisical's database or drop Plane's, under a server the client had already started, after it had already said FAILED. So on any exit the client first removes this run's restore Jobs that have not finished, with `--cascade=foreground`, so their pods are gone when that returns. Then it flushes Infisical's Redis, because the database may be the restored one by then, starts the server and puts auto-sync back, root last. The run says the environment may hold the old data, the backup's, or a part of it, and running it again restores it.
 
 If a Job cannot be removed, or kubectl cannot say whether it runs, nothing starts: the server or apps stay down, auto-sync stays paused, and it prints what to run, in order. A clean restore that resumes does all of that by itself.
 
@@ -369,7 +370,7 @@ In the order that blocks the most:
 
 1. **The destroying run: `make drill-clean-restore CONFIRM=yes`, and `LOSE_CLUSTER=yes`.** Everything above stops short of deleting the cluster. Nothing has yet shown the sequence on a real new cluster with a new CA, Plane's data services initializing with the old values, `make restore` of a Plane environment against its real database and bucket, Terraform on a state moved aside, or how much of a 12 GB kind volume reaches the host and how soon: 93% was measured on 273 MB.
 1. These have run only on stubs: the repair after a hard stop, the stop for a sign-in and its resume in a clean restore, an admin token that has really ended, a backup replacing one before its dump, a registry that cannot serve a digest, and the disk arithmetic against a real delete. Password login after a restore, and the sign-in stop in place, ran for real.
-1. These too, from the second review: a client that ends during a Job and removes it with `--cascade=foreground`, every refusal of a resume, and a kubectl error read as "cannot tell what it holds". The Plane backup Job's new lines, for its retention and its comparison of uploaded rows, ran as written on BusyBox with a stub rclone, on fake folders (`dr-job-lines-busybox-1.txt`), and in the harness. No real Job has run them, and the query they use has run only in a restore's Job and by hand on a dump: 23 of 34 rows in dev and 28 of 41 in prod-sim marked uploaded, none with no object (`dr-gate2-real-backups-1.txt`).
+1. These too, from the second review: a client that ends during a Job and removes it with `--cascade=foreground`, every refusal of a resume, and a kubectl error read as "cannot tell what it holds". The Plane backup Job's new lines, for its retention and its comparison of uploaded rows, ran as written on BusyBox with a stub rclone, on fake folders (`dr-job-lines-busybox-2.txt`), and in the harness. No real Job has run them, and the query they use has run only in a restore's Job and by hand on a dump: 23 of 34 rows in dev and 28 of 41 in prod-sim marked uploaded, none with no object (`dr-gate2-real-backups-1.txt`).
 1. The sign-in steps by hand. Their labels come from this image's frontend build, and the password route behind them ran through the API. `scripts/ci/copy-to-local-registry.sh` has never run, and nobody has checked that GHCR holds these digests.
 1. Everything in `rotate.sh` against real Postgres: socket trust, 127.0.0.1 trust versus pod-IP password checks, the probe route, the error window, and the Infisical backup it now takes at the end.
 2. Argo CD and the operator's template annotations during a rotation (critique gate 8). The first sync is covered: `postgres-exporter` was patched once when `plane-pgdb` appeared and not again, and `monitoring-extras` stayed Synced. `rotate.sh` restarts by hand if the annotation is missing and reports a generation change as FAIL.

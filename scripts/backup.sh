@@ -271,13 +271,18 @@ spec:
               echo "objects: $(wc -l < "$D/objects.check") checked"
               # GATE2 begin. A restore's GATE2, made here on what a restore would have: the rows in this dump and the
               # objects in this backup. It stays a record and not a failure, because a backup with one dangling row
-              # still holds everything else, and is better than none. The manifest carries the count for a plan.
+              # still holds everything else, and is better than none. The manifest carries the count for a plan. If
+              # the comparison itself cannot run, this backup records no result, and that does not cost the backup.
               if [ -f "$D/postgres/uploaded-keys.txt" ]; then
-                rclone lsf -R --files-only "$D/objects" > "$D/.objects.list"
-                LC_ALL=C sort "$D/.objects.list" > "$D/.objects.sorted"
-                LC_ALL=C comm -23 "$D/postgres/uploaded-keys.txt" "$D/.objects.sorted" > "$D/postgres/uploaded-missing.txt"
-                rm -f "$D/.objects.list" "$D/.objects.sorted"
-                echo "GATE2: $(wc -l < "$D/postgres/uploaded-keys.txt") rows marked uploaded, $(wc -l < "$D/postgres/uploaded-missing.txt") with no object in this backup"
+                if rclone lsf -R --files-only "$D/objects" > "$D/.objects.list" \
+                  && LC_ALL=C sort "$D/.objects.list" > "$D/.objects.sorted" \
+                  && LC_ALL=C comm -23 "$D/postgres/uploaded-keys.txt" "$D/.objects.sorted" > "$D/.objects.missing"; then
+                  mv "$D/.objects.missing" "$D/postgres/uploaded-missing.txt"
+                  echo "GATE2: $(wc -l < "$D/postgres/uploaded-keys.txt") rows marked uploaded, $(wc -l < "$D/postgres/uploaded-missing.txt") with no object in this backup"
+                else
+                  echo "objects: could not compare the uploaded rows with the objects, so this backup records no result for them" >&2
+                fi
+                rm -f "$D/.objects.list" "$D/.objects.sorted" "$D/.objects.missing"
               fi
               # GATE2 end
       containers:

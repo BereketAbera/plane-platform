@@ -234,17 +234,26 @@ R3() {
   check "a newer dev backup with another SECRET_KEY is not named" no_out "BACKUP_DEV=$second_d"
 }
 
+# The stub logs a Job before it records it, so a stop that came on the log line alone could beat the record.
+wait_for_running_job() {
+  local waited=0
+  until jq -e 'any(.[]; .state == "Running")' "$H/state/jobs.json" >/dev/null 2>&1 || [[ "$waited" -gt 900 ]]; do
+    /bin/sleep 0.2
+    waited=$((waited + 1))
+  done
+}
+
 R4() {
   scenario "R4. The client ends while a restore Job runs: the Job goes first, and nothing starts over it"
   local sig job_count
-  for sig in TERM INT; do
+  for sig in TERM INT HUP; do
     reset
     take_backups
     printf '[["plane-restore-2","infisical"]]' > "$H/state/hang-jobs.json"
     : > "$H/state/calls.log"
     start_detached scripts/restore.sh infisical latest CONFIRM=yes
     wait_for_log 'kc apply Job plane-restore ns=infisical'
-    /bin/sleep 0.5
+    wait_for_running_job
     stop_detached "$sig"
     job_count="$(jq -r '[.[] | select(.state == "Running")] | length' "$H/state/jobs.json")"
     check "Infisical, SIG$sig: not a pass (got $RC)" test "$RC" -ne 0
@@ -263,7 +272,7 @@ R4() {
   : > "$H/state/calls.log"
   start_detached scripts/restore.sh dev latest CONFIRM=yes
   wait_for_log 'kc apply Job plane-restore ns=plane-dev'
-  /bin/sleep 0.5
+  wait_for_running_job
   stop_detached TERM
   check "dev: not a pass (got $RC)" test "$RC" -ne 0
   check "dev: no Job is left running" test "$(jq -r '[.[] | select(.state == "Running")] | length' "$H/state/jobs.json")" = 0
@@ -277,7 +286,7 @@ R4() {
   : > "$H/state/calls.log"
   start_detached scripts/restore.sh dev latest CONFIRM=yes
   wait_for_log 'kc apply Job plane-restore-migrate ns=plane-dev'
-  /bin/sleep 0.5
+  wait_for_running_job
   stop_detached TERM
   check "the migrator's Job: no Job is left running" test "$(jq -r '[.[] | select(.state == "Running")] | length' "$H/state/jobs.json")" = 0
   check "the migrator's Job: removed before auto-sync" order 'kc delete job plane-restore-migrate ns=plane-dev' 'kc patch application plane-dev resume'
@@ -305,7 +314,7 @@ R4() {
     : > "$H/state/calls.log"
     start_detached scripts/restore.sh infisical latest CONFIRM=yes
     wait_for_log 'kc apply Job plane-restore ns=infisical'
-    /bin/sleep 0.5
+    wait_for_running_job
     stop_detached TERM
     check "kubectl fails on '$failing': not a pass (got $RC)" test "$RC" -ne 0
     check "kubectl fails on '$failing': the server stays down" no_log 'kc scale deployment/infisical --replicas=1'
@@ -326,7 +335,7 @@ R4() {
   : > "$H/state/calls.log"
   start_detached scripts/restore.sh clean latest
   wait_for_log 'kc apply Job plane-restore ns=plane-dev'
-  /bin/sleep 0.5
+  wait_for_running_job
   stop_detached TERM
   rm -f "$H/state/hang-jobs.json"
   check "a clean restore, stopped in dev's Job: not a pass (got $RC)" test "$RC" -ne 0
@@ -346,7 +355,7 @@ R4() {
   : > "$H/state/calls.log"
   start_detached scripts/restore.sh clean latest
   wait_for_log 'kc apply Job plane-restore-migrate ns=plane-dev'
-  /bin/sleep 0.5
+  wait_for_running_job
   stop_detached KILL
   rm -f "$H/state/hang-jobs.json"
   : > "$H/state/calls.log"
@@ -355,6 +364,21 @@ R4() {
   show_tail
   check "SIGKILL in the migrator's Job: the resume removes it first" order 'kc delete job plane-restore-migrate ns=plane-dev' 'kc patch application plane-dev resume' 'kc apply Job plane-restore ns=plane-dev'
   check "SIGKILL in the migrator's Job: nothing started over it" no_log '^ERROR'
+
+  # A repair starts things again, so it must not read a kubectl error as no Job there.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","infisical"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  printf 'plane-dev get jobs\n' > "$H/state/kubectl-fail"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "a resume that cannot list the Jobs: stops (got $RC)" test "$RC" -ne 0
+  check "a resume that cannot list the Jobs: says so" out_has "so this cannot tell whether a restore Job is still running there"
+  check "a resume that cannot list the Jobs: starts nothing" no_log 'kc scale|kc patch application|tf local apply'
+  check "a resume that cannot list the Jobs: the marker stays" test -f "$H/.local/restore-clean.state"
 }
 
 R5() {
@@ -542,6 +566,29 @@ R7() {
   check "the registry stopped, a plan on a live cluster: refuses (got $RC)" test "$RC" -ne 0
   check "the registry stopped, a plan on a live cluster: says why" out_has "the local registry does not answer"
   check "the registry stopped, a plan on a live cluster: nothing started" no_log 'docker compose'
+
+  # What else stage 0 stops on, each before any backup or delete.
+  reset
+  leave_scaled 0 plane-dev/plane-api-wl
+  : > "$H/state/calls.log"
+  run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
+  check "an Application not Healthy: stage 0 stops (got $RC)" test "$RC" -ne 0
+  check "an Application not Healthy: names it" out_has "plane-dev=OutOfSync"
+  check "an Application not Healthy: deletes nothing" no_log 'kind delete cluster'
+  reset
+  rm "$H/.local/test-sentinel-prod-sim.json"
+  : > "$H/state/calls.log"
+  run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
+  check "no sentinel for prod-sim: stage 0 stops (got $RC)" test "$RC" -ne 0
+  check "no sentinel for prod-sim: says so" out_has "no sentinel for prod-sim"
+  check "no sentinel for prod-sim: deletes nothing" no_log 'kind delete cluster'
+  reset
+  grep -v '^PLANE_DEV_API_TOKEN=' "$H/.local/test-accounts.env" > "$H/state/t" && cp "$H/state/t" "$H/.local/test-accounts.env"
+  : > "$H/state/calls.log"
+  run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
+  check "no API token for dev: stage 0 stops (got $RC)" test "$RC" -ne 0
+  check "no API token for dev: says so" out_has "no API token in .local/test-accounts.env for: dev"
+  check "no API token for dev: deletes nothing" no_log 'kind delete cluster'
 }
 
 # A whole drill each, so tests/drills/clean-restore-mutants.sh can ask for the one that matters with R8D_ONLY.
@@ -719,6 +766,13 @@ R8d() {
     run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
     check "the drill, the delete leaves the cluster: fails (got $RC)" test "$RC" -ne 0
     check "the drill, the delete leaves the cluster: on that comparison" fail_line_has "the cluster still exists"
+  fi
+  if drill_wanted "the drill, the local state survives the delete"; then
+    reset
+    perl -0pi -e 's/^rm -rf "\$LOCAL_DIR\/terraform\/local"\n//m' "$H/scripts/destroy.sh"
+    run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
+    check "the drill, the local state survives the delete: fails (got $RC)" test "$RC" -ne 0
+    check "the drill, the local state survives the delete: on that comparison" fail_line_has "the local Terraform state survived"
   fi
   drill_catches_at_delete "the drill, secret zero changes in the delete" "secret zero changed in the delete" \
     "printf more >> '$z/DB_PASSWORD'"
@@ -987,8 +1041,8 @@ R15() {
   check "a Plane backup gone: the plan names it" out_has "dev/$id"
   run env CONFIRM=yes SKIP_BACKUP=yes scripts/destroy.sh
   run scripts/restore.sh clean latest PLAN_ONLY=yes
-  check "the way to start over works (got $RC)" test "$RC" -ne 0
-  check "and then it says only what is true now" out_has "no backup of dev matches"
+  check "having started over, the marker is gone" test ! -e "$H/.local/restore-clean.state"
+  check "and a plan speaks of what is here now: that backup was dev's only one" out_has "no backup of dev matches"
 
   reset
   take_backups
@@ -1326,4 +1380,19 @@ R22() {
   run env "BACKUP_DEV=$good" scripts/restore.sh clean latest PLAN_ONLY=yes
   check "a backup from before this: goes through (got $RC)" test "$RC" -eq 0
   check "a backup from before this: and says it is not recorded" out_has "uploaded rows with no object: not recorded"
+
+  # The comparison itself failing must not cost the backup, which is worth more than the record.
+  reset
+  touch "$H/state/rclone-fail"
+  ( cd "$H" && scripts/backup.sh all ) > "$H/state/o10.txt" 2>&1
+  check "the comparison cannot run: the backup still succeeds" test "$?" -eq 0
+  rm -f "$H/state/rclone-fail"
+  /bin/sleep 1
+  d="$H/.local/backups/dev/$(ls "$H/.local/backups/dev" | tail -1)"
+  check "the comparison cannot run: the manifest records no result" jq -e '.uploaded_objects == null' "$d/manifest.json"
+  check "the comparison cannot run: nothing half-written is left" test -z "$(find "$d" -name '.objects*' -o -name 'uploaded-missing.txt')"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "the comparison cannot run: a plan goes on (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the comparison cannot run: and says it is not recorded" out_has "uploaded rows with no object: not recorded"
 }

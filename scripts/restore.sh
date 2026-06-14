@@ -29,9 +29,9 @@
 # restore.sh infisical alone also has 3: Infisical is back, and a person has to sign in to prove it.
 # These numbers are this script's. Through make, any of them but 0 is make's own exit 2, and make prints this one.
 #
-# If this client ends while a restore Job runs, by a signal or a kubectl error, it removes that Job first, because the
-# Job would otherwise carry on and drop or replace a database with the apps back up. If it cannot remove it, the
-# server or apps stay down and auto-sync stays paused, and it prints what to run.
+# If this client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it removes
+# that Job first, because the Job would otherwise carry on and drop or replace a database with the apps back up. If it
+# cannot remove it, the server or apps stay down and auto-sync stays paused, and it prints what to run.
 #
 # Every refusal comes before anything is touched. Order for a Plane environment:
 #   verify checksums and fingerprint, refuse, pause auto-sync (root first), stop the apps, restore
@@ -717,6 +717,7 @@ restore_clean() {
   mkdir -p "$LOCAL_DIR/evidence-raw"
   CLEAN_EVIDENCE="$LOCAL_DIR/evidence-raw/restore-clean-$CLEAN_STAMP.json"
   trap clean_on_exit EXIT
+  trap 'exit 129' HUP
   trap 'exit 130' INT
   trap 'exit 143' TERM
 
@@ -916,12 +917,13 @@ stop_this_runs_jobs() {
 on_exit() {
   local rc=$? result not_run
   trap - EXIT
-  # Bounded, and being stopped halfway through it is what would leave the worst state.
-  trap '' INT TERM
+  # Being stopped halfway through this is what would leave the worst state, so only SIGKILL ends it now. It waits for
+  # a Job's removal for 180s at most, and a resume repairs what a SIGKILL leaves.
+  trap '' HUP INT TERM
   stop_this_runs_jobs
   if [[ -n "$JOBS_LEFT_RUNNING" ]]; then
     warn "COULD NOT REMOVE these restore Jobs in $NS:$JOBS_LEFT_RUNNING. One may still drop or replace a database, so nothing is being started: auto-sync stays paused, and what was stopped stays stopped. When the cluster answers, run these, in this order:"
-    printf '    kubectl -n %s delete job %s --cascade=foreground\n' "$NS" "${JOBS_LEFT_RUNNING# }" >&2
+    printf '    kubectl -n %s delete job %s --cascade=foreground --ignore-not-found\n' "$NS" "${JOBS_LEFT_RUNNING# }" >&2
     if [[ "$INFISICAL_STOPPED" == yes ]]; then
       printf '    kubectl -n %s exec infisical-redis-0 -c redis -- redis-cli FLUSHALL\n    kubectl -n %s scale deployment/infisical --replicas=1\n' "$NS" "$NS" >&2
     fi
@@ -982,6 +984,8 @@ on_exit() {
   exit "$rc"
 }
 trap on_exit EXIT
+# A terminal that closes is a stop like any other, and with no trap of its own it would reach on_exit reading as exit 0.
+trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
