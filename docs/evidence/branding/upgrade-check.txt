@@ -1,6 +1,6 @@
-# apps/wayline/checks/upgrade-check.sh, in a clone of commit b2ba58723fe736f2ce56a972f9d396ce24416461 at <clone>, with its own .build and the upstream cache copied in. It rewrites .build/plane-src, which the real tree's gates read, so it does not run there.
+# apps/wayline/checks/upgrade-check.sh, in a clone of commit 84b63d9b6294319787276f303e354a66b945558b at <clone>, with its own .build and the upstream cache copied in. It rewrites .build/plane-src, which the real tree's gates read, so it does not run there.
 
-# Thu Nov  5 05:57:15 EAT 2026
+# Thu Nov  5 08:18:31 EAT 2026
 $ apps/wayline/checks/upgrade-check.sh
  ok <clone>/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
 ==> Overlay against the pinned commit

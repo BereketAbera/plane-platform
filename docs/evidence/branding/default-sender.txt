@@ -1,7 +1,7 @@
-# What sender the mail tasks use, behind the row on the sender in apps/wayline/MODIFICATIONS.md. Recorded Thu Nov  5 08:09:55 EAT 2026.
+# What sender the mail tasks use, behind the row on the sender in apps/wayline/MODIFICATIONS.md. Recorded Thu Nov  5 08:21:56 EAT 2026.
 # Each case reads get_email_configuration(), which every mail task calls, and the from_email Django gives a message built with what it returns. A scratch Postgres on an internal Docker network, removed afterwards, and nothing was sent. The image's own api entrypoint runs configure_instance at every start, and SKIP_ENV_VAR defaults to 1 in plane/settings/common.py. checks/backend-db.sh runs with SKIP_ENV_VAR=0, so its 'default sender' PASS is case 2. A workspace's mail on the platform this repository deploys is case 4 or a sender set in god-mode, because no manifest here sets EMAIL_FROM or SKIP_ENV_VAR.
 
-# ---- this image: localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+# ---- this image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
 $ manage.py migrate, on a scratch database
 # exit 0
 

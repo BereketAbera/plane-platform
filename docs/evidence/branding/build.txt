@@ -1,6 +1,6 @@
-# Thu Nov  5 05:52:31 EAT 2026 commit b2ba58723fe736f2ce56a972f9d396ce24416461
+# Thu Nov  5 08:13:10 EAT 2026 commit 84b63d9b6294319787276f303e354a66b945558b
 # git status under the source paths, which must be empty:
-# df before: /dev/disk3s1s1       460   11        14    46%  458732 147825840    0%   /
+# df before: /dev/disk3s1s1       460   11        12    49%  458732 132808360    0%   /
 $ /usr/bin/time -l scripts/ci/build-images.sh localhost:5001/wayline
 ==> Node v22.22.2
  ok /Users/bek/dev/pr/plane-platform/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
@@ -45,12 +45,12 @@ source-links: 1579 files read, 0 problems
 ==> pnpm 11.10.0
 ==> pnpm install
 Scope: 16 of 20 workspace projects
-✓ Lockfile passes supply-chain policies (verified 6h ago)
+✓ Lockfile passes supply-chain policies (verified 8h ago)
 Lockfile is up to date, resolution step is skipped
 . prepare$ husky
 . prepare: HUSKY=0 skip install
 . prepare: Done
-Done in 1.5s using pnpm v11.10.0
+Done in 1.4s using pnpm v11.10.0
 ==> turbo build web
 
    • Packages in scope: web
@@ -60,7 +60,7 @@ Done in 1.5s using pnpm v11.10.0
 
  Tasks:    11 successful, 11 total
 Cached:    11 cached, 11 total
-  Time:    326ms >>> FULL TURBO
+  Time:    244ms >>> FULL TURBO
 
 ==> turbo build admin
 
@@ -71,7 +71,7 @@ Cached:    11 cached, 11 total
 
  Tasks:    8 successful, 8 total
 Cached:    8 cached, 8 total
-  Time:    131ms >>> FULL TURBO
+  Time:    106ms >>> FULL TURBO
 
 ==> turbo build space
 
@@ -82,7 +82,7 @@ Cached:    8 cached, 8 total
 
  Tasks:    10 successful, 10 total
 Cached:    10 cached, 10 total
-  Time:    204ms >>> FULL TURBO
+  Time:    201ms >>> FULL TURBO
 
 leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
   allowlisted 293x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
@@ -106,39 +106,39 @@ leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
 a suffix of lower-case letters only, so read it: notification-jgmydpsu.js
 ==> admin: 79 files under assets/, 79 named as the rule says, 0 in a subdirectory, which the rule does not cover
 ==> Assemble /Users/bek/dev/pr/plane-platform/.build/wayline-dist
-==> web built from commit=b2ba58723fe736f2ce56a972f9d396ce24416461 dirty=no
-==> admin built from commit=b2ba58723fe736f2ce56a972f9d396ce24416461 dirty=no
-==> space built from commit=b2ba58723fe736f2ce56a972f9d396ce24416461 dirty=no
-==> backend built from commit=b2ba58723fe736f2ce56a972f9d396ce24416461 dirty=no
+==> web built from commit=84b63d9b6294319787276f303e354a66b945558b dirty=no
+==> admin built from commit=84b63d9b6294319787276f303e354a66b945558b dirty=no
+==> space built from commit=84b63d9b6294319787276f303e354a66b945558b dirty=no
+==> backend built from commit=84b63d9b6294319787276f303e354a66b945558b dirty=no
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.admin
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.backend
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.space
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web
 5.0M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/admin
-232K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
+236K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
  24M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/space
  28M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/web
  ok Build complete for: web admin space backend
-warn b2ba58723fe736f2ce56a972f9d396ce24416461 is not on origin/main, so web's /source link answers 404 until it is pushed
+warn 84b63d9b6294319787276f303e354a66b945558b is not on origin/main, so web's /source link answers 404 until it is pushed
 ... Docker's part is in images-build.txt ...
-       82.05 real        22.73 user        11.13 sys
-           333021184  maximum resident set size
+       91.49 real        22.89 user        10.83 sys
+           334856192  maximum resident set size
                    0  average shared memory size
                    0  average unshared data size
                    0  average unshared stack size
-             1592673  page reclaims
-               16621  page faults
+             1597103  page reclaims
+               17460  page faults
                    0  swaps
                    0  block input operations
                    0  block output operations
-               33107  messages sent
-               25578  messages received
-                1913  signals received
-               21746  voluntary context switches
-              202880  involuntary context switches
-           134961669  instructions retired
-            96043845  cycles elapsed
-             1769784  peak memory footprint
+               32626  messages sent
+               25330  messages received
+                1772  signals received
+               21667  voluntary context switches
+              194110  involuntary context switches
+           137012353  instructions retired
+           101282376  cycles elapsed
+             1802552  peak memory footprint
 # build-images.sh exit 0
-# Thu Nov  5 05:53:53 EAT 2026
-# df after: /dev/disk3s1s1       460   11        13    47%  458732 141462320    0%   /
+# Thu Nov  5 08:14:42 EAT 2026
+# df after: /dev/disk3s1s1       460   11        12    49%  458732 130938720    0%   /

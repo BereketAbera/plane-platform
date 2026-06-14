@@ -1,4 +1,4 @@
-# PyJWT in the backend image. Recorded Thu Nov  5 05:59:43 EAT 2026.
+# PyJWT in the backend image. Recorded Thu Nov  5 08:21:34 EAT 2026.
 
 $ # what pins it, in upstream's image
 66-# jwt
@@ -7,7 +7,7 @@ Version: 2.13.0
 Requires: 
 Required-by: 
 
-$ # the same in the published image, localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+$ # the same in the published image, localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
 66-# jwt
 67:PyJWT==2.14.0
 Version: 2.14.0

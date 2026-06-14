@@ -1,32 +1,32 @@
-# Thu Nov  5 05:55:33 EAT 2026
-$ env WAYLINE_EXPECT_REF=b2ba58723fe736f2ce56a972f9d396ce24416461 apps/wayline/checks/smoke-images.sh
-Unable to find image 'localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b' locally
-localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b: Pulling from wayline/web
-986092e40873: Pulling fs layer
+# Thu Nov  5 08:15:50 EAT 2026
+$ env WAYLINE_EXPECT_REF=84b63d9b6294319787276f303e354a66b945558b apps/wayline/checks/smoke-images.sh
+Unable to find image 'localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747' locally
+localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747: Pulling from wayline/web
 bdf13b123409: Pulling fs layer
+986092e40873: Pulling fs layer
+b627ceb902e6: Pulling fs layer
 52be770b5106: Pulling fs layer
 a65484573877: Pulling fs layer
-d29a383d7292: Pulling fs layer
-a73296237da3: Pulling fs layer
-8f75bcea531d: Pulling fs layer
+8f7da5006c64: Pulling fs layer
+8f5e811ba1b4: Pulling fs layer
 986092e40873: Already exists
-bdf13b123409: Already exists
+b627ceb902e6: Already exists
 52be770b5106: Already exists
 a65484573877: Already exists
-d29a383d7292: Already exists
-a73296237da3: Already exists
-8f75bcea531d: Already exists
+8f7da5006c64: Already exists
+8f5e811ba1b4: Already exists
+bdf13b123409: Already exists
 986092e40873: Pull complete
 52be770b5106: Pull complete
+b627ceb902e6: Pull complete
 a65484573877: Pull complete
-d29a383d7292: Pull complete
-a73296237da3: Pull complete
-8f75bcea531d: Pull complete
+8f7da5006c64: Pull complete
+8f5e811ba1b4: Pull complete
 bdf13b123409: Pull complete
-Digest: sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
-Status: Downloaded newer image for localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+Digest: sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+Status: Downloaded newer image for localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
 
-== web: localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+== web: localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS / title names Wayline
@@ -39,9 +39,9 @@ PASS font /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
 PASS SPA route /some-workspace/projects/ status: 200
 PASS SPA route serves index.html: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
-/source -> 302 https://github.com/BereketAbera/plane-platform/tree/b2ba58723fe736f2ce56a972f9d396ce24416461
+/source -> 302 https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294319787276f303e354a66b945558b
 PASS /source is a 302 to the repository at a commit
-PASS /source names commit b2ba58723fe736f2ce56a972f9d396ce24416461
+PASS /source names commit 84b63d9b6294319787276f303e354a66b945558b
 NOTE /source target, followed logged out, answers 404. 404 is expected while the repository is private or the commit is unpushed
 PASS /licenses/LICENSE.txt status: 200
 PASS /licenses/LICENSE.txt content type: text/plain
@@ -402,31 +402,31 @@ PASS /assets with Host plane.dev.localhost: Location: /assets/
 PASS onboarding form's marketing consent default: confirm_password:void 0,has_marketing_email_consent:!1
 uid in container: 101
 PASS web carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 11.16MiB / 64MiB
+memory after these requests: 10.69MiB / 64MiB
 PASS web logs show no permission or fatal errors
 
-== web: localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+== web: localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS web also runs without the chart's emptyDirs
-Unable to find image 'localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb' locally
-localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb: Pulling from wayline/admin
-bdf13b123409: Pulling fs layer
-96878e3f966a: Pulling fs layer
-c6aa4516629b: Pulling fs layer
+Unable to find image 'localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796' locally
+localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796: Pulling from wayline/admin
 7c85ca6ce807: Pulling fs layer
-c6aa4516629b: Already exists
+96878e3f966a: Pulling fs layer
+6577c471a0ca: Pulling fs layer
+bdf13b123409: Pulling fs layer
 7c85ca6ce807: Already exists
-bdf13b123409: Already exists
+6577c471a0ca: Already exists
 96878e3f966a: Already exists
-c6aa4516629b: Pull complete
+bdf13b123409: Already exists
 7c85ca6ce807: Pull complete
-bdf13b123409: Pull complete
+6577c471a0ca: Pull complete
 96878e3f966a: Pull complete
-Digest: sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
-Status: Downloaded newer image for localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+bdf13b123409: Pull complete
+Digest: sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+Status: Downloaded newer image for localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
 
-== admin: localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+== admin: localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS /god-mode/ answers 200 after about 1 s
 PASS /god-mode/ title names Wayline
@@ -652,32 +652,32 @@ PASS /god-mode/assets with Host plane.dev.localhost: status: 301
 PASS /god-mode/assets with Host plane.dev.localhost: Location: /god-mode/assets/
 uid in container: 101
 PASS admin carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 3.547MiB / 64MiB
+memory after these requests: 3.527MiB / 64MiB
 PASS admin logs show no permission or fatal errors
-Unable to find image 'localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872' locally
-localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872: Pulling from wayline/space
-048efbb2aec9: Pulling fs layer
-57489b1b1dc8: Pulling fs layer
+Unable to find image 'localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039' locally
+localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039: Pulling from wayline/space
+d4a4d9dbc300: Pulling fs layer
+f433c207bc22: Pulling fs layer
+7c28d13c9296: Pulling fs layer
+d288de7eaf2d: Pulling fs layer
+7a8c860df646: Pulling fs layer
 4f4fb700ef54: Pulling fs layer
-9ff94fdc7f01: Pulling fs layer
-f04eb5addea5: Pulling fs layer
-1f6a4955a66e: Pulling fs layer
+d288de7eaf2d: Already exists
+7a8c860df646: Already exists
+7c28d13c9296: Already exists
+d4a4d9dbc300: Already exists
 4f4fb700ef54: Already exists
-9ff94fdc7f01: Already exists
-048efbb2aec9: Already exists
-f04eb5addea5: Already exists
-1f6a4955a66e: Already exists
-57489b1b1dc8: Already exists
-9ff94fdc7f01: Pull complete
+f433c207bc22: Already exists
+7c28d13c9296: Pull complete
+7a8c860df646: Pull complete
+d4a4d9dbc300: Pull complete
+f433c207bc22: Pull complete
+d288de7eaf2d: Pull complete
 4f4fb700ef54: Pull complete
-048efbb2aec9: Pull complete
-f04eb5addea5: Pull complete
-1f6a4955a66e: Pull complete
-57489b1b1dc8: Pull complete
-Digest: sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
-Status: Downloaded newer image for localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+Digest: sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+Status: Downloaded newer image for localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
 
-== space: localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+== space: localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
 run as uid 1000, memory 256m, cpus 0.25, cap-drop ALL, no-new-privileges
 PASS /spaces/ answers 200 after about 9 s
 PASS /spaces/ title names Wayline
@@ -702,7 +702,7 @@ PASS a missing hashed file under /spaces/assets/ has no Cache-Control: 0
 PASS /spaces/assets/globals-BbMWYMN9.css with its ETag: 304
 uid in container: 1000
 PASS space carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 145.6MiB / 256MiB
+memory after these requests: 145.5MiB / 256MiB
 PASS space logs show no permission or fatal errors
 
 == What the server bundle imports
@@ -734,9 +734,9 @@ PASS space-deps.mjs check exit 0
 
 0 failure(s) in the frontend images
 
-== backend: localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+== backend: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
 == docker image inspect
-id=sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+id=sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
 == base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 == manage.py check
@@ -839,7 +839,7 @@ PASS style removal matches the old regex on "<STYLE type='text/css'>\n"
 PASS style removal matches the old regex on '<style>a{}</style><style'
 PASS style removal matches the old regex on '<style</style>x</style>'
 PASS style removal matches the old regex on '<p>Hi</p><style<style<st'
-PASS 11000 unclosed style-like tags take under a second 0.016 s
+PASS 11000 unclosed style-like tags take under a second 0.052 s
 
 == PyJWT as Plane uses it
 PASS importers of jwt: ['plane/app/views/project/invite.py', 'plane/app/views/workspace/invite.py']
@@ -918,7 +918,7 @@ PASS backend check-image.sh exit 0
 PASS backend carries the licence texts in /usr/share/licenses/wayline
 PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
 base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
-built localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4, config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea
+built localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe, config sha256:400a862ed0c468d8c8c91d5f17a664713ccb8edc617580dbcf425d841dc1b772
 
 == Env
 PASS GPG_KEY is the base's value
@@ -934,7 +934,7 @@ PASS PYTHON_VERSION is the base's value
 == Labels
 PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
 PASS org.opencontainers.image.licenses is set AGPL-3.0-only
-PASS org.opencontainers.image.revision is set b2ba58723fe736f2ce56a972f9d396ce24416461
+PASS org.opencontainers.image.revision is set 84b63d9b6294319787276f303e354a66b945558b
 PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
 PASS org.opencontainers.image.title is set wayline-backend
 

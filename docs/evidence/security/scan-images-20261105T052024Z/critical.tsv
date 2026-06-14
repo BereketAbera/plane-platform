@@ -1,0 +1,2 @@
+image	ours	id	package	installed	fixed_in	target
+wayline-source-lockfiles	no	CVE-2026-90711	proxy-addr	2.0.7	2.0.8	pnpm-lock.yaml

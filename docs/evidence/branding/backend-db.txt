@@ -1,15 +1,15 @@
-# Thu Nov  5 05:56:31 EAT 2026
+# Thu Nov  5 08:16:51 EAT 2026
 $ env WAYLINE_BASE_CONTROL=yes apps/wayline/checks/backend-db.sh
 ==> Waiting for Postgres
 127.0.0.1:5432 - accepting connections
-==> manage.py migrate, on localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+==> manage.py migrate, on localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
  ok 164 migrations applied
 ==> manage.py makemigrations --check, against that database
 No changes detected
-==> manage.py register_instance, on localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4, with no route to GitHub
+==> manage.py register_instance, on localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe, with no route to GitHub
 Error checking for latest version
 Instance registered
-==> check_db.py, on localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+==> check_db.py, on localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
 
 == A newly registered instance
 PASS telemetry is off is_telemetry_enabled=False
@@ -22,30 +22,30 @@ PASS with telemetry on, it does build one, so the line above is not vacuous
 == The setup endpoint
 /usr/local/lib/python3.12/site-packages/django/core/handlers/base.py:61: UserWarning: No directory at: /code/plane/static-assets/collected-static/
   mw_instance = middleware(adapted_handler)
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:55,872", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 842, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "d972bb42-fd5a-4cf7-9b62-8669006c919e"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:10,608", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 831, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "0c4fd38b-561b-4f5a-95e4-5e480061d896"}
 PASS setup with {'is_telemetry_enabled': 'True'} succeeds 302 https://x.test/god-mode/general/
 PASS ticking the box still turns telemetry on is_telemetry_enabled=True
 /usr/local/lib/python3.12/site-packages/django/core/handlers/base.py:61: UserWarning: No directory at: /code/plane/static-assets/collected-static/
   mw_instance = middleware(adapted_handler)
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,089", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 120, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "16d447c8-6d26-4973-b673-7f1b9c5cd714"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:10,852", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 119, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "2a753074-6b80-4687-9d14-933e418d35c6"}
 PASS setup with {'is_telemetry_enabled': 'False'} succeeds 302 https://x.test/god-mode/general/
 PASS the unticked form leaves it off is_telemetry_enabled=False
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,287", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 120, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "c5a56198-293a-45ac-a309-f900453aabb7"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,043", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 117, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "9dd07f35-330b-402b-975d-2ecb57369731"}
 PASS setup with no field succeeds 302 https://x.test/god-mode/general/
 PASS a request that leaves the field out leaves it off is_telemetry_enabled=False
 PASS a new profile's model default is no marketing consent. This passes on upstream's image too, so it does not cover the onboarding patch has_marketing_email_consent=False
 
 == PyJWT through the two views that use it
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,319", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/invitations/ 200", "path": "/api/workspaces/proof/invitations/", "method": "POST", "status_code": 200, "duration_ms": 23, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "c5a56198-293a-45ac-a309-f900453aabb7"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,073", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/invitations/ 200", "path": "/api/workspaces/proof/invitations/", "method": "POST", "status_code": 200, "duration_ms": 21, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "9dd07f35-330b-402b-975d-2ecb57369731"}
 PASS POST workspace invitations 200 b'{"message":"Emails sent successfully"}'
 PASS its stored token is HS256 and decodes with SECRET_KEY ['email', 'timestamp']
 Server Error
-{"levelname": "ERROR", "asctime": "2026-11-05 02:57:56,323", "module": "exception_logger", "name": "plane.exception", "message": "'SoftDeletionQuerySet' object has no attribute 'role'", "exc_info": "Traceback (most recent call last):\n  File \"/code/plane/app/views/base.py\", line 76, in handle_exception\n    response = super().handle_exception(exc)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 475, in handle_exception\n    self.raise_uncaught_exception(exc)\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 486, in raise_uncaught_exception\n    raise exc\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 512, in dispatch\n    response = handler(request, *args, **kwargs)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/permissions/base.py\", line 63, in _wrapped_view\n    return view_func(instance, request, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/views/project/invite.py\", line 67, in create\n    ).role\n      ^^^^\nAttributeError: 'SoftDeletionQuerySet' object has no attribute 'role'"}
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,325", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/projects/bbf51b91-9e32-4fef-ab6e-cde2ebecd732/invitations/ 500", "path": "/api/workspaces/proof/projects/bbf51b91-9e32-4fef-ab6e-cde2ebecd732/invitations/", "method": "POST", "status_code": 500, "duration_ms": 3, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "c5a56198-293a-45ac-a309-f900453aabb7"}
+{"levelname": "ERROR", "asctime": "2026-11-05 05:18:11,076", "module": "exception_logger", "name": "plane.exception", "message": "'SoftDeletionQuerySet' object has no attribute 'role'", "exc_info": "Traceback (most recent call last):\n  File \"/code/plane/app/views/base.py\", line 76, in handle_exception\n    response = super().handle_exception(exc)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 475, in handle_exception\n    self.raise_uncaught_exception(exc)\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 486, in raise_uncaught_exception\n    raise exc\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 512, in dispatch\n    response = handler(request, *args, **kwargs)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/permissions/base.py\", line 63, in _wrapped_view\n    return view_func(instance, request, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/views/project/invite.py\", line 67, in create\n    ).role\n      ^^^^\nAttributeError: 'SoftDeletionQuerySet' object has no attribute 'role'"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,078", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/projects/7cc444ca-cde8-474a-9e57-d896827ddcfe/invitations/ 500", "path": "/api/workspaces/proof/projects/7cc444ca-cde8-474a-9e57-d896827ddcfe/invitations/", "method": "POST", "status_code": 500, "duration_ms": 3, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "9dd07f35-330b-402b-975d-2ecb57369731"}
 NOTE POST project invitations answers 500, upstream's bug at v1.4.3, so its jwt.encode is not reached. check_image.py runs the same call directly
 
 == email.py through a real mail: the invitation task, rendered, sent over SMTP, and read back from the server
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,429", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,108", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
 PASS one message reached the mail server 1
 PASS subject Admin has invited you to join them in Proof on Wayline
 PASS default sender noreply@wayline.invalid
@@ -55,24 +55,24 @@ PASS the text part holds the template's words
 PASS the HTML part holds the link, escaped for HTML
 
 == The invitation's message column, where those two tasks store email.py's result
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,440", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "POST", "status_code": 200, "duration_ms": 6, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "c5a56198-293a-45ac-a309-f900453aabb7"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,120", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "POST", "status_code": 200, "duration_ms": 5, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "9dd07f35-330b-402b-975d-2ecb57369731"}
 PASS POST workspace invitations, for a workspace whose name holds markup 200
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,454", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,126", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
 PASS the column holds decoded raw markup, not escaped text 'Proof <b>marked</b> & co on Wayline\n\nAdmin has invited you t'
-{"levelname": "INFO", "asctime": "2026-11-05 02:57:56,461", "module": "logger", "name": "plane.api.request", "message": "GET /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "GET", "status_code": 200, "duration_ms": 5, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "c5a56198-293a-45ac-a309-f900453aabb7"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:11,130", "module": "logger", "name": "plane.api.request", "message": "GET /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "GET", "status_code": 200, "duration_ms": 3, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "9dd07f35-330b-402b-975d-2ecb57369731"}
 PASS the API serves that column as it is 200, 1 row
 
 RESULT PASS: 0 failed
-==> The api entrypoint's steps, then gunicorn, on localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+==> The api entrypoint's steps, then gunicorn, on localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
 Cache Cleared
 
 35 static files copied to '/code/plane/static-assets/collected-static', 71 post-processed.
-[2026-11-05 02:58:02 +0000] [26] [INFO] Starting gunicorn 23.0.0
-[2026-11-05 02:58:02 +0000] [26] [INFO] Listening at: http://127.0.0.1:8000 (26)
-[2026-11-05 02:58:02 +0000] [26] [INFO] Using worker: uvicorn.workers.UvicornWorker
-[2026-11-05 02:58:02 +0000] [28] [INFO] Booting worker with pid: 28
+[2026-11-05 05:18:16 +0000] [26] [INFO] Starting gunicorn 23.0.0
+[2026-11-05 05:18:16 +0000] [26] [INFO] Listening at: http://127.0.0.1:8000 (26)
+[2026-11-05 05:18:16 +0000] [26] [INFO] Using worker: uvicorn.workers.UvicornWorker
+[2026-11-05 05:18:16 +0000] [28] [INFO] Booting worker with pid: 28
 PASS GET / answers 200
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:04,387", "module": "logger", "name": "plane.api.request", "message": "GET /api/instances/ 200", "path": "/api/instances/", "method": "GET", "status_code": 200, "duration_ms": 34, "remote_addr": "127.0.0.1", "user_agent": "Python-urllib/3.12", "user_id": null}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:18,307", "module": "logger", "name": "plane.api.request", "message": "GET /api/instances/ 200", "path": "/api/instances/", "method": "GET", "status_code": 200, "duration_ms": 34, "remote_addr": "127.0.0.1", "user_agent": "Python-urllib/3.12", "user_id": null}
 PASS GET /api/instances/ answers 200 with instance_name 'Proof'
 ==> Control: the same on the upstream base image, makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, which must fail
 Error checking for latest version
@@ -89,30 +89,30 @@ PASS with telemetry on, it does build one, so the line above is not vacuous
 == The setup endpoint
 /usr/local/lib/python3.12/site-packages/django/core/handlers/base.py:61: UserWarning: No directory at: /code/plane/static-assets/collected-static/
   mw_instance = middleware(adapted_handler)
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:14,894", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 1025, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "94694377-b46e-46d1-8c18-598fb8cab405"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:28,540", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 853, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "5f3a5d76-f916-4c12-bb44-d581a5ecb23c"}
 PASS setup with {'is_telemetry_enabled': 'True'} succeeds 302 https://x.test/god-mode/general/
 PASS ticking the box still turns telemetry on is_telemetry_enabled=True
 /usr/local/lib/python3.12/site-packages/django/core/handlers/base.py:61: UserWarning: No directory at: /code/plane/static-assets/collected-static/
   mw_instance = middleware(adapted_handler)
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,124", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 118, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "e7268878-251f-4156-a45e-0be17137b2db"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:28,765", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 126, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "f841c234-0e74-46a1-ab72-56092be1611a"}
 PASS setup with {'is_telemetry_enabled': 'False'} succeeds 302 https://x.test/god-mode/general/
 PASS the unticked form leaves it off is_telemetry_enabled=False
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,320", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 120, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "73e653e1-a23a-4b0f-8eeb-fec73fb7837c"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:28,950", "module": "logger", "name": "plane.api.request", "message": "POST /api/instances/admins/sign-up/ 302", "path": "/api/instances/admins/sign-up/", "method": "POST", "status_code": 302, "duration_ms": 118, "remote_addr": "127.0.0.1", "user_agent": "check_db.py", "user_id": "60f73044-75f9-4cce-9882-19d0fff95228"}
 PASS setup with no field succeeds 302 https://x.test/god-mode/general/
 FAIL a request that leaves the field out leaves it off is_telemetry_enabled=True
 PASS a new profile's model default is no marketing consent. This passes on upstream's image too, so it does not cover the onboarding patch has_marketing_email_consent=False
 
 == PyJWT through the two views that use it
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,358", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/invitations/ 200", "path": "/api/workspaces/proof/invitations/", "method": "POST", "status_code": 200, "duration_ms": 28, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "73e653e1-a23a-4b0f-8eeb-fec73fb7837c"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:28,982", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/invitations/ 200", "path": "/api/workspaces/proof/invitations/", "method": "POST", "status_code": 200, "duration_ms": 23, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "60f73044-75f9-4cce-9882-19d0fff95228"}
 PASS POST workspace invitations 200 b'{"message":"Emails sent successfully"}'
 PASS its stored token is HS256 and decodes with SECRET_KEY ['email', 'timestamp']
 Server Error
-{"levelname": "ERROR", "asctime": "2026-11-05 02:58:15,363", "module": "exception_logger", "name": "plane.exception", "message": "'SoftDeletionQuerySet' object has no attribute 'role'", "exc_info": "Traceback (most recent call last):\n  File \"/code/plane/app/views/base.py\", line 76, in handle_exception\n    response = super().handle_exception(exc)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 475, in handle_exception\n    self.raise_uncaught_exception(exc)\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 486, in raise_uncaught_exception\n    raise exc\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 512, in dispatch\n    response = handler(request, *args, **kwargs)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/permissions/base.py\", line 63, in _wrapped_view\n    return view_func(instance, request, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/views/project/invite.py\", line 67, in create\n    ).role\n      ^^^^\nAttributeError: 'SoftDeletionQuerySet' object has no attribute 'role'"}
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,365", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/projects/0a0f731e-cada-48a0-81ab-706e4430eb3d/invitations/ 500", "path": "/api/workspaces/proof/projects/0a0f731e-cada-48a0-81ab-706e4430eb3d/invitations/", "method": "POST", "status_code": 500, "duration_ms": 5, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "73e653e1-a23a-4b0f-8eeb-fec73fb7837c"}
+{"levelname": "ERROR", "asctime": "2026-11-05 05:18:28,986", "module": "exception_logger", "name": "plane.exception", "message": "'SoftDeletionQuerySet' object has no attribute 'role'", "exc_info": "Traceback (most recent call last):\n  File \"/code/plane/app/views/base.py\", line 76, in handle_exception\n    response = super().handle_exception(exc)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 475, in handle_exception\n    self.raise_uncaught_exception(exc)\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 486, in raise_uncaught_exception\n    raise exc\n  File \"/usr/local/lib/python3.12/site-packages/rest_framework/views.py\", line 512, in dispatch\n    response = handler(request, *args, **kwargs)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/permissions/base.py\", line 63, in _wrapped_view\n    return view_func(instance, request, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/code/plane/app/views/project/invite.py\", line 67, in create\n    ).role\n      ^^^^\nAttributeError: 'SoftDeletionQuerySet' object has no attribute 'role'"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:28,988", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof/projects/fd94127f-e0a9-414e-a507-d2011997a768/invitations/ 500", "path": "/api/workspaces/proof/projects/fd94127f-e0a9-414e-a507-d2011997a768/invitations/", "method": "POST", "status_code": 500, "duration_ms": 4, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "60f73044-75f9-4cce-9882-19d0fff95228"}
 NOTE POST project invitations answers 500, upstream's bug at v1.4.3, so its jwt.encode is not reached. check_image.py runs the same call directly
 
 == email.py through a real mail: the invitation task, rendered, sent over SMTP, and read back from the server
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,398", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:29,019", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
 PASS one message reached the mail server 1
 FAIL subject Admin has invited you to join them in Proof on Plane
 FAIL default sender team@mailer.plane.so
@@ -122,11 +122,11 @@ FAIL the text part holds the template's words
 PASS the HTML part holds the link, escaped for HTML
 
 == The invitation's message column, where those two tasks store email.py's result
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,408", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "POST", "status_code": 200, "duration_ms": 5, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "73e653e1-a23a-4b0f-8eeb-fec73fb7837c"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:29,028", "module": "logger", "name": "plane.api.request", "message": "POST /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "POST", "status_code": 200, "duration_ms": 5, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "60f73044-75f9-4cce-9882-19d0fff95228"}
 PASS POST workspace invitations, for a workspace whose name holds markup 200
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,415", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:29,035", "module": "workspace_invitation_task", "name": "plane.worker", "message": "Email sent successfully"}
 FAIL the column holds decoded raw markup, not escaped text '\n\nAdmin invited you to Proof &lt;b&gt;marked&lt;/b&gt; &amp;'
-{"levelname": "INFO", "asctime": "2026-11-05 02:58:15,422", "module": "logger", "name": "plane.api.request", "message": "GET /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "GET", "status_code": 200, "duration_ms": 5, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "73e653e1-a23a-4b0f-8eeb-fec73fb7837c"}
+{"levelname": "INFO", "asctime": "2026-11-05 05:18:29,041", "module": "logger", "name": "plane.api.request", "message": "GET /api/workspaces/proof-marked/invitations/ 200", "path": "/api/workspaces/proof-marked/invitations/", "method": "GET", "status_code": 200, "duration_ms": 4, "remote_addr": "127.0.0.1", "user_agent": "", "user_id": "60f73044-75f9-4cce-9882-19d0fff95228"}
 PASS the API serves that column as it is 200, 1 row
 
 RESULT FAIL: 8 failed

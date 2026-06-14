@@ -1,40 +1,40 @@
-# The lint set on apps/wayline, scripts/ci/build-images.sh and images.yml, at commit b2ba58723fe736f2ce56a972f9d396ce24416461. Not the whole of scripts/ci/lint.sh, which runs terraform init in directories other agents use, and not scripts/ci/security.sh, which reads the whole tree other agents are editing.
+# The lint set on apps/wayline, scripts/ci/build-images.sh and images.yml, at commit 84b63d9b6294319787276f303e354a66b945558b. Not the whole of scripts/ci/lint.sh, which runs terraform init in directories other agents use, and not scripts/ci/security.sh, which reads the whole tree other agents are editing.
 
-# Thu Nov  5 05:58:53 EAT 2026
+# Thu Nov  5 08:20:19 EAT 2026
 $ shellcheck --external-sources --source-path=SCRIPTDIR --severity=warning apps/wayline/backend/assemble.sh apps/wayline/backend/check-image.sh apps/wayline/backend/render-logo.sh apps/wayline/checks/backend-db.sh apps/wayline/checks/bundle-art.sh apps/wayline/checks/cache-names.sh apps/wayline/checks/font-urls.sh apps/wayline/checks/leak-scan.sh apps/wayline/checks/roundtrip.sh apps/wayline/checks/smoke-images.sh apps/wayline/checks/upgrade-check.sh apps/wayline/checks/upstream-check.sh apps/wayline/scripts/apply.sh apps/wayline/scripts/assemble-backend.sh apps/wayline/scripts/build.sh apps/wayline/scripts/fetch.sh apps/wayline/scripts/lib.sh apps/wayline/scripts/overlay-lock.sh apps/wayline/scripts/patchwork.sh apps/wayline/scripts/prune-ghcr.sh apps/wayline/scripts/publish-gate.sh apps/wayline/scripts/save-patch.sh apps/wayline/scripts/sync-overlay.sh scripts/ci/build-images.sh
 # exit 0
 
-# Thu Nov  5 05:58:55 EAT 2026
+# Thu Nov  5 08:20:22 EAT 2026
 $ actionlint -color=false .github/workflows/images.yml
 # exit 0
 
-# Thu Nov  5 05:58:55 EAT 2026
+# Thu Nov  5 08:20:22 EAT 2026
 $ zizmor --offline --no-progress --strict-collection .github/workflows/images.yml
  INFO zizmor: 🌈 zizmor v1.32.0
  INFO audit: zizmor: 🌈 completed .github/workflows/images.yml
 No findings to report. Good job! (1 suppressed)
 # exit 0
 
-# Thu Nov  5 05:58:55 EAT 2026
+# Thu Nov  5 08:20:22 EAT 2026
 $ hadolint --failure-threshold warning apps/wayline/runtime/Dockerfile.admin apps/wayline/runtime/Dockerfile.backend apps/wayline/runtime/Dockerfile.space apps/wayline/runtime/Dockerfile.web
 apps/wayline/runtime/Dockerfile.backend:29 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
 apps/wayline/runtime/Dockerfile.backend:33 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
 apps/wayline/runtime/Dockerfile.space:28 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
 # exit 0
 
-# Thu Nov  5 05:58:55 EAT 2026
+# Thu Nov  5 08:20:22 EAT 2026
 $ env PYTHONPYCACHEPREFIX=<scratch>/pyc python3 -m py_compile apps/wayline/backend/check_db.py apps/wayline/backend/check_image.py apps/wayline/backend/edit_strings.py apps/wayline/backend/vendor/email.py apps/wayline/checks/flatten-compare.py apps/wayline/checks/flatten-config.py apps/wayline/checks/layer-check.py apps/wayline/checks/layer-check-cases.py apps/wayline/checks/oci_read.py
 # exit 0
 
-# Thu Nov  5 05:58:56 EAT 2026
+# Thu Nov  5 08:20:22 EAT 2026
 $ node --check apps/wayline/checks/space-regions.mjs
 # exit 0
 
-# Thu Nov  5 05:58:56 EAT 2026
+# Thu Nov  5 08:20:22 EAT 2026
 $ trivy config --cache-dir /Users/bek/dev/pr/plane-platform/.local/trivy-cache --ignorefile .trivyignore --exit-code 1 --severity HIGH,CRITICAL --skip-dirs apps/wayline/overlay apps/wayline
-2026-11-05T05:58:56+03:00	INFO	[misconfig] Misconfiguration scanning is enabled
-2026-11-05T05:58:56+03:00	INFO	[checks-client] Using existing checks from cache	path="/Users/bek/dev/pr/plane-platform/.local/trivy-cache/policy/content"
-2026-11-05T05:58:56+03:00	INFO	Detected config files	num=4
+2026-11-05T08:20:23+03:00	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-11-05T08:20:23+03:00	INFO	[checks-client] Using existing checks from cache	path="/Users/bek/dev/pr/plane-platform/.local/trivy-cache/policy/content"
+2026-11-05T08:20:23+03:00	INFO	Detected config files	num=4
 
 Report Summary
 
@@ -55,19 +55,19 @@ Legend:
 
 # exit 0
 
-# Thu Nov  5 05:58:56 EAT 2026
+# Thu Nov  5 08:20:23 EAT 2026
 $ gitleaks dir --config .gitleaks.toml --redact --no-banner --exit-code 1 --log-level warn apps/wayline
 # exit 0
 
-# Thu Nov  5 05:58:57 EAT 2026
+# Thu Nov  5 08:20:23 EAT 2026
 $ gitleaks dir --config .gitleaks.toml --redact --no-banner --exit-code 1 --log-level warn scripts/ci/build-images.sh
 # exit 0
 
-# Thu Nov  5 05:58:57 EAT 2026
+# Thu Nov  5 08:20:24 EAT 2026
 $ gitleaks dir --config .gitleaks.toml --redact --no-banner --exit-code 1 --log-level warn .github/workflows/images.yml
 # exit 0
 
-# Thu Nov  5 05:58:57 EAT 2026
+# Thu Nov  5 08:20:24 EAT 2026
 $ gitleaks dir --config .gitleaks.toml --redact --no-banner --exit-code 1 --log-level warn NOTICE.md
 # exit 0
 
