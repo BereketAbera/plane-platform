@@ -652,6 +652,12 @@ recovery_rebuild_machine_file() { # backup-dir
       identity_ids: .outputs.identity_ids.value
     }' "$dir/recovery/terraform.tfstate" > "$MACHINE_FILE.tmp"; then
     chmod 600 "$MACHINE_FILE.tmp"
+    # Both come from one backup, and a state with other ids is no better than the file it would replace.
+    if [[ "$(jq -cS '{organization: .organization.id, project_ids, identity_ids}' "$MACHINE_FILE.tmp")" != "$(jq -cS '.identity' "$(recovery_set_file "$dir")")" ]]; then
+      rm -f "$MACHINE_FILE.tmp"
+      warn "this backup's Terraform state does not name the ids its recovery set does, so ${MACHINE_FILE##*/} was left as it is"
+      return 0
+    fi
     if [[ -e "$MACHINE_FILE" ]]; then
       archive="$SECRET_ZERO_DIR/archive-pre-restore-$(date -u +%Y%m%dT%H%M%SZ)"
       mkdir -p "$archive"

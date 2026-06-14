@@ -295,7 +295,7 @@ clean_resolve() {
     CLEAN_ENVS="$(clean_marker_value envs)"
     clean_refuse_marker_gone
     if [[ "$requested" != latest && "$requested" != "$CLEAN_IID" ]]; then
-      die "a clean restore of Infisical backup $CLEAN_IID is under way ($RESTORE_CLEAN_MARKER). Finish it with BACKUP=$CLEAN_IID. To start over with another backup, run make destroy CONFIRM=yes SKIP_BACKUP=yes first."
+      die "a clean restore of Infisical backup $CLEAN_IID is under way ($RESTORE_CLEAN_MARKER). Nothing was changed. Finish it with BACKUP=$CLEAN_IID. $(clean_start_over_advice)"
     fi
     if [[ "$requested" == latest ]]; then clean_refuse_stale_marker; fi
     clean_refuse_other_options
