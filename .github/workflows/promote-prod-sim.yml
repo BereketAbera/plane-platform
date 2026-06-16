@@ -60,7 +60,7 @@ jobs:
             echo 'MESSAGE_END'
             echo "title=$(head -n 1 .build/promote-message.txt)"
           } >>"$GITHUB_OUTPUT"
-      # A pull request opened with GITHUB_TOKEN does not trigger on: pull_request, so check it here.
+      # A pull request opened with GITHUB_TOKEN starts no job until someone approves its ci run, so check it here.
       - name: Validate the result
         if: steps.promote.outputs.title != ''
         env:

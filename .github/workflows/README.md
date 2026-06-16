@@ -47,31 +47,39 @@ So production approval here is a process, not a control:
 
 ## Settings and limits to know
 
-- **Workflows may not open pull requests yet.** *Settings, Actions, General, Workflow permissions, Allow GitHub Actions
-  to create and approve pull requests* is off, the default for a repository under a personal account. With it off,
-  `promote-prod-sim.yml` edits, validates and pushes `promote/prod-sim`, then GitHub refuses the pull request and the run
-  goes red at that step. `images.yml` uses the same action for `bump/dev-images`, so expect the same there, although no
-  run has reached that step. Turning it on is the owner's decision. The alternative is to open the pull request by hand
-  from the pushed branch, and the failed run links to the page for that.
-- A pull request opened with `GITHUB_TOKEN` does not trigger `on: pull_request`, so CI does not run on it.
-  Those workflows run `validate-manifests.sh` themselves before opening it. A pull request a person opens does start CI.
+- **Workflows may open pull requests.** *Settings, Actions, General, Workflow permissions, Allow GitHub Actions to create and
+  approve pull requests* has been on since 2026-11-05, by the owner's decision. `images.yml` opened #1 and `promote-prod-sim.yml`
+  opened #2. With it off, as it was before, `promote-prod-sim.yml` edits, validates and pushes `promote/prod-sim`, then GitHub
+  refuses the pull request, the run goes red at that step, and the failed run links to the page for opening it by hand. A second
+  dispatch with the same inputs while that pull request is open succeeds and changes nothing, in run 41977288287.
+- A pull request opened with `GITHUB_TOKEN` starts no job. GitHub does make a `ci` run for it, and holds it at `action_required`
+  with no jobs and no log until someone approves it. Closing the pull request turned such a run to `failure`, still with no jobs,
+  so that red run is no check's result: runs 41976206674 and 41977201138. Those workflows run `validate-manifests.sh` themselves
+  before opening it. No job of `ci.yml` has run on `on: pull_request` yet, and no person has opened a pull request here.
 - **Native arm64 runners work here.** `ubuntu-24.04-arm` ran in this private repository, billed as `Actions Linux ARM` at
   $0.005 a minute against included compute. It had 2 cores, 7.7 GiB of memory and 34 GiB free on `/`. The x64 runner had
-  14 GiB free. Those sizes come from one run, so treat them as what was seen, not as a promise.
+  14 GiB free. Those sizes come from one run, so treat them as what was seen, not as a promise. Run 41975430939 built, checked
+  and published all four images in a job of 6 minutes 26 seconds, 321 seconds of it in the build step, billed as 7 minutes.
 - **Included compute on Free is $12 a month**, shared by all of the account's private repositories: about 2,000 x64 minutes
   or 2,400 arm64 minutes. Without a payment method, GitHub blocks usage once it is spent. A build that reaches the
   90-minute timeout in `images.yml` costs $0.45.
-- **`GITHUB_TOKEN` is accepted for a GHCR push, but no image has been pushed.** With `packages: write` GHCR opened an upload
-  session for `ghcr.io/bereketabera/wayline/ci-probe`, and with `packages: read` or no packages permission it answered 403.
-  That proves the permission, not a whole push or a recorded digest. Do not push these names by hand first: GitHub's
-  documentation says `GITHUB_TOKEN` cannot push to a package that was pushed earlier without being connected to the repository.
-- **The GHCR quota is documented, not measured.** GitHub's Packages billing page gives Free 500 MB of storage, shared with
-  Actions artifacts, and 1 GB of transfer a month, then adds: "Container image storage and bandwidth for the Container
-  registry is currently free." It promises a month's notice before that changes. So the 500 MB should not limit `ghcr.io`
-  today, but nothing has been stored there to prove it. After the first push, read
-  `gh api users/<owner>/settings/billing/usage/summary` and the package page. The upstream arm64 images for web, admin,
-  space and backend total 437 MiB compressed, not counting shared layers. Wayline's own sizes are not measured yet.
+- **`GITHUB_TOKEN` pushes to GHCR.** Run 41975430939 pushed all four images to `ghcr.io/bereketabera/wayline/` and walked every
+  layer again as GHCR served it. **The packages are private:** with no credentials, GHCR's token endpoint answers 401 for those
+  names, 200 for a public image, and 403 for a name with no package. Do not push these names by hand: GitHub's documentation says
+  `GITHUB_TOKEN` cannot push to a package that was pushed earlier without being connected to the repository. The prune job lists
+  versions with that token and has deleted nothing yet, so a delete with it is still untested.
+- **The GHCR quota is documented, and the images have not met it.** GitHub's Packages billing page gives Free 500 MB of storage,
+  shared with Actions artifacts, and 1 GB of transfer a month, then adds: "Container image storage and bandwidth for the Container
+  registry is currently free." It promises a month's notice before that changes. Compressed, as run 41975430939 read them from
+  GHCR: web 40.7, admin 30.3, space 263.9 and backend 97.4 MiB, 401.8 MiB counting each distinct layer once.
+  `gh api users/<owner>/settings/billing/usage/summary` showed no packages row right after the push. The local `gh` token cannot
+  read the package pages, because it lacks `read:packages`.
 - Digests built in GitHub Actions live in GHCR, while Argo CD pulls from `localhost:5001`. After merging a digest bump, run
-  `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`. Copying keeps the digest, and rebuilding would not.
-  The `docker login ghcr.io` it needs takes a token with `read:packages`, which the `gh` logins on this host do not have.
+  `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`, with the owner in lower case, and only then
+  `make gitops-publish`, which does not look in the registry. Copying keeps the digest, and rebuilding would not: run 41975430939
+  built from `9c8e098` and the Mac from `84b63d9`, and all four digests differ. The `docker login ghcr.io` the copy needs takes
+  a token with `read:packages`, which the `gh` logins on this host do not have. Without it the script stops at its first image
+  with a 401 and writes nothing, so it has never finished a copy. The digests the Mac built were never pushed to GHCR, so it
+  cannot bring those back.
 - `$GITHUB_STEP_SUMMARY` output shows only on the run's page. `gh run view --json` and the check-run API do not return it.
+  A scan's raw results stay on the runner, so of `images.yml`'s scan only its table in the log remains.
