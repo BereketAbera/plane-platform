@@ -279,11 +279,11 @@ step_status_is() { # evidence-file step status
   jq -e --arg s "$2" --arg st "$3" 'any(.steps[]; .step == $s and .status == $st)' "$1"
 }
 # In a session of its own, so a signal can reach all of it, as Ctrl-C does. A shell starts a background job with SIGINT
-# ignored, and a script cannot trap what it was started ignoring, so this puts that back as a terminal would have it.
-# Sets DETACHED and OUT.
+# ignored, nohup ignores SIGHUP, and a script cannot trap what it was started ignoring, so this puts those back as a
+# terminal would have them. Sets DETACHED and OUT.
 start_detached() { # command...
   OUT="$H/state/detached.txt"
-  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
+  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGHUP, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
   DETACHED=$!
 }
 wait_for_log() { # pattern
@@ -294,10 +294,17 @@ wait_for_log() { # pattern
   done
   log_has "$1"
 }
+# A client that does not stop would otherwise hold up the whole run, for as long as its stub Job never ends. So after
+# the limit it gets SIGKILL, and RC says 137, which no scenario expects of a stop that worked.
 stop_detached() { # signal. Sets RC to how it ended.
+  local watchdog
   kill "-$1" -- "-$DETACHED" 2>/dev/null
+  ( /bin/sleep "$RUN_LIMIT_SECONDS"; kill -KILL -- "-$DETACHED" 2>/dev/null ) > /dev/null 2>&1 &
+  watchdog=$!
   wait "$DETACHED" 2>/dev/null
   RC=$?
+  kill "$watchdog" 2>/dev/null
+  wait "$watchdog" 2>/dev/null
 }
 write_marker() { # Under way, as a run that got this far leaves it.
   local iid dev prod
