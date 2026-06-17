@@ -1,0 +1,169 @@
+UTC date: 2026-11-05T05:50:33Z
+commit: 9c8e098
+command: ghcr-visibility.sh, which runs each command shown below after its $ line. Curl has -q, no netrc, no cookie.
+
+=== Each published image, by the digest the run recorded, then by its tag
+
+### anonymous, bereketabera/wayline/web @ sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/web:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/web/manifests/sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/web:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/web @ 9c8e09828be3
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/web:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/web/manifests/9c8e09828be3
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/web:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/admin @ sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/admin:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/admin/manifests/sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/admin:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/admin @ 9c8e09828be3
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/admin:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/admin/manifests/9c8e09828be3
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/admin:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/space @ sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/space:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/space/manifests/sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/space:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/space @ 9c8e09828be3
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/space:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/space/manifests/9c8e09828be3
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/space:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/backend @ sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/backend:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/backend/manifests/sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/backend:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+### anonymous, bereketabera/wayline/backend @ 9c8e09828be3
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/backend:pull'
+HTTP 401 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "UNAUTHORIZED", "message": "authentication required"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/backend/manifests/9c8e09828be3
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/backend:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+=== Controls
+A public image, the one build-images.sh pins as its throwaway registry: the same requests should read it
+
+### anonymous, distribution/distribution @ sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:distribution/distribution:pull'
+HTTP 200 [curl exit 0]
+body with any token value left out: {"token": "<64 characters, not recorded>"}
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' -H 'Authorization: Bearer <that token>' https://ghcr.io/v2/distribution/distribution/manifests/sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9
+HTTP 200 digest=sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9 type=application/vnd.oci.image.index.v1+json www-authenticate= [curl exit 0]
+body, first 400 bytes: {
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.index.v1+json",
+  "manifests": [
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:b92d85255a404bc3933c6ae76bc0835a1031dfad6dba623cc6e027f5cef72acd",
+      "size": 1053,
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    {
+      "mediaType": "app
+A name that cannot exist under the same owner: does a private package answer differently from no package?
+
+### anonymous, bereketabera/wayline/no-such-image-validation-control @ sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' 'https://ghcr.io/token?scope=repository:bereketabera/wayline/no-such-image-validation-control:pull'
+HTTP 403 [curl exit 0]
+body with any token value left out: {"errors": [{"code": "DENIED", "message": "requested access to the resource is denied"}]}
+no token given, so the manifest read goes with no Authorization header
+$ curl -q -sS -o <body> -w 'HTTP %{http_code} digest=%header{docker-content-digest}' -H 'Accept: ...' https://ghcr.io/v2/bereketabera/wayline/no-such-image-validation-control/manifests/sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+HTTP 401 digest= type=application/json www-authenticate=Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:bereketabera/wayline/no-such-image-validation-control:pull" [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}
+
+=== gh api with the local token, account BereketAbera
+
+$ gh api user --jq .login
+BereketAbera
+[exit 0]
+scopes on that token, from the response header of GET /user:
+
+$ sh -c gh api -i user 2>/dev/null | tr -d '\r' | grep -i '^x-oauth-scopes:'
+X-Oauth-Scopes: admin:public_key, gist, read:org, repo, user, workflow
+[exit 0]
+
+$ gh api /users/BereketAbera/packages/container/wayline%2Fweb
+{"message":"You need at least read:packages scope to get a package.","documentation_url":"https://docs.github.com/rest/packages/packages#get-a-package-for-a-user","status":"403"}gh: You need at least read:packages scope to get a package. (HTTP 403)
+[exit 1]
+
+$ gh api /users/BereketAbera/packages/container/wayline%2Fweb/versions
+{"message":"You need at least read:packages scope to get a package's versions.","documentation_url":"https://docs.github.com/rest/packages/packages#list-package-versions-for-a-package-owned-by-a-user","status":"403"}gh: You need at least read:packages scope to get a package's versions. (HTTP 403)
+[exit 1]
+
+$ gh api /user/packages?package_type=container
+{"message":"You need at least read:packages scope to list packages.","documentation_url":"https://docs.github.com/rest/packages/packages#list-packages-for-the-authenticated-users-namespace","status":"403"}gh: You need at least read:packages scope to list packages. (HTTP 403)
+[exit 1]
+
+$ gh api /users/BereketAbera/packages?package_type=container
+{"message":"You need at least read:packages scope to list packages.","documentation_url":"https://docs.github.com/rest/packages/packages#list-packages-for-a-user","status":"403"}gh: You need at least read:packages scope to list packages. (HTTP 403)
+[exit 1]
+
+=== ghcr.io itself with the local token, account BereketAbera, sent only to ghcr.io
+$ curl -q -sS -o <body> -w 'HTTP %{http_code}' -u BereketAbera:<gh token> 'https://ghcr.io/token?service=ghcr.io&scope=repository:bereketabera/wayline/web:pull'
+HTTP 200 [curl exit 0]
+body with any token value left out: {"token": "<56 characters, not recorded>"}
+$ curl -q -sS -o <body> -w ... -H 'Authorization: Bearer <registry token>' https://ghcr.io/v2/bereketabera/wayline/web/manifests/sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+HTTP 404 digest= type=application/json [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown"}]}
+$ curl -q -sS -o <body> -w ... -H 'Authorization: Bearer <registry token>' https://ghcr.io/v2/bereketabera/wayline/admin/manifests/sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+HTTP 404 digest= type=application/json [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown"}]}
+$ curl -q -sS -o <body> -w ... -H 'Authorization: Bearer <registry token>' https://ghcr.io/v2/bereketabera/wayline/space/manifests/sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+HTTP 404 digest= type=application/json [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown"}]}
+$ curl -q -sS -o <body> -w ... -H 'Authorization: Bearer <registry token>' https://ghcr.io/v2/bereketabera/wayline/backend/manifests/sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+HTTP 404 digest= type=application/json [curl exit 0]
+body, first 400 bytes: {"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown"}]}
+
+=== docker, which is what scripts/ci/copy-to-local-registry.sh uses on this Mac
+does Docker's config name ghcr.io at all? (keys only, no values)
+
+$ python3 -I -c import json,os;d=json.load(open(os.path.expanduser('~/.docker/config.json')));print('auths has ghcr.io:', 'ghcr.io' in d.get('auths',{}));print('credsStore:', d.get('credsStore'));print('credHelpers has ghcr.io:', 'ghcr.io' in d.get('credHelpers',{}))
+auths has ghcr.io: False
+credsStore: desktop
+credHelpers has ghcr.io: False
+[exit 0]
+
+$ docker buildx imagetools inspect ghcr.io/bereketabera/wayline/web@sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+ERROR: failed to authorize: failed to fetch anonymous token: unexpected status from GET request to https://ghcr.io/token?scope=repository%3Abereketabera%2Fwayline%2Fweb%3Apull&service=ghcr.io: 401 Unauthorized
+[exit 1]

@@ -1,0 +1,86 @@
+UTC date: 2026-11-05T05:48:12Z
+commit: 9c8e098
+command: br3.sh, which runs each command shown below after its $ line
+
+$ curl -q -sS -I --max-time 20 http://plane.dev.localhost/source
+HTTP/1.1 302 Found
+Cache-Control: no-cache
+Content-Length: 145
+Content-Type: text/html
+Date: Thu, 05 Nov 2026 05:48:12 GMT
+Location: https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294319787276f303e354a66b945558b
+Server: nginx/1.31.8
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-Xss-Protection: 1; mode=block
+
+[exit 0]
+
+$ curl -q -sS -I --max-time 20 http://plane.prod-sim.localhost/source
+HTTP/1.1 302 Found
+Cache-Control: no-cache
+Content-Length: 145
+Content-Type: text/html
+Date: Thu, 05 Nov 2026 05:48:12 GMT
+Location: https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294319787276f303e354a66b945558b
+Server: nginx/1.31.8
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-Xss-Protection: 1; mode=block
+
+[exit 0]
+target named by /source on dev: https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294319787276f303e354a66b945558b
+
+--- logged out, no credentials
+
+$ curl -q -sS -o /dev/null -w HTTP %{http_code} final=%{url_effective} redirects=%{num_redirects}\n -L --max-time 40 https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294319787276f303e354a66b945558b
+HTTP 404 final=https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294319787276f303e354a66b945558b redirects=0
+[exit 0]
+
+$ curl -q -sS -o /dev/null -w HTTP %{http_code} final=%{url_effective} redirects=%{num_redirects}\n -L --max-time 40 https://github.com/BereketAbera/plane-platform
+HTTP 404 final=https://github.com/BereketAbera/plane-platform redirects=0
+[exit 0]
+
+$ curl -q -sS -o /dev/null -w HTTP %{http_code} final=%{url_effective} redirects=%{num_redirects}\n -L --max-time 40 https://github.com/BereketAbera/plane-platform/archive/84b63d9b6294319787276f303e354a66b945558b.tar.gz
+HTTP 404 final=https://github.com/BereketAbera/plane-platform/archive/84b63d9b6294319787276f303e354a66b945558b.tar.gz redirects=0
+[exit 0]
+
+$ curl -q -sS -o /dev/null -w HTTP %{http_code} final=%{url_effective} redirects=%{num_redirects}\n -L --max-time 40 https://api.github.com/repos/BereketAbera/plane-platform
+HTTP 404 final=https://api.github.com/repos/BereketAbera/plane-platform redirects=0
+[exit 0]
+
+$ curl -q -sS -o /dev/null -w HTTP %{http_code} final=%{url_effective} redirects=%{num_redirects}\n -L --max-time 40 https://api.github.com/repos/BereketAbera/plane-platform/commits/84b63d9b6294319787276f303e354a66b945558b
+HTTP 404 final=https://api.github.com/repos/BereketAbera/plane-platform/commits/84b63d9b6294319787276f303e354a66b945558b redirects=0
+[exit 0]
+
+--- with the owner's gh login (account BereketAbera), read only: is the commit on GitHub, and who can read it
+
+$ gh api user --jq .login
+BereketAbera
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform --jq {full_name,private,visibility,default_branch,pushed_at,license:(.license.spdx_id // null),permissions}
+{"default_branch":"main","full_name":"BereketAbera/plane-platform","license":"AGPL-3.0","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true},"private":true,"pushed_at":"2026-11-05T05:47:17Z","visibility":"private"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/84b63d9b6294319787276f303e354a66b945558b --jq {sha,date:.commit.committer.date,message:(.commit.message|split("\n")[0])}
+{"date":"2026-11-05T05:12:49Z","message":"docs(wayline): say when the fallback sender applies, correct the sidebar item's name and the spinners' size, say what the 17.5 h assumes, and name who left the backend's HIGH findings","sha":"84b63d9b6294319787276f303e354a66b945558b"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/compare/84b63d9b6294319787276f303e354a66b945558b...main --jq {status,ahead_by,behind_by}
+{"ahead_by":5,"behind_by":0,"status":"ahead"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/collaborators?affiliation=all&per_page=100 --jq [.[]|{login,role_name}]
+[{"login":"BereketAbera","role_name":"admin"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/invitations?per_page=100 --jq [.[]|{invitee:.invitee.login,permissions}]
+[]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/keys?per_page=100 --jq [.[]|{title,read_only}]
+[]
+[exit 0]

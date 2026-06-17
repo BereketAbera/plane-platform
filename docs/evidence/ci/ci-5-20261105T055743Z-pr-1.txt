@@ -1,0 +1,110 @@
+UTC date: 2026-11-05T05:57:43Z
+commit: 9c8e098
+command: pr-read.sh CI-5 1, which runs each command shown below after its $ line. The dev digest bump images.yml opened. Not merged, not closed.
+
+$ gh pr view 1 --repo BereketAbera/plane-platform --json number,title,state,isDraft,mergeable,mergeStateStatus,baseRefName,baseRefOid,headRefName,headRefOid,author,createdAt,updatedAt,closedAt,mergedAt,url,commits,files,statusCheckRollup,body,reviewDecision,changedFiles,additions,deletions,comments
+{"additions":11,"author":{"is_bot":true,"login":"app/github-actions"},"baseRefName":"main","baseRefOid":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","body":"Digest bump for dev, opened by `images.yml`. Merge it yourself: nothing merges this automatically.\n\nAfter merging:\n\n1. `git pull`\n2. `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`\n3. `make gitops-publish`\n\n`validate-manifests.sh` already ran in this workflow, because a pull request opened with\n`GITHUB_TOKEN` does not start CI on its own.","changedFiles":2,"closedAt":null,"comments":[],"commits":[{"authoredDate":"2026-11-05T05:47:16Z","authors":[{"email":"19558685+BereketAbera@users.noreply.github.com","id":"MDQ6VXNlcjE5NTU4Njg1","login":"BereketAbera","name":"BereketAbera"}],"committedDate":"2026-11-05T05:47:16Z","messageBody":"…plane-space a1585e502352, plane-backend 737fccc5c547\n\nPromote-Env: dev\nPromote-Image: plane-frontend=localhost:5001/wayline/web@sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67\nPromote-Image: plane-admin=localhost:5001/wayline/admin@sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51\nPromote-Image: plane-space=localhost:5001/wayline/space@sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43\nPromote-Image: plane-backend=localhost:5001/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e","messageHeadline":"promote(dev): plane-frontend 6c2686f9b850, plane-admin 823620826d9d, …","oid":"33b9109e495cf45e743d691f6a92739cf8d23eee"}],"createdAt":"2026-11-05T05:47:18Z","deletions":11,"files":[{"path":"gitops/environments/dev/manifests.yaml","additions":7,"deletions":7,"changeType":"MODIFIED"},{"path":"helm/plane/overlays/dev/kustomization.yaml","additions":4,"deletions":4,"changeType":"MODIFIED"}],"headRefName":"bump/dev-images","headRefOid":"33b9109e495cf45e743d691f6a92739cf8d23eee","isDraft":false,"mergeStateStatus":"UNSTABLE","mergeable":"MERGEABLE","mergedAt":null,"number":1,"reviewDecision":"","state":"OPEN","statusCheckRollup":[],"title":"promote(dev): plane-frontend 6c2686f9b850, plane-admin 823620826d9d, plane-space a1585e502352, plane-backend 737fccc5c547","updatedAt":"2026-11-05T05:47:18Z","url":"https://github.com/BereketAbera/plane-platform/pull/1"}
+[exit 0]
+
+$ gh pr diff 1 --repo BereketAbera/plane-platform
+diff --git a/gitops/environments/dev/manifests.yaml b/gitops/environments/dev/manifests.yaml
+index 974d87b..eaa9ea9 100644
+--- a/gitops/environments/dev/manifests.yaml
++++ b/gitops/environments/dev/manifests.yaml
+@@ -328,7 +328,7 @@ spec:
+     spec:
+       automountServiceAccountToken: false
+       containers:
+-      - image: localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
++      - image: localhost:5001/wayline/admin@sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+         imagePullPolicy: IfNotPresent
+         lifecycle:
+           preStop:
+@@ -439,7 +439,7 @@ spec:
+         - secretRef:
+             name: plane-app-keys
+             optional: false
+-        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
++        image: localhost:5001/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+         imagePullPolicy: IfNotPresent
+         lifecycle:
+           preStop:
+@@ -541,7 +541,7 @@ spec:
+         - secretRef:
+             name: plane-app-keys
+             optional: false
+-        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
++        image: localhost:5001/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+         imagePullPolicy: IfNotPresent
+         livenessProbe:
+           exec:
+@@ -714,7 +714,7 @@ spec:
+     spec:
+       automountServiceAccountToken: false
+       containers:
+-      - image: localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
++      - image: localhost:5001/wayline/space@sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+         imagePullPolicy: IfNotPresent
+         lifecycle:
+           preStop:
+@@ -794,7 +794,7 @@ spec:
+     spec:
+       automountServiceAccountToken: false
+       containers:
+-      - image: localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
++      - image: localhost:5001/wayline/web@sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+         imagePullPolicy: IfNotPresent
+         lifecycle:
+           preStop:
+@@ -905,7 +905,7 @@ spec:
+         - secretRef:
+             name: plane-app-keys
+             optional: false
+-        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
++        image: localhost:5001/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+         imagePullPolicy: IfNotPresent
+         livenessProbe:
+           exec:
+@@ -1414,7 +1414,7 @@ spec:
+         - secretRef:
+             name: plane-app-keys
+             optional: false
+-        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
++        image: localhost:5001/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+         imagePullPolicy: IfNotPresent
+         name: plane-api-migrate
+         resources:
+diff --git a/helm/plane/overlays/dev/kustomization.yaml b/helm/plane/overlays/dev/kustomization.yaml
+index 7b1291e..cf61dff 100644
+--- a/helm/plane/overlays/dev/kustomization.yaml
++++ b/helm/plane/overlays/dev/kustomization.yaml
+@@ -23,20 +23,20 @@ components:
+ # Contract section 13: digests live here, and only `make promote` changes these lines. `name` is
+ # the reference the chart renders, so it never changes. Index digests, never platform-specific ones.
+ images:
+-- digest: sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
++- digest: sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+   name: artifacts.plane.so/makeplane/plane-admin
+   newName: localhost:5001/wayline/admin
+-- digest: sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
++- digest: sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+   name: artifacts.plane.so/makeplane/plane-backend
+   newName: localhost:5001/wayline/backend
+-- digest: sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
++- digest: sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+   name: artifacts.plane.so/makeplane/plane-frontend
+   newName: localhost:5001/wayline/web
+ - digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+   name: artifacts.plane.so/makeplane/plane-live
+   newName: docker.io/makeplane/plane-live
+   newTag: v1.4.3
+-- digest: sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
++- digest: sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+   name: artifacts.plane.so/makeplane/plane-space
+   newName: localhost:5001/wayline/space
+ - digest: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/branches?per_page=100 --jq [.[]|{name,sha:.commit.sha}]
+[{"name":"bump/dev-images","sha":"33b9109e495cf45e743d691f6a92739cf8d23eee"},{"name":"main","sha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6"},{"name":"promote/prod-sim","sha":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a"}]
+[exit 0]
