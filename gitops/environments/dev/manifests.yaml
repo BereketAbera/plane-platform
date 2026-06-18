@@ -439,7 +439,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/throwaway/backend-failing-migrator@sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -541,7 +541,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/throwaway/backend-failing-migrator@sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -905,7 +905,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/throwaway/backend-failing-migrator@sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -1414,7 +1414,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/throwaway/backend-failing-migrator@sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         name: plane-api-migrate
         resources:
