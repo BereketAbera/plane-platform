@@ -3,7 +3,7 @@
 # copy of the scripts, and runs the scenarios that ought to notice. So this says which lines the harness looks at, and,
 # for those it does not, says so. It proves nothing about the platform, for the reasons that harness gives.
 #
-#   tests/drills/clean-restore-mutants.sh                    all of them, in the background, about an hour
+#   tests/drills/clean-restore-mutants.sh                    all of them, in the background. 22 minutes at JOBS=4
 #   MUTANTS="no-migrator no-valkey-flush" tests/drills/clean-restore-mutants.sh
 #   JOBS=4 tests/drills/clean-restore-mutants.sh             how many at once, 3 if not set
 #   tests/drills/clean-restore-mutants.sh --list
