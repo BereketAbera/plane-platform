@@ -17,12 +17,12 @@
 # stops on one before anything moves. rollback.sh reverts the newest promotion of dev, so run this alone:
 # a promotion of dev made during it is what would be reverted, and stage 5 would say so.
 #
-# What to expect, by reading. These times are estimates until this has run with the current rules. The
-# sync applies wave 3 after the migrator hook and waits on the rollout, which misses its 600s deadline, so
-# the Application first reads Degraded about 10 to 11m in, and this reverts then. That sync attempt has failed,
-# and the operation stays open: the next attempt starts 30s later, then 60s after that one fails
-# (gitops/applications/plane-dev.yaml), reads the newest commit, runs the hook again, and only then puts
-# the old image back. ArgoSyncFailed fires if the operation is still open about 13m in, so it may well fire.
+# What to expect, as measured on the one real run, 2026-11-05 in dev (DEP-1 in docs/validation.md). The sync applies wave 3
+# after the migrator hook and waits on the rollout, which misses its 600s deadline, so the Application first read
+# Degraded 10m24s in, and this reverted 8s later. That sync attempt had failed, and the operation stayed open: the next
+# attempt started 62s after the failure, not the 30s that gitops/applications/plane-dev.yaml reads as, took the newest
+# commit, ran the hook again, and put the old image back 11m48s in. The operation closed at 11m51s. Nothing fired: ArgoSyncFailed
+# stayed pending for 13m45s, against a for: of 15m, so a revert about 75s later would have let it fire.
 #
 # So what fires is not assumed here. From before the promotion until the alerts that appeared have gone,
 # this keeps every pending and firing alert, as Prometheus itself reports them, and the Application's state,
