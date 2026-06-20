@@ -1,6 +1,6 @@
 # Documentation index
 
-This is the documentation for a customized Plane Community Edition v1.4.3 deployment, run locally on kind. The application is Plane CE, not an original product. Pass 1 runs on one laptop and provisions nothing in the cloud.
+This is the documentation for a customized Plane Community Edition v1.4.3 deployment, run locally on kind. The application is Plane CE, not an original product. It is local and production-inspired. Pass 1 runs on one laptop, and no Hetzner or Cloudflare resource exists.
 
 The [repository README](../README.md) has the overview, status table, and quick start.
 
@@ -10,7 +10,7 @@ The [repository README](../README.md) has the overview, status table, and quick 
 
 1. [platform-contract.md](platform-contract.md) is binding for names, ownership, and ordering. If code and the contract disagree, one of them is a bug.
 2. The code decides what actually happens.
-3. [evidence/](evidence/README.md) decides what actually happened. A claim about runtime behaviour needs a capture there, with its date and command.
+3. [evidence/](evidence/README.md) decides what actually happened. A claim about runtime behaviour needs a capture there, with its date and command. A plain path under `.local/evidence-raw/` names a run that has not been published yet, and by [the evidence rules](evidence/README.md#rules) it becomes a result only once `make publish-evidence` copies it.
 
 **Result labels**, from [contract section 12](platform-contract.md#12-evidence-rule), as [validation.md](validation.md#status-values) defines them:
 
@@ -21,7 +21,7 @@ The [repository README](../README.md) has the overview, status table, and quick 
 | BLOCKED | The test could not run or finish because something it depends on failed or is missing. This says nothing about the system under test |
 | NOT RUN | The test was not attempted, or it was attempted and no evidence was captured |
 
-**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 the open ones are mostly what has not run yet: a clean install, teardown and recreation, a full restore, secret rotation, the failed-deploy drill, the load test, `make test-alert`, and everything about Hetzner and Cloudflare.
+**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 the markers still open in the front documents are what has not run yet: a clean install, teardown and recreation, a full restore into a clean cluster, in-place Plane restores, secret rotation, and the load test.
 
 | Marker | Meaning |
 |---|---|
@@ -33,6 +33,8 @@ To list what is still open:
 ```bash
 git grep -n -E '\[\[(VERIFY|MEASURE):' -- '*.md'
 ```
+
+Questions about Hetzner, Cloudflare and what Pass 2 will decide cannot be answered in Pass 1. In [PASS2_HANDOFF.md](../PASS2_HANDOFF.md) and [future-hetzner.md](future-hetzner.md) they read as plain sentences that start with "Unverified:" or "Not measured:", to check at the start of Pass 2. List them with `git grep -n -E '(Unverified|Not measured):' -- PASS2_HANDOFF.md docs/future-hetzner.md`.
 
 A number with no measurement behind it says "estimate" and how it was derived. Present-tense descriptions such as "the policy allows X" describe configuration. They do not say the behaviour has been observed.
 
@@ -95,7 +97,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 
 | Document | Answers |
 |---|---|
-| [PASS2_HANDOFF.md](../PASS2_HANDOFF.md) | What does Pass 2 inherit, and what must it do first? Nothing cloud in it exists yet |
+| [PASS2_HANDOFF.md](../PASS2_HANDOFF.md) | What does Pass 2 inherit, and what must it do first? Nothing about Hetzner or Cloudflare in it exists yet |
 | [future-hetzner.md](future-hetzner.md) | What must Terraform provide on Hetzner Cloud with independent dev and prod and Cloudflare? Nothing there is built, provisioned or tested |
 
 ### Component notes, next to the code
@@ -107,7 +109,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | [helm/plane/vendor/plane-ce-1.8.6/VENDOR.md](../helm/plane/vendor/plane-ce-1.8.6/VENDOR.md) | Provenance of the vendored upstream chart |
 | [infisical/README.md](../infisical/README.md) | Infisical layer |
 | [monitoring/README.md](../monitoring/README.md) | Monitoring layout and Grafana access |
-| [tests/load/README.md](../tests/load/README.md) | The k6 load test |
+| [tests/load/README.md](../tests/load/README.md) | The k6 load test, which has not run |
 | [.github/workflows/README.md](../.github/workflows/README.md) | Workflows, and what GitHub Free does not enforce |
 | [apps/wayline/README.md](../apps/wayline/README.md) | How the branded images are built from the pinned upstream source |
 | [apps/wayline/MODIFICATIONS.md](../apps/wayline/MODIFICATIONS.md) | The dated record of what changed from upstream |
