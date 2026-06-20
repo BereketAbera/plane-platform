@@ -21,6 +21,25 @@ test_limit_present_is_quiet if {
 	count(charts.warn) == 0 with input as doc
 }
 
+wrapped_route := {
+	"apiVersion": "traefik.io/v1alpha1",
+	"kind": "IngressRoute",
+	"metadata": {"name": "x", "namespace": "monitoring"},
+	"spec": {"routes": [{"match": "Host(`prometheus.localhost`)", "services": [{"name": "kps-prometheus", "port": 9090}]}]},
+}
+
+test_a_list_of_any_kind_rejected if {
+	count(charts.deny) == 1 with input as {"apiVersion": "v1", "kind": "List", "items": [wrapped_route]}
+	count(charts.deny) == 1 with input as {"apiVersion": "v1", "kind": "ConfigMapList", "items": []}
+	count(charts.deny) == 1 with input as object.union(wrapped_route, {"items": [wrapped_route]})
+}
+
+test_items_lower_down_and_list_inside_a_kind_accepted if {
+	count(charts.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "x"}, "data": {"items": "[1]"}}
+	count(charts.deny) == 0 with input as {"kind": "ListenerSet", "metadata": {"name": "x"}}
+	count(charts.deny) == 0 with input as wrapped_route
+}
+
 good_digest := "sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984"
 
 pinned := concat("@", ["docker.io/traefik", good_digest])

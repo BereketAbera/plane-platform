@@ -24,19 +24,24 @@ collect() { # collect <directory> <output file>
   else
     refuse_files_only_argocd_reads "$dir"
     local file
+    # Argo CD starts a document at any line beginning with ---, and drops the rest of that line. conftest
+    # splits only at a line that is exactly that, and one CRLF anywhere makes it look for that form with
+    # CRLF around it, and to it the rest is then one document, of which it reads the first. So this hands on what Argo CD reads.
     while read -r file; do
       printf -- '---\n'
-      cat "$file"
+      tr -d '\r' <"$file" | sed -E 's/^---.*$/---/'
     done < <(find "$dir" -type f -name '*.yaml' | sort) >"$target"
   fi
 }
 
 collect_in_repo() { # collect_in_repo <directory>: one file per source, everything this repository authors
-  local out="$1" platform_dir environment_dir
+  local out="$1" platform_dir environment_dir stray
   mkdir -p "$out"
   # Their manifests.yaml is read by name, and Argo CD reads the whole directory.
   for environment_dir in gitops/environments/*/; do
     refuse_files_only_argocd_reads "${environment_dir%/}"
+    stray="$(find "${environment_dir%/}" -type f -name '*.yaml' ! -name manifests.yaml | LC_ALL=C sort)"
+    [[ -z "$stray" ]] || die "Argo CD reads the whole directory and every check reads only manifests.yaml, so these would reach the cluster unchecked: ${stray//$'\n'/, }"
   done
   collect gitops/applications "$out/applications.yaml"
   for platform_dir in gitops/platform/*/; do
