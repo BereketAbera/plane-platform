@@ -2,6 +2,8 @@
 
 A bad image or a bad migration reached an environment through a promotion.
 
+The drills and the rollback below ran in dev on 2026-11-05. Files cited under `.local/evidence-raw/` are that raw output, and `make publish-evidence` has not copied them to `docs/evidence/runs/` yet.
+
 Preamble for raw commands:
 
 ```bash
@@ -16,14 +18,14 @@ NS=plane-dev APP=plane-dev   # or plane-prod-sim for both
 | One pod in `ErrImagePull` or `ImagePullBackOff`, old pods still Ready | The digest cannot be pulled. The rollout is stuck, and users are still served by old pods |
 | `Application` is `Degraded`, or `ArgoAppDegraded` is firing | The Deployment passed its progress deadline |
 | Deployment condition `ProgressDeadlineExceeded` | Same. The hardening patch sets `progressDeadlineSeconds: 600` on all seven Deployments in both environments (`gitops/environments/*/manifests.yaml`), so this takes up to 10 minutes |
-| Job `plane-api-migrate-1` failing, Deployments unchanged | Migration failed. Deployments are wave 3 and the hook is wave 2, so they do not move |
+| Job `plane-api-migrate-1` failing, Deployments unchanged | Migration failed. Deployments are wave 3 and the hook is wave 2, so they do not move. The Application reads `OutOfSync`, **`Healthy`**, `Running`, so health alone hides this |
 | `Running` phase with "Retrying attempt #N" | Argo CD is retrying. See [Argo sync stuck](argo-sync-stuck.md) |
 | `Running` phase with "waiting for healthy state of apps/Deployment/..." | The rollout has not finished or failed yet. Deployments are wave 3 of 4, so the sync waits on it |
 | New pods crash, `PlanePodCrashLooping` firing | Image is pullable but broken. See [Plane app debugging](plane-app-debugging.md) |
 
-Design intent: with `RollingUpdate`, a bad image on a Deployment leaves old pods serving. [[VERIFY: the failed-deploy drill sees 200 on every sample while the rollout fails]]
+With `RollingUpdate`, a bad image on a Deployment leaves old pods serving. Measured once, on 2026-11-05 in dev, with the `web` image: the drill's 61 samples through Traefik all read 200 while the rollout failed, and the old pod stayed Ready (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`). A watcher beside it read 913 signed-in `GET /api/users/me/` and 458 cycles of `/`, `/sign-in/`, `/god-mode/` and `/spaces/` over the whole drill, all 200 (`.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`). That covers one Deployment and an image that cannot be pulled. It says nothing about an image that pulls and then crashes.
 
-**What should fire, and has not been run.** Read from `monitoring/manifests/shared/rules-platform.yaml`: a bad image in a Plane Deployment holds the operation open, so `ArgoAppDegraded` fires 5 minutes after the deadline turns it Degraded, and `ArgoSyncFailed` at 15 minutes, if nobody reverts. The drill reverts at the first Degraded, about 10 minutes in, so both are expected to go pending, with neither firing unless the revert takes more than 5 minutes. No drill has measured this. See [what fires for which failure](argo-sync-stuck.md#what-fires-for-which-failure).
+**What fired.** In that run only `Watchdog` reached the sink, and everything else stayed pending. The Application first read Degraded 10m24s in and the drill reverted 8s later, so `ArgoAppDegraded` stayed far from its 5 minutes. `ArgoSyncFailed` stayed pending for 13m45s against its 15 minutes, so a revert about 75s later would have let it fire (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z-alerts.tsv`). If nobody reverts, `monitoring/manifests/shared/rules-platform.yaml` reads as `ArgoAppDegraded` 5 minutes after the first Degraded and `ArgoSyncFailed` at 15 minutes. That half has not been seen on a Plane Deployment. See [what fires for which failure](argo-sync-stuck.md#what-fires-for-which-failure).
 
 ## Diagnosis
 
@@ -56,27 +58,41 @@ make rollback ENV=prod-sim CONFIRM=yes
 ```
 
 `scripts/rollback.sh` finds the newest promotion of that environment that has not been reverted, runs `git revert`, re-renders,
-and publishes. Git stays the source of truth and auto-sync stays on. Running it again steps back one promotion further. The steps are in
-[Argo CD](../argocd.md#rollback). No rollback has run on the real cluster yet, and the logic has run against a stub `kubectl`
-([ci-2-20261104T225907Z-make-ci.log](../evidence/ci/ci-2-20261104T225907Z-make-ci.log)).
+and publishes. Git stays the source of truth and auto-sync stays on. Running it again steps back one promotion further. A later change beside an image line
+makes the revert conflict in the rendered file, which is generated, so rendering replaces it and the rollback goes on. A conflict anywhere else stops it with nothing changed.
+The steps are in [Argo CD](../argocd.md#rollback).
 
-Argo CD picks this up on its next poll, every three minutes or so. To ask it to look now:
+`make rollback ENV=dev` ran on the real cluster on 2026-11-05. It reverted `1fc9fbe` as `91ef477`, the six Deployments on those images went back to their earlier digests,
+prod-sim's render did not move, and `smoke.py --mode verify --job-probe` passed on the rolled-back images. `make promote ENV=dev` then put the final images back as `29316f2`
+(`.local/evidence-raw/DEP-2-20261105T064032Z-rollback.txt`, `DEP-2-20261105T064032Z-verify-on-rolled-back.txt` and `DEP-2-20261105T064032Z-promote-forward.txt` beside it). A rollback of prod-sim has run only against
+a stub `kubectl` ([ci-2-20261104T225907Z-make-ci.log](../evidence/ci/ci-2-20261104T225907Z-make-ci.log)).
+
+Argo CD picks this up at its next look. Looks were measured 120 to 289s apart, median 193s (`.local/evidence-raw/alert-text-figures-1.txt`). To ask it to look now:
 
 ```bash
 kubectl -n argocd annotate application "$APP" argocd.argoproj.io/refresh=normal --overwrite
 ```
 
-Child Applications have `retry.refresh: true`, so a revert lands while the bad revision is still retrying. [[VERIFY: a revert published during a retry loop replaces the bad revision without manual termination]]
+Child Applications have `retry.refresh: true`, so a revert lands while the bad revision is still retrying, with no manual termination. Seen twice in dev on 2026-11-05, and the backoff is what you wait for:
+
+| Revert published | What the Application did | From the timeline |
+|---|---|---|
+| Failed-deploy drill, 8s after the first attempt failed | The next attempt read `Retrying operation with latest revisions. Attempt #1` on the reverted commit, ran the hook again and put the old image back | `.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt` |
+| Failing-migrator drill, 16s after the third failure | It read `Synced`, `Healthy`, `Running` for 3m45s, until the next attempt was due, and then closed | `.local/evidence-raw/DEP-3-20261105T064517Z-timeline.txt` |
 
 ### If Postgres or plane-dev is what broke
 
-A rollback does not depend on either. For prod-sim it takes one best-effort dump first, limited to `ROLLBACK_DUMP_TIMEOUT` seconds (300 by
+A rollback of prod-sim depends on neither. It takes one best-effort dump first, limited to `ROLLBACK_DUMP_TIMEOUT` seconds (300 by
 default), and a failure there does not stop it. It then publishes with `SKIP_BACKUP=yes` and `SKIP_DEV_CHECK`, so the publish takes no dump and
 asks the cluster nothing. The skipped plane-dev check is logged in `.local/evidence-raw/promotion-overrides.log`. `make rollback ENV=prod-sim SKIP_BACKUP=yes CONFIRM=yes`
 leaves the dump out.
 
+A rollback of dev needs neither, because a publish that moves no prod-sim image asks the cluster nothing. A publish is all of `main`, though. If `main` holds a prod-sim image change that
+Argo CD has not read, `make rollback ENV=dev` stops before reverting and names the commit. Withdraw it first, with `make rollback ENV=prod-sim` if it is a promotion and `git revert` if not.
+Or set `OVERRIDE_DEV_CHECK="<reason>"` to send it along, which is logged, and that publish still asks plane-dev and takes the dump.
+
 If the publish itself fails, the revert stays on `main`. Fix the cause and run `make rollback` again: it publishes that revert and reverts nothing
-else.
+else. A promotion already put back by hand is reported as undone, and `main` is still published.
 
 ### If a migration ran and rolling back the image is not enough
 
@@ -90,7 +106,18 @@ ls -1 .local/backups/prod-sim/
 make restore ENV=prod-sim BACKUP=<id-from-before-the-promotion> CONFIRM=yes
 ```
 
-Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. The rollback prints the dump to use.
+Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. A prod-sim rollback prints a dump to use, and picks it by the promotion
+commit's time, not by whether or when the promotion reached Argo CD. So read it before you restore:
+
+| What happened to the promotion | What to do with the dump it names |
+|---|---|
+| Its publish was refused, so it never reached Argo CD | Nothing moved, so nothing needs restoring. That restore would only discard every write since the dump |
+| Its publish was refused, and a second `make promote` sent it | Use the dump the second run took, which is later than the one named |
+| It was merged on GitHub | The dump was taken at the publish, so the right one can be the first after that time |
+| The rollback's own publish failed, and the re-run published the revert | The re-run names no dump. Pick the one from before the promotion by hand |
+
+This comes from a review on stubs (`.local/evidence-raw/review-promotion-4-scenarios-1.txt`). No real prod-sim rollback has run.
+
 Roll back the image first, because `scripts/restore.sh` refuses a backup from a newer Plane version than the one running. Dev takes no automatic dump on
 promotion, so run `make backup ENV=dev` yourself before a risky one. See [Backup and restore](backup-restore.md).
 
@@ -106,13 +133,35 @@ make test-e2e ENV=dev
 You want `Synced Healthy Succeeded`, no pod on the bad digest, and the probes green on the Platform overview dashboard. Check which
 digest ran when on the [Deployments and rollbacks](../monitoring.md#deployment-and-rollback-visibility) dashboard.
 
-Drill: `make drill-failed-deploy` runs `tests/drills/failed-deploy-rollback.sh`, which pushes a syntactically valid digest that no registry
-can serve, through the real promotion path, and reverts it. It runs on dev only and adds two commits to `main`. Stage 4 waits up to the 600s deadline
-plus 120s. It has not run.
+Right after a rollout `make test-e2e` can exit 2, BLOCKED, while old pods are still going, because `tests/e2e/smoke.py` will not read PASS during a rollout. Wait about 40s and run it again. That is from reading the script, and no real run has hit it.
 
-[[VERIFY: tests/drills/failed-deploy-rollback.sh completes with RESULT PASS]]
+### Drills
 
-[[MEASURE: seconds from publishing a revert to Application Synced and Healthy]]
+`make drill-failed-deploy` runs `tests/drills/failed-deploy-rollback.sh`, which pushes a syntactically valid digest that no registry
+can serve, through the real promotion path, and reverts it. It runs on dev only and adds two commits to `main`. Run it alone and in the background: it took 15 minutes,
+and stage 4 alone can wait the 600s deadline plus 120s. Preflight stops before anything moves if a prod-sim change waits on `main` or Prometheus does not answer. It records every pending and firing
+alert in `<evidence>-alerts.tsv`, and stage 6 prints them by alert with what the sink received.
+
+`tests/drills/failed-migrator.sh` does the same with a throwaway backend image whose migrator exits 1. It has no `make` target. It holds the failure for `HOLD_SECONDS`, 300 by default, so rules with a 15 minute `for` cannot fire inside it.
+
+Both ran once in dev on 2026-11-05 and ended RESULT PASS:
+
+| Drill | What it showed | Evidence |
+|---|---|---|
+| `failed-deploy-rollback.sh` | Bad digest asked for 25s in, first Degraded 10m24s in, revert published 8s later, old image back 11m48s in, `Synced` and `Healthy` 11m54s in. 200 on all 61 samples. No pod left on the bad digest, and prod-sim's manifests did not move | `.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log` |
+| `failed-migrator.sh` | The Job failed `BackoffLimitExceeded` 58s in. Deployment generations, images and pods equalled the start on all 67 samples, and 200 on all 67. The recovery replaced no pod. `ArgoAppOutOfSync`, `ArgoSyncFailed` and `KubeJobFailed` went pending, and only `Watchdog` reached the sink | `.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log` |
+
+The migrator exited 1 and changed nothing. A migration that fails halfway through a schema change has not been tried, so neither run says what state that leaves.
+
+Seconds from publishing a revert to the Application reading `Synced` and `Healthy` with no operation open, in dev, one run each, with a refresh asked for each time (`.local/evidence-raw/argocd-refresh-reasons-1.txt`):
+
+| Reverted | Seconds | Why that long |
+|---|---:|---|
+| A good promotion of four images, with no retry open (`make rollback ENV=dev`) | 67 | The sync itself. The operation ran from 06:41:03Z to 06:42:04Z |
+| A bad `web` image, in a retry loop | 82 | 54s until the next attempt, which ran the hook again |
+| A failing migrator, in a retry loop | 251 | 226s of backoff until the next attempt was due |
+
+None of these is from prod-sim, and none waited for Argo CD's own look.
 
 ## What not to do
 
