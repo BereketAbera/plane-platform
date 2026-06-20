@@ -5,8 +5,9 @@ a customized Plane Community Edition v1.4.3 deployment, not an original product.
 
 **Status of this page.** It describes the configuration in the code, and what ran on the one local kind cluster on
 2026-11-04 and 2026-11-05 with Argo CD v3.5.7. A measured statement links its file under
-[`docs/evidence/runs/`](evidence/README.md). A `VERIFY` or `MEASURE` marker stays on what has not run: the failed-deploy
-drill, a failing migrator, a real rollback, a promotion to prod-sim and a clean install. Several results come from scratch
+[`docs/evidence/runs/`](evidence/README.md), or names it under `.local/evidence-raw/` for the runs of 2026-11-05 that
+`make publish-evidence` has not copied yet. A `VERIFY` or `MEASURE` marker stays on what has not run: a cluster-scoped refusal, a self-heal
+timed on a manual scale, a secret rotation and a restore during a failing sync. A clean install has not run either, and neither has a rollback of prod-sim. Several results come from scratch
 Applications on the real controller. They show how Argo CD behaves, not how a first boot from nothing would go.
 
 ## Access
@@ -210,10 +211,14 @@ Consequences of this design:
   harmless: the re-run at 21:46:29Z on `plane-dev` added no row to the 164 of its first run
   ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and a later one took 9s
   ([plane-prod-sim-firstboot-1.txt](evidence/runs/plane-prod-sim-firstboot-1.txt)).
-- **A failed migrator stops the sync before wave 3,** so no Deployment is touched and the old version keeps running. [[VERIFY: failing migrator leaves wave 3 Deployments untouched]]
+- **A failed migrator stops the sync before wave 3,** so no Deployment is touched and the old version keeps running. Measured once, on
+  2026-11-05 in dev, with a throwaway backend whose migrator exits 1 (`tests/drills/failed-migrator.sh`). The Job failed `BackoffLimitExceeded` 58s after the
+  publish, the sync retried, and over 67 samples the Deployments' generations, images and pods equalled the start, and the host answered 200
+  (`.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log`). That migrator changed nothing before it failed, so one that fails partway through a schema
+  change has not been tried.
 - **App health can stay Healthy while the migrator fails,** because aggregate health skips hooks. A failing hook on a scratch
-  Application read phase `Running`, health `Healthy` ([argocd-terminate-1.txt](evidence/runs/argocd-terminate-1.txt)). Read the operation
-  phase and message, not only health.
+  Application read phase `Running`, health `Healthy` ([argocd-terminate-1.txt](evidence/runs/argocd-terminate-1.txt)), and `plane-dev` read
+  `OutOfSync`, `Healthy`, `Running` in that drill. Read the operation phase and message, not only health.
 
 ### Other sync options
 
@@ -232,17 +237,21 @@ Git change, not the sync button.**
 A live change that differs from Git is reverted. The contract says this takes seconds. One edit has been timed: a NetworkPolicy
 was back about 6s after its Application's self-heal was switched back on
 ([traefik-nodeport-source-1.txt](evidence/runs/traefik-nodeport-source-1.txt)).
+The test on a Deployment was refused by the session's permission system on 2026-11-05 before it changed anything
+(`.local/evidence-raw/GITOPS-4-20261105T062155Z.txt`).
 [[MEASURE: time from a manual kubectl scale to self-heal reverting it]]
 
-Git polling has no webhook in Pass 1. A published commit is seen at the next reconciliation, within about three minutes
-by the chart's default (120 seconds plus up to 60 seconds of jitter). To ask immediately:
+Git polling has no webhook in Pass 1. A published commit is seen at the controller's next look. The chart's default is 120 seconds plus up to 60
+seconds of jitter, and looks were measured 120 to 289s apart, median 193s, because a resync is skipped when the previous look landed later
+in its jitter (`.local/evidence-raw/alert-text-figures-1.txt`). To ask immediately:
 
 ```bash
 kubectl -n argocd annotate application plane-dev argocd.argoproj.io/refresh=normal --overwrite
 ```
 
 The controller removes the annotation once it has compared, which took 18s after a hard refresh in one test
-([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)).
+([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)). In each real promotion, rollback and drill revert of 2026-11-05 a refresh was asked for,
+and the sync began within a second of it (`.local/evidence-raw/argocd-refresh-reasons-1.txt`).
 
 Two things that look like drift and should not fight:
 
@@ -264,12 +273,13 @@ project: phase `Running`, `retryCount` 7, `finishedAt` set, `status.conditions` 
 | Setting | Value | Why |
 |---|---|---|
 | `limit` | -1, no limit | Automated sync never reattempts a failed commit. A child is often briefly Degraded on first boot, so a finite limit would strand it until the next commit |
-| `backoff` | 30s, factor 2, cap 5m | The wait goes 30s, 1m, 2m, 4m, 5m, 5m and on |
+| `backoff` | 30s, factor 2, cap 5m | The waits measured after each failed attempt were 61s or 62s, then 120s, then 242s, so the first wait read about a minute and not the 30s the setting reads as (`.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`, `.local/evidence-raw/DEP-3-20261105T064517Z-timeline.txt`). Later waits, up to the cap, have not been read on a real Plane sync |
 | `refresh` | `true` on children and on `root` | A retry picks up the newest commit, so a revert lands while the sync loops. Without it the retry stays pinned to the bad revision |
 
 On the first boot, root's operation began at the first published commit (`b98fa47`) and reached `4a49a9c` on a retry, with no new
 operation ([bootstrap-up-terraform-1.txt](evidence/runs/bootstrap-up-terraform-1.txt),
-[argocd-root-terminate-1.txt](evidence/runs/argocd-root-terminate-1.txt)). That shows the revision moving. Nobody has watched a fix to an
+[argocd-root-terminate-1.txt](evidence/runs/argocd-root-terminate-1.txt)). That shows the revision moving. A revert landed the same way during `plane-dev`'s retry loop in both
+drills of 2026-11-05, with no step by hand (`.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`, `.local/evidence-raw/DEP-3-20261105T064517Z-timeline.txt`). Nobody has watched a fix to an
 Application manifest land this way.
 
 To see the true state:
@@ -318,38 +328,45 @@ make rollback ENV=prod-sim CONFIRM=yes
 
 `scripts/rollback.sh`:
 
-1. Refuses unless you are on `main` with a clean overlay and rendered file.
-2. Looks for a revert of this environment's promotion that is on `main` and was never published. If it finds one, it publishes that and reverts nothing else.
-3. Otherwise finds the newest promotion of that environment not already reverted. It matches the `Promote-Env:` trailer or the `promote(<env>):` subject, since a squash merge may drop the trailer.
-4. For prod-sim, asks unless `CONFIRM=yes`, then takes one best-effort dump, limited to `ROLLBACK_DUMP_TIMEOUT` seconds (300 by default). A failure there does not stop the rollback. `SKIP_BACKUP=yes` leaves the dump out.
-5. Runs `git revert`, re-renders, and commits both as one commit. On a conflict it aborts, changes nothing, and tells you to resolve it by hand.
-6. Publishes with `SKIP_BACKUP=yes` and `SKIP_DEV_CHECK`, so the publish takes no dump and asks the cluster nothing, because the cluster may be what is broken.
+1. Refuses unless you are on `main` with a clean overlay and rendered file, and no merge, cherry-pick or revert is under way.
+2. For dev, stops if `main` holds a prod-sim image change Argo CD has not read, and names it, because a publish is all of `main`. `OVERRIDE_DEV_CHECK="<reason>"` sends it along, which is logged, and that publish still asks plane-dev and takes the dump.
+3. Looks for a revert of this environment's promotion that is on `main` and was never published. If it finds one, it publishes that and reverts nothing else.
+4. Otherwise finds the newest promotion of that environment not already reverted. It matches the `Promote-Env:` trailer or the `promote(<env>):` subject, since a squash merge may drop the trailer.
+5. For prod-sim, asks unless `CONFIRM=yes`, then takes one best-effort dump, limited to `ROLLBACK_DUMP_TIMEOUT` seconds (300 by default). A failure there does not stop the rollback. `SKIP_BACKUP=yes` leaves the dump out.
+6. Runs `git revert`, re-renders, and commits both as one commit, holding the lock in `scripts/lib/commit-lock.sh` from before the revert until the commit. A conflict only in the rendered file is replaced by rendering. A conflict anywhere else stops it with nothing changed, and undoes only the revert it started. If the revert would change nothing, it reports the promotion as already undone and still publishes `main`.
+7. Publishes. For prod-sim that is with `SKIP_BACKUP=yes` and `SKIP_DEV_CHECK`, so the publish takes no dump and asks the cluster nothing, because the cluster may be what is broken. For dev, a publish that moves no prod-sim image asks the cluster nothing anyway.
 
 **Things to know before running it:**
 
 | Point | Detail |
 |---|---|
 | Images roll back, the schema does not | Migrations are forward only. Old code starts against the newer schema with no warning. The way back for data is the dump taken before a prod-sim promotion, through `make restore` |
-| **Do not use `BACKUP=latest` for that** | The rollback's own dump holds the newer schema, so `latest` may name it. The script prints the dump to use. Check that it predates the promotion |
+| **Do not use `BACKUP=latest` for that** | The rollback's own dump holds the newer schema, so `latest` may name it. A prod-sim rollback prints a dump to use, picked by the promotion commit's time. Check it first: [Failed deploy](runbooks/failed-deploy-rollback.md#if-a-migration-ran-and-rolling-back-the-image-is-not-enough) lists when it is the wrong one, such as a promotion whose publish was refused |
 | A failed publish is safe to retry | The revert stays on `main`. Run `make rollback` again: it publishes that revert and reverts nothing else |
-| A rollback publishes all of `main` | An unpublished prod-sim promotion sitting on `main` goes out under the same skip, with its digests logged in `.local/evidence-raw/promotion-overrides.log` |
-| A revert during a retry loop | Children have `retry.refresh: true`, so the retry should pick it up. The drill below would show it |
+| A rollback publishes all of `main` | A rollback of prod-sim sends what else waits on `main` under the same skip, an older unpublished prod-sim promotion included, with its digests logged in `.local/evidence-raw/promotion-overrides.log`. That gap is known and open. A rollback of dev stops on one instead |
+| A revert during a retry loop | Children have `retry.refresh: true`, and the retry picks it up. Measured in both drills below, and you wait for the backoff |
 
-None of this has run on the real cluster. The logic has, against a stub `kubectl`: `rollback-rerun-after-failed-publish`,
+`make rollback ENV=dev` ran on the real cluster on 2026-11-05: it reverted `1fc9fbe` as `91ef477` and the six Deployments on those images went back to their earlier digests, with prod-sim's render
+unmoved and `smoke.py --mode verify --job-probe` passing on the rolled-back images (`.local/evidence-raw/DEP-2-20261105T064032Z-rollback.txt`). A rollback of prod-sim has not run on the real cluster. Its logic has, against a stub `kubectl`: `rollback-rerun-after-failed-publish`,
 `rollback-prod-sim-with-broken-backup` and the other scenarios in
-[ci-2-20261104T225907Z-make-ci.log](evidence/ci/ci-2-20261104T225907Z-make-ci.log).
+[ci-2-20261105T055459Z-make-ci.log](evidence/ci/ci-2-20261105T055459Z-make-ci.log).
 
 `make drill-failed-deploy` runs `tests/drills/failed-deploy-rollback.sh`, which exercises this path in dev. It promotes an
 unpullable digest for `web`, checks that the old pods keep serving, and reverts. It needs no pause, because the bad state is the
-desired state in Git, so Argo CD has nothing to undo. It has not run. What it should fire is in
-[Argo sync stuck](runbooks/argo-sync-stuck.md#what-fires-for-which-failure), and that is not measured either.
+desired state in Git, so Argo CD has nothing to undo. Preflight stops it before anything moves if a prod-sim change waits on `main`, or if Prometheus does not answer. It keeps every pending and firing alert in
+`<evidence>-alerts.tsv`, and stage 6 prints them with what the sink received.
 
-- [[VERIFY: failed-deploy drill passes; old pods keep serving and revert restores Synced and Healthy]]
-- [[MEASURE: time from make rollback to the environment reading Synced and Healthy]]
+It ran once, on 2026-11-05 in dev, and ended RESULT PASS. The old pod stayed Ready and all 61 samples through Traefik read 200 during the failed rollout. The Application first read Degraded 10m24s in, and the revert was published 8s later.
+The next attempt took the newest commit, the old image was back 11m48s in, and `plane-dev` read `Synced` and `Healthy` 82s after the revert. Nothing fired: `ArgoSyncFailed` stayed pending for 13m45s against its 15 minutes
+(`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`, with `-alerts.tsv` beside it). See
+[Argo sync stuck](runbooks/argo-sync-stuck.md#what-fires-for-which-failure). That is one bad image on one Deployment, in dev. An image that pulls and then crashes has not been drilled.
+
+Time from `make rollback` to the environment reading `Synced` and `Healthy`: 67s, for `make rollback ENV=dev` moving four images with no retry open. It published at 06:40:59Z, and the Application read so at 06:42:06Z
+(`.local/evidence-raw/DEP-2-20261105T064032Z-timeline.txt`). A refresh was asked for, so this does not include waiting for Argo CD's own look. It is one run, in dev.
 
 `progressDeadlineSeconds` is 600 on every rendered Deployment, which decides when a bad rollout is declared failed. It stays
 above the longest startup budget (api, worker and beat, 300 seconds), because image pull and scheduling count against
-the same deadline, and first-boot pulls measured 448s. Stage 4 of the drill waits that long plus 120 seconds, so up to 12 minutes.
+the same deadline, and first-boot pulls measured 448s. The drill's rollout read `ProgressDeadlineExceeded` about 10 minutes after it started. Stage 4 of the drill can wait the deadline plus 120 seconds, so up to 12 minutes.
 
 web, admin, space, live and api keep serving for a 5-second `preStop` sleep after SIGTERM, so that Traefik stops sending to a pod
 before it goes. How long Traefik takes to react has not been measured. The "about 2 seconds" in contract section 6 and in the comment in
@@ -358,8 +375,9 @@ before it goes. How long Traefik takes to react has not been measured. The "abou
 What ran, on 2026-11-04 in plane-dev on upstream images: each of the 5 routes sampled at 10 Hz through Traefik while all seven
 Deployments rolled, with a failure meaning no answer in 2 seconds or a 5xx. One rollout before the sleep failed 10 of 2,757 samples
 ([plane-dev-rollout-availability-1.txt](evidence/runs/plane-dev-rollout-availability-1.txt)). Two rollouts after it failed 0 of 5,902
-([plane-dev-rollout-availability-2.txt](evidence/runs/plane-dev-rollout-availability-2.txt)). That counts HTTP answers only, and it has
-not been repeated on the branded images. An open WebSocket does not ride through: replacing the `live` pod closed it with code 4205, the
+([plane-dev-rollout-availability-2.txt](evidence/runs/plane-dev-rollout-availability-2.txt)). That counts HTTP answers only. On branded images the 10 Hz test has not been repeated. A slower watcher ran across the
+rollback and the promotion forward of 2026-11-05 in dev, which rolled six Deployments twice: 239 signed-in requests at about one a second and 120 cycles of four pages, all 200
+(`.local/evidence-raw/DEP-2-20261105T064032Z-timeline.txt`). An open WebSocket does not ride through: replacing the `live` pod closed it with code 4205, the
 client reconnected 21.2 seconds after the delete, and an edit still inside the debounce was not on the server afterwards
 ([plane-dev-live-restart-1.txt](evidence/runs/plane-dev-live-restart-1.txt)).
 
@@ -389,7 +407,8 @@ hard refresh and the child's patch held for a minute, and a server dry run of ap
 end, and `argo_pause_child` then checks that the patch held. `argo_resume` puts the saved blocks back in reverse order, from an exit trap, so root sees
 no drift. The two in-place Infisical restores went through this: the server stayed at zero while paused, and auto-sync came back
 ([dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt),
-[restore-infisical-20261105T001834Z.json](evidence/runs/restore-infisical-20261105T001834Z.json)).
+[restore-infisical-20261105T001834Z.json](evidence/runs/restore-infisical-20261105T001834Z.json)). So did `make test-alert ENV=dev` on 2026-11-05, with `root` and `plane-dev` paused from before the injection until it was over, and both blocks back at the end
+(`.local/evidence-raw/MON-1-20261105T055029Z.txt`).
 
 By hand:
 
@@ -416,6 +435,7 @@ trusting an injection.
 | `make restore ENV=infisical` | That Application only | It stops the server. Root may be waiting on what the restore leads to |
 | `make test-alert` | Root and child | It injects a failure behind Git's back |
 | `make drill-failed-deploy` | No | The change goes through Git |
+| `tests/drills/failed-migrator.sh` | No | The change goes through Git |
 | `make drill-pod-restart` | No | Deleting a pod changes no spec |
 
 ## Diffing
@@ -467,9 +487,9 @@ flowchart LR
   H --> I["Argo CD syncs plane-prod-sim"]
 ```
 
-**Images.** Since commit `4f622e3` on 2026-11-05, dev's overlay names `localhost:5001/wayline/{web,admin,space,backend}` by digest.
-Its `live` image and the data services stay upstream. Prod-sim's overlay still names upstream `docker.io/makeplane/*` by digest, so
-contract section 5 holds for dev only until prod-sim is promoted.
+**Images.** Both overlays name `localhost:5001/wayline/{web,admin,space,backend}` by digest: dev since `4f622e3` and prod-sim since `0af8956`, both on 2026-11-05.
+Their `live` image and the data services stay upstream. Both environments now run the final images built from `84b63d9` (web `3d7575a1`, admin `ce7adc37`, space `5f0119ff`, backend `8c04bd18`), promoted to dev by `1fc9fbe`
+and to prod-sim by `9c8e098`. Dev's drills moved it away and back, and `29316f2` is the promotion it stands on.
 
 ### Dev
 
@@ -485,10 +505,11 @@ make promote ENV=dev IMAGE=web DIGEST=sha256:<64-hex>
 `web` maps to the chart's `plane-frontend`. Add `REPO=` when the digest comes from another repository. A digest under
 `localhost:5001/` must already be in the local registry, or the script stops before Argo CD can sit in `ImagePullBackOff`.
 
-**Through GitHub.** No run has reached these steps: `images.yml` has not built an image, as row CI-4 records in
-[evidence/ci/README.md](evidence/ci/README.md).
+**Through GitHub.** The first step has run, on 2026-11-05 at `9c8e098`. Run 41975430939 built four images, published four private GHCR packages and opened
+[pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), which stays open and unmerged (rows CI-4 and CI-5 in [evidence/ci/README.md](evidence/ci/README.md)). Nothing has copied those digests to the local
+registry, so steps 2 and 3 have not run, and what runs in the cluster came from `make images`.
 
-1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It opens the pull request with the same action as `promote-prod-sim.yml` below, so expect the same refusal while that setting is off (row CI-5).
+1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It needs the repository setting that lets workflows open pull requests, on since 2026-11-05 by the owner's decision.
 2. Merge it, and `git pull`.
 3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not.
 
@@ -516,20 +537,19 @@ What `scripts/promote.sh` does differently for prod-sim:
 | Plane-dev check | `scripts/lib/dev-check.sh` refuses unless `plane-dev` is Synced and Healthy with that digest in a ready container. `OVERRIDE_DEV_CHECK="<reason>"` goes ahead and logs the reason in `.local/evidence-raw/promotion-overrides.log`. With no cluster in reach, as in CI, the check is skipped, and the output and commit say so |
 | Confirmation | Prompts for `yes`, or needs `CONFIRM=yes`. Without a terminal it stops |
 | Backup | `scripts/backup.sh prod-sim` before any edit, because rolling back an image does not roll back a migration. `SKIP_BACKUP=yes` overrides, with a warning |
-| Failure | Restores the overlay and rendered file, so nothing half-promoted stays behind |
+| Failure | Before the commit, restores the overlay and rendered file, so nothing half-promoted stays behind. If the publish is refused after the commit, the promotion stays on `main`, and it leaves with the next publish of any kind. Run `make promote` again, which publishes it, or withdraw it with `make rollback ENV=prod-sim` |
+| Nothing to promote | With every digest already in the overlay, it publishes `main` if Argo CD has not read it, and a publish that fails exits non-zero |
 
 The digest check cannot tell order inside one commit, so a change adding a digest to both environments at once passes. Human
 review covers that.
 
 **Through GitHub.** `promote-prod-sim.yml`, run by manual dispatch, edits the overlay, validates it, pushes branch `promote/prod-sim`, and
-asks GitHub for a pull request. It never builds. It refused an unrecorded digest on a real runner on 2026-11-04, PASS (run 41905513020).
-Opening the pull request is BLOCKED: in runs 41905611391 and 41908167069 the branch was pushed, then GitHub refused the pull request,
-because the repository setting that allows it is off (rows CI-6 and CI-6b in [validation.md](validation.md#real-github-actions-runs), and
-[evidence/ci/README.md](evidence/ci/README.md)). Turning it on
-is the owner's decision. While it is off, open the pull request by hand from the pushed branch. No promotion pull request has been opened or
-merged, so steps 2 and 3 have not run.
+asks GitHub for a pull request. It never builds. On a real runner it refused an unrecorded digest on 2026-11-04 (run 41905513020), and on 2026-11-05 an invented digest and another image's digest
+(runs 41976950402 and 41977025314). Run 41977114312 at `9c8e098` opened [pull request 2](https://github.com/BereketAbera/plane-platform/pull/2), closed unmerged as a test
+(rows CI-6 and CI-6b in [evidence/ci/README.md](evidence/ci/README.md)). The repository setting that lets a workflow open a pull request has been on since 2026-11-05, by the owner's decision. With it off, GitHub refused
+the pull request in runs 41905611391 and 41908167069. A pull request opened this way starts no job: GitHub holds its `ci` run for approval. No promotion pull request has been merged, so steps 2 and 3 have not run.
 
-1. Run the workflow, with `image` and `digest` or with neither to copy every image from dev. The run goes red at the pull request step while that setting is off, and links to the page for opening it by hand.
+1. Run the workflow, with `image` and `digest` or with neither to copy every image from dev. If that setting is off, the run goes red at the pull request step and links to the page for opening it by hand.
 2. Review and merge. **Merging is the approval, and GitHub cannot enforce it.** The repository is private on the Free plan, so there are no environment reviewers and no protected branches. See [`.github/workflows/README.md`](../.github/workflows/README.md).
 3. Publish. The workflow could not reach the cluster, so both checks happen here.
 
@@ -541,8 +561,11 @@ make gitops-publish      # asks plane-dev first, then takes the prod-sim dump, i
 `gitops-publish.sh` detects this by reading the diff of the prod-sim manifests for `@sha256:` lines. The plane-dev check comes first,
 so a refused publish costs no dump, and `SKIP_BACKUP=yes` is not a way past it. It reads to the end of the diff rather than using
 `grep -q`, which under `pipefail` could read a match in a large diff as no match. A stub run reproduces that trap on the old script and
-takes the dump on the new one ([test_publish-stub-1.txt](evidence/runs/test_publish-stub-1.txt)). No real prod-sim image has been
-published this way.
+takes the dump on the new one ([test_publish-stub-1.txt](evidence/runs/test_publish-stub-1.txt)). Its plane-dev check ran for real at `9c8e098`, where `make promote ENV=prod-sim` had already taken the dump
+(`.local/evidence-raw/promote-prod-sim-final-2.txt`). A promotion merged on GitHub, where this script takes the dump itself, has not run.
+
+Promotion covers image lines only. Any other change to prod-sim's rendered manifests gets a warning and is published, because `helm/plane/components/hardening` and the chart reach both environments in one push.
+A digest changed by hand gets a warning if `make promote` would have refused it. A publish also warns about commits on `main` that are not on `origin/main`, which GitHub CI and review have not seen.
 
 ### After a promotion
 
@@ -553,12 +576,20 @@ kubectl -n argocd get application plane-prod-sim
 make test-e2e ENV=prod-sim
 ```
 
-The dev half has run. On 2026-11-05, `make promote ENV=dev` published `4f622e3`, the branded images reached `plane-dev`, and
-`make test-e2e ENV=dev` passed 38 of 38 ([smoke-dev-20261105T001213Z.json](evidence/runs/smoke-dev-20261105T001213Z.json),
-[branding/live-dev/README.md](evidence/branding/live-dev/README.md)). Prod-sim has run its 37 steps on upstream images only.
+Both halves have run. On 2026-11-05, `make promote ENV=dev` published `1fc9fbe` and `make promote ENV=prod-sim` published `9c8e098`, carrying the final images from `84b63d9` through the local registry
+(`.local/evidence-raw/promote-dev-final-2.txt`, `.local/evidence-raw/promote-prod-sim-final-2.txt`). After them, `make test-e2e` read 45 PASS and 1 SKIP in dev, and 44 PASS and 1 SKIP in prod-sim, with the running digests equal to the overlay's. The skip needs a clean
+database, so it waits for the clean install (`.local/evidence-raw/smoke-dev-20261105T053137Z-52811.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`).
 
-[[VERIFY: a digest promotion reaches prod-sim through this path]]
-[[VERIFY: prod-sim promotion takes a dump before the image changes]]
-[[MEASURE: time from make promote to the environment reading Synced and Healthy]]
+**The dump comes first.** Prod-sim's promotion checked each digest against dev's record, asked plane-dev, and took backup `20261105T053351Z` with its row counts and object check before it committed `9c8e098` at 05:34:06Z. The publish then asked plane-dev
+again, and took no second dump (`.local/evidence-raw/promote-prod-sim-final-2.txt`). That backup has not been restored, so this shows it exists and came first, not that a restore from it works.
+
+**How long it took,** to the Application's operation closing `Synced` and `Healthy`, each with a refresh asked (`.local/evidence-raw/argocd-refresh-reasons-1.txt`, and `started` and `finished` in `.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`):
+
+| Promotion | From | Sync began | Closed | Total |
+|---|---|---|---|---:|
+| `1fc9fbe`, dev, four images | Commit at 05:29:47Z | 05:29:48Z | 05:30:54Z | 67s |
+| `9c8e098`, prod-sim, the same four, already on the node | Dump started at 05:33:51Z | 05:34:07Z | 05:35:07Z | 76s |
+
+One run each, on a small database: the dump is 806,858 bytes. So 15 of prod-sim's seconds were that dump, and a large database would take longer. Neither run waited for Argo CD's own look, which can add up to the 289s above.
 
 If it goes wrong, see [Rollback](#rollback). Failure handling is in [runbooks](runbooks/).
