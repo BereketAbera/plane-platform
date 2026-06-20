@@ -109,7 +109,8 @@ terraform -chdir=infrastructure/terraform/environments/local \
 ```
 
 The `local` lock file has hashes for those two platforms, while `scripts/install-tools.sh` also supports `linux_arm64`.
-[[VERIFY: terraform init on linux_arm64 with the committed lock file]]
+Nothing in Pass 1 runs Terraform on `linux_arm64`: this Mac is `darwin_arm64`, and the Lint job in `ci.yml` runs on `ubuntu-24.04`, which is
+`linux_amd64`. So `terraform init` on `linux_arm64` with this lock file is unverified. If a Pass 2 machine uses that platform, check it at the start of Pass 2.
 
 ## State
 
@@ -221,6 +222,7 @@ This root applies against the real API. On 2026-11-04 bootstrap and Terraform ex
 
 `environments/dev` and `environments/prod` contain no `.tf` files, so none of these checks them. There is nothing to check.
 
+The Lint job ran them on `ubuntu-24.04` at `9c8e098` and `0dde813` ([run 41975431001](evidence/ci/ci-1-20261105T053955Z-run-41975431001.log), [run 41978707479](evidence/ci/ci-1-20261105T061058Z-run-41978707479.log)).
 Validation proves syntax and provider schema. It does not prove that an apply works.
 
 ```bash
@@ -236,7 +238,7 @@ are not operational code.** They contain no Terraform, no resources and no `vers
 |---|---|
 | What they are | A proposal for Pass 2: the variables a Hetzner implementation must take, the outputs it must produce, what changes when the modules are reused, and a commented remote state template |
 | What they are not | Provisioning code. No Hetzner or Cloudflare resource exists anywhere in this repository |
-| Remote state template | Commented out in `INTERFACE.md`. It has never reached a real bucket. Support for `use_lockfile` on Hetzner Object Storage is unknown. [[VERIFY: INTERFACE.md says terraform init accepted these arguments against a dead endpoint; docs/evidence holds no record of it]] |
+| Remote state template | Commented out in `INTERFACE.md`. It has never reached a real bucket. Support for `use_lockfile` on Hetzner Object Storage is unverified. `INTERFACE.md` says `terraform init` accepted these arguments against a dead endpoint, and `docs/evidence` holds no record of that, so it is unverified too. Check both at the start of Pass 2 |
 | Environment model today | Dev and prod-sim are two namespaces on one kind node, both created by the single root `environments/local`. **Namespace separation is not equivalent to independent production clusters** |
 
 Pass 2 is described in [future-hetzner.md](future-hetzner.md) and [PASS2_HANDOFF.md](../PASS2_HANDOFF.md).
