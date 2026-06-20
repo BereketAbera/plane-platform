@@ -29,7 +29,7 @@ The UI shows it as syncing. It never reaches `Failed` or `Error`, and three thin
 - `argo_wait_idle` in `monitoring/ops/lib.sh` waits on this phase. After 180s it ends the operation, so `make restore` and `make test-alert` go on, and Argo CD will not retry that revision. That has run against a stub only ([test_lib-stub-1.txt](../evidence/runs/test_lib-stub-1.txt)).
 - Turning off auto-sync does not stop an operation already recorded.
 
-Backoff starts at 30 seconds, doubles, and caps at 5 minutes, so an attempt can be up to 5 minutes away.
+The manifests set a backoff of 30 seconds, factor 2, capped at 5 minutes, so an attempt can be up to 5 minutes away. On a real controller the first wait read about a minute, not 30 seconds: 61s and 62s after a first failure, then 120s, then 242s (`.local/evidence-raw/DEP-3-20261105T064517Z-timeline.txt`, `.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`, not yet published).
 
 The root loops the same way. A comment in `root-application.yaml` notes that a Degraded child fails the root's sync, and a child is often briefly Degraded on first boot, so a retrying root is normal on the way up. A root waiting on a child that stays `Progressing` is different: nothing failed, so it never retries.
 
@@ -54,11 +54,13 @@ Read from `monitoring/manifests/shared/rules-platform.yaml`. The last column say
 
 | Failure | What Argo CD reads | What fires | Status |
 |---|---|---|---|
-| A commit that cannot render, or a Git that cannot be read | Sync `Unknown`, health unchanged, no operation, condition `ComparisonError` | `ArgoAppSyncUnknown` after 15m of reading Unknown, about 21m after a commit on an Application that was rendering, and nothing else | PASS on a throwaway only, whose path never existed ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)). That proves the path, not the timing from a real commit, which has not fired |
+| A commit that cannot render, or a Git that cannot be read | Sync `Unknown`, health unchanged, no operation, condition `ComparisonError` | `ArgoAppSyncUnknown` after 15m of reading Unknown, and nothing else. On an Application that was rendering, `rules-platform.yaml` estimates about 21m after the commit, and up to about 26m | PASS on a throwaway only, whose path never existed ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)). That proves the path, not the timing from a real commit, which has not fired |
 | A sync refused or failing, under retry | Phase `Running`, `retryCount` climbing | `ArgoAppDegraded` at 5m if health reads `Degraded` or `Missing`, `ArgoAppOutOfSync` and `ArgoSyncFailed` at 15m | PASS on a throwaway only ([h16-fire-1.txt](../evidence/runs/h16-fire-1.txt)) |
-| A bad image in a Plane Deployment | Deployments are wave 3 of 4, so the operation stays open, fails at the 600s deadline, and retries | `ArgoAppDegraded` once Degraded for 5m, `ArgoSyncFailed` at 15m, if nobody reverts | **NOT RUN.** Read from the rules. The failed-deploy drill reverts at the first Degraded, about 10m in, so `ArgoSyncFailed` and `ArgoAppDegraded` are expected to go pending, with neither firing unless the revert takes more than 5m |
+| A bad image in a Plane Deployment | Deployments are wave 3 of 4, so the operation stays open, fails at the 600s deadline, and retries | `ArgoAppDegraded` once Degraded for 5m, `ArgoSyncFailed` at 15m, if nobody reverts | Pending only, in the one drill. It reverted 8s after the first Degraded, at 10m24s, so nothing fired: `ArgoSyncFailed` stayed pending for 13m45s, and a revert about 75s later would have let it fire (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z-alerts.tsv`). With no revert, NOT RUN |
+| A migrator that fails, in a Plane Application | `OutOfSync`, **`Healthy`**, `Running`, `retryCount` climbing. The Job fails, wave 3 is not touched | `ArgoAppOutOfSync` and `ArgoSyncFailed` at 15m, and the chart's `KubeJobFailed`. `ArgoAppDegraded` does not fire, because health stays `Healthy` | All pending only, in the one drill, which held for 6 minutes and then reverted (`.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log`) |
 | A bad image in a single-wave chart Application | The sync succeeds on apply, which closes the operation, then `Degraded` at the rollout's deadline | `ArgoAppDegraded`, and `ArgoSyncFailed` never | NOT RUN |
 | A chart child with no deadline to miss, such as a stuck StatefulSet | Operation closed, `Synced` and `Progressing`, while a root sync waits on it with no retry | The chart's `Kube*` rules at 15m, `ArgoAppStuckProgressing` at 30m, `ArgoRootSyncStuck` at 60m | `ArgoAppStuckProgressing`: PASS on a throwaway only, on 2026-11-05 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt), and the run's own `argo-stuck-progressing-1.txt`, in `.local/evidence-raw/`, not yet published). The rest: NOT RUN |
+| A child `Healthy` but not `Synced`, which the override in `helm/values/argocd.yaml` reads as `Progressing` for root only | Root waits on it, while the child's own series says `Healthy` | `ArgoAppSyncUnknown` or `ArgoAppOutOfSync` at 15m, by its sync status. `ArgoAppStuckProgressing` stays quiet | NOT RUN, read from the rules |
 | A Prometheus that cannot start | `Progressing`, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. `Watchdog` stops reaching the sink, and nothing watches for that | The `Progressing` read: PASS ([h43-repro-after-1.txt](../evidence/runs/h43-repro-after-1.txt)). The rest: NOT RUN, read from the code |
 
 ## Diagnosis
@@ -106,7 +108,7 @@ make gitops-publish
 kubectl -n argocd annotate application "$APP" argocd.argoproj.io/refresh=normal --overwrite
 ```
 
-Polling is every three minutes or so. If `plane-git` is stopped, `make up` starts it. The bare repo can be rebuilt: remove it and republish, since the working repo is the source of truth.
+The controller's looks were measured 120 to 289s apart, median 193s (`.local/evidence-raw/alert-text-figures-1.txt`, not yet published). If `plane-git` is stopped, `make up` starts it. The bare repo can be rebuilt: remove it and republish, since the working repo is the source of truth.
 
 If `gitops-publish` refuses, see the note on non-fast-forward in [Failed deploy](failed-deploy-rollback.md#what-not-to-do).
 
@@ -114,7 +116,7 @@ If `gitops-publish` refuses, see the note on non-fast-forward in [Failed deploy]
 
 Argo CD cannot compare with Git, so sync reads `Unknown` and health stays as it was. Auto-sync runs only from `OutOfSync`, so no operation opens, nothing retries, and the cluster stays on the old commit.
 
-Only `ArgoAppSyncUnknown` fires, after 15m of reading Unknown. A throwaway whose path never existed read Unknown from the start and reached the sink at 15m ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)). An Application that was rendering takes longer, because the controller ignores the failure for 180s and looks every 120s. A real commit read Unknown 5m57s after it, with the object it had deployed still there, so `rules-platform.yaml` puts the alert about 21m after the commit. That run stopped at pending, when the commit was taken out, so the 21m has not been seen (`argo-sync-unknown-2.txt`, in `.local/evidence-raw/`, not yet published).
+Only `ArgoAppSyncUnknown` fires, after 15m of reading Unknown. A throwaway whose path never existed read Unknown from the start and reached the sink at 15m ([argo-sync-unknown-1.txt](../evidence/runs/argo-sync-unknown-1.txt)). An Application that was rendering takes longer, because the controller ignores the failure for 180s and its looks are 120 to 289s apart. A real commit read Unknown 5m57s after it, with the object it had deployed still there, so `rules-platform.yaml` estimates the alert about 21m after the commit, and up to about 26m by reading. That run stopped at pending, when the commit was taken out, so neither figure has been seen (`argo-sync-unknown-2.txt`, in `.local/evidence-raw/`, not yet published).
 
 ```bash
 kubectl -n argocd get application "$APP" -o jsonpath='{.status.conditions}{"\n"}'
@@ -126,7 +128,7 @@ The condition `ComparisonError` holds the repo server's error. Fix or revert the
 
 Every Application, `root` included, sets `retry.refresh: true`, so a retry picks up the newest commit. Fix forward or revert in Git, then publish, and the next attempt uses it. No manual step is needed beyond waiting for backoff.
 
-Root's revision moved this way on the first boot, from `b98fa47` to `4a49a9c` with no new operation ([bootstrap-up-terraform-1.txt](../evidence/runs/bootstrap-up-terraform-1.txt), [argocd-root-terminate-1.txt](../evidence/runs/argocd-root-terminate-1.txt)). Nobody has watched a fix to an Application manifest land this way, and a revert during a child's retry loop is marked in [Failed deploy](failed-deploy-rollback.md#roll-back-the-image).
+Root's revision moved this way on the first boot, from `b98fa47` to `4a49a9c` with no new operation ([bootstrap-up-terraform-1.txt](../evidence/runs/bootstrap-up-terraform-1.txt), [argocd-root-terminate-1.txt](../evidence/runs/argocd-root-terminate-1.txt)). A revert during `plane-dev`'s retry loop landed this way twice on 2026-11-05, with a message reading `Retrying operation with latest revisions` and no step by hand. Until the next attempt, the Application can read `Synced`, `Healthy`, `Running`. See [Failed deploy](failed-deploy-rollback.md#roll-back-the-image). Nobody has watched a fix to an Application manifest land this way.
 
 ### End an operation
 
@@ -202,7 +204,7 @@ Without a deadline a bad image on the hook hangs, because `ImagePullBackOff` und
 
 The migrator succeeded on each environment's first boot on 2026-11-04 with no step by hand on the hook itself: dev applied 164 migrations in 83s after a 69s pull ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt)), and prod-sim's Job started at 21:47:17 with the image already there ([plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)). Those boots were not a clean `make up`.
 
-Deployments stay on the old image until the hook passes, so a failed migration does not on its own take the environment down. That is the design, and a failing migrator has not run.
+Deployments stay on the old image until the hook passes, so a failed migration does not on its own take the environment down. That held in the one run, on 2026-11-05 in dev, with a throwaway backend whose migrator exits 1. The Job failed `BackoffLimitExceeded` 58s after the publish, and over 67 samples no Deployment changed generation, image or pod, and the host answered 200 (`.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log`). That migrator changed nothing before it failed, so this does not cover one that fails partway through a schema change.
 
 ### OutOfSync that will not clear
 
@@ -216,7 +218,7 @@ If a new one appears, read the diff from the UI at `http://argocd.localhost`, or
 
 ### Auto-sync was left paused
 
-Scripts save the `automated` block and restore it in a trap. That trap cannot run after `kill -9`, a crash, or a reboot. The script prints the exact command when a restore fails.
+Scripts save the `automated` block and restore it in a trap. That trap cannot run after `kill -9`, a crash, or a reboot. The script prints the exact command when a restore fails. `make restore-clean` puts back any it finds on a later run (`argo_unpause_all` in `monitoring/ops/lib.sh`). Other scripts do not.
 
 Check for a pause with the overview command above. `false` in the `AUTO` column means paused, and `<none>` is the normal state.
 
@@ -248,6 +250,8 @@ kubectl -n argocd get applications -o custom-columns='NAME:.metadata.name,SYNC:.
 ```
 
 All of them should read `Synced`, `Healthy`, `Succeeded`, and automated sync should be on everywhere. `ArgoAppOutOfSync`, `ArgoAppDegraded` and `ArgoSyncFailed` should resolve.
+
+With a refresh asked, the sync starts within about a second of the annotation. On 2026-11-05 in dev, each with no retry open: four images took 67s from the publish of a rollback to `Synced` and `Healthy`, and 64s for the promotion after it (`.local/evidence-raw/DEP-2-20261105T064032Z-timeline.txt`). Each run on record asked for a refresh (`.local/evidence-raw/argocd-refresh-reasons-1.txt`), so the wait with no refresh, and a change of one digest with no retry open, have not been timed.
 
 [[MEASURE: seconds from gitops-publish to Synced and Healthy for one digest change, with refresh and without]]
 
