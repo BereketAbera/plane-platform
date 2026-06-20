@@ -4,7 +4,7 @@
 
 The migration as a whole is in [`PASS2_HANDOFF.md`](../PASS2_HANDOFF.md). This file covers only root modules, state, and how to tell an implementation meets the contract. Local Terraform is described in [terraform.md](terraform.md).
 
-Written 2026-11-04, and checked against the code again on 2026-11-05. Pass 1 has since run on kind, and none of that says anything about this document's contracts, which remain unbuilt and untested. `VERIFY` marks a provider detail from memory that has not been checked against current documentation.
+Written 2026-11-04, and checked against the code again on 2026-11-05. Pass 1 has since run on kind, and none of that says anything about this document's contracts, which remain unbuilt and untested. A sentence starting "Unverified:" is a provider detail from memory, or a behaviour nothing has tested, and Pass 1 cannot answer it. Check it at the start of Pass 2.
 
 ## What Terraform does today
 
@@ -70,7 +70,7 @@ Roots pass values through `terraform_remote_state` or by outputs fed to variable
 | `storage_class_name` | no | Plane overlays and Infisical manifests, replacing `standard` |
 | `backup_bucket`, `s3_endpoint` | no | Backup Job configuration |
 
-**State warning.** A cluster bootstrap token, and a kubeconfig output, end up in state. Treat this state as a credential: encrypted backend, restricted access, and separate S3 keys per environment. Prefer a design where the kubeconfig is fetched after creation rather than stored. [[VERIFY: whether the chosen distribution and provider allow bootstrap without a long-lived token in state]]
+**State warning.** A cluster bootstrap token, and a kubeconfig output, end up in state. Treat this state as a credential: encrypted backend, restricted access, and separate S3 keys per environment. Prefer a design where the kubeconfig is fetched after creation rather than stored. Unverified: whether the chosen distribution and provider allow bootstrap without a long-lived token in state. Check it at the start of Pass 2.
 
 ## Contract B: `environments/<env>` (platform root)
 
@@ -126,19 +126,19 @@ Known trap from Pass 1: the provider's delete of `kubernetes_config_map_v1_data`
 |---|---|
 | `public_hostnames` | Map of service to hostname, used to generate overlay values and Probes |
 
-A public DNS record must not exist for an internal UI unless Access or an equivalent covers it. Keep that in one list in code, and test it (acceptance test 7). Cloudflare resource names and behaviour change between provider majors. [[VERIFY: Cloudflare provider resources for records, tunnels, and Access in the pinned version]]
+A public DNS record must not exist for an internal UI unless Access or an equivalent covers it. Keep that in one list in code, and test it (acceptance test 7). Cloudflare resource names and behaviour change between provider majors. Unverified: which Cloudflare provider resources cover records, tunnels, and Access in the pinned version. Check it at the start of Pass 2.
 
 ## Remote state
 
-`INTERFACE.md` carries a commented `s3` backend template aimed at Hetzner Object Storage. It records that Terraform 1.17 accepted the arguments during `terraform init` against a dead local endpoint. It has never reached a real bucket. [[VERIFY: S3 backend template works against a real Hetzner Object Storage bucket]]
+`INTERFACE.md` carries a commented `s3` backend template aimed at Hetzner Object Storage. It records that Terraform 1.17 accepted the arguments during `terraform init` against a dead local endpoint. It has never reached a real bucket. Unverified: whether the template works against a real Hetzner Object Storage bucket. Check it at the start of Pass 2.
 
 | Rule | Reason |
 |---|---|
 | One bucket and one key pair per environment | A dev credential must not be able to read prod state |
 | Separate `key` per root | `plane-platform/<env>/cluster`, `/edge`, `/platform`, `/infisical` |
 | The state bucket is created outside these roots | It must exist before `init`. Record how, since it is the one manual step |
-| Versioning on | Recover from a bad write. [[VERIFY: object versioning support at Hetzner Object Storage]] |
-| Locking tested before relied on | `INTERFACE.md` says `use_lockfile` conditional writes are unknown there. [[VERIFY: use_lockfile rejects a second concurrent lock at Hetzner Object Storage]] |
+| Versioning on | Recover from a bad write. Unverified: whether Hetzner Object Storage supports object versioning. Check it at the start of Pass 2 |
+| Locking tested before relied on | `INTERFACE.md` says `use_lockfile` conditional writes are unknown there. Unverified: whether `use_lockfile` rejects a second concurrent lock at Hetzner Object Storage. Check it at the start of Pass 2 |
 | No credentials in backend blocks | `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` at runtime |
 
 If locking does not work, the choices are another backend, or a documented single-operator rule. Say which was chosen.
@@ -169,29 +169,29 @@ A larger prod is fine. A dev too small to run the same workloads would stop dev 
 
 ## Acceptance tests
 
-An implementation meets this contract when each passes, with evidence in `docs/evidence/`. None has run.
+An implementation meets this contract when each passes, with evidence in `docs/evidence/`. None has run, and Pass 1 has nothing to run them on, because none of these roots exists. Set up each check at the start of Pass 2.
 
-| # | Test | Marker |
+| # | Test | State |
 |---|---|---|
-| 1 | `terraform fmt -check` and `validate` on every root, in CI, without credentials | [[VERIFY: CI validates all new roots with no credentials]] |
-| 2 | Fresh apply of cluster, platform, and edge from an empty project | [[VERIFY: full apply from empty succeeds and records duration]] |
-| 3 | A second `plan` on each root reports no changes | [[VERIFY: plans are clean immediately after apply]] |
-| 4 | Dev credentials are refused on prod state and prod resources | [[VERIFY: dev Terraform credentials are refused against prod]] |
-| 5 | `git grep` finds no secret value, and state holds only what the root README lists | [[VERIFY: state contents reviewed for secrets]] |
-| 6 | `admin_cidrs = ["0.0.0.0/0"]` fails validation, and a port scan from outside matches the firewall | [[VERIFY: external scan shows only intended ports]] |
-| 7 | Internal UI hostnames are unreachable without auth from a browser with no session | [[VERIFY: internal UIs refuse an anonymous browser]] |
-| 8 | `environments/local` still works after module changes | [[VERIFY: make up on kind after module changes matches the Pass 1 result]] |
-| 9 | Destroy then re-create, then restore from off-host backup | [[VERIFY: recreate and restore passes tests/e2e/smoke.py]] |
+| 1 | `terraform fmt -check` and `validate` on every root, in CI, without credentials | Unverified: CI validates all new roots with no credentials |
+| 2 | Fresh apply of cluster, platform, and edge from an empty project | Unverified: a full apply from empty succeeds and records its duration |
+| 3 | A second `plan` on each root reports no changes | Unverified: plans are clean immediately after apply |
+| 4 | Dev credentials are refused on prod state and prod resources | Unverified: dev Terraform credentials are refused against prod |
+| 5 | `git grep` finds no secret value, and state holds only what the root README lists | Unverified: state contents reviewed for secrets |
+| 6 | `admin_cidrs = ["0.0.0.0/0"]` fails validation, and a port scan from outside matches the firewall | Unverified: an external scan shows only intended ports |
+| 7 | Internal UI hostnames are unreachable without auth from a browser with no session | Unverified: internal UIs refuse an anonymous browser |
+| 8 | `environments/local` still works after module changes | Unverified: `make up` on kind after module changes matches the Pass 1 result |
+| 9 | Destroy then re-create, then restore from off-host backup | Unverified: recreate and restore passes `tests/e2e/smoke.py` |
 
 ## Hetzner and Cloudflare facts to confirm before writing code
 
-Each is from memory.
+Each is from memory, and Pass 1 cannot answer it. Check each at the start of Pass 2.
 
-- [[VERIFY: Hetzner API token scope is per project]]
-- [[VERIFY: arm64 and x86 server types and availability per location]]
-- [[VERIFY: Hetzner Cloud firewall rules apply to the chosen attachment and to private network traffic as expected]]
-- [[VERIFY: Hetzner CCM and CSI driver versions compatible with Kubernetes v1.36]]
-- [[VERIFY: terraform-provider-hcloud can manage everything in contract A except S3 buckets]]
-- [[VERIFY: Hetzner Object Storage endpoints and S3 compatibility]]
-- [[VERIFY: Cloudflare proxied WebSocket behaviour and body limit on the chosen plan]]
-- [[VERIFY: Cloudflare token permissions needed for records, tunnels, and Access]]
+- Unverified: whether a Hetzner API token's scope is per project.
+- Unverified: which arm64 and x86 server types exist, and their availability per location.
+- Unverified: whether Hetzner Cloud firewall rules apply to the chosen attachment and to private network traffic as expected.
+- Unverified: which Hetzner CCM and CSI driver versions are compatible with Kubernetes v1.36.
+- Unverified: whether `terraform-provider-hcloud` can manage everything in contract A except S3 buckets.
+- Unverified: Hetzner Object Storage's endpoints and S3 compatibility.
+- Unverified: Cloudflare's proxied WebSocket behaviour and body limit on the chosen plan.
+- Unverified: which Cloudflare token permissions records, tunnels, and Access need.
