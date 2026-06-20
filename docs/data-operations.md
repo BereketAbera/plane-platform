@@ -2,7 +2,7 @@
 
 Postgres, Valkey, RabbitMQ and Silo in each Plane environment, where their bytes live, what a backup contains, and how to restore it.
 
-**Status: NOT RUN.** No backup or restore has run yet, and Plane has not been deployed. `docs/evidence/` holds no result. Every statement that depends on a runtime result carries a `VERIFY` marker, and every number to measure carries `MEASURE`.
+**Status, 2026-11-05.** Backups of dev, prod-sim and Infisical have run, and Infisical has been restored in place. A Plane restore into its real database and bucket has not run, and neither has a restore into a clean cluster. Each `VERIFY` or `MEASURE` marker left here waits on one of those runs, or on the load test or a rotation. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published.
 
 These are single-replica services on a local kind node. There is no replication, no failover and no point-in-time recovery. "prod-sim" is a simulation, and sharing one node with dev is not equivalent to an independent production cluster.
 
@@ -63,7 +63,7 @@ Why volumes stay on the VM and backups go to the host: PVs on VirtioFS would put
 
 Backup PVs and PVCs come from the `backup-storage` Application at wave -10. Each environment's PVC, named `backups`, binds to a PV with a fixed `claimRef` on `/backups/<env>`. A pod that names a `hostPath` fails PSA `baseline`, while a pod that mounts a PVC does not, so backup Jobs mount only the PVC and see only their own folder.
 
-[[VERIFY: UID 70 can write /backups/ENV through the VirtioFS mount, and the host user can read what it wrote]]
+A Job as UID 70 writes to `/backups/<env>` through the VirtioFS mount. On the host each backup is a folder at 0700 and its files at 0600, belonging to the Docker Desktop user, so the host user reads them, and `shasum -c` passes there (`dr-backup-modes-1.txt`, `dr-backup-job-real-1.txt`).
 
 ## Operating each service
 
@@ -107,7 +107,9 @@ kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli info memory 
 kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli dbsize
 ```
 
-`/api/instances/` is cached here for two hours and answers 200 with Postgres down. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]] A green result from that route says nothing about the database. That is why the probes and `rotate.sh` use a database-backed route.
+`/api/instances/` is cached here for two hours. In each Postgres round of the pod restart drill, under a minute, the database probe answered 500 for one 15 s sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). A longer outage has not been tried. A green result from that route says nothing about the database. That is why the probes and `rotate.sh` use a database-backed route.
+
+Deleting the Valkey pod in the drill, on the final images, left a signed-in session answering 200 throughout. The new pod reattached the same volume, so that is not a loss of Valkey's data (`PERS-1-20261105T070358Z-timeline.txt`). A flush has run only on stubs.
 
 [[VERIFY: flushing or losing Valkey costs only cache and throttle state, and existing sessions keep working]]
 
@@ -125,9 +127,7 @@ The management port 15672 stays closed by NetworkPolicy. Prometheus scrapes 1569
 
 Losing the volume loses queued tasks. A restore purges the `celery` queue, because queued tasks describe rows from before the restore. A password change needs `rabbitmqctl change_password` as well as the Secret, since `RABBITMQ_DEFAULT_*` acts only on a new data directory. No script implements that.
 
-[[VERIFY: the absolute watermark applies through conf.d and rabbitmq-diagnostics shows the 256 MiB threshold]]
-
-[[VERIFY: the worker attaches a consumer on queue celery with rabbitmq:3.13.7-management-alpine]]
+The watermark applies: `make test-e2e` reads `{absolute,"256Mi"}`, 268435456 bytes, with no alarms, in both environments. The worker attaches 1 consumer on queue `celery`, 0 messages waiting, on `rabbitmq:3.13.7-management-alpine` (`plane-dev-final-e2e-20261105T070735Z.txt`, `final-prod-sim-smoke-3.txt`). The dev run also stops the consumer as a negative control: messages park, and no activity appears until it comes back.
 
 ### Silo
 
@@ -144,9 +144,9 @@ Port 9090, the console, stays closed. Only `/uploads` is routed publicly, and th
 
 `FILE_SIZE_LIMIT` is bytes, set to 5242880. A value like `5MB` crashes Django at import. Traefik's buffering limit is 20971520 bytes, kept above that to leave room for multipart overhead.
 
-[[VERIFY: Silo metrics are scraped. No MINIO_PROMETHEUS_AUTH_TYPE is set at commit f733b87, so default auth may answer 403 and PlaneMinioDown would fire on a healthy Silo]]
+Silo metrics are scraped. `MINIO_PROMETHEUS_AUTH_TYPE=public` is set in `helm/plane/components/hardening/patches/silo.yaml`, and `up` reads 1 on both metrics paths in both namespaces ([monitoring-silo-metrics-1.txt](evidence/runs/monitoring-silo-metrics-1.txt)).
 
-[[VERIFY: presigned upload through /uploads, download and export links work with no bucket Job]]
+Uploads work with no bucket Job. `make test-e2e` uploads through a presigned URL and checks the checksum on download and in the bucket, sends 4718592 bytes through Traefik, has 5 MiB plus 1 byte refused with 400, gets 403 with no signature or a tampered one, and downloads an export through its link (`plane-dev-final-e2e-20261105T070735Z.txt`, `final-prod-sim-smoke-3.txt`, and on an earlier image [branded-dev-smoke-1.txt](evidence/runs/branded-dev-smoke-1.txt)).
 
 ## Backups
 
@@ -166,6 +166,8 @@ make backup ENV=all
 | `make promote ENV=prod-sim`, unless `SKIP_BACKUP=yes` | prod-sim |
 | `make gitops-publish` when the diff changes a prod-sim image digest, unless `SKIP_BACKUP=yes` | prod-sim |
 | `make destroy CONFIRM=yes`, unless `SKIP_BACKUP=yes` | All three. A failed backup stops the delete |
+| `make rotate`, once a rotation finishes, unless `SKIP_BACKUP=yes` | Infisical. A failure there exits 3 with the rotation standing |
+| `make drill-clean-restore CONFIRM=yes`, unless it names a backup and `SKIP_BACKUP=yes` | All three, before it deletes the cluster |
 
 ### Paths and layout
 
@@ -184,9 +186,15 @@ Host path `.local/backups/<env>/<id>/`, with `<id>` a UTC timestamp such as `YYY
     content.tsv          md5 over issues, projects, file_assets
     server_version.txt
     pg_dump_version.txt
+    uploaded-keys.txt    rows the dump marks as uploaded
+    uploaded-missing.txt those of them with no object in this backup. A restore refuses a backup with any
   objects/               rclone copy of the uploads bucket
   objects.check          rclone check result, by download
   objects.lsjson         listing with metadata
+  recovery/              written from the host after the Job
+    test-accounts.env    this environment's lines of .local/test-accounts.env
+    test-sentinel.json   .local/test-sentinel-<env>.json
+    objects.types.tsv    object key and Content-Type, which the host folder cannot keep
 
 .local/backups/infisical/<id>/
   manifest.json
@@ -196,7 +204,12 @@ Host path `.local/backups/<env>/<id>/`, with `<id>` a UTC timestamp such as `YYY
     infisical.toc.txt
     rowcounts.sql
     rowcounts.tsv
+  recovery/              written from the host after the Job
+    terraform.tfstate    the state of infisical/terraform that matches this dump
+    set.json             sha256 of each secret zero file, who the admin token belongs to and when it ends, project and identity ids, and each Plane secret's truncated hash, version and id. Written last
 ```
+
+An Infisical backup without a whole `set.json` keeps its dump, and an in-place restore can use it. A clean restore refuses it.
 
 ### What is in a backup, and what is not
 
@@ -206,6 +219,8 @@ Host path `.local/backups/<env>/<id>/`, with `<id>` a UTC timestamp such as `YYY
 | All objects in `uploads` | `rclone copy` runs after the dump, so every asset row has its object. Extra objects are harmless |
 | Fingerprint of `SECRET_KEY` | First 16 hex of its sha256, never the key |
 | Sentinel record | Ids and a hash, from `tests/e2e/smoke.py`. No secrets |
+| Test accounts | Rows in this dump, so a later `make test-e2e` signs in with them. Those lines hold test credentials, and the folder is 0700 |
+| Count of rows marked uploaded, and of those with no object | `uploaded_objects` in the manifest. The last backup read recorded 59 rows and 0 missing in dev, and 40 and 0 in prod-sim |
 
 | Not in a backup | Why, and what it means |
 |---|---|
@@ -213,14 +228,13 @@ Host path `.local/backups/<env>/<id>/`, with `<id>` a UTC timestamp such as `YYY
 | Valkey | Cache and throttle counters |
 | RabbitMQ | Queued tasks are lost and would be stale after a restore |
 | Plane secret values | They live in Infisical. Back up `infisical` as well |
-| `ENCRYPTION_KEY` and secret zero | A dump without the key is useless, so they stay apart. **Copy them off the machine by hand** |
-| Terraform state in `.local/terraform/infisical/` | Needed to recover Infisical on a new cluster, and not in any backup |
-| Infisical Redis | Pending jobs and locks |
+| `ENCRYPTION_KEY` and secret zero | A dump without the key is useless, so they stay apart. A backup records only their sha256. **Copy them off the machine by hand** |
+| Infisical Redis | Queued jobs, schedules and caches. A restore flushes it |
 | Prometheus and Loki data | Short retention, not worth restoring |
 | Argo CD state, dashboards, manifests | Rebuilt from Git |
-| Registry contents | Rebuilt or copied. See [disaster-recovery.md](disaster-recovery.md) |
+| Registry contents | Since promotion the overlays name digests only the local registry holds, and a rebuild does not reproduce a digest. See [registry lost](disaster-recovery.md#scenario-registry-lost) |
 
-**Backups are not encrypted.** Dumps hold password hashes and plaintext API tokens. `.local/backups` is kept at 0700 by `backup.sh`, and each environment folder is 0777, because the Job's UID must write there and `hostPath` ignores `fsGroup`. The parent's mode is what keeps other host users out.
+**Backups are not encrypted.** Dumps hold password hashes and plaintext API tokens. `.local/backups` is kept at 0700 by `cluster-up.sh` and `backup.sh`, and each environment folder is 0777, because the Job's UID must write there and `hostPath` ignores `fsGroup`. The parent's mode is what keeps other host users out.
 
 **Backups live on the same disk as everything else.** They survive the cluster and the VM. They do not survive the machine. No script copies them elsewhere.
 
@@ -238,30 +252,35 @@ This proves a dump restores on this server, and it does not prove that Plane run
 
 The Job uses the same Postgres image as the server, read from the live StatefulSet, because `pg_dump` refuses a server newer than itself. Rclone is pinned in `monitoring/ops/lib.sh`.
 
-Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-sentinel-<env>.json`, which `backup.sh` copies into the manifest. Without it, the restore reports its sentinel proof as NOT RUN, not as a pass. [[VERIFY: make test-e2e works, since scripts/test.sh does not exist at commit f733b87]]
+Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-sentinel-<env>.json`, which `backup.sh` copies into the manifest. Without it, the restore reports its sentinel proof as NOT RUN, not as a pass. `make test-e2e` passes on the final images: dev 45 PASS and 1 SKIP, prod-sim 44 PASS and 1 SKIP. The skip needs a clean database (`plane-dev-final-e2e-20261105T070735Z.txt`, `final-prod-sim-smoke-3.txt`).
 
 ### Retention
 
-The Job keeps the newest `KEEP` finished backups. Dev keeps 3, prod-sim and Infisical keep 5, and `KEEP=<n>` overrides. Only folders with a final timestamped name and a manifest are removed. Nothing checks age, and nothing alerts on an old backup.
+Dev keeps 3, prod-sim and Infisical keep 5, and `KEEP=<n>` overrides. Nothing checks age, and nothing alerts on an old backup.
+
+Plane's retention runs in its backup Job. It keeps the newest `KEEP` finished backups and, past that, the newest one whose `rowcounts.tsv` counts users above 0, so backups of an empty environment cannot push out the last real one. Only folders with a final timestamped name and a manifest are removed. The "kept" branch has run only on BusyBox and stubs (`dr-backup-job-real-1.txt`, `dr-job-lines-busybox-2.txt`).
+
+Infisical's runs from the host, once the backup just taken has a complete recovery set, and only a complete set counts toward `KEEP`. A backup with no complete set stays while it is newer than the oldest set kept. On real folders it removed only what was past `KEEP` ([dr-backup-retention-1.txt](evidence/runs/dr-backup-retention-1.txt), `dr-retention-2.txt`, `dr-locks-1.txt`).
 
 `PlaneBackupFailed` fires on a failed backup Job, which stays around for 7 days. A later successful backup deletes it.
 
-[[VERIFY: make backup ENV=dev completes against a running environment, and manifest.json and SHA256SUMS check out on the host]]
+**What ran.** `make backup ENV=all` exited 0, with `SHA256SUMS` checked again on the host ([dr-backup-4.txt](evidence/runs/dr-backup-4.txt)). The first two attempts failed, and stay as evidence ([dr-backup-1.txt](evidence/runs/dr-backup-1.txt), [dr-backup-2.txt](evidence/runs/dr-backup-2.txt)). `make promote ENV=prod-sim` took a backup at 05:33 UTC on 2026-11-05 with the current lines: 61 objects checked, 40 rows marked uploaded, 0 with no object, every checksum good (`dr-backup-job-real-1.txt`). This shows backups complete and restore into a scratch database. It does not show that Plane runs on the result.
 
-[[VERIFY: make backup ENV=infisical completes against a running Infisical]]
+| `make backup` | Duration | Size of the newest, `du -sh` on 2026-11-05 | Evidence |
+|---|---|---|---|
+| `ENV=dev` | 15 s on 2026-11-05 with 92 objects, 31 s on 2026-11-04 with 17 | 78 MiB, of which 80264131 bytes are objects. The dump is 951191 bytes | `SEC-2-backup-before-20261105T062141Z.txt`, [dr-backup-dev-1.txt](evidence/runs/dr-backup-dev-1.txt), the manifest of `.local/backups/dev/20261105T062141Z` |
+| `ENV=prod-sim` | 11 s with 0 objects. Not timed since it held more | 51 MiB, of which 51935206 bytes are objects | [dr-backup-prod-sim-1.txt](evidence/runs/dr-backup-prod-sim-1.txt), `dr-backup-job-real-1.txt` |
+| `ENV=infisical` | 22 s and 29 s | 6.0 MiB. The dump is 4.4 MB | [dr-backup-3.txt](evidence/runs/dr-backup-3.txt), `dr-locks-1.txt` |
+| `ENV=all` | 42 s | Each environment's folder, all kept backups: dev 134 MiB, prod-sim 122 MiB, Infisical 30 MiB | [dr-backup-4.txt](evidence/runs/dr-backup-4.txt) |
 
-[[MEASURE: duration of make backup ENV=dev]]
-
-[[MEASURE: duration of make backup ENV=prod-sim]]
-
-[[MEASURE: bytes per backup per environment, from du -sh .local/backups/*]]
+Smoke runs upload test files, one of them 4718592 bytes, so these sizes describe a test instance and not a real workload.
 
 ## Restore
 
 ```bash
 make restore ENV=dev BACKUP=latest
 make restore ENV=dev BACKUP=<backup-id> CONFIRM=yes
-make restore ENV=infisical BACKUP=latest
+make restore ENV=infisical BACKUP=latest CONFIRM=yes
 ```
 
 | Flag | Effect |
@@ -269,10 +288,16 @@ make restore ENV=infisical BACKUP=latest
 | `BACKUP=latest` | Newest finished backup in that environment's folder |
 | `CONFIRM=yes` | Needed to overwrite a target that already holds users or objects |
 | `ALLOW_SECRET_KEY_MISMATCH=yes` | Proceed although the live key differs from the backup's. Encrypted rows then decrypt to `""`, the proofs fail, and the script exits non-zero even though the data is back |
+| `ALLOW_NO_SENTINEL=yes` | Accept that a sentinel proof could not run, as with a backup taken before a sentinel existed. The step still reads NOT RUN |
+| `ALLOW_STALE_PLANE_SECRETS=yes` | Infisical only. Restore a dump older than the last rotation. The operators then render a password Plane's Postgres no longer takes |
+| `ALLOW_NEWER_INFISICAL_BACKUP=yes` | Infisical only. Restore a dump from a newer Infisical than the one that will run on it. That server refuses to start until a newer image is deployed |
+| `ALLOW_NO_ADMIN_TOKEN=yes` | Infisical only. Restore with nothing here known to log in afterwards, as when its Postgres is lost |
+
+`scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2 when nothing failed but a proof could not run or a person has to act, which is not a pass. `restore.sh infisical` alone also has 3: Infisical is back, and a person has to sign in. Through `make`, any of these but 0 is make's own exit 2, and make prints which, so read the evidence: `jq '.result, .not_run' .local/evidence-raw/restore-<env>-*.json`.
 
 A backup restores only into the environment that took it. Each PVC mounts only its own folder, and the script checks the manifest. Moving data between environments is not supported.
 
-**Restore Infisical before Plane.** Plane's `SECRET_KEY` lives in Infisical, and the fingerprint check compares against it. See [disaster-recovery.md](disaster-recovery.md#full-restoration-into-a-clean-environment) for the full order on a clean machine.
+**Restore Infisical before Plane.** Plane's `SECRET_KEY` lives in Infisical, and the fingerprint check compares against it. On a clean machine `make restore-clean` does the full order. See [disaster-recovery.md](disaster-recovery.md#full-restoration-into-a-clean-environment).
 
 ### Plane restore, step by step
 
@@ -282,22 +307,26 @@ Every refusal comes before anything is touched.
 |---|---|---|
 | 1 | Verify `SHA256SUMS` on the host | Refuse |
 | 2 | Manifest `env` equals the target | Refuse |
-| 3 | Backup's Plane version not newer than the running one. Django cannot migrate backwards | Refuse |
+| 3 | The manifest records no row marked uploaded with no object. Step 11 would refuse it with the data already replaced, and has no override. Backup's Plane version not newer than the running one. Django cannot migrate backwards | Refuse |
 | 4 | `SECRET_KEY` fingerprint equals the backup's | Refuse, unless `ALLOW_SECRET_KEY_MISMATCH=yes` |
-| 5 | Data services are ready. Guard Jobs count users and objects | Refuse if the target holds data and `CONFIRM` is not `yes`. A failed count stops the restore |
-| 6 | Pause auto-sync: root first, then the environment's Application. Each saved `automated` block is restored verbatim at exit | Die, and resume what was paused |
+| 5 | Data services are ready. Guard Jobs count users and objects. It warns if the backup holds 0 users and the target holds some, and names the newest backup that has them | Refuse if the target holds data and `CONFIRM` is not `yes`. A failed count stops the restore |
+| 6 | Pause auto-sync: root first, then the environment's Application. Each saved `automated` block is restored verbatim at exit. A sync that has run for 180 s is terminated, and after 300 s the script gives up | Die, and resume what was paused |
 | 7 | Scale api, worker, beat and live to zero. Wait for the pods to exit | |
 | 8 | `dropdb --force`, `createdb`, `pg_restore --single-transaction --exit-on-error`, `vacuumdb --analyze-only` | All or nothing for this step |
 | 9 | Gate 1: row counts and content hashes equal the backup's | Job fails |
 | 10 | `rclone sync` objects to the bucket, so objects not in the backup go. `rclone check --download` | Job fails |
 | 11 | Gate 2: every asset row marked uploaded has its object | Job fails. Catches a database and a bucket from different backups |
-| 12 | `valkey-cli FLUSHALL`. Purge queue `celery` | |
+| 12 | Put back this dump's test accounts and sentinel from `recovery/`. `valkey-cli FLUSHALL`. Purge queue `celery` | |
 | 13 | Run the migrator as a one-off Job from the rendered manifest, with the image the api runs now | |
 | 14 | Scale apps back to the replica count in Git, api first. Wait for readiness | |
 | 15 | Proofs below | Non-zero exit if a proof fails |
 | 16 | Auto-sync returns, in reverse order, including on failure | Prints the exact command if a patch cannot be put back |
 
 `dropdb` and not `pg_restore --clean`, so tables newer than the dump cannot survive. `--single-transaction` rules out `--jobs`, so restore is serial.
+
+If the client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it first removes that Job, because the Job would otherwise carry on and drop a database with the apps back up. If it cannot, the apps stay down and auto-sync stays paused, and it prints what to run. This has run only on stubs (`dr-stop-sweep-1.txt`).
+
+These steps have not run against a real Plane database and bucket. Into a scratch database and bucket, the exact Job passed its Postgres gates, synced objects and checked them by download through the read-only mount, and put Content-Type back on 14 of 22 objects, because VirtioFS keeps no xattrs ([dr-plane-restore-rehearsal-1.txt](evidence/runs/dr-plane-restore-rehearsal-1.txt)).
 
 The role and its password are not in the dump, so a Plane restore leaves the Postgres role as it is. Restoring an older Plane dump after a rotation should need no password change. [[VERIFY: a Plane dump taken before make rotate restores and Plane connects with the current password]]
 
@@ -310,21 +339,25 @@ Each writes to `.local/evidence-raw/restore-<env>-<stamp>.json` with status **PA
 | `proof-encrypted-sentinel` | `WAYLINE_RESTORE_SENTINEL` decrypts to its seeded value | Encrypted rows are empty on a fresh instance, so a decrypt check with no sentinel proves nothing |
 | `proof-no-empty-decrypt` | No encrypted row decrypts to `""` | `decrypt_data` fails silently |
 | `proof-sentinel` | `tests/e2e/smoke.py --mode verify --job-probe`: the work item through the API, the attachment's checksum through a presigned URL, a worker finishing a new job | The token comes from the restored database, so this also proves tokens survived |
-| `proof-probes` | `probe_success` for the API and database probes reaches 1 in Prometheus within 180 s | Reported NOT RUN rather than FAIL if Prometheus cannot be reached. The steps above already checked the data, and a broken dashboard path should not fail a restore |
+| `proof-probes` | `probe_success` for the API and database probes reaches 1 in Prometheus within 180 s | Reported NOT RUN rather than FAIL if they do not. The steps above already checked the data, and a broken dashboard path should not fail a restore. It is the one NOT RUN that does not make the script exit 2 |
 
-The evidence file records no durations. Time the run with `time` to get an RTO number. See [disaster-recovery.md](disaster-recovery.md#rpo-and-rto-to-measure-not-promised).
+A Plane restore's evidence file records no durations, so time the run with `time` to get an RTO number. See [disaster-recovery.md](disaster-recovery.md#rpo-and-rto-to-measure-not-promised).
 
 ### Infisical restore
 
-Refuses on the same rules, with the `ENCRYPTION_KEY` fingerprint. Infisical cannot run on a wrong key, so unlike Plane this mismatch is fatal to the store. Then: pause auto-sync, scale the server to zero, drop and restore the database, compare row counts, scale up, require `/api/status` to answer 200 through Traefik.
+Refuses on the same rules, with the `ENCRYPTION_KEY` fingerprint. Infisical cannot run on a wrong key, so unlike Plane this mismatch is fatal to the store. It also refuses a dump newer than the running server, a dump older than the last rotation, and, with no token and no password known to this backup, a restore nothing could log in to afterwards.
 
-It does not flush Infisical's Redis. It does not reconcile local files or Terraform state, and on a new cluster the stored CA is wrong until Terraform runs again. See [disaster-recovery.md](disaster-recovery.md#scenario-infisical-lost).
+Then: pause auto-sync on `infisical` only, scale the server to zero, restore into a second database, compare row counts, swap it in, install the Terraform state and machine file that go with it, flush Redis, start the server, make sure something here can log in, and prove it. The swap is two renames in one transaction and then a drop, so wherever a Job stops, a whole database has that name. One transaction around the restore itself cannot work: 3,000 partition indexes need more locks than this server has.
+
+The proofs: `/api/status` answers 200 through Traefik, the server reads the restored admin config, and every Plane secret decrypts to the value, version and id the backup recorded. The next step is `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh`, to refresh the cluster CA and the identity Secrets. See [disaster-recovery.md](disaster-recovery.md#scenario-infisical-lost).
+
+`make restore ENV=infisical` has run in place on the live instance: 51 s to 71 s in all, five times, with the server not answering for 39 s to 52 s by a probe once a second. Every Plane pod uid and restart count, workload generation and Secret resourceVersion stayed the same, apart from probe pods of another test and one worker another test replaced. After all five, `make test-infisical` exited 0 with 118 PASS lines and all 14 Applications read Synced and Healthy, none paused (`dr-inplace-restore-3.txt`, `dr-inplace-token-lost-1.txt`, `dr-inplace-token-back-1.txt`, `dr-after-restores-1.txt`, and earlier [dr-inplace-restore-1.txt](evidence/runs/dr-inplace-restore-1.txt), [dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt)). So the operators keep syncing after an in-place restore. That does not show a restore into a new cluster.
+
+A Plane restore is still to run, so the markers below stay. A refusal has run only on stubs: `make drill-clean-restore-harness` covers them with kubectl and the API stubbed (`dr-harness-stubbed-4.txt`), which shows the logic and not the platform. Terminating a running sync has run on real Applications ([argocd-terminate-2.txt](evidence/runs/argocd-terminate-2.txt)). The path through `argo_wait_idle`, which terminates at 180 s and gives up at 300 s, has run only on a stub ([test_lib-stub-1.txt](evidence/runs/test_lib-stub-1.txt)).
 
 [[VERIFY: make restore ENV=dev completes into a populated environment with CONFIRM=yes, and every proof reports PASS]]
 
 [[VERIFY: make restore refuses a non-empty target without CONFIRM=yes, and refuses a SECRET_KEY mismatch]]
-
-[[VERIFY: make restore ENV=infisical completes and operators keep syncing afterwards]]
 
 [[VERIFY: make restore works while the environment's sync is failing. By static reading, argo_wait_idle dies after 180 s in that case, because infinite retries keep the operation phase at Running]]
 
@@ -332,19 +365,19 @@ It does not flush Infisical's Redis. It does not reconcile local files or Terraf
 
 ## Capacity limits
 
-Items labelled estimate have no measurement behind them on a running Plane.
+Items labelled estimate have no measurement behind them on a running Plane. Disk figures come from `dr-disk-1.txt`, read with both Plane environments up.
 
 | Limit | Value | Enforced by | Note |
 |---|---|---|---|
-| Host free disk before `make up` | 25 GiB minimum, 35 GiB recommended | `guard_disk` checks 15 GiB in `cluster-up.sh` | Estimate of 16.7 to 22 GiB growth, summed from registry layer sizes (8.56 GiB unpacked on the node) and guessed volumes, logs and builds |
-| Host free disk for scripts | 10 GiB default | `guard_disk` in `scripts/lib/common.sh` | Override with `MIN_FREE_DISK_GIB`. The Docker VM reports hundreds of free GiB on a sparse disk, so nothing inside the cluster sees the real limit |
+| Host free disk for a new cluster | 25 GiB in `make up`, 15 GiB in `cluster-up.sh` alone | `guard_new_cluster` in `scripts/lib/up-checks.sh`. `ALLOW_LOW_DISK="<reason>"` goes past it, and logs the reason | A first install measured 17.75 GiB: the node's volume 12.94 by `du`, local services' volumes 3.62, node image 1.19. Re-creating with the rest kept is 12.94, and 25 leaves about 2 over that plus the floor below |
+| Host free disk for scripts | 10 GiB default | `guard_disk` in `scripts/lib/common.sh` | `MIN_FREE_DISK_GIB` lowers it, and a value below 10 is logged. `ALLOW_LOW_DISK` does not go past it. The Docker VM reports hundreds of free GiB on a sparse disk, so nothing inside the cluster sees the real limit |
 | Postgres disk, Silo disk | 1Gi label, no enforcement | Nothing | Grows until the host runs out. kind sets eviction thresholds to 0% and disables image GC, so a full disk means write errors, not evictions |
 | Postgres memory | 512 MiB limit | Kubernetes | Restores and scratch restores run against this server |
 | Backup Job memory | 256 MiB Postgres, 192 MiB rclone | Kubernetes | |
 | Backup and restore Job time | 1800 s | `activeDeadlineSeconds` | A larger dataset fails at this deadline |
-| Backup folder, per environment | 5Gi label, no enforcement | Nothing | Bounded only by `KEEP` and host disk. Backup Job size is an estimate: under 100 MiB compressed for the database with logs excluded, a planning guess with no run behind it |
+| Backup folder, per environment | 5Gi label, no enforcement | Nothing | Bounded only by `KEEP` and host disk. See [the measured sizes](#retention) |
 | Attachment size | 5242880 bytes | `FILE_SIZE_LIMIT`, Traefik buffering at 20971520 | |
-| ResourceQuota, per Plane namespace | 2704 Mi requests, 7904 Mi limits, 22 pods, 6 PVCs | Kubernetes | Sized for each Deployment surging once, plus a backup |
+| ResourceQuota, per Plane namespace | 2732 Mi requests, 7984 Mi limits, 24 pods, 6 PVCs, read from the live `plane-dev` on 2026-11-05 | Kubernetes | Sized for each Deployment surging once, plus a backup. Terraform computes it in `infrastructure/terraform/modules/foundation/main.tf` |
 | Prometheus | 3d, `retentionSize: 1GiB` | Prometheus | The only real cap on that volume |
 | Loki | 72h retention, 2Gi label | Loki compactor | Retention is the only cap |
 
@@ -356,11 +389,11 @@ du -sh .local/backups/*
 df -h .
 ```
 
-[[VERIFY: local-path volumes are under /var/local-path-provisioner on the node]]
+The volumes are there: 1599804 KiB under `/var/local-path-provisioner`, of 13567228 KiB in the node's `/var` (`dr-disk-1.txt`), and each Plane PVC maps to a path there ([harness-separation-state-1.txt](evidence/runs/harness-separation-state-1.txt)).
 
 Load tests grow the database. Each `X-Api-Key` request stores its body in `api_activity_logs` through Celery. Estimate from research: 8 requests per second times 20 KB responses is about 10 MiB per minute uncompressed. [[MEASURE: pg_database_size_bytes growth per minute during make test-load]]
 
-Reclaiming disk: Docker Desktop does not give space back on its own. Do not run `docker system prune -a` to free space on this host: unrelated containers run from a cached MinIO image that can no longer be pulled anonymously.
+Reclaiming disk: removing a 273 MB kind volume gave back 254 MB on the host within 15 s, the first reading (`KIND_RECLAIM_PERCENT` in `scripts/lib/up-checks.sh`, which records it with no evidence file behind it). A 12 GB volume has not been measured, so do not count on the same for a whole cluster. Do not run `docker system prune -a` to free space on this host: unrelated containers run from a cached MinIO image that can no longer be pulled anonymously.
 
 [[MEASURE: Docker.raw allocated size before and after kind delete cluster, from ls -klsh]]
 
