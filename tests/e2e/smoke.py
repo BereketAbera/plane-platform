@@ -14,7 +14,7 @@ Exit status: 0 all passed, 1 at least one FAIL, 2 no FAIL but something was BLOC
 During a rollout, workloads-ready and branding-overlay read BLOCKED and not FAIL, so a run that finds nothing else exits 2.
 That is not a pass, and it says nothing about the images on their way. A step that does fail during one still exits 1,
 because nothing here can tell whether the rollout caused it, so read such a run again once the rollout has finished. A
-rollout past its deadline is no longer under way, and fails.
+rollout past its deadline is no longer under way, and fails, and so is a sync that has failed an attempt and is retrying.
 
 Generated credentials go only to .local/test-accounts.env (mode 0600). They are never printed
 and never written to the evidence file.
@@ -681,6 +681,21 @@ def rollout_under_way(workload: dict) -> bool:
     return progressing.get("status") == "True" and progressing.get("reason") != "NewReplicaSetAvailable"
 
 
+def sync_failing(application: dict) -> str | None:
+    """Why an Application's open sync will not end by waiting, or None. Every Application here sets retry.limit: -1, so a
+    sync that fails every attempt never closes: the controller sets each failed attempt back to phase Running and counts it
+    in retryCount. An operation about to replace a finished one still shows that one's count, so this reads the phase too."""
+    state = application.get("status", {}).get("operationState", {})
+    attempts = state.get("retryCount") or 0
+    if state.get("phase") != "Running" or attempts <= 0:
+        return None
+    return f"its sync has failed {attempts} time(s) and is retrying: {state.get('message') or 'with no message'}"
+
+
+def job_failed(job: dict) -> bool:
+    return any(c.get("type") == "Failed" and c.get("status") == "True" for c in job.get("status", {}).get("conditions", []))
+
+
 def parse_time(text: str) -> dt.datetime:
     """Kubernetes and this script write a trailing Z, which fromisoformat does not read before Python 3.11."""
     return dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
@@ -909,7 +924,8 @@ class Smoke:
 
     def step_workloads(self, data: dict) -> str:
         """FAIL for what will not end by waiting, and BLOCKED for what a rollout or an open sync explains, which says nothing
-        yet either way. tests/separation's require_environments reads a rollout the same way."""
+        yet either way. An open sync that has failed an attempt explains nothing. tests/separation's require_environments
+        reads a rollout the same way."""
         listed = json.loads(self.cluster.in_namespace("get", "deployments,statefulsets,jobs", "-o", "json"))
         items = {(item["kind"], item["metadata"]["name"]): item for item in listed["items"]}
         app = json.loads(self.cluster.run("-n", "argocd", "get", "application", self.cluster.application, "-o", "json"))
@@ -925,8 +941,8 @@ class Smoke:
                 (under_way if rollout_under_way(item) else problems).append(f"{name} has {ready}/{wanted} ready")
         job = items.get(("Job", MIGRATOR_JOB))
         if job is None or not job["status"].get("succeeded"):
-            # An open sync runs this hook again, and the Job is replaced each time.
-            (under_way if sync_open else problems).append(f"Job {MIGRATOR_JOB} has not succeeded")
+            # An open sync runs this hook again, and the Job is replaced each time. One that has failed is done, though.
+            (under_way if sync_open and not (job and job_failed(job)) else problems).append(f"Job {MIGRATOR_JOB} has not succeeded")
         pods = json.loads(self.cluster.in_namespace("get", "pods", "-o", "json"))["items"]
         data["restarts"] = {
             pod["metadata"]["name"]: status["restartCount"]
@@ -937,6 +953,9 @@ class Smoke:
             moving = sync_open or any(rollout_under_way(item) for (kind, _), item in items.items() if kind != "Job")
             finished_badly = app["status"]["health"]["status"] in ("Degraded", "Missing")
             (under_way if moving and not finished_badly else problems).append(f"Application {self.cluster.application} is {data['application']}")
+        failing = sync_failing(app)
+        if failing:
+            problems.append(f"Application {self.cluster.application}: {failing}")
         if problems:
             raise StepFailed("; ".join(problems + under_way))
         if under_way:
@@ -2258,13 +2277,15 @@ def selftest() -> int:
     assert not rollout_under_way({"kind": "StatefulSet", "status": {"currentRevision": "a", "updateRevision": "a"}})
 
     # What workloads-ready reads during a rollout, and so what the run does, with kubectl stubbed.
-    def workloads_run(web: dict, sync_health: str, operation: dict | None = None) -> tuple[Smoke, str]:
+    def workloads_run(web: dict, sync_health: str, operation: dict | None = None, state: dict | None = None,
+                      job: dict | None = None) -> tuple[Smoke, str]:
         complete = {"replicas": 1, "readyReplicas": 1, "conditions": [{"type": "Progressing", "status": "True", "reason": "NewReplicaSetAvailable"}]}
         listed = [{"kind": kind, "metadata": {"name": name}, "spec": {"replicas": 1},
                    "status": {**complete, **(web if name == "plane-web-wl" else {})}} for kind, name in WORKLOADS]
-        listed.append({"kind": "Job", "metadata": {"name": MIGRATOR_JOB}, "spec": {}, "status": {"succeeded": 1}})
+        listed.append({"kind": "Job", "metadata": {"name": MIGRATOR_JOB}, "spec": {}, "status": {"succeeded": 1} if job is None else job})
         sync, health = sync_health.split("/")
-        app = {**({"operation": operation} if operation else {}), "status": {"sync": {"status": sync}, "health": {"status": health}}}
+        app = {**({"operation": operation} if operation else {}), "status": {"sync": {"status": sync}, "health": {"status": health},
+                                                                             **({"operationState": state} if state else {})}}
 
         with tempfile.TemporaryDirectory() as directory:
             smoke = Smoke(parse_args(["--accounts", f"{directory}/a.env", "--sentinel", f"{directory}/s.json"]))
@@ -2288,6 +2309,23 @@ def selftest() -> int:
     ):
         smoke, printed = workloads_run(web, sync_health, operation)
         assert verdict + " " in printed.splitlines()[-1] and smoke.overall() == verdict, (web, sync_health, printed)
+
+    # Under retry.limit -1 a sync that fails every attempt never closes, so an open one is not always a rollout.
+    message = "one or more synchronization tasks completed unsuccessfully"
+    hook_failed = {"conditions": [{"type": "Failed", "status": "True", "reason": "BackoffLimitExceeded"}]}
+    for web, sync_health, operation, state, job, verdict, says in (
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Running"}, None, "BLOCKED", "under way"),
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Running", "retryCount": 0}, None, "BLOCKED", "under way"),
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Succeeded", "retryCount": 2}, None, "BLOCKED", "under way"),
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Running", "retryCount": 9, "message": message}, None, "FAIL", message),
+        ({}, "Synced/Healthy", {"sync": {}}, {"phase": "Running", "retryCount": 1}, None, "FAIL", "failed 1 time(s)"),
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Running", "retryCount": 3, "message": message}, {}, "FAIL", "has not succeeded"),
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Running"}, {}, "BLOCKED", "has not succeeded"),
+        ({}, "OutOfSync/Healthy", {"sync": {}}, {"phase": "Running"}, hook_failed, "FAIL", "has not succeeded"),
+        ({"readyReplicas": 0, **rolling}, "Synced/Progressing", {"sync": {}}, {"phase": "Running", "retryCount": 2}, None, "FAIL", "0/1 ready"),
+    ):
+        smoke, printed = workloads_run(web, sync_health, operation, state, job)
+        assert verdict + " " in printed.splitlines()[-1] and smoke.overall() == verdict and says in printed, (state, job, printed)
 
     # The sentinel a clean install finds from before it, with HTTP and kubectl stubbed. It says nothing about Plane.
     def sentinel_run(found: dict, namespace_created: str) -> tuple[Smoke, str, dict]:
