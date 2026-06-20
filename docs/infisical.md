@@ -2,7 +2,7 @@
 
 How secret values reach the two Plane environments of Wayline, a customized Plane Community Edition v1.4.3 deployment, and what happens when the secret store is lost.
 
-**Status: NOT RUN.** Nothing in this file has run against a real cluster or a real Infisical yet. `docs/evidence/` holds no Infisical result. Every statement below that depends on a runtime result carries a `VERIFY` marker. Prose without a marker describes configuration in the repository, not observed behaviour.
+**Status: run on the real cluster on 2026-11-04 and 2026-11-05, except `scripts/rotate.sh` and the destroying end of a clean restore.** A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. Prose with no file and no marker describes configuration in the repository, not observed behaviour. All of this is one local kind node, and it says nothing about Infisical on another host. [`infisical/README.md`](../infisical/README.md) holds the full list of measurements.
 
 | Component | Version | Where it is pinned |
 |---|---|---|
@@ -13,7 +13,7 @@ How secret values reach the two Plane environments of Wayline, a customized Plan
 | Infisical's Postgres | `postgres:16.15-alpine`, by digest | `infisical/manifests/postgres.yaml` |
 | Infisical's Redis | `redis:7.2.17-alpine`, by digest | `infisical/manifests/redis.yaml` |
 
-Postgres and Redis here are dedicated to Infisical and never shared with Plane, so the secret store does not depend on what it protects.
+Postgres and Redis here are dedicated to Infisical and never shared with Plane, so the secret store does not depend on what it protects. This Postgres runs with `max_locks_per_transaction=128`, because a backup's scratch restore held 3437 locks against a table of 3328 at the default (`dr-locks-1.txt`).
 
 ## What this design does and does not solve
 
@@ -40,7 +40,7 @@ The order matters because each step needs what the previous one created.
 ```mermaid
 flowchart TD
   A["Terraform local root: namespaces"] --> B["scripts/secret-zero.sh: files, then 3 Secrets in namespace infisical"]
-  B --> C["Argo CD: Infisical Postgres, Redis, server. About 600 migrations on first boot"]
+  B --> C["Argo CD: Infisical Postgres, Redis, server. 602 migrations on first boot"]
   C --> D["Argo CD: 2 namespaced operators"]
   C --> E["scripts/infisical-bootstrap.sh, from the host"]
   E --> E1["POST /api/v1/admin/bootstrap, once only"]
@@ -63,23 +63,23 @@ flowchart TD
 
 Step 5 is outside Argo CD because it needs the admin token, and that token never enters the cluster. It seeds before it publishes identity ids, so an operator never logs in to an empty project.
 
-[[VERIFY: first boot of about 600 migrations finishes under the 1Gi limit and 640 MiB heap on arm64]]
+First boot ran 602 migrations in about 11 s under the 1Gi limit and 640 MiB heap on arm64, with a peak of 807 MiB by cgroup `memory.peak` and 0 OOM events ([infisical-firstboot-1.txt](evidence/runs/infisical-firstboot-1.txt)). The container started at 21:10:39Z and the `infisical` Application read Healthy at 21:11:00Z, 21 s later ([bootstrap-timeline-1.txt](evidence/runs/bootstrap-timeline-1.txt)). `/api/status` itself was not timed apart from that.
+
+`make up` runs these steps in this order. It has not yet run whole on a fresh cluster. So far bootstrap ran with the operators already up, and the prod-sim ServiceAccounts and CRs were applied by hand 19 minutes before `plane-prod-sim` existed, after which Argo CD adopted them with the same UIDs ([infisical-prod-sim-crs-1.txt](evidence/runs/infisical-prod-sim-crs-1.txt)).
 
 [[VERIFY: the sequence above completes on a fresh cluster with scripts/up.sh, which does not exist at commit f733b87]]
 
-[[MEASURE: seconds from infisical pod start to /api/status answering 200 on first boot]]
-
 ### Idempotence, and the trap in it
 
-Steps 2 and 5 are written to be rerun. With an initialized instance and intact local files, the bootstrap script finds the admin file, Terraform changes nothing except a new cluster CA, and the seed writes nothing.
+Steps 2 and 5 are written to be rerun. With an initialized instance and intact local files, the bootstrap script finds the admin file, Terraform changes nothing except a new cluster CA, and the seed writes nothing. Three reruns on the live instance, the last with both Plane environments up, gave "No changes" and left secret ids, versions, Secret contents, pods and Plane generations identical ([infisical-idempotency-1.txt](evidence/runs/infisical-idempotency-1.txt), [infisical-idempotency-2.txt](evidence/runs/infisical-idempotency-2.txt)).
 
 The other branch is destructive to local state. If `GET /api/v1/admin/config` reports `initialized: false`, the script assumes a fresh instance. It moves `infisical-admin.json`, `infisical-machine.json` and `infisical-admin-password` to `.local/secret-zero/archive-<stamp>/`, moves the Terraform state aside, creates a new admin, new projects and new identities, and seeds new values including a new `SECRET_KEY`.
 
-So never run the bootstrap against an empty Infisical that you intend to restore. Restore first, then bootstrap. [disaster-recovery.md](disaster-recovery.md) gives the order.
+So never run the plain bootstrap against an empty Infisical that you intend to restore. `make restore-clean` does the order, and while `.local/restore-clean.state` exists the script refuses that branch. `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh` is restored mode: same credentials, new cluster CA through Terraform, identity Secrets published, no value written. It refuses a fresh instance, a token the server rejects, Terraform wanting to create or delete anything, or a missing secret. On the live instance it gave "No changes" and wrote nothing ([dr-restored-bootstrap-1.txt](evidence/runs/dr-restored-bootstrap-1.txt), `dr-restored-bootstrap-2.txt`). [disaster-recovery.md](disaster-recovery.md#full-restoration-into-a-clean-environment) gives the order.
 
 ## What lives in `.local/secret-zero`
 
-The directory is mode 0700, files are 0600, and `.local/` is gitignored. No script copies this directory off the machine. That is a manual duty, and the whole recovery story depends on it.
+The directory is mode 0700, files are 0600, and `.local/` is gitignored. No script copies this directory off the machine. That is a manual duty, and the whole recovery story depends on it. No backup copies these files either. Each Infisical backup records their sha256 in `recovery/set.json`, and a restore finds them by that, here or in any `archive-*` inside here. So this directory and `.local/backups/` both have to be kept, and kept apart.
 
 | File | Written by | Used for | If lost |
 |---|---|---|---|
@@ -87,17 +87,20 @@ The directory is mode 0700, files are 0600, and `.local/` is gitignored. No scri
 | `AUTH_SECRET` | `secret-zero.sh` | Signs JWTs | Sessions and tokens die, identities log in again |
 | `DB_PASSWORD` | `secret-zero.sh` | Infisical's Postgres | Recoverable from Secret `infisical-db` |
 | `REDIS_PASSWORD` | `secret-zero.sh` | Infisical's Redis | Recoverable from Secret `infisical-redis` |
-| `infisical-admin.json` | Bootstrap | Admin token, org id. The token carries a JWT expiry capped at 90 days | See [Recovery](#recovery) |
-| `infisical-admin-password` | Bootstrap, before the call, because the route works once | First admin's UI password | The token still works |
-| `infisical-machine.json` | Bootstrap, from Terraform outputs | Project ids, identity ids. Not secret, but 0600 like the rest | Rerun bootstrap |
+| `infisical-admin.json` | Bootstrap, or a script that replaced an ended token | Admin token, org id. The token carries a JWT expiry capped at 90 days | A password login makes another. See [Recovery](#recovery) |
+| `infisical-admin-password` | Bootstrap, before the call, because the route works once | First admin's UI password | The token still works until it ends. After that a person needs a copy |
+| `infisical-admin-token.new` | A person, after a sign-in, one line | There only until a script has checked it against the server and moved it into place | |
+| `infisical-admin-replaced.log` | Each replacement of `infisical-admin.json` | When, why, how, and the sha256 before and after. No token | Nothing depends on it. It is the record |
+| `infisical-machine.json` | Bootstrap, from Terraform outputs | Project ids, identity ids. Not secret, but 0600 like the rest | Rerun bootstrap. A restore rebuilds it from the backup's Terraform state |
 | `rotation-<env>/` | `rotate.sh` | Old and new password in plaintext, only while a rotation is stopped partway | That rotation cannot be resumed automatically |
 | `archive-<stamp>/` | `secret-zero.sh REGENERATE`, bootstrap on a fresh instance | Files moved aside, never deleted | |
+| `archive-token-<time>/`, `archive-pre-restore-<time>/` | A token replacement, a restore | The admin file or machine file taken over from, so a restore can still find it by checksum | |
 
 `secret-zero.sh` reuses existing files. It restores a missing one from the cluster when it can. It refuses to replace a differing `ENCRYPTION_KEY` in the cluster without `CONFIRM=yes`. It replaces the whole set only with `REGENERATE=yes CONFIRM=yes`, which is meant for an empty database, because Postgres keeps its old password until its volume is recreated.
 
 The six Plane Secrets contain no secret zero. The seed generates values in memory, sends them, and keeps no copy. Infisical's database plus `ENCRYPTION_KEY` is the whole recovery set for them.
 
-Terraform state in `.local/terraform/infisical/` is not in this directory, yet recovery also needs it. See [Recovery](#recovery).
+Terraform state in `.local/terraform/infisical/` is not in this directory, yet recovery also needs it. `make destroy` keeps it, and each Infisical backup copies it to `recovery/terraform.tfstate`, because state and database are a pair. See [Recovery](#recovery).
 
 ## Projects and the secret layout
 
@@ -116,7 +119,7 @@ Why one project per environment: custom roles and folder RBAC are paid features.
 | `SECRET_KEY` | `openssl rand -hex 32` | `plane-app-keys` |
 | `LIVE_SERVER_SECRET_KEY` | `openssl rand -hex 32` | `plane-app-keys` |
 
-Passwords are hex because the chart and the templates do not URL-encode into connection strings. The seed uses one batch write and 3 requests per environment, because unlicensed self-hosted Infisical allows 40 secret requests per minute per client IP (read from `license-fns.ts` at v0.167.6).
+Passwords are hex because the chart and the templates do not URL-encode into connection strings. The seed uses one batch write and 3 requests per environment. The research named a limit of 40 secret requests per minute per client IP, but v0.167.6 registers the limiter only on Infisical Cloud (`app.ts`), and 240 reads in 4 s from one address all answered 200 ([infisical-rate-limit-1.txt](evidence/runs/infisical-rate-limit-1.txt)).
 
 ## Machine identities and Kubernetes Auth
 
@@ -143,7 +146,7 @@ Three costs come with this choice:
 - The server pod needs egress to the API server. kindnet sees that as the node IP on 6443, so the policy allows `172.16.0.0/12` on 6443.
 - `ALLOW_INTERNAL_IP_CONNECTIONS=true` is set, because token review goes through a safe-request path that rejects private IPs, and `kubernetes.default.svc` is a private IP on kind. This relaxes SSRF protection for the whole instance. It is acceptable on a single-user local instance and needs a new decision for Pass 2.
 
-[[VERIFY: Kubernetes Auth login succeeds on kind under default-deny, including TLS verification against kubernetes.default.svc.cluster.local]]
+Login works on kind under default-deny. The operator logs in and caches for 42 m, 70% of the TTL. A wrong CA is refused with "SSL certificate verification failed", so verification is on, and the API server's certificate covers `kubernetes.default.svc.cluster.local` ([infisical-k8s-auth-tls-1.txt](evidence/runs/infisical-k8s-auth-tls-1.txt), [infisical-isolation-2.txt](evidence/runs/infisical-isolation-2.txt)). The dev operator logged in again 42m17s after its first login, with 0 errors in the 24 reconciles around it ([infisical-token-renewal-1.txt](evidence/runs/infisical-token-renewal-1.txt)).
 
 An identity id is not a credential, since login also needs a token for the ServiceAccount. It still sits in a Secret, because the CRD accepts only a Secret reference, and it changes on every re-bootstrap, so it cannot be rendered into Git.
 
@@ -164,13 +167,13 @@ Details that exist because of a specific failure:
 - **A target with a template gets only its template's keys.** No Secret carries a key it does not need.
 - **Argo CD health is custom Lua** in `helm/values/argocd.yaml`. `InfisicalStaticSecret` is Healthy only when `status.observedGeneration` matches and `status.error` is not true. `InfisicalAuth` and `InfisicalConnection` read the `secrets.infisical.com/IsReady` condition. Wave 1 and later wait on this.
 
-[[VERIFY: operators reconcile all 6 InfisicalStaticSecret in both namespaces and the rendered keys match contract section 8]]
+All 6 `InfisicalStaticSecret` reconcile in both namespaces, and each rendered Secret holds exactly the keys of contract section 8, with no empty or `<no value>` value and nothing shared across environments. The check fails on a tampered Secret, and the operator repaired that one in 9 s ([infisical-rendered-secrets-1.txt](evidence/runs/infisical-rendered-secrets-1.txt), [infisical-tamper-1.txt](evidence/runs/infisical-tamper-1.txt)). `make test-infisical` runs it again.
 
-[[VERIFY: the custom Lua health checks report Healthy and Degraded as written]]
+The Lua checks, run through `argocd admin` in the real server pod, read Healthy on the real CRs and Degraded on a failing one ([argocd-lua-infisical-live-1.txt](evidence/runs/argocd-lua-infisical-live-1.txt)).
 
-[[VERIFY: whether Argo CD waits or fails the sync while InfisicalAuth is unready before bootstrap publishes the identity Secret]]
+Argo CD fails the sync and retries it. While `InfisicalAuth` is unready, a Plane sync fails at wave -2 and retries, every 5 minutes once backed off. After bootstrap publishes the identity Secret the CR turns Ready within a second, but the sync moves on only at its next retry, which took 3m10s on the first run ([infisical-unready-sync-1.txt](evidence/runs/infisical-unready-sync-1.txt)).
 
-Instant updates are paid, so the operator polls. `refreshInterval` is the propagation delay, up to 60 s. Each operator polls 6 CRs per minute from its own pod IP, below the 40 per minute limit.
+Instant updates are paid, so the operator polls. `refreshInterval` is the propagation delay, up to 60 s. Each operator polls 6 CRs per minute from its own pod IP.
 
 ### Two operators, not one
 
@@ -189,7 +192,9 @@ From the operator source at v0.11.16: when a target Secret really changes, the o
 | api, worker, beat, live | Yes | Read connection strings from env at start |
 | Postgres, RabbitMQ | No, on purpose | `POSTGRES_PASSWORD` and `RABBITMQ_DEFAULT_*` act only on an empty data directory, so a restart achieves nothing and causes an outage |
 | Migrator Job | Not supported | A Job is not restarted. It reads the current Secret on its next run |
-| `postgres-exporter` | No, at commit f733b87 | Reads `plane-pgdb` at start, so it keeps the old password after a rotation until it restarts. `PlanePostgresDown` could then fire on a healthy Postgres. [[VERIFY: postgres-exporter survives make rotate, or carries auto-reload in the final manifests]] |
+| `postgres-exporter` | Yes, in `monitoring/manifests/environments/base/exporters.yaml` | Reads `plane-pgdb` at start, so without a restart it would keep the old password after a rotation, and `PlanePostgresDown` could fire on a healthy Postgres. The running pod template carries the operator's mark (`SEC-2-20261105T062211Z-state-before.txt`). No rotation has shown it restart |
+
+At the first sync the operator patched `postgres-exporter` once when `plane-pgdb` appeared and not again, and `monitoring-extras` stayed Synced. That says nothing yet about a rotation.
 
 [[VERIFY: the operator's template annotation does not cause a sync loop with Argo CD self-heal]]
 
@@ -204,6 +209,8 @@ scripts/rotate.sh ENV=dev RESUME=yes
 scripts/rotate.sh ENV=dev ROLLBACK=yes
 ```
 
+**`make rotate` has not run, in either environment.** The attempt in dev was refused by the session's permission system before anything ran, and no password changed (`SEC-2-20261105T062211Z-refused.txt`). Prod-sim stopped at the backup that comes first (`SEC-3-20261105T062127Z.txt`). So this section is read from `scripts/rotate.sh`, and the dev rotation needs the owner to run or approve it.
+
 **Why it is a script.** Secret rotation is a paid feature (`secretRotation: false` for unlicensed self-hosted, `license-fns.ts` at v0.167.6). So this is scripted rotation of one value, `PG_PASSWORD`. It is not native rotation, scheduled rotation, or per-pod credentials. Dynamic secrets are paid too. `PG_PASSWORD` was chosen because the role can be changed in place and the old value can be shown to fail.
 
 **Order of operations:**
@@ -213,6 +220,7 @@ scripts/rotate.sh ENV=dev ROLLBACK=yes
 3. Nudge the CRs by annotation and wait for the operator to update `plane-pgdb` and `plane-app-env`. The operator starts restarting Plane at this point.
 4. `ALTER ROLE` over the Unix socket, with the statement on stdin and logging suppressed for the session.
 5. Wait for the rollouts, then record the proofs.
+6. Take an Infisical backup, because an older dump holds the old `PG_PASSWORD`. `SKIP_BACKUP=yes` skips it. If it fails, the rotation stands and the script exits 3.
 
 Step 3 precedes step 4 because the operator owns the restart. New pods crash-loop until the role has the new password, which is the error window.
 
@@ -222,7 +230,7 @@ Step 3 precedes step 4 because the operator owns the restart. New pods crash-loo
 |---|---|---|
 | Old rejected, new accepted | Login over the pod IP | The image's `pg_hba.conf` trusts the socket and 127.0.0.1, so a login there accepts any password |
 | The test can fail | Random password rejected first | |
-| Plane uses a new connection | `/api/public/anchor/__probe__/settings/` returns 404 "does not exist" | `/api/instances/` is cached in Valkey for two hours and answers 200 with Postgres down. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]] |
+| Plane uses a new connection | `/api/public/anchor/__probe__/settings/` returns 404 "does not exist" | `/api/instances/` is cached in Valkey for two hours. In each Postgres round of the pod restart drill, under a minute, the probe route answered 500 for one 15 s sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). A longer outage has not been tried |
 | Plane rolled | Pod template names the Secret's new version, `rollout status` finishes | |
 | Postgres untouched | Pod start time compared before and after | |
 | `SECRET_KEY` unchanged | Value compared before and after | |
@@ -230,6 +238,8 @@ Step 3 precedes step 4 because the operator owns the restart. New pods crash-loo
 | No fight with Argo CD | Generations stable after the rollout | |
 
 [[VERIFY: make rotate ENV=dev completes against real Postgres and every proof above records PASS]]
+
+A random password is refused over the pod IP and over the Service, while the current one is accepted, so passwords are checked on those routes (`SEC-2-20261105T062211Z-old-value.txt`). Trust on the socket and on 127.0.0.1 has not been shown apart from that.
 
 [[VERIFY: the socket and 127.0.0.1 are trusted while the pod IP requires scram-sha-256 in postgres:15.19-alpine]]
 
@@ -243,7 +253,7 @@ Step 3 precedes step 4 because the operator owns the restart. New pods crash-loo
 - In-flight Jobs keep their old environment.
 - Audit logs are not stored on this tier (`auditLogsRetentionDays: 0`). Secret version history is the only trail.
 - Changing `PG_PASSWORD` by hand in the UI does not change the role. The next Plane restart then fails. Only `ROLLBACK=yes` keeps both sides together.
-- A dump of Infisical taken before a rotation holds the old password. Restoring it makes Infisical and the Postgres role disagree. So back up Infisical straight after a rotation: `make backup ENV=infisical`. Nothing does this automatically.
+- A dump of Infisical taken before a rotation holds the old password. Restoring it in place makes Infisical and the Postgres role disagree, so `make restore ENV=infisical` refuses it unless `ALLOW_STALE_PLANE_SECRETS=yes`. A clean restore does not care: Plane's Postgres initializes with whatever Infisical says, and a dump carries no role password.
 
 If it stops partway, the script prints what Infisical, the Secret and Postgres each hold. `RESUME=yes` finishes and `ROLLBACK=yes` undoes. Both run the same steps against real state, so running either twice is meant to be safe. [[VERIFY: RESUME and ROLLBACK recover a rotation interrupted between the Infisical write and ALTER ROLE]]
 
@@ -269,7 +279,7 @@ Read from `license-fns.ts` and its enforcement sites at v0.167.6. An unlicensed 
 | Dynamic secrets are paid | One shared Postgres role |
 | Audit logs are not stored | Who read what cannot be shown |
 | Instant updates are paid | The operator polls every 60 s |
-| 40 secret requests, 60 reads, 200 writes per minute | One seed batch. Scripts honour `Retry-After` on 429 |
+| None for rate limits. The research named 40 secret requests, 60 reads and 200 writes per minute, but v0.167.6 registers the limiter only on Infisical Cloud, and 240 reads in 4 s all answered 200 ([infisical-rate-limit-1.txt](evidence/runs/infisical-rate-limit-1.txt)) | The seed still uses one batch, and scripts still honour `Retry-After` on 429, in case a later version applies a limit. That path has never run |
 | Non-wildcard trusted IPs are paid | 1 hour token TTL |
 | Gateway reviewer is paid | The client JWT reviews itself |
 
@@ -278,17 +288,19 @@ Read from `license-fns.ts` and its enforcement sites at v0.167.6. An unlicensed 
 | Situation | Result | Do this |
 |---|---|---|
 | Server pod lost | Stateless, rescheduled | Nothing |
-| Redis lost | Pending jobs and locks only | Nothing |
+| Redis lost | Queued jobs, schedules and caches. While it is down the API does not answer, for about 12 s in the restart test ([infisical-restart-1.txt](evidence/runs/infisical-restart-1.txt)) | Nothing |
 | Operator pod lost | Existing Secrets stay. Sync pauses until it returns | Nothing |
-| Infisical down, Plane running | Plane keeps running on its existing Kubernetes Secrets. Restarted Plane pods still start, for the same reason. Rotation and new Secrets stop | Restore service. [[VERIFY: Plane survives an Infisical outage and restarts with existing Secrets]] |
+| Infisical down, Plane running | Plane keeps running on its existing Kubernetes Secrets, and Plane pods should still start, for the same reason. Rotation and new Secrets stop. Across in-place restores with the server down for 39 s to 52 s, no Plane pod, generation or Secret moved (`dr-inplace-restore-3.txt`). No Plane pod was restarted on purpose during an outage | Restore service. [[VERIFY: Plane survives an Infisical outage and restarts with existing Secrets]] |
 | `ENCRYPTION_KEY` file lost, cluster alive | Recoverable | `scripts/secret-zero.sh` restores it from the cluster |
 | `ENCRYPTION_KEY` lost everywhere | **Secrets are gone**, even with the database dump | New instance, new values. `SECRET_KEY` is gone too, so see [disaster-recovery.md](disaster-recovery.md#path-b-encryption_key-is-lost) |
-| Postgres lost, key kept, dump exists | Recoverable | [disaster-recovery.md](disaster-recovery.md#scenario-infisical-lost) |
+| Postgres lost, key kept, dump exists | Recoverable | `make restore ENV=infisical BACKUP=<id> CONFIRM=yes` on the same or a newer image with the same key, then `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh`. See [disaster-recovery.md](disaster-recovery.md#scenario-infisical-lost) |
 | Postgres lost, no dump | All secret values gone | As `ENCRYPTION_KEY` lost |
-| Cluster recreated | New CA must reach Kubernetes Auth | Rerun bootstrap, which passes the CA to Terraform |
-| `infisical-admin.json` lost, instance initialized | Bootstrap refuses, because it works only once | Sign in at `http://infisical.localhost` as `admin@wayline.localhost` with `infisical-admin-password`, create a Token Auth token for "Instance Admin Identity", and recreate the file in the shape the bootstrap writes |
-| Admin token expired | 90 day cap. Scripts warn in the last 7 days, then refuse | As above |
-| Terraform state lost, instance alive | Terraform would try to create what exists, and bootstrap runs Terraform unconditionally, so it fails before publishing identity ids | Import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days. [[VERIFY: terraform import works for infisical_project, infisical_project_environment, infisical_identity, infisical_project_identity and infisical_identity_kubernetes_auth at provider 0.20.10]] |
+| Cluster and everything in it gone | New CA must reach Kubernetes Auth, and the data must come back | `make restore-clean BACKUP=latest`. See [disaster-recovery.md](disaster-recovery.md#full-restoration-into-a-clean-environment) |
+| Cluster recreated with `make up`, data not wanted back | New instance, new secrets | Bootstrap detects `initialized=false` and moves the old files aside, never deleting them |
+| `infisical-admin.json` lost, instance initialized | Bootstrap's own route works once, so it cannot make another | `scripts/infisical-bootstrap.sh` signs in with `infisical-admin-password`, mints a token for the instance admin identity and records it. Run through the API on the live instance (`dr-mint-1.txt`). With no password it stops with the steps for a person, whose labels were read from this image's frontend build and not yet clicked through |
+| Admin token expired | 90 day cap. Scripts warn in the last 7 days. A backup or `make up` then replaces it the same way, and anything else refuses and says so. `RENEW_ADMIN_TOKEN=yes scripts/infisical-bootstrap.sh` does it ahead of time | As above. A token that has really ended has run only on stubs |
+| Admin token and password both gone | Nothing here can log in, and the instance and its secrets are fine | Write a new bcrypt hash into the restored database, as [`infisical/README.md`](../infisical/README.md#admin-token-and-password-both-gone) shows. Run in place on 2026-11-05 (`dr-inplace-no-token-no-password-1.txt`, `-2.txt`, `-3.txt`), not on a clean restore |
+| Terraform state lost, instance alive | Terraform would try to create what exists, and bootstrap runs Terraform unconditionally, so it fails before publishing identity ids | Copy `recovery/terraform.tfstate` from the newest Infisical backup. With no backup, import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days. [[VERIFY: terraform import works for infisical_project, infisical_project_environment, infisical_identity, infisical_project_identity and infisical_identity_kubernetes_auth at provider 0.20.10]] |
 | Rotation stopped partway | Plane may be failing | `RESUME=yes` or `ROLLBACK=yes` |
 
 Infisical's migrations run forward only. An older image refuses to start on a newer schema, so a Helm rollback alone does not restore it. A restore must use the same or a newer image.
@@ -297,61 +309,32 @@ Back up `ENCRYPTION_KEY` separately from the dump. A dump with its key in one ar
 
 A restored Plane database needs the `SECRET_KEY` it was written with. `SECRET_KEY` lives in Infisical. So Infisical and Plane restore as a matched set, Infisical first. `scripts/restore.sh` compares the fingerprint and refuses a mismatch unless `ALLOW_SECRET_KEY_MISMATCH=yes`.
 
-## Least-privilege evidence plan
+An in-place Infisical restore has run five times, 51 s to 71 s in all, with the server not answering for 39 s to 52 s by a probe once a second. Afterwards `make test-infisical` exited 0 with 118 PASS lines, and all 14 Applications were Synced and Healthy (`dr-inplace-restore-3.txt`, `dr-after-restores-1.txt`). Earlier runs took 48 s and 44 s ([dr-inplace-restore-1.txt](evidence/runs/dr-inplace-restore-1.txt), [dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt)). The restore into a new cluster has not run.
 
-No script tests this yet. The contract requires per-project isolation as the free-tier boundary, so it needs direct evidence. Capture the output to `docs/evidence/` with date and command, label each row **PASS**, **FAIL**, **BLOCKED** or **NOT RUN**, and record no tokens or values.
+## Least-privilege evidence
+
+`make test-infisical` runs `infisical/tests/isolation.sh` and `infisical/tests/rendered-secrets.sh`: real logins and reads with the same ServiceAccount tokens the operators use, from the host and from inside each namespace. Every 403 is checked against a positive control with the same token, so a wrong project id or a dead token cannot pass as isolation. It prints status codes and the server's messages, and no token or value.
 
 | # | Claim | Test | Expected | Result |
 |---|---|---|---|---|
-| L1 | Dev reader lists its own project | `status GET` below against `$OWN` | 200 | NOT RUN |
-| L2 | Dev reader cannot read prod-sim | Same against `$OTHER` | 403 or 404 | NOT RUN |
-| L3 | Dev reader cannot write its own project | `POST /api/v4/secrets/LEAST_PRIVILEGE_PROBE` to `$OWN` | 403. A success is a FAIL, and the probe key must then be deleted | NOT RUN |
-| L4 | Org role `no-access` reaches nothing at org level | An org-level read with the same token | 403 | NOT RUN |
-| L5 | Wrong namespace cannot log in | Token for `plane-prod-sim/plane-infisical-auth` with the dev identity id | 401 or 403 | NOT RUN |
-| L6 | Wrong ServiceAccount cannot log in | Token for `plane-dev/plane` with the dev identity id | 401 or 403 | NOT RUN |
-| L7 | Dev operator cannot read prod-sim Secrets | `kubectl auth can-i` below | `no` | NOT RUN |
-| L8 | Dev operator cannot mint tokens in prod-sim | `kubectl auth can-i` below | `no` | NOT RUN |
-| L9 | Workloads hold no API token | `automountServiceAccountToken` on running pods, expected false except the two operators | No exception | NOT RUN |
-| L10 | Rendered manifests hold no Secret | `make ci`, conftest rule in `policy/gitops.rego` | Passes | NOT RUN |
+| L1 | Dev reader lists its own project | `make test-infisical` | 200 | PASS, 200 |
+| L2 | Dev reader cannot read prod-sim, and the other way round | Same: list, single read and slug lookup | 403 or 404 | PASS, 403 in both directions |
+| L3 | Dev reader cannot write its own project | Same | 403. A success is a FAIL | PASS, 403. Asked of the dev reader only |
+| L4 | Org role `no-access` reaches nothing at org level | Same: list the organization's identities | 403 | PASS, 403. Asked of the dev reader only |
+| L5 | Wrong namespace cannot log in | Same: each namespace's account with the other's identity | 401 or 403 | PASS, 401 "K8s namespace not allowed" in both directions |
+| L6 | Wrong ServiceAccount cannot log in | Same: `plane-dev/default` and `plane-dev/iso-dev-controller-manager` with the dev identity | 401 or 403 | PASS, 401. A forged token also gets 401 |
+| L7 | Dev operator cannot read prod-sim Secrets, and the other way round | `kubectl auth can-i` below | `no` | PASS, `no` |
+| L8 | Dev operator cannot mint tokens in prod-sim, and the other way round | `kubectl auth can-i` below | `no` | PASS, `no` |
+| L9 | Workloads hold no API token | `policy/workloads.rego` denies a rendered workload without `automountServiceAccountToken: false`, except the two operators | No exception | PASS on rendered manifests, in `make ci`. Running pods have not been read |
+| L10 | Rendered manifests hold no Secret | `make ci`, conftest rule in `policy/gitops.rego` | Passes | PASS |
 
-[[VERIFY: run the table above, including the same tests with dev and prod-sim swapped, and replace each NOT RUN with a labelled result]]
-
-The commands print status codes only. The token travels on stdin, so it never reaches an argv.
+L1 to L6: [infisical-isolation-2.txt](evidence/runs/infisical-isolation-2.txt), [infisical-isolation-3.txt](evidence/runs/infisical-isolation-3.txt), [infisical-isolation-20261104T232524Z.txt](evidence/runs/infisical-isolation-20261104T232524Z.txt), and on the restored database `dr-after-restores-1.txt`. L7 and L8: [infisical-rbac-1.txt](evidence/runs/infisical-rbac-1.txt). L9 and L10: [ci-2-20261105T061644Z-make-ci.log](evidence/ci/ci-2-20261105T061644Z-make-ci.log), exit 0. These show the boundary the free tier allows, per project. A reader still sees every secret in its own environment.
 
 ```bash
-export PATH="$PWD/.tools/bin:$PATH" KUBECONFIG="$PWD/.local/kubeconfig"
-MACHINE=.local/secret-zero/infisical-machine.json
-URL=http://infisical.localhost
-IDENTITY="$(jq -r '.identity_ids.dev' "$MACHINE")"
-OWN="$(jq -r '.project_ids.dev' "$MACHINE")"
-OTHER="$(jq -r '.project_ids["prod-sim"]' "$MACHINE")"
-
-login() { # namespace serviceaccount: prints the access token, or nothing
-  kubectl --context kind-plane-platform -n "$1" create token "$2" --duration=10m \
-    | jq -Rs --arg id "$IDENTITY" '{identityId: $id, jwt: rtrimstr("\n")}' \
-    | curl -sS -X POST -H 'Content-Type: application/json' --data-binary @- \
-        "$URL/api/v1/auth/kubernetes-auth/login" \
-    | jq -r '.accessToken // empty'
-}
-
-ACCESS="$(login plane-dev plane-infisical-auth)"
-
-status() { # project id: HTTP status of a key listing, values not requested
-  printf 'Authorization: Bearer %s\n' "$ACCESS" | curl -sS -o /dev/null -w '%{http_code}\n' -H @- \
-    "$URL/api/v4/secrets?projectId=$1&environment=prod&secretPath=%2F&viewSecretValue=false"
-}
-
-status "$OWN"    # L1
-status "$OTHER"  # L2
-[ -z "$(login plane-prod-sim plane-infisical-auth)" ] && echo "L5 refused"
-[ -z "$(login plane-dev plane)" ] && echo "L6 refused"
-
 SA=system:serviceaccount:plane-dev:iso-dev-controller-manager
 kubectl --context kind-plane-platform auth can-i get secrets -n plane-prod-sim --as="$SA"                         # L7
 kubectl --context kind-plane-platform auth can-i create serviceaccounts --subresource=token -n plane-prod-sim --as="$SA"  # L8
 ```
-
-The login route and the v4 listing route come from the Infisical source at v0.167.6. Neither has been called from here yet. [[VERIFY: the commands above work as written against the running instance]]
 
 ## Related documents
 
