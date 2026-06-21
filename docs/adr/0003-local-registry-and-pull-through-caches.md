@@ -44,12 +44,12 @@ Digests are what make a mirror safe to trust: containerd verifies content agains
 
 - Branded and upstream images share one mechanism, and both environments reference images the same way, by digest.
 - Cached blobs outlive the cluster, so a rebuild should not re-download. [[VERIFY: a second cluster build after kind delete pulls from the local caches rather than upstream]]
-- Disk use grows. The Docker Hub set is 2.28 GiB compressed, summed from registry metadata on 2026-11-04. [[MEASURE: on-disk size of the four registry volumes after a full make up]]
+- Disk use grows. The Docker Hub set is 2.28 GiB compressed, summed from registry metadata on 2026-11-04. The four registry volumes held 3.89 GB on 2026-11-05 at 02:01 UTC, with the whole platform up: the Docker cache 2.486, `plane-registry` 0.919, the Quay cache 0.448 and the Kubernetes cache 0.038 (`.local/evidence-raw/dr-disk-1.txt`, raw output that is not published yet). That is this host after staged bring-ups and several builds, not what a clean `make up` leaves.
 - `mirror.gcr.io` is not complete. Blob fetches for `plane-live` and the Infisical operator returned 404 there during research, so a pull depends on falling through to Docker Hub. containerd's fallback was read in source, not run at this level of the stack. [[VERIFY: an image with blobs absent from mirror.gcr.io completes through the Docker Hub fallback]]
 - **That fallback is anonymous.** No credential is configured, so a blob missing from the mirror can still hit the Hub quota.
 - Gate 1 in `tests/gates/day1.sh` records PASS for digest pulls from `docker.io`, `quay.io` and `localhost:5001`, and, since 2026-11-04, for containerd having asked each mirror for that digest in that run, read from the mirror's access log ([day1-gates-20261104T231136Z.txt](../evidence/day1-gates-20261104T231136Z.txt)). That covers one small image per path. It does not cover the Hub fallback, and for a layer already on the node it shows the route, not the bytes.
 - The registries speak plain HTTP on the `kind` Docker network, with no authentication. Only `plane-registry` is published to the host, and only on loopback.
-- `make images` and CI differ only in registry prefix. Pass 2 is expected to replace this Compose file with GHCR. That is intent, not configuration.
+- `make images` and CI differ only in registry prefix, and that does not make their digests match. The images `images.yml` published at `9c8e098` have other digests than the local build, and share only part of their layers ([compare](../evidence/ci/ci-4-20261105T060219Z-published-compare.txt)). So what CI publishes is not what the cluster runs until it is copied and promoted, which has not happened. Pass 2 is expected to replace this Compose file with GHCR. That is intent, not configuration.
 
 ## What we found when we ran it
 
