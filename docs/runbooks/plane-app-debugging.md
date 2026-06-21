@@ -132,7 +132,7 @@ kubectl -n "$NS" exec deploy/plane-worker-wl -c plane-worker -- celery -A plane 
 kubectl -n "$NS" delete pod -l app.kubernetes.io/component=worker
 ```
 
-Replacing the pod is the only repair, since Celery has no remote command that restores the selection. It is no drift for Argo CD, though the Application reads `Progressing` until the new pod is ready.
+Replacing the pod is the repair to use. `add_consumer` a second time did not bring it back through a broker restart on a scratch worker. SIGHUP, Celery's own restart, did, in that same scratch container, but that has not been tried on a Plane pod (`.local/evidence-raw/harness-worker-scratch-1.txt`, not yet published). Replacing the pod is no drift for Argo CD, though the Application reads `Progressing` until the new pod is ready.
 
 ### Configuration silently empty
 
@@ -188,11 +188,11 @@ A `live` restart keeps stored edits. An edit still inside the 10-second debounce
 
 Auth counters live in Valkey, and retry-heavy tests can trip them. `API_KEY_RATE_LIMIT` defaults to 60 a minute per key, and `api_tokens.allowed_rate_limit` is not read. Requests with an API key are also logged through Celery into `api_activity_logs`, so API-token load writes to the database. `tests/load/` uses session auth for this reason.
 
-Cookies are host-only, with no `Domain` attribute, and a dev session gets 401 on the prod-sim host, over plain HTTP ([plane-dev-cookies-1.txt](../evidence/runs/plane-dev-cookies-1.txt)). Both hosts at once in one real browser has not been tried. [[VERIFY: logging in to both hosts at once in one browser keeps sessions apart]]
+Cookies are host-only, with no `Domain` attribute, and a dev session gets 401 on the prod-sim host, over plain HTTP ([plane-dev-cookies-1.txt](../evidence/runs/plane-dev-cookies-1.txt)). In Chromium on 2026-11-05, a profile signed in on dev read 200 from dev's `GET /api/users/me/` and 401 from prod-sim's, in two tabs at once (`.local/evidence-raw/AUTH-4-20261105T062750Z.txt`, not yet published). That is one session, and no sign-in on prod-sim happened, because the session's permission system refused reading that test account. So both hosts signed in at once has not been tried. [[VERIFY: logging in to both hosts at once in one browser keeps sessions apart]]
 
 ### What a browser shows
 
-An old page after a promotion can be the browser's cache. On 2026-11-05 the upstream sign-in page kept showing after the branded images landed, with no error, because nginx in the web and admin images sends `ETag` and `Last-Modified` with no `Cache-Control`. Reload past the cache to tell ([live-dev](../evidence/branding/live-dev/README.md)). The fix is in `apps/wayline/runtime/` and is not in the running images yet.
+An old page after a promotion was the browser's cache on the first branded images. On 2026-11-05 the upstream sign-in page kept showing after they landed, with no error, because nginx in the web and admin images sent `ETag` and `Last-Modified` with no `Cache-Control` ([live-dev](../evidence/branding/live-dev/README.md)). The final images send `cache-control: no-cache` on HTML, from `apps/wayline/runtime/nginx-web.conf` and `nginx-admin.conf`. In Chromium with no hard reload, a browser holding the old `/sign-in/` got the new file after a promotion in dev and in prod-sim, and got the older file after a rollback in dev (`.local/evidence-raw/auth-6-browser-promotion-dev-1.txt`, `.local/evidence-raw/AUTH-6-rollback-20261105T064032Z.txt`, not yet published). That was one route, read by `etag`, after a navigation. A tab left open across a rollout, and other browsers, have not been tried. If an old page shows anyway, reload past the cache to tell.
 
 React errors #418 and #423 in the console are hydration mismatches. They appear on upstream's images as well, and the app works past them. Their cause has not been found ([plane-dev-browser-1.txt](../evidence/runs/plane-dev-browser-1.txt)).
 
@@ -204,7 +204,7 @@ kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli ping
 kubectl -n "$NS" exec plane-rabbitmq-wl-0 -c plane-rabbitmq -- rabbitmq-diagnostics status
 ```
 
-Treat Valkey as a cache. A cold cache after it restarts is normal. The pod restart drill deletes each StatefulSet's pod in turn, Valkey's included, and checks the sentinel row, the attachment and a new background job after each: PASS in dev and prod-sim ([drill-pod-restart-dev-20261104T224424Z.log](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log), [drill-pod-restart-prod-sim-20261104T235402Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)).
+Treat Valkey as a cache. A cold cache after it restarts is normal. The pod restart drill deletes each StatefulSet's pod in turn, Valkey's included, and checks the sentinel row, the attachment and a new background job after each: PASS in dev and prod-sim on upstream images ([drill-pod-restart-dev-20261104T224424Z.log](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log), [drill-pod-restart-prod-sim-20261104T235402Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)), and PASS again in dev on the final images on 2026-11-05 (`.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log`, not yet published). It has not run in prod-sim on the final images.
 
 Valkey logging `Possible SECURITY ATTACK` means something sent HTTP to its port. Here that was the NetworkPolicy matrix's probes, and one direct HTTP request reproduced it ([plane-prod-sim-valkey-security-line-1.txt](../evidence/runs/plane-prod-sim-valkey-security-line-1.txt)).
 
@@ -216,7 +216,7 @@ make test-e2e ENV=dev
 
 Check the Platform overview dashboard: all four probes green for the environment. Then check that relevant alerts have resolved in `http://alertmanager.localhost`.
 
-`make test-e2e ENV=dev` passed 38 of 38 on the branded images on 2026-11-05 ([smoke-dev-20261105T001213Z.json](../evidence/runs/smoke-dev-20261105T001213Z.json)). `make test-e2e ENV=prod-sim` passed 37 of 37 on upstream images on 2026-11-04 ([smoke-prod-sim-20261104T235926Z.json](../evidence/runs/smoke-prod-sim-20261104T235926Z.json)). They drive the API and the WebSocket, not a browser.
+On the final images on 2026-11-05, `make test-e2e ENV=dev` read 45 PASS and 1 SKIP, and `make test-e2e ENV=prod-sim` read 44 PASS and 1 SKIP (`.local/evidence-raw/smoke-dev-20261105T053137Z-52811.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`, not yet published). The skip is `branding-fresh-install`, which needs a clean database. They drive the API and the WebSocket, not a browser.
 
 ## What not to do
 
@@ -228,7 +228,7 @@ Check the Platform overview dashboard: all four probes green for the environment
 | Rename the bucket per environment | It breaks export links |
 | Upgrade RabbitMQ to 4.3 | Celery attaches zero consumers |
 | Run Celery's `cancel_consumer` on a worker you mean to keep | It stops consuming at the next broker reconnect. Replace the pod afterwards |
-| Use `artifacts.plane.so` images | Images come from `docker.io` by digest |
+| Use `artifacts.plane.so` images | Upstream images come from `docker.io` by digest, and the branded web, admin, space and backend from `localhost:5001/wayline/` |
 | Scale beat above 1 | Scheduled tasks would run twice |
 | `FLUSHALL` Valkey as a first move | Cache and rate-limit counters all go at once, and live state with them. It belongs after a restore |
 | Purge `celery` to clear a backlog on a live system | It drops real activity and notification work |
