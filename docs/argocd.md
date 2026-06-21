@@ -590,6 +590,6 @@ again, and took no second dump (`.local/evidence-raw/promote-prod-sim-final-2.tx
 | `1fc9fbe`, dev, four images | Commit at 05:29:47Z | 05:29:48Z | 05:30:54Z | 67s |
 | `9c8e098`, prod-sim, the same four, already on the node | Dump started at 05:33:51Z | 05:34:07Z | 05:35:07Z | 76s |
 
-One run each, on a small database: the dump is 806,858 bytes. So 15 of prod-sim's seconds were that dump, and a large database would take longer. Neither run waited for Argo CD's own look, which can add up to the 289s above.
+One run each, on a small database: the dump is 806,858 bytes. So about 15 of prod-sim's seconds were that dump, and a large database would take longer. Neither run waited for Argo CD's own look, which can add up to the 289s above.
 
 If it goes wrong, see [Rollback](#rollback). Failure handling is in [runbooks](runbooks/).
