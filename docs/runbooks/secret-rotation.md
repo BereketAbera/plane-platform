@@ -62,7 +62,7 @@ What `scripts/rotate.sh` does, checking real state at each step:
 The window where Plane may fail is between the operator's sync and `ALTER ROLE`, plus rollout time. The script measures it with a probe once a
 second. [[MEASURE: rotation error window in seconds, per environment, from the rotate evidence log]]
 
-**Read that number with care.** The probe is anonymous, and `db_probe` counts anything but its expected 404 as a failure. Plane throttled the same route after 30 requests: the 31st got 429 with `Retry-After` 54 (`.local/evidence-raw/SEC-2-throttle-precheck-20261105T061924Z.txt`). So a run longer than about 30 s can report throttled probes as its error window. Measure the window from a signed-in request as well, which has its own limit, as `.local/evidence-raw/SEC-2-20261105T062211Z-watcher-source.txt` does.
+**Read that number with care.** The probe is anonymous, and `db_probe` counts anything but its expected 404 as a failure. Plane throttled the same route after 30 requests: the 31st got 429 with `Retry-After` 54 (`.local/evidence-raw/SEC-2-throttle-precheck-20261105T061924Z.txt`). So a run longer than about 30 s can report throttled probes as its error window. Measure the window from a signed-in request as well, which is outside the anonymous limit, as `.local/evidence-raw/SEC-2-20261105T062211Z-watcher-source.txt` does.
 
 ## Diagnosis
 
