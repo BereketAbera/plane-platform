@@ -5,6 +5,8 @@
 # Source this after scripts/lib/common.sh.
 
 DEV_CHECK_LOG="$LOCAL_DIR/evidence-raw/promotion-overrides.log"
+# One line per publish: <utc> <what the bare repository held, or -> <what was sent>. rollback.sh reads it.
+export PUBLISH_LOG="$LOCAL_DIR/publishes.log"
 DEV_CHECK=""
 PROD_SIM_MANIFESTS=gitops/environments/prod-sim/manifests.yaml
 

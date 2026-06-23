@@ -17,7 +17,10 @@
 # - prod-sim gets one dump of its own first, which may fail or run out of time without stopping the
 #   rollback. SKIP_BACKUP=yes leaves it out, and ROLLBACK_DUMP_TIMEOUT sets the limit in seconds.
 # - A revert that never reached Argo CD is published by the next run, instead of a second promotion
-#   being reverted.
+#   being reverted, unless a promotion newer than it waits too. That one is what this run reverts.
+# - A promotion that never reached Argo CD can have something else waiting under it. A publish is all of
+#   main, so withdrawing only the newest would send the rest to prod-sim under the waiver above, with no
+#   check and no dump. So this stops before that and names them.
 # - A later change beside an image line makes the revert conflict in the rendered file. That file is
 #   generated, so rendering replaces it and the rollback goes on. A conflict anywhere else stops it.
 # - A promotion that was already put back by hand is reported as undone, and main is still published.
@@ -29,7 +32,9 @@
 # This rolls back images, not the database: migrations are forward-only, and old code starts
 # against the newer schema with no warning. The dump taken before a prod-sim promotion is the
 # way back for data, through make restore. The dump taken here holds the newer schema, so after a
-# rollback BACKUP=latest names the wrong one. The output names the dump to use.
+# rollback BACKUP=latest names the wrong one. The output names the dump to use: the newest from before
+# the promotion first went out, which gitops-publish records. A promotion that never reached Argo CD
+# moved nothing, so then the output says there is nothing to restore, and names no dump.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=lib/dev-check.sh
@@ -79,7 +84,7 @@ promotions="$(git log -E --format=%H \
 
 DEV_CHECK_WAIVER="an emergency path must not need plane-dev to be healthy"
 
-publish() { # publish <the commit being reverted>
+publish() { # publish <the commit being reverted> <the commit that has to reach Argo CD>
   local status=0
   if [[ "$ENV" == prod-sim ]]; then
     # With both skips gitops-publish does not touch the cluster, which may be what is broken.
@@ -88,11 +93,100 @@ publish() { # publish <the commit being reverted>
   else
     "$ROOT/scripts/gitops-publish.sh" || status=$?
   fi
-  [[ "$status" -eq 0 ]] || die "$(git log -1 --format='%h %s') is on main but did not reach Argo CD. Fix the cause and run this again: it publishes that and reverts nothing else."
+  [[ "$status" -eq 0 ]] || die "$(git log -1 --format='%h %s' "$2") is on main but did not reach Argo CD. Fix the cause and run this again: it publishes that and reverts nothing else."
 }
 
 reverted_by() { # reverted_by <commit>: the commit it reverts, if any
   git log -1 --format=%B "$1" | sed -n 's/^This reverts commit \([0-9a-f]\{40\}\).*/\1/p'
+}
+
+# Names are UTC timestamps, so they sort by time, and a dump's name is when it started. A dump from the
+# same second as a publish cannot hold what that publish did, because Argo CD had not read it yet.
+newest_dump() { # newest_dump [<time>]: the newest finished backup, from no later than that time
+  local dir name latest="${1:-99999999T999999Z}" newest=""
+  for dir in "$BACKUPS"/*; do
+    name="$(basename "$dir")"
+    if [[ -f "$dir/manifest.json" && "$name" =~ ^[0-9]{8}T[0-9]{6}Z$ && ! "$name" > "$latest" ]]; then newest="$name"; fi
+  done
+  printf '%s' "$newest"
+}
+
+dumps_after() { # dumps_after <time>: the finished backups from later than that time, on one line
+  local dir name names=""
+  for dir in "$BACKUPS"/*; do
+    name="$(basename "$dir")"
+    if [[ -f "$dir/manifest.json" && "$name" =~ ^[0-9]{8}T[0-9]{6}Z$ && "$name" > "$1" ]]; then names+="${names:+ }$name"; fi
+  done
+  printf '%s' "$names"
+}
+
+# When the publish that first sent this commit went out. Prints nothing if the record cannot say: the first
+# entry holding it may have started from a bare repository that had it already, or had nothing at all, so
+# it first went out before the record began.
+first_published_at() { # first_published_at <commit>
+  local at old new
+  [[ -f "$PUBLISH_LOG" ]] || return 0
+  while read -r at old new; do
+    git merge-base --is-ancestor "$1" "$new" 2>/dev/null || continue
+    if [[ "$old" != - ]] && ! git merge-base --is-ancestor "$1" "$old" 2>/dev/null; then printf '%s' "$at"; fi
+    return 0
+  done <"$PUBLISH_LOG"
+}
+
+# Which dump takes prod-sim back to before a promotion. It goes by when the promotion first went out, not by
+# its commit: a refused publish leaves the commit on main, and the run that later sends it takes a newer
+# dump just before it does, and restoring an older one loses the writes between the two. A promotion merged
+# on GitHub also takes its dump at that publish. With no record of the publish, the commit is all there is.
+RESTORE_FROM=""
+RESTORE_WHEN=""
+RESTORE_NOTE=""
+find_restore_point() { # find_restore_point <promotion>: before this run's own dump, which is no way back
+  local at committed later
+  at="$(first_published_at "$1")"
+  if [[ -n "$at" ]]; then
+    RESTORE_FROM="$(newest_dump "$at")"
+    RESTORE_WHEN="the publish that first sent $(git log -1 --format=%h "$1"), at $at"
+  else
+    committed="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"
+    RESTORE_FROM="$(newest_dump "$committed")"
+    RESTORE_WHEN="$(git log -1 --format='%h from %cI' "$1")"
+    later="$(dumps_after "$committed")"
+    RESTORE_NOTE=" No record says when it first went out, so this goes by its commit. A promotion merged on GitHub, or sent by a later run after a refusal, took its dump at that publish, so for one of those the right dump is the one from just before it.${later:+ Finished since the commit: $later.}"
+  fi
+}
+
+# Read just before a publish, because a dump takes minutes and someone else may publish meanwhile. A bare
+# repository that is gone, or holds history unknown here, cannot say no, so the output still names a dump.
+reached_argo() { # reached_argo <commit>: yes or no
+  local now
+  now="$(git --git-dir="$BARE" rev-parse -q --verify refs/heads/main 2>/dev/null || true)"
+  if [[ -n "$now" ]] && git cat-file -e "$now" 2>/dev/null && ! git merge-base --is-ancestor "$1" "$now"; then
+    echo no
+  else
+    echo yes
+  fi
+}
+
+say_what_to_restore() { # say_what_to_restore <promotion> <whether it reached Argo CD before this publish>
+  [[ "$ENV" == prod-sim ]] || return 0
+  if [[ "$2" == no ]]; then
+    ok "$(git log -1 --format=%h "$1") never reached Argo CD, so prod-sim's images and schema did not move. There is nothing to restore."
+  elif [[ -n "$RESTORE_FROM" ]]; then
+    warn "Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=$RESTORE_FROM, the newest finished dump older than $RESTORE_WHEN.$RESTORE_NOTE BACKUP=latest may name the dump taken just now, which holds the newer schema."
+  else
+    warn "Images are back, the schema is not, and no finished dump older than $RESTORE_WHEN exists in ${BACKUPS#"$ROOT"/}.$RESTORE_NOTE"
+  fi
+}
+
+# Withdrawing a promotion Argo CD never read should move nothing in prod-sim. If what would be left still moves
+# it, something else waits on main, and this rollback's waiver would send that along with no check and no dump.
+refuse_sending_what_waits() { # refuse_sending_what_waits <promotion> <what would be left on main>
+  [[ "$ENV" == prod-sim && -n "$published" ]] || return 0
+  git cat-file -e "$published" 2>/dev/null || return 0
+  prod_sim_digests_move "$published" "$2" || return 0
+  local waiting
+  waiting="$(commits_moving_prod_sim "$published" "$2")"
+  die "$(git log -1 --format=%h "$1") never reached Argo CD, and main holds more that moves prod-sim's images and has not gone out either: ${waiting//$'\n'/; }. A publish is all of main, so withdrawing only this one would send the rest to prod-sim with no check of plane-dev and no dump. Nothing changed. Take them all off with git revert, newest first, then run this again, which publishes those reverts."
 }
 
 published="$(git --git-dir="$BARE" rev-parse -q --verify refs/heads/main 2>/dev/null || true)"
@@ -117,11 +211,17 @@ fi
 if [[ -n "$published" ]] && git cat-file -e "$published" 2>/dev/null; then
   while read -r commit; do
     [[ -n "$commit" ]] || continue
+    # A promotion newer than such a revert is what a rollback means now, and publishing would send it.
+    if grep -qxF "$commit" <<<"$promotions"; then break; fi
     reverted="$(reverted_by "$commit")"
     if [[ -n "$reverted" ]] && grep -qxF "$reverted" <<<"$promotions"; then
+      reached="$(reached_argo "$reverted")"
+      if [[ "$reached" == no ]]; then refuse_sending_what_waits "$reverted" HEAD; fi
       log "$(git log -1 --format='%h %s' "$commit") is on main but was never published. Publishing it, and reverting nothing else."
-      publish "$reverted"
+      find_restore_point "$reverted"
+      publish "$reverted" "$commit"
       ok "rollback of ${reverted:0:12} published. Run this again to step back one promotion further."
+      say_what_to_restore "$reverted" "$reached"
       exit 0
     fi
   done < <(git rev-list "$published..refs/heads/main" -- "$OVERLAY")
@@ -140,6 +240,7 @@ done <<<"$promotions"
 
 [[ -n "$target" ]] || die "no promotion of $ENV left to roll back"
 log "Rolling back: $(git log -1 --format='%h %s' "$target")"
+if [[ "$(reached_argo "$target")" == no ]]; then refuse_sending_what_waits "$target" "$target^"; fi
 
 # What the revert can touch. The render is here because rendering replaces it, whatever the commit did.
 revert_paths=("$RENDERED")
@@ -154,23 +255,15 @@ refuse_edits_in_the_way() {
 refuse_edits_in_the_way
 
 if [[ "$ENV" == prod-sim && "${CONFIRM:-}" != yes ]]; then
-  warn "Images roll back, the database schema does not. See docs/runbooks for restoring the dump."
+  if [[ "$(reached_argo "$target")" == no ]]; then
+    warn "This promotion never reached Argo CD, so this only takes it off main."
+  else
+    warn "Images roll back, the database schema does not. See docs/runbooks for restoring the dump."
+  fi
   [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"
   read -r -p "Revert this promotion in prod-sim? Type yes: " answer
   [[ "$answer" == yes ]] || die "not confirmed, nothing changed"
 fi
-
-# Names are UTC timestamps, so they sort by time, and a dump's name is when it started. A dump from the
-# same second as the commit cannot hold what that commit did, because Argo CD had not read it yet.
-newest_dump() { # newest_dump [<commit>]: the newest finished backup, from no later than that commit
-  local dir name latest="99999999T999999Z" newest=""
-  if [[ $# -gt 0 ]]; then latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"; fi
-  for dir in "$BACKUPS"/*; do
-    name="$(basename "$dir")"
-    if [[ -f "$dir/manifest.json" && "$name" =~ ^[0-9]{8}T[0-9]{6}Z$ && ! "$name" > "$latest" ]]; then newest="$name"; fi
-  done
-  printf '%s' "$newest"
-}
 
 run_with_limit() { # run_with_limit <seconds> <command...>: fails if the command fails or outlives the limit
   local limit="$1" pid waited=0
@@ -192,9 +285,8 @@ run_with_limit() { # run_with_limit <seconds> <command...>: fails if the command
 
 # Only prod-sim, as with every other dump the contract requires. It runs before the revert, so it
 # holds what the bad promotion left, for looking at later. The dump to restore from is an older one.
-restore_from=""
 if [[ "$ENV" == prod-sim ]]; then
-  restore_from="$(newest_dump "$target")"
+  find_restore_point "$target"
   if [[ "${SKIP_BACKUP:-}" == yes ]]; then
     warn "SKIP_BACKUP=yes: no dump taken before this rollback"
   else
@@ -295,8 +387,10 @@ if git diff --cached --quiet -- "${to_commit[@]}"; then
   undo_revert || stop_revert "reverting ${target:0:12} would change nothing." "Run this again."
   release_commit_lock
   ok "$(git log -1 --format='%h %s' "$target") is already undone: reverting it would change nothing, so there is no new commit. To step back further, revert the promotion before it by hand with git revert, then make gitops-publish."
+  reached="$(reached_argo "$target")"
   # It may have been put back by a commit nobody has published.
-  publish "$target"
+  publish "$target" "$(git rev-parse HEAD)"
+  say_what_to_restore "$target" "$reached"
   exit 0
 fi
 
@@ -306,19 +400,12 @@ commit_flags=(--quiet --no-edit --cleanup=strip)
 if ! git_when_index_free commit "${commit_flags[@]}" -- "${to_commit[@]}"; then
   stop_revert "could not commit the revert." "Run this again once the cause above is gone."
 fi
+# Before the lock goes, so this names what this run made and not what someone commits next.
+revert_commit="$(git rev-parse HEAD)"
 reverting=no
 release_commit_lock
-ok "committed $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
+ok "committed $(git rev-parse --short "$revert_commit"): $(git log -1 --format=%s "$revert_commit")"
 
-publish "$target"
-
-if [[ "$ENV" == prod-sim ]]; then
-  promoted_at="$(git log -1 --format='%h from %cI' "$target")"
-  # A promotion merged on GitHub took its dump at the publish, which is later than its commit.
-  merged_note="A promotion merged on GitHub took its dump when it was published, so for one of those the right dump can be the first one after that time."
-  if [[ -n "$restore_from" ]]; then
-    warn "Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=$restore_from, the newest finished dump older than $promoted_at. $merged_note BACKUP=latest may name the dump taken just now, which holds the newer schema."
-  else
-    warn "Images are back, the schema is not, and no finished dump older than $promoted_at exists in ${BACKUPS#"$ROOT"/}. $merged_note"
-  fi
-fi
+reached="$(reached_argo "$target")"
+publish "$target" "$revert_commit"
+say_what_to_restore "$target" "$reached"

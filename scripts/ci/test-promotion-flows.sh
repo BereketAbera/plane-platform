@@ -241,7 +241,7 @@ reset_clone() { # reset_clone <commit to start from>
   git -C "$CLONE" reset --quiet --hard "$1"
   git -C "$CLONE" update-ref -d refs/remotes/origin/main 2>/dev/null || true
   git -C "$CLONE" clean --quiet -fd -- helm gitops docs
-  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls" "$STUB/backup-saw-changes" "$STUB/backup-saw-lock" "$STUB/kubectl-calls" "$STUB/curl-calls" \
+  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.local/publishes.log" "$CLONE/.build" "$STUB/backup-calls" "$STUB/backup-saw-changes" "$STUB/backup-saw-lock" "$STUB/kubectl-calls" "$STUB/curl-calls" \
     "$STUB/kustomize-mode" "$STUB/kustomize-edited" "$STUB/index-lock-seconds" "$STUB/lock-at-commit" "$STUB/lock-at-push"
   echo statefulset.apps/plane-pgdb-wl >"$STUB/prod-sim-database"
   rm -f "$CLONE/.tools/bin/curl"
@@ -1985,6 +1985,165 @@ rollback_skips_an_unfinished_dump() {
   expect "it names the finished one" said "BACKUP=$older"
 }
 
+# ---- a rollback says what there is to restore, going by when the promotion first went out
+a_dump_exists() { # a_dump_exists <name>
+  mkdir -p "$CLONE/.local/backups/prod-sim/$1"
+  echo '{}' >"$CLONE/.local/backups/prod-sim/$1/manifest.json"
+}
+rollback_of_a_refused_promotion_says_nothing_to_restore() {
+  local status=0 prod_sim_before
+  a_dump_exists 20260101T000000Z
+  prod_sim_before="$(argo_reads_web prod-sim)"
+  promote_dev "$DIGEST_A"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the promotion is refused at its publish" [ "$status" -ne 0 ]
+  echo ok >"$STUB/backup-mode"
+  status=0
+  rollback prod-sim || status=$?
+  expect "taking it off main works" [ "$status" -eq 0 ]
+  expect "it says why there is nothing to do" said "never reached Argo CD"
+  expect "and says so" said "There is nothing to restore"
+  expect "it sends nobody to a dump" not_said "make restore"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "prod-sim did not move" equal "$(argo_reads_web prod-sim)" "$prod_sim_before"
+}
+rollback_of_a_retried_promotion_names_the_dump_of_the_run_that_sent_it() {
+  # Restoring the refused attempt's dump would lose every write between the two dumps.
+  local status=0 first_dump second_dump
+  promote_dev "$DIGEST_A"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the first attempt is refused at its publish" [ "$status" -ne 0 ]
+  first_dump="$(find "$CLONE/.local/backups/prod-sim" -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+  sleep 1
+  echo ok >"$STUB/backup-mode"
+  echo Synced/Healthy >"$STUB/app-status"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim
+  expect "the second run sends it" equal "$(published)" "$(head_commit)"
+  second_dump="$(find "$CLONE/.local/backups/prod-sim" -mindepth 1 -maxdepth 1 -type d ! -name "$first_dump" -exec basename {} \;)"
+  expect "and took its own dump" [ -n "$second_dump" ]
+  sleep 1
+  rollback prod-sim
+  expect "it names the dump from just before the digest went out" said "BACKUP=$second_dump"
+  expect "not the refused attempt's" not_said "BACKUP=$first_dump"
+  expect "it says what it goes by" said "the publish that first sent"
+}
+rollback_rerun_names_the_dump() {
+  # The run that finally sends the revert is the one that can say what to restore.
+  local status=0 older=20260101T000000Z
+  a_dump_exists "$older"
+  promote_prod_sim_committed
+  failing_hook "$BARE/hooks/pre-receive"
+  sleep 1
+  rollback prod-sim || status=$?
+  expect "the publish fails" [ "$status" -ne 0 ]
+  expect "and it names no dump yet" not_said "make restore"
+  rm -f "$BARE/hooks/pre-receive"
+  rollback prod-sim
+  expect "it publishes the revert" said "was never published"
+  expect "and names the dump" said "make restore ENV=prod-sim BACKUP=$older"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+rollback_rerun_of_a_withdrawal_says_nothing_to_restore() {
+  local status=0 prod_sim_before
+  a_dump_exists 20260101T000000Z
+  prod_sim_before="$(argo_reads_web prod-sim)"
+  promote_dev "$DIGEST_A"
+  failing_hook "$BARE/hooks/pre-receive"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the promotion's publish fails" [ "$status" -ne 0 ]
+  status=0
+  rollback prod-sim || status=$?
+  expect "the rollback's publish fails too" [ "$status" -ne 0 ]
+  rm -f "$BARE/hooks/pre-receive"
+  rollback prod-sim
+  expect "it publishes the revert" said "was never published"
+  expect "and says so" said "There is nothing to restore"
+  expect "it sends nobody to a dump" not_said "make restore"
+  expect "prod-sim did not move" equal "$(argo_reads_web prod-sim)" "$prod_sim_before"
+}
+rollback_goes_by_the_commit_with_no_record_of_the_publish() {
+  # What was published before the record began. A later publish holds it, and did not first send it.
+  local older=20260101T000000Z later
+  a_dump_exists "$older"
+  promote_prod_sim_committed
+  rm -f "$CLONE/.local/publishes.log"
+  sleep 1
+  later="$(date -u +%Y%m%dT%H%M%SZ)"
+  a_dump_exists "$later"
+  sleep 1
+  git -C "$CLONE" commit --quiet --allow-empty -m 'something later'
+  in_clone ./scripts/gitops-publish.sh
+  rollback prod-sim
+  expect "it names the dump from before the commit" said "BACKUP=$older"
+  expect "not the one from after it" not_said "BACKUP=$later"
+  expect "it says what it goes by" said "goes by its commit"
+  expect "and which came later" said "Finished since the commit: $later"
+}
+rollback_reverts_a_refused_promotion_above_an_unpublished_revert() {
+  # Publishing the revert would send the newer promotion too, under the waiver, and moving forward is no rollback.
+  local status=0 argo_before refused
+  promote_prod_sim_committed
+  argo_before="$(argo_reads_web prod-sim)"
+  promote_dev "$DIGEST_B"
+  web_image "$DIGEST_B" true
+  failing_hook "$BARE/hooks/pre-receive"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the promotion's publish fails" [ "$status" -ne 0 ]
+  status=0
+  rollback prod-sim || status=$?
+  expect "the rollback's publish fails too" [ "$status" -ne 0 ]
+  rm -f "$BARE/hooks/pre-receive"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the next promotion is refused" [ "$status" -ne 0 ]
+  refused="$(head_commit)"
+  echo ok >"$STUB/backup-mode"
+  status=0
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "it reverts that promotion" grep -qF "This reverts commit $refused" <(git -C "$CLONE" log -1 --format=%B)
+  expect "it does not send it" equal "$(argo_reads_web prod-sim)" "$argo_before"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "and says so" said "There is nothing to restore"
+}
+rollback_stops_before_sending_what_waits_under_a_withdrawal() {
+  local status=0 argo_before first second
+  argo_before="$(argo_reads_web prod-sim)"
+  promote_dev "$DIGEST_A"
+  failing_hook "$BARE/hooks/pre-receive"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the first promotion's publish fails" [ "$status" -ne 0 ]
+  first="$(head_commit)"
+  status=0
+  promote_dev "$DIGEST_B" || status=$?
+  web_image "$DIGEST_B" true
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "the second promotion's publish fails" [ "$status" -ne 0 ]
+  second="$(head_commit)"
+  rm -f "$BARE/hooks/pre-receive" "$STUB/backup-calls"
+  status=0
+  rollback prod-sim || status=$?
+  expect "a stop" [ "$status" -ne 0 ]
+  expect "it names what waits" said "$(git -C "$CLONE" log -1 --format='%h %s' "$first")"
+  expect "and why that matters" said "with no check of plane-dev and no dump"
+  expect "and says nothing changed" said "Nothing changed"
+  expect "no revert" equal "$(head_commit)" "$second"
+  expect "no dump spent on it" equal "$(backup_calls)" 0
+  expect "Argo CD still reads the old digest" equal "$(argo_reads_web prod-sim)" "$argo_before"
+  # What it says works.
+  git -C "$CLONE" revert --no-edit "$second" >/dev/null
+  git -C "$CLONE" revert --no-edit "$first" >/dev/null
+  rollback prod-sim
+  expect "it publishes those reverts" said "was never published"
+  expect "and says there is nothing to restore" said "There is nothing to restore"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "prod-sim did not move" equal "$(argo_reads_web prod-sim)" "$argo_before"
+}
+
 # ---- publish: what it sends, and what its warning says
 publish_creates_the_bare_repository() {
   local status=0
@@ -2201,6 +2360,13 @@ scenario rollback-finds-a-trailer-only-promotion rollback_finds_a_trailer_only_p
 scenario rollback-second-attempt-names-the-dump-from-before-the-promotion rollback_second_attempt_names_the_dump_from_before_the_promotion
 scenario rollback-says-when-no-dump-is-older rollback_says_when_no_dump_is_older
 scenario rollback-skips-an-unfinished-dump rollback_skips_an_unfinished_dump
+scenario rollback-of-a-refused-promotion-says-nothing-to-restore rollback_of_a_refused_promotion_says_nothing_to_restore
+scenario rollback-of-a-retried-promotion-names-the-dump-of-the-run-that-sent-it rollback_of_a_retried_promotion_names_the_dump_of_the_run_that_sent_it
+scenario rollback-rerun-names-the-dump rollback_rerun_names_the_dump
+scenario rollback-rerun-of-a-withdrawal-says-nothing-to-restore rollback_rerun_of_a_withdrawal_says_nothing_to_restore
+scenario rollback-goes-by-the-commit-with-no-record-of-the-publish rollback_goes_by_the_commit_with_no_record_of_the_publish
+scenario rollback-reverts-a-refused-promotion-above-an-unpublished-revert rollback_reverts_a_refused_promotion_above_an_unpublished_revert
+scenario rollback-stops-before-sending-what-waits-under-a-withdrawal rollback_stops_before_sending_what_waits_under_a_withdrawal
 scenario publish-creates-the-bare-repository publish_creates_the_bare_repository
 scenario publish-sends-what-it-checked publish_sends_what_it_checked
 scenario publish-warning-leaves-dev-out-when-it-only-moves-an-image publish_warning_leaves_dev_out_when_it_only_moves_an_image
