@@ -31,7 +31,7 @@ On 2026-11-05 the running kubelet reported `imageGCHighThresholdPercent` 100 and
 
 | Symptom | Where |
 |---|---|
-| `only N GiB free on the host, need at least M GiB` | `guard_disk`, from most scripts. The default floor is 10 GiB. On a new cluster `up.sh` needs 25 and `cluster-up.sh` 15. `make test` and the failed-deploy and pod-restart drills need 2, and `make promote`, `make rollback`, `make gitops-publish`, `make render` and `make test-netpol` need 1 |
+| `only N GiB free on the host, need at least M GiB` | `guard_disk`, from most scripts. The default floor is 10 GiB. On a new cluster `up.sh` needs 25 and `cluster-up.sh` 15. `make test` and the failed-deploy, failing-migrator and pod-restart drills need 2, and `make promote`, `make rollback`, `make gitops-publish`, `make render` and `make test-netpol` need 1. `ALLOW_LOW_DISK="<reason>"` goes past the check for a new cluster, and `MIN_FREE_DISK_GIB=<n>` lowers the floor. A value below 10 and each reason are logged in `.local/evidence-raw/low-disk-overrides.log`. The refusal was seen on 2026-11-05: `MIN_FREE_DISK_GIB=999` stopped `make backup` before a Job started, and `make status`, which does not call the guard, still ran (`.local/evidence-raw/OPS-7-20261105T061555Z.txt`, not yet published) |
 | `the host is below N GiB free, so stopping here` | `make scan-images` wants 15 GiB to start and stops below its floor, reporting the rest as not scanned. `SCAN_MIN_FREE_GIB` and `SCAN_FLOOR_GIB` change those. One run stopped at 2 of 35 images this way ([security README](../evidence/security/README.md)) |
 | `fail N GiB free ... 25 GiB is the minimum` | `scripts/prereqs.sh`. 35 GiB is the recommendation |
 | Postgres logs `No space left on device`, or pods fail on writes | The VM's disk could not grow |
@@ -108,7 +108,7 @@ docker volume rm plane-platform-local_mirror-quay-data
 docker compose -f infrastructure/local-services/compose.yaml up -d mirror-quay
 ```
 
-Do not do this to `registry-data`. It holds the branded images that dev's overlay names, and they exist nowhere else until rebuilt, and a rebuild can give other digests. [[VERIFY: removing one mirror volume and restarting it leaves pulls working through the cache]]
+Do not do this to `registry-data`. It holds the branded images that both overlays name, and those digests exist nowhere else until rebuilt, and a rebuild can give other digests. [[VERIFY: removing one mirror volume and restarting it leaves pulls working through the cache]]
 
 **5. Return freed VM space to the Mac.** Docker's FAQ recommends this after deleting data inside containers:
 
