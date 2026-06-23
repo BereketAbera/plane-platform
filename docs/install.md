@@ -305,7 +305,7 @@ Choose by what you need to keep.
 | `make down` | Stopped, kept | Stopped, kept | Kept | **No data loss.** `make up` resumes. [[VERIFY: all PVC data survives make down and make up]] |
 | `make destroy CONFIRM=yes` | **Deleted** | Kept | Kept | Takes `backup.sh all` first, for Infisical, dev and prod-sim. If that fails, nothing is deleted. The local Terraform state is removed, and the Infisical one is kept |
 | `make destroy CONFIRM=yes SKIP_BACKUP=yes` | **Deleted** | Kept | Kept | **Data since your last backup is gone** |
-| `make destroy CONFIRM=yes PURGE=yes` | **Deleted** | **Deleted**, with their volumes | Kept | Branded images must be rebuilt and caches refill from upstream |
+| `make destroy CONFIRM=yes PURGE=yes` | **Deleted** | **Deleted**, with their volumes | Kept | Branded images must be rebuilt, because the local registry holds the only copy of what the Mac built, and a rebuild gives new digests. Caches refill from upstream |
 
 Four details that catch people:
 
