@@ -71,6 +71,8 @@ docker system df -v | grep plane-platform-local
 
 Budget, for comparing what you see. Both figures are estimates from critique section 5, made before anything was deployed. Workload images on the node come to about 8.56 GiB unpacked, derived from each gzip layer's size trailer in the registry. Total host growth of 16.7 to 22 GiB adds planning figures for volumes and logs. [Resource utilization](../resource-utilization.md#disk) adds the caches.
 
+Read on the running platform on 2026-11-05 at 02:01Z, with both environments up: the node's `/var` volume 12.94 GiB by `du`, of which images 10.51 and volumes 1.53, local services' volumes 3.62 GiB and the node image 1.19 GiB, so about 17.75 GiB for this platform. `Docker.raw` allocated 42.18 GiB, which holds whatever else is on this host's Docker too (`.local/evidence-raw/dr-disk-1.txt`, not yet published). That comes from a platform that has been running and promoted several times, not from a first install on an empty disk, so it does not answer the line below.
+
 [[MEASURE: actual Docker.raw growth and host free space after a first full install]]
 
 ## Fix
