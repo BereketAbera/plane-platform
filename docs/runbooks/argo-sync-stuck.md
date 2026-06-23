@@ -124,6 +124,8 @@ kubectl -n argocd get application "$APP" -o jsonpath='{.status.conditions}{"\n"}
 
 The condition `ComparisonError` holds the repo server's error. Fix or revert the commit, and publish.
 
+**A broken file does not always read `Unknown`.** Argo CD ignores an unparsable file unless its text holds `apiVersion:`, `kind:` and `metadata:`. A first attempt at that test, a file with no `metadata:`, read `Synced` at the new revision with no condition (`argo-sync-unknown-2.txt`). So a mangled manifest can pass with no alert, and with `prune: true` its objects could be pruned. That last part is from reading, not tested. Only the CI checks would catch it, and only `make gitops-publish` after them reaches the cluster.
+
 ### A bad revision is retrying
 
 Every Application, `root` included, sets `retry.refresh: true`, so a retry picks up the newest commit. Fix forward or revert in Git, then publish, and the next attempt uses it. No manual step is needed beyond waiting for backoff.

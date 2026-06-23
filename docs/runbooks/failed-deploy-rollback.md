@@ -65,7 +65,7 @@ The steps are in [Argo CD](../argocd.md#rollback).
 `make rollback ENV=dev` ran on the real cluster on 2026-11-05. It reverted `1fc9fbe` as `91ef477`, the six Deployments on those images went back to their earlier digests,
 prod-sim's render did not move, and `smoke.py --mode verify --job-probe` passed on the rolled-back images. `make promote ENV=dev` then put the final images back as `29316f2`
 (`.local/evidence-raw/DEP-2-20261105T064032Z-rollback.txt`, `DEP-2-20261105T064032Z-verify-on-rolled-back.txt` and `DEP-2-20261105T064032Z-promote-forward.txt` beside it). A rollback of prod-sim has run only against
-a stub `kubectl` ([ci-2-20261104T225907Z-make-ci.log](../evidence/ci/ci-2-20261104T225907Z-make-ci.log)).
+a stub `kubectl` ([ci-2-20261105T055459Z-make-ci.log](../evidence/ci/ci-2-20261105T055459Z-make-ci.log)).
 
 Argo CD picks this up at its next look. Looks were measured 120 to 289s apart, median 193s (`.local/evidence-raw/alert-text-figures-1.txt`). To ask it to look now:
 
