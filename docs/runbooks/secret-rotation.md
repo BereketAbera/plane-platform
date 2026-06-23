@@ -17,7 +17,7 @@ NS=plane-dev
 |---|---|---|
 | `PG_PASSWORD` (Plane Postgres role) | `make rotate ENV=<env>` | The only scripted rotation |
 | `SECRET_KEY` | **Never** | Derives the key for encrypted config rows. `decrypt_data` fails silently to `""`, so nothing errors and configuration just disappears |
-| `LIVE_SERVER_SECRET_KEY` | Not worth rotating | Nothing in Plane v1.4.3 reads it, so a rotation demonstrates nothing (critique C22) |
+| `LIVE_SERVER_SECRET_KEY` | Not worth rotating | Nothing in Plane v1.4.3 reads it, so a rotation demonstrates nothing |
 | `RABBITMQ_PASSWORD` | No script. Separate procedure | The broker's user must change with the value |
 | `SILO_ACCESS_KEY`, `SILO_SECRET_KEY` | No script. Separate procedure | Silo root credentials and every consumer must change together |
 | Infisical `ENCRYPTION_KEY`, `AUTH_SECRET`, DB password | No procedure | Secret zero, in `.local/secret-zero/`. Losing `ENCRYPTION_KEY` loses all secrets |
