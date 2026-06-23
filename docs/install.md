@@ -33,9 +33,12 @@ Names and ordering come from the binding [platform contract](platform-contract.m
 message in `prereqs.sh`. A Git identity is needed too, because `make promote` and `make rollback` commit.
 
 The platform was built on `darwin_arm64`.
-Other platforms have install paths, and no run of `make setup` or `make up` is recorded on them. All that has run on Linux is
-`scripts/install-tools.sh`, for a few tools, on GitHub's `ubuntu-24.04-arm` and `ubuntu-24.04` runners
+Other platforms have install paths, and no run of `make setup` or `make up` is recorded on them. Only parts have run on Linux:
+the CI scripts and `scripts/install-tools.sh` for a few tools, on GitHub's `ubuntu-24.04-arm` and `ubuntu-24.04` runners
 ([log](evidence/ci/ci-4-20261105T053955Z-run-41975430939.log)). Treat a full install on Linux as untested.
+
+On 2026-11-05T06:15Z `scripts/prereqs.sh` failed on the build laptop for disk alone, with 13 GiB free against the 25 GiB minimum
+(`.local/evidence-raw/INST-3-20261105T061554Z.txt`, unpublished). A clean install there needs space freed first.
 
 ### Resource use
 
@@ -49,6 +52,7 @@ conditions and the rest.
 | Docker VM used, highest sampled | 10.49 GiB | The same file, 2026-11-04T23:23:42Z, right after a change replaced the Argo CD pods. The smoke tests topped at 9.87 GiB and the drills at 9.90 GiB |
 | Swap used, highest | 0.60 GiB of 2 GiB | The same file |
 | Host disk growth | 19.5 to 24.8 GiB, estimate | Image sizes summed from registry layer metadata (8.56 GiB unpacked), plus estimates for volumes, logs, build bases, caches and tools |
+| Disk on the running platform | 17.75 GiB, a sum of sizes | 2026-11-05T02:01Z: the node's `/var`, the local services' volumes and the node image (`.local/evidence-raw/dr-disk-1.txt`, unpublished). Read while other work was building, not a before and after of a clean install |
 
 Research recommended 14 GiB of Docker memory with unrelated containers stopped, and 16 GiB if they must keep running. So far, 14 GiB has
 held with them running. That has not been tried under load.
@@ -265,7 +269,7 @@ to supply those credentials yourself.
 |---|---|---|
 | `make backup` | Backs up to `.local/backups/<env>/<id>/` through a Job | `ENV=dev`, `prod-sim`, `infisical` or `all`, `KEEP=<count>`, `ALLOW_BACKUP_DURING_RESTORE=yes` |
 | `make restore` | Restores a backup into the environment that took it. Refuses to overwrite a non-empty environment without `CONFIRM=yes` | `ENV`, `BACKUP=<backup-id or latest>`, `CONFIRM=yes` |
-| `make restore-clean` | Brings the whole platform back into a clean environment, Infisical first. Exits 2 if a proof could not run or a person must sign in. NOT RUN end to end | `BACKUP=<infisical-backup-id or latest>`, `PLAN_ONLY=yes`, `ENVS=dev`, `ALLOW_LOW_DISK="<reason>"`, `ALLOW_NO_SENTINEL=yes`, `ALLOW_NEWER_INFISICAL_BACKUP=yes`, `ALLOW_RESUME_OVERWRITE=yes` |
+| `make restore-clean` | Brings the whole platform back into a clean environment, Infisical first. The script exits 2 if a proof could not run or a person must sign in, and `make` exits 2 on any failure. NOT RUN end to end | `BACKUP=<infisical-backup-id or latest>`, `PLAN_ONLY=yes`, `ENVS=dev`, `ALLOW_LOW_DISK="<reason>"`, `ALLOW_NO_SENTINEL=yes`, `ALLOW_NEWER_INFISICAL_BACKUP=yes`, `ALLOW_RESUME_OVERWRITE=yes` |
 | `make rotate` | Rotates the Postgres credential through Infisical. NOT RUN | `ENV=dev`, `RESUME=yes` or `ROLLBACK=yes`. Prod-sim also needs `CONFIRM=yes` |
 
 Details are in [data-operations.md](data-operations.md).
@@ -287,7 +291,7 @@ Details are in [data-operations.md](data-operations.md).
 | Target | What it does | State on 2026-11-05 |
 |---|---|---|
 | `make drill-pod-restart ENV=dev` | Restarts each StatefulSet pod and proves the data survives | Dev read PASS on the final images, 07:04Z (`.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log`, unpublished). Published: PASS in dev and in prod-sim, on upstream images, 2026-11-04. Not run on prod-sim on the final images. See [validation.md](validation.md) |
-| `make drill-failed-deploy` | A bad image reaches dev through Git, the rollout refuses it, and a revert restores it. Dev only | Read PASS on the final images, 06:23Z (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`, unpublished). The old pod kept serving, and no alert fired: `ArgoSyncFailed` was pending for 13m45s, against its 15m, when the revert closed the operation |
+| `make drill-failed-deploy` | A bad image reaches dev through Git, the rollout refuses it, and a revert restores it. Dev only | Read PASS on the final images, 06:23Z (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`, unpublished). The old pod kept serving, and no alert fired: `ArgoSyncFailed` stayed pending for 13m45s against its 15m, because the revert ended it first |
 | `tests/drills/failed-migrator.sh` | A backend image whose migrator exits 1 reaches dev through Git, the sync stops at wave 2, wave 3 does not move, and a revert restores it. Dev only. No make target | Read PASS on the final images, 06:49Z (`.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log`, unpublished) |
 | `make drill-clean-restore CONFIRM=yes` | Takes a backup, **deletes the cluster**, restores everything and proves it. `PLAN_ONLY=yes` stops before the delete | NOT RUN for the delete and restore. `PLAN_ONLY=yes` has run ([dr-drill-planonly-1.txt](evidence/runs/dr-drill-planonly-1.txt)) |
 | `make drill-clean-restore-harness` | The order and refusals of a clean restore, with `kubectl`, `kind`, `docker`, Terraform and the API stubbed. Touches no cluster and proves no platform | Ran on stubs ([dr-harness-stubbed-1.txt](evidence/runs/dr-harness-stubbed-1.txt)). Later runs are in `.local/evidence-raw/`, unpublished |
