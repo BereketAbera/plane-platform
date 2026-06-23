@@ -19,7 +19,7 @@ code on 2026-11-05, and [section 14](#14-changes-to-this-contract) lists what th
 | Plane chart | `plane-ce` 1.8.6, `https://helm.plane.so/`, tgz sha256 `c70244eefa7dfa94e8636048fe4032640999c7d4e265b1fec68d13060cf70e4f` |
 | Helm release name | `plane` in both environments, so object names match and one patch set fits both |
 | Distinct product name | **Wayline**, a customized Plane Community Edition deployment. Never present it as an original product |
-| Host-only state | `.local/` (gitignored): `kubeconfig`, `kind-cluster.yaml`, `git/`, `backups/`, `secret-zero/`, `terraform/`, `rendered/`, `evidence-raw/`, `evidence-scrub-values`, `restore-clean.state`, `test-accounts.env`, `test-sentinel-<env>.json`, `kubeconform-schemas/`, `trivy-cache/`. Build output goes to `.build/`, also gitignored |
+| Host-only state | `.local/` (gitignored): `kubeconfig`, `kind-cluster.yaml`, `git/`, `backups/`, `secret-zero/`, `terraform/` (with `terraform/local.stale-<time>` once `make up` has moved a lost cluster's state aside), `rendered/`, `evidence-raw/`, `evidence-scrub-values`, `publishes.log`, `restore-clean.state`, `test-accounts.env`, `test-sentinel-<env>.json`, `kubeconform-schemas/`, `trivy-cache/`. Build output goes to `.build/`, also gitignored |
 
 ## 2. Namespaces
 
@@ -82,7 +82,8 @@ also allowed until then, was removed in `2d77243`.
 `172.16.0.0/12` with no `ipStrategy`, so Traefik reads the socket address and not a header. Traefik refuses a Middleware from
 another namespace, so `monitoring`, `argocd` and `infisical` each hold a copy. A pod arrives from `10.244.0.0/16` and gets 403.
 `policy/plane.rego` refuses a route that does not name the Middleware if it uses one of these hosts or their Services, or sits in
-one of those namespaces. It also refuses a TCP or UDP route beside or to an internal UI, and a Middleware of that name that admits
+one of those namespaces, and a blank, null or missing namespace counts as one of those, because Argo CD places such a route in its
+Application's destination. It also refuses a TCP or UDP route beside or to an internal UI, and a Middleware of that name that admits
 anything else. `tests/routes/internal-routes.sh` runs both sides. This is a source-address check, not a login.
 
 CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to
@@ -109,11 +110,13 @@ Rule: if `git grep` finds the same resource under two owners, it is a bug. CI ch
 - **Argo CD source:** `git://plane-git/plane-platform.git`, branch `main`. `plane-git` is a read-only
   container on the `kind` Docker network serving the bare repo at `.local/git/plane-platform.git`. The only
   writer is `make gitops-publish`, which pushes from the working repo to that path.
-- **GitHub** (`origin`, private `BereketAbera/plane-platform`) runs CI. Argo CD does not read it in Pass 1.
+- **GitHub** (`origin`, private `BereketAbera/plane-platform`) runs CI. Argo CD does not read it in Pass 1. `images.yml` publishes to
+  private GHCR packages under `ghcr.io/bereketabera/wayline/`, whose digests differ from the local build's, and opens a digest bump for dev.
+  Those images reach the cluster only if a merged bump is pulled, `scripts/ci/copy-to-local-registry.sh` copies them and `make gitops-publish` runs.
 - **Branded images:** `localhost:5001/wayline/{web,admin,space,backend}`, always referenced `@sha256:` by digest.
   `kind load` is forbidden: it is reported to fail on this host's containerd image store (kind #3795), and that was not reproduced
   here, because nothing calls it. `plane-dev` has run them since promotion `4f622e3` and `plane-prod-sim` since `0af8956`, both on
-  2026-11-05. `live` stays upstream's in both.
+  2026-11-05, and the final build from `84b63d9` since `1fc9fbe` and `9c8e098`. `live` stays upstream's in both.
 - **Upstream images:** by index digest from `docker.io`, never `artifacts.plane.so`. Pulls go through
   the pull-through caches declared in `infrastructure/kind/containerd-certs.d/`.
 - **Plane manifests are rendered and committed.** `helm/plane/` holds the Kustomize overlay over the vendored
@@ -124,13 +127,19 @@ Rule: if `git grep` finds the same resource under two owners, it is a bug. CI ch
 - **Promotion:** `make promote ENV=dev` or `make promote ENV=prod-sim`. Prod-sim accepts only a digest recorded for dev under
   the same image (`scripts/ci/check-promoted-digests.sh`), refuses unless `plane-dev` is Synced and Healthy with that digest in a
   ready container (`scripts/lib/dev-check.sh`), and takes a Postgres dump first. For a prod-sim digest that arrives through a merged
-  pull request, `make gitops-publish` repeats the `plane-dev` check and the dump. It does not run `check-promoted-digests.sh`: that
-  runs in `scripts/promote.sh` and in CI, and a check in CI cannot block a merge on this plan. `OVERRIDE_DEV_CHECK="<reason>"` goes
+  pull request, `make gitops-publish` repeats the `plane-dev` check and the dump. It runs `check-promoted-digests.sh` only as a warning,
+  because rollback uses that path. That check blocks in `scripts/promote.sh`, and a check in CI cannot block a merge on this plan.
+  A changed prod-sim line that is not an image also gets a warning, and goes out. `OVERRIDE_DEV_CHECK="<reason>"` goes
   past the `plane-dev` check and is logged, `SKIP_BACKUP=yes` skips the dump, and with no cluster in reach the check is skipped and
   the commit message says so.
-- **Rollback:** `make rollback ENV=<env>` is a `git revert` and a publish with `SKIP_BACKUP=yes` and `SKIP_DEV_CHECK`, so it needs
-  neither a healthy `plane-dev` nor a working backup. Prod-sim gets one best-effort dump first, limited to 300s. Images roll back,
-  and schemas do not.
+- **Rollback:** `make rollback ENV=<env>` is a `git revert` and a publish. For prod-sim the publish has `SKIP_BACKUP=yes` and
+  `SKIP_DEV_CHECK`, so it needs neither a healthy `plane-dev` nor a working backup, and prod-sim gets one best-effort dump first, limited
+  to 300s. Dev needs neither, because a publish that moves no prod-sim image asks the cluster nothing. A publish is all of `main`, so a
+  rollback of dev stops and names any change on `main` that would move a prod-sim image and has not gone out, and `OVERRIDE_DEV_CHECK`
+  goes on. A rollback of prod-sim stops the same way on anything else waiting under a promotion that never reached Argo CD. A conflict
+  in a rendered file is settled by rendering, and a conflict anywhere else stops the rollback. Images roll back, and schemas do not. The
+  output names the dump to restore, from what `make gitops-publish` records, or says there is nothing to restore if the promotion never
+  went out.
 
 ## 6. Sync waves
 
@@ -202,9 +211,10 @@ after the bootstrap for all 14 Applications, each Synced and Healthy.
 | `plane-dev` | `plane-dev` only | Namespaced workloads and Infisical CRs. No NetworkPolicy, no cluster-scoped resources |
 | `plane-prod-sim` | `plane-prod-sim` only | Same as `plane-dev` |
 
-`policy/gitops.rego` refuses a Plane Application under any other project, any Application under project `default` or none, and
-rendered manifests of an environment under any project but its own. That check runs in CI, and nothing makes it block a merge on
-this GitHub plan.
+`policy/gitops.rego` refuses a Plane Application under any other project, any Application under project `default` or none,
+rendered manifests of an environment under any project but its own, and a document that wraps others under any kind, because conftest
+reads only the outer one. That check runs in CI, and nothing makes it block a merge on this GitHub plan. `scripts/ci/lib-manifests.sh`
+also refuses a `.yml`, `.json` or `.jsonnet` file in a plain directory Argo CD reads, because no check would read it.
 
 Both Plane environments sync automatically with self-heal. The prod-sim control point is the Git change,
 not the sync button. A drill that changes live objects behind Git's back must pause self-heal first, or Argo CD reverts the change within
@@ -296,7 +306,7 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
 `ci`, `images`, `gitops-publish`, `gates`, `test-e2e`, `test-netpol`, `test-infisical`, `test-routes`, `test-separation`, `test-alert`,
 `test-load`, `scan-images`, `publish-evidence`, `drill-failed-deploy`, `drill-pod-restart`, `drill-clean-restore`,
 `drill-clean-restore-harness`, `wayline-upgrade-check`, `wayline-upstream-check`.
-`make help` lists them. Options are passed as `make <target> NAME=value`.
+`make help` lists them. Options are passed as `make <target> NAME=value`. `tests/drills/failed-migrator.sh` has no target and runs directly.
 
 - `make down` stops the cluster and **keeps all data**. `make up` resumes it.
 - `make up` is idempotent, so it is also how to continue after a failure. It refuses uncommitted changes under
@@ -308,10 +318,12 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
   `.local/terraform/local` and keeps backups, secret zero and `.local/terraform/infisical`, because a clean restore needs them.
   `PURGE=yes` also removes the local services and their volumes.
 - `make restore` refuses to overwrite a non-empty environment without `CONFIRM=yes`. `make restore-clean` brings the whole platform
-  back into a clean environment, Infisical first.
+  back into a clean environment, Infisical first. `scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2
+  when nothing failed but something could not run or a person has to act, which is not a pass. `scripts/restore.sh infisical` alone also has 3:
+  Infisical is back, and a person has to sign in to prove it. Through `make`, any of these but 0 is make's own exit 2, and make prints the script's.
 - Scripts that write to the cluster, a registry or the disk check free host disk through `guard_disk`, because the Docker VM
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
-  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB. `scan-images.sh`
+  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
   asks for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh` and `gitops-publish.sh`.
   `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it, so the first four
   still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
@@ -341,7 +353,8 @@ monitoring/                    dashboards, rules, blackbox config, alert sink (m
 policy/                        conftest rules
 tests/                         e2e/ smoke, gates/ day-1, drills/, load/, routes/ internal UIs, separation/ between environments,
                                rules/ promtool unit tests, network-policy-matrix.yaml
-scripts/                       entry points behind make targets; scripts/lib/common.sh is sourced by nearly all, scripts/ci/ holds CI's
+scripts/                       entry points behind make targets; scripts/lib/common.sh is sourced by nearly all, scripts/lib/up-checks.sh holds
+                               what up.sh, restore.sh and the clean-restore drill refuse on, scripts/ci/ holds CI's
 docs/                          adr/, runbooks/, evidence/{runs,ci,security,branding}
 .github/workflows/             thin workflows that call the same scripts as make targets
 ```
@@ -379,3 +392,11 @@ Each line settles a place where the code and this file disagreed, by changing th
 | 2026-11-04 | 10 | Quota 2732Mi, 7984Mi, 24 pods, with the exporters budgeted. It was 2704Mi, 7904Mi, 22 pods | `bc8bb91`, [quota-budget-1.txt](evidence/runs/quota-budget-1.txt) |
 | 2026-11-05 | 11 | `guard_disk` is not in every script, on purpose, and the target list is complete | `scripts/`, `Makefile` |
 | 2026-11-05 | 11 | A new cluster's disk checks take `ALLOW_LOW_DISK`, and the 10 GiB floor does not | `1fb4707`, `scripts/lib/up-checks.sh` |
+| 2026-11-05 | 1 | A lost cluster's state moves aside to `terraform/local.stale-<time>`, and each publish is recorded in `publishes.log` | `1fb4707`, `4664cbd` |
+| 2026-11-05 | 3, 7 | A blank or null namespace reads as none, and a document that wraps others is refused | `c32d27c`, `dc200f2`, `policy/` |
+| 2026-11-05 | 5 | `make gitops-publish` warns about a digest `make promote` would refuse and about prod-sim lines that are not images, and goes on | `cf55d3d`, `7ca9ace`, `scripts/gitops-publish.sh` |
+| 2026-11-05 | 5 | A rollback of dev needs no dump or check, and stops on an unpublished prod-sim change. A rollback names the dump from the publish record | `7ca9ace`, `4664cbd`, `scripts/rollback.sh` |
+| 2026-11-05 | 7 | CI refuses a file only Argo CD would read in a plain directory | `010cdd5`, `scripts/ci/lib-manifests.sh` |
+| 2026-11-05 | 11 | `MIN_FREE_DISK_GIB` below the default is logged | `e1c12a1`, `scripts/lib/common.sh` |
+| 2026-11-05 | 11 | `scripts/restore.sh` has a documented exit 2, and `failed-migrator.sh` has no make target | `scripts/restore.sh`, `1c6adbe` |
+| 2026-11-05 | 13 | `scripts/lib/up-checks.sh` is named | `scripts/lib/up-checks.sh` |
