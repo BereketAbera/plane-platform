@@ -251,7 +251,7 @@ kubectl -n argocd get applications -o custom-columns='NAME:.metadata.name,SYNC:.
 
 All of them should read `Synced`, `Healthy`, `Succeeded`, and automated sync should be on everywhere. `ArgoAppOutOfSync`, `ArgoAppDegraded` and `ArgoSyncFailed` should resolve.
 
-With a refresh asked, the sync starts within about a second of the annotation. On 2026-11-05 in dev, each with no retry open: four images took 67s from the publish of a rollback to `Synced` and `Healthy`, and 64s for the promotion after it (`.local/evidence-raw/DEP-2-20261105T064032Z-timeline.txt`). Each run on record asked for a refresh (`.local/evidence-raw/argocd-refresh-reasons-1.txt`), so the wait with no refresh, and a change of one digest with no retry open, have not been timed.
+With a refresh asked, the sync starts within about a second of the annotation. On 2026-11-05 in dev, each with no retry open: four images took 67s from the publish of a rollback to `Synced` and `Healthy`, and 64s for the promotion after it (`.local/evidence-raw/DEP-2-20261105T064032Z-timeline.txt`). The controller logged a refresh asked for by annotation at each run on record (`.local/evidence-raw/argocd-refresh-reasons-1.txt`), although `make promote` and `make rollback` do not ask for one, and the log does not say who did. So the wait with no refresh, and a change of one digest with no retry open, have not been timed.
 
 [[MEASURE: seconds from gitops-publish to Synced and Healthy for one digest change, with refresh and without]]
 
