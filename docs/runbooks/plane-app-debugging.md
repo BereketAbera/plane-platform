@@ -216,7 +216,7 @@ make test-e2e ENV=dev
 
 Check the Platform overview dashboard: all four probes green for the environment. Then check that relevant alerts have resolved in `http://alertmanager.localhost`.
 
-On the final images on 2026-11-05, `make test-e2e ENV=dev` read 45 PASS and 1 SKIP, and `make test-e2e ENV=prod-sim` read 44 PASS and 1 SKIP (`.local/evidence-raw/smoke-dev-20261105T053137Z-52811.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`, not yet published). The skip is `branding-fresh-install`, which needs a clean database. They drive the API and the WebSocket, not a browser.
+On the final images on 2026-11-05, `make test-e2e ENV=dev` read 45 PASS and 1 SKIP, and `make test-e2e ENV=prod-sim` read 44 PASS and 1 SKIP (`.local/evidence-raw/smoke-dev-20261105T053137Z-52811.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`, not yet published). The skip is `branding-fresh-install`, which needs a clean database. Dev read the same at 07:07Z, after the drills had moved it away and back (`.local/evidence-raw/smoke-dev-20261105T070735Z-94252.json`). They drive the API and the WebSocket, not a browser.
 
 ## What not to do
 
