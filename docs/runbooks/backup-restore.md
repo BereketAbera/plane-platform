@@ -3,6 +3,8 @@
 Take a backup, bring data back, and handle the failures in between. For wider scenarios, such as losing the whole cluster, see
 [Disaster recovery](../disaster-recovery.md). For the design, see [Data operations](../data-operations.md).
 
+**Status, 2026-11-05.** Backups of all three have run, and Infisical has been restored in place. `make restore` of a Plane environment has not run against its real database and bucket. Each `VERIFY` or `MEASURE` marker here waits on that run. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published.
+
 Preamble for raw commands:
 
 ```bash
@@ -18,7 +20,8 @@ NS=plane-dev
 | "Last backup" stat is old or empty | Nothing runs on a schedule. Backups happen when a script takes them. The stat also empties when a Job's 7-day TTL expires |
 | Data is wrong or missing | Decide whether to restore |
 | `the Job finished but ... manifest.json is not on the host` | The kind mount of `.local/backups` is not what the Job wrote to |
-| `has had a sync running for 180s` from `make restore` | The Application is in a retry loop. See below |
+| `has had a sync running for 180s, so terminating it` from `make restore` | The Application was in a retry loop, and the script ended that sync to go on. See below |
+| `is still Running after 300s, and terminating its sync did not end it` | The script gave up. See below |
 
 ## Back up
 
@@ -31,7 +34,7 @@ make backup ENV=all
 ls -1 .local/backups/dev/
 ```
 
-There is no CronJob. Backups run when you run them, and also inside three commands: `make promote ENV=prod-sim`, a `make gitops-publish` that changes a prod-sim image, and `make destroy`.
+There is no CronJob. Backups run when you run them, and also inside these commands: `make promote ENV=prod-sim`, a `make gitops-publish` that changes a prod-sim image, `make destroy`, `make drill-clean-restore`, and, for Infisical, a `make rotate` that finished.
 
 | Part | Method |
 |---|---|
@@ -39,7 +42,8 @@ There is no CronJob. Backups run when you run them, and also inside three comman
 | Objects | `rclone copy` from Silo, then `rclone check --download`. Plane only |
 | Keys | Only a truncated hash of `SECRET_KEY` or `ENCRYPTION_KEY` in the manifest, never the key |
 | Excluded rows | `api_activity_logs`, `webhook_logs`, `email_notification_logs`. Schema is kept |
-| Retention | Newest 3 for dev, 5 for others. `KEEP=<n>` overrides |
+| Retention | Newest 3 for dev, 5 for others. `KEEP=<n>` overrides. Plane also keeps, past that, the newest backup that holds users. Infisical counts only complete recovery sets, and runs its retention from the host once this backup's set is complete |
+| Recovery set | Infisical: `recovery/terraform.tfstate`, and `recovery/set.json`, which names secret zero by sha256. Plane: that environment's test accounts and sentinel, and object Content-Types. Written from the host, after the Job |
 | Location | `.local/backups/<env>/<id>/`, on the host, so it survives cluster deletion |
 
 Dumps hold password hashes and plaintext API tokens, so `.local/backups` is kept at 0700. It is on one disk on one laptop. No off-host copy exists in Pass 1.
@@ -58,12 +62,14 @@ df -h .
 
 | Log or state | Cause | Fix |
 |---|---|---|
-| Permission denied under `/backups` | UID 70 cannot write through VirtioFS. `backup.sh` sets the environment folder to 0777, and this mapping is the first place to look. [[VERIFY: UID 70 can write .local/backups/<env> from a pod through VirtioFS]] | Check the mode. Do not widen the parent, which must stay 0700 |
+| Permission denied under `/backups` | UID 70 cannot write through VirtioFS. `backup.sh` sets the environment folder to 0777, and with that a Job as UID 70 writes there (`dr-backup-modes-1.txt`), so this mapping is the first place to look | Check the mode. Do not widen the parent, which must stay 0700 |
 | `backup already running in <ns>` | Another Job is active | Wait, or delete it if it is truly stuck |
 | `PVC backups is missing` | `backup-storage` has not synced | See [Argo sync stuck](argo-sync-stuck.md) |
 | Connection refused or timeout to `plane-pgdb` | Postgres is down, or NetworkPolicy dropped the Job. The Job needs label `app.kubernetes.io/component: backup` | Check the pod and the policy |
 | `exceeded quota` | The Job would pass the namespace's pod or memory quota, typically during a rollout | Wait for the rollout to finish |
 | `*.partial` folder left behind | Backup died midway. A final name appears only after all checks. Partials older than a day are removed by the next run | Safe to ignore |
+| `a clean restore is under way` | That environment is empty or partly restored, and a backup of it could push out the one that holds the data | Finish the restore. `ALLOW_BACKUP_DURING_RESTORE=yes` backs it up anyway |
+| `its recovery set is not whole` | Infisical's dump is good, but a file the set names, or the API, was missing. Retention did not run | An in-place restore can use this dump, and `make restore-clean` refuses it. Fix what the warnings name and back up again |
 
 ## Restore
 
@@ -73,6 +79,7 @@ df -h .
 make restore ENV=dev BACKUP=latest
 make restore ENV=dev BACKUP=20261104T120000Z CONFIRM=yes
 make restore ENV=infisical BACKUP=latest CONFIRM=yes
+INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh   # after Infisical: refreshes the CA and identity Secrets, writes no value
 ```
 
 `CONFIRM=yes` is required to overwrite an environment that holds users or objects. Refusals all come before anything changes:
@@ -84,6 +91,10 @@ make restore ENV=infisical BACKUP=latest CONFIRM=yes
 | Backup from a newer Plane than is running | Django cannot migrate backwards. Roll the image forward or back first |
 | `SECRET_KEY` fingerprint differs | Encrypted rows would decrypt silently to nothing. `ALLOW_SECRET_KEY_MISMATCH=yes` accepts that loss, and the script then exits non-zero even though data is back |
 | Target holds data, no `CONFIRM=yes` | Overwrite guard |
+| The backup records rows marked uploaded with no object | The restore's GATE2 would refuse it with the data already replaced, and has no override. Choose another backup |
+| Infisical: a dump from a newer version than is running | Its migrations go forward only, so that server would refuse to start. `ALLOW_NEWER_INFISICAL_BACKUP=yes` goes past it |
+| Infisical: a dump older than the last rotation or manual change | The operators would render a password Plane's Postgres no longer takes. `ALLOW_STALE_PLANE_SECRETS=yes` goes past it |
+| Infisical: no token or password here that could log in afterwards | Nothing could prove the restore. `ALLOW_NO_ADMIN_TOKEN=yes` goes past it, as when its Postgres is lost, and it may stop with exit 3 and sign-in steps |
 
 Then, for a Plane environment:
 
@@ -97,9 +108,15 @@ Then, for a Plane environment:
 8. Prove: encrypted sentinel, no empty decrypts, sentinel work item and attachment through `tests/e2e/smoke.py`, a worker running a new job, and green probes.
 9. Resume auto-sync, also on failure.
 
-### If it stops with "has had a sync running for 180s"
+For Infisical it pauses auto-sync on `infisical` only, stops the server, restores into a second database and checks its row counts, swaps it in with two renames in one transaction, installs the Terraform state and machine file that go with it, flushes Redis, starts the server, makes sure something here can log in, and proves it. In place it took 51 s to 71 s, five times, and no Plane workload moved (`dr-inplace-restore-3.txt`).
 
-Every Application has `retry.limit: -1`, so an Application whose sync is failing stays in phase `Running`, and `argo_wait_idle` gives up. That is the exact moment you are likely to want a restore. Terminate the operation first, then re-run:
+If the client ends while a restore Job runs, by Ctrl-C, a closed terminal or a kubectl error, it removes that Job first. If it cannot, the server or apps stay down and auto-sync stays paused, and it prints what to run. That has run only on stubs (`dr-stop-sweep-1.txt`).
+
+### If it says "has had a sync running for 180s"
+
+Every Application has `retry.limit: -1`, so an Application whose sync is failing stays in phase `Running`. That is the exact moment you are likely to want a restore. So `argo_wait_idle` in `monitoring/ops/lib.sh` terminates the operation at 180 s and goes on, and gives up at 300 s if that did not end it. The script's path has run only on a stub ([test_lib-stub-1.txt](../evidence/runs/test_lib-stub-1.txt)). On real throwaway Applications, Terminating ended a running hook and a retry backoff, and neither restarted by itself 40 s later. A newer commit then synced ([argocd-terminate-2.txt](../evidence/runs/argocd-terminate-2.txt)). So after this, Argo CD will not retry that revision until something changes.
+
+If it gives up, look at the phase. The same patch by hand:
 
 ```bash
 kubectl -n argocd patch application plane-dev --type merge \
@@ -107,11 +124,9 @@ kubectl -n argocd patch application plane-dev --type merge \
 kubectl -n argocd get application plane-dev -o jsonpath='{.status.operationState.phase}{"\n"}'
 ```
 
-[[VERIFY: the Terminating patch ends a retrying operation, and make restore then proceeds; or scripts now do this themselves]]
-
 ### On a new cluster
 
-Secret zero in `.local/secret-zero/` must survive, or the Infisical dump cannot be read. The order is in [Clean rebuild](clean-rebuild.md). Re-run bootstrap after restoring Infisical, because Kubernetes Auth stores the old cluster's CA.
+Use `make restore-clean BACKUP=latest`, not `make restore`. Secret zero in `.local/secret-zero/` must survive, or the Infisical dump cannot be read. The order is in [Disaster recovery](../disaster-recovery.md#full-restoration-into-a-clean-environment), and [Clean rebuild](clean-rebuild.md) has the commands. It has run only as far as its plan, and against stubs.
 
 ## Confirm
 
@@ -120,15 +135,17 @@ jq '{result, failed: [.steps[] | select(.status != "PASS")]}' "$(ls -1t .local/e
 make test-e2e ENV=dev
 ```
 
-Restore evidence has one line per step, labelled PASS, FAIL or NOT RUN. A `NOT RUN` means a proof could not be made, usually because the backup was taken before a sentinel existed. It does not mean the proof passed, so do not report it as a success.
+Restore evidence has one line per step, labelled PASS, FAIL or NOT RUN. A `NOT RUN` means a proof could not be made, usually because the backup was taken before a sentinel existed. It does not mean the proof passed, so do not report it as a success. `scripts/restore.sh` exits 2 for one, except `proof-probes`. It exits 1 on a failure, and `restore.sh infisical` exits 3 when Infisical is back and a person has to sign in. Through `make`, any of these is make's own exit 2, and make prints which.
 
 [[VERIFY: make restore ENV=dev brings back the sentinel work item and attachment and result is PASS]]
 
-[[VERIFY: make restore ENV=infisical returns /api/status 200 and Plane Secrets still sync]]
+`make restore ENV=infisical` returned `/api/status` 200 in all five runs, with `proof-values` PASS. Afterwards `make test-infisical` exited 0 with 118 PASS lines, including each rendered Secret, and all 14 Applications read Synced and Healthy (`dr-inplace-restore-3.txt`, `dr-after-restores-1.txt`). The operators kept syncing on the same database contents, so this does not show a change of value reaching a Secret after a restore.
 
 [[VERIFY: restore.sh refuses a backup whose SECRET_KEY fingerprint differs]]
 
-[[MEASURE: backup duration and size per environment]]
+Backup duration and size: dev 15 s and 78 MiB, prod-sim 11 s with no objects and 51 MiB with 61, Infisical 22 s and 6.0 MiB. See [Data operations](../data-operations.md#retention) for what each rests on.
+
+Restore duration: Infisical 51 s to 71 s in place. Plane has not been timed.
 
 [[MEASURE: restore duration per environment, stop of apps to probes green]]
 
