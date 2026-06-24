@@ -213,8 +213,8 @@ after the bootstrap for all 14 Applications, each Synced and Healthy.
 
 `policy/gitops.rego` refuses a Plane Application under any other project, any Application under project `default` or none,
 rendered manifests of an environment under any project but its own, and a document that wraps others under any kind, because conftest
-reads only the outer one. That check runs in CI, and nothing makes it block a merge on this GitHub plan. `scripts/ci/lib-manifests.sh`
-also refuses a `.yml`, `.json` or `.jsonnet` file in a plain directory Argo CD reads, because no check would read it.
+reads only the outer one, and `policy/charts.rego` refuses the same through a chart's values. That check runs in CI, and nothing makes it block a merge on this GitHub plan. `scripts/ci/lib-manifests.sh`
+also refuses a `.yml`, `.json` or `.jsonnet` file in a plain directory Argo CD reads, because no check would read it, and any other `*.yaml` beside a rendered `manifests.yaml`.
 
 Both Plane environments sync automatically with self-heal. The prod-sim control point is the Git change,
 not the sync button. A drill that changes live objects behind Git's back must pause self-heal first, or Argo CD reverts the change within
@@ -396,7 +396,7 @@ Each line settles a place where the code and this file disagreed, by changing th
 | 2026-11-05 | 3, 7 | A blank or null namespace reads as none, and a document that wraps others is refused | `c32d27c`, `dc200f2`, `policy/` |
 | 2026-11-05 | 5 | `make gitops-publish` warns about a digest `make promote` would refuse and about prod-sim lines that are not images, and goes on | `cf55d3d`, `7ca9ace`, `scripts/gitops-publish.sh` |
 | 2026-11-05 | 5 | A rollback of dev needs no dump or check, and stops on an unpublished prod-sim change. A rollback names the dump from the publish record | `7ca9ace`, `4664cbd`, `scripts/rollback.sh` |
-| 2026-11-05 | 7 | CI refuses a file only Argo CD would read in a plain directory | `010cdd5`, `scripts/ci/lib-manifests.sh` |
+| 2026-11-05 | 7 | CI refuses a file only Argo CD would read in a plain directory or beside a render, and a List through a chart's values | `010cdd5`, `40a2e3a`, `scripts/ci/lib-manifests.sh`, `policy/charts.rego` |
 | 2026-11-05 | 11 | `MIN_FREE_DISK_GIB` below the default is logged | `e1c12a1`, `scripts/lib/common.sh` |
 | 2026-11-05 | 11 | `scripts/restore.sh` has a documented exit 2, and `failed-migrator.sh` has no make target | `scripts/restore.sh`, `1c6adbe` |
 | 2026-11-05 | 13 | `scripts/lib/up-checks.sh` is named | `scripts/lib/up-checks.sh` |
