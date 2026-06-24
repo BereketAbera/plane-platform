@@ -2,7 +2,7 @@
 
 Postgres, Valkey, RabbitMQ and Silo in each Plane environment, where their bytes live, what a backup contains, and how to restore it.
 
-**Status, 2026-11-05.** Backups of dev, prod-sim and Infisical have run, and Infisical has been restored in place. A Plane restore into its real database and bucket has not run, and neither has a restore into a clean cluster. Each `VERIFY` or `MEASURE` marker left here waits on one of those runs, or on the load test or a rotation. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published.
+**Status, 2026-11-05.** Backups of dev, prod-sim and Infisical have run, and Infisical has been restored in place. A Plane restore into its real database and bucket has not run, and neither has a restore into a clean cluster. Each `VERIFY` or `MEASURE` marker left here waits on one of those runs, or on the load test. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published.
 
 These are single-replica services on a local kind node. There is no replication, no failover and no point-in-time recovery. "prod-sim" is a simulation, and sharing one node with dev is not equivalent to an independent production cluster.
 
@@ -166,7 +166,7 @@ make backup ENV=all
 | `make promote ENV=prod-sim`, unless `SKIP_BACKUP=yes` | prod-sim |
 | `make gitops-publish` when the diff changes a prod-sim image digest, unless `SKIP_BACKUP=yes` | prod-sim |
 | `make destroy CONFIRM=yes`, unless `SKIP_BACKUP=yes` | All three. A failed backup stops the delete |
-| `make rotate`, once a rotation finishes, unless `SKIP_BACKUP=yes` | Infisical. A failure there exits 3 with the rotation standing |
+| `make rotate`, once a rotation finishes, unless `SKIP_BACKUP=yes` | Infisical, as the dev rotation did on 2026-11-05 (`SEC-2-20261105T072331Z.txt`). A failure there exits 3 with the rotation standing |
 | `make drill-clean-restore CONFIRM=yes`, unless it names a backup and `SKIP_BACKUP=yes` | All three, before it deletes the cluster |
 
 ### Paths and layout
@@ -260,7 +260,7 @@ Dev keeps 3, prod-sim and Infisical keep 5, and `KEEP=<n>` overrides. Nothing ch
 
 Plane's retention runs in its backup Job. It keeps the newest `KEEP` finished backups and, past that, the newest one whose `rowcounts.tsv` counts users above 0, so backups of an empty environment cannot push out the last real one. Only folders with a final timestamped name and a manifest are removed. The "kept" branch has run only on BusyBox and stubs (`dr-backup-job-real-1.txt`, `dr-job-lines-busybox-2.txt`).
 
-Infisical's runs from the host, once the backup just taken has a complete recovery set, and only a complete set counts toward `KEEP`. A backup with no complete set stays while it is newer than the oldest set kept. On real folders it removed only what was past `KEEP` ([dr-backup-retention-1.txt](evidence/runs/dr-backup-retention-1.txt), `dr-retention-2.txt`, `dr-locks-1.txt`).
+Infisical's runs from the host, once the backup just taken has a complete recovery set, and only a complete set counts toward `KEEP`. A backup with no complete set stays while it is newer than the oldest set kept. On real folders it removed only what was past `KEEP` ([dr-backup-retention-1.txt](evidence/runs/dr-backup-retention-1.txt), `dr-retention-2.txt`, `dr-locks-1.txt`, `SEC-2-20261105T072331Z.txt`).
 
 `PlaneBackupFailed` fires on a failed backup Job, which stays around for 7 days. A later successful backup deletes it.
 
