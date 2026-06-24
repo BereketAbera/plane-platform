@@ -1,6 +1,6 @@
 # 0008. Scripted rotation, and `SECRET_KEY` is never rotated
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked. `scripts/rotate.sh` has been exercised against stubs only (`infisical/README.md`).
+**Status:** Accepted, 2026-11-04. Runtime validation pending where marked. `make rotate ENV=dev` ran for real on 2026-11-05 and ended PASS (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`, raw output that is not published yet). A stopped rotation has been exercised against stubs only (`infisical/README.md`).
 
 ## Context
 
@@ -48,15 +48,15 @@ The script compares `SECRET_KEY` before and after, and records whether it moved.
 
 ## Consequences
 
-- This is scripted rotation with an error window. It is not native, scheduled or per-pod credentials. The one replica restarts with a password Postgres may not accept yet. [[MEASURE: error window in seconds from the per-second probe during make rotate, for dev and prod-sim]]
+- This is scripted rotation with an error window. It is not native, scheduled or per-pod credentials. The one replica restarts with a password Postgres may not accept yet. In dev the per-second probe failed 39 of 62 times, over 60s from first to last failure (same log). [[MEASURE: error window in seconds from the per-second probe during make rotate, for dev and prod-sim]]
 - The role is a shared superuser, so rotation does not reduce what a leaked password can do while it is valid.
 - In-flight Jobs keep their old environment.
 - The journal holds both passwords on disk until the rotation finishes. It is inside `.local/secret-zero/`, mode 0600, and gitignored.
 - Changing `PG_PASSWORD` by hand in the Infisical UI does not change the role. Plane then fails at its next restart. Only the script keeps both sides together.
-- [[VERIFY: after make rotate ENV=dev the old password is rejected and the new one accepted over the pod IP]]
-- [[VERIFY: Plane uses a new database connection after rotation, shown by the anchor probe returning 404 does not exist]]
+- After `make rotate ENV=dev` the old password was refused and the new one accepted, by `psql` over the pod IP and by `psycopg` over the Service, while a random value was refused as the control. Before the rotation, the same checks accepted the old password (`.local/evidence-raw/SEC-2-20261105T072331Z-old-value.txt`).
+- Plane used a new database connection after that rotation. `scripts/rotate.sh` read the anchor route's 404, which needs a database login with what the pods now hold, and the running api, worker and beat pods no longer held the old value (the log above, and the same file).
 - [[VERIFY: SECRET_KEY is unchanged after rotation and instance configuration rows still decrypt]]
-- [[VERIFY: the operator's restart annotations do not cause an Argo CD self-heal loop during rotation]]
+- The operator's restart annotations caused no Argo CD self-heal loop in that rotation. `plane-dev` stayed Synced, its last sync operation stayed the one from 06:49:44 UTC, and workload generations stayed still for 20s after the rollout (`.local/evidence-raw/SEC-6-20261105T072331Z-application-watch.txt`).
 - [[VERIFY: a rotation stopped partway is recovered by RESUME=yes and by ROLLBACK=yes]]
 - **A leaked `SECRET_KEY` has no scripted response.** Handling it would mean generating a new key and re-entering the encrypted configuration rows. That procedure is not written or tested in Pass 1. See [known limitations](../known-limitations.md).
 - `SECRET_KEY` must match the database it was used with. A restored Plane database with a freshly generated key breaks instance configuration silently, so the two are restored as a matched set. See [disaster recovery](../disaster-recovery.md).
