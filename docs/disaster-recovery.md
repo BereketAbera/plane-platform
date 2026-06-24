@@ -2,7 +2,7 @@
 
 What fails, what survives, how to recover, and how to restore the whole platform into a clean environment.
 
-**Status, 2026-11-05.** The pod restart drill has run, backups have run, and Infisical has been restored in place. The destroying run has not: `make drill-clean-restore CONFIRM=yes` has never deleted a cluster, and no Plane environment has been restored into its real database and bucket. `make restore-clean` has run only as far as its plan on the live cluster, and against stubs. So the [clean restore](#full-restoration-into-a-clean-environment) is read from the scripts, backed by rehearsals on throwaway copies. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. This platform is local, production-inspired and single-node, and nothing here is a claim about any other environment.
+**Status, 2026-11-05.** The pod restart drill has run in both environments, backups have run, and Infisical has been restored in place. The destroying run has not: `make drill-clean-restore CONFIRM=yes` has never deleted a cluster, and no Plane environment has been restored into its real database and bucket. `make restore-clean` has run only as far as its plan on the live cluster, and against stubs. So the [clean restore](#full-restoration-into-a-clean-environment) is read from the scripts, backed by rehearsals on throwaway copies. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. This platform is local, production-inspired and single-node, and nothing here is a claim about any other environment.
 
 ## Principles
 
@@ -67,7 +67,7 @@ No RPO or RTO is promised. Few numbers exist yet, and nothing automates the inpu
 
 | Scenario | RPO by design | RTO | Evidence |
 |---|---|---|---|
-| Pod lost | Zero, the volume survives | Dev, final images, read every 3 s: Silo and Postgres about 9 s, RabbitMQ about 12 s, Valkey under 3 s. A signed-in request answered 500 for about 7 s during the Postgres round. Prod-sim's drill was not timed | PASS: `PERS-1-20261105T070358Z-timeline.txt`, `drill-pod-restart-dev-20261105T070414Z.log` |
+| Pod lost | Zero, the volume survives | Dev, final images, read every 3 s: Silo and Postgres about 9 s, RabbitMQ about 12 s, Valkey under 3 s. A signed-in request answered 500 for about 7 s during the Postgres round. Prod-sim's drill was not timed | PASS: `PERS-1-20261105T070358Z-timeline.txt`, `drill-pod-restart-dev-20261105T070414Z.log`, `drill-pod-restart-prod-sim-20261105T072331Z.log` |
 | `make down` then `make up` | Zero | [[MEASURE: seconds from make up to all Applications Healthy after make down]] | NOT RUN |
 | Node container lost | Age of last backup | [[MEASURE: time from cluster-up to verified restore after docker rm of the node]] | NOT RUN |
 | Infisical Postgres lost | Age of last Infisical backup | In place with the volume kept: 51 s to 71 s, with the server not answering for 39 s to 52 s. The operators' resync was not timed. [[MEASURE: time for make restore ENV=infisical, including operators resyncing]] | NOT RUN with the volume deleted. In place, PASS: `dr-inplace-restore-3.txt`, `dr-after-restores-1.txt` |
@@ -91,7 +91,7 @@ make drill-pod-restart ENV=dev
 
 The drill deletes each StatefulSet's pod in turn, checks each reattached the same claim, re-reads the sentinel written by `tests/e2e/smoke.py`, and creates a new work item to prove the async path after a broker restart.
 
-Dev passed on the final images on 2026-11-05 (`drill-pod-restart-dev-20261105T070414Z.log`). Prod-sim passed on upstream images on 2026-11-04 ([drill-pod-restart-prod-sim-20261104T235402Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)), after a failed run that stays as evidence ([drill-pod-restart-prod-sim-20261104T233500Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log)). On the final images the session's permission system refused the prod-sim drill, so it did not start (`PERS-2-20261105T061948Z.txt`). This shows data surviving a pod, not a volume.
+Both environments passed on the final images on 2026-11-05 (`drill-pod-restart-dev-20261105T070414Z.log`, `drill-pod-restart-prod-sim-20261105T072331Z.log`). On 2026-11-04, on upstream images, prod-sim also passed, after a failed run that stays as evidence ([drill-pod-restart-prod-sim-20261104T235402Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), [drill-pod-restart-prod-sim-20261104T233500Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log)). This shows data surviving a pod, not a volume.
 
 ### Scenario: node lost
 
@@ -135,7 +135,7 @@ make restore ENV=infisical BACKUP=latest CONFIRM=yes
 INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
 ```
 
-Plane's password check matters here. If `PG_PASSWORD` was rotated after this dump was taken, Infisical would hold the old value, the operator would write it to the Secret, and Plane would fail on its next restart. So the restore refuses that dump unless `ALLOW_STALE_PLANE_SECRETS=yes`, and `rotate.sh` refuses to run in that state. `make rotate` takes an Infisical backup when it finishes, so the newest dump holds the new value.
+Plane's password check matters here. If `PG_PASSWORD` was rotated after this dump was taken, Infisical would hold the old value, the operator would write it to the Secret, and Plane would fail on its next restart. So the restore refuses that dump unless `ALLOW_STALE_PLANE_SECRETS=yes`, and `rotate.sh` refuses to run in that state. `make rotate` takes an Infisical backup when it finishes, as it did in the dev rotation, so the newest dump holds the new value (`SEC-2-20261105T072331Z.txt`).
 
 The restore itself has run in place, five times, with the volume kept: Plane's pods, generations and Secrets did not move, and `make test-infisical` exited 0 afterwards (`dr-inplace-restore-3.txt`, `dr-after-restores-1.txt`). The same Job restored into a brand-new server on an empty database, in a throwaway namespace ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). Deleting the real volume has not run, and no Plane pod was restarted on purpose during an outage.
 
@@ -372,7 +372,7 @@ Recorded plainly, because each changes what a real recovery needs.
 | The sign-in steps by hand | `ia_print_sign_in_steps` | Their labels come from this image's frontend build, and nobody has clicked through them. The API calls behind a password login ran on the live instance | `dr-mint-1.txt` |
 | Images built here are in no backup | `plane-platform-local_registry-data` | A new machine, a lost `Docker.raw` or `PURGE=yes` loses them, and GHCR holds other digests | [Registry lost](#scenario-registry-lost) |
 | Terraform state lost with no Infisical backup | `.local/terraform/infisical`, `recovery/terraform.tfstate` | Bootstrap fails, because Terraform would create what the restored database already holds | Copy it from the newest Infisical backup. Otherwise import, or a fresh instance. [[VERIFY: an import path exists for every resource in infisical/terraform/main.tf]] |
-| A dump older than the last rotation | `SKIP_BACKUP=yes` on `make rotate`, or a backup that failed there | Restoring it in place gives Infisical a stale `PG_PASSWORD`, so `make restore` refuses it unless `ALLOW_STALE_PLANE_SECRETS=yes` | `make backup ENV=infisical`. No rotation has run yet |
+| A dump older than the last rotation | `SKIP_BACKUP=yes` on `make rotate`, or a backup that failed there | Restoring it in place gives Infisical a stale `PG_PASSWORD`, so `make restore` refuses it unless `ALLOW_STALE_PLANE_SECRETS=yes` | `make backup ENV=infisical` |
 | No off-machine copy | No script | Machine loss is total without a manual archive | [Before anything fails](#before-anything-fails) |
 | No scheduled backup, no backup-age alert | No CronJob, `PlaneBackupFailed` covers only failed Jobs | RPO unbounded | Run `make backup` deliberately |
 
