@@ -237,8 +237,9 @@ Git change, not the sync button.**
 A live change that differs from Git is reverted. The contract says this takes seconds. One edit has been timed: a NetworkPolicy
 was back about 6s after its Application's self-heal was switched back on
 ([traefik-nodeport-source-1.txt](evidence/runs/traefik-nodeport-source-1.txt)).
-The test on a Deployment was refused by the session's permission system on 2026-11-05 before it changed anything
-(`.local/evidence-raw/GITOPS-4-20261105T062155Z.txt`).
+The test on a Deployment has no result yet. On 2026-11-05 the first try was refused by the session's permission system before it changed anything
+(`.local/evidence-raw/GITOPS-4-20261105T062155Z.txt`). A second at 07:25Z, with the owner's approval, could not call `kubectl`, so nothing was scaled, and `plane-admin-wl` stayed at generation 12
+(`.local/evidence-raw/GITOPS-4-20261105T072541Z.txt`).
 [[MEASURE: time from a manual kubectl scale to self-heal reverting it]]
 
 Git polling has no webhook in Pass 1. A published commit is seen at the controller's next look. The chart's default is 120 seconds plus up to 60
