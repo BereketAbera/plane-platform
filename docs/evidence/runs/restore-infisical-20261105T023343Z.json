@@ -1,0 +1,69 @@
+{
+  "environment": "infisical",
+  "backup": "20261105T022627Z",
+  "started_at": "20261105T023343Z",
+  "result": "PASS",
+  "steps": [
+    {
+      "step": "checksums",
+      "status": "PASS",
+      "detail": "7 files match"
+    },
+    {
+      "step": "key-fingerprint",
+      "status": "PASS",
+      "detail": "ENCRYPTION_KEY matches the backup"
+    },
+    {
+      "step": "version",
+      "status": "PASS",
+      "detail": "backup v0.167.6, running v0.167.6"
+    },
+    {
+      "step": "overwrite-guard",
+      "status": "PASS",
+      "detail": "target holds 1 users and 0 objects, overwriting on CONFIRM=yes"
+    },
+    {
+      "step": "app-stopped",
+      "status": "PASS",
+      "detail": "infisical at zero with auto-sync paused"
+    },
+    {
+      "step": "postgres",
+      "status": "PASS",
+      "detail": "dump restored into a second database, row counts equal the backup, swapped in"
+    },
+    {
+      "step": "redis",
+      "status": "PASS",
+      "detail": "flushed, so no cache or queued job from before the restore survives"
+    },
+    {
+      "step": "proof-status",
+      "status": "PASS",
+      "detail": "/api/status answers 200 through Traefik"
+    },
+    {
+      "step": "server-downtime",
+      "status": "PASS",
+      "detail": "told to stop at 2026-11-05T02:33:53Z, answering by 2026-11-05T02:34:33Z, 40s"
+    },
+    {
+      "step": "proof-initialized",
+      "status": "PASS",
+      "detail": "the server reads the restored admin config"
+    },
+    {
+      "step": "admin-token",
+      "status": "PASS",
+      "detail": "the file this backup names, and the server accepts it"
+    },
+    {
+      "step": "proof-values",
+      "status": "PASS",
+      "detail": "every Plane secret decrypts to the value, version and id the backup recorded"
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,539 @@
+# date 2026-11-05T04:12:00Z, the flows with the 67 new scenarios run against the scripts as they were at a8bce12, before the fixes, in a scratch clone, so each failure is a finding reproduced or a message that did not exist yet. command: ./scripts/ci/test-promotion-flows.sh, with only that file replaced
+ ok promote-digest-under-another-image
+ ok promote-digest-never-recorded
+ ok promote-dev-healthy-and-running
+ ok promote-dev-out-of-sync
+ ok promote-dev-degraded
+ ok promote-dev-application-missing
+ ok promote-dev-running-another-digest
+ ok promote-dev-container-not-ready
+ ok promote-no-cluster-says-skipped
+ ok promote-override-is-logged
+ ok promote-override-unused-when-dev-is-fine
+ ok rollback-rerun-after-failed-publish
+ ok rollback-prod-sim-with-broken-backup
+ ok rollback-prod-sim-with-hung-backup
+ ok rollback-prod-sim-names-the-older-dump
+ ok rollback-prod-sim-skip-backup
+ ok rollback-prod-sim-past-a-later-change-beside-the-image
+ ok rollback-stops-on-a-conflict-in-the-overlay
+ ok rollback-dev-takes-no-dump
+ ok rollback-leaves-other-staged-files-alone
+ ok publish-warns-when-ahead-of-origin
+ ok publish-quiet-when-level-with-origin
+ ok publish-says-when-origin-is-unknown
+ ok publish-still-backs-up-prod-sim-change
+ ok publish-warns-when-a-shared-change-reaches-prod-sim
+ ok publish-warns-when-the-chart-reaches-prod-sim
+ ok publish-warns-when-only-prod-sim-changes
+ ok publish-warns-and-checks-a-mixed-push
+ ok publish-quiet-when-a-shared-change-renders-to-nothing
+ ok publish-quiet-when-only-dev-changes
+ ok publish-merged-promotion-dev-proven
+ ok publish-merged-promotion-dev-out-of-sync
+ ok publish-merged-promotion-dev-degraded
+ ok publish-merged-promotion-dev-application-missing
+ ok publish-merged-promotion-dev-running-another-digest
+ ok publish-merged-promotion-dev-container-not-ready
+ ok publish-merged-promotion-override-is-logged
+ ok publish-merged-promotion-refused-then-retried
+ ok publish-merged-promotion-no-cluster-says-skipped
+ ok publish-skip-backup-is-no-way-past-the-dev-check
+ ok publish-skip-dev-check-is-recorded
+ ok publish-prod-sim-not-deployed-needs-no-dev-check
+ ok publish-dev-change-needs-no-dev-check
+ ok promote-override-reaches-the-publish
+ ok rollback-prod-sim-with-unhealthy-dev
+ ok rollback-prod-sim-rerun-with-unhealthy-dev
+ ok make-passes-the-documented-options
+ ok promote-level-has-nothing-to-do
+ ok promote-four-images-through-make
+ ok promote-four-images-one-at-a-time
+ ok promote-four-images-each-must-run-in-dev
+ ok promote-four-images-each-must-be-recorded
+ ok promote-four-images-each-must-be-in-the-registry
+ ok promote-four-images-override-names-them-all
+ ok publish-merged-four-images-checks-each
+ ok rollback-four-images-together
+ ok drill-runs-to-a-pass
+ ok drill-failed-promotion-reverts-nothing-else
+ ok promote-refuses-a-terminating-pod
+ ok promote-refuses-a-pod-not-running
+ ok promote-refuses-a-ready-sibling
+ ok promote-refuses-the-failure-drill-digest
+ ok promote-stops-when-the-dump-fails
+ ok publish-stops-when-the-dump-fails
+ ok promote-prod-sim-needs-confirmation
+ ok rollback-prod-sim-needs-confirmation
+ ok promote-refuses-a-dirty-overlay
+ ok rollback-refuses-a-dirty-overlay
+ ok promote-refuses-off-main
+ ok rollback-refuses-off-main
+ ok promote-takes-a-whole-digests-file
+ ok promote-refuses-a-partial-digests-file
+ ok promote-refuses-a-malformed-digests-file
+ ok promote-checks-its-arguments
+ ok promote-refuses-an-ambiguous-image
+warn   expected: the reason
+warn promote-render-failure-puts-the-overlay-back FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    stub kustomize: failing as told
+warn   expected: the reason
+warn promote-commit-failure-puts-the-overlay-back FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 90b6d1b: promote(dev): plane-frontend aaaaaaaaaaaa
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 90b6d1b8144f to <tmp>/repo/.local/git/plane-platform.git
+warn   a command in the scenario itself failed, with status 128
+warn promote-waits-out-a-git-add FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    fatal: Unable to create '<tmp>/repo/.git/index.lock': File exists.
+    
+    Another git process seems to be running in this repository, e.g.
+    an editor opened by 'git commit'. Please make sure all processes
+    are terminated then try again. If it still fails, a git process
+    may have crashed in this repository earlier:
+    remove the file manually to continue.
+    fatal: Unable to create '<tmp>/repo/.git/index.lock': File exists.
+    
+    Another git process seems to be running in this repository, e.g.
+    an editor opened by 'git commit'. Please make sure all processes
+    are terminated then try again. If it still fails, a git process
+    may have crashed in this repository earlier:
+    remove the file manually to continue.
+warn   expected: a refusal
+warn   expected: the reason
+warn   expected: it says the overlay still holds it
+warn   expected: and the way out
+warn   expected: no commit
+warn promote-says-what-to-do-when-the-index-stays-held FAILED. Its last command printed:
+     ok dev already runs these digests, nothing to promote
+warn   expected: a refusal
+warn   expected: the reason
+warn   expected: no commit
+warn   expected: the edit is still there
+warn promote-rechecks-the-overlay-after-the-dump FAILED. Its last command printed:
+    ==> Promotion plan for prod-sim
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     ok 1 image(s) were recorded for dev under the same name
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    ==> Backing up prod-sim first, because rolling back an image does not roll back a migration
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed b7899e5: promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main b7899e56eb4d to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: held at the commit
+warn promote-holds-the-commit-lock-for-its-commit FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed b7c38e1: promote(dev): plane-frontend aaaaaaaaaaaa
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main b7c38e141ef1 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: held at the commit
+warn rollback-holds-the-commit-lock-for-its-commit FAILED. Its last command printed:
+    ==> Rolling back: 1dec056 promote(dev): plane-frontend aaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 9da46d6: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 9da46d69ad6a to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: it says what it waits for
+warn promote-waits-for-the-commit-lock FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed ed96617: promote(dev): plane-frontend aaaaaaaaaaaa
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main ed966170f087 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: it says what it waits for
+warn rollback-waits-for-the-commit-lock FAILED. Its last command printed:
+    ==> Rolling back: 82e4d41 promote(dev): plane-frontend aaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 2dde77b: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 2dde77b36008 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: a refusal
+warn   expected: the reason and the way out
+warn   expected: nothing moved
+warn promote-gives-up-on-a-commit-lock-left-behind FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 10fb5fd: promote(dev): plane-frontend aaaaaaaaaaaa
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 10fb5fd330fa to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: a refusal
+warn   expected: the reason and the way out
+warn   expected: nothing moved
+warn rollback-gives-up-on-a-commit-lock-left-behind FAILED. Its last command printed:
+    ==> Rolling back: fcbe5aa promote(dev): plane-frontend aaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 462a667: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 462a6674de66 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: it says the commit stays
+warn   expected: and how it can leave
+warn   expected: a second run with the push still refused does not exit 0
+warn   expected: and it does not say all is well
+warn   expected: it says what happened
+warn   expected: and published
+warn   expected: Argo CD reads the new digest
+warn   expected: this run took its own dump before the digest moved
+warn promote-again-publishes-after-a-refused-push FAILED. Its last command printed:
+     ok prod-sim already runs these digests, nothing to promote
+warn   expected: it says the commit stays
+warn   expected: a second run with dev still bad does not exit 0
+warn   expected: and it does not say all is well
+warn   expected: it says the check passed
+warn   expected: and published
+warn promote-again-publishes-after-a-refused-check FAILED. Its last command printed:
+     ok prod-sim already runs these digests, nothing to promote
+warn   expected: it says the commit stays
+warn   expected: the second run publishes it
+warn   expected: Argo CD reads it
+warn promote-dev-again-publishes-after-a-refused-push FAILED. Its last command printed:
+     ok dev already runs these digests, nothing to promote
+ ok promote-commit-no-publishes-nothing
+warn   expected: it says what moves
+warn   expected: it took the dump
+warn promote-dev-takes-the-dump-a-carried-prod-sim-change-needs FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 7aa8090: promote(dev): plane-frontend bbbbbbbbbbbb
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 7aa809077137 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: a refusal
+warn   expected: the reason
+warn   expected: it says the commit stays
+warn   expected: nothing was published
+warn promote-dev-stops-when-a-carried-dump-fails FAILED. Its last command printed:
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 465bfb6: promote(dev): plane-frontend bbbbbbbbbbbb
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 465bfb61c90a to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: it names the commit
+warn   expected: and says the dev commit stays
+warn publish-names-the-prod-sim-commit-a-dev-change-waits-behind FAILED. Its last command printed:
+    ==> Rolling back: cff1b38 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041005Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 4f5aff8: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 4f5aff8eb7be to <tmp>/repo/.local/git/plane-platform.git
+    warn Images are back, the schema is not, and no finished dump from before this rollback exists in .local/backups/prod-sim.
+ ok publish-refusal-of-prod-sim-alone-says-nothing-of-dev
+warn   expected: a stop
+warn   expected: it names the commit
+warn   expected: and the way out
+warn   expected: and says nothing changed
+warn   expected: no revert
+warn   expected: nothing was published
+warn   expected: nothing logged
+warn rollback-dev-stops-before-moving-prod-sim FAILED. Its last command printed:
+    ==> Rolling back: bd146b6 promote(dev): plane-frontend aaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 1dbef9d: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of bd146b641e55: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 1dbef9d2d9e8 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: it says the commit stays and how it leaves
+warn   expected: the rollback of dev stops
+warn   expected: it names the commit
+warn   expected: no revert yet
+warn   expected: prod-sim did not take the digest
+warn   a command in the scenario itself failed, with status 1
+warn rollback-chain-after-a-refused-promotion FAILED. Its last command printed:
+    ==> Rolling back: 62699c9 promote(dev): plane-frontend 96841278d02a, plane-admin c24ead5a02a1, plane-space 0a4ca742292d, plane-backend 9c7130942d90
+    error: could not revert 62699c9... promote(dev): plane-frontend 96841278d02a, plane-admin c24ead5a02a1, plane-space 0a4ca742292d, plane-backend 9c7130942d90
+    hint: after resolving the conflicts, mark the corrected paths
+    hint: with 'git add <paths>' or 'git rm <paths>'
+    hint: Disable this message with "git config set advice.mergeConflict false"
+    fail the revert conflicts with a later change to helm/plane/overlays/dev. Nothing changed. Resolve it by hand.
+warn   expected: the stop's override is logged
+warn   expected: plane-dev was still asked
+warn   expected: no waiver
+warn   expected: the dump was still taken
+warn rollback-dev-override-keeps-the-checks FAILED. Its last command printed:
+    ==> Rolling back: 04b238f promote(dev): plane-frontend aaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 31d2c86: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of 04b238f4006c: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 31d2c867eed7 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: a stop
+warn   expected: it names the commit
+warn   expected: the revert did not leave
+warn rollback-dev-rerun-stops-too FAILED. Its last command printed:
+    ==> df35700 Revert "promote(dev): plane-frontend aaaaaaaaaaaa" is on main but was never published. Publishing it, and reverting nothing else.
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of 07ecebcb89ac: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main e6fedab68bbf to <tmp>/repo/.local/git/plane-platform.git
+     ok rollback of 07ecebcb89ac published. Run this again to step back one promotion further.
+ ok rollback-dev-goes-on-past-what-does-not-move-prod-sim
+[main a112e6e] Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+ Date: Thu Nov 5 07:10:35 2026 +0300
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ ok rollback-dev-goes-on-when-a-promotion-was-withdrawn
+warn   expected: someone's work is still staged
+warn   expected: the new file is on disk
+warn   expected: the edit is on disk
+warn rollback-conflict-keeps-someones-staged-work FAILED. Its last command printed:
+    ==> Rolling back: c20a572 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041040Z
+    error: could not revert c20a572... promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    hint: after resolving the conflicts, mark the corrected paths
+    hint: with 'git add <paths>' or 'git rm <paths>'
+    hint: Disable this message with "git config set advice.mergeConflict false"
+    fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+warn   expected: the revert is gone
+warn   expected: helm and gitops are clean
+warn   expected: a second run stops for the same reason
+warn   expected: not for what the first left
+warn rollback-conflict-with-a-partly-staged-file FAILED. Its last command printed:
+    fail helm/plane/overlays/prod-sim or gitops/environments/prod-sim/manifests.yaml has uncommitted changes
+warn   expected: someone's work is still staged
+warn   expected: the new file is on disk
+warn   expected: the edit is on disk
+warn rollback-render-failure-keeps-someones-staged-work FAILED. Its last command printed:
+    ==> Rolling back: 35e9aeb promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041049Z
+    stub kustomize: failing as told
+    fail rendering after the revert failed. Nothing changed.
+warn   expected: the reason
+warn   expected: the revert is gone
+warn   expected: helm and gitops are clean
+warn   a command in the scenario itself failed, with status 1
+warn rollback-commit-failure-can-run-again FAILED. Its last command printed:
+    fail helm/plane/overlays/prod-sim or gitops/environments/prod-sim/manifests.yaml has uncommitted changes
+warn   a command in the scenario itself failed, with status 128
+warn rollback-waits-out-a-git-add FAILED. Its last command printed:
+    ==> Rolling back: 46247a4 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041100Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    fatal: Unable to create '<tmp>/repo/.git/index.lock': File exists.
+    
+    Another git process seems to be running in this repository, e.g.
+    an editor opened by 'git commit'. Please make sure all processes
+    are terminated then try again. If it still fails, a git process
+    may have crashed in this repository earlier:
+    remove the file manually to continue.
+warn   expected: the reason
+warn   expected: it says the revert is still here
+warn   expected: and the way out
+warn   expected: it says a revert is under way
+warn   expected: and how to clear it
+warn rollback-says-what-to-do-when-the-index-stays-held FAILED. Its last command printed:
+    ==> Rolling back: c0c3eff promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041105Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 5cab1c7: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of c0c3effdc33c: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 5cab1c7ca4de to <tmp>/repo/.local/git/plane-platform.git
+    warn Images are back, the schema is not, and no finished dump from before this rollback exists in .local/backups/prod-sim.
+warn   expected: the reason
+warn   expected: no talk of a conflict
+warn rollback-says-when-the-revert-cannot-start FAILED. Its last command printed:
+    ==> Rolling back: 28c93a7 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    warn SKIP_BACKUP=yes: no dump taken before this rollback
+    fatal: Unable to create '<tmp>/repo/.git/index.lock': File exists.
+    
+    Another git process seems to be running in this repository, e.g.
+    an editor opened by 'git commit'. Please make sure all processes
+    are terminated then try again. If it still fails, a git process
+    may have crashed in this repository earlier:
+    remove the file manually to continue.
+    error: no cherry-pick or revert in progress
+    fatal: revert failed
+    fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+warn   expected: it succeeds
+warn   expected: it says so
+warn   expected: the revert is gone
+warn   expected: what put it back reached Argo CD
+warn   expected: a second run says the same
+warn   expected: and succeeds
+warn rollback-says-a-promotion-put-back-by-hand-is-undone FAILED. Its last command printed:
+    ==> Rolling back: d785eca promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041116Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    On branch main
+    You are currently reverting commit d785eca.
+      (all conflicts fixed: run "git revert --continue")
+      (use "git revert --skip" to skip this patch)
+      (use "git revert --abort" to cancel the revert operation)
+    
+    nothing to commit, working tree clean
+warn   expected: the rollback works
+warn   expected: in the revert
+warn   expected: the revert is finished
+warn rollback-promotion-that-added-a-file FAILED. Its last command printed:
+    ==> Rolling back: dc44615 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041121Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    fatal: pathspec 'docs/added-with-the-promotion.txt' did not match any files
+warn   expected: the rollback works
+warn   expected: one revert
+warn   expected: the revert is finished
+warn   expected: published
+warn rollback-promotion-whose-added-file-is-gone FAILED. Its last command printed:
+    ==> Rolling back: 713ec9e promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041125Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    fatal: pathspec 'docs/added-with-the-promotion.txt' did not match any files
+warn   expected: the reason
+warn   expected: no dump spent on it
+warn rollback-refuses-an-edit-in-a-file-the-promotion-touched FAILED. Its last command printed:
+    ==> Rolling back: cc5f15c promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041130Z
+    error: Your local changes to the following files would be overwritten by merge:
+    	docs/added-with-the-promotion.txt
+    Please commit your changes or stash them before you merge.
+    Aborting
+    fatal: revert failed
+    error: no cherry-pick or revert in progress
+    fatal: revert failed
+    fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+warn   expected: the reason
+warn rollback-rechecks-after-the-dump FAILED. Its last command printed:
+    ==> Rolling back: f4a05af promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041135Z
+    error: Your local changes to the following files would be overwritten by merge:
+    	helm/plane/overlays/prod-sim/kustomization.yaml
+    Please commit your changes or stash them before you merge.
+    Aborting
+    fatal: revert failed
+    error: no cherry-pick or revert in progress
+    fatal: revert failed
+    fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+ ok rollback-finds-a-subject-only-promotion
+ ok rollback-finds-a-trailer-only-promotion
+[main 9f7808e] Revert "a digest changed by hand, so not a promotion"
+ Date: Thu Nov 5 07:11:52 2026 +0300
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+warn   expected: it names the older dump
+warn   expected: not the first attempt's
+warn rollback-second-attempt-names-the-dump-from-before-the-promotion FAILED. Its last command printed:
+    ==> Rolling back: 7d6de76 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041153Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 005fd23: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of 7d6de768bd14: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 005fd2303be9 to <tmp>/repo/.local/git/plane-platform.git
+    warn Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=20261105T041151Z, the newest dump from before this rollback. Check that it predates 7d6de76 from 2026-11-05T07:11:49+03:00. BACKUP=latest may name the dump taken 
+warn   expected: it says none predates the promotion
+warn rollback-says-when-no-dump-is-older FAILED. Its last command printed:
+    ==> Rolling back: 5b73bc3 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T041159Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 7b1dbb7: Revert "promote(prod-sim): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of 5b73bc3fe4ee: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 7b1dbb7bc910 to <tmp>/repo/.local/git/plane-platform.git
+    warn Images are back, the schema is not, and no finished dump from before this rollback exists in .local/backups/prod-sim.
+ ok rollback-skips-an-unfinished-dump
+warn   expected: it stays for the next publish
+warn publish-sends-what-it-checked FAILED. Its last command printed:
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    ==> This publish changes a prod-sim image, so taking a backup first
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 714152859743 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: dev is not in it
+warn publish-warning-leaves-dev-out-when-it-only-moves-an-image FAILED. Its last command printed:
+    warn publishing 61 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach dev and prod-sim together with this push. Changed under helm/plane:
+           helm/plane/overlays/dev/kustomization.yaml
+           helm/plane/overlays/prod-sim/kustomization.yaml
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 3e070687aef1 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: and the rest counted
+warn publish-warning-says-when-its-list-is-cut FAILED. Its last command printed:
+    warn publishing 7 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach dev and prod-sim together with this push. Changed under helm/plane:
+           helm/plane/components/hardening/serviceaccounts.yaml
+           helm/plane/components/hardening/zz-note-1.txt
+           helm/plane/components/hardening/zz-note-10.txt
+           helm/plane/components/hardening/zz-note-11.txt
+           helm/plane/components/hardening/zz-note-12.txt
+           helm/plane/components/hardening/zz-note-13.txt
+           helm/plane/components/hardening/zz-note-2.txt
+           helm/plane/components/hardening/zz-note-3.txt
+           helm/plane/components/hardening/zz-note-4.txt
+           helm/plane/components/hardening/zz-note-5.txt
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main d197e1e3ee40 to <tmp>/repo/.local/git/plane-platform.git
+ ok publish-warning-says-nothing-of-more-when-all-are-named
+warn   expected: it says so
+warn   expected: and promises no list
+warn publish-warning-says-when-no-source-changed FAILED. Its last command printed:
+    warn publishing 1 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach prod-sim with this push. Changed under helm/plane:
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 009af12cef71 to <tmp>/repo/.local/git/plane-platform.git
+warn   expected: the warning
+warn   expected: and why
+warn publish-warns-when-a-digest-by-hand-breaks-the-invariant FAILED. Its last command printed:
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    ==> This publish changes a prod-sim image, so taking a backup first
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 7ee956b30dc4 to <tmp>/repo/.local/git/plane-platform.git
+ ok publish-quiet-about-the-invariant-for-a-promotion
+ ok promote-no-cluster-writes-the-job-summary
+fail 40 of 125 promotion flow scenarios failed
+exit 1 in 459s

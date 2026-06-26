@@ -1,0 +1,471 @@
+# date 2026-11-05T05:15:09Z, planted defects in scratch clones, /bin/bash 3.2. command: plant-final.sh a286e52, source below: plant.py plants one defect, plant-one.sh runs the one scenario named for it, plant-all.sh runs them four at a time, plant-final.sh then plants the 17 of the review together and runs the whole suite
+
+=== final round, at a286e52, one defect at a time:  81 CAUGHT;
+id	verdict	flows	scenario	what that scenario expected and did not see
+A	CAUGHT	exit 1	promote-refuses-a-terminating-pod	a refusal;the reason;no overlay change;
+A2	CAUGHT	exit 1	promote-refuses-a-pod-not-running	a refusal;the reason;no overlay change;
+A3	CAUGHT	exit 1	promote-refuses-a-terminating-pod	a refusal;the reason;no overlay change;
+B	CAUGHT	exit 1	promote-refuses-a-ready-sibling	a refusal;the reason;no overlay change;
+C	CAUGHT	exit 1	promote-render-failure-puts-the-overlay-back	nothing moved;
+D	CAUGHT	exit 1	promote-prod-sim-needs-confirmation	a refusal;the reason;no dump;
+E	CAUGHT	exit 1	promote-refuses-a-dirty-overlay	before it spends a dump;
+F	CAUGHT	exit 1	promote-refuses-off-main	a refusal;the reason;no commit;
+G	CAUGHT	exit 1	promote-refuses-a-partial-digests-file	a refusal;the reason;nothing moved;
+H	CAUGHT	exit 1	promote-refuses-a-malformed-digests-file	a refusal;the reason;nothing moved;
+I	CAUGHT	exit 1	promote-stops-when-the-dump-fails	a refusal;the reason;nothing moved;
+J	CAUGHT	exit 1	publish-stops-when-the-dump-fails	a refusal;the reason;nothing was published;
+K	CAUGHT	exit 1	rollback-refuses-a-dirty-overlay	the reason;
+L	CAUGHT	exit 1	rollback-refuses-off-main	a refusal;the reason;no commit;
+M	CAUGHT	exit 1	rollback-prod-sim-needs-confirmation	a refusal;the reason;no dump;
+N	CAUGHT	exit 1	rollback-finds-a-subject-only-promotion	the rollback works;of that commit;prod-sim is back;
+N2	CAUGHT	exit 1	rollback-finds-a-trailer-only-promotion	the rollback works;of that commit;
+Q	CAUGHT	exit 1	promote-refuses-the-failure-drill-digest	a refusal;the reason;no overlay change;
+T	CAUGHT	exit 1	promote-refuses-an-ambiguous-image	a refusal;the reason;nothing moved;
+U	CAUGHT	exit 1	promote-checks-its-arguments	a short digest is refused;and says why;nothing moved;
+a1	CAUGHT	exit 1	rollback-dev-stops-before-moving-prod-sim	and says nothing changed;no revert;it asked the cluster nothing;
+a2	CAUGHT	exit 1	rollback-chain-after-a-refused-promotion	no revert yet;(a command in the scenario stopped it);
+a3	CAUGHT	exit 1	rollback-dev-takes-no-dump	no waiver: only a rollback of prod-sim has one;
+a4	CAUGHT	exit 1	rollback-dev-override-keeps-the-checks	plane-dev was still asked;no waiver;the dump was still taken;
+a5	CAUGHT	exit 1	rollback-dev-override-keeps-the-checks	the stop's override is logged;
+a6	CAUGHT	exit 1	rollback-dev-goes-on-past-what-does-not-move-prod-sim	the rollback works;published;the other change is called out;
+a7	CAUGHT	exit 1	rollback-dev-rerun-stops-too	a stop;the revert did not leave;
+a8	CAUGHT	exit 1	promote-again-publishes-after-a-refused-push	it says the commit stays;and how it can leave;
+b1	CAUGHT	exit 1	promote-again-publishes-after-a-refused-push	a second run with the push still refused does not exit 0;and it does not say all is well;it says what happened;
+b2	CAUGHT	exit 1	promote-again-publishes-after-a-refused-check	a second run with dev still bad does not exit 0;and it does not say all is well;it says the check passed;
+b3	CAUGHT	exit 1	promote-dev-again-publishes-after-a-refused-push	the second run publishes it;Argo CD reads it;
+b4	CAUGHT	exit 1	promote-commit-no-publishes-nothing	nothing was published;no dump;
+c1	CAUGHT	exit 1	promote-dev-takes-the-dump-a-carried-prod-sim-change-needs	it took the dump;
+c2	CAUGHT	exit 1	promote-four-images-through-make	one dump;and takes no second dump;
+d1	CAUGHT	exit 1	rollback-conflict-keeps-someones-staged-work	someone's work is still staged;the new file is on disk;the edit is on disk;
+d2	CAUGHT	exit 1	rollback-render-failure-keeps-someones-staged-work	someone's work is still staged;the new file is on disk;the edit is on disk;
+d3	CAUGHT	exit 1	rollback-conflict-with-a-partly-staged-file	the revert is gone;helm and gitops are clean;a second run stops for the same reason;
+d4	CAUGHT	exit 1	rollback-stops-on-a-conflict-in-the-overlay	nothing left in progress;
+d5	CAUGHT	exit 1	rollback-stops-on-a-conflict-in-the-overlay	nothing changed;
+e1	CAUGHT	exit 1	rollback-commit-failure-can-run-again	it says nothing changed;
+e10	CAUGHT	exit 1	promote-waits-for-the-commit-lock	it says what it waits for;
+e11	CAUGHT	exit 1	rollback-holds-the-commit-lock-for-its-commit	not at the publish;
+e12	CAUGHT	exit 1	promote-holds-the-commit-lock-for-its-commit	not at the publish;
+e13	CAUGHT	exit 1	rollback-holds-the-commit-lock-for-its-commit	held at the commit;
+e14	CAUGHT	exit 1	promote-gives-up-on-a-commit-lock-left-behind	the reason and the way out;
+e15	CAUGHT	exit 1	promote-gives-up-on-a-commit-lock-left-behind	it is not this script's to remove;
+e16	CAUGHT	exit 1	rollback-says-when-the-revert-cannot-start	the reason;no talk of a conflict;
+e17	CAUGHT	exit 1	rollback-refuses-an-edit-in-a-file-the-promotion-touched	the reason;no dump spent on it;the edit is still there;
+e18	CAUGHT	exit 1	rollback-rechecks-after-the-dump	the reason;the edit is still there;
+e19	CAUGHT	exit 1	promote-rechecks-the-overlay-after-the-dump	a refusal;the reason;no commit;
+e2	CAUGHT	exit 1	rollback-says-what-to-do-when-the-index-stays-held	it does not claim nothing changed;it says the revert is still here;and the way out;
+e20	CAUGHT	exit 1	rollback-says-what-to-do-when-the-index-stays-held	and how to clear it;
+e21	CAUGHT	exit 1	rollback-render-failure-keeps-someones-staged-work	the reason;it says nothing changed;
+e22	CAUGHT	exit 1	rollback-leaves-the-other-render-as-git-has-it	helm and gitops are clean;
+e23	CAUGHT	exit 1	promote-refuses-while-a-revert-is-under-way	a refusal;the reason;
+e24	CAUGHT	exit 1	rollback-ended-halfway-puts-the-revert-back	the revert is gone;helm and gitops are clean;someone's work is still staged;
+e25	CAUGHT	exit 1	promote-ended-halfway-puts-the-overlay-back	nothing moved;
+e26	CAUGHT	exit 1	rollback-leaves-someones-merge-alone	the reason;the merge is still under way;
+e3	CAUGHT	exit 1	rollback-waits-out-a-git-add	(a command in the scenario stopped it);
+e4	CAUGHT	exit 1	rollback-says-a-promotion-put-back-by-hand-is-undone	it succeeds;it says so;what put it back reached Argo CD;
+e5	CAUGHT	exit 1	rollback-says-a-promotion-put-back-by-hand-is-undone	what put it back reached Argo CD;
+e6	CAUGHT	exit 1	rollback-promotion-that-added-a-file	the rollback works;the file went with it;in the revert;
+e7	CAUGHT	exit 1	rollback-promotion-whose-added-file-is-gone	the rollback works;one revert;published;
+e8	CAUGHT	exit 1	rollback-render-failure-keeps-someones-staged-work	a refusal;the reason;it says nothing changed;
+e9	CAUGHT	exit 1	rollback-waits-for-the-commit-lock	it says what it waits for;
+m1	CAUGHT	exit 1	promote-says-what-to-do-when-the-index-stays-held	it says the overlay still holds it;and the way out;
+m10	CAUGHT	exit 1	rollback-skips-an-unfinished-dump	it names the finished one;
+m11	CAUGHT	exit 1	publish-names-the-prod-sim-commit-a-dev-change-waits-behind	it names the commit;
+m12	CAUGHT	exit 1	publish-refusal-of-prod-sim-alone-says-nothing-of-dev	no word of a dev change;
+m13	CAUGHT	exit 1	publish-warns-when-a-digest-by-hand-breaks-the-invariant	the warning;and why;
+m14	CAUGHT	exit 1	publish-quiet-about-the-invariant-for-a-promotion	no warning;
+m15	CAUGHT	exit 1	publish-sends-what-it-checked	it stays for the next publish;
+m16	CAUGHT	exit 1	promote-no-cluster-writes-the-job-summary	the job summary says so;
+m2	CAUGHT	exit 1	promote-waits-out-a-git-add	(a command in the scenario stopped it);
+m3	CAUGHT	exit 1	publish-warning-leaves-dev-out-when-it-only-moves-an-image	dev is not in it;
+m4	CAUGHT	exit 1	publish-warns-when-a-shared-change-reaches-prod-sim	it says who gets it;
+m5	CAUGHT	exit 1	publish-warning-says-when-its-list-is-cut	and the rest counted;
+m6	CAUGHT	exit 1	publish-warning-says-nothing-of-more-when-all-are-named	no count;
+m7	CAUGHT	exit 1	publish-warning-says-when-no-source-changed	it says so;and promises no list;
+m8	CAUGHT	exit 1	rollback-second-attempt-names-the-dump-from-before-the-promotion	it names the older dump;not the first attempt's;
+m9	CAUGHT	exit 1	rollback-says-when-no-dump-is-older	it says none predates the promotion;and names none;
+
+=== the 17 of the review together, with the whole suite, at a286e52
+warn promote-refuses-a-terminating-pod
+warn promote-refuses-a-pod-not-running
+warn promote-refuses-a-ready-sibling
+warn promote-refuses-the-failure-drill-digest
+warn promote-stops-when-the-dump-fails
+warn publish-stops-when-the-dump-fails
+warn promote-prod-sim-needs-confirmation
+warn rollback-prod-sim-needs-confirmation
+warn promote-refuses-a-dirty-overlay
+warn rollback-refuses-a-dirty-overlay
+warn promote-refuses-off-main
+warn rollback-refuses-off-main
+warn promote-refuses-a-partial-digests-file
+warn promote-refuses-a-malformed-digests-file
+warn promote-checks-its-arguments
+warn promote-refuses-an-ambiguous-image
+warn promote-render-failure-puts-the-overlay-back
+warn promote-ended-halfway-puts-the-overlay-back
+warn promote-commit-failure-puts-the-overlay-back
+warn promote-says-what-to-do-when-the-index-stays-held
+warn promote-dev-stops-when-a-carried-dump-fails
+warn rollback-finds-a-subject-only-promotion
+fail 22 of 132 promotion flow scenarios failed
+all 17 together, whole suite: exit 1 in 415s
+
+=== second round, at a2e6c1a, with those scenarios tightened:  80 CAUGHT;, and the 17 together: fail 22 of 130 promotion flow scenarios failed
+
+=== first round, at 010cdd5, before four scenarios were tightened:  74 CAUGHT; 4 MISSED;
+E	MISSED	exit 0	promote-refuses-a-dirty-overlay	
+a3	MISSED	exit 0	rollback-dev-takes-no-dump	
+a7	MISSED	exit 0	rollback-dev-rerun-stops-too	
+e1	MISSED	exit 0	rollback-commit-failure-can-run-again	
+E: a second check of the overlay after the lock caught what the first would, so the scenario now also wants no dump spent.
+a3: with nothing moving in prod-sim the waiver changes nothing, so the scenario now reads the output for it, and the override scenario covers what it would do.
+a7: the publish's own check refused it too, so the scenario now has plane-dev prove the digest, which leaves only the stop to catch it.
+e1: the exit trap undid the revert anyway, so the scenario now also wants the words Nothing changed.
+
+=== plant.py
+#!/usr/bin/env python3
+"""Plants one defect, or all of a group, in a scratch clone of the promotion scripts.
+
+  plant.py <clone> list              id, then the scenario that must catch it, one per line
+  plant.py <clone> plant <id>...     applies these defects
+
+Every old string must match exactly once, or nothing is left to prove.
+"""
+import sys
+
+P = "scripts/promote.sh"
+R = "scripts/rollback.sh"
+G = "scripts/gitops-publish.sh"
+D = "scripts/lib/dev-check.sh"
+L = "scripts/lib/commit-lock.sh"
+C = "scripts/ci/check-promoted-digests.sh"
+
+# id, description, scenario filter, file, old, new
+DEFECTS = [
+ # The 17 of platform-hardening-3__verify-ci.md, which left the suite at 58 of 58.
+ ("A", "dev-check: terminating and non-Running pods count as proof", "promote-refuses-a-terminating-pod", D,
+  'select(.metadata.deletionTimestamp == null and .status.phase == "Running")', 'select(true)'),
+ ("A2", "dev-check: non-Running pods count as proof (A's other half, on its own)", "promote-refuses-a-pod-not-running", D,
+  'select(.metadata.deletionTimestamp == null and .status.phase == "Running")', 'select(.metadata.deletionTimestamp == null)'),
+ ("A3", "dev-check: terminating pods count as proof (A's other half, on its own)", "promote-refuses-a-terminating-pod", D,
+  'select(.metadata.deletionTimestamp == null and .status.phase == "Running")', 'select(.status.phase == "Running")'),
+ ("B", "dev-check: any ready container in the pod proves every container in it", "promote-refuses-a-ready-sibling", D,
+  'select(any($statuses[]; .name == $container.name and .ready == true))', 'select(any($statuses[]; .ready == true))'),
+ ("C", "promote: a failure after the overlay was edited does not restore it", "promote-render-failure-puts-the-overlay-back", P,
+  '''    restore_from_head "$OVERLAY" "$RENDERED" ||
+      warn''', '''    true ||
+      warn'''),
+ ("D", "promote: prod-sim asks no confirmation", "promote-prod-sim-needs-confirmation", P,
+  'if [[ "${CONFIRM:-}" != yes ]]; then\n    [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"\n    read -r -p "Promote',
+  'if false; then\n    [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"\n    read -r -p "Promote'),
+ ("E", "promote: uncommitted changes in the overlay are not refused", "promote-refuses-a-dirty-overlay", P,
+  '[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"\nif [[ "$COMMIT" == yes ]]; then',
+  'true\nif [[ "$COMMIT" == yes ]]; then'),
+ ("F", "promote: not refused off main", "promote-refuses-off-main", P,
+  '[[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "promote from main, or use COMMIT=no"', 'true'),
+ ("G", "promote: a partial digests file is accepted", "promote-refuses-a-partial-digests-file", P,
+  '''[[ "$(awk '$1 !~ /^#/ && NF { print $1 }' apps/wayline/images.txt | LC_ALL=C sort)" == "$(cut -f1 "$DIGESTS_FILE" | LC_ALL=C sort)" ]] \\\n      || die "$DIGESTS_FILE does not name every image in apps/wayline/images.txt. Run make images again, or use IMAGE= and DIGEST="''', 'true'),
+ ("H", "promote: a bad digest in the digests file is accepted", "promote-refuses-a-malformed-digests-file", P,
+  '[[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "bad digest for $image in $DIGESTS_FILE"', 'true'),
+ ("I", "promote: a failed backup does not stop the promotion", "promote-stops-when-the-dump-fails", P,
+  '"$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was promoted. SKIP_BACKUP=yes overrides."', '"$ROOT/scripts/backup.sh" prod-sim || true'),
+ ("J", "publish: a failed backup does not stop the publish", "publish-stops-when-the-dump-fails", G,
+  '"$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."', '"$ROOT/scripts/backup.sh" prod-sim || true'),
+ ("K", "rollback: uncommitted changes in the overlay are not refused", "rollback-refuses-a-dirty-overlay", R,
+  '[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"', 'true'),
+ ("L", "rollback: not refused off main", "rollback-refuses-off-main", R,
+  '[[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "roll back from main: gitops-publish pushes main"', 'true'),
+ ("M", "rollback: prod-sim asks no confirmation", "rollback-prod-sim-needs-confirmation", R,
+  'if [[ "$ENV" == prod-sim && "${CONFIRM:-}" != yes ]]; then', 'if false; then'),
+ ("N", "rollback: a squash merge that lost the trailer is not found", "rollback-finds-a-subject-only-promotion", R,
+  '''--grep="^Promote-Env: $ENV\\$" --grep="^promote\\\\($ENV\\\\):" -- "$OVERLAY")"''', '''--grep="^Promote-Env: $ENV\\$" -- "$OVERLAY")"'''),
+ ("N2", "rollback: a commit with only the trailer is not found", "rollback-finds-a-trailer-only-promotion", R,
+  '''--grep="^Promote-Env: $ENV\\$" --grep="^promote\\\\($ENV\\\\):" -- "$OVERLAY")"''', '''--grep="^promote\\\\($ENV\\\\):" -- "$OVERLAY")"'''),
+ ("Q", "invariant: the failure-drill digest may reach prod-sim", "promote-refuses-the-failure-drill-digest", C,
+  'if [[ "$digest" == "$NULL_DIGEST" ]]; then', 'if false; then'),
+ ("T", "promote: an image name matching two images is not refused", "promote-refuses-an-ambiguous-image", P,
+  '''[[ "$(wc -l <<<"$matches")" -eq 1 ]] || die "'$2' matches more than one image in $file"''', 'true'),
+ ("U", "promote: DIGEST= is not validated", "promote-checks-its-arguments", P,
+  '[[ -z "$DIGEST" || "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || die "DIGEST must be sha256: and 64 hex characters"', 'true'),
+
+ # What this track's fixes added: each fix undone, one at a time.
+ ("a1", "item 1: rollback of dev no longer stops before moving prod-sim", "rollback-dev-stops-before-moving-prod-sim", R,
+  'if [[ "$ENV" == dev ]] && prod_sim_digests_move "$published" HEAD; then', 'if false; then'),
+ ("a2", "item 1: the same, seen through the chain after a refused promotion", "rollback-chain-after-a-refused-promotion", R,
+  'if [[ "$ENV" == dev ]] && prod_sim_digests_move "$published" HEAD; then', 'if false; then'),
+ ("a3", "item 1: rollback of dev publishes under the waiver again", "rollback-dev-takes-no-dump", R,
+  '''  if [[ "$ENV" == prod-sim ]]; then
+    # With both skips''', '''  if true; then
+    # With both skips'''),
+ ("a4", "item 1: rollback of dev under the override publishes with the waiver", "rollback-dev-override-keeps-the-checks", R,
+  '''  if [[ "$ENV" == prod-sim ]]; then
+    # With both skips''', '''  if [[ "$ENV" == prod-sim || -n "${OVERRIDE_DEV_CHECK:-}" ]]; then
+    # With both skips'''),
+ ("a5", "item 1: the override of the stop is not logged", "rollback-dev-override-keeps-the-checks", R,
+  '''  record_dev_check overridden "$(override_reason "$OVERRIDE_DEV_CHECK")" "rollback of dev carries''', '''  true "$(override_reason "$OVERRIDE_DEV_CHECK")" "rollback of dev carries'''),
+ ("a6", "item 1: the stop looks at any line of prod-sim's render, not only digests", "rollback-dev-goes-on-past-what-does-not-move-prod-sim", D,
+  '''git diff "$1" "$2" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+].*@sha256:' >/dev/null''', '''git diff "$1" "$2" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+]' >/dev/null'''),
+ ("a7", "item 1: the stop does not cover publishing an earlier run's revert", "rollback-dev-rerun-stops-too", R,
+  'if [[ "$ENV" == dev ]] && prod_sim_digests_move "$published" HEAD; then', 'if [[ "$ENV" == dev ]] && [[ -z "$(git log -1 --format=%h --grep="^This reverts commit" "$published..HEAD")" ]] && prod_sim_digests_move "$published" HEAD; then'),
+ ("a8", "item 1: a failed publish does not say the commit stays on main", "promote-again-publishes-after-a-refused-push", P,
+  '''  die "$(git log -1 --format='%h %s') stays on main, and Argo CD has not read it. It leaves with the next publish of any kind. Fix the cause and run this again, which publishes it, or withdraw it with make rollback ENV=$ENV."''', '''  die "the publish failed"'''),
+ ("b1", "item 2: the false green is back: an empty plan does not publish", "promote-again-publishes-after-a-refused-push", P,
+  '''if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then''', '''if [[ ! -s "$PLAN" ]]; then
+  if false; then'''),
+ ("b2", "item 2: the same, after a refused plane-dev check", "promote-again-publishes-after-a-refused-check", P,
+  '''if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then''', '''if [[ ! -s "$PLAN" ]]; then
+  if false; then'''),
+ ("b3", "item 2: the same, for dev", "promote-dev-again-publishes-after-a-refused-push", P,
+  '''if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then''', '''if [[ ! -s "$PLAN" ]]; then
+  if false; then'''),
+ ("b4", "item 2: an empty plan publishes under COMMIT=no too", "promote-commit-no-publishes-nothing", P,
+  '''if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then''', '''if [[ ! -s "$PLAN" ]]; then
+  if true; then'''),
+ ("c1", "item 3: a promotion of dev publishes with SKIP_BACKUP=yes again", "promote-dev-takes-the-dump-a-carried-prod-sim-change-needs", P,
+  '''else
+  "$ROOT/scripts/gitops-publish.sh" || publish_status=$?''', '''else
+  SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh" || publish_status=$?'''),
+ ("c2", "item 3: a promotion of prod-sim takes a second dump at its publish", "promote-four-images-through-make", P,
+  '''  SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh" || publish_status=$?''', '''  "$ROOT/scripts/gitops-publish.sh" || publish_status=$?'''),
+ ("d1", "item 4: stopping uses git revert --abort again", "rollback-conflict-keeps-someones-staged-work", R,
+  '''  restore_from_head "${revert_paths[@]}" || return 1
+  # Not when the revert never started, because --quit forgets any git operation under way.
+  if [[ -e "$REVERT_HEAD_FILE" ]]; then git revert --quit || return 1; fi
+  reverting=no''', '''  git revert --abort || true
+  reverting=no'''),
+ ("d2", "item 4: the same, on a render failure", "rollback-render-failure-keeps-someones-staged-work", R,
+  '''  restore_from_head "${revert_paths[@]}" || return 1
+  # Not when the revert never started, because --quit forgets any git operation under way.
+  if [[ -e "$REVERT_HEAD_FILE" ]]; then git revert --quit || return 1; fi
+  reverting=no''', '''  git revert --abort || true
+  reverting=no'''),
+ ("d3", "item 4: the same, with a partly staged file", "rollback-conflict-with-a-partly-staged-file", R,
+  '''  restore_from_head "${revert_paths[@]}" || return 1
+  # Not when the revert never started, because --quit forgets any git operation under way.
+  if [[ -e "$REVERT_HEAD_FILE" ]]; then git revert --quit || return 1; fi
+  reverting=no''', '''  git revert --abort || true
+  reverting=no'''),
+ ("d4", "item 4: the helper leaves the revert in progress", "rollback-stops-on-a-conflict-in-the-overlay", R,
+  '''  if [[ -e "$REVERT_HEAD_FILE" ]]; then git revert --quit || return 1; fi
+  reverting=no''', '''  reverting=no'''),
+ ("d5", "item 4: the helper leaves the paths conflicted", "rollback-stops-on-a-conflict-in-the-overlay", R,
+  '''  restore_from_head "${revert_paths[@]}" || return 1
+  # Not when''', '''  # Not when'''),
+ ("e1", "item 5: a failed commit leaves the revert half done", "rollback-commit-failure-can-run-again", R,
+  '''  stop_revert "could not commit the revert." "Run this again once the cause above is gone."''', '''  die "could not commit the revert."'''),
+ ("e2", "item 5: a failed stage leaves the revert half done and claims nothing", "rollback-says-what-to-do-when-the-index-stays-held", R,
+  '''  stop_revert "could not stage the revert." "Run this again once git can write the index."''', '''  reverting=no; die "could not stage the revert. Nothing changed."'''),
+ ("e3", "item 5: a stage that lost the race is not retried", "rollback-waits-out-a-git-add", L,
+  '''    wait_for_index
+    if output="$(git "$@" 2>&1)"; then''', '''    if output="$(git "$@" 2>&1)"; then'''),
+ ("e4", "item 5: no check for a revert with nothing to do", "rollback-says-a-promotion-put-back-by-hand-is-undone", R,
+  'if git diff --cached --quiet -- "${to_commit[@]}"; then', 'if false; then'),
+ ("e5", "item 5: a promotion put back by hand and not published stays unpublished", "rollback-says-a-promotion-put-back-by-hand-is-undone", R,
+  '''  # It may have been put back by a commit nobody has published.
+  publish "$target"
+''', ''),
+ ("e6", "item 5: git add is given a path the revert removed", "rollback-promotion-that-added-a-file", R,
+  '''  if [[ -e "$path" || -n "$(git ls-files -- "$path")" ]]; then
+    to_add+=("$path")''', '''  if true; then
+    to_add+=("$path")'''),
+ ("e7", "item 5: git commit is given a path that is nowhere", "rollback-promotion-whose-added-file-is-gone", R,
+  '''  elif git cat-file -e "HEAD:$path" 2>/dev/null; then
+    to_commit+=("$path")''', '''  else
+    to_commit+=("$path")'''),
+ ("e8", "item 5: a failed render of the revert is not stopped", "rollback-render-failure-keeps-someones-staged-work", R,
+  '''if [[ "$render_status" -ne 0 ]]; then
+  stop_revert "rendering after the revert failed." "Fix the render and run this again."''', '''if false; then
+  true'''),
+ ("e9", "item 5: rollback takes no commit lock", "rollback-waits-for-the-commit-lock", R,
+  '''take_commit_lock
+refuse_what_is_under_way''', '''refuse_what_is_under_way'''),
+ ("e10", "item 5: promote takes no commit lock", "promote-waits-for-the-commit-lock", P,
+  '''take_commit_lock
+refuse_what_is_under_way''', '''refuse_what_is_under_way'''),
+ ("e11", "item 5: rollback holds the commit lock through its publish", "rollback-holds-the-commit-lock-for-its-commit", R,
+  '''reverting=no
+release_commit_lock
+ok "committed''', '''reverting=no
+ok "committed'''),
+ ("e12", "item 5: promote holds the commit lock through its publish", "promote-holds-the-commit-lock-for-its-commit", P,
+  '''applied=no
+release_commit_lock
+ok "committed''', '''applied=no
+ok "committed'''),
+ ("e13", "item 5: rollback takes the lock after the revert, so not at its commit either", "rollback-holds-the-commit-lock-for-its-commit", L,
+  '''  until mkdir "$COMMIT_LOCK" 2>/dev/null; do''', '''  return 0
+  until mkdir "$COMMIT_LOCK" 2>/dev/null; do'''),
+ ("e14", "item 5: a lock left behind waits for ever", "promote-gives-up-on-a-commit-lock-left-behind", L,
+  '''    if [[ "$waited" -ge "$limit" ]]; then''', '''    if [[ "$waited" -ge 20 ]]; then exit 7; fi
+    if false; then'''),
+ ("e15", "item 5: the commit lock is removed even when it was never held", "promote-gives-up-on-a-commit-lock-left-behind", L,
+  '''  if [[ "$COMMIT_LOCK_HELD" == yes ]]; then
+    COMMIT_LOCK_HELD=no''', '''  if [[ -n "${COMMIT_LOCK:-}" ]]; then
+    COMMIT_LOCK_HELD=no'''),
+ ("e16", "item 5: a revert that cannot start reads as a conflict", "rollback-says-when-the-revert-cannot-start", R,
+  '''  if [[ -z "$all_conflicts" ]]; then
+    printf '%s\\n' "$revert_errors" >&2
+    stop_revert "git could not start the revert of ${target:0:12}." "Run this again once the cause above is gone."
+  elif [[ -n "$conflicts" ]]; then''', '''  if [[ -z "$all_conflicts" || -n "$conflicts" ]]; then'''),
+ ("e17", "item 5: an edit in a file the promotion touched is not refused", "rollback-refuses-an-edit-in-a-file-the-promotion-touched", R,
+  '''  [[ -z "$edited" ]] || die "the revert would touch files with uncommitted changes''', '''  [[ -n "$edited$edited" || -z "$edited" ]] || die "the revert would touch files with uncommitted changes'''),
+ ("e18", "item 5: nothing is checked again after the dump", "rollback-rechecks-after-the-dump", R,
+  '''refuse_what_is_under_way
+refuse_edits_in_the_way
+other_render''', '''refuse_what_is_under_way
+other_render'''),
+ ("e19", "item 5: promote checks nothing again after its dump", "promote-rechecks-the-overlay-after-the-dump", P,
+  '''[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes, made since this started. Nothing was promoted."
+''', ''),
+ ("e20", "item 5: a second run does not say a revert is under way", "rollback-says-what-to-do-when-the-index-stays-held", R,
+  '''  if [[ "$under_way" == REVERT_HEAD ]]; then
+    die "a revert of''', '''  if false; then
+    die "a revert of'''),
+ ("e21", "item 5: a failed render stops the script with no word of what is left", "rollback-render-failure-keeps-someones-staged-work", R,
+  '''"$ROOT/scripts/render.sh" || render_status=$?
+''', '''"$ROOT/scripts/render.sh"
+'''),
+ ("e22", "beyond the list: a stale render of the other environment stays on disk", "rollback-leaves-the-other-render-as-git-has-it", R,
+  '''if [[ "$other_render_was_clean" == yes ]]; then
+  restore_from_head''', '''if false; then
+  restore_from_head'''),
+ ("e23", "beyond the list: a promotion's commit finishes a revert that is under way", "promote-refuses-while-a-revert-is-under-way", P,
+  '''[[ -z "$under_way" ]] || die "$under_way says''', '''true || die "$under_way says'''),
+ ("e24", "beyond the list: a rollback ended halfway leaves the revert in the checkout", "rollback-ended-halfway-puts-the-revert-back", R,
+  '''if [[ "$reverting" == yes && "$status" -ne 0 ]]; then''', '''if false; then'''),
+ ("e25", "beyond the list: a promotion ended halfway leaves the overlay edited", "promote-ended-halfway-puts-the-overlay-back", P,
+  '''if [[ "$applied" == yes && "$status" -ne 0 ]]; then''', '''if false; then'''),
+ ("e26", "beyond the list: a merge under way is not refused, and stopping forgets it", "rollback-leaves-someones-merge-alone", L,
+  '''for state in REVERT_HEAD MERGE_HEAD CHERRY_PICK_HEAD; do''', '''for state in REVERT_HEAD; do'''),
+ ("m1", "minor: promote's cleanup fails quietly when the index stays held", "promote-says-what-to-do-when-the-index-stays-held", P,
+  '''    restore_from_head "$OVERLAY" "$RENDERED" ||
+      warn "$OVERLAY and $RENDERED still hold this promotion, uncommitted, because git could not write the index. Once it can: git restore --source=HEAD --staged --worktree -- $OVERLAY $RENDERED. Then run this again."''', '''    restore_from_head "$OVERLAY" "$RENDERED" || true'''),
+ ("m2", "minor: promote does not wait out a git add", "promote-waits-out-a-git-add", L,
+  '''    wait_for_index
+    if output="$(git "$@" 2>&1)"; then''', '''    if output="$(git "$@" 2>&1)"; then'''),
+ ("m3", "minor: the warning's reach reads all of dev's diff again", "publish-warning-leaves-dev-out-when-it-only-moves-an-image", G,
+  '''if [[ -n "$(beyond_images "$DEV_MANIFESTS")" ]]; then reach=''', '''if ! git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS"; then reach='''),
+ ("m4", "minor: the warning's reach never names dev", "publish-warns-when-a-shared-change-reaches-prod-sim", G,
+  '''if [[ -n "$(beyond_images "$DEV_MANIFESTS")" ]]; then reach=''', '''if false; then reach='''),
+ ("m5", "minor: a cut list says nothing of it", "publish-warning-says-when-its-list-is-cut", G,
+  '''if [[ "$source_count" -gt 10 ]]; then printf''', '''if false; then printf'''),
+ ("m6", "minor: a list that is not cut says it was", "publish-warning-says-nothing-of-more-when-all-are-named", G,
+  '''if [[ "$source_count" -gt 10 ]]; then printf''', '''if true; then printf'''),
+ ("m7", "minor: a render with no source change promises a list", "publish-warning-says-when-no-source-changed", G,
+  '''if [[ -z "$sources" ]]; then
+      what_changed=''', '''if false; then
+      what_changed='''),
+ ("m8", "minor: newest_dump takes the newest dump of all", "rollback-second-attempt-names-the-dump-from-before-the-promotion", R,
+  '''if [[ $# -gt 0 ]]; then latest="$(TZ=UTC''', '''if false; then latest="$(TZ=UTC'''),
+ ("m9", "minor: no finished older dump is not said", "rollback-says-when-no-dump-is-older", R,
+  '''restore_from="$(newest_dump "$target")"
+  if [[ "${SKIP_BACKUP:-}" == yes ]]; then''', '''restore_from="$(newest_dump)"
+  [[ -n "$restore_from" ]] || restore_from=20000101T000000Z
+  if [[ "${SKIP_BACKUP:-}" == yes ]]; then'''),
+ ("m10", "minor: an unfinished dump can be named", "rollback-skips-an-unfinished-dump", R,
+  '''if [[ -f "$dir/manifest.json" && "$name" =~''', '''if [[ "$name" =~'''),
+ ("m11", "minor: the refusal does not name what a dev change waits behind", "publish-names-the-prod-sim-commit-a-dev-change-waits-behind", G,
+  '''if ! git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS"; then
+          warn "A publish is all of main''', '''if false; then
+          warn "A publish is all of main'''),
+ ("m12", "minor: a refusal with no dev change in the push speaks of one", "publish-refusal-of-prod-sim-alone-says-nothing-of-dev", G,
+  '''if ! git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS"; then
+          warn "A publish is all of main''', '''if true; then
+          warn "A publish is all of main'''),
+ ("m13", "minor: no warning for a digest make promote would refuse", "publish-warns-when-a-digest-by-hand-breaks-the-invariant", G,
+  '''if [[ ${#pairs[@]} -gt 0 ]] && ! invariant=''', '''if false && ! invariant='''),
+ ("m14", "minor: that warning fires for an ordinary promotion", "publish-quiet-about-the-invariant-for-a-promotion", G,
+  '''if [[ ${#pairs[@]} -gt 0 ]] && ! invariant="$("$ROOT/scripts/ci/check-promoted-digests.sh" "${pairs[@]}" 2>&1 >/dev/null)"; then''', '''invariant=planted
+if true; then'''),
+ ("m15", "beyond the list: a publish sends commits made during its dump", "publish-sends-what-it-checked", G,
+  '''git push --quiet "$BARE" "$new:refs/heads/main" ||''', '''git push --quiet "$BARE" refs/heads/main:refs/heads/main ||'''),
+ ("m16", "minor: the job summary line is gone", "promote-no-cluster-writes-the-job-summary", D,
+  '''[[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || printf''', '''[[ -n "${GITHUB_STEP_SUMMARY:-}" ]] || printf'''),
+]
+
+BY_ID = {d[0]: d for d in DEFECTS}
+
+
+def plant(root, ids):
+    for one in ids:
+        _, name, _, path, old, new = BY_ID[one]
+        full = root + "/" + path
+        text = open(full).read()
+        count = text.count(old)
+        if count != 1:
+            print(f"COULD NOT PLANT {one}: {name}: {count} matches")
+            sys.exit(3)
+        open(full, "w").write(text.replace(old, new))
+
+
+def main():
+    root, verb, *rest = sys.argv[1:]
+    if verb == "list":
+        for one in DEFECTS:
+            print(f"{one[0]}\t{one[2]}\t{one[1]}")
+    elif verb == "plant":
+        plant(root, rest)
+    else:
+        sys.exit(f"unknown verb {verb}")
+
+
+main()
+
+=== plant-one.sh
+#!/bin/bash
+# plant-one.sh <id> <scenario>: one defect, alone, in a scratch clone of main's HEAD, and the one scenario meant to catch it.
+# A line of output per defect: CAUGHT or MISSED, the flows' exit status, and what the scenario expected.
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-track
+MAIN=/Users/bek/dev/pr/plane-platform
+id="$1"; scenario="$2"
+W="$S/plant-work/$id"
+rm -rf "${W:?}"; mkdir -p "$W"
+git clone --quiet "$MAIN" "$W/c" || { echo "$id SETUP-FAILED"; exit 0; }
+git -C "$W/c" checkout --quiet "$PLANT_COMMIT" || { echo "$id SETUP-FAILED"; exit 0; }
+mkdir -p "$W/c/.tools"; ln -s "$MAIN/.tools/bin" "$W/c/.tools/bin"
+python3 -B "$S/plant.py" "$W/c" plant "$id" >"$W/plant.out" 2>&1 || { echo "$id COULD-NOT-PLANT $(cat "$W/plant.out")"; rm -rf "${W:?}"; exit 0; }
+(cd "$W/c" && ./scripts/ci/test-promotion-flows.sh "$scenario") >"$W/flows.out" 2>&1
+rc=$?
+expected="$(sed 's/\x1b\[[0-9;]*m//g' "$W/flows.out" | sed -n 's/^warn   expected: //p;s/^warn   a command in the scenario itself failed.*/(a command in the scenario stopped it)/p' | head -n 3 | tr '\n' ';')"
+ran="$(sed 's/\x1b\[[0-9;]*m//g' "$W/flows.out" | grep -cE "^( ok|warn) $scenario( FAILED)?")"
+if [[ "$rc" -ne 0 && "$ran" -ge 1 ]]; then verdict=CAUGHT; else verdict=MISSED; fi
+printf '%s\t%s\texit %s\t%s\t%s\n' "$id" "$verdict" "$rc" "$scenario" "$expected"
+if [[ "$verdict" == MISSED ]]; then sed 's/\x1b\[[0-9;]*m//g' "$W/flows.out" | tail -n 8 | cut -c1-200 >&2; fi
+rm -rf "${W:?}"
+
+=== plant-all.sh
+#!/bin/bash
+# plant-all.sh <commit>: every defect in plant.py, one at a time, four at a time. Then the 17 of the review together, with the whole suite.
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-track
+MAIN=/Users/bek/dev/pr/plane-platform
+export PLANT_COMMIT="$1"
+RESULT="$S/plant-result.txt"
+mkdir -p "$S/plant-work"
+: >"$RESULT"
+python3 -B "$S/plant.py" "$S" list | cut -f1,2 | tr '\t' ' ' | xargs -P 4 -L 1 "$S/plant-one.sh" >>"$RESULT" 2>>"$S/plant-errors.txt"
+echo "one at a time finished" >>"$RESULT"
+
+=== plant-final.sh
+#!/bin/bash
+# Every defect alone, then the 17 of the review together with the whole suite, at the commit given.
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-track
+MAIN=/Users/bek/dev/pr/plane-platform
+commit="$1"
+rm -f "$S/plant-errors.txt"
+"$S/plant-all.sh" "$commit"
+W="$S/plant-work/all17"
+rm -rf "${W:?}"; mkdir -p "$W"
+git clone --quiet "$MAIN" "$W/c" || exit 98
+git -C "$W/c" checkout --quiet "$commit" || exit 98
+mkdir -p "$W/c/.tools"; ln -s "$MAIN/.tools/bin" "$W/c/.tools/bin"
+python3 -B "$S/plant.py" "$W/c" plant A B C D E F G H I J K L M N Q T U || exit 97
+t0=$SECONDS
+(cd "$W/c" && ./scripts/ci/test-promotion-flows.sh) >"$S/plant-all17.txt" 2>&1
+rc=$?
+echo "all 17 together, whole suite: exit $rc in $((SECONDS-t0))s" >>"$S/plant-all17.txt"
+rm -rf "${W:?}"
+exit 0

@@ -1,0 +1,71 @@
+# 2026-11-05T04:50:30Z
+# The Plane backup Job's objects and finalize scripts, extracted from scripts/backup.sh with yq, run on BusyBox v1.37 (local image sha256:a7dbc319b143), with a stub rclone, on four older backup folders and a .partial with one row marked uploaded and no object. No cluster touched.
+# docker run --rm -i busybox sh -c "... sh objects.sh; sh finalize.sh; ls /backups; cat manifest.json ..."
+objects: 1 checked
+GATE2: 2 rows marked uploaded, 1 with no object in this backup
+--- finalize
+retention: removed 20261102T000000Z
+retention: kept 20261101T000000Z past KEEP=3, the newest backup that holds users
+finalize: 20261105T000000Z complete
+--- left
+20261101T000000Z
+20261103T000000Z
+20261104T000000Z
+20261105T000000Z
+--- manifest
+{
+  "schema": 1,
+  "kind": "plane",
+  "env": "dev",
+  "id": "20261105T000000Z",
+  "created_at": "2026-11-05T04:50:16Z",
+  "plane_version": "1.4.3",
+  "backend_image": "be",
+  "pg_image": "pg",
+  "pg_server_version": "15.19",
+  "pg_dump_version": "pg_dump 15.19",
+  "secret_key_fp": "531854cef641648c",
+  "excluded_table_data": ["api_activity_logs", "webhook_logs", "email_notification_logs"],
+  "objects": {"count": 3, "bytes": 332},
+  "uploaded_objects": {"rows": 2, "missing": 1},
+  "encrypted_sentinel": "ok",
+  "sentinel": {"environment":"dev","slug":"s","project_id":"p","work_item_id":"w","name":"n","asset_id":"a","sha256":"h"},
+  "files": [{"path":"postgres/plane.dump","bytes":2,"sha256":"73cb3858a687a8494ca3323053016282f3dad39d42cf62ca4e79dda2aac7d9ac"},{"path":"postgres/plane.toc.txt","bytes":2,"sha256":"73cb3858a687a8494ca3323053016282f3dad39d42cf62ca4e79dda2aac7d9ac"},{"path":"postgres/rowcounts.tsv","bytes":17,"sha256":"26f39f3719010434ac1ae30722e379df1ea5c0c9693321a811ab02271fbad11a"},{"path":"postgres/content.tsv","bytes":2,"sha256":"73cb3858a687a8494ca3323053016282f3dad39d42cf62ca4e79dda2aac7d9ac"},{"path":"objects.lsjson","bytes":3,"sha256":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"}]
+}
+--- missing
+c/no-object.png
+--- sums
+24
+/backups/20261105T000000Z:
+.
+..
+._objects
+._objects.lsjson
+._postgres
+SHA256SUMS
+manifest.json
+objects
+objects.check
+objects.lsjson
+postgres
+
+/backups/20261105T000000Z/postgres:
+.
+..
+._content.tsv
+._pg_dump_version.txt
+._plane.dump
+._plane.toc.txt
+._rowcounts.tsv
+._server_version.txt
+._uploaded-keys.txt
+content.tsv
+pg_dump_version.txt
+plane.dump
+plane.toc.txt
+rowcounts.tsv
+server_version.txt
+uploaded-keys.txt
+uploaded-missing.txt
+
+BusyBox v1.37.0 (2024-09-26 21:31:42 UTC) multi-call binary.

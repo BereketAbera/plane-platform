@@ -1,0 +1,6 @@
+2026-11-05T07:38:44Z PASS preflight: Infisical, Secrets and Postgres agree; Plane answers; negative control rejected
+2026-11-05T07:38:44Z INFO prod-sim: rotating <redacted>
+2026-11-05T07:38:44Z PASS Infisical <redacted> version 2 -> 3
+2026-11-05T07:38:44Z PASS operator synced plane-pgdb and plane-app-env
+2026-11-05T07:38:45Z PASS Postgres accepts the target password over TCP, where passwords are checked
+2026-11-05T07:38:45Z PASS Postgres rejects the replaced password: password authentication failed

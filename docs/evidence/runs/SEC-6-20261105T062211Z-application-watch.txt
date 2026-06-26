@@ -1,0 +1,4 @@
+# 2026-11-05T06:22:11Z commit 0dde813
+# command: kubectl -n argocd get application plane-dev -w, each line timestamped by scratchpad/plane-dev/app-watch.sh
+2026-11-05T06:22:11Z SYNC     HEALTH    OP          STARTED                REV
+2026-11-05T06:22:11Z Synced   Healthy   Succeeded   2026-11-05T05:29:48Z   9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6

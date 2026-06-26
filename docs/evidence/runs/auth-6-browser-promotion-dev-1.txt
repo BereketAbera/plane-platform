@@ -1,0 +1,14 @@
+2026-11-05T05:33:38Z
+# AUTH-6, real browser pane (Chromium), plain navigation with no hard reload and no cache setting. plane.dev.localhost through Traefik.
+# Starting point: .local/evidence-raw/browser-cache-seed-1.txt, 04:16Z: the browser held /sign-in/ with etag "6aebdc6c-18f1", cache-control no-cache, images from ec45e21.
+# Then: make promote ENV=dev published 1fc9fbe, images from 84b63d9. Rollout finished at 05:31:09Z.
+# Navigation to /sign-in/ at 05:31:33Z. Read in the page: fetch('/sign-in/',{cache:'only-if-cached',mode:'same-origin'}), performance.getEntriesByType('navigation')[0].
+cached entry after the navigation: status 200, etag "6aebef83-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 02:52:51 GMT
+navigation: type navigate, transferSize 6685, decodedBodySize 6385   (a full body came over the network, so the browser asked and got the new file)
+server at that moment: curl -I /sign-in/ gave etag "6aebef83-18f1", cache-control no-cache
+Limits: a promotion only, on dev, Chromium only. The rollback direction is tested in the failed-deploy drill.
+
+# Same check on plane.prod-sim.localhost, signed out, 2026-11-05T05:36:16Z, after make promote ENV=prod-sim published 9c8e098 (images from 84b63d9).
+# Starting point, same seed file: etag "6aebdc6c-18f1".
+cached entry after the navigation: status 200, etag "6aebef83-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 02:52:51 GMT
+navigation: type navigate, transferSize 6685, decodedBodySize 6385. Title "Sign up - Wayline", the signed-out page, so the dev session did not carry over.

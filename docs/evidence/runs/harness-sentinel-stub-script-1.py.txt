@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""Item 1: the sentinel on a database this run finds not set up. tests/e2e/smoke.py is the real code, over real HTTP, against
+a stub that plays only the Plane endpoints these steps use. The namespace's age is read from the real cluster with kubectl.
+Nothing here says anything about Plane itself: a real clean database comes in the validation stage.
+"""
+import http.server, json, os, re, secrets, shutil, sys, tempfile, threading, contextlib, io, datetime as dt, uuid
+from pathlib import Path
+from urllib.parse import urlsplit, parse_qs
+sys.path.insert(0, os.environ.get("SMOKE_DIR", "/Users/bek/dev/pr/plane-platform/tests/e2e"))
+import smoke as S
+
+class Plane:
+    def __init__(self, set_up=False, name="Wayline", telemetry=False):
+        self.set_up, self.name, self.telemetry = set_up, name, telemetry
+        self.created = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+        self.tokens, self.workspaces, self.items, self.objects, self.assets = set(), set(), {}, {}, {}
+    def instance(self):
+        return {"instance": {"is_setup_done": self.set_up, "instance_name": self.name, "is_telemetry_enabled": self.telemetry, "created_at": self.created},
+                "config": {"instance_changelog_url": ""}}
+
+def handler(plane):
+    class H(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a): pass
+        def reply(self, status, body=b"", headers=None):
+            if isinstance(body, (dict, list)):
+                body = json.dumps(body).encode()
+            self.send_response(status)
+            for k, v in (headers or {}).items():
+                self.send_header(k, v)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+        def key_ok(self):
+            return self.headers.get("X-API-Key") in plane.tokens
+        def body(self):
+            return self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        def do_GET(self):
+            path = urlsplit(self.path).path
+            if path == "/":
+                return self.reply(200, b"<html><title>x</title></html>")
+            if path == "/api/instances/":
+                return self.reply(200, plane.instance())
+            if path == "/auth/get-csrf-token/":
+                return self.reply(200, {"csrf_token": "stub"}, {"Set-Cookie": "csrftoken=stub; Path=/"})
+            if path == "/api/users/me/":
+                return self.reply(200, {"id": "user-1"}) if "session-id=" in (self.headers.get("Cookie") or "") else self.reply(401, {})
+            if path == "/api/v1/users/me/":
+                return self.reply(200, {"id": "user-1"}) if self.key_ok() else self.reply(401, {})
+            m = re.fullmatch(r"/api/v1/workspaces/([^/]+)/projects/([^/]+)/work-items/([^/]+)/", path)
+            if m:
+                # As the real API answers: a workspace this account does not have reads 403, even with a good key.
+                if not self.key_ok() or m.group(1) not in plane.workspaces:
+                    return self.reply(403, {"error": "You do not have permission"})
+                return self.reply(200, {"name": plane.items[m.group(3)]})
+            m = re.fullmatch(r"/api/v1/workspaces/([^/]+)/projects/([^/]+)/work-items/([^/]+)/attachments/([^/]+)/", path)
+            if m:
+                return self.reply(302, b"", {"Location": f"http://{self.headers['Host']}/uploads/{plane.assets[m.group(4)]}?sig=stub"})
+            if path.startswith("/uploads/"):
+                return self.reply(200, plane.objects[path[len("/uploads/"):]])
+            return self.reply(404, {})
+        def do_POST(self):
+            path = urlsplit(self.path).path
+            raw = self.body()
+            if path == "/api/instances/admins/sign-up/":
+                if plane.set_up:
+                    return self.reply(302, b"", {"Location": "/god-mode/setup/?error_code=5180&error_message=ADMIN_ALREADY_EXIST"})
+                plane.set_up = True
+                return self.reply(302, b"", {"Location": "/god-mode/general/", "Set-Cookie": "admin-session-id=stub; Path=/"})
+            if path == "/auth/sign-in/":
+                return self.reply(302, b"", {"Location": "/", "Set-Cookie": "session-id=stub; Path=/"})
+            if path == "/api/users/api-tokens/":
+                token = "plane_api_" + secrets.token_hex(8)
+                plane.tokens.add(token)
+                return self.reply(201, {"token": token})
+            if path == "/api/workspaces/":
+                plane.workspaces.add(json.loads(raw)["slug"])
+                return self.reply(201, {})
+            m = re.fullmatch(r"/api/v1/workspaces/([^/]+)/projects/", path)
+            if m:
+                payload = json.loads(raw)
+                return self.reply(201, {"id": str(uuid.uuid4()), "name": payload["name"], "identifier": payload["identifier"]})
+            m = re.fullmatch(r"/api/v1/workspaces/([^/]+)/projects/([^/]+)/work-items/", path)
+            if m:
+                item = str(uuid.uuid4())
+                plane.items[item] = json.loads(raw)["name"]
+                return self.reply(201, {"id": item})
+            m = re.fullmatch(r"/api/v1/workspaces/([^/]+)/projects/([^/]+)/work-items/([^/]+)/attachments/", path)
+            if m:
+                asset, key = str(uuid.uuid4()), secrets.token_hex(8)
+                plane.assets[asset] = key
+                return self.reply(200, {"asset_id": asset, "upload_data": {"url": f"http://{self.headers['Host']}/uploads", "fields": {"key": key}}})
+            if path == "/uploads":
+                # multipart: fields first and the file last, as smoke.multipart writes it
+                key = re.search(rb'name="key"\r\n\r\n([^\r]+)', raw).group(1).decode()
+                content = raw.split(b"\r\n\r\n")[-1].rsplit(b"\r\n--", 1)[0]
+                plane.objects[key] = content
+                return self.reply(204)
+            return self.reply(404, {})
+        def do_PATCH(self):
+            self.body()
+            return self.reply(204)
+    return H
+
+def serve(plane):
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler(plane))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+STEPS = [("reachable", "step_reachable", ()), ("instance-setup", "step_instance_setup", ("reachable",)),
+         ("sign-in", "step_sign_in", ("instance-setup",)), ("api-token", "step_api_token", ("sign-in",)),
+         ("branding-overlay", "step_branding_overlay", ()),
+         ("branding-fresh-install", "step_branding_fresh_install", ("reachable",)),
+         ("sentinel-create", "step_sentinel_create", ("api-token",)), ("sentinel-reread", "step_sentinel_reread", ("sentinel-create",))]
+
+def run(plane_or_server, directory, sentinel, *extra):
+    server = plane_or_server
+    args = S.parse_args(["--env", "dev", "--host", "plane.dev.localhost", "--connect", f"127.0.0.1:{server.server_address[1]}",
+                         "--accounts", f"{directory}/accounts.env", "--sentinel", str(sentinel), "--wait-seconds", "3", *extra])
+    smoke = S.Smoke(args)
+    if args.mode == "verify":
+        smoke.run_verify()
+    else:
+        for name, method, requires in STEPS:
+            smoke.run(name, getattr(smoke, method), requires)
+    code = {"PASS": 0, "FAIL": 1, "BLOCKED": 2}[smoke.overall()]
+    print(f"RESULT {smoke.overall()}, would exit {code}")
+    return code
+
+def record(sentinel):
+    return json.loads(Path(sentinel).read_text())
+
+failures = 0
+def expect(what, ok):
+    global failures
+    print(("  ok   " if ok else "  WRONG ") + what)
+    failures += 0 if ok else 1
+
+OLD = {"environment": "dev", "slug": "sentinel-oldcluster", "project_id": "p", "work_item_id": "i-old", "name": "n", "asset_id": "a", "sha256": "0"*64}
+root = tempfile.mkdtemp(prefix="sentinel-stub-", dir=sys.argv[1])
+try:
+    print("== S1 first smoke after a clean install: is_setup_done false, and the record is older than the namespace, as after make destroy")
+    plane = Plane(set_up=False); server = serve(plane)
+    d = Path(root) / "s1"; d.mkdir()
+    sentinel = d / "sentinel.json"
+    sentinel.write_text(json.dumps({**OLD, "created_at": "2026-11-01T00:00:00Z"}))
+    code = run(server, d, sentinel)
+    new = record(sentinel)
+    expect("exit 0", code == 0)
+    expect("the record is new", new["work_item_id"] != "i-old" and new["slug"].startswith("sentinel-"))
+    print("== S2 the second smoke on that database: setup is done and it holds the record, which is the state after a clean restore too")
+    before = sentinel.read_text()
+    code = run(server, d, sentinel)
+    expect("exit 0", code == 0)
+    expect("the record is unchanged", sentinel.read_text() == before)
+    print("== S3 --mode verify on that database, which is what a restore and the pod restart drill run")
+    code = run(server, d, sentinel, "--mode", "verify", "--job-timeout", "1")
+    expect("exit 0", code == 0)
+    expect("the record is unchanged", sentinel.read_text() == before)
+    server.shutdown()
+
+    print("== S4 is_setup_done false, and the record is younger than the namespace: this namespace's database held it and lost it")
+    plane = Plane(set_up=False); server = serve(plane)
+    d = Path(root) / "s4"; d.mkdir()
+    sentinel = d / "sentinel.json"
+    written = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    sentinel.write_text(json.dumps({**OLD, "created_at": written}))
+    code = run(server, d, sentinel)
+    expect("exit 1", code == 1)
+    expect("the record is kept", record(sentinel)["work_item_id"] == "i-old")
+    server.shutdown()
+
+    print("== S5 --mode verify after a clean install, before any full smoke: not set up, stale record, stale token. Never replaced in this mode")
+    plane = Plane(set_up=False); server = serve(plane)
+    d = Path(root) / "s5"; d.mkdir()
+    sentinel = d / "sentinel.json"
+    sentinel.write_text(json.dumps({**OLD, "created_at": "2026-11-01T00:00:00Z"}))
+    S.Accounts(d / "accounts.env", "dev").set(API_TOKEN="plane_api_stale", ADMIN_EMAIL="x@wayline.test", ADMIN_PASSWORD="stub-password-2")
+    code = run(server, d, sentinel, "--mode", "verify")
+    expect("exit 1", code == 1)
+    expect("the record is kept", record(sentinel)["work_item_id"] == "i-old")
+    print("== S6 --mode verify with a working token and a workspace this database does not have, set up")
+    plane.set_up = True
+    plane.tokens.add("plane_api_stale")
+    code = run(server, d, sentinel, "--mode", "verify")
+    expect("exit 1", code == 1)
+    server.shutdown()
+
+    print("== S7 --reset-sentinel still replaces, with no comparison, on a set-up database")
+    plane = Plane(set_up=True); server = serve(plane)
+    d = Path(root) / "s7"; d.mkdir()
+    sentinel = d / "sentinel.json"
+    sentinel.write_text(json.dumps({**OLD, "created_at": written}))
+    S.Accounts(d / "accounts.env", "dev").set(API_TOKEN="plane_api_x", ADMIN_EMAIL="x@wayline.test", ADMIN_PASSWORD="stub-password-1")
+    code = run(server, d, sentinel, "--reset-sentinel")
+    expect("the record is new", record(sentinel)["work_item_id"] != "i-old")
+    server.shutdown()
+
+    print("== S8 the name a new instance must have, on the stub: the assertion in branding-fresh-install fails on upstream's default")
+    plane = Plane(set_up=False, name="Plane Community Edition"); server = serve(plane)
+    d = Path(root) / "s8"; d.mkdir()
+    code = run(server, d, d / "sentinel.json")
+    expect("exit 1", code == 1)
+    server.shutdown()
+finally:
+    shutil.rmtree(root)
+print(f"failures: {failures}")
+sys.exit(1 if failures else 0)

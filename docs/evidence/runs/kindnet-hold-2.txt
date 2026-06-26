@@ -1,3 +1,45 @@
 # date: 2026-11-05T00:52:51Z
 [00:52:51Z] real kindnet: kindnet-gqcpb restarts=0
 pod/kindnet-failopen-synthetic-heartbeat created
+[00:53:47Z] firing in Prometheus after 56s
+[00:53:57Z] firing webhook at the sink after 10s
+  the count now: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic-heartbeat 1 00:54:27Z 
+  the count held for 3d: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic-heartbeat 1 00:54:27Z 
+  the old expression: namespace=kube-system,pod=kindnet-failopen-synthetic-heartbeat 1 00:54:27Z 
+  lines read from this pod:  9 00:54:27Z
+  ALERTS: (this line failed on a quoting bug in the script under bash 3.2; the raw samples below replace it)
+[00:54:27Z] stopping the Alloy container in place, restartCount 3, pod alloy-68d8ccc746-n2tbr uid 99403958-a0d4-48bb-b5d9-10c967699b55
+[00:55:04Z] Alloy restarted in the same pod, restartCount 4, same uid 99403958-a0d4-48bb-b5d9-10c967699b55 after 36s
+[00:55:04Z] the count gone from Alloy, and so from Prometheus after 0s
+[00:56:04Z] the count is gone
+  the count now: (empty) 
+  the count held for 3d: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic-heartbeat 1 00:56:04Z 
+  the old expression: (empty) 
+  lines read from this pod:  9 00:56:04Z
+  ALERTS: (this line failed on a quoting bug in the script under bash 3.2; the raw samples below replace it)
+[00:58:04Z] 3 minutes later
+  the count now: (empty) 
+  the count held for 3d: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic-heartbeat 1 00:58:04Z 
+  the old expression: (empty) 
+  lines read from this pod:  21 00:58:04Z
+  ALERTS: (this line failed on a quoting bug in the script under bash 3.2; the raw samples below replace it)
+[00:58:04Z] resolved lines at the sink for this pod so far: 0
+[00:58:04Z] deleting the scratch pod, so the count no longer applies
+pod "kindnet-failopen-synthetic-heartbeat" force deleted from kube-system namespace
+[01:03:25Z] resolved webhook at the sink after 320s
+  the count now: (empty) 
+  the count held for 3d: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic-heartbeat 1 01:03:25Z 
+  the old expression: (empty) 
+  lines read from this pod:  24 01:03:26Z
+  ALERTS: (this line failed on a quoting bug in the script under bash 3.2; the raw samples below replace it)
+[01:03:26Z] every line at the sink for this pod:
+2026-11-05T00:53:53Z group=firing alert=firing KindnetSkippedNetworkPolicies  kube-system kindnet-failopen-synthetic-heartbeat  startsAt=2026-11-05T00:53:43 endsAt=0001-01-01T00:00:00
+2026-11-05T00:54:23Z group=firing alert=firing KindnetSkippedNetworkPolicies  kube-system kindnet-failopen-synthetic-heartbeat  startsAt=2026-11-05T00:53:43 endsAt=0001-01-01T00:00:00
+2026-11-05T01:03:23Z group=resolved alert=resolved KindnetSkippedNetworkPolicies  kube-system kindnet-failopen-synthetic-heartbeat  startsAt=2026-11-05T00:53:43 endsAt=2026-11-05T01:03:13
+[01:03:26Z] real kindnet: kindnet-gqcpb restarts=0
+# done
+## Raw samples from Prometheus, read afterwards
+the count: 3 samples, first 00:53:05, last 00:54:05, value changes [('00:53:05', '1')]
+the alert: 19 samples, first 00:53:43, last 01:02:43, value changes [('00:53:43', '1')]
+kube_pod_info: 10 samples, first 00:53:16, last 00:57:46, value changes [('00:53:16', '1')]
+Alloy restarts: 50 samples, first 00:38:46, last 01:03:16, value changes [('00:38:46', '1'), ('00:41:46', '2'), ('00:45:16', '3'), ('00:55:16', '4')]

@@ -1,0 +1,479 @@
+# make drill-clean-restore-harness at ac52a14, 2026-11-05T02:43:36Z. bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25). Stubs, not the platform: see the first lines of tests/drills/clean-restore-harness.sh
+
+=== S0. What the fixture itself can see, so a pass below means something
+PASS  no token: the API refuses a secret read
+PASS  a made-up token: refused
+PASS  the real token: accepted
+PASS  a Plane app's pods are there
+PASS  self-heal reverts a scale while auto-sync is on
+PASS  so the server still answers
+PASS  paused, the scale stands, and nothing answers
+PASS  and the Application is not Synced and Healthy
+PASS  the curl on the path refuses a real host
+PASS  a lost cluster leaves its local state, as a real loss does
+
+=== S1. The happy path: nothing left but the host's files
+PASS  exit 0 (got 0)
+PASS  order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, dev, prod-sim
+PASS  no database or cache was replaced under a running server
+PASS  root was never paused for Infisical
+PASS  no admin bootstrap call
+PASS  no secret written
+PASS  no password login: the token this backup names still works
+PASS  terraform never ran with -auto-approve
+PASS  marker removed
+PASS  secret zero unchanged
+PASS  no archive made
+PASS  evidence says PASS
+PASS  every clean step PASS
+PASS  the plan named row and object counts
+PASS  and for Infisical
+
+=== S2. A cluster with data: refuse, change nothing, and say which backup and how to keep it the newest
+PASS  non-zero exit
+PASS  says why
+PASS  the advice skips a backup, which would take over BACKUP=latest (finding 10)
+PASS  and names the backup to come back to
+PASS  marker not written
+PASS  nothing ran
+
+=== S3. No Infisical backup at all, Plane backups exist
+PASS  non-zero exit
+PASS  says Infisical is the source of truth
+PASS  nothing ran
+
+=== S4. Plane backup taken with another SECRET_KEY
+PASS  non-zero exit
+PASS  names the mismatch
+PASS  tells what to do
+PASS  nothing ran
+PASS  leaving dev out passes the plan
+
+=== S5. A tampered dump
+PASS  non-zero exit
+PASS  says which
+PASS  nothing ran
+
+=== S6. A key gone: a clear refusal, and only the hint that applies (finding 2)
+PASS  ENCRYPTION_KEY: non-zero exit
+PASS  ENCRYPTION_KEY: no shell error in the output
+PASS  ENCRYPTION_KEY: no shell source in the output
+PASS  ENCRYPTION_KEY: says the dump is unreadable
+PASS  ENCRYPTION_KEY: and not the AUTH_SECRET hint
+PASS  ENCRYPTION_KEY: nothing ran
+PASS  AUTH_SECRET: non-zero exit
+PASS  AUTH_SECRET: no shell error in the output
+PASS  AUTH_SECRET: no shell source in the output
+PASS  AUTH_SECRET: its own hint
+PASS  AUTH_SECRET: and not the ENCRYPTION_KEY hint
+PASS  AUTH_SECRET: nothing ran
+PASS  no script in the source has a case inside a command substitution
+
+=== S7. A plain make up came first, which archived the credentials. Restore finds them by checksum
+PASS  exit 0 (got 0)
+PASS  credentials are the backup's again
+PASS  what it replaced is kept
+PASS  Terraform state is the backup's
+PASS  the state it replaced is kept
+
+=== S8. Fails partway, then resumes
+PASS  first run fails at dev
+PASS  marker stays
+PASS  Infisical marked done
+PASS  the wait for all Applications is marked done
+PASS  says to run it again
+PASS  second run exit 0 (got 0)
+PASS  Infisical not restored twice
+PASS  dev restored this time
+PASS  marker removed
+PASS  says it did not wait for everything again until the end
+
+=== S9. Under way, a plain make up on the fresh instance, and another backup id
+PASS  first run stops at the Infisical restore
+PASS  marker there
+PASS  plain up refuses to bootstrap a fresh instance while a restore is under way
+PASS  and says so
+PASS  no bootstrap call
+PASS  another backup id refused while one is under way
+PASS  the same id resumes, exit 0 (got 0)
+
+=== S10. Restored mode refuses instead of repairing
+PASS  create: non-zero
+PASS  create: names the resource
+PASS  create: nothing applied
+PASS  replace: non-zero
+PASS  replace: names the resource
+PASS  replace: nothing applied
+PASS  no changes: exit 0 (got 0)
+PASS  no changes: says so
+PASS  no changes: identities still published
+PASS  no changes: no write
+PASS  fresh instance: refuses
+PASS  fresh instance: says the restore did not take
+PASS  fresh instance: no bootstrap call
+PASS  fresh instance: nothing archived
+PASS  rejected token: refuses
+PASS  rejected token: says so
+PASS  rejected token: does not mint its way past it
+PASS  missing secret: refuses
+PASS  missing secret: names it, generates nothing
+PASS  missing secret: no write
+PASS  no state: refuses before planning
+PASS  no state: no plan
+
+=== S11. Plain make up on a fresh instance works as before, including over old state
+PASS  exit 0 (got 0)
+PASS  bootstrap call
+PASS  old credentials moved to an archive
+PASS  old Terraform state moved aside
+PASS  terraform ran with -auto-approve
+PASS  secrets seeded in both projects
+PASS  identity published
+
+=== S12. destroy.sh keeps what a restore needs
+PASS  exit 0 (got 0)
+PASS  cluster deleted
+PASS  local state removed
+PASS  Infisical state kept, byte for byte
+PASS  secret zero kept
+PASS  points at restore-clean
+PASS  with its own backup: warns that latest now names it (finding 10)
+PASS  PURGE=yes: says the registry held images (finding 5)
+
+=== S13. The drill, start to finish
+PASS  PLAN_ONLY: exit 0 (got 0)
+PASS  PLAN_ONLY: deleted nothing
+PASS  no CONFIRM: refuses
+PASS  drill exit 0 (got 0)
+PASS  drill deleted the cluster
+PASS  RESULT PASS
+PASS  LOSE_CLUSTER=yes: the disaster path, exit 0 (got 0)
+PASS  LOSE_CLUSTER=yes: the state stayed behind for the restore to deal with
+PASS  LOSE_CLUSTER=yes: and it moved it aside
+PASS  LOSE_CLUSTER=yes: Terraform never applied over it
+PASS  LOSE_CLUSTER=yes: RESULT PASS
+
+=== S14. Rotation guard on an in-place restore
+PASS  refuses
+PASS  says a rotation happened
+PASS  names the keys
+PASS  nothing stopped
+PASS  the override goes on
+
+=== S15. A restore under way, and the cluster it was working on goes away
+PASS  fails at dev, Infisical marked done
+PASS  run again with the cluster gone: exit 0 (got 0)
+PASS  Infisical restored again, because the new cluster has none
+PASS  fails at dev, marker there
+PASS  destroy clears the marker
+
+=== S16. PLAN_ONLY changes nothing, on a live cluster or with a restore under way
+PASS  PLAN_ONLY exit 0 (got 0)
+PASS  not one file under .local changed
+PASS  the disk line is in the plan (finding 4)
+PASS  with a marker and no cluster: exit 0 (got 0)
+PASS  with a marker and no cluster: not one file changed
+PASS  with a marker and no cluster: still says done
+PASS  the plan says the stale state would move, and moves nothing (finding 6)
+PASS  the state is where it was
+
+=== S17. Infisical cannot be read at backup time: the backup says so, and a clean restore passes over it
+PASS  backup exits non-zero (got 1)
+PASS  and says why
+PASS  the dump is kept
+PASS  a newer backup exists
+PASS  latest passes over it, exit 0 (got 0)
+PASS  and names it
+PASS  and uses the good one
+PASS  naming it directly is refused
+PASS  with the reason
+
+=== S18. An older Infisical backup pairs with the Plane backups of its own run
+PASS  two distinct sets
+PASS  older Infisical id takes the dev backup of its own run
+PASS  latest takes the newest
+PASS  BACKUP_DEV overrides
+
+=== S19. Plane restore puts back the accounts and sentinel of its dump, and leaves the other environment's alone
+PASS  exit 0 (got 0)
+PASS  dev token is the dump's
+PASS  prod-sim token untouched
+PASS  file stays 0600
+PASS  sentinel is the dump's
+
+=== S20. Finding 1: the token a backup names has expired, and the password is here. A password login mints another
+PASS  the plan goes through, exit 0 (got 0)
+PASS  and warns
+PASS  and says what happens
+PASS  the restore goes through, exit 0 (got 0)
+PASS  the login comes after the database is back, and before anything reads a value
+PASS  evidence says PASS
+PASS  the Infisical restore records that it was replaced
+PASS  the file now holds another token
+PASS  and it has not expired
+PASS  the ledger links the old file to the new
+PASS  the set still names the old file, and the archive still holds it
+PASS  marker removed
+
+=== S21. Finding 1: infisical-admin.json is lost altogether, and the keys, password and dump are here
+PASS  exit 0 (got 0)
+PASS  no shell error
+PASS  minted after the database came back
+PASS  the new file has the old shape, with its organization
+PASS  the ledger has it, with no old file to name
+PASS  and the machine file came back, from Terraform's own outputs
+PASS  marker removed
+
+=== S22. Finding 1: no token and no password: restore Infisical, stop with steps, resume with the replacement
+PASS  the plan goes through and warns, exit 0 (got 0)
+PASS  the plan says it will stop for a sign-in
+PASS  the run stops with exit 2 (got 2)
+PASS  after restoring Infisical
+PASS  and no Plane restore began
+PASS  the steps name where a sign-in happens
+PASS  the steps name the file for the token
+PASS  the steps name the file for a password
+PASS  the steps name what to run next, with the backup id
+PASS  marker stays, with Infisical done
+PASS  evidence says BLOCKED
+PASS  something that is not a token: stops again, exit 2 (got 2)
+PASS  and says so
+PASS  a token the server does not know: stops again, exit 2 (got 2)
+PASS  and says so
+PASS  and it is not moved into place
+PASS  and Infisical was not restored again
+PASS  with a real replacement, it resumes and finishes, exit 0 (got 0)
+PASS  Infisical was not restored again
+PASS  Plane was restored
+PASS  the token file is the replacement
+PASS  the file a person left is gone
+PASS  the ledger says a person did it
+PASS  marker removed
+PASS  the file lost and no password: the same stop, exit 2 (got 2)
+PASS  the file lost and no password: Infisical is back
+PASS  writing the password, as the steps say, lets it go on, exit 0 (got 0)
+PASS  it signed in by itself
+
+=== S23. Finding 1: in place, what stops a restore comes before the server stops
+PASS  expired and no password: refuses
+PASS  before anything was stopped
+PASS  and before the database was touched
+PASS  says what to do while it can
+PASS  and that a token made now would not help
+PASS  the override restores it, for an instance with nothing to sign in to
+PASS  the override then stops, with a blocked exit, not a pass (got 3)
+PASS  the override: its evidence says BLOCKED
+PASS  the override: with the steps
+PASS  expired, password here: goes through and mints, exit 0 (got 0)
+PASS  expired, password here: order
+PASS  expired, password here: proof-values PASS
+PASS  a token newer than the dump, the old file gone: mints, exit 0 (got 0)
+PASS  a token newer than the dump: the server was asked first
+PASS  a token newer than the dump: proof-values PASS with the token the restored server takes
+PASS  the named file in an archive: exit 0 (got 0)
+PASS  the named file in an archive: no login
+PASS  the named file in an archive: it is back in place
+PASS  a password newer than the dump: exit 0 (got 0)
+PASS  a password newer than the dump: the one the dump goes with is back
+PASS  a password newer than the dump: the newer one is kept
+
+=== S24. Finding 1: a warning at backup and plan time when the token ends inside the retention period
+PASS  10 days left: the backup warns
+PASS  10 days left: and says the password is what is left
+PASS  10 days left: the plan warns
+PASS  60 days left: the backup does not
+PASS  10 days left and no password: the warning says what that costs
+
+=== S25. Finding 1: a token that has ended does not stop backups, and the dump holds the one the set names
+PASS  the backup succeeds, exit 0 (got 0)
+PASS  minted before the dump, so the dump holds it
+PASS  the set is complete
+PASS  the set names the new file
+PASS  the new file is not the old one
+PASS  and a clean restore of it needs no login, exit 0 (got 0)
+PASS  no login
+PASS  no password either: the dump is kept and the set is not whole, exit non-zero
+PASS  no password either: says what to do
+PASS  no password either: says nothing was pruned
+PASS  RENEW_ADMIN_TOKEN=yes replaces a token that still works (got 0)
+PASS  and the next bootstrap accepts it (got 0)
+
+=== S26. Finding 1: writing a token over the file does not pass as the file the checksum names
+PASS  the plan does not call it the file this backup names
+PASS  the restored server refuses it, and a password login takes over, exit 0 (got 0)
+PASS  the server was asked
+PASS  the ledger says why
+PASS  a token the restored server accepts goes through, exit 0 (got 0)
+PASS  with no login
+PASS  and is on record, from the file this backup names to this one
+
+=== S27. Finding 3: uncommitted changes refuse before anything is deleted, as up.sh would
+PASS  PLAN_ONLY refuses
+PASS  and names the path
+PASS  and says why
+PASS  a real run refuses
+PASS  before the marker
+PASS  before anything ran
+PASS  the drill refuses
+PASS  the drill deletes nothing
+PASS  the drill backs up nothing first
+PASS  the drill names the path
+PASS  up.sh itself refuses it, the same way
+
+=== S28. Finding 4: the disk check before a delete, and agreement with up.sh
+PASS  14 GiB + 93% of 11.4: under 25, the drill refuses
+PASS  before the delete
+PASS  and shows the arithmetic
+PASS  and how to go on
+PASS  ALLOW_LOW_DISK=yes is refused: it says nothing
+PASS  before the delete
+PASS  and it says what it wants
+PASS  a reason goes past it, exit 0 (got 0)
+PASS  deleted and restored
+PASS  the drill logged it
+PASS  up.sh logged it
+PASS  cluster-up.sh did not need to: 24 GiB clears its 15
+PASS  15 GiB + 93% of 11.4: 25.6 clears 25, and the run goes through, exit 0 (got 0)
+PASS  with no override
+PASS  passes the check, and only 60% comes back: it does not stop at up.sh, exit 0 (got 0)
+PASS  the run says what happened
+PASS  and up.sh logs it, with that reason
+PASS  up.sh with no cluster and 12 GiB: refuses
+PASS  up.sh says how to go on
+PASS  up.sh created nothing
+PASS  up.sh with a reason goes on (got 0)
+PASS  up.sh logs it
+PASS  and cluster-up.sh, past its own 15
+PASS  cluster-up.sh alone with no cluster and 12 GiB: refuses
+PASS  cluster-up.sh alone: says how to go on
+PASS  up.sh on a cluster that exists asks only for the floor, exit 0 (got 0)
+PASS  an empty cluster that stays, 12 GiB: no disk refusal (got 0)
+PASS  restore-clean with no cluster and 20 GiB: refuses
+PASS  before the marker
+PASS  before anything ran
+PASS  with a reason it goes through, exit 0 (got 0)
+
+=== S29. Finding 5: digests the registry cannot serve are listed before anything is touched
+PASS  PLAN_ONLY refuses
+PASS  and lists the digest
+PASS  and gives the way from GHCR
+PASS  and the way by rebuilding
+PASS  and by promoting
+PASS  and says the data is left alone
+PASS  and how to get a registry to copy into
+PASS  and rebuilds nothing to find out
+PASS  a real run refuses
+PASS  before anything ran
+PASS  before the marker
+PASS  the drill refuses
+PASS  the drill deletes nothing
+PASS  the registry merely stopped, its volume there: no refusal (got 0)
+PASS  and it says up.sh will check
+PASS  the registry and its volume gone, as after PURGE=yes: refuses
+PASS  and lists what it cannot serve
+
+=== S30. Finding 6: a cluster lost with no make destroy leaves state about it, which must not be applied over
+PASS  exit 0 (got 0)
+PASS  Terraform did not apply over it
+PASS  the old state is kept, moved aside
+PASS  the aside folder is private
+PASS  the run says so
+PASS  the evidence says so
+PASS  and the new state is this cluster's
+PASS  plain make up on a lost cluster too
+PASS  make up with the cluster there keeps its state (got 0)
+PASS  Docker down: refuses, and does not take that for a lost cluster
+PASS  Docker down: state untouched
+
+=== S31. Finding 7: a hard stop ran no trap. Infisical left at zero with auto-sync paused
+PASS  fixture: nothing answers
+PASS  fixture: the Application reads what a wait cannot get past
+PASS  the resume finishes, exit 0 (got 0)
+PASS  auto-sync came back and the server was scaled up, before anything waited
+PASS  then the restore went ahead
+PASS  the run says what it repaired
+PASS  marker removed
+
+=== S31b. Finding 7: root and a Plane app left paused, with that app at zero
+PASS  the resume finishes, exit 0 (got 0)
+PASS  root last, as argo_resume does
+PASS  the apps came back to Git's replicas first
+PASS  none left paused at the end
+
+=== S31c. Finding 7: the real thing. Kill the whole process group with SIGKILL, in the Infisical restore Job
+PASS  fixture: the Job is still there, active, with its client gone
+PASS  fixture: the server is at zero, and paused
+PASS  the resume finishes, exit 0 (got 0)
+PASS  the Job with no client was removed first
+PASS  no restore ran with the server up
+PASS  marker removed
+
+=== S31d. A run that is alive is not a hard stop
+PASS  a second run refuses
+PASS  and says another is running
+PASS  and repairs nothing under it
+
+=== S31e. Finding 7: a power cut. The same state, and the node stopped too
+PASS  fixture: nothing answers, not even the cluster
+PASS  the resume finishes, exit 0 (got 0)
+PASS  the node first, then what it left behind
+PASS  marker removed
+
+=== S32. Finding 8: retention, on real folders. Five failed Infisical backups keep the last complete one
+PASS  the last complete one is still there, after 6 that could not finish
+PASS  and the failures are kept too: nothing pruned
+PASS  and a clean restore still has it
+PASS  a complete backup with KEEP=1 succeeds, exit 0 (got 0)
+PASS  the newest complete set stays
+PASS  the older complete one goes
+PASS  and the failure older than it
+PASS  KEEP=2 counts complete sets only, exit 0 (got 0)
+PASS  KEEP=2: two complete, and the failure between them is kept for an in-place restore
+PASS  KEEP=2: the failure is the one kept
+PASS  the Plane Job's own retention lines still run, on real folders (got 0)
+
+=== S33. Finding 9: a proof that could not run is not a pass
+PASS  exit 2, as scripts/test.sh does (got 2)
+PASS  the marker stays
+PASS  it does not say complete
+PASS  the evidence says NOT RUN
+PASS  and names the steps
+PASS  run again with the proof working: exit 0 (got 0)
+PASS  without restoring anything again
+PASS  marker removed
+PASS  a backup with no sentinel: the plan says what that means
+PASS  a backup with no sentinel: exit 2 (got 2)
+PASS  a backup with no sentinel: the option is named
+PASS  the explicit option accepts it, exit 0 (got 0)
+PASS  the option: marker removed
+PASS  the option: the step still reads NOT RUN
+PASS  one environment, the proof could not run: exit 2 (got 2)
+PASS  one environment: the evidence says NOT RUN
+PASS  one environment: the data is back, and it says so
+
+=== S34. Finding 10: a plan shows what a backup holds, and warns when it looks like the wrong one
+PASS  0 users: warned
+PASS  0 users: names the backup that has them
+PASS  0 users: names the way to it
+PASS  a sentinel with 0 workspaces in the dump: warned
+
+=== S35. Finding 11: an Infisical backup from a newer server than Git deploys or the cluster runs
+PASS  fixture: the backup is from the newer server
+PASS  in place: refuses
+PASS  in place: says why
+PASS  in place: before anything stopped
+PASS  in place: and says nothing was changed
+PASS  in place: the override goes on
+PASS  clean: the plan refuses, from Git
+PASS  clean: says why
+PASS  clean: a real run refuses
+PASS  clean: before anything ran
+PASS  clean: the override passes the plan (got 0)
+PASS  a backup from an older server is fine: migrations go forward (got 0)
+
+=== S36. Small ones: the backup folder's mode at creation (finding 14), the lock table (finding 15)
+PASS  cluster-up.sh makes .local/backups at 0700
+PASS  the manifest asks for the larger lock table
+
+RESULT 393 passed, 0 failed
+exit status 0

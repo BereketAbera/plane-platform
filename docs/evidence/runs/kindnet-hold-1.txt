@@ -1,4 +1,5 @@
 # date: 2026-11-05T00:39:54Z
+# Note added afterwards: the count stayed at 1 through these restarts because this pod's only line was the fail-open line, and the tail resumes at its last line, so it was read again. kindnet-hold-2.txt has heartbeats after the line, as real kindnet logs, and there the count does go.
 [00:39:54Z] real kindnet: kindnet-gqcpb restarts=0
 [00:39:54Z] before
   counter: (empty) 

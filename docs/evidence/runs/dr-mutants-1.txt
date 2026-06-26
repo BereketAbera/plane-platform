@@ -1,0 +1,79 @@
+# date: 2026-11-05T06:30:57Z
+# command: JOBS=4 /bin/bash tests/drills/clean-restore-mutants.sh, from an export of 0bd3e2d, GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+CAUGHT       no-migrator [S1] 4 failed, first: exit 0 (got 1)
+CAUGHT       no-valkey-flush [S1] 1 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       no-rabbitmq-purge [S1] 1 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       no-wait-for-fresh-server [S1] 1 failed, first: no database or cache was replaced under a running server
+CAUGHT       no-compare-rendered-in-verify [R8] 5 failed, first: a rendered Secret differs at verify: exit 1 (got 0)
+CAUGHT       no-compare-values-in-verify [R8] 3 failed, first: a value rewritten after the restore: exit 1 (got 0)
+CAUGHT       drill-identifiers-not-compared [R8d] 2 failed, first: the drill, ids in the machine file changed: the drill fails (got 0)
+CAUGHT       no-overwrite-guard-plane [R8] 10 failed, first: the guard: refuses with no CONFIRM (got 0)
+CAUGHT       no-decrypt-proof [S1 R8] 5 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       drill-rendered-not-compared [R8d] 2 failed, first: the drill, a rendered Secret differs: the drill fails (got 0)
+CAUGHT       drill-evidence-not-checked [R8d] 2 failed, first: the drill, a restore's evidence is not all PASS: the drill fails (got 0)
+CAUGHT       test-files-not-put-back [S19] 2 failed, first: dev token is the dump's
+CAUGHT       secret-zero-not-reinstated [S7] 3 failed, first: the key this dump needs is in an archive: found by checksum, exit 0 (got 1)
+CAUGHT       no-in-place-compare [S14] 4 failed, first: refuses
+CAUGHT       prune-before-the-set-is-complete [S32] 1 failed, first: a backup with no complete set, KEEP=1: both complete ones stay
+CAUGHT       no-prepare-admin [S25] 6 failed, first: the backup succeeds, exit 0 (got 1)
+CAUGHT       environment-not-marked-done [S33] 1 failed, first: without restoring anything again
+CAUGHT       no-version-check [S35] 4 failed, first: in place: refuses
+CAUGHT       stale-done-lines-kept [S15] 2 failed, first: run again with the cluster gone: exit 0 (got 2)
+CAUGHT       no-sentinel-proof [S1 R8] 6 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       restored-mode-applies-anything [S1 S10] 10 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       repair-leaves-the-job [S31] 2 failed, first: the Job with no client was removed first
+CAUGHT       no-overwrite-guard-infisical [R8] 3 failed, first: the guard, Infisical: refuses with no CONFIRM (got 0)
+CAUGHT       marker-not-compared-with-latest [R1] 18 failed, first: the cluster gone, BACKUP=latest: refuses (got 0)
+CAUGHT       marker-plane-choice-stands [R1] 4 failed, first: the set the same, a newer Plane backup, the cluster gone: refuses (got 0)
+CAUGHT       next-from-every-infisical-id [R3] 3 failed, first: and the failed set does not end its window: dev is the newer one
+CAUGHT       no-warning-of-newer-plane [R3] 5 failed, first: and warns about the newer dev backup, by name
+CAUGHT       resume-not-told-to-child [R2] 18 failed, first: 500 users and 777 objects where the backup has 23 and 1: refuses (got 0)
+CAUGHT       resume-refuses-a-partial-restore [R2] 6 failed, first: 23 users and 0 objects, this backup part way through: resumes, exit 0 (got 1)
+CAUGHT       exit-leaves-the-job-running [R4] 45 failed, first: Infisical, SIGTERM: no Job is left running
+CAUGHT       exit-starts-with-job-left [R4] 14 failed, first: kubectl fails on 'delete job': the server stays down
+CAUGHT       exit-does-not-flush-redis [R4] 3 failed, first: Infisical, SIGTERM: the Job goes first, then the flush, then the server, then auto-sync
+CAUGHT       pvc-error-reads-as-none [R5] 1 failed, first: prod-sim's listing alone fails: names it
+CAUGHT       repair-only-by-label [R4] 2 failed, first: SIGKILL in the migrator's Job: the resume removes it first
+CAUGHT       infisical-pvc-error-reads-as-none [R5] 1 failed, first: Infisical's listing fails: says so
+CAUGHT       retention-counts-empty-backups [R6] 7 failed, first: three backups of an empty dev, KEEP=3: the one with users is still there
+CAUGHT       repair-reads-an-error-as-no-jobs [R4] 4 failed, first: a resume that cannot list the Jobs: stops (got 0)
+CAUGHT       backup-ignores-the-marker [R6] 11 failed, first: a backup of what it has not finished: refuses (got 0)
+CAUGHT       no-empty-backup-warning-in-place [R6] 3 failed, first: in place, no CONFIRM: warns
+CAUGHT       drill-ignores-the-marker [R7] 6 failed, first: a marker: backs up nothing first
+CAUGHT       registry-down-is-a-note [R7] 6 failed, first: the registry stopped: deletes nothing
+CAUGHT       drill-ca-not-compared [R8d] 2 failed, first: the drill, the cluster CA the same: fails (got 0)
+CAUGHT       drill-zero-not-compared [R8d] 2 failed, first: the drill, a secret-zero file changed: the drill fails (got 0)
+CAUGHT       drill-admin-file-not-compared [R8d] 1 failed, first: the drill, the admin file changed with no record: on that comparison
+CAUGHT       drill-archives-not-compared [R8d] 2 failed, first: the drill, a new secret-zero archive: the drill fails (got 0)
+CAUGHT       drill-marker-not-checked [R8d] 2 failed, first: the drill, the marker still there: the drill fails (got 0)
+CAUGHT       drill-apps-not-checked [R8d] 2 failed, first: the drill, an Application not Healthy: the drill fails (got 0)
+CAUGHT       drill-stale-state-not-checked [R8d] 2 failed, first: the drill, the state of a lost cluster not moved aside: the drill fails (got 0)
+CAUGHT       drill-restored-plan-not-checked [R8d] 2 failed, first: the drill, restored mode still has changes: the drill fails (got 0)
+CAUGHT       drill-delete-not-checked [R8d] 1 failed, first: the drill, the delete leaves the cluster: on that comparison
+CAUGHT       drill-plain-bootstrap-not-checked [R8d] 1 failed, first: the drill, a plain bootstrap writes a secret: on that comparison
+CAUGHT       floor-lowered-with-no-log [R10] 2 failed, first: and says so
+CAUGHT       way-out-has-no-override [R11] 1 failed, first: the plan prints the override in the promotion to prod-sim
+CAUGHT       machine-file-kept-if-not-empty [R12] 8 failed, first: a clean restore goes through, exit 0 (got 1)
+CAUGHT       first-install-not-counted [R9] 5 failed, first: no registry or mirror volumes, 25 GiB: the plan refuses (got 0)
+CAUGHT       state-installed-before-the-job [R13] 3 failed, first: the Job fails: the state is still what it was
+CAUGHT       blank-reason-passes [R10] 11 failed, first: ALLOW_LOW_DISK=' ': the drill refuses (got 0)
+CAUGHT       empty-cluster-creates-nothing [S28] 2 failed, first: an empty cluster that stays, 12 GiB: refused, it still has 12.94 GiB to pull (got 0)
+CAUGHT       another-run-by-any-mention [R16] 1 failed, first: another checkout's restore and a command that names one: the resume goes on, exit 0 (got 1)
+CAUGHT       drill-says-gone-after-stage-5 [R14] 2 failed, first: stage 6 fails: no talk of a cluster that is gone
+CAUGHT       marker-ids-not-checked [R15] 9 failed, first: a Plane backup gone: refuses, exit 1 (got 2)
+CAUGHT       options-ignored-under-a-marker [R17] 10 failed, first: BACKUP_DEV differs from the marker's, in a plan: refuses (got 0)
+CAUGHT       newline-makes-another-password [R18] 1 failed, first: a trailing newline is the same password: goes through, exit 0 (got 1)
+CAUGHT       any-password-counts [R18] 7 failed, first: in place: nothing stopped
+CAUGHT       kind-error-discarded [R19] 2 failed, first: with kind's own error
+CAUGHT       plan-advice-without-skip-backup [S34] 3 failed, first: and the advice skips a backup, which would take over BACKUP=latest
+CAUGHT       no-set-not-checked [R18] 3 failed, first: no complete set, nothing can log in: nothing stopped
+CAUGHT       in-place-ignores-a-dangling-row [R22] 5 failed, first: in place: refuses (got 0)
+CAUGHT       plan-ignores-a-dangling-row [R22] 6 failed, first: a plan refuses (got 0)
+CAUGHT       comparison-failure-costs-the-backup [R22] 5 failed, first: the comparison cannot run: the backup still succeeds
+CAUGHT       manifest-does-not-record-it [R22] 15 failed, first: and says so
+CAUGHT       comparison-the-wrong-way-round [R22] 14 failed, first: and says so
+CAUGHT       another-run-by-absolute-path-only [R16] 3 failed, first: ./scripts/restore.sh running in place: says so
+
+RESULT 73 caught, 0 survived, 0 did not apply
+exit 0
+# ended: 2026-11-05T06:52:51Z

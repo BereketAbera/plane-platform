@@ -1,0 +1,15 @@
+# MON-2
+# date_utc: 2026-11-05T06:08:40Z
+# commit: 0bd3e2d
+# command: make test-alert ENV=prod-sim
+#
+# REFUSED by the session's permission system before it started. Nothing ran: no pause of Argo CD, no scale, no
+# injection, and no alert-test-prod-sim-*.json was written. This is a record of the refusal, not output of the test.
+#
+# The Bash tool call that was refused, exactly:
+# cd /Users/bek/dev/pr/plane-platform && TS=$(cat /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/mon/MON-2.ts); F=.local/evidence-raw/MON-2-$TS.txt; printf '# MON-2\n# date_utc: %s\n# commit: %s\n# command: make test-alert ENV=prod-sim\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD)" > "$F"; make test-alert ENV=prod-sim >>"$F" 2>&1; rc=$?; printf '# exit=%s ended_utc=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$F"; exit $rc
+#
+# What the permission system returned, first sentences verbatim:
+# Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Shared Cluster Mutation].
+#
+# As the brief says, it was not retried and not routed around with another command. The owner will be asked.

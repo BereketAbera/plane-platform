@@ -1,0 +1,46 @@
+[1;34m==>[0m End-to-end smoke test in prod-sim
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=full
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    frontends  web, admin and space pages and the assets they name are served
+PASS    routes  bare paths redirect, deep links reach admin, /live/health answers
+PASS    workloads-ready  11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0
+PASS    instance-setup  already set up, reusing stored admin
+PASS    csrf-enforced  sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)
+PASS    sign-in  session established, anonymous request refused
+PASS    workspace  smoke-181b2c97
+PASS    api-token  token works on /api/v1, refused without it
+PASS    project  772ce8a7-7a1f-436b-b6ea-435302c3cdcc
+PASS    work-item  20aec2c7-d09a-4994-98d4-bce322d637ac
+PASS    background-job  issue_activity task ran in 3.1s
+PASS    work-item-list  new work item is among 1 listed
+PASS    read-back  workspace, project and work item PC3C126-1 all match, by key and by session
+PASS    workspace-seed  seed project present after 0.0s
+SKIP    branding-overlay  helm/plane/overlays/prod-sim/kustomization.yaml names no localhost:5001/wayline image, so this environment runs upstream's and has no branding to check. This runs once make promote puts them there
+PASS    app-shell  all 15 requests answered 200
+PASS    admin-sign-in  37 config rows read, 8 of them encrypted, refused with no session (401)
+PASS    second-user  sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    broker-memory  watermark {absolute,"256Mi"} = 268435456 bytes, no alarms
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+PASS    attachment-upload  1047 bytes stored
+PASS    attachment-download  sha256 745cbd63982fbd70... matches
+PASS    object-in-silo  1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']
+PASS    uploads-private  refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}
+PASS    large-upload  4718592 bytes up and back through Traefik, sha256 matches
+PASS    oversize-refused  5 MiB + 1 byte refused by the storage policy with 400
+PASS    asset-duplicate  copy_object through the public host worked: 1722daef-ef6b-443a-a753-b7beb5128fd2 holds the same bytes
+PASS    avatar  avatar stored and read back anonymously through its signed redirect
+PASS    export  export completed, its link downloads, and the 490 byte zip holds the work item
+PASS    public-board  published: api and space serve it anonymously. Unpublished: 404
+PASS    realtime-page  a05503be-fbf1-4601-8313-1c5051b0ade3
+PASS    realtime-auth  Authenticated (read-write): traefik upgrade, live -> api session check
+PASS    realtime-denied  mismatched user refused: PermissionDenied
+PASS    realtime-sync  both clients synced, and an update reached the other client in 1 ms
+PASS    realtime-persist  stored as HTML and binary in 2.1s, and a new connection gets it back from the database
+PASS    sentinel-create  reusing existing sentinel test-sentinel-prod-sim.json
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T010552Z.json
+RESULT  PASS
+[1;34m==>[0m Summary, also in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/test-20261105T010552Z.txt
+    PASS     e2e prod-sim               evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T010552Z.json
+[1;32m ok[0m all passed

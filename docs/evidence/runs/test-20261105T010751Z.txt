@@ -1,0 +1,10 @@
+scripts/test.sh , started 20261105T010751Z
+PASS     gates                      evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/gates-20261105T010751Z.txt
+PASS     netpol                     evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-*.tsv
+PASS     infisical isolation        evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/infisical-isolation-20261105T010751Z.txt
+PASS     infisical rendered-secrets evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/infisical-rendered-secrets-20261105T010751Z.txt
+PASS     routes                     evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/routes-20261105T010751Z.txt
+PASS     e2e dev                    evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-dev-20261105T010751Z.json
+PASS     e2e prod-sim               evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T010751Z.json
+PASS     separation network         evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/separation-network-20261105T010751Z.txt
+PASS     separation state           evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/separation-state-20261105T010751Z.txt

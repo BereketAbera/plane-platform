@@ -1,0 +1,18 @@
+# date 2026-11-05T03:37:17Z, command: run-behind.sh: rollback.sh prod-sim in a clean clone of 1936016, then the flows with GITHUB_STEP_SUMMARY set
+clone at 1936016, differing images before: 0
+rollback.sh prod-sim in the clone: exit 0
+==> Rolling back: 0af8956 promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+warn SKIP_BACKUP=yes: no dump taken before this rollback
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 1986115: Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+ ok created /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-ci-3/c3/.local/git/plane-platform.git
+warn publishing 1 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       1986115 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+ ok published main 19861158429f to /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-ci-3/c3/.local/git/plane-platform.git
+warn Images are back, the schema is not, and no finished dump from before this rollback exists in .local/backups/prod-sim.
+differing images after: 4, HEAD 1986115 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c713
+flows in the behind state: exit 0 in 201s:  ok 58 of 58 promotion flow scenarios passed, with a stub cluster
+lines in the step summary after one full run: 15
+  15 **The plane-dev check was skipped.** No cluster is in reach from here, so `make gitops-publish` checks dev after the merge.

@@ -1,0 +1,237 @@
+# Separation of plane-dev and plane-prod-sim, state and data. 2026-11-05T01:30:53Z
+# command: tests/separation/state.py
+
+## 1. Separate servers and separate storage. 2026-11-05T01:30:53Z
+plane-dev postgres system_identifier=7704432373789790233 started=2026-11-04 22:44:37.220382+00
+plane-prod-sim postgres system_identifier=7704436104353652761 started=2026-11-04 23:54:12.594621+00
+PASS the two Postgres clusters have different system identifiers, so neither is a copy or a shared server
+plane-dev valkey run_id=850c8be1 (first 8 hex of 40) dbsize=4
+plane-prod-sim valkey run_id=0769c204 (first 8 hex of 40) dbsize=3
+PASS the two Valkey servers have different run ids
+key sep-valkey-6d9c0389daaf: written in plane-dev, reads 'dev' there and '' in plane-prod-sim
+PASS a Valkey key written in dev exists there and not in prod-sim
+silo buckets: {"dev": [["uploads", "2026-11-04T21:35:37.969000+00:00"]], "prod-sim": [["uploads", "2026-11-04T21:49:14.409000+00:00"]]}
+PASS each Silo holds its own bucket uploads, created at different moments
+plane-dev pvc backups -> backups-dev at /backups/dev
+plane-dev pvc pvc-plane-minio-vol-plane-minio-wl-0 -> pvc-bb4c631d-0466-4b18-b70c-1708ee8a037f at /var/local-path-provisioner/pvc-bb4c631d-0466-4b18-b70c-1708ee8a037f_plane-dev_pvc-plane-minio-vol-plane-minio-wl-0
+plane-dev pvc pvc-plane-pgdb-vol-plane-pgdb-wl-0 -> pvc-7e53cc45-a69c-493f-a97f-8b75a6be78cb at /var/local-path-provisioner/pvc-7e53cc45-a69c-493f-a97f-8b75a6be78cb_plane-dev_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+plane-dev pvc pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 -> pvc-1caa4b30-68d2-4a05-967c-34be857d6129 at /var/local-path-provisioner/pvc-1caa4b30-68d2-4a05-967c-34be857d6129_plane-dev_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+plane-dev pvc pvc-plane-redis-vol-plane-redis-wl-0 -> pvc-ffbc0cf8-a81d-4943-964e-4c481b91e6f4 at /var/local-path-provisioner/pvc-ffbc0cf8-a81d-4943-964e-4c481b91e6f4_plane-dev_pvc-plane-redis-vol-plane-redis-wl-0
+plane-prod-sim pvc backups -> backups-prod-sim at /backups/prod-sim
+plane-prod-sim pvc pvc-plane-minio-vol-plane-minio-wl-0 -> pvc-4ecbc6b1-55d8-40f9-8fe0-e372ba3e71f6 at /var/local-path-provisioner/pvc-4ecbc6b1-55d8-40f9-8fe0-e372ba3e71f6_plane-prod-sim_pvc-plane-minio-vol-plane-minio-wl-0
+plane-prod-sim pvc pvc-plane-pgdb-vol-plane-pgdb-wl-0 -> pvc-6fcb0c5e-f886-4b88-9c08-621e9e9755cb at /var/local-path-provisioner/pvc-6fcb0c5e-f886-4b88-9c08-621e9e9755cb_plane-prod-sim_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+plane-prod-sim pvc pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 -> pvc-61c58b9d-f625-411d-8bb2-d955c39a00d6 at /var/local-path-provisioner/pvc-61c58b9d-f625-411d-8bb2-d955c39a00d6_plane-prod-sim_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+plane-prod-sim pvc pvc-plane-redis-vol-plane-redis-wl-0 -> pvc-3f2f00f9-32b5-4fa8-bbb5-8ac0196f4129 at /var/local-path-provisioner/pvc-3f2f00f9-32b5-4fa8-bbb5-8ac0196f4129_plane-prod-sim_pvc-plane-redis-vol-plane-redis-wl-0
+PASS all 10 volumes are distinct directories, and each path names its own environment
+plane-dev plane-pgdb-wl-0 pod IP 10.244.0.222
+plane-prod-sim plane-pgdb-wl-0 pod IP 10.244.0.99
+
+## 2. Who is really connected, read from the servers and from the node's conntrack table. 2026-11-05T01:30:56Z
+plane-dev postgres clients: {"10.244.0.113": "plane-dev/plane-beat-worker-wl-657897986c-mv2kk", "10.244.0.83": "plane-dev/postgres-exporter-79f8bbdffd-p5q9g"}
+PASS every Postgres client of plane-dev is a pod in plane-dev
+plane-dev valkey clients: {"10.244.0.114": "plane-dev/plane-api-wl-648bc8f87c-6m7p6", "10.244.0.224": "plane-dev/plane-redis-wl-0", "10.244.0.19": "plane-dev/plane-live-wl-5744d85f8b-qdb9d"}
+PASS every Valkey client of plane-dev is a pod in plane-dev
+plane-dev rabbitmq connections: 7, from {"10.244.0.114": "plane-dev/plane-api-wl-648bc8f87c-6m7p6", "10.244.0.84": "plane-dev/plane-worker-wl-68ff64dd8b-rclhs", "10.244.0.113": "plane-dev/plane-beat-worker-wl-657897986c-mv2kk"}
+PASS every AMQP client of plane-dev is a pod in plane-dev
+plane-prod-sim postgres clients: {"10.244.0.66": "plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz", "10.244.0.82": "plane-prod-sim/postgres-exporter-b6f657c47-p65fl"}
+PASS every Postgres client of plane-prod-sim is a pod in plane-prod-sim
+plane-prod-sim valkey clients: {"10.244.0.101": "plane-prod-sim/plane-redis-wl-0", "10.244.0.242": "plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq", "10.244.0.246": "plane-prod-sim/plane-api-wl-8566bcd789-lc7df"}
+PASS every Valkey client of plane-prod-sim is a pod in plane-prod-sim
+plane-prod-sim rabbitmq connections: 8, from {"10.244.0.66": "plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz", "10.244.0.126": "plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g", "10.244.0.246": "plane-prod-sim/plane-api-wl-8566bcd789-lc7df"}
+PASS every AMQP client of plane-prod-sim is a pod in plane-prod-sim
+conntrack: 1709 TCP flows on the node, 0 between a plane-dev pod and a plane-prod-sim pod, 30 to prod-sim's Silo port
+PASS no TCP flow in the node's conntrack table joins the two environments
+
+## 3. Separate credentials. Only same or different is printed, never a value. 2026-11-05T01:30:58Z
+plane-app-env              AMQP_URL                     different  must differ
+PASS plane-app-env/AMQP_URL differs between the environments
+plane-app-env              DATABASE_URL                 different  must differ
+PASS plane-app-env/DATABASE_URL differs between the environments
+plane-app-env              REDIS_URL                    different  must differ
+PASS plane-app-env/REDIS_URL differs between the environments
+plane-app-keys             LIVE_SERVER_SECRET_KEY       different  must differ
+PASS plane-app-keys/LIVE_SERVER_SECRET_KEY differs between the environments
+plane-app-keys             SECRET_KEY                   different  must differ
+PASS plane-app-keys/SECRET_KEY differs between the environments
+plane-live-env             REDIS_URL                    different  must differ
+PASS plane-live-env/REDIS_URL differs between the environments
+plane-doc-store            AWS_ACCESS_KEY_ID            different  must differ
+PASS plane-doc-store/AWS_ACCESS_KEY_ID differs between the environments
+plane-doc-store            AWS_S3_BUCKET_NAME           same       same by design
+PASS plane-doc-store/AWS_S3_BUCKET_NAME is the same in both, as the contract fixes it
+plane-doc-store            AWS_S3_ENDPOINT_URL          same       same by design
+PASS plane-doc-store/AWS_S3_ENDPOINT_URL is the same in both, as the contract fixes it
+plane-doc-store            AWS_SECRET_ACCESS_KEY        different  must differ
+PASS plane-doc-store/AWS_SECRET_ACCESS_KEY differs between the environments
+plane-doc-store            FILE_SIZE_LIMIT              same       same by design
+PASS plane-doc-store/FILE_SIZE_LIMIT is the same in both, as the contract fixes it
+plane-doc-store            MINIO_ROOT_PASSWORD          different  must differ
+PASS plane-doc-store/MINIO_ROOT_PASSWORD differs between the environments
+plane-doc-store            MINIO_ROOT_USER              different  must differ
+PASS plane-doc-store/MINIO_ROOT_USER differs between the environments
+plane-doc-store            USE_MINIO                    same       same by design
+PASS plane-doc-store/USE_MINIO is the same in both, as the contract fixes it
+plane-pgdb                 POSTGRES_DB                  same       same by design
+PASS plane-pgdb/POSTGRES_DB is the same in both, as the contract fixes it
+plane-pgdb                 POSTGRES_PASSWORD            different  must differ
+PASS plane-pgdb/POSTGRES_PASSWORD differs between the environments
+plane-pgdb                 POSTGRES_USER                same       same by design
+PASS plane-pgdb/POSTGRES_USER is the same in both, as the contract fixes it
+plane-rabbitmq             RABBITMQ_DEFAULT_PASS        different  must differ
+PASS plane-rabbitmq/RABBITMQ_DEFAULT_PASS differs between the environments
+plane-rabbitmq             RABBITMQ_DEFAULT_USER        same       same by design
+PASS plane-rabbitmq/RABBITMQ_DEFAULT_USER is the same in both, as the contract fixes it
+plane-infisical-identity   identityId                   different  must differ
+PASS plane-infisical-identity/identityId differs between the environments
+plane-dev connection targets: {"DATABASE_URL": "plane-pgdb.plane-dev.svc.cluster.local", "REDIS_URL": "plane-redis.plane-dev.svc.cluster.local", "AMQP_URL": "plane-rabbitmq.plane-dev.svc.cluster.local", "live REDIS_URL": "plane-redis.plane-dev.svc.cluster.local", "AWS_S3_ENDPOINT_URL": "http://plane-minio:9000"}
+PASS every connection string in plane-dev names a server in plane-dev
+plane-prod-sim connection targets: {"DATABASE_URL": "plane-pgdb.plane-prod-sim.svc.cluster.local", "REDIS_URL": "plane-redis.plane-prod-sim.svc.cluster.local", "AMQP_URL": "plane-rabbitmq.plane-prod-sim.svc.cluster.local", "live REDIS_URL": "plane-redis.plane-prod-sim.svc.cluster.local", "AWS_S3_ENDPOINT_URL": "http://plane-minio:9000"}
+PASS every connection string in plane-prod-sim names a server in plane-prod-sim
+
+Real attempts, inside each environment's api pod, where the network allows them: its own credential, then the other environment's.
+plane-dev {"attempt": "own postgres password", "verdict": "ACCEPTED", "detail": "SELECT 1 -> 1"}
+PASS plane-dev: own postgres password is accepted
+plane-dev {"attempt": "other environment's postgres password", "verdict": "REFUSED", "error": "OperationalError", "code": null, "detail": "connection failed: connection to server at \"10.244.0.222\", port 5432 failed: FATAL:  password authentication failed for user \"plane\""}
+PASS plane-dev: other environment's postgres password is refused by the server, as an authentication failure
+plane-dev {"attempt": "own rabbitmq password", "verdict": "ACCEPTED", "detail": "AMQP opened"}
+PASS plane-dev: own rabbitmq password is accepted
+plane-dev {"attempt": "other environment's rabbitmq password", "verdict": "REFUSED", "error": "AccessRefused", "code": null, "detail": "(0, 0): (403) ACCESS_REFUSED - Login was refused using authentication mechanism AMQPLAIN. For details see the broker logfile."}
+PASS plane-dev: other environment's rabbitmq password is refused by the server, as an authentication failure
+plane-dev {"attempt": "own silo keys", "verdict": "ACCEPTED", "detail": "ListBuckets -> ['uploads']"}
+PASS plane-dev: own silo keys is accepted
+plane-dev {"attempt": "other environment's silo keys", "verdict": "REFUSED", "error": "ClientError", "code": "InvalidAccessKeyId", "detail": "An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The Access Key Id you provided does not exist in our records."}
+PASS plane-dev: other environment's silo keys is refused by the server, as an authentication failure
+plane-prod-sim {"attempt": "own postgres password", "verdict": "ACCEPTED", "detail": "SELECT 1 -> 1"}
+PASS plane-prod-sim: own postgres password is accepted
+plane-prod-sim {"attempt": "other environment's postgres password", "verdict": "REFUSED", "error": "OperationalError", "code": null, "detail": "connection failed: connection to server at \"10.244.0.99\", port 5432 failed: FATAL:  password authentication failed for user \"plane\""}
+PASS plane-prod-sim: other environment's postgres password is refused by the server, as an authentication failure
+plane-prod-sim {"attempt": "own rabbitmq password", "verdict": "ACCEPTED", "detail": "AMQP opened"}
+PASS plane-prod-sim: own rabbitmq password is accepted
+plane-prod-sim {"attempt": "other environment's rabbitmq password", "verdict": "REFUSED", "error": "AccessRefused", "code": null, "detail": "(0, 0): (403) ACCESS_REFUSED - Login was refused using authentication mechanism AMQPLAIN. For details see the broker logfile."}
+PASS plane-prod-sim: other environment's rabbitmq password is refused by the server, as an authentication failure
+plane-prod-sim {"attempt": "own silo keys", "verdict": "ACCEPTED", "detail": "ListBuckets -> ['uploads']"}
+PASS plane-prod-sim: own silo keys is accepted
+plane-prod-sim {"attempt": "other environment's silo keys", "verdict": "REFUSED", "error": "ClientError", "code": "InvalidAccessKeyId", "detail": "An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The Access Key Id you provided does not exist in our records."}
+PASS plane-prod-sim: other environment's silo keys is refused by the server, as an authentication failure
+plane-dev valkey requirepass: empty, no password
+plane-prod-sim valkey requirepass: empty, no password
+
+## 4. Data created in one environment does not appear in the other. 2026-11-05T01:31:01Z
+plane-dev: created workspace sep-dev-c7fe5af534, project 302b9322-dc91-4c35-b38d-a00008c76d3b, work item 8ca1c04a-ef49-44c1-912e-221e22f962ef and an attachment at key 11cbae45-efae-4728-9357-aac5c08c8087/945de5559d6a412397d3332b76405635-sep.txt
+plane-prod-sim: created workspace sep-prod-sim-ef7f085e1a, project 76bd07d5-c3e6-4d2a-8452-a658951ed718, work item d89cb5b9-e39e-48fc-a581-1fb135c50962 and an attachment at key 677c6b29-4cd4-47d4-822a-752ec456eca3/141e1a2d851944bfaf1230ff9532dfdf-sep.txt
+
+marker sep-dev-c7fe5af534, created in plane-dev:
+  sql workspaces.slug: plane-dev=1 plane-prod-sim=0
+PASS workspaces.slug of sep-dev-c7fe5af534 is found in plane-dev and not in plane-prod-sim
+  sql issues.name: plane-dev=1 plane-prod-sim=0
+PASS issues.name of sep-dev-c7fe5af534 is found in plane-dev and not in plane-prod-sim
+  sql issues.id: plane-dev=1 plane-prod-sim=0
+PASS issues.id of sep-dev-c7fe5af534 is found in plane-dev and not in plane-prod-sim
+  sql file_assets.id: plane-dev=1 plane-prod-sim=0
+PASS file_assets.id of sep-dev-c7fe5af534 is found in plane-dev and not in plane-prod-sim
+  whole-database scan, pg_dump --data-only: plane-dev 7 lines of 4930 hold the marker, plane-prod-sim 0 of 3649
+PASS a scan of every table finds sep-dev-c7fe5af534 in plane-dev and nowhere in plane-prod-sim
+  api: work item with dev's key on plane.dev.localhost 200; the same path with prod-sim's key on plane.prod-sim.localhost 403; workspace by session, plane.dev.localhost 200, plane.prod-sim.localhost 404
+PASS sep-dev-c7fe5af534's work item is served by plane.dev.localhost and refused by plane.prod-sim.localhost
+PASS sep-dev-c7fe5af534's workspace is served by plane.dev.localhost and not by plane.prod-sim.localhost
+  silo: HEAD 11cbae45-efae-4728-9357-aac5c08c8087/945de5559d6a412397d3332b76405635-sep.txt: plane-dev 200, plane-prod-sim 404
+PASS sep-dev-c7fe5af534's object is in plane-dev's Silo and not in plane-prod-sim's
+  presigned link from plane.dev.localhost: there 200, replayed against plane.prod-sim.localhost 403
+PASS a presigned link from plane.dev.localhost does not open anything on plane.prod-sim.localhost
+
+marker sep-prod-sim-ef7f085e1a, created in plane-prod-sim:
+  sql workspaces.slug: plane-prod-sim=1 plane-dev=0
+PASS workspaces.slug of sep-prod-sim-ef7f085e1a is found in plane-prod-sim and not in plane-dev
+  sql issues.name: plane-prod-sim=1 plane-dev=0
+PASS issues.name of sep-prod-sim-ef7f085e1a is found in plane-prod-sim and not in plane-dev
+  sql issues.id: plane-prod-sim=1 plane-dev=0
+PASS issues.id of sep-prod-sim-ef7f085e1a is found in plane-prod-sim and not in plane-dev
+  sql file_assets.id: plane-prod-sim=1 plane-dev=0
+PASS file_assets.id of sep-prod-sim-ef7f085e1a is found in plane-prod-sim and not in plane-dev
+  whole-database scan, pg_dump --data-only: plane-prod-sim 7 lines of 3650 hold the marker, plane-dev 0 of 4932
+PASS a scan of every table finds sep-prod-sim-ef7f085e1a in plane-prod-sim and nowhere in plane-dev
+  api: work item with prod-sim's key on plane.prod-sim.localhost 200; the same path with dev's key on plane.dev.localhost 403; workspace by session, plane.prod-sim.localhost 200, plane.dev.localhost 404
+PASS sep-prod-sim-ef7f085e1a's work item is served by plane.prod-sim.localhost and refused by plane.dev.localhost
+PASS sep-prod-sim-ef7f085e1a's workspace is served by plane.prod-sim.localhost and not by plane.dev.localhost
+  silo: HEAD 677c6b29-4cd4-47d4-822a-752ec456eca3/141e1a2d851944bfaf1230ff9532dfdf-sep.txt: plane-prod-sim 200, plane-dev 404
+PASS sep-prod-sim-ef7f085e1a's object is in plane-prod-sim's Silo and not in plane-dev's
+  presigned link from plane.prod-sim.localhost: there 200, replayed against plane.dev.localhost 403
+PASS a presigned link from plane.prod-sim.localhost does not open anything on plane.dev.localhost
+
+Whole-set overlap between the two environments, every row and object, counts only:
+  workspace slugs: plane-dev 24, plane-prod-sim 13, in both 0
+PASS no workspace slugs in common
+  user ids: plane-dev 36, plane-prod-sim 21, in both 0
+PASS no user ids in common
+  workspace ids: plane-dev 24, plane-prod-sim 13, in both 0
+PASS no workspace ids in common
+  project ids: plane-dev 47, plane-prod-sim 26, in both 0
+PASS no project ids in common
+  issue ids: plane-dev 201, plane-prod-sim 120, in both 0
+PASS no issue ids in common
+  file asset ids: plane-dev 62, plane-prod-sim 41, in both 0
+PASS no file asset ids in common
+  API tokens, compared by md5: plane-dev 17, plane-prod-sim 7, in both 0
+PASS no API tokens, compared by md5 in common
+  instance ids: plane-dev 1, plane-prod-sim 1, in both 0
+PASS no instance ids in common
+  session keys, compared by md5: plane-dev 50, plane-prod-sim 27, in both 0
+PASS no session keys, compared by md5 in common
+  silo object keys: plane-dev 62, plane-prod-sim 41, in both 0
+PASS no object key in common
+
+## 5. Sessions, keys and accounts do not cross hosts. 2026-11-05T01:31:10Z
+instance id: plane.dev.localhost 83c547b1c6275915b7395221, plane.prod-sim.localhost 4a780521a9292f66b82cc14b
+PASS the two hosts report different instance ids
+dev's API key: on plane.dev.localhost 200, on plane.prod-sim.localhost 403; a made-up key on plane.prod-sim.localhost 403
+PASS dev's API key works on its own host, and plane.prod-sim.localhost treats it as a key it has never seen
+dev's session cookie: on plane.dev.localhost 200, replayed on plane.prod-sim.localhost 401
+PASS dev's session works on its own host and is refused on plane.prod-sim.localhost
+dev's admin password, same email address, signing in on plane.prod-sim.localhost: HTTP 302, error_code 5065, session cookie not set
+PASS dev's admin password does not sign in on plane.prod-sim.localhost
+prod-sim's API key: on plane.prod-sim.localhost 200, on plane.dev.localhost 403; a made-up key on plane.dev.localhost 403
+PASS prod-sim's API key works on its own host, and plane.dev.localhost treats it as a key it has never seen
+prod-sim's session cookie: on plane.prod-sim.localhost 200, replayed on plane.dev.localhost 401
+PASS prod-sim's session works on its own host and is refused on plane.dev.localhost
+prod-sim's admin password, same email address, signing in on plane.dev.localhost: HTTP 302, error_code 5065, session cookie not set
+PASS prod-sim's admin password does not sign in on plane.dev.localhost
+PASS the two generated admin passwords differ
+
+## 6. Infisical project, identity and Kubernetes permissions. 2026-11-05T01:31:11Z
+plane-dev: 6 InfisicalStaticSecrets, project slugs ['plane-dev'], status [('plane-app-env', 'True'), ('plane-app-keys', 'True'), ('plane-doc-store', 'True'), ('plane-live-env', 'True'), ('plane-pgdb', 'True'), ('plane-rabbitmq', 'True')]
+PASS every InfisicalStaticSecret in plane-dev reads only project plane-dev
+plane-prod-sim: 6 InfisicalStaticSecrets, project slugs ['plane-prod-sim'], status [('plane-app-env', 'True'), ('plane-app-keys', 'True'), ('plane-doc-store', 'True'), ('plane-live-env', 'True'), ('plane-pgdb', 'True'), ('plane-rabbitmq', 'True')]
+PASS every InfisicalStaticSecret in plane-prod-sim reads only project plane-prod-sim
+system:serviceaccount:plane-dev:iso-dev-controller-manager: {"get secrets in plane-dev": "yes", "get secrets in plane-prod-sim": "no", "create secrets in plane-prod-sim": "no", "list secrets in infisical": "no", "patch deployments in plane-prod-sim": "no"}
+PASS the plane-dev operator can read Secrets at home and do nothing in plane-prod-sim or infisical
+system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager: {"get secrets in plane-prod-sim": "yes", "get secrets in plane-dev": "no", "create secrets in plane-dev": "no", "list secrets in infisical": "no", "patch deployments in plane-dev": "no"}
+PASS the plane-prod-sim operator can read Secrets at home and do nothing in plane-dev or infisical
+system:serviceaccount:plane-dev:plane: get secrets {"plane-dev": "no", "plane-prod-sim": "no"}
+PASS plane-dev/plane cannot read Secrets in plane-prod-sim
+system:serviceaccount:plane-dev:plane-infisical-auth: get secrets {"plane-dev": "no", "plane-prod-sim": "no"}
+PASS plane-dev/plane-infisical-auth cannot read Secrets in plane-prod-sim
+system:serviceaccount:plane-dev:default: get secrets {"plane-dev": "no", "plane-prod-sim": "no"}
+PASS plane-dev/default cannot read Secrets in plane-prod-sim
+system:serviceaccount:plane-prod-sim:plane: get secrets {"plane-prod-sim": "no", "plane-dev": "no"}
+PASS plane-prod-sim/plane cannot read Secrets in plane-dev
+system:serviceaccount:plane-prod-sim:plane-infisical-auth: get secrets {"plane-prod-sim": "no", "plane-dev": "no"}
+PASS plane-prod-sim/plane-infisical-auth cannot read Secrets in plane-dev
+system:serviceaccount:plane-prod-sim:default: get secrets {"plane-prod-sim": "no", "plane-dev": "no"}
+PASS plane-prod-sim/default cannot read Secrets in plane-dev
+AppProject plane-dev: destinations [{"namespace": "plane-dev", "server": "https://kubernetes.default.svc"}], clusterResourceWhitelist null, blacklist [{"group": "", "kind": "ResourceQuota"}, {"group": "", "kind": "LimitRange"}, {"group": "networking.k8s.io", "kind": "NetworkPolicy"}]
+PASS AppProject plane-dev may deploy only to plane-dev
+AppProject plane-prod-sim: destinations [{"namespace": "plane-prod-sim", "server": "https://kubernetes.default.svc"}], clusterResourceWhitelist null, blacklist [{"group": "", "kind": "ResourceQuota"}, {"group": "", "kind": "LimitRange"}, {"group": "networking.k8s.io", "kind": "NetworkPolicy"}]
+PASS AppProject plane-prod-sim may deploy only to plane-prod-sim
+
+## 7. What is shared on purpose, and the known gap. 2026-11-05T01:31:12Z
+Shared by both environments: the one node, Traefik, CoreDNS, Argo CD, the Infisical server (separate projects), Prometheus and Loki.
+from plane-dev's api pod through Traefik, which its policy allows for copy_object: {"plane.prod-sim.localhost/api/instances/": {"status": 200, "instance_id": "4a780521a9292f66b82cc14b"}, "plane.prod-sim.localhost/api/users/me/": {"status": 401}, "plane.prod-sim.localhost/uploads?list-type=2": {"status": 403}, "plane.dev.localhost/api/instances/": {"status": 200, "instance_id": "83c547b1c6275915b7395221"}, "plane.dev.localhost/api/users/me/": {"status": 401}, "plane.dev.localhost/uploads?list-type=2": {"status": 403}}
+PASS that path gives plane-dev's api only plane.prod-sim.localhost's public surface: no session 401, bucket listing 403
+from plane-prod-sim's api pod through Traefik, which its policy allows for copy_object: {"plane.prod-sim.localhost/api/instances/": {"status": 200, "instance_id": "4a780521a9292f66b82cc14b"}, "plane.prod-sim.localhost/api/users/me/": {"status": 401}, "plane.prod-sim.localhost/uploads?list-type=2": {"status": 403}, "plane.dev.localhost/api/instances/": {"status": 200, "instance_id": "83c547b1c6275915b7395221"}, "plane.dev.localhost/api/users/me/": {"status": 401}, "plane.dev.localhost/uploads?list-type=2": {"status": 403}}
+PASS that path gives plane-prod-sim's api only plane.dev.localhost's public surface: no session 401, bucket listing 403
+So the api of one environment can reach the other's public HTTP surface, as any browser can. It cannot reach a data port. The network policy file records this as a known gap.
+reference, plane-dev's worker to Traefik, which has no such rule: TIMEOUT 5.01
+PASS plane-dev's worker cannot reach Traefik, so that path is the api's alone
+
+RESULT checks passed=97 failed=0 blocked=0 2026-11-05T01:31:18Z
+Scanned this output for 24 secret values: 0 found and replaced.

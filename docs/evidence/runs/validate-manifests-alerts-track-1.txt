@@ -1,0 +1,10 @@
+# date: 2026-11-05T04:10:55Z
+# command: PATH=/bin:$PATH /bin/bash ./scripts/ci/validate-manifests.sh, with charts and flows, on a scratch clone at a8bce12. Started 04:05:55Z, ended 04:10:43Z, exit 0
+1850 tests, 1850 passed, 0 warnings, 0 failures, 0 exceptions
+2835 tests, 2835 passed, 0 warnings, 0 failures, 0 exceptions
+ ok 2 rule file(s) valid
+  SUCCESS
+  SUCCESS
+3298 tests, 3298 passed, 0 warnings, 0 failures, 0 exceptions
+ ok 26 rule file(s) valid
+ ok manifests valid

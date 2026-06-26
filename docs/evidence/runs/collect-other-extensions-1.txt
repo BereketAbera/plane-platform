@@ -1,0 +1,48 @@
+# date 2026-11-05T04:59:48Z, scratch clone of a286e52 with the new lib-manifests.sh, command: SKIP_CHARTS=yes scripts/ci/validate-manifests.sh, /bin/bash 3.2
+=== nothing planted: exit 0
+ ok manifests valid
+=== planted gitops/platform/network-policies/planted.yml: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/platform/network-policies/planted.yml
+=== planted gitops/platform/network-policies/planted.json: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/platform/network-policies/planted.json
+=== planted gitops/platform/network-policies/planted.jsonnet: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/platform/network-policies/planted.jsonnet
+=== planted gitops/applications/planted.yml: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/applications/planted.yml
+=== planted gitops/bootstrap/argocd-route/planted.yml: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/bootstrap/argocd-route/planted.yml
+=== planted infisical/manifests/planted.yml: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: infisical/manifests/planted.yml
+=== planted gitops/environments/dev/planted.yml: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/environments/dev/planted.yml
+=== planted gitops/environments/prod-sim/planted.jsonnet: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/environments/prod-sim/planted.jsonnet
+
+=== the script
+#!/bin/bash
+# date and command for the evidence file
+cd "$1" || exit 99
+echo "# date $(date -u +%Y-%m-%dT%H:%M:%SZ), scratch clone of $(git rev-parse --short HEAD) with the new lib-manifests.sh, command: SKIP_CHARTS=yes scripts/ci/validate-manifests.sh, /bin/bash 3.2"
+clean() { git status --porcelain | grep -v -E 'scripts/ci/(lib-manifests|validate-manifests)\.sh' | sed 's/^...//' | while read -r f; do rm -rf "$f"; done; }
+run() {
+  local label="$1"
+  SKIP_CHARTS=yes /bin/bash scripts/ci/validate-manifests.sh >out.txt 2>&1
+  rc=$?
+  echo "=== $label: exit $rc"
+  sed 's/\x1b\[[0-9;]*m//g' out.txt | grep -E 'Argo CD would read|manifests valid|manifest check|FAILED' | cut -c1-200
+  rm -f out.txt
+}
+run "nothing planted"
+planted='apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: {name: planted, namespace: monitoring}
+spec:
+  routes:
+    - kind: Rule
+      match: Host(`prometheus.localhost`)
+      services: [{name: kps-prometheus, port: 9090}]'
+for path in gitops/platform/network-policies/planted.yml gitops/platform/network-policies/planted.json gitops/platform/network-policies/planted.jsonnet gitops/applications/planted.yml gitops/bootstrap/argocd-route/planted.yml infisical/manifests/planted.yml gitops/environments/dev/planted.yml gitops/environments/prod-sim/planted.jsonnet; do
+  printf '%s\n' "$planted" >"$path"
+  run "planted $path"
+  rm -f "$path"
+done

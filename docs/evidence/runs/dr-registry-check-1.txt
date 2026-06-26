@@ -1,0 +1,7 @@
+# up_missing_local_images against the real registry and real docker buildx. A manifest with one digest the registry has and one it cannot have. 2026-11-05T02:44:12Z
+from Git: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+up_missing_local_images prints:
+    localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+and on what Git deploys now it prints:
+(end)
+4 digests referenced

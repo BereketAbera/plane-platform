@@ -1,0 +1,219 @@
+# date: 2026-11-05T02:33:46Z
+# command: routes-both-ways.sh, shown at the end. Old policy is 7a3b783, the commit before this change. New policy is the working tree on 218f423.
+
+## The real manifests, as they are, against the new policy
+monitoring/manifests, kustomize build                      exit=0  504 tests, 504 passed, 0 warnings, 0 failures, 0 exceptions
+infisical/manifests                                        exit=0  24 tests, 24 passed, 0 warnings, 0 failures, 0 exceptions
+gitops/bootstrap/argocd-route                              exit=0  24 tests, 24 passed, 0 warnings, 0 failures, 0 exceptions
+rendered plane-dev                                         exit=0  444 tests, 444 passed, 0 warnings, 0 failures, 0 exceptions
+rendered plane-prod-sim                                    exit=0  444 tests, 444 passed, 0 warnings, 0 failures, 0 exceptions
+
+## The live IngressRoutes in argocd, monitoring, infisical and plane-dev
+routes in argocd: 1 (read exit 0)
+argocd/argocd-server Host(`argocd.localhost`) -> argocd-server middlewares=node-network-only
+live argocd                                                exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+routes in monitoring: 3 (read exit 0)
+monitoring/alertmanager Host(`alertmanager.localhost`) -> kps-alertmanager middlewares=node-network-only
+monitoring/grafana Host(`grafana.localhost`) -> kps-grafana middlewares=node-network-only
+monitoring/prometheus Host(`prometheus.localhost`) -> kps-prometheus middlewares=node-network-only
+live monitoring                                            exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+routes in infisical: 1 (read exit 0)
+infisical/infisical Host(`infisical.localhost`) -> infisical middlewares=node-network-only
+live infisical                                             exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+routes in plane-dev: 1 (read exit 0)
+plane-dev/plane-ingress Host(`plane.dev.localhost`) && PathPrefix(`/spaces`) -> plane-space middlewares=plane-trailing-slash,plane-body-limit
+live plane-dev                                             exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+
+## Each real route with a defect planted, the old policy (7a3b783) against the new
+old grafana: same host, no middleware                      exit=1  10 tests, 9 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/grafana: route "Host(`grafana.localhost`)" serves grafana.localhost, so it must name the node-network-only middleware
+new grafana: same host, no middleware                      exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/grafana: route "Host(`grafana.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-on
+old grafana: another host, no middleware                   exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new grafana: another host, no middleware                   exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/grafana: route "Host(`metrics.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-on
+old grafana: PathPrefix only, no middleware                exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new grafana: PathPrefix only, no middleware                exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/grafana: route "PathPrefix(`/`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only middlew
+old grafana: HostRegexp, no middleware                     exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new grafana: HostRegexp, no middleware                     exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/grafana: route "HostRegexp(`^ui[.]localhost$`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-netwo
+old grafana: another host, middleware kept                 exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new grafana: another host, middleware kept                 exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+old prometheus: same host, no middleware                   exit=1  10 tests, 9 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/prometheus: route "Host(`prometheus.localhost`)" serves prometheus.localhost, so it must name the node-network-only middleware
+new prometheus: same host, no middleware                   exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/prometheus: route "Host(`prometheus.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-netw
+old prometheus: another host, no middleware                exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new prometheus: another host, no middleware                exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/prometheus: route "Host(`metrics.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network
+old prometheus: PathPrefix only, no middleware             exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new prometheus: PathPrefix only, no middleware             exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/prometheus: route "PathPrefix(`/`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only midd
+old prometheus: HostRegexp, no middleware                  exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new prometheus: HostRegexp, no middleware                  exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/prometheus: route "HostRegexp(`^ui[.]localhost$`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-ne
+old prometheus: another host, middleware kept              exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new prometheus: another host, middleware kept              exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+old alertmanager: same host, no middleware                 exit=1  10 tests, 9 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/alertmanager: route "Host(`alertmanager.localhost`)" serves alertmanager.localhost, so it must name the node-network-only middleware
+new alertmanager: same host, no middleware                 exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/alertmanager: route "Host(`alertmanager.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-
+old alertmanager: another host, no middleware              exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new alertmanager: another host, no middleware              exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/alertmanager: route "Host(`metrics.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-netwo
+old alertmanager: PathPrefix only, no middleware           exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new alertmanager: PathPrefix only, no middleware           exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/alertmanager: route "PathPrefix(`/`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only mi
+old alertmanager: HostRegexp, no middleware                exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new alertmanager: HostRegexp, no middleware                exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute monitoring/alertmanager: route "HostRegexp(`^ui[.]localhost$`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-
+old alertmanager: another host, middleware kept            exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new alertmanager: another host, middleware kept            exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+old argocd-server: same host, no middleware                exit=1  10 tests, 9 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute argocd/argocd-server: route "Host(`argocd.localhost`)" serves argocd.localhost, so it must name the node-network-only middleware
+new argocd-server: same host, no middleware                exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute argocd/argocd-server: route "Host(`argocd.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-o
+old argocd-server: another host, no middleware             exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new argocd-server: another host, no middleware             exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute argocd/argocd-server: route "Host(`metrics.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-
+old argocd-server: PathPrefix only, no middleware          exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new argocd-server: PathPrefix only, no middleware          exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute argocd/argocd-server: route "PathPrefix(`/`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only middl
+old argocd-server: HostRegexp, no middleware               exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new argocd-server: HostRegexp, no middleware               exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute argocd/argocd-server: route "HostRegexp(`^ui[.]localhost$`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-net
+old argocd-server: another host, middleware kept           exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new argocd-server: another host, middleware kept           exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+old infisical: same host, no middleware                    exit=1  10 tests, 9 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute infisical/infisical: route "Host(`infisical.localhost`)" serves infisical.localhost, so it must name the node-network-only middleware
+new infisical: same host, no middleware                    exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute infisical/infisical: route "Host(`infisical.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network
+old infisical: another host, no middleware                 exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new infisical: another host, no middleware                 exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute infisical/infisical: route "Host(`metrics.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-o
+old infisical: PathPrefix only, no middleware              exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new infisical: PathPrefix only, no middleware              exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute infisical/infisical: route "PathPrefix(`/`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only middle
+old infisical: HostRegexp, no middleware                   exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new infisical: HostRegexp, no middleware                   exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - planted.yaml - plane - IngressRoute infisical/infisical: route "HostRegexp(`^ui[.]localhost$`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-netw
+old infisical: another host, middleware kept               exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new infisical: another host, middleware kept               exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+
+## A route from another namespace to a real UI Service
+old: traefik namespace to kps-prometheus                   exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new: traefik namespace to kps-prometheus                   exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - cross.yaml - plane - IngressRoute traefik/prometheus: route "Host(`metrics.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only
+
+## An IngressRouteTCP in monitoring to the real Prometheus Service
+old: IngressRouteTCP in monitoring                         exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new: IngressRouteTCP in monitoring                         exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - tcp.yaml - plane - IngressRouteTCP monitoring/planted: IngressRouteTCP is not allowed beside an internal UI, because it would have no node-network-only middleware
+
+## A real route with its namespace left out, and no middleware, under an unrelated host
+old: no namespace, Service loki                            exit=0  10 tests, 10 passed, 0 warnings, 0 failures, 0 exceptions
+new: no namespace, Service loki                            exit=1  12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions
+FAIL - none.yaml - plane - IngressRoute -/prometheus: route "Host(`logs.localhost`)" is in a namespace that holds an internal UI, or names one by Service or host, so it must name the node-network-only middlewar
+
+## A real Plane route keeps passing
+new: the rendered plane-dev route                          exit=0  12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions
+
+## Prometheus resources, charts.rego
+old  thanos: {baseImage: quay.io/thanos/thanos, version: v0.30.0}                                         exit=0
+new  thanos: {baseImage: quay.io/thanos/thanos, version: v0.30.0}                                         exit=1
+old  thanos: {baseImage: "quay.io/thanos/thanos:v0.42.5", sha: abc}                                       exit=0
+new  thanos: {baseImage: "quay.io/thanos/thanos:v0.42.5", sha: abc}                                       exit=1
+old  thanos: {baseImage: "quay.io/thanos/thanos@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984"} exit=0
+new  thanos: {baseImage: "quay.io/thanos/thanos@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984"} exit=0
+old  thanos: {image: "quay.io/thanos/thanos:v0.42.5"}                                                     exit=1
+new  thanos: {image: "quay.io/thanos/thanos:v0.42.5"}                                                     exit=1
+old  thanos: {version: v0.42.5}                                                                           exit=0
+new  thanos: {version: v0.42.5}                                                                           exit=0
+
+## The script
+#!/bin/bash
+# Real manifests both ways against policy/plane.rego and policy/charts.rego, old policy (7a3b783) and new (working tree).
+# Nothing here touches the cluster except a read of IngressRoutes in four namespaces.
+R=/Users/bek/dev/pr/plane-platform
+W=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/alerts-work
+T=$R/.tools/bin
+export PATH="$T:$PATH"
+export KUBECONFIG=$R/.local/kubeconfig
+d="$(mktemp -d "$W/r.XXXXXX")"
+trap 'rm -rf "$d"' EXIT
+cd "$R" || exit 9
+mkdir -p "$d/old"
+git archive 7a3b783 policy | tar -x -C "$d/old"
+kustomize build monitoring/manifests >"$d/monitoring.yaml"
+if [ -f infisical/manifests/kustomization.yaml ]; then kustomize build infisical/manifests >"$d/infisical.yaml"; else cp infisical/manifests/ingressroute.yaml "$d/infisical.yaml"; fi
+cp gitops/bootstrap/argocd-route/ingressroute.yaml "$d/argocd.yaml"
+run() { # run <label> <policy dir> <file...>: prints the verdict line and the exit code, and the first deny
+  local label="$1" pol="$2" out st
+  shift 2
+  out="$(conftest test --policy "$pol" --no-color --namespace plane "$@" 2>&1)"; st=$?
+  printf '%-58s exit=%s  %s\n' "$label" "$st" "$(printf '%s\n' "$out" | tail -1)"
+  [ "$st" -eq 0 ] || printf '%s\n' "$out" | grep -m1 FAIL | sed "s#$d/##" | cut -c1-210
+}
+echo "## The real manifests, as they are, against the new policy"
+run "monitoring/manifests, kustomize build" policy "$d/monitoring.yaml"
+run "infisical/manifests" policy "$d/infisical.yaml"
+run "gitops/bootstrap/argocd-route" policy "$d/argocd.yaml"
+run "rendered plane-dev" policy gitops/environments/dev/manifests.yaml
+run "rendered plane-prod-sim" policy gitops/environments/prod-sim/manifests.yaml
+echo
+echo "## The live IngressRoutes in argocd, monitoring, infisical and plane-dev"
+for ns in argocd monitoring infisical plane-dev; do
+  kubectl --context kind-plane-platform -n "$ns" get ingressroutes.traefik.io -o yaml >"$d/live-$ns.yaml"; rc=$?
+  printf 'routes in %s: %s (read exit %s)\n' "$ns" "$(yq -r '.items | length' "$d/live-$ns.yaml")" "$rc"
+  yq -r '.items[] | .metadata.namespace + "/" + .metadata.name + " " + (.spec.routes[0].match) + " -> " + (.spec.routes[0].services[0].name) + " middlewares=" + ([.spec.routes[0].middlewares[]?.name] | join(","))' "$d/live-$ns.yaml"
+  yq -N '.items[]' "$d/live-$ns.yaml" >"$d/live-$ns-docs.yaml"
+  run "live $ns" policy "$d/live-$ns-docs.yaml"
+done
+echo
+echo "## Each real route with a defect planted, the old policy (7a3b783) against the new"
+plant() { # plant <file> <route name> <label> <yq expression>
+  local file="$1" name="$2" label="$3" expr="$4" doc="$d/planted.yaml"
+  NAME="$name" yq -N 'select(.kind == "IngressRoute" and .metadata.name == strenv(NAME))' "$file" | yq "$expr" >"$doc"
+  run "old $name: $label" "$d/old/policy" "$doc"
+  run "new $name: $label" policy "$doc"
+}
+nomw='del(.spec.routes[0].middlewares)'
+for spec in "$d/monitoring.yaml grafana" "$d/monitoring.yaml prometheus" "$d/monitoring.yaml alertmanager" "$d/argocd.yaml argocd-server" "$d/infisical.yaml infisical"; do
+  set -- $spec
+  plant "$1" "$2" "same host, no middleware" "$nomw"
+  plant "$1" "$2" "another host, no middleware" "$nomw | .spec.routes[0].match = \"Host(\`metrics.localhost\`)\""
+  plant "$1" "$2" "PathPrefix only, no middleware" "$nomw | .spec.routes[0].match = \"PathPrefix(\`/\`)\""
+  plant "$1" "$2" "HostRegexp, no middleware" "$nomw | .spec.routes[0].match = \"HostRegexp(\`^ui[.]localhost\$\`)\""
+  plant "$1" "$2" "another host, middleware kept" ".spec.routes[0].match = \"Host(\`metrics.localhost\`)\""
+done
+echo
+echo "## A route from another namespace to a real UI Service"
+yq -N 'select(.kind == "IngressRoute" and .metadata.name == "prometheus")' "$d/monitoring.yaml" | yq 'del(.spec.routes[0].middlewares) | .metadata.namespace = "traefik" | .spec.routes[0].match = "Host(`metrics.localhost`)" | .spec.routes[0].services[0].namespace = "monitoring"' >"$d/cross.yaml"
+run "old: traefik namespace to kps-prometheus" "$d/old/policy" "$d/cross.yaml"
+run "new: traefik namespace to kps-prometheus" policy "$d/cross.yaml"
+echo
+echo "## An IngressRouteTCP in monitoring to the real Prometheus Service"
+printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRouteTCP\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  entryPoints: [web]\n  routes:\n    - match: HostSNI(`*`)\n      services:\n        - { name: kps-prometheus, port: 9090 }\n' >"$d/tcp.yaml"
+run "old: IngressRouteTCP in monitoring" "$d/old/policy" "$d/tcp.yaml"
+run "new: IngressRouteTCP in monitoring" policy "$d/tcp.yaml"
+echo
+echo "## A real route with its namespace left out, and no middleware, under an unrelated host"
+yq -N 'select(.kind == "IngressRoute" and .metadata.name == "prometheus")' "$d/monitoring.yaml" | yq 'del(.spec.routes[0].middlewares) | del(.metadata.namespace) | .spec.routes[0].match = "Host(`logs.localhost`)" | .spec.routes[0].services[0].name = "loki"' >"$d/none.yaml"
+run "old: no namespace, Service loki" "$d/old/policy" "$d/none.yaml"
+run "new: no namespace, Service loki" policy "$d/none.yaml"
+echo
+echo "## A real Plane route keeps passing"
+yq -N 'select(.kind == "IngressRoute")' gitops/environments/dev/manifests.yaml >"$d/plane-route.yaml"
+run "new: the rendered plane-dev route" policy "$d/plane-route.yaml"
+echo
+echo "## Prometheus resources, charts.rego"
+PINNED='quay.io/prometheus/prometheus@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984'
+for th in '{baseImage: quay.io/thanos/thanos, version: v0.30.0}' '{baseImage: "quay.io/thanos/thanos:v0.42.5", sha: abc}' '{baseImage: "quay.io/thanos/thanos@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984"}' '{image: "quay.io/thanos/thanos:v0.42.5"}' '{version: v0.42.5}'; do
+  printf 'apiVersion: monitoring.coreos.com/v1\nkind: Prometheus\nmetadata:\n  name: p\n  namespace: monitoring\nspec:\n  image: %s\n  thanos: %s\n' "$PINNED" "$th" >"$d/p.yaml"
+  for pol in "$d/old/policy" policy; do
+    out="$(conftest test --policy "$pol" --no-color --namespace charts "$d/p.yaml" 2>&1)"; st=$?
+    if [ "$pol" = policy ]; then which=new; else which=old; fi
+    printf '%-4s thanos: %-92s exit=%s\n' "$which" "$th" "$st"
+  done
+done

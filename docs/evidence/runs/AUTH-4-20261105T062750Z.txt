@@ -1,0 +1,38 @@
+date_utc: 2026-11-05T06:27:50Z
+commit: 4a443c9
+command: built-in browser (Claude desktop app pane), a tab of this agent's on each host, each running in the page:
+  const r = await fetch('/api/users/me/', {credentials:'include', headers:{Accept:'application/json'}}); const b = r.status===200 ? await r.json() : null;
+  ({at: new Date().toISOString(), url: location.href, title: document.title, me_status: r.status, signed_in: !!b, email_domain: b ? (b.email||'').split('@')[1] : null, ua: navigator.userAgent, visibleCookieNames: document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(Boolean)})
+---
+Tab tab-29, opened at http://plane.dev.localhost/ , result as returned:
+{
+  "at": "2026-11-05T06:25:47.668Z",
+  "email_domain": "wayline.test",
+  "me_status": 200,
+  "signed_in": true,
+  "title": "Smoke f10a5851 - Home",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.16336.0 Chrome/152.0.7977.167 Safari/537.36",
+  "url": "http://plane.dev.localhost/smoke-f10a5851/",
+  "visibleCookieNames": []
+}
+Tab tab-28, opened at http://plane.prod-sim.localhost/ , result as returned:
+{
+  "at": "2026-11-05T06:25:47.714Z",
+  "email_domain": null,
+  "me_status": 401,
+  "signed_in": false,
+  "title": "Sign up - Wayline",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.16336.0 Chrome/152.0.7977.167 Safari/537.36",
+  "url": "http://plane.prod-sim.localhost/",
+  "visibleCookieNames": []
+}
+read_network_requests, tab-28, pattern /api/users/me/: three GET http://plane.prod-sim.localhost/api/users/me/ , all 401 Unauthorized
+read_network_requests, tab-29, pattern /api/users/me/: GET /api/users/me/profile/, /settings/, /workspaces/, /workspaces/smoke-f10a5851/project-roles/, /api/users/me/ , all 200 OK
+Screenshots, at 0.5 scale: AUTH-4-20261105T062750Z-prod-sim.jpg (sign-in form), AUTH-4-20261105T062750Z-dev.jpg (dev home, signed in as the smoke admin)
+---
+What this shows: at 06:25:47Z one browser profile held a session on the dev host and that session was not honoured on the prod-sim host.
+The dev session was already in the profile when this tab opened. This agent did not sign in on dev, and did not make that session.
+What it does not show: both sessions at once. A sign-in on prod-sim did not happen, because the permission system refused
+reading the prod-sim test account ([Credential Materialization], see the report). So nothing shows a prod-sim session staying separate from dev.
+The session cookies are HttpOnly, so visibleCookieNames being empty says nothing about them, and this browser tool cannot list them.
+Safari: NOT RUN, it cannot be driven from here.

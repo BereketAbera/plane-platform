@@ -1,0 +1,110 @@
+# date 2026-11-05T03:37:56Z, candidate fixes tried in a scratch clone of 1936016 and then undone. Nothing here is committed. command: ./scripts/ci/test-promotion-flows.sh <filter>
+
+=== 1. scripts/rollback.sh: undo only what the revert touched, in place of git revert --abort, which is git reset --merge
+undo_revert() {
+  local undo=("$RENDERED") path
+  while read -r path; do undo+=("$path"); done < <(git diff-tree --no-commit-id --name-only -r "$target")
+  git restore --source=HEAD --staged --worktree -- "${undo[@]}"
+  git revert --quit
+}
+  both `git revert --abort || true`  ->  `undo_revert || true`
+  git add -- "${paths[@]}"           ->  ... || { undo_revert || true; die "could not stage the revert. Nothing changed. Run this again."; }
+  git commit ... -- "${paths[@]}"    ->  ... || { undo_revert || true; die "could not commit the revert. Nothing changed. Run this again."; }
+--- filter rollback (the 12 scenarios already in the suite, and my index-lock one, which needs the lock gone first)
+warn   expected: helm and gitops clean
+warn   expected: a second run finishes the rollback
+warn rv2-rollback-index-lock FAILED. Its last command printed:
+ ok rollback-rerun-after-failed-publish
+ ok rollback-prod-sim-with-broken-backup
+ ok rollback-prod-sim-with-hung-backup
+ ok rollback-prod-sim-names-the-older-dump
+ ok rollback-prod-sim-skip-backup
+ ok rollback-prod-sim-past-a-later-change-beside-the-image
+ ok rollback-stops-on-a-conflict-in-the-overlay
+ ok rollback-dev-takes-no-dump
+ ok rollback-leaves-other-staged-files-alone
+ ok rollback-prod-sim-with-unhealthy-dev
+ ok rollback-prod-sim-rerun-with-unhealthy-dev
+ ok rollback-four-images-together
+fail 1 of 13 promotion flow scenarios failed
+--- filter rv-
+ ok rv-conflict-with-staged-work
+ ok rv-conflict-with-partly-staged-file
+ ok rv-render-fails-after-revert
+ ok rv-commit-fails-after-revert
+ ok rv-empty-revert
+warn   expected: the rollback works
+warn rv-promotion-added-a-file FAILED. Its last command printed:
+ ok rv-dev-past-a-later-change
+warn   expected: dev is not in it
+warn rv-warning-reach FAILED. Its last command printed:
+warn   expected: it says the list was cut
+warn rv-warning-list-cut FAILED. Its last command printed:
+ ok rv-warning-render-only
+ ok rv-shared-image-swap
+fail 3 of 11 promotion flow scenarios failed
+--- what they saw
+[rollback-index-lock] --- git status --porcelain: M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[rollback-index-lock] --- REVERT_HEAD: absent
+[rollback-index-lock] --- git status --porcelain: M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[rollback-index-lock] --- REVERT_HEAD: absent
+[conflict-staged] --- git status --porcelain: M  README.md;A  docs/staged-by-someone.txt;
+[conflict-staged] --- REVERT_HEAD: absent
+[conflict-staged] after: staged: README.md docs/staged-by-someone.txt 
+[conflict-staged] after: new file on disk: yes
+[conflict-staged] after: the edit in README.md on disk: 1
+[conflict-partly-staged] --- git status --porcelain: MM README.md;
+[conflict-partly-staged] --- REVERT_HEAD: absent
+[conflict-partly-staged] --- git status --porcelain: MM README.md;
+[conflict-partly-staged] --- REVERT_HEAD: absent
+[render-fails] --- git status --porcelain: A  docs/staged-by-someone.txt;
+[render-fails] --- REVERT_HEAD: absent
+[render-fails] after: new file on disk: yes
+[commit-fails] --- git status --porcelain: 
+[commit-fails] --- REVERT_HEAD: absent
+[commit-fails] --- git status --porcelain: 
+[commit-fails] --- REVERT_HEAD: absent
+[empty-revert] --- git status --porcelain: 
+[empty-revert] --- REVERT_HEAD: absent
+[empty-revert] --- git status --porcelain: 
+[empty-revert] --- REVERT_HEAD: absent
+[promotion-added-a-file] --- git status --porcelain: 
+[promotion-added-a-file] --- REVERT_HEAD: absent
+[dev-past-later-change] --- git status --porcelain: 
+[dev-past-later-change] --- REVERT_HEAD: absent
+[warning-reach] --- git status --porcelain: 
+[warning-reach] --- REVERT_HEAD: absent
+[warning-list] --- git status --porcelain: 
+[warning-list] --- REVERT_HEAD: absent
+[warning-render-only] --- git status --porcelain: 
+[warning-render-only] --- REVERT_HEAD: absent
+[image-swap] --- git status --porcelain: 
+[image-swap] --- REVERT_HEAD: absent
+
+=== 2. scripts/promote.sh, the empty plan: publish what an earlier run committed
+  ok "$ENV already runs these digests, nothing to promote"
+  if [[ "$COMMIT" == yes ]]; then "$ROOT/scripts/gitops-publish.sh"; fi
+  exit 0
+--- filter rv5-
+ ok rv5-promote-rerun-after-failed-publish
+ ok rv5-promote-rerun-after-second-check-refused
+ ok 2 of 2 promotion flow scenarios passed, with a stub cluster
+--- filter promote-level
+ ok promote-level-has-nothing-to-do
+ ok 1 of 1 promotion flow scenarios passed, with a stub cluster
+--- filter four-images-through
+ ok promote-four-images-through-make
+ ok 1 of 1 promotion flow scenarios passed, with a stub cluster
+
+=== 3. scripts/promote.sh, last line: only prod-sim has taken its dump already
+if [[ "$ENV" == prod-sim ]]; then SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh"; else "$ROOT/scripts/gitops-publish.sh"; fi
+--- filter rv4-dev-promotion
+ ok rv4-dev-promotion-carries-prod-sim
+ ok 1 of 1 promotion flow scenarios passed, with a stub cluster
+[dev-promotion-carries-prod-sim] published is HEAD: yes; published prod-sim render now has sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 1; dumps taken: 1
+--- filter publish-dev-change
+ ok publish-dev-change-needs-no-dev-check
+ ok 1 of 1 promotion flow scenarios passed, with a stub cluster
+--- filter promote-dev-healthy
+ ok promote-dev-healthy-and-running
+ ok 1 of 1 promotion flow scenarios passed, with a stub cluster

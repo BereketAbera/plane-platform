@@ -1,0 +1,169 @@
+{
+  "captured_at": "2026-11-05T07:48:30Z",
+  "command": "curl -G http://prometheus.localhost/api/v1/query, sum by (le)(increase(traefik_service_request_duration_seconds_bucket{service=<plane-api route>,method=...}[180s])) at the end of each step",
+  "api_route": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd",
+  "entries": [
+    {
+      "window": "vus_05",
+      "step_end": "07:36:50",
+      "method": "GET",
+      "buckets": [
+        {
+          "le": "0.1",
+          "count": 523.193024093012
+        },
+        {
+          "le": "0.3",
+          "count": 562.792496100052
+        },
+        {
+          "le": "1.2",
+          "count": 569.9924001013319
+        },
+        {
+          "le": "5.0",
+          "count": 577.192304102612
+        },
+        {
+          "le": "+Inf",
+          "count": 577.192304102612
+        }
+      ]
+    },
+    {
+      "window": "vus_05",
+      "step_end": "07:36:50",
+      "method": "POST",
+      "buckets": [
+        {
+          "le": "0.1",
+          "count": 40.799456007253234
+        },
+        {
+          "le": "0.3",
+          "count": 47.999360008533216
+        },
+        {
+          "le": "1.2",
+          "count": 47.999360008533216
+        },
+        {
+          "le": "5.0",
+          "count": 47.999360008533216
+        },
+        {
+          "le": "+Inf",
+          "count": 47.999360008533216
+        }
+      ]
+    },
+    {
+      "window": "vus_10",
+      "step_end": "07:39:50",
+      "method": "GET",
+      "buckets": [
+        {
+          "le": "0.1",
+          "count": 769.1897441367448
+        },
+        {
+          "le": "0.3",
+          "count": 970.7870561725845
+        },
+        {
+          "le": "1.2",
+          "count": 1017.5864321809044
+        },
+        {
+          "le": "5.0",
+          "count": 1017.5864321809044
+        },
+        {
+          "le": "+Inf",
+          "count": 1017.5864321809044
+        }
+      ]
+    },
+    {
+      "window": "vus_10",
+      "step_end": "07:39:50",
+      "method": "POST",
+      "buckets": [
+        {
+          "le": "0.1",
+          "count": 64.79913601151985
+        },
+        {
+          "le": "0.3",
+          "count": 83.99888001493315
+        },
+        {
+          "le": "1.2",
+          "count": 86.3988480153598
+        },
+        {
+          "le": "5.0",
+          "count": 86.3988480153598
+        },
+        {
+          "le": "+Inf",
+          "count": 86.3988480153598
+        }
+      ]
+    },
+    {
+      "window": "vus_20",
+      "step_end": "07:42:50",
+      "method": "GET",
+      "buckets": [
+        {
+          "le": "0.1",
+          "count": 706.8000000000001
+        },
+        {
+          "le": "0.3",
+          "count": 1203.6000000000001
+        },
+        {
+          "le": "1.2",
+          "count": 1458
+        },
+        {
+          "le": "5.0",
+          "count": 1491.6
+        },
+        {
+          "le": "+Inf",
+          "count": 1491.6
+        }
+      ]
+    },
+    {
+      "window": "vus_20",
+      "step_end": "07:42:50",
+      "method": "POST",
+      "buckets": [
+        {
+          "le": "0.1",
+          "count": 76.8
+        },
+        {
+          "le": "0.3",
+          "count": 135.6
+        },
+        {
+          "le": "1.2",
+          "count": 158.4
+        },
+        {
+          "le": "5.0",
+          "count": 166.79999999999998
+        },
+        {
+          "le": "+Inf",
+          "count": 166.79999999999998
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+# date 2026-11-05T05:00:09Z, scratch clone of a286e52, GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+# no .local/kubeconfig here, so kubectl has no cluster, and .local/git is the clone's own
+
+$ ./scripts/gitops-publish.sh
+ ok created <clone>/.local/git/plane-platform.git
+ ok published main a286e5236caf to <clone>/.local/git/plane-platform.git
+exit 0
+
+prod-sim before:
+plane-admin localhost:5001/wayline/admin sha256:c24ead5a02a1
+plane-backend localhost:5001/wayline/backend sha256:9c7130942d90
+plane-frontend localhost:5001/wayline/web sha256:96841278d02a
+plane-space localhost:5001/wayline/space sha256:0a4ca742292d
+
+$ env SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim
+==> Rolling back: 0af8956 promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+warn Images roll back, the database schema does not. See docs/runbooks for restoring the dump.
+fail prod-sim needs CONFIRM=yes when not run from a terminal
+exit 1
+
+without CONFIRM that was refused, and nothing moved: HEAD a286e52, clean: 0
+
+$ env CONFIRM=yes SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim
+==> Rolling back: 0af8956 promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+warn SKIP_BACKUP=yes: no dump taken before this rollback
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 1391b48: Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+==> This publish moves prod-sim's images, through:
+       1391b48 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+warn plane-dev check not run for this publish: rollback of 0af895603a79: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+warn publishing 1 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       1391b48 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+ ok published main 1391b48aa78d to <clone>/.local/git/plane-platform.git
+warn Images are back, the schema is not, and no finished dump older than 0af8956 from 2026-11-05T05:20:40+03:00 exists in .local/backups/prod-sim. A promotion merged on GitHub took its dump when it was published, so for one of tho
+exit 0
+
+the revert:
+1391b48 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+This reverts commit 0af895603a79a5a6793f9c85dd1efa67c91bfe41.
+
+Promote-Dev-Check: not run: an emergency path must not need plane-dev to be healthy
+
+ gitops/environments/prod-sim/manifests.yaml     | 14 +++++++-------
+ helm/plane/overlays/prod-sim/kustomization.yaml | 20 ++++++++++++--------
+ 2 files changed, 19 insertions(+), 15 deletions(-)
+
+lines changed in the render that are not images: 0
+
+prod-sim after:
+plane-admin docker.io/makeplane/plane-admin sha256:45c952532825
+plane-backend docker.io/makeplane/plane-backend sha256:9b75bf46cf4f
+plane-frontend docker.io/makeplane/plane-frontend sha256:95ce1418b7b9
+plane-space docker.io/makeplane/plane-space sha256:af9b955874a2
+
+$ ./scripts/render.sh --check
+ ok dev is up to date
+ ok prod-sim is up to date
+exit 0
+
+$ ./scripts/ci/check-promoted-digests.sh
+ ok 9 image(s) were recorded for dev under the same name
+exit 0
+
+$ env CONFIRM=yes SKIP_BACKUP=yes SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh prod-sim
+==> Promotion plan for prod-sim
+    plane-admin -> localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+    plane-backend -> localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+    plane-frontend -> localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    plane-space -> localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+warn plane-dev check skipped: no cluster in reach, so nothing checked that plane-dev is healthy or runs these digests
+warn SKIP_BACKUP=yes: no backup taken before this promotion
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 3003c6d: promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+==> This publish moves prod-sim's images, through:
+       3003c6d promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+==> This publish changes a prod-sim image, so plane-dev must have proven it
+warn plane-dev check skipped: no cluster in reach, so nothing checked that plane-dev is healthy or runs these digests
+warn publishing 2 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       3003c6d promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+       1391b48 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+ ok published main 3003c6d250f2 to <clone>/.local/git/plane-platform.git
+exit 0
+
+prod-sim promoted again, same as dev: yes
+3003c6d promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+Promote-Env: prod-sim
+Promote-Image: plane-admin=localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+Promote-Image: plane-backend=localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+Promote-Image: plane-frontend=localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+Promote-Image: plane-space=localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+Promote-Dev-Check: skipped: no cluster in reach, so nothing checked that plane-dev is healthy or runs these digests
+
+
+$ ./scripts/rollback.sh dev
+==> Rolling back: 62699c9 promote(dev): plane-frontend 96841278d02a, plane-admin c24ead5a02a1, plane-space 0a4ca742292d, plane-backend 9c7130942d90
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed bb9e530: Revert "promote(dev): plane-frontend 96841278d02a, plane-admin c24ead5a02a1, plane-space 0a4ca742292d, plane-backend 9c7130942d90"
+warn publishing 3 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       bb9e530 Revert "promote(dev): plane-frontend 96841278d02a, plane-admin c24ead5a02a1, plane-space 0a4ca742292d, plane-backend 9c7130942d90"
+       3003c6d promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+       1391b48 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+ ok published main bb9e530d3396 to <clone>/.local/git/plane-platform.git
+exit 0
+
+dev after its rollback:
+plane-admin localhost:5001/wayline/admin sha256:279dfd7f06cc
+plane-backend localhost:5001/wayline/backend sha256:4add277ce63e
+plane-frontend localhost:5001/wayline/web sha256:73a48d643f87
+plane-space localhost:5001/wayline/space sha256:a8c49151ee94
+
+HEAD bb9e530, the clone's published bb9e530, status lines under helm and gitops: 0
+the real published commit did not move: 9e86372
+
+=== the script
+#!/bin/bash
+# The fixed scripts on the repository's real overlays and history, in a scratch clone with its own bare
+# repository and no kubeconfig, so nothing here can reach the cluster, the real bare repository or a registry.
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-track
+MAIN=/Users/bek/dev/pr/plane-platform
+C="$S/real/c"
+rm -rf "${S:?}/real"; mkdir -p "$S/real"
+git clone --quiet "$MAIN" "$C" || exit 98
+cd "$C" || exit 98
+mkdir -p .tools; ln -s "$MAIN/.tools/bin" .tools/bin
+git config user.name scratch; git config user.email scratch@invalid; git config commit.gpgsign false
+echo "# date $(date -u +%Y-%m-%dT%H:%M:%SZ), scratch clone of $(git rev-parse --short HEAD), $(/bin/bash --version | head -1)"
+echo "# no .local/kubeconfig here, so kubectl has no cluster, and .local/git is the clone's own"
+show() { sed 's/\x1b\[[0-9;]*m//g' | sed -E "s#$C#<clone>#g" | cut -c1-230; }
+run() { echo; echo "\$ $*"; "$@" </dev/null 2>&1 | show; echo "exit ${PIPESTATUS[0]}"; }
+images() { .tools/bin/yq -r '.images[] | select(.name | test("plane-(frontend|admin|space|backend)$")) | (.name | split("/") | .[-1]) + " " + .newName + " " + (.digest | .[0:19])' "helm/plane/overlays/$1/kustomization.yaml"; }
+run ./scripts/gitops-publish.sh
+echo; echo "prod-sim before:"; images prod-sim
+run env SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim
+echo; echo "without CONFIRM that was refused, and nothing moved: HEAD $(git log -1 --format=%h), clean: $(git status --porcelain -- helm gitops | wc -l | tr -d ' ')"
+run env CONFIRM=yes SKIP_BACKUP=yes ./scripts/rollback.sh prod-sim
+echo; echo "the revert:"; git log -1 --format='%h %s%n%b' | show; git show --stat --format= HEAD | show
+echo; echo "lines changed in the render that are not images: $(git diff -U0 HEAD~1 HEAD -- gitops/environments/prod-sim/manifests.yaml | grep -E '^[-+]' | grep -vcE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ')"
+echo; echo "prod-sim after:"; images prod-sim
+run ./scripts/render.sh --check
+run ./scripts/ci/check-promoted-digests.sh
+run env CONFIRM=yes SKIP_BACKUP=yes SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh prod-sim
+echo; echo "prod-sim promoted again, same as dev: $(diff <(images prod-sim) <(images dev) >/dev/null && echo yes || echo no)"
+git log -1 --format='%h %s%n%b' | show
+run ./scripts/rollback.sh dev
+echo; echo "dev after its rollback:"; images dev
+echo; echo "HEAD $(git log -1 --format=%h), the clone's published $(git --git-dir=.local/git/plane-platform.git rev-parse --short refs/heads/main), status lines under helm and gitops: $(git status --porcelain -- helm gitops | wc -l | tr -d ' ')"
+echo "the real published commit did not move: $(git --git-dir="$MAIN/.local/git/plane-platform.git" rev-parse --short refs/heads/main)"
+cd "$S" && rm -rf "${S:?}/real"

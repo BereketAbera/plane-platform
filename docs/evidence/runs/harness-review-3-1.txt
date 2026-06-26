@@ -1,0 +1,100 @@
+# Adversarial review of the test harness track. 2026-11-05T03:11:44Z, HEAD 1936016. Scripts in a scratch folder, removed afterwards; bodies are summarised by the case labels. No repo file edited.
+
+## make test-separation, attempted once about 03:07Z: refused by the permission system as [Remote Shell Writes]. Not retried or run in pieces.
+
+## branding-backend and the two-hour cache
+# kubectl -n plane-dev exec plane-redis-wl-0 -c plane-redis -- valkey-cli TTL :1:/api/instances/ , twice, 20s apart, while the 15s probe reads the route
+03:11:44Z TTL 4806
+03:12:04Z TTL 4785
+# kubectl -n plane-prod-sim get pods -l app.kubernetes.io/component=api: name, created, Ready since
+plane-api-wl-7675d8b644-flq5c created 2026-11-05T02:21:14Z ready 2026-11-05T02:21:50Z
+# smoke-prod-sim-20261105T022210Z-2247.json (code 8dcf2a1) and the next run
+smoke-prod-sim-20261105T022210Z-2247.json 2026-11-05T02:22:10Z FAIL
+ +4.1s PASS branding-overlay admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every roll
+ +4.2s FAIL branding-backend the backend reports upstream's changelog: 'https://sites.plane.so/pages/691ef037bcfe416a902e48cb55f59891/'
+ +5.6s PASS admin-sign-in 37 config rows read, 8 of them encrypted, refused with no session (401)
+smoke-prod-sim-20261105T022256Z-12154.json 2026-11-05T02:22:56Z PASS
+ +4.1s PASS branding-overlay admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every roll
+ +4.1s PASS branding-backend instance_changelog_url is '', so "What's new" shows the local fallback
+ +5.4s PASS admin-sign-in 37 config rows read, 8 of them encrypted, refused with no session (401)
+# upstream v1.4.3: license/api/views/instance.py:34 @cache_response(60*60*2, user=False); utils/cache.py keys on request.get_full_path() and invalidate_cache runs before the view; license/api/views/admin.py:272 sign-in invalidates /api/instances/; bin/docker-entrypoint-api.sh runs clear_cache before gunicorn
+
+## python3 -B smoke_cases.py, stubs over the real tests/e2e/smoke.py
+A. clean install, sentinel older than namespace, and creating the new record fails with a 500
+  printed: FAIL    sentinel-create  POST /api/workspaces/ answered 500
+  old record still on disk: False
+  'Replaced' or the old slug printed: False
+B. rollout_unfinished with an old pod still terminating (status.replicas does not count it)
+  rollout_unfinished -> None
+C. instance found not set up, stored admin exists, and the sign-up is refused (a stale cached is_setup_done false)
+  printed: FAIL    instance-setup  au***h error 5180 ADMIN_ALREADY_EXIST
+  stored password still the one the database holds: False
+D. workloads-ready while a rollout runs: one new pod surged, the old one still ready, Application Progressing
+  printed: FAIL    workloads-ready  plane-web-wl has 2/1 ready; Application plane-dev is Synced/Progressing
+  overall: FAIL (a BLOCKED branding-overlay beside this does not change it)
+
+## python3 -B net_stub.py, kubectl stubbed over the real tests/separation/network.py
+== normal
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T03:12:05Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 0, 'FAIL': 0, 'PASS': 384}, exit 0
+
+== clients-empty
+RESULT checks passed=360 failed=0 blocked=0 2026-11-05T03:12:05Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 0, 'FAIL': 0, 'PASS': 360}, exit 0
+
+== clients-one
+RESULT checks passed=366 failed=0 blocked=0 2026-11-05T03:12:05Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 0, 'FAIL': 0, 'PASS': 366}, exit 0
+
+== pg-fast
+PASS 2026-11-05T03:12:05Z plane-dev/plane-pgdb-wl-0 -> plane-pgdb.plane-prod-sim.svc.cluster.local: want rc=2, no response: plane-pgdb...:5432 - no re ...
+PASS 2026-11-05T03:12:05Z plane-prod-sim/plane-pgdb-wl-0 -> plane-pgdb.plane-dev.svc.cluster.local: want rc=2, no response: plane-pgdb...:5432 - no re ...
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T03:12:05Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 0, 'FAIL': 0, 'PASS': 384}, exit 0
+
+
+## python3 -B net_cases.py, the whole SH_PROBE through probe() under macOS sh with a stub nc
+whole SH_PROBE under macOS sh, as written in network.py, with a stub nc
+  dns-tcp CONNECTED 0
+  gone TIMEOUT 5
+  name DNS-FAILED 0
+  closed ERROR: 0
+left in TMPDIR: []
+mktemp fails:
+  dns-tcp EXEC-FAILED rc=125 mktemp: failed
+no target lines reach the loop:
+  rc 1 stderr cat: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.TQR0hfpQui/*: No such 
+left in TMPDIR: []
+
+## the whole SH_PROBE in a local busybox container, --network none, as in the report's image
+writable /tmp exit 0 | dns-tcp kube-dns.kube-system.svc.cluster.local 53 service-dns 1 0 nc:_bad_address_'kube-dns.kube-system.svc.cluster.loca | 
+read-only root exit 125 |  | mktemp: : Read-only file system
+
+## the real NODE_WITNESS on the node, and the real functions from scripts/test-netpol.sh
+1 UNRESOLVED
+2 UNRESOLVED
+3 ANSWERED
+4 ANSWERED
+5 ANSWERED
+# rows: 1 plane.dev.localhost:80, 2 kubernetes.default.svc:443, 3 plane-git:9418, 4 plane-platform-control-plane:10250, 5 traefik.github.io:443
+0 kubernetes.default.svc 443
+1 plane.dev.localhost 80
+kubernetes.default.svc scope=cluster ready=-
+plane.dev.localhost scope=local ready=-
+deny TIMEOUT cluster - UNRESOLVED yes -> INCONCLUSIVE|counts|the target did not answer the node either, so this proves nothing abou
+deny TIMEOUT local - UNRESOLVED yes -> INCONCLUSIVE|counts|the target did not answer the node either, so this proves nothing abou
+before=SILENT after=ANSWERED witness=SILENT -> INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this prove
+before=UNRESOLVED after=ANSWERED witness=UNRESOLVED -> INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this prove
+before=ANSWERED after=SILENT witness=SILENT -> INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this prove
+before=ANSWERED after=UNRESOLVED witness=UNRESOLVED -> INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this prove
+before=SILENT after=SILENT witness=SILENT -> INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this prove
+
+## pg_isready 17.10 from Homebrew: the code network.py:319 accepts, on a name that does not resolve and on a closed port
+does-not-exist.invalid:5432 - no response
+bad name rc=2
+127.0.0.1:9 - no response
+refused rc=2

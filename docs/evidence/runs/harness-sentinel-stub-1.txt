@@ -1,0 +1,92 @@
+# Item 1. 2026-11-05T02:45:31Z, commit 9e86372, tests/e2e/smoke.py last changed in 8dcf2a1. Command: python3 -B .local/evidence-raw/harness-sentinel-stub-script-1.py.txt <scratch>
+# Real smoke.py over real HTTP against a stub of the Plane endpoints those steps use. The namespace's age and the Deployments come from the real cluster. A real clean database comes in the validation stage, so this says nothing about Plane.
+== S1 first smoke after a clean install: is_setup_done false, and the record is older than the namespace, as after make destroy
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    instance-setup  admin created, telemetry off
+PASS    sign-in  session established, anonymous request refused
+PASS    api-token  token works on /api/v1, refused without it
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+PASS    sentinel-create  Replaced sentinel.json: this run found the instance not set up, so this new database cannot hold sentinel sentinel-oldcluster, written 2026-11-01T00:00:00Z. Created bb836246-3666-4f4c-bb6f-fdbbbb1aa785
+PASS    sentinel-reread  sentinel row and attachment intact
+RESULT PASS, would exit 0
+  ok   exit 0
+  ok   the record is new
+== S2 the second smoke on that database: setup is done and it holds the record, which is the state after a clean restore too
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    instance-setup  already set up, reusing stored admin
+PASS    sign-in  session established, anonymous request refused
+PASS    api-token  token works on /api/v1, refused without it
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    sentinel-create  reusing existing sentinel sentinel.json
+PASS    sentinel-reread  sentinel row and attachment intact
+RESULT PASS, would exit 0
+  ok   exit 0
+  ok   the record is unchanged
+== S3 --mode verify on that database, which is what a restore and the pod restart drill run
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+RESULT PASS, would exit 0
+  ok   exit 0
+  ok   the record is unchanged
+== S4 is_setup_done false, and the record is younger than the namespace: this namespace's database held it and lost it
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    instance-setup  admin created, telemetry off
+PASS    sign-in  session established, anonymous request refused
+PASS    api-token  token works on /api/v1, refused without it
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+FAIL    sentinel-create  this run found the instance not set up, and namespace plane-dev, created 2026-11-04T20:40:19Z, is older than sentinel sentinel-oldcluster, written 2026-11-05T02:39:35Z. So this database held that record and no longer does: data was lost. If it was reset on purpose, remove <scratch>/sentinel-***-2288uifg/s4/sentinel.json and run this again
+BLOCKED sentinel-reread  needs sentinel-create
+RESULT FAIL, would exit 1
+  ok   exit 1
+  ok   the record is kept
+== S5 --mode verify after a clean install, before any full smoke: not set up, stale record, stale token. Never replaced in this mode
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+FAIL    sentinel-reread  sentinel workspace sentinel-oldcluster answered 403, and /api/v1/users/me/ with the same token answered 401: the user or token row is gone, or the token is not this database's
+RESULT FAIL, would exit 1
+  ok   exit 1
+  ok   the record is kept
+== S6 --mode verify with a working token and a workspace this database does not have, set up
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+FAIL    sentinel-reread  sentinel workspace sentinel-oldcluster answered 403 to a token that works, so this account has no such workspace and this database does not hold the record: data was lost, or sentinel.json, written 2026-11-01T00:00:00Z, is from an older database. If this environment was installed after that, remove the file and run the full smoke test
+RESULT FAIL, would exit 1
+  ok   exit 1
+== S7 --reset-sentinel still replaces, with no comparison, on a set-up database
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    instance-setup  already set up, reusing stored admin
+PASS    sign-in  session established, anonymous request refused
+PASS    api-token  token works on /api/v1, refused without it
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    sentinel-create  Created e1638637-62cb-4928-9771-4af00d55ca31
+PASS    sentinel-reread  sentinel row and attachment intact
+RESULT PASS, would exit 0
+  ok   the record is new
+== S8 the name a new instance must have, on the stub: the assertion in branding-fresh-install fails on upstream's default
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    instance-setup  admin created, telemetry off
+PASS    sign-in  session established, anonymous request refused
+PASS    api-token  token works on /api/v1, refused without it
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+FAIL    branding-fresh-install  a new instance is named 'Plane Community Edition', want 'Wayline'
+PASS    sentinel-create  Created 41d4c762-40ec-4fc7-8364-78cf5ccc642d
+PASS    sentinel-reread  sentinel row and attachment intact
+RESULT FAIL, would exit 1
+  ok   exit 1
+failures: 0
+
+# The same stub with smoke.py from 8dcf2a1~1, S1 only, to show the failure the reviewer found. The two branding lines fail only because that copy sat outside the repository.
+== S1 first smoke after a clean install: is_setup_done false, and the record is older than the namespace, as after make destroy
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    instance-setup  admin created, telemetry off
+PASS    sign-in  session established, anonymous request refused
+PASS    api-token  token works on /api/v1, refused without it
+FAIL    branding-overlay  FileNotFoundError: [Errno 2] No such file or directory: '<scratch>/before/helm/plane/overlays/dev/kustomization.yaml'
+FAIL    branding-fresh-install  KeyError: 'branded'
+PASS    sentinel-create  reusing existing sentinel sentinel.json
+FAIL    sentinel-reread  API token refused with 403: the user or token row is gone
+RESULT FAIL, would exit 1
+  WRONG exit 0
+  WRONG the record is new

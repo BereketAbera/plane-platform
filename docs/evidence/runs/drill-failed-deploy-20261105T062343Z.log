@@ -1,0 +1,104 @@
+drill failed-deploy started 2026-11-05T06:23:43Z by: ./tests/drills/failed-deploy-rollback.sh
+
+--- 0. Preflight
+PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+PASS  recording every pending and firing alert in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-failed-deploy-20261105T062343Z-alerts.tsv
+
+--- 1. Promote a digest that cannot be pulled
+[1;34m==>[0m Promotion plan for dev
+    plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 6157074: promote(dev): plane-frontend 000000000000
+[1;33mwarn[0m publishing 1 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       6157074 promote(dev): plane-frontend 000000000000
+[1;32m ok[0m published main 61570743ba00 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+AT    2026-11-05T06:23:45Z +0s  promotion published
+PASS  promotion committed and published as 61570743ba00
+
+--- 2. Argo CD applies it
+AT    2026-11-05T06:24:10Z +25s  Deployment asks for the bad digest
+PASS  Deployment now asks for the bad digest
+
+--- 3. The new pod cannot start
+AT    2026-11-05T06:24:10Z +25s  new pod cannot pull
+PASS  new pod is in ErrImagePull or ImagePullBackOff
+
+--- 4. Argo CD reports the failure while the old pods keep serving
+AT    2026-11-05T06:34:14Z +629s  stopped waiting, Application health is Degraded
+PASS  Application health is Degraded
+PASS  plane.dev.localhost answered 200 on all 61 samples during the failed rollout
+PASS  old pod dda78f72-c195-48ec-a578-df2cf168f4c3 is still Ready
+
+--- 5. git revert restores
+[1;34m==>[0m Rolling back: 6157074 promote(dev): plane-frontend 000000000000
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed b7d1bfa: Revert "promote(dev): plane-frontend 000000000000"
+[1;33mwarn[0m publishing 3 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       b7d1bfa Revert "promote(dev): plane-frontend 000000000000"
+       4a443c9 docs(evidence): record the first image build on GitHub, the two pull requests, who can read the packages and /source, and make ci at 9c8e098 and 0dde813
+       6157074 promote(dev): plane-frontend 000000000000
+[1;32m ok[0m published main b7d1bfab5bbd to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+AT    2026-11-05T06:34:17Z +632s  revert published
+PASS  main reverts 61570743ba00
+PASS  rendered dev manifests no longer name the bad digest
+AT    2026-11-05T06:35:33Z +708s  Deployment is back on the old image
+PASS  Deployment is back on localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+AT    2026-11-05T06:35:39Z +714s  plane-dev is Synced and Healthy
+PASS  plane-dev is Synced and Healthy again
+PASS  no pod references the bad digest
+PASS  plane.dev.localhost answers 200
+PASS  prod-sim's manifests did not move
+
+--- 6. What fired, as Prometheus itself reported it
+AT    2026-11-05T06:38:04Z +859s  nothing is pending or firing that was not at the start
+Prometheus http://prometheus.localhost/api/v1/alerts, every 15s since 2026-11-05T06:23:43Z: 61 readings, 0 with no answer. Raw: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-failed-deploy-20261105T062343Z-alerts.tsv
+AT START     Watchdog severity=none first_pending=- first_firing=2026-11-05T06:23:43Z last_seen=2026-11-05T06:38:48Z 
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-prometheus-operator-06d28b01-8200-4167-88ff-c7fe424fce2e.yaml;prometheus-operator,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubernetes-storage-cd961228-f1a7-4936-88e8-141145b57875.yaml;kubernetes-storage,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-prometheus-bea78e3b-b470-4ca6-93c1-450b9a7d2812.yaml;prometheus,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-node.rules-3bd2a90e-9926-474e-a943-9b67c92de8c6.yaml;node.rules,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-state-metrics-4265aaab-cdd9-488f-9f4b-2e5c6b728da3.yaml;kube-state-metrics,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-memory-working-set-bytes-513b15c4-bb68-4874-a82d-d05248ba9680.yaml;k8s.rules.container_memory_working_set_bytes,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-node-network-82fd342c-54af-407b-aae4-e5a3b928572b.yaml;node-network,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:24:13Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-platform-eb8875be-4b2c-4663-ae68-41ec83850e5a.yaml;platform.network,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-plane-92242ec1-3fa7-4730-8242-1833aaf3b974.yaml;plane.availability,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:27:44Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-config-reloaders-87913698-a06d-4aad-a71e-6a7cc3fd72c4.yaml;config-reloaders,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:28:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-alertmanager.rules-1cdbce4d-7226-4b84-b173-01d850fc16e8.yaml;alertmanager.rules,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubernetes-apps-e2f8c92a-e66c-4994-a8dc-828b5c437533.yaml;kubernetes-apps,service=kps-prometheus
+AT START     PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:23:43Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-node-exporter.rules-68c378e7-3702-4108-a55b-150c611852e6.yaml;node-exporter.rules,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubernetes-resources-4bad785e-109b-4f9c-be34-9da7c8d41384.yaml;kubernetes-resources,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-node-recording.rules-d2fa7af3-aefb-459e-ab06-b341b89cbcb4.yaml;kube-prometheus-node-recording.rules,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:28:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-general.rules-b1bf7093-f4bf-4800-937f-61cca0405817.yaml;general.rules,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:28:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-node-exporter-bf27b9ac-14d0-47f6-b9ad-59c97fffe119.yaml;node-exporter,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-memory-cache-088db392-7ea0-40c8-80e2-d0661600221b.yaml;k8s.rules.container_memory_cache,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubelet.rules-eab20303-aa51-48b7-b47b-e04a2951f1e6.yaml;kubelet.rules,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-resource-bf85fe0a-6540-45ce-ab27-f24b96e78e23.yaml;k8s.rules.container_resource,service=kps-prometheus
+PENDING ONLY KubePodNotReady severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:35:47Z job=kube-state-metrics,namespace=plane-dev,pod=plane-web-wl-95867ffd6-sm2l2
+PENDING ONLY KubeContainerWaiting severity=warning first_pending=2026-11-05T06:24:28Z first_firing=- last_seen=2026-11-05T06:27:44Z container=plane-web,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,namespace=plane-dev,pod=plane-web-wl-95867ffd6-sm2l2,reason=ErrImagePull,service=kps-kube-state-metrics,uid=bc0a45ce-d0d1-493c-ac2e-7643b1d58927
+PENDING ONLY ArgoAppOutOfSync severity=warning first_pending=2026-11-05T06:24:44Z first_firing=- last_seen=2026-11-05T06:36:17Z component=argocd,dest_namespace=plane-dev,name=plane-dev
+PENDING ONLY ArgoSyncFailed severity=critical first_pending=2026-11-05T06:24:44Z first_firing=- last_seen=2026-11-05T06:37:47Z component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:24:59Z first_firing=- last_seen=2026-11-05T06:29:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-memory-swap-88311d1c-8176-4df5-92d6-cd6c00e9b67e.yaml;k8s.rules.container_memory_swap,service=kps-prometheus
+PENDING ONLY ArgoAppStuckProgressing severity=warning first_pending=2026-11-05T06:25:14Z first_firing=- last_seen=2026-11-05T06:36:17Z component=argocd,dest_namespace=plane-dev,name=plane-dev
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:29Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:29Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-memory-rss-2479842e-47a1-4440-8060-ca279df71272.yaml;k8s.rules.container_memory_rss,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:29Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubernetes-system-f830def4-4efa-482d-98dc-a4e20a4985b4.yaml;kubernetes-system,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:29Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubernetes-system-apiserver-78198114-1c79-4a32-b6e8-5f57ac2f55d1.yaml;kubernetes-system-apiserver,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:29Z first_firing=- last_seen=2026-11-05T06:29:45Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-plane-92242ec1-3fa7-4730-8242-1833aaf3b974.yaml;plane.data,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:59Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.pod-owner-0d048bd9-43bd-4eb4-88fc-d432a796ae8c.yaml;k8s.rules.pod_owner,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:25:59Z first_firing=- last_seen=2026-11-05T06:30:15Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kubernetes-system-kubelet-3fdca78e-6aea-4d63-b9f9-2d8843e750a7.yaml;kubernetes-system-kubelet,service=kps-prometheus
+PENDING ONLY KubeContainerWaiting severity=warning first_pending=2026-11-05T06:26:29Z first_firing=- last_seen=2026-11-05T06:35:47Z container=plane-web,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,namespace=plane-dev,pod=plane-web-wl-95867ffd6-sm2l2,reason=ImagePullBackOff,service=kps-kube-state-metrics,uid=bc0a45ce-d0d1-493c-ac2e-7643b1d58927
+PENDING ONLY KubeDeploymentRolloutStuck severity=warning first_pending=2026-11-05T06:34:31Z first_firing=- last_seen=2026-11-05T06:35:47Z condition=Progressing,container=kube-state-metrics,deployment=plane-web-wl,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,reason=ProgressDeadlineExceeded,service=kps-kube-state-metrics,status=false
+PENDING ONLY ArgoAppDegraded severity=critical first_pending=2026-11-05T06:35:17Z first_firing=- last_seen=2026-11-05T06:36:17Z component=argocd,dest_namespace=argocd,health_status=Degraded,name=root
+PENDING ONLY ArgoAppDegraded severity=critical first_pending=2026-11-05T06:35:17Z first_firing=- last_seen=2026-11-05T06:36:17Z component=argocd,dest_namespace=plane-dev,health_status=Degraded,name=plane-dev
+APP   2026-11-05T06:23:43Z  Synced/Healthy/Succeeded
+APP   2026-11-05T06:23:58Z  OutOfSync/Healthy/Running
+APP   2026-11-05T06:24:13Z  Synced/Progressing/Running
+APP   2026-11-05T06:34:16Z  Synced/Degraded/Running
+APP   2026-11-05T06:34:31Z  OutOfSync/Degraded/Running
+APP   2026-11-05T06:35:47Z  Synced/Healthy/Succeeded
+SINK  nothing but Watchdog since 2026-11-05T06:23:43Z
+
+RESULT PASS   evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log

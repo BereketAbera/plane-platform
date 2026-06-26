@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Read-only state of plane-dev around a rotation. Prints no secret value: fingerprints are the same
+# truncated sha256 that scripts/backup.sh records, and Infisical is listed with viewSecretValue=false.
+#   sec-state.sh <label>
+set -uo pipefail
+ROOT=/Users/bek/dev/pr/plane-platform
+source "$ROOT/scripts/lib/common.sh"
+set +e
+source "$ROOT/infisical/lib/api.sh"
+cd "$ROOT"
+NS=plane-dev
+LABEL="${1:-state}"
+
+printf '%s\n' "===== $LABEL $(date -u +%Y-%m-%dT%H:%M:%SZ) commit $(git rev-parse --short HEAD)"
+
+echo "--- Deployments: generation, observedGeneration, revision, image digest, template annotations"
+kc -n "$NS" get deployments -o json | jq -r '.items[] | [.metadata.name, .metadata.generation, .status.observedGeneration, .metadata.annotations["deployment.kubernetes.io/revision"], (.spec.template.spec.containers[0].image | split("@sha256:")[1][0:12]), ((.spec.template.metadata.annotations // {}) | tojson)] | @tsv'
+echo "--- ReplicaSets per owner"
+kc -n "$NS" get rs -o json | jq -r '[.items[] | .metadata.ownerReferences[0].name] | group_by(.) | map("\(.[0]) \(length)") | .[]'
+echo "--- Pods: name, uid, start, restarts, phase"
+kc -n "$NS" get pods -o json | jq -r '.items[] | select(.status.phase != "Succeeded") | [.metadata.name, .metadata.uid[0:8], .status.startTime, (.status.containerStatuses[0].restartCount // 0), .status.phase] | @tsv'
+
+echo "--- Secret versions and resourceVersions in $NS"
+kc -n "$NS" get secrets -o json | jq -r '.items[] | select(.metadata.name | startswith("plane-")) | [.metadata.name, .metadata.resourceVersion, (.metadata.annotations["secrets.infisical.com/version"] // "-")] | @tsv'
+
+fp() { kc -n "$NS" get secret "$1" -o json | jq -r --arg k "$2" '.data[$k] // "" | @base64d' | tr -d '\n' | shasum -a 256 | cut -c1-16; }
+echo "--- Truncated sha256, the form backup.sh records"
+printf 'SECRET_KEY (plane-app-keys)            %s\n' "$(fp plane-app-keys SECRET_KEY)"
+printf 'LIVE_SERVER_SECRET_KEY (plane-app-keys) %s\n' "$(fp plane-app-keys LIVE_SERVER_SECRET_KEY)"
+printf 'POSTGRES_PASSWORD (plane-pgdb)         %s\n' "$(fp plane-pgdb POSTGRES_PASSWORD)"
+printf 'DATABASE_URL (plane-app-env)           %s\n' "$(fp plane-app-env DATABASE_URL)"
+printf 'RABBITMQ_DEFAULT_PASS (plane-rabbitmq) %s\n' "$(fp plane-rabbitmq RABBITMQ_DEFAULT_PASS)"
+
+echo "--- Infisical: every secret of the dev project, key and version only, viewSecretValue=false"
+ia_init
+ia_load_admin
+PROJECT_ID="$(machine_value project_ids dev)"
+ENV_SLUG="$(jq -er '.environment_slug' "$MACHINE_FILE")"
+ia_request GET "/api/v4/secrets?projectId=$PROJECT_ID&environment=$ENV_SLUG&secretPath=%2F&viewSecretValue=false&expandSecretReferences=false&includeImports=false"
+if [[ "$IA_STATUS" == 200 ]]; then
+  printf '%s' "$IA_BODY" | jq -r '.secrets[] | [.secretKey, .version] | @tsv' | LC_ALL=C sort
+else
+  echo "Infisical answered $IA_STATUS"
+fi
+ia_cleanup
+
+echo "--- Encrypted config rows, read in the api pod. Counts and key names only"
+kc -n "$NS" exec deploy/plane-api-wl -c plane-api -- python manage.py shell -c "
+from plane.license.models import InstanceConfiguration as C
+from plane.license.utils.encryption import decrypt_data as d
+rows = C.objects.filter(is_encrypted=True)
+stored = rows.exclude(value__isnull=True).exclude(value='')
+print('@@ENCRYPTED_ROWS=%d WITH_A_STORED_VALUE=%d' % (rows.count(), stored.count()))
+print('@@DECRYPT_TO_EMPTY=[' + ','.join(sorted(c.key for c in stored if not d(c.value))) + ']')
+" 2>/dev/null | sed -n 's/^@@//p'
+
+echo "--- Applications"
+kc -n argocd get applications plane-dev monitoring-extras root -o json | jq -r '.items[] | [.metadata.name, .status.sync.status, .status.health.status, (.status.operationState.phase // "-"), (.status.operationState.startedAt // "-"), (.status.history | length), (.status.sync.revision[0:12])] | @tsv'
+echo "--- Argo CD counters, from Prometheus: argocd_app_sync_total for plane-dev"
+curl -s --max-time 5 'http://prometheus.localhost/api/v1/query?query=argocd_app_sync_total%7Bname%3D%22plane-dev%22%7D' | jq -c '.data.result[]? | [.metric.phase, .metric.name, .value[1]]'
+echo "--- pg_up"
+curl -s --max-time 5 'http://prometheus.localhost/api/v1/query?query=pg_up' | jq -c '.data.result[]? | [.metric.namespace, .value[1]]'

@@ -1,0 +1,152 @@
+verdict	expect	observed	from	labels	to	port	note
+PASS	allow	CONNECTED	plane-prod-sim	{"probe":"unlabelled"}	kube-dns.kube-system.svc.cluster.local	53	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-rabbitmq.plane-prod-sim.svc.cluster.local	5672	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-rabbitmq.plane-prod-sim.svc.cluster.local	5672	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-rabbitmq.plane-prod-sim.svc.cluster.local	5672	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-rabbitmq.plane-prod-sim.svc.cluster.local	5672	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-rabbitmq.plane-prod-sim.svc.cluster.local	15672	management port stays closed; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-minio.plane-prod-sim.svc.cluster.local	9090	Silo console stays closed; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-api.plane-prod-sim.svc.cluster.local	8000	
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"api"}	traefik.traefik.svc.cluster.local	80	copy_object; Service 80 is pod port 8000
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	traefik.traefik.svc.cluster.local	80	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	traefik.traefik.svc.cluster.local	80	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	traefik.traefik.svc.cluster.local	80	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	traefik.traefik.svc.cluster.local	80	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-api.plane-prod-sim.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"admin"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"admin"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"admin"}	plane-api.plane-prod-sim.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"admin"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	plane-api.plane-prod-sim.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	infisical.infisical.svc.cluster.local	8080	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	kubernetes.default.svc.cluster.local	443	
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/name":"postgres-exporter"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/name":"redis-exporter"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"postgres-exporter"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-pgdb.plane-dev.svc.cluster.local	5432	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-redis.plane-dev.svc.cluster.local	6379	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-rabbitmq.plane-dev.svc.cluster.local	5672	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-minio.plane-dev.svc.cluster.local	9000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-api.plane-dev.svc.cluster.local	8000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-web.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	plane-live.plane-dev.svc.cluster.local	3000	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	1.1.1.1	443	by IP, so a DNS failure cannot pass as a block; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	telemetry.plane.so	443	phone-home; DNS failure means inconclusive, not deny; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	telemetry.plane.so	443	phone-home; DNS failure means inconclusive, not deny; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	api.github.com	443	register_instance version check; DNS failure means inconclusive; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	kubernetes.default.svc.cluster.local	443	evaluated as node IP:6443 on kindnet's INPUT chain; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	infisical.infisical.svc.cluster.local	8080	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	kubernetes.default.svc.cluster.local	443	evaluated as node IP:6443 on kindnet's INPUT chain; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	infisical.infisical.svc.cluster.local	8080	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	kubernetes.default.svc.cluster.local	443	evaluated as node IP:6443 on kindnet's INPUT chain; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	infisical.infisical.svc.cluster.local	8080	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"migrator"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"live"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"web"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"admin"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"space"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"postgres"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"valkey"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"rabbitmq"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"minio"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"backup"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"postgres-exporter"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"redis-exporter"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"secrets-operator"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"probe":"unlabelled"}	192.168.65.254	80	host.docker.internal; reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	argocd-server.argocd.svc.cluster.local	80	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	argocd-repo-server.argocd.svc.cluster.local	8081	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	kps-prometheus.monitoring.svc.cluster.local	9090	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	kps-grafana.monitoring.svc.cluster.local	80	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/component":"api"}	loki.monitoring.svc.cluster.local	3100	reference: the target answered the node and this pod's DNS answered, at the same moment
+PASS	deny	TIMEOUT	plane-prod-sim	{"app.kubernetes.io/name":"k6"}	traefik.traefik.svc.cluster.local	80	load test stays in dev; reference: the target answered the node and this pod's DNS answered, at the same moment

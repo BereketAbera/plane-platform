@@ -186,3 +186,48 @@ container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 178708
  n=217 first=20:57:47Z last=00:33:47Z min=9529@20:57:47Z max=241366@23:56:47Z lastval=178708
 container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 691.1999998092651 00:33:47Z
 container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 75 00:33:47Z
+
+# After the change. Limit 1024Mi since 00:34:11Z. Read 2026-11-05T01:05:55Z
+### monitoring/prometheus-kps-prometheus-0/prometheus qos=burstable restarts=0 started=2026-11-05T00:34:11Z
+memory.current 605724672
+memory.peak 943382528
+memory.max 1073741824
+memory.high max
+memory.swap.current 0
+memory.swap.peak 0
+--- memory.events
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+--- memory.stat (selected)
+anon 399134720
+file 163393536
+kernel 5533696
+kernel_stack 131072
+pagetables 1757184
+sock 0
+shmem 0
+file_mapped 47194112
+file_dirty 282624
+file_writeback 0
+inactive_anon 0
+active_anon 436764672
+inactive_file 118829056
+active_file 44568576
+slab_reclaimable 3431968
+slab_unreclaimable 189424
+slab 3621392
+workingset_refault_anon 0
+workingset_refault_file 51906
+pgscan 23744
+pgsteal 23741
+pgfault 141695
+pgmajfault 538
+pgrefill 2
+ n=65 first=00:33:55Z last=01:05:55Z min=378.3@01:04:55Z max=565.934@00:35:25Z lastval=380.645
+ n=65 first=00:33:55Z last=01:05:55Z min=462@01:04:55Z max=618.66@00:35:25Z lastval=464.312
+ n=65 first=00:33:55Z last=01:05:55Z min=7.786e+04@01:00:25Z max=196141@00:59:55Z lastval=81343
+container=prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0 921.5999994277954 01:05:55Z

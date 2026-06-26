@@ -1,0 +1,2 @@
+scripts/test.sh routes, started 20261105T013118Z
+PASS     routes                     evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/routes-20261105T013118Z.txt

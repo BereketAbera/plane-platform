@@ -1,0 +1,105 @@
+# command: make promote ENV=prod-sim CONFIRM=yes, on a clean clone of 62699c9 from before the real promotion, kubectl and backup stubbed, curl real and read-only against the local registry
+=== 2026-11-05T02:16:19Z make promote ENV=prod-sim CONFIRM=yes at clean clone of 62699c9
+==> Promotion plan for prod-sim
+    plane-admin -> localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+    plane-backend -> localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+    plane-frontend -> localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    plane-space -> localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok passed: plane-dev was Synced and Healthy and running every digest here
+==> Backing up prod-sim first, because rolling back an image does not roll back a migration
+backup stub: prod-sim (overlay status: 0 changed paths)
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 45a309b: promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+==> This publish changes a prod-sim image, so plane-dev must have proven it
+ ok passed: plane-dev was Synced and Healthy and running every digest here
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main 45a309b6bdaa to /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-3/real-plan/.local/git/plane-platform.git
+=== exit 0
+=== commit
+45a309b promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+Promote-Env: prod-sim
+Promote-Image: plane-admin=localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+Promote-Image: plane-backend=localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+Promote-Image: plane-frontend=localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+Promote-Image: plane-space=localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+Promote-Dev-Check: passed: plane-dev was Synced and Healthy and running every digest here
+
+ gitops/environments/prod-sim/manifests.yaml     | 14 +++++++-------
+ helm/plane/overlays/prod-sim/kustomization.yaml | 20 ++++++++------------
+ 2 files changed, 15 insertions(+), 19 deletions(-)
+=== overlay diff
+diff --git a/helm/plane/overlays/prod-sim/kustomization.yaml b/helm/plane/overlays/prod-sim/kustomization.yaml
+index c0d96c0..6d8ba42 100644
+--- a/helm/plane/overlays/prod-sim/kustomization.yaml
++++ b/helm/plane/overlays/prod-sim/kustomization.yaml
+@@ -23,26 +23,22 @@ components:
+ # Contract section 13: digests live here, and only `make promote` changes these lines. `name` is
+ # the reference the chart renders, so it never changes. Index digests, never platform-specific ones.
+ images:
+-- digest: sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
++- digest: sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+   name: artifacts.plane.so/makeplane/plane-admin
+-  newName: docker.io/makeplane/plane-admin
+-  newTag: v1.4.3
+-- digest: sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++  newName: localhost:5001/wayline/admin
++- digest: sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+   name: artifacts.plane.so/makeplane/plane-backend
+-  newName: docker.io/makeplane/plane-backend
+-  newTag: v1.4.3
+-- digest: sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
++  newName: localhost:5001/wayline/backend
++- digest: sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+   name: artifacts.plane.so/makeplane/plane-frontend
+-  newName: docker.io/makeplane/plane-frontend
+-  newTag: v1.4.3
++  newName: localhost:5001/wayline/web
+ - digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+   name: artifacts.plane.so/makeplane/plane-live
+   newName: docker.io/makeplane/plane-live
+   newTag: v1.4.3
+-- digest: sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
++- digest: sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+   name: artifacts.plane.so/makeplane/plane-space
+-  newName: docker.io/makeplane/plane-space
+-  newTag: v1.4.3
++  newName: localhost:5001/wayline/space
+ - digest: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+   name: docker.io/pgsty/silo
+   newName: docker.io/pgsty/silo
+=== rendered prod-sim diff, changed lines
+--- a/gitops/environments/prod-sim/manifests.yaml
++++ b/gitops/environments/prod-sim/manifests.yaml
+-      - image: docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
++      - image: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+-      - image: docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
++      - image: localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+-      - image: docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
++      - image: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+=== lines that are not images:
+       0
+=== dev manifests changed: 0
+=== kubectl asks:
+2
+=== backup calls:
+backup stub: prod-sim (overlay status: 0 changed paths)
+=== bare at HEAD: yes
+=== check-promoted-digests full
+ ok 9 image(s) were recorded for dev under the same name
+exit 0
+=== again
+ ok prod-sim already runs these digests, nothing to promote
+exit 0

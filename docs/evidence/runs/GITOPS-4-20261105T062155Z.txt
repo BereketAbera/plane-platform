@@ -1,0 +1,12 @@
+date_utc: 2026-11-05T06:21:55Z
+commit: 0dde813
+command: .tools/bin/kubectl --context kind-plane-platform -n plane-prod-sim scale deployment/plane-web-wl --replicas=0 (inside the run.sh call quoted in full below)
+---
+THIS IS A REFUSAL RECORD, NOT TEST OUTPUT. No manual change was made, so self-heal had nothing to revert.
+The session's permission system refused this Bash call:
+2026-11-05T06:22Z refused [Shared Cluster Mutation]: Bash tool, foreground, command: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prodsim/run.sh GITOPS-4 'python3 -c "import datetime;print(\"before scale\",datetime.datetime.now(datetime.timezone.utc).isoformat())"; .tools/bin/kubectl --context kind-plane-platform -n plane-prod-sim scale deployment/plane-web-wl --replicas=0; echo "kubectl scale exit $?"; python3 -c "import datetime;print(\"after scale\",datetime.datetime.now(datetime.timezone.utc).isoformat())"'; echo "rc=$?"; cd /Users/bek/dev/pr/plane-platform; cat "$(ls -1t .local/evidence-raw/GITOPS-4-2*.txt | grep -v watch | head -1)"
+Reason given: "Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Shared Cluster Mutation]."
+The brief allows the same change on a non-Plane Application only if it is the same test with no route-around.
+The refusal names the shared cluster, and every Application lives on that cluster, so that would route around it. Not tried.
+Not retried, and no patch, annotate or edit was tried in its place. The watcher beside it, .local/evidence-raw/GITOPS-4-20261105T062127Z-watch.txt, read the Deployment and Application only.
+Correction, written at 2026-11-05T06:26Z: the "2026-11-05T06:22Z" stamped on the refusal line above was typed before reading the clock. The refusal came before this file was first written at 06:21:55Z.

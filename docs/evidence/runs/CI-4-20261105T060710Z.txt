@@ -1,0 +1,75 @@
+UTC date: 2026-11-05T06:07:10Z
+commit: 0bd3e2d
+command: plan-facts.sh, which runs each command shown below after its $ line
+
+$ gh api user --jq {login,plan}
+{"login":"BereketAbera","plan":{"collaborators":0,"name":"free","private_repos":10000,"space":976562499}}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform --jq {private,visibility,default_branch,owner:.owner.login,owner_type:.owner.type}
+{"default_branch":"main","owner":"BereketAbera","owner_type":"User","private":true,"visibility":"private"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/permissions
+{"enabled":true,"allowed_actions":"all","sha_pinning_required":false}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/permissions/workflow
+{"default_workflow_permissions":"read","can_approve_pull_request_reviews":true}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/cache/usage
+{"full_name":"BereketAbera/plane-platform","active_caches_size_in_bytes":0,"active_caches_count":0}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/artifacts?per_page=5 --jq {total_count}
+{"total_count":0}
+[exit 0]
+
+# Billing rows for this repository only, in November so far. The filter hides the account's other repositories.
+
+$ gh api users/BereketAbera/settings/billing/usage?year=2026&month=11 --jq .usageItems[] | select(.repositoryName=="plane-platform") | [.date,.sku,.quantity,.unitType,.pricePerUnit,.grossAmount,.discountAmount,.netAmount] | @tsv
+2026-11-04T20:05:22Z	Actions Linux ARM	2	Minutes	0.005	0.01	0.01	0
+2026-11-04T20:36:28Z	Actions Linux	27	Minutes	0.006	0.162	0.162	0
+2026-11-05T05:40:39Z	Actions Linux	4	Minutes	0.006	0.024	0.084	0
+2026-11-05T05:46:27Z	Actions Linux ARM	7	Minutes	0.005	0.035	0.035	0
+[exit 0]
+
+# The account's totals for November, every repository together, with no repository names.
+
+$ gh api users/BereketAbera/settings/billing/usage/summary?year=2026&month=11 --jq .usageItems[] | [.product,.sku,.grossQuantity,.unitType,.grossAmount,.discountAmount,.netAmount] | @tsv
+Actions	actions_linux	150	minutes	0.9	0.96	0
+Actions	actions_linux_arm	9	minutes	0.045	0.045	0
+Actions	actions_storage	0.33444389	gigabyte-hours	0.000112332	0.000112332	0
+[exit 0]
+
+# Run duration and billable time as the run timing API gives them
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41975431001/timing
+{"billable":{"UBUNTU":{"total_ms":0,"jobs":3,"job_runs":[{"job_id":127073052052,"duration_ms":0},{"job_id":127073052238,"duration_ms":0},{"job_id":127073052339,"duration_ms":0}]}},"run_duration_ms":362000}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41975430939/timing
+{"billable":{"UBUNTU":{"total_ms":0,"jobs":4,"job_runs":[{"job_id":127073051933,"duration_ms":0},{"job_id":127073053512,"duration_ms":0},{"job_id":127075229030,"duration_ms":0},{"job_id":127075229125,"duration_ms":0}]}},"run_duration_ms":446000}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41976950402/timing
+{"billable":{"UBUNTU":{"total_ms":0,"jobs":1,"job_runs":[{"job_id":127077903897,"duration_ms":0}]}},"run_duration_ms":13000}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41977025314/timing
+{"billable":{"UBUNTU":{"total_ms":0,"jobs":1,"job_runs":[{"job_id":127078144413,"duration_ms":0}]}},"run_duration_ms":13000}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41977114312/timing
+{"billable":{"UBUNTU":{"total_ms":0,"jobs":1,"job_runs":[{"job_id":127078431311,"duration_ms":0}]}},"run_duration_ms":51000}[exit 0]
+
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41977288287/timing
+{"billable":{"UBUNTU":{"total_ms":0,"jobs":1,"job_runs":[{"job_id":127079017765,"duration_ms":0}]}},"run_duration_ms":47000}[exit 0]
+
+# Runs in this repository, newest first
+
+$ gh run list --repo BereketAbera/plane-platform --limit 12 --json databaseId,workflowName,event,createdAt,updatedAt,conclusion,headSha
+[{"conclusion":"success","createdAt":"2026-11-05T05:57:58Z","databaseId":41977288287,"event":"workflow_dispatch","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","updatedAt":"2026-11-05T05:58:45Z","workflowName":"promote-prod-sim"},{"conclusion":"failure","createdAt":"2026-11-05T05:57:04Z","databaseId":41977201138,"event":"pull_request","headSha":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a","updatedAt":"2026-11-05T05:59:37Z","workflowName":"ci"},{"conclusion":"success","createdAt":"2026-11-05T05:56:12Z","databaseId":41977114312,"event":"workflow_dispatch","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","updatedAt":"2026-11-05T05:57:03Z","workflowName":"promote-prod-sim"},{"conclusion":"failure","createdAt":"2026-11-05T05:55:20Z","databaseId":41977025314,"event":"workflow_dispatch","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","updatedAt":"2026-11-05T05:55:33Z","workflowName":"promote-prod-sim"},{"conclusion":"failure","createdAt":"2026-11-05T05:54:35Z","databaseId":41976950402,"event":"workflow_dispatch","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","updatedAt":"2026-11-05T05:54:48Z","workflowName":"promote-prod-sim"},{"conclusion":"action_required","createdAt":"2026-11-05T05:47:21Z","databaseId":41976206674,"event":"pull_request","headSha":"33b9109e495cf45e743d691f6a92739cf8d23eee","updatedAt":"2026-11-05T05:47:21Z","workflowName":"ci"},{"conclusion":"success","createdAt":"2026-11-05T05:39:55Z","databaseId":41975431001,"event":"push","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","updatedAt":"2026-11-05T05:45:57Z","workflowName":"ci"},{"conclusion":"success","createdAt":"2026-11-05T05:39:55Z","databaseId":41975430939,"event":"push","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","updatedAt":"2026-11-05T05:47:21Z","workflowName":"images"},{"conclusion":"success","createdAt":"2026-11-04T20:52:59Z","databaseId":41910795283,"event":"push","headSha":"da7a4c9759b4c119dd15e6bcd55aa59e6971c584","updatedAt":"2026-11-04T20:53:25Z","workflowName":"ci"},{"conclusion":"success","createdAt":"2026-11-04T20:46:14Z","databaseId":41909741166,"event":"push","headSha":"5fdf41dd69d12941f49f2e8d342c0429a248e25b","updatedAt":"2026-11-04T20:46:43Z","workflowName":"ci"},{"conclusion":"failure","createdAt":"2026-11-04T20:36:11Z","databaseId":41908167069,"event":"workflow_dispatch","headSha":"b350fdcc061d817cffaf22b6da17be19abd9ae07","updatedAt":"2026-11-04T20:36:36Z","workflowName":"promote-prod-sim"},{"conclusion":"failure","createdAt":"2026-11-04T20:34:21Z","databaseId":41907873100,"event":"workflow_dispatch","headSha":"b350fdcc061d817cffaf22b6da17be19abd9ae07","updatedAt":"2026-11-04T20:36:28Z","workflowName":"ci-probe"}]
+[exit 0]

@@ -1,0 +1,56 @@
+# image localhost:5001/wayline/backend:1563cbfbe895, broker rabbitmq:3-management, 2026-11-05T01:23:02Z
+celery 5.5.3 kombu 5.5.4
+consumer on queue celery after 5s
+process tree: PID 1 and main process 7
+d8cdad80-a5ed-417f-9062-7a4565d8339b
+messages named celery.ping the worker has received so far: 1
+
+== A. Freeze the main process and close its connections at the broker, with no Celery command
+main process 7, state T
+01:23:15 frozen, connections closed: consumers=0
+main process 7, state S
+consumer on queue celery after 2s
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'argum
+efb753ef-37a1-49fa-98f2-e6acb6c97cf4
+messages named celery.ping the worker has received so far: 2
+-- then a broker restart, which is what an emptied selection does not survive
+01:23:40 broker restarted
+consumer on queue celery after 6s
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'argum
+2e36a602-ca96-4953-80f3-69b1f8744cf3
+messages named celery.ping the worker has received so far: 3
+
+== B. Reproduce: cancel_consumer, add_consumer, broker restart
+        no longer consuming from celery
+after cancel: consumers=0
+        add consumer celery
+consumer on queue celery after 0s
+01:24:42 broker restarted
+NO consumer on queue celery after 60s (consumers=0)
+    - empty -
+
+== C. add_consumer again on that worker: does a remote control command repair it?
+        add consumer celery
+consumer on queue celery after 0s
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'argum
+01:26:28 broker restarted
+NO consumer on queue celery after 60s (consumers=0)
+    - empty -
+
+== D. SIGHUP, Celery's own restart: the main process execs itself, same PID, same container
+container restarts before: 0
+before: 7
+main process 7, state S
+consumer on queue celery after 7s
+after: 7
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'argum
+3b79d3b7-ca7a-46f4-84d1-00c0eb81ce6d
+messages named celery.ping the worker has received so far: 4
+-- then a broker restart
+01:28:08 broker restarted
+consumer on queue celery after 2s
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'argum
+19f3c1b7-737f-4a72-b702-99709205d81d
+messages named celery.ping the worker has received so far: 5
+container restarts after: 0, running true
+== done 2026-11-05T01:28:24Z

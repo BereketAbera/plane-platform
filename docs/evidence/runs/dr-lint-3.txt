@@ -1,0 +1,48 @@
+# date: 2026-11-05T06:53:34Z
+# command: scripts/ci/lint.sh at 06274c2
+[1;34m==>[0m shellcheck
+[1;32m ok[0m shellcheck
+[1;34m==>[0m actionlint
+[1;32m ok[0m actionlint
+[1;34m==>[0m zizmor
+ INFO zizmor: 🌈 zizmor v1.32.0
+ INFO audit: zizmor: 🌈 completed .github/workflows/ci.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/images.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/promote-prod-sim.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/wayline-upstream-check.yml
+No findings to report. Good job! (3 suppressed)
+[1;32m ok[0m zizmor
+[1;34m==>[0m terraform fmt
+[1;32m ok[0m terraform fmt
+[1;34m==>[0m terraform validate
+Success! The configuration is valid.
+
+Success! The configuration is valid.
+
+[1;32m ok[0m terraform validate
+[1;34m==>[0m tflint
+[1;32m ok[0m tflint
+[1;34m==>[0m hadolint
+apps/wayline/runtime/Dockerfile.backend:29 DL3059 [92minfo[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.backend:33 DL3059 [92minfo[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.space:28 DL3059 [92minfo[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+[1;32m ok[0m hadolint
+[1;34m==>[0m conftest verify
+
+102 tests, 102 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+[1;32m ok[0m conftest verify
+[1;34m==>[0m no Bitnami reference
+[1;32m ok[0m no Bitnami reference
+[1;34m==>[0m python compile
+[1;32m ok[0m python compile
+[1;34m==>[0m smoke.py self check
+selftest ok
+[1;32m ok[0m smoke.py self check
+[1;34m==>[0m scan report self check
+selftest ok
+[1;32m ok[0m scan report self check
+[1;34m==>[0m network policy verdict self check
+[1;32m ok[0m selftest passed
+[1;32m ok[0m network policy verdict self check
+[1;32m ok[0m lint passed
+exit 0

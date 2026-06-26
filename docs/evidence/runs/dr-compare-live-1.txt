@@ -2,5 +2,5 @@
 PASS rendered dev: every key holds the recorded value
 PASS rendered prod-sim: every key holds the recorded value
 PASS Infisical values, versions and ids equal the set
-PASS doctored set refused: plane-dev/plane-pgdb POSTGRES_PASSWORD does not hold PG_PASSWORD
-PASS doctored set refused: dev PG_PASSWORD: value differs;prod-sim SECRET_KEY: rewritten, same value
+PASS doctored set refused: plane-dev/plane-pgdb POSTGRES_PASSWORD does not hold <redacted>
+PASS doctored set refused: dev <redacted>: value differs;prod-sim SECRET_KEY: rewritten, same value

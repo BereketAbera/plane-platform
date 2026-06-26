@@ -1,0 +1,112 @@
+# MON-1 before snapshot
+# date_utc: 2026-11-05T05:50:30Z
+# commit: 9c8e098
+# command: scripts in the scratchpad mon/snap.sh, read-only: curl of Alertmanager and Prometheus through Traefik, kubectl get, /proc in the kind node
+
+## git status --short, and hashes of what the drill runs
+?? docs/evidence/ci/ci-1-20261105T053955Z-run-41975431001.jobs-api.json
+?? docs/evidence/ci/ci-1-20261105T053955Z-run-41975431001.json
+?? docs/evidence/ci/ci-1-20261105T053955Z-run-41975431001.log
+?? docs/evidence/ci/ci-4-20261105T053955Z-run-41975430939.jobs-api.json
+?? docs/evidence/ci/ci-4-20261105T053955Z-run-41975430939.json
+?? docs/evidence/ci/ci-4-20261105T053955Z-run-41975430939.log
+7f28410eb5a4c6fb8b9a379f39bf18220c656fd793022b6140c3bcca97bc0ea2  scripts/test-alert.sh
+b039d05f28dd7387bb5403b63f2c1df57c3b22da73527a5a7e7254ea772ddc41  monitoring/ops/lib.sh
+c28804768957ec054867f3a6700b5056f1e3ed4594a242634227dfb37bb80bd1  scripts/lib/common.sh
+8172642233ad08d4c390a133642dd8416abaedbb17dc1a4d82d6b2155c57b113  helm/values/kube-prometheus-stack.yaml
+d229a6fad1c596c890c24675b1718222af2188d93d4524ed75d24c0b73ef6abe  monitoring/manifests/shared/rules-plane.yaml
+
+## host clock against the kind node clock
+host_before=1793857830.095295 node=1793857830.175790504 host_after=1793857830.20926
+
+## curl http://alertmanager.localhost/api/v2/alerts (all, including silenced, inhibited and unprocessed)
+[{"annotations":{"description":"This is an alert meant to ensure that the entire alerting pipeline is functional.\nThis alert is always firing, therefore it should always be firing in Alertmanager\nand always fire against a receiver. There are integrations with various notification\nmechanisms that send a notification when this alert is not firing. For example the\n\"DeadMansSnitch\" integration in PagerDuty.\n","runbook_url":"https://runbooks.prometheus-operator.dev/runbooks/general/watchdog","summary":"An alert that should always be firing to certify that Alertmanager is working properly."},"endsAt":"2026-11-05T05:53:26.617Z","fingerprint":"d68248beabce3f14","receivers":[{"name":"sink"}],"startsAt":"2026-11-04T21:35:26.617Z","status":{"inhibitedBy":[],"mutedBy":[],"silencedBy":[],"state":"active"},"updatedAt":"2026-11-05T05:49:26.634Z","generatorURL":"http://prometheus.localhost/graph?g0.expr=vector%281%29\u0026g0.tab=1","labels":{"alertname":"Watchdog","prometheus":"monitoring/kps-prometheus","severity":"none"}}]
+ [curl exit 0]
+
+## curl http://alertmanager.localhost/api/v2/silences
+[]
+ [curl exit 0]
+
+## curl http://prometheus.localhost/api/v1/alerts
+{"status":"success","data":{"alerts":[{"labels":{"alertname":"Watchdog","severity":"none"},"annotations":{"description":"This is an alert meant to ensure that the entire alerting pipeline is functional.\nThis alert is always firing, therefore it should always be firing in Alertmanager\nand always fire against a receiver. There are integrations with various notification\nmechanisms that send a notification when this alert is not firing. For example the\n\"DeadMansSnitch\" integration in PagerDuty.\n","runbook_url":"https://runbooks.prometheus-operator.dev/runbooks/general/watchdog","summary":"An alert that should always be firing to certify that Alertmanager is working properly."},"state":"firing","activeAt":"2026-11-05T00:34:26.617154565Z","value":"1e+00"}]}} [curl exit 0]
+
+## probe_success, both environments
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"probe_success","env":"dev","instance":"http://traefik.traefik.svc.cluster.local/","job":"plane-http","namespace":"plane-dev","probe":"frontend"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"dev","instance":"http://traefik.traefik.svc.cluster.local/live/health","job":"plane-http","namespace":"plane-dev","probe":"live"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"prod-sim","instance":"http://traefik.traefik.svc.cluster.local/spaces/","job":"plane-http","namespace":"plane-prod-sim","probe":"frontend"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"dev","instance":"http://traefik.traefik.svc.cluster.local/spaces/","job":"plane-http","namespace":"plane-dev","probe":"frontend"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"prod-sim","instance":"http://traefik.traefik.svc.cluster.local/","job":"plane-http","namespace":"plane-prod-sim","probe":"frontend"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"dev","instance":"http://traefik.traefik.svc.cluster.local/god-mode/","job":"plane-http","namespace":"plane-dev","probe":"frontend"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"prod-sim","instance":"http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/","job":"plane-http","namespace":"plane-prod-sim","probe":"api-db"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"prod-sim","instance":"http://traefik.traefik.svc.cluster.local/api/instances/","job":"plane-http","namespace":"plane-prod-sim","probe":"api-instance"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"prod-sim","instance":"http://traefik.traefik.svc.cluster.local/live/health","job":"plane-http","namespace":"plane-prod-sim","probe":"live"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"prod-sim","instance":"http://traefik.traefik.svc.cluster.local/god-mode/","job":"plane-http","namespace":"plane-prod-sim","probe":"frontend"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"dev","instance":"http://traefik.traefik.svc.cluster.local/api/instances/","job":"plane-http","namespace":"plane-dev","probe":"api-instance"},"value":[1793857830.253,"1"]},{"metric":{"__name__":"probe_success","env":"dev","instance":"http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/","job":"plane-http","namespace":"plane-dev","probe":"api-db"},"value":[1793857830.253,"1"]}]}} [curl exit 0]
+
+## kubectl -n argocd get applications
+NAME                          SYNC     HEALTH    OP          REV                                        AUTO
+alloy                         Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+backup-storage                Synced   Healthy   Succeeded   9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6   map[prune:true selfHeal:true]
+infisical                     Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+infisical-operator-dev        Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+infisical-operator-prod-sim   Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+kube-prometheus-stack         Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+loki                          Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+metrics-server                Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+monitoring-extras             Synced   Healthy   Succeeded   9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6   map[prune:true selfHeal:true]
+network-policies              Synced   Healthy   Succeeded   9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6   map[prune:true selfHeal:true]
+plane-dev                     Synced   Healthy   Succeeded   9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6   map[prune:true selfHeal:true]
+plane-prod-sim                Synced   Healthy   Succeeded   9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6   map[prune:true selfHeal:true]
+root                          Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+traefik                       Synced   Healthy   Succeeded   <none>                                     map[prune:true selfHeal:true]
+
+## kubectl -n plane-dev get deployment plane-api-wl; pods
+NAME           SPEC   READY   AVAILABLE   IMAGE
+plane-api-wl   1      1       1           localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+NAME                                          READY   STATUS      RESTARTS   AGE     IP             NODE                           NOMINATED NODE   READINESS GATES
+iso-dev-controller-manager-85dbfbcb5b-vswbn   1/1     Running     0          8h      10.244.0.138   plane-platform-control-plane   <none>           <none>
+plane-admin-wl-545f5b8fcd-97kwj               1/1     Running     0          20m     10.244.0.238   plane-platform-control-plane   <none>           <none>
+plane-api-migrate-1-8hpmh                     0/1     Completed   0          20m     10.244.0.233   plane-platform-control-plane   <none>           <none>
+plane-api-wl-d7d5dcb7f-5h8hf                  1/1     Running     0          20m     10.244.0.235   plane-platform-control-plane   <none>           <none>
+plane-backup-20261104t225855z-6s5fz           0/1     Completed   0          6h51m   10.244.0.23    plane-platform-control-plane   <none>           <none>
+plane-backup-20261104t231324z-98ktf           0/1     Completed   0          6h37m   10.244.0.211   plane-platform-control-plane   <none>           <none>
+plane-backup-20261105t000512z-ljml5           0/1     Completed   0          5h45m   10.244.0.105   plane-platform-control-plane   <none>           <none>
+plane-backup-20261105t000616z-2gm22           0/1     Completed   0          5h44m   10.244.0.108   plane-platform-control-plane   <none>           <none>
+plane-beat-worker-wl-645c56988f-mltb7         1/1     Running     0          20m     10.244.0.237   plane-platform-control-plane   <none>           <none>
+plane-live-wl-5744d85f8b-qdb9d                1/1     Running     0          6h55m   10.244.0.19    plane-platform-control-plane   <none>           <none>
+plane-minio-wl-0                              1/1     Running     0          7h6m    10.244.0.221   plane-platform-control-plane   <none>           <none>
+plane-pgdb-wl-0                               1/1     Running     0          7h5m    10.244.0.222   plane-platform-control-plane   <none>           <none>
+plane-rabbitmq-wl-0                           1/1     Running     0          7h5m    10.244.0.223   plane-platform-control-plane   <none>           <none>
+plane-redis-wl-0                              1/1     Running     0          7h5m    10.244.0.224   plane-platform-control-plane   <none>           <none>
+plane-space-wl-847f88bc46-h6vmn               1/1     Running     0          20m     10.244.0.234   plane-platform-control-plane   <none>           <none>
+plane-web-wl-748764649d-q72kc                 1/1     Running     0          20m     10.244.0.239   plane-platform-control-plane   <none>           <none>
+plane-worker-wl-7f4494fd56-vb5hb              1/1     Running     0          17m     10.244.0.240   plane-platform-control-plane   <none>           <none>
+postgres-exporter-79f8bbdffd-p5q9g            1/1     Running     0          7h53m   10.244.0.83    plane-platform-control-plane   <none>           <none>
+redis-exporter-5b59d6cb7c-rp2rd               1/1     Running     0          8h      10.244.0.122   plane-platform-control-plane   <none>           <none>
+
+## kubectl -n plane-prod-sim get deployment plane-api-wl; pods
+NAME           SPEC   READY   AVAILABLE   IMAGE
+plane-api-wl   1      1       1           localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+NAME                                              READY   STATUS      RESTARTS   AGE     IP             NODE                           NOMINATED NODE   READINESS GATES
+iso-prod-sim-controller-manager-5cc86cc76-4r45n   1/1     Running     0          7h58m   10.244.0.72    plane-platform-control-plane   <none>           <none>
+plane-admin-wl-64b68f786-lxtxv                    1/1     Running     0          16m     10.244.0.249   plane-platform-control-plane   <none>           <none>
+plane-api-migrate-1-8cm79                         0/1     Completed   0          16m     10.244.0.243   plane-platform-control-plane   <none>           <none>
+plane-api-wl-c4f9658c9-5k6hn                      1/1     Running     0          16m     10.244.0.247   plane-platform-control-plane   <none>           <none>
+plane-backup-20261104t225926z-csj5f               0/1     Completed   0          6h51m   10.244.0.24    plane-platform-control-plane   <none>           <none>
+plane-backup-20261104t231335z-v9jm5               0/1     Completed   0          6h36m   10.244.0.216   plane-platform-control-plane   <none>           <none>
+plane-backup-20261105t000523z-qp2sl               0/1     Completed   0          5h45m   10.244.0.106   plane-platform-control-plane   <none>           <none>
+plane-backup-20261105t000627z-dwm84               0/1     Completed   0          5h44m   10.244.0.109   plane-platform-control-plane   <none>           <none>
+plane-backup-20261105t022025z-hsbkj               0/1     Completed   0          3h30m   10.244.0.155   plane-platform-control-plane   <none>           <none>
+plane-backup-20261105t053351z-zjflc               0/1     Completed   0          16m     10.244.0.241   plane-platform-control-plane   <none>           <none>
+plane-beat-worker-wl-f44b9b987-mdv9p              1/1     Running     0          16m     10.244.0.246   plane-platform-control-plane   <none>           <none>
+plane-live-wl-5d5fd749c6-szdzq                    1/1     Running     0          6h59m   10.244.0.242   plane-platform-control-plane   <none>           <none>
+plane-minio-wl-0                                  1/1     Running     0          5h56m   10.244.0.98    plane-platform-control-plane   <none>           <none>
+plane-pgdb-wl-0                                   1/1     Running     0          5h56m   10.244.0.99    plane-platform-control-plane   <none>           <none>
+plane-rabbitmq-wl-0                               1/1     Running     0          5h18m   10.244.0.127   plane-platform-control-plane   <none>           <none>
+plane-redis-wl-0                                  1/1     Running     0          5h55m   10.244.0.101   plane-platform-control-plane   <none>           <none>
+plane-space-wl-6c6c7c76c6-z4jwz                   1/1     Running     0          16m     10.244.0.245   plane-platform-control-plane   <none>           <none>
+plane-web-wl-545ff57fd4-fksxq                     1/1     Running     0          16m     10.244.0.248   plane-platform-control-plane   <none>           <none>
+plane-worker-wl-cd696f548-7tmq2                   1/1     Running     0          16m     10.244.0.244   plane-platform-control-plane   <none>           <none>
+postgres-exporter-b6f657c47-p65fl                 1/1     Running     0          7h53m   10.244.0.82    plane-platform-control-plane   <none>           <none>
+redis-exporter-5b59d6cb7c-xsw9t                   1/1     Running     0          8h      10.244.0.120   plane-platform-control-plane   <none>           <none>
+
+## kind node memory and oom_kill, docker stats of the node, host disk
+MemTotal:       14294756 kB
+MemFree:          455644 kB
+MemAvailable:    4088940 kB
+Buffers:          512272 kB
+Cached:          2240732 kB
+oom_kill 62
+plane-platform-control-plane 8.227GiB / 13.63GiB
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s5   460Gi   417Gi    13Gi    97%    6.4M  139M    4%   /System/Volumes/Data

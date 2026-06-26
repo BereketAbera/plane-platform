@@ -1,0 +1,29 @@
+# real ia_mint_admin_token, live instance, 2026-11-05T02:00:36Z. The file is lost and no local file names the org.
+[1;33mwarn[0m replaced infisical-admin.json, because probe: the file is lost. How: password. Recorded in ledger.log, and the token it replaced is not revoked
+ia_mint_admin_token -> rc=0, HTTP 200
+{
+  "email": "<redacted>",
+  "organization": {
+    "id": "<redacted>",
+    "name": "wayline",
+    "slug": "wayline-r-ey-o"
+  },
+  "identity": {
+    "id": "<redacted>",
+    "name": "Instance Admin Identity"
+  },
+  "token_length": 891
+}
+{"at":"2026-11-05T02:00:37Z","method":"password","why":"probe: the file is lost","had_old":false,"token_exp":1801620036}
+minted token ends 2027-02-03T02:00:36Z, 89 days from now
+the minted token reads memberships -> 200
+revoke with the admin token -> 200 
+the revoked token -> 401
+--- a wrong password
+[1;33mwarn[0m signing in as <redacted> with wrong answered HTTP 400: Invalid credentials
+ia_mint_admin_token -> rc=1, HTTP 400
+--- a token the server refuses, through the drop file
+[1;33mwarn[0m the server refused the token in infisical-admin-token.new, HTTP 403: invalid token
+ia_adopt_dropped_token -> rc=2, HTTP 403
+--- tokens on the identity after this
+[{"name":"minted-20261105T020036Z","revoked":true},{"name":"Instance Admin Token","revoked":false}]

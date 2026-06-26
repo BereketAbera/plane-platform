@@ -1,0 +1,163 @@
+# 2026-11-05T07:10:13Z commit f1ff355
+# command: scratchpad/plane-dev/dep2-read.sh; kubectl -n argocd get applications; kubectl -n plane-dev get pods; kubectl -n plane-dev logs deploy/plane-worker-wl --tail=-1 counted for 'Canceling queue'; git diff against 9c8e098 for prod-sim; alert sink log since 06:20Z without Watchdog; scratchpad/plane-dev/sec-state.sh
+2026-11-05T07:10:13Z HEAD f1ff355 published 9891630
+-- plane-dev Deployments: name, generation, revision, ready, image digest
+plane-admin-wl	12	11	1	ce7adc37b1a7
+plane-api-wl	14	11	1	8c04bd18bb08
+plane-beat-worker-wl	11	10	1	8c04bd18bb08
+plane-live-wl	7	6	1	30741b6d6552
+plane-space-wl	12	11	1	5f0119ff2266
+plane-web-wl	14	13	1	3d7575a1b934
+plane-worker-wl	11	10	1	8c04bd18bb08
+-- Running pods digests, by container status
+plane-admin-wl-545f5b8fcd-8prz5	true	ce7adc37b1a7
+plane-api-wl-d7d5dcb7f-7xq5z	true	8c04bd18bb08
+plane-beat-worker-wl-645c56988f-bwtg8	true	8c04bd18bb08
+plane-live-wl-5744d85f8b-qdb9d	true	30741b6d6552
+plane-space-wl-847f88bc46-pchg4	true	5f0119ff2266
+plane-web-wl-748764649d-5swbd	true	3d7575a1b934
+plane-worker-wl-7f4494fd56-9pq7h	true	8c04bd18bb08
+-- overlay digests in HEAD, helm/plane/overlays/dev/kustomization.yaml
+artifacts.plane.so/makeplane/plane-admin ce7adc37b1a7
+artifacts.plane.so/makeplane/plane-backend 8c04bd18bb08
+artifacts.plane.so/makeplane/plane-frontend 3d7575a1b934
+artifacts.plane.so/makeplane/plane-space 5f0119ff2266
+-- Application plane-dev
+{"sync":"Synced","health":"Healthy","revision":"9891630da5ea","op":"Succeeded","started":"2026-11-05T06:49:44Z","finished":"2026-11-05T06:59:53Z","message":"successfully synced (all tasks run)","open":false}
+-- prod-sim: render in HEAD by sha256, overlay digests, Application plane-prod-sim, pods
+cf4b6b402ae0e1b7
+{"sync":"Synced","health":"Healthy","revision":"9891630da5ea","op":"Succeeded","started":"2026-11-05T05:34:07Z","finished":"2026-11-05T05:35:07Z","history":5,"images":["docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984","docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281","docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e","docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885","docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e","localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796","localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe","localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039","localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747"]}
+a88b51ca0be3795b
+
+-- all Applications
+alloy                         Synced   Healthy
+backup-storage                Synced   Healthy
+infisical                     Synced   Healthy
+infisical-operator-dev        Synced   Healthy
+infisical-operator-prod-sim   Synced   Healthy
+kube-prometheus-stack         Synced   Healthy
+loki                          Synced   Healthy
+metrics-server                Synced   Healthy
+monitoring-extras             Synced   Healthy
+network-policies              Synced   Healthy
+plane-dev                     Synced   Healthy
+plane-prod-sim                Synced   Healthy
+root                          Synced   Healthy
+traefik                       Synced   Healthy
+
+-- plane-dev pods
+iso-dev-controller-manager-85dbfbcb5b-vswbn   1/1   Running     0     9h
+plane-admin-wl-545f5b8fcd-8prz5               1/1   Running     0     27m
+plane-api-migrate-1-srfpw                     0/1   Completed   0     10m
+plane-api-wl-d7d5dcb7f-7xq5z                  1/1   Running     0     27m
+plane-beat-worker-wl-645c56988f-bwtg8         1/1   Running     0     27m
+plane-live-wl-5744d85f8b-qdb9d                1/1   Running     0     8h
+plane-minio-wl-0                              1/1   Running     0     5m58s
+plane-pgdb-wl-0                               1/1   Running     0     5m47s
+plane-rabbitmq-wl-0                           1/1   Running     0     5m35s
+plane-redis-wl-0                              1/1   Running     0     5m13s
+plane-space-wl-847f88bc46-pchg4               1/1   Running     0     27m
+plane-web-wl-748764649d-5swbd                 1/1   Running     0     27m
+plane-worker-wl-7f4494fd56-9pq7h              1/1   Running     0     92s
+postgres-exporter-79f8bbdffd-p5q9g            1/1   Running     0     9h
+redis-exporter-5b59d6cb7c-rp2rd               1/1   Running     0     10h
+
+-- worker log lines with 'Canceling queue': 0
+-- worker pod: plane-worker-wl-7f4494fd56-9pq7h
+
+-- git diff --stat 9c8e098 HEAD -- gitops/environments/prod-sim helm/plane/overlays/prod-sim
+(end of diff)
+-- git diff --stat 9c8e098 HEAD -- gitops/environments/dev helm/plane/overlays/dev
+(end of diff)
+
+-- published against HEAD: what main holds that Argo CD's remote does not
+f1ff355 docs(drills): say what the failed-deploy drill measured on its first real run, in place of the estimates
+548216d fix(drills): keep the alert file's header line out of the failing-migrator drill's report
+
+-- the alert sink since 06:20Z, everything but Watchdog
+(end of sink)
+
+===== after-the-drills-no-rotation-ran 2026-11-05T07:10:14Z commit f1ff355
+--- Deployments: generation, observedGeneration, revision, image digest, template annotations
+iso-dev-controller-manager	1	1	1	0edfbde22637	{"kubectl.kubernetes.io/default-container":"manager"}
+plane-admin-wl	12	12	11	ce7adc37b1a7	{}
+plane-api-wl	14	14	11	8c04bd18bb08	{}
+plane-beat-worker-wl	11	11	10	8c04bd18bb08	{}
+plane-live-wl	7	7	6	30741b6d6552	{}
+plane-space-wl	12	12	11	5f0119ff2266	{}
+plane-web-wl	14	14	13	3d7575a1b934	{}
+plane-worker-wl	11	11	10	8c04bd18bb08	{}
+postgres-exporter	3	3	3	ac5ec343104f	{"secrets.infisical.com/managed-secret.d0bb965f2f7d03613c7ead00e29fc9b4":"W/\\"secrets-244-544C0B45\\""}
+redis-exporter	1	1	1	3d57b9eb142a	{}
+--- ReplicaSets per owner
+iso-dev-controller-manager 1
+plane-admin-wl 7
+plane-api-wl 7
+plane-beat-worker-wl 6
+plane-live-wl 4
+plane-space-wl 7
+plane-web-wl 8
+plane-worker-wl 6
+postgres-exporter 3
+redis-exporter 1
+--- Pods: name, uid, start, restarts, phase
+iso-dev-controller-manager-85dbfbcb5b-vswbn	ad45e6e0	2026-11-04T21:11:03Z	0	Running
+plane-admin-wl-545f5b8fcd-8prz5	72dbb7a0	2026-11-05T06:43:09Z	0	Running
+plane-api-wl-d7d5dcb7f-7xq5z	6d62f9b8	2026-11-05T06:43:09Z	0	Running
+plane-beat-worker-wl-645c56988f-bwtg8	f780710f	2026-11-05T06:43:09Z	0	Running
+plane-live-wl-5744d85f8b-qdb9d	4b8adf33	2026-11-04T22:54:48Z	0	Running
+plane-minio-wl-0	42e6d222	2026-11-05T07:04:16Z	0	Running
+plane-pgdb-wl-0	092acc8a	2026-11-05T07:04:27Z	0	Running
+plane-rabbitmq-wl-0	bb1de7d9	2026-11-05T07:04:39Z	0	Running
+plane-redis-wl-0	d8f002f1	2026-11-05T07:05:01Z	0	Running
+plane-space-wl-847f88bc46-pchg4	439442e5	2026-11-05T06:43:09Z	0	Running
+plane-web-wl-748764649d-5swbd	085a3194	2026-11-05T06:43:09Z	0	Running
+plane-worker-wl-7f4494fd56-9pq7h	cb741122	2026-11-05T07:08:42Z	0	Running
+postgres-exporter-79f8bbdffd-p5q9g	4604d538	2026-11-04T21:56:42Z	0	Running
+redis-exporter-5b59d6cb7c-rp2rd	f9d9f1ca	2026-11-04T21:03:37Z	0	Running
+--- Secret versions and resourceVersions in plane-dev
+plane-app-env	22620	W/"secrets-979-7A034C1E"
+plane-app-keys	22624	W/"secrets-451-1016E086"
+plane-doc-store	22614	W/"secrets-678-AB90B2EA"
+plane-infisical-identity	21729	-
+plane-live-env	22618	W/"secrets-207-275FF22A"
+plane-pgdb	22600	W/"secrets-244-544C0B45"
+plane-rabbitmq	22622	W/"secrets-225-C6A23CB2"
+--- Truncated sha256, the form backup.sh records
+SECRET_KEY (plane-app-keys)            4ceb3f709b196ae0
+LIVE_SERVER_SECRET_KEY (plane-app-keys) e32a98802bbfdb27
+POSTGRES_PASSWORD (plane-pgdb)         bff104dc1fd82597
+DATABASE_URL (plane-app-env)           f0b5084c07dbe897
+RABBITMQ_DEFAULT_PASS (plane-rabbitmq) 45755d126de39f8a
+--- Infisical: every secret of the dev project, key and version only, viewSecretValue=false
+LIVE_SERVER_SECRET_KEY	1
+PG_DB	1
+<redacted>	1
+PG_USER	1
+RABBITMQ_PASSWORD	1
+RABBITMQ_USER	1
+SECRET_KEY	1
+SILO_ACCESS_KEY	1
+SILO_SECRET_KEY	1
+--- Encrypted config rows, read in the api pod. Counts and key names only
+ENCRYPTED_ROWS=8 WITH_A_STORED_VALUE=1
+DECRYPT_TO_EMPTY=[]
+--- Applications
+plane-dev	Synced	Healthy	Succeeded	2026-11-05T06:49:44Z	10	9891630da5ea
+monitoring-extras	Synced	Healthy	Succeeded	2026-11-05T02:26:45Z	10	9891630da5ea
+root	Synced	Healthy	Succeeded	2026-11-05T00:34:05Z	4	
+--- Argo CD counters, from Prometheus: argocd_app_sync_total for plane-dev
+["Succeeded","plane-dev","6"]
+--- pg_up
+["plane-dev","1"]
+["plane-prod-sim","1"]
+
+-- rotation journal directories: 0
+-- backups of dev
+20261105T000512Z
+20261105T000616Z
+20261105T062141Z
+MemTotal:       14294756 kB
+MemAvailable:    4001008 kB
+oom_kill 62
+/dev/disk3s1s1   460Gi    12Gi    13Gi    48%    459k  138M    0%   /

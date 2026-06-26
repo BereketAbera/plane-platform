@@ -1,0 +1,113 @@
+# date 2026-11-05T02:10:55Z, command: scripts/ci/test-promotion-flows.sh on a clean clone of 83ba5d2, the script before this fix. exit 1
+# It stops at publish-still-backs-up-prod-sim-change: 22 of 41 scenarios started, 6 failed, and 19 never ran.
+ ok promote-digest-under-another-image
+ ok promote-digest-never-recorded
+warn   expected: the promotion goes ahead
+warn   expected: a recorded pass
+warn   expected: the prod-sim overlay moved
+warn promote-dev-healthy-and-running FAILED. Its last command printed:
+    ==> Promotion plan for prod-sim
+        plane-admin -> localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+        plane-backend -> localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+        plane-frontend -> localhost:5001/wayline/web@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        plane-space -> localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+     ok 1 image(s) were recorded for dev under the same name
+     ok 1 image(s) were recorded for dev under the same name
+     ok 1 image(s) were recorded for dev under the same name
+     ok 1 image(s) were recorded for dev under the same name
+    warn no ready container in namespace plane-dev runs sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+    warn no ready container in namespace plane-dev runs sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+    warn no ready container in namespace plane-dev runs sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+    fail plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK="<reason>", which is logged. Nothing changed.
+ ok promote-dev-out-of-sync
+ ok promote-dev-degraded
+ ok promote-dev-application-missing
+ ok promote-dev-running-another-digest
+ ok promote-dev-container-not-ready
+ ok promote-no-cluster-says-skipped
+ ok promote-override-is-logged
+warn   expected: a pass, not an override
+warn   expected: nothing logged
+warn promote-override-unused-when-dev-is-fine FAILED. Its last command printed:
+    ==> Promotion plan for prod-sim
+        plane-admin -> localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+        plane-backend -> localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+        plane-frontend -> localhost:5001/wayline/web@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        plane-space -> localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+     ok 1 image(s) were recorded for dev under the same name
+     ok 1 image(s) were recorded for dev under the same name
+     ok 1 image(s) were recorded for dev under the same name
+     ok 1 image(s) were recorded for dev under the same name
+    warn no ready container in namespace plane-dev runs sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+    warn no ready container in namespace plane-dev runs sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+    warn no ready container in namespace plane-dev runs sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+    warn OVERRIDE_DEV_CHECK: going ahead anyway. Logged in .local/evidence-raw/promotion-overrides.log: not needed
+    warn SKIP_BACKUP=yes: no backup taken before this promotion
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok prod-sim overlay and manifests updated, not committed. Commit message in .build/promote-message.txt
+ ok rollback-rerun-after-failed-publish
+warn   expected: the setup works
+warn   expected: the rollback works anyway
+warn   expected: it says the dump failed
+warn   expected: it says how it published
+./scripts/ci/test-promotion-flows.sh: line 323: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.r8OMboqAbf/stub/backup-calls: No such file or directory
+warn   expected: only its own attempt, no second from the publish
+warn rollback-prod-sim-with-broken-backup FAILED. Its last command printed:
+    fail no promotion of prod-sim left to roll back
+warn   expected: the setup works
+warn   expected: the rollback does not wait for it
+warn   expected: it says time ran out
+warn rollback-prod-sim-with-hung-backup FAILED. Its last command printed:
+    fail no promotion of prod-sim left to roll back
+warn   expected: the setup works
+warn   expected: the rollback works
+./scripts/ci/test-promotion-flows.sh: line 345: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.r8OMboqAbf/stub/backup-calls: No such file or directory
+warn   expected: it took a dump of its own
+warn   expected: it names the dump to restore from
+warn   expected: and warns about latest
+warn rollback-prod-sim-names-the-older-dump FAILED. Its last command printed:
+    fail no promotion of prod-sim left to roll back
+warn   expected: the setup works
+warn   expected: the rollback works
+warn   expected: it says so
+warn rollback-prod-sim-skip-backup FAILED. Its last command printed:
+    fail no promotion of prod-sim left to roll back
+ ok rollback-dev-takes-no-dump
+ ok rollback-leaves-other-staged-files-alone
+ ok publish-warns-when-ahead-of-origin
+ ok publish-quiet-when-level-with-origin
+ ok publish-says-when-origin-is-unknown
+On branch main
+nothing to commit, working tree clean
+
+# date 2026-11-05T02:34:30Z, command: scripts/ci/test-promotion-flows.sh drill-runs on the same clone, to run a scenario the stop hid. exit 1
+warn   expected: the drill passes
+warn   expected: RESULT PASS
+warn drill-runs-to-a-pass FAILED. Its last command printed:
+    
+    --- 1. Promote a digest that cannot be pulled
+    ==> Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 59ee169: promote(dev): plane-frontend 000000000000
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 59ee169281f6 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.zOYdBhU9CJ/repo/.local/git/plane-platform.git
+    PASS  promotion committed and published as 59ee169281f6
+    
+    --- 2. Argo CD applies it
+    FAIL  Argo CD did not apply the commit within 300s. Sync status: stubbed
+    
+    --- Restore (exit trap)
+    ==> Rolling back: 59ee169 promote(dev): plane-frontend 000000000000
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 0110182: Revert "promote(dev): plane-frontend 000000000000"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 011018252046 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.zOYdBhU9CJ/repo/.local/git/plane-platform.git
+    PASS  bad promotion reverted by the trap
+    
+    RESULT FAIL   aborted, 1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.zOYdBhU9CJ/repo/.local/evidence-raw/drill-failed-deploy-20261105T022922Z.log
+fail 1 of 1 promotion flow scenarios failed

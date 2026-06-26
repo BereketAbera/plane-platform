@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""The instance route's two-hour key and a rollout's verdict, on one code and on another, over real HTTP against StubPlane from
+the new tests/e2e/smoke.py, with kubectl stubbed. StubPlane plays only what these steps read. Nothing here says anything about
+Plane itself, and no real sign-up races were run.
+
+usage: instance-stub.py <directory holding the new smoke.py> <directory holding the code under test>"""
+import contextlib
+import importlib.util
+import io
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+
+def load(directory, name):
+    spec = importlib.util.spec_from_file_location(name, f"{directory}/smoke.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+NEW = load(sys.argv[1], "smoke_new")
+S = load(sys.argv[2], "smoke_under_test")
+
+
+def smoke(plane, directory):
+    return S.Smoke(S.parse_args(["--connect", f"127.0.0.1:{plane.port}", "--accounts", f"{directory}/a.env",
+                                 "--sentinel", f"{directory}/s.json", "--wait-seconds", "1"]))
+
+
+def setup(plane, directory):
+    run = smoke(plane, directory)
+    with contextlib.redirect_stdout(io.StringIO()) as printed:
+        run.run("reachable", run.step_reachable)
+        run.run("instance-setup", run.step_instance_setup, ("reachable",))
+    return printed.getvalue().splitlines()[-1]
+
+
+def stored(directory, key):
+    return S.Accounts(Path(f"{directory}/a.env"), "dev").get(key)
+
+
+print("== the sequence in the finding: a probe lands during the first sign-up, then a second run")
+with tempfile.TemporaryDirectory() as directory:
+    plane = NEW.StubPlane(probe_during_sign_up=True)
+    print("first run:  ", setup(plane, directory))
+    print("  sign-ups:", plane.sign_ups, " bare key says is_setup_done:", json.loads(plane.cache["/api/instances/"])["instance"]["is_setup_done"],
+          " database says:", plane.instance["is_setup_done"])
+    print("  stored password is the one the database holds:", stored(directory, "ADMIN_PASSWORD") == plane.admin_password)
+    print("second run: ", setup(plane, directory))
+    print("  sign-ups:", plane.sign_ups)
+    print("  stored password is the one the database holds:", stored(directory, "ADMIN_PASSWORD") == plane.admin_password)
+    plane.server.shutdown()
+
+print("== branding-backend after a promotion, with the previous image's answer in the bare key")
+for label, in_the_bare_key, from_this_image in (("good image over a bad one", "https://sites.plane.so/x", ""), ("bad image over a good one", "", "https://sites.plane.so/x")):
+    plane = NEW.StubPlane(set_up=True, changelog=from_this_image)
+    plane.cache["/api/instances/"] = json.dumps({"instance": plane.instance, "config": {"instance_changelog_url": in_the_bare_key}}).encode()
+    with tempfile.TemporaryDirectory() as directory:
+        run = smoke(plane, directory)
+    run.state["branded"] = {"backend": {}}
+    with contextlib.redirect_stdout(io.StringIO()) as printed:
+        run.run("branding-backend", run.step_branding_backend)
+    print(f"{label}: {printed.getvalue().strip()[:150]}")
+    plane.server.shutdown()
+
+print("== the sentinel, when its replacement cannot be created")
+with tempfile.TemporaryDirectory() as directory:
+    path = Path(directory) / "s.json"
+    path.write_text(json.dumps({"slug": "sentinel-old", "work_item_id": "old", "created_at": "2026-05-01T00:00:00Z"}))
+    plane = NEW.StubPlane()
+    run = smoke(plane, directory)
+    run.state["instance"] = {"is_setup_done": False}
+    run.cluster.run = lambda *_, **__: json.dumps({"metadata": {"creationTimestamp": "2026-06-01T00:00:00Z"}})
+
+    def refused(*_):
+        raise S.StepFailed("POST /api/workspaces/ answered 500")
+    run.create_workspace = refused
+    with contextlib.redirect_stdout(io.StringIO()) as printed:
+        run.run("sentinel-create", run.step_sentinel_create)
+    print(printed.getvalue().strip()[:260])
+    print("  file still there:", path.exists(), " the line says Replaced:", "Replaced" in printed.getvalue())
+    plane.server.shutdown()
+
+print("== a pod being terminated after a finished rollout")
+print(S.rollout_unfinished({"metadata": {"generation": 2}, "spec": {"replicas": 1}, "status": {"observedGeneration": 2, "updatedReplicas": 1, "replicas": 1, "availableReplicas": 1, "terminatingReplicas": 1}}))
+
+print("== workloads-ready and the run's verdict, with one surge pod and a Progressing Application")
+complete = {"replicas": 1, "readyReplicas": 1, "conditions": [{"type": "Progressing", "status": "True", "reason": "NewReplicaSetAvailable"}]}
+web = {"readyReplicas": 2, "conditions": [{"type": "Progressing", "status": "True", "reason": "ReplicaSetUpdated"}]}
+listed = [{"kind": kind, "metadata": {"name": name}, "spec": {"replicas": 1}, "status": {**complete, **(web if name == "plane-web-wl" else {})}} for kind, name in S.WORKLOADS]
+listed.append({"kind": "Job", "metadata": {"name": S.MIGRATOR_JOB}, "spec": {}, "status": {"succeeded": 1}})
+with tempfile.TemporaryDirectory() as directory:
+    run = S.Smoke(S.parse_args(["--accounts", f"{directory}/a.env", "--sentinel", f"{directory}/s.json"]))
+run.cluster.in_namespace = lambda *args, **_: json.dumps({"items": listed if "deployments,statefulsets,jobs" in args else []})
+run.cluster.run = lambda *_, **__: json.dumps({"status": {"sync": {"status": "Synced"}, "health": {"status": "Progressing"}}})
+with contextlib.redirect_stdout(io.StringIO()) as printed:
+    run.run("reachable", lambda _: "ok")
+    run.run("workloads-ready", run.step_workloads)
+print(printed.getvalue().splitlines()[-1][:200])
+print("run's verdict:", run.overall(), " exit", {"PASS": 0, "FAIL": 1, "BLOCKED": 2}[run.overall()])

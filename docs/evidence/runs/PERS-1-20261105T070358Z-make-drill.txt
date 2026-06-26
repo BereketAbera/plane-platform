@@ -1,0 +1,73 @@
+# 2026-11-05T07:04:14Z commit 548216d
+# command: make drill-pod-restart ENV=dev
+drill pod-restart-dev started 2026-11-05T07:04:14Z by: ./tests/drills/pod-restart-persistence.sh
+
+--- 0. Preflight
+PASS  StatefulSets: plane-minio-wl plane-pgdb-wl plane-rabbitmq-wl plane-redis-wl
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-dev-baseline.json
+RESULT  PASS
+PASS  sentinel is intact before any restart
+PASS  no cancel_consumer in the worker's log, so a broker restart tests the broker
+
+--- 1. Restart plane-minio-wl
+pod "plane-minio-wl-0" deleted from plane-dev namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-minio-wl-0 was really replaced
+PASS  plane-minio-wl-0 reattached the same claim: pvc-plane-minio-vol-plane-minio-wl-0
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-dev-plane-minio-wl.json
+RESULT  PASS
+PASS  after restarting plane-minio-wl: sentinel row and attachment intact, background jobs run
+
+--- 2. Restart plane-pgdb-wl
+pod "plane-pgdb-wl-0" deleted from plane-dev namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-pgdb-wl-0 was really replaced
+PASS  plane-pgdb-wl-0 reattached the same claim: pvc-plane-pgdb-vol-plane-pgdb-wl-0
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-dev-plane-pgdb-wl.json
+RESULT  PASS
+PASS  after restarting plane-pgdb-wl: sentinel row and attachment intact, background jobs run
+
+--- 3. Restart plane-rabbitmq-wl
+pod "plane-rabbitmq-wl-0" deleted from plane-dev namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-rabbitmq-wl-0 was really replaced
+PASS  plane-rabbitmq-wl-0 reattached the same claim: pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 9.2s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-dev-plane-rabbitmq-wl.json
+RESULT  PASS
+PASS  after restarting plane-rabbitmq-wl: sentinel row and attachment intact, background jobs run
+
+--- 4. Restart plane-redis-wl
+pod "plane-redis-wl-0" deleted from plane-dev namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-redis-wl-0 was really replaced
+PASS  plane-redis-wl-0 reattached the same claim: pvc-plane-redis-vol-plane-redis-wl-0
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-dev-plane-redis-wl.json
+RESULT  PASS
+PASS  after restarting plane-redis-wl: sentinel row and attachment intact, background jobs run
+
+RESULT PASS   evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log
+# exit code: 0
+# finished 2026-11-05T07:05:06Z

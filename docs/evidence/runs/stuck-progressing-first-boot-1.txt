@@ -1,0 +1,72 @@
+# date: 2026-11-05T02:24:52Z
+# command: stuck-evidence.py, shown at the end, and the kube-prometheus-stack lines of bootstrap-timeline-1.txt
+
+query: max by (name, dest_namespace) (max_over_time(argocd_app_info{health_status="Progressing",name!="root"}[2m])) == 1
+  wave-probe-parent true 21:10:00Z to 21:12:00Z, 2.0m
+  infisical true 21:05:00Z to 21:12:30Z, 7.5m
+  kube-prometheus-stack true 21:05:00Z to 21:30:30Z, 25.5m
+  infisical-operator-dev true 21:11:30Z to 21:13:00Z, 1.5m
+  plane-dev true 21:29:30Z to 21:34:00Z, 4.5m
+  plane-dev true 21:36:00Z to 21:42:30Z, 6.5m
+  infisical-operator-prod-sim true 21:11:30Z to 21:13:00Z, 1.5m
+earliest argocd_app_info sample for kube-prometheus-stack: 21:05:00Z
+restart counters of Grafana's sidecars, where they changed:
+  kps-grafana-6797b8c945-rfhjg grafana-sc-dashboard from 3 at 20:57:30Z: [('20:59:00Z', 4), ('21:01:00Z', 5), ('21:04:30Z', 6), ('21:10:00Z', 7), ('21:16:00Z', 8), ('21:21:30Z', 9), ('21:27:30Z', 10)]
+  kps-grafana-6797b8c945-rfhjg grafana-sc-datasources from 3 at 20:57:30Z: [('20:59:00Z', 4), ('21:01:00Z', 5), ('21:04:30Z', 6), ('21:10:00Z', 7), ('21:16:00Z', 8), ('21:21:30Z', 9), ('21:27:30Z', 10)]
+last terminated reason:
+  grafana-sc-dashboard OOMKilled 20:58:00Z to 21:29:00Z
+  grafana-sc-datasources OOMKilled 20:58:00Z to 21:29:00Z
+
+## kube-prometheus-stack in bootstrap-timeline-1.txt
+20:47:26Z  kube-prometheus-stack | - | - | noop | - | -
+20:47:36Z  kube-prometheus-stack | OutOfSync | Healthy | op | Running | -
+20:47:38Z  kube-prometheus-stack | OutOfSync | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:47:42Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:47:57Z  kube-prometheus-stack | Synced | Degraded | noop | Succeeded | successfully synced (all tasks run)
+20:57:17Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:57:36Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+20:58:22Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+20:59:02Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:00:25Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:01:03Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:03:55Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:04:33Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:09:34Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:10:09Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:15:38Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:16:14Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+21:21:18Z  kube-prometheus-stack | Synced | Healthy | noop | Succeeded | successfully synced (all tasks run)
+21:21:52Z  kube-prometheus-stack | Synced | Progressing | noop | Succeeded | successfully synced (all tasks run)
+
+## The script
+# ArgoAppStuckProgressing's own expression over retained history, and what Grafana's sidecars were doing. Read only.
+import json, subprocess, time, datetime as dt, calendar
+def q(expr, start, end, step):
+    d = json.loads(subprocess.run(["/bin/bash", "./q.sh", expr, str(start), str(end), str(step)], capture_output=True, text=True, check=True).stdout)
+    assert d["status"] == "success", d
+    return d["data"]["result"]
+z = lambda t: dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%H:%M:%SZ")
+ts = lambda s: calendar.timegm(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ"))
+A, B = ts("2026-11-04T20:40:00Z"), ts("2026-11-04T21:45:00Z")
+expr = 'max by (name, dest_namespace) (max_over_time(argocd_app_info{health_status="Progressing",name!="root"}[2m])) == 1'
+print("query:", expr)
+for s in q(expr, A, B, 30):
+    t = [float(a) for a, _ in s["values"]]
+    runs = []; st = pv = t[0]
+    for x in t[1:]:
+        if x - pv > 30:
+            runs.append((st, pv)); st = x
+        pv = x
+    runs.append((st, pv))
+    for a, b in runs:
+        print("  %s true %s to %s, %.1fm" % (s["metric"]["name"], z(a), z(b), (b - a) / 60))
+print("earliest argocd_app_info sample for kube-prometheus-stack:", z(min(float(a) for s in q('argocd_app_info{name="kube-prometheus-stack"}', A, B, 30) for a, _ in s["values"])))
+print("restart counters of Grafana's sidecars, where they changed:")
+for s in q('kube_pod_container_status_restarts_total{pod=~"kps-grafana.*",namespace="monitoring",container=~"grafana-sc-.*"}', A, B, 30):
+    v = [(float(a), float(b)) for a, b in s["values"]]
+    ch = [(z(a), int(b)) for (a, b), (c, d) in zip(v[1:], v) if b != d]
+    if ch:
+        print("  %s %s from %d at %s: %s" % (s["metric"]["pod"], s["metric"]["container"], int(v[0][1]), z(v[0][0]), ch))
+print("last terminated reason:")
+for s in q('kube_pod_container_status_last_terminated_reason{pod=~"kps-grafana.*",namespace="monitoring"} == 1', A, B, 60):
+    print("  %s %s %s to %s" % (s["metric"]["container"], s["metric"]["reason"], z(float(s["values"][0][0])), z(float(s["values"][-1][0]))))

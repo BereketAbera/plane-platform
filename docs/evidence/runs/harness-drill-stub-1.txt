@@ -1,0 +1,444 @@
+# 2026-11-05T04:20:44Z /bin/bash drill-stub.sh <repo>, on the drill as on disk after 335bc58. kubectl and curl stubbed, real promote.sh, rollback.sh, gitops-publish.sh and render.sh as on disk. Says nothing about what really fires. Script: harness-drill-stub-script-1.sh.txt
+=== records: a full run, with an alert that fires and one that only goes pending
+--- exit 0
+    drill failed-deploy started 2026-11-05T04:20:48Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    PASS  recording every pending and firing alert in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042048Z-alerts.tsv
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 5fd746c: promote(dev): plane-frontend 000000000000
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 5fd746c1282f to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:20:51Z +0s  promotion published
+    PASS  promotion committed and published as 5fd746c1282f
+    
+    --- 2. Argo CD applies it
+    AT    2026-11-05T04:20:51Z +0s  Deployment asks for the bad digest
+    PASS  Deployment now asks for the bad digest
+    
+    --- 3. The new pod cannot start
+    AT    2026-11-05T04:20:51Z +0s  new pod cannot pull
+    PASS  new pod is in ErrImagePull or ImagePullBackOff
+    
+    --- 4. Argo CD reports the failure while the old pods keep serving
+    AT    2026-11-05T04:20:51Z +0s  stopped waiting, Application health is Degraded
+    PASS  Application health is Degraded
+    PASS  plane.dev.localhost answered 200 on all 1 samples during the failed rollout
+    PASS  old pod uid-old-pod is still Ready
+    
+    --- 5. git revert restores
+    [1;34m==>[0m Rolling back: 5fd746c promote(dev): plane-frontend 000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 0c6d951: Revert "promote(dev): plane-frontend 000000000000"
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 0c6d951f1ee8 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:20:53Z +2s  revert published
+    PASS  main reverts 5fd746c1282f
+    PASS  rendered dev manifests no longer name the bad digest
+    AT    2026-11-05T04:20:53Z +2s  Deployment is back on the old image
+    PASS  Deployment is back on localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    AT    2026-11-05T04:20:53Z +2s  plane-dev is Synced and Healthy
+    PASS  plane-dev is Synced and Healthy again
+    PASS  no pod references the bad digest
+    PASS  plane.dev.localhost answers 200
+    PASS  prod-sim's manifests did not move
+    
+    --- 6. What fired, as Prometheus itself reported it
+    AT    2026-11-05T04:20:58Z +7s  nothing is pending or firing that was not at the start
+    Prometheus http://prometheus.localhost/api/v1/alerts, every 1s since 2026-11-05T04:20:48Z: 51 readings, 0 with no answer. Raw: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evi
+    AT START     Watchdog severity=none first_pending=- first_firing=2026-11-05T04:20:50Z last_seen=2026-11-05T04:21:42Z 
+    PENDING ONLY ArgoAppStuckProgressing severity=warning first_pending=2026-11-05T04:20:52Z first_firing=- last_seen=2026-11-05T04:20:52Z name=plane-dev,dest_namespace=plane-dev
+    FIRED        ArgoSyncFailed severity=critical first_pending=2026-11-05T04:20:52Z first_firing=2026-11-05T04:20:53Z last_seen=2026-11-05T04:20:56Z name=plane-dev,dest_namespace=plane-dev
+    APP   2026-11-05T04:20:50Z  Synced/Healthy/Succeeded
+    APP   2026-11-05T04:20:52Z  Synced/Degraded/Running
+    APP   2026-11-05T04:20:53Z  Synced/Healthy/Succeeded
+    SINK  2026-11-05T05:16:00+00:00  firing  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    SINK  2026-11-05T05:18:00+00:00  resolved  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    
+    RESULT PASS   evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042048Z.log
+  ok   exit 0
+  ok   RESULT PASS
+  ok   two commits on main
+  ok   published
+  ok   the raw record exists
+  ok   ArgoSyncFailed reads FIRED
+  ok   ArgoAppStuckProgressing reads PENDING ONLY
+  ok   Watchdog reads AT START
+  ok   the Application's changes are there
+  ok   the sink's lines are there, without Watchdog
+  ok   no Watchdog from the sink
+  ok   no gap
+  ok   it waited for the new alerts to go
+  ok   prod-sim did not move
+  ok   times to read against
+  ok   no dump for a dev change
+  ok   the recorder is gone
+--- the raw record, first lines and last lines
+    # 2026-11-05T04:20:48Z tests/drills/failed-deploy-rollback.sh. utc, state, alert, severity, active since, labels. Also: utc, none or no-reading, and utc, application,
+    2026-11-05T04:20:50Z	firing	Watchdog	none	2026-11-01T00:00:00Z	
+    2026-11-05T04:20:50Z	application	Synced/Healthy/Succeeded
+    2026-11-05T04:20:51Z	firing	Watchdog	none	2026-11-01T00:00:00Z	
+    2026-11-05T04:20:51Z	application	Synced/Healthy/Succeeded
+    2026-11-05T04:20:52Z	firing	Watchdog	none	2026-11-01T00:00:00Z	
+    ...
+    2026-11-05T04:21:41Z	firing	Watchdog	none	2026-11-01T00:00:00Z	
+    2026-11-05T04:21:41Z	application	Synced/Healthy/Succeeded
+    2026-11-05T04:21:42Z	firing	Watchdog	none	2026-11-01T00:00:00Z	
+    2026-11-05T04:21:42Z	application	Synced/Healthy/Succeeded
+=== prometheus-down: no answer at preflight stops it before anything moves
+--- exit 1
+    drill failed-deploy started 2026-11-05T04:21:48Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    FAIL  Prometheus does not answer at http://prometheus.localhost, so this drill could not say what fires
+    NOT RECORDED  no alert was read during this run, so it says nothing about what fires
+    
+    RESULT FAIL   aborted, 1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042148Z.log
+  ok   exit non-zero
+  ok   it says why
+  ok   HEAD did not move
+=== not-the-api: a 200 that is not the alerts API, as the CI flows' curl stub answers. The drill goes on and says so
+--- exit 0
+    drill failed-deploy started 2026-11-05T04:21:50Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    NOT RECORDED  what answers at http://prometheus.localhost is not its alerts API, so this run will say nothing about what fires
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 85fd6f9: promote(dev): plane-frontend 000000000000
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 85fd6f928d50 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:21:52Z +0s  promotion published
+    PASS  promotion committed and published as 85fd6f928d50
+    
+    --- 2. Argo CD applies it
+    AT    2026-11-05T04:21:52Z +0s  Deployment asks for the bad digest
+    PASS  Deployment now asks for the bad digest
+    
+    --- 3. The new pod cannot start
+    AT    2026-11-05T04:21:52Z +0s  new pod cannot pull
+    PASS  new pod is in ErrImagePull or ImagePullBackOff
+    
+    --- 4. Argo CD reports the failure while the old pods keep serving
+    AT    2026-11-05T04:21:52Z +0s  stopped waiting, Application health is Degraded
+    PASS  Application health is Degraded
+    PASS  plane.dev.localhost answered 200 on all 1 samples during the failed rollout
+    PASS  old pod uid-old-pod is still Ready
+    
+    --- 5. git revert restores
+    [1;34m==>[0m Rolling back: 85fd6f9 promote(dev): plane-frontend 000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 9b6472f: Revert "promote(dev): plane-frontend 000000000000"
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 9b6472fbd8ce to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:21:53Z +1s  revert published
+    PASS  main reverts 85fd6f928d50
+    PASS  rendered dev manifests no longer name the bad digest
+    AT    2026-11-05T04:21:53Z +1s  Deployment is back on the old image
+    PASS  Deployment is back on localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    AT    2026-11-05T04:21:53Z +1s  plane-dev is Synced and Healthy
+    PASS  plane-dev is Synced and Healthy again
+    PASS  no pod references the bad digest
+    PASS  plane.dev.localhost answers 200
+    PASS  prod-sim's manifests did not move
+    
+    --- 6. What fired, as Prometheus itself reported it
+    NOT RECORDED  no alert was read during this run, so it says nothing about what fires
+    
+    RESULT PASS   evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042150Z.log
+  ok   exit 0
+  ok   it says nothing was recorded
+=== gap: Prometheus stops answering for a few readings mid-drill
+--- exit 0
+    drill failed-deploy started 2026-11-05T04:21:55Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    PASS  recording every pending and firing alert in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042155Z-alerts.tsv
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 3888ea6: promote(dev): plane-frontend 000000000000
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 3888ea65404d to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:21:57Z +0s  promotion published
+    PASS  promotion committed and published as 3888ea65404d
+    
+    --- 2. Argo CD applies it
+    AT    2026-11-05T04:21:57Z +0s  Deployment asks for the bad digest
+    PASS  Deployment now asks for the bad digest
+    
+    --- 3. The new pod cannot start
+    AT    2026-11-05T04:21:57Z +0s  new pod cannot pull
+    PASS  new pod is in ErrImagePull or ImagePullBackOff
+    
+    --- 4. Argo CD reports the failure while the old pods keep serving
+    AT    2026-11-05T04:21:57Z +0s  stopped waiting, Application health is Degraded
+    PASS  Application health is Degraded
+    PASS  plane.dev.localhost answered 200 on all 1 samples during the failed rollout
+    PASS  old pod uid-old-pod is still Ready
+    
+    --- 5. git revert restores
+    [1;34m==>[0m Rolling back: 3888ea6 promote(dev): plane-frontend 000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed be98063: Revert "promote(dev): plane-frontend 000000000000"
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main be98063e7ad2 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:21:58Z +1s  revert published
+    PASS  main reverts 3888ea65404d
+    PASS  rendered dev manifests no longer name the bad digest
+    AT    2026-11-05T04:21:58Z +1s  Deployment is back on the old image
+    PASS  Deployment is back on localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    AT    2026-11-05T04:21:58Z +1s  plane-dev is Synced and Healthy
+    PASS  plane-dev is Synced and Healthy again
+    PASS  no pod references the bad digest
+    PASS  plane.dev.localhost answers 200
+    PASS  prod-sim's manifests did not move
+    
+    --- 6. What fired, as Prometheus itself reported it
+    AT    2026-11-05T04:22:08Z +11s  nothing is pending or firing that was not at the start
+    Prometheus http://prometheus.localhost/api/v1/alerts, every 1s since 2026-11-05T04:21:55Z: 53 readings, 2 with no answer. Raw: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evi
+    GAP   2026-11-05T04:21:57Z
+    GAP   2026-11-05T04:21:58Z
+    AT START     Watchdog severity=none first_pending=- first_firing=2026-11-05T04:21:55Z last_seen=2026-11-05T04:22:52Z 
+    PENDING ONLY ArgoAppStuckProgressing severity=warning first_pending=2026-11-05T04:21:56Z first_firing=- last_seen=2026-11-05T04:21:56Z name=plane-dev,dest_namespace=plane-dev
+    FIRED        ArgoSyncFailed severity=critical first_pending=2026-11-05T04:21:56Z first_firing=2026-11-05T04:21:59Z last_seen=2026-11-05T04:22:03Z name=plane-dev,dest_namespace=plane-dev
+    APP   2026-11-05T04:21:55Z  Synced/Healthy/Succeeded
+    APP   2026-11-05T04:21:56Z  Synced/Degraded/Running
+    APP   2026-11-05T04:21:57Z  Synced/Healthy/Succeeded
+    SINK  2026-11-05T05:16:00+00:00  firing  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    SINK  2026-11-05T05:18:00+00:00  resolved  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    
+    RESULT PASS   evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042155Z.log
+  ok   exit 0
+  ok   the gaps are listed
+  ok   and counted
+=== pending-prod-sim: a prod-sim change waits on main, so the drill does not start
+--- exit 1
+    drill failed-deploy started 2026-11-05T04:22:55Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    FAIL  main holds a change to prod-sim's manifests that Argo CD has not read, and a publish is all of main, so this drill would send it to prod-sim. Publish or withdraw it first: 23c7dff promote(prod-sim): w
+    NOT RECORDED  no alert was read during this run, so it says nothing about what fires
+    
+    RESULT FAIL   aborted, 1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042255Z.log
+  ok   exit non-zero
+  ok   it names the commit
+  ok   HEAD did not move
+  ok   nothing was published
+  ok   no trap restore
+=== revert-unpublished: rollback.sh commits the revert and its publish is refused once. The bare repository still names the digest
+--- exit 1
+    drill failed-deploy started 2026-11-05T04:22:57Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    PASS  recording every pending and firing alert in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042257Z-alerts.tsv
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 0e7c0f9: promote(dev): plane-frontend 000000000000
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 0e7c0f97f488 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:22:59Z +0s  promotion published
+    PASS  promotion committed and published as 0e7c0f97f488
+    
+    --- 2. Argo CD applies it
+    AT    2026-11-05T04:22:59Z +0s  Deployment asks for the bad digest
+    PASS  Deployment now asks for the bad digest
+    
+    --- 3. The new pod cannot start
+    AT    2026-11-05T04:22:59Z +0s  new pod cannot pull
+    PASS  new pod is in ErrImagePull or ImagePullBackOff
+    
+    --- 4. Argo CD reports the failure while the old pods keep serving
+    AT    2026-11-05T04:22:59Z +0s  stopped waiting, Application health is Degraded
+    PASS  Application health is Degraded
+    PASS  plane.dev.localhost answered 200 on all 1 samples during the failed rollout
+    PASS  old pod uid-old-pod is still Ready
+    
+    --- 5. git revert restores
+    [1;34m==>[0m Rolling back: 0e7c0f9 promote(dev): plane-frontend 000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed e8eb763: Revert "promote(dev): plane-frontend 000000000000"
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    remote: refused once by the stub        
+    To /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+     ! [remote rejected] e8eb763e952b3b49bfbf346fab5461b7d9e747c4 -> main (pre-receive hook declined)
+    error: failed to push some refs to '/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git'
+    [1;31mfail[0m push refused. If main was rewritten, restore it or delete /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git to republish from scratch.
+    [1;31mfail[0m the revert e8eb763 is on main but did not reach Argo CD. Fix the cause and run this again: it publishes that revert and reverts nothing else.
+    
+    --- Restore (exit trap)
+    [1;34m==>[0m e8eb763 Revert "promote(dev): plane-frontend 000000000000" is on main but was never published. Publishing it, and reverting nothing else.
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main e8eb763e952b to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    [1;32m ok[0m rollback of 0e7c0f97f488 published. Run this again to step back one promotion further.
+    PASS  bad promotion reverted by the trap. This did not wait for plane-dev to recover
+    Prometheus http://prometheus.localhost/api/v1/alerts, every 1s since 2026-11-05T04:22:57Z: 4 readings, 0 with no answer. Raw: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evid
+    AT START     Watchdog severity=none first_pending=- first_firing=2026-11-05T04:22:57Z last_seen=2026-11-05T04:23:01Z 
+    PENDING ONLY ArgoAppStuckProgressing severity=warning first_pending=2026-11-05T04:22:59Z first_firing=- last_seen=2026-11-05T04:22:59Z name=plane-dev,dest_namespace=plane-dev
+    FIRED        ArgoSyncFailed severity=critical first_pending=2026-11-05T04:22:59Z first_firing=2026-11-05T04:23:00Z last_seen=2026-11-05T04:23:01Z name=plane-dev,dest_namespace=plane-dev
+    APP   2026-11-05T04:22:57Z  Synced/Healthy/Succeeded
+    APP   2026-11-05T04:22:59Z  Synced/Degraded/Running
+    APP   2026-11-05T04:23:00Z  Synced/Healthy/Succeeded
+    SINK  2026-11-05T05:16:00+00:00  firing  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    SINK  2026-11-05T05:18:00+00:00  resolved  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    
+    RESULT FAIL   aborted, 0 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042257Z.log
+  ok   exit non-zero
+  ok   the old wording is not there
+  ok   the trap published the revert
+  ok   one revert on main, not two
+  ok   published is HEAD
+  ok   the record is still printed
+  ok   the recorder is gone
+=== prod-sim-arrives: a prod-sim promotion lands on main while dev is broken. rollback.sh dev must not carry it, and the drill says so
+--- exit 1
+    drill failed-deploy started 2026-11-05T04:23:06Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    PASS  recording every pending and firing alert in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042306Z-alerts.tsv
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed c922bb6: promote(dev): plane-frontend 000000000000
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main c922bb633548 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:23:08Z +0s  promotion published
+    PASS  promotion committed and published as c922bb633548
+    
+    --- 2. Argo CD applies it
+    AT    2026-11-05T04:23:08Z +0s  Deployment asks for the bad digest
+    PASS  Deployment now asks for the bad digest
+    
+    --- 3. The new pod cannot start
+    AT    2026-11-05T04:23:08Z +0s  new pod cannot pull
+    PASS  new pod is in ErrImagePull or ImagePullBackOff
+    
+    --- 4. Argo CD reports the failure while the old pods keep serving
+    AT    2026-11-05T04:23:08Z +0s  stopped waiting, Application health is Degraded
+    PASS  Application health is Degraded
+    PASS  plane.dev.localhost answered 200 on all 1 samples during the failed rollout
+    PASS  old pod uid-old-pod is still Ready
+    
+    --- 5. git revert restores
+    [1;33mwarn[0m Main holds a change to prod-sim's images that Argo CD has not read, and a publish is all of main, so this rollback would send it to prod-sim:
+           c1bcdad promote(prod-sim): planted during the drill
+    [1;31mfail[0m Nothing changed. Withdraw it first, with make rollback ENV=prod-sim if it is a promotion and git revert if not. Or set OVERRIDE_DEV_CHECK="<reason>" to send it along, which is logged, and th
+    
+    --- Restore (exit trap)
+    [1;33mwarn[0m Main holds a change to prod-sim's images that Argo CD has not read, and a publish is all of main, so this rollback would send it to prod-sim:
+           c1bcdad promote(prod-sim): planted during the drill
+    [1;31mfail[0m Nothing changed. Withdraw it first, with make rollback ENV=prod-sim if it is a promotion and git revert if not. Or set OVERRIDE_DEV_CHECK="<reason>" to send it along, which is logged, and th
+    FAIL  automatic restore failed. Run scripts/rollback.sh dev and check Application plane-dev
+    Prometheus http://prometheus.localhost/api/v1/alerts, every 1s since 2026-11-05T04:23:06Z: 2 readings, 0 with no answer. Raw: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evid
+    AT START     Watchdog severity=none first_pending=- first_firing=2026-11-05T04:23:07Z last_seen=2026-11-05T04:23:08Z 
+    PENDING ONLY ArgoAppStuckProgressing severity=warning first_pending=2026-11-05T04:23:08Z first_firing=- last_seen=2026-11-05T04:23:08Z name=plane-dev,dest_namespace=plane-dev
+    PENDING ONLY ArgoSyncFailed severity=critical first_pending=2026-11-05T04:23:08Z first_firing=- last_seen=2026-11-05T04:23:08Z name=plane-dev,dest_namespace=plane-dev
+    APP   2026-11-05T04:23:07Z  Synced/Healthy/Succeeded
+    APP   2026-11-05T04:23:08Z  Synced/Degraded/Running
+    SINK  2026-11-05T05:16:00+00:00  firing  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    SINK  2026-11-05T05:18:00+00:00  resolved  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    
+    RESULT FAIL   aborted, 1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042306Z.log
+  ok   exit non-zero
+  ok   rollback.sh refused to carry it
+  ok   the drill says the restore failed
+  ok   nothing reached prod-sim
+  ok   the bad digest is still what Argo CD reads, which is the true state
+=== pods-unreadable: a failed read is not proof that no pod has the digest
+--- exit 1
+    drill failed-deploy started 2026-11-05T04:23:11Z by: ./tests/drills/failed-deploy-rollback.sh
+    
+    --- 0. Preflight
+    PASS  plane-dev is Synced and Healthy, serving localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    PASS  recording every pending and firing alert in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042311Z-alerts.tsv
+    
+    --- 1. Promote a digest that cannot be pulled
+    [1;34m==>[0m Promotion plan for dev
+        plane-frontend -> localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 58e412c: promote(dev): plane-frontend 000000000000
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 58e412c35d04 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:23:12Z +0s  promotion published
+    PASS  promotion committed and published as 58e412c35d04
+    
+    --- 2. Argo CD applies it
+    AT    2026-11-05T04:23:12Z +0s  Deployment asks for the bad digest
+    PASS  Deployment now asks for the bad digest
+    
+    --- 3. The new pod cannot start
+    AT    2026-11-05T04:23:12Z +0s  new pod cannot pull
+    PASS  new pod is in ErrImagePull or ImagePullBackOff
+    
+    --- 4. Argo CD reports the failure while the old pods keep serving
+    AT    2026-11-05T04:23:12Z +0s  stopped waiting, Application health is Degraded
+    PASS  Application health is Degraded
+    PASS  plane.dev.localhost answered 200 on all 1 samples during the failed rollout
+    PASS  old pod uid-old-pod is still Ready
+    
+    --- 5. git revert restores
+    [1;34m==>[0m Rolling back: 58e412c promote(dev): plane-frontend 000000000000
+    [1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+    [1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+    [1;32m ok[0m committed 6d8bec0: Revert "promote(dev): plane-frontend 000000000000"
+    [1;33mwarn[0m origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+    [1;32m ok[0m published main 6d8bec0cee46 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/git/plane-platform.git
+    AT    2026-11-05T04:23:13Z +1s  revert published
+    PASS  main reverts 58e412c35d04
+    PASS  rendered dev manifests no longer name the bad digest
+    AT    2026-11-05T04:23:13Z +1s  Deployment is back on the old image
+    PASS  Deployment is back on localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    AT    2026-11-05T04:23:13Z +1s  plane-dev is Synced and Healthy
+    PASS  plane-dev is Synced and Healthy again
+    FAIL  could not read the pods in plane-dev, so nothing shows the bad digest is gone
+    PASS  plane.dev.localhost answers 200
+    PASS  prod-sim's manifests did not move
+    
+    --- 6. What fired, as Prometheus itself reported it
+    AT    2026-11-05T04:23:18Z +6s  nothing is pending or firing that was not at the start
+    Prometheus http://prometheus.localhost/api/v1/alerts, every 1s since 2026-11-05T04:23:11Z: 50 readings, 0 with no answer. Raw: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evi
+    AT START     Watchdog severity=none first_pending=- first_firing=2026-11-05T04:23:11Z last_seen=2026-11-05T04:24:02Z 
+    PENDING ONLY ArgoAppStuckProgressing severity=warning first_pending=2026-11-05T04:23:12Z first_firing=- last_seen=2026-11-05T04:23:12Z name=plane-dev,dest_namespace=plane-dev
+    FIRED        ArgoSyncFailed severity=critical first_pending=2026-11-05T04:23:12Z first_firing=2026-11-05T04:23:13Z last_seen=2026-11-05T04:23:16Z name=plane-dev,dest_namespace=plane-dev
+    APP   2026-11-05T04:23:11Z  Synced/Healthy/Succeeded
+    APP   2026-11-05T04:23:12Z  Synced/Degraded/Running
+    APP   2026-11-05T04:23:13Z  Synced/Healthy/Succeeded
+    SINK  2026-11-05T05:16:00+00:00  firing  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    SINK  2026-11-05T05:18:00+00:00  resolved  ArgoSyncFailed  severity=critical,name=plane-dev,dest_namespace=plane-dev
+    
+    RESULT FAIL   1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.Dc94aT26Wu/repo/.local/evidence-raw/drill-failed-deploy-20261105T042311Z.log
+  ok   exit non-zero
+  ok   it says so
+  ok   no pass for it
+=== wrong: 0
+harness exit 0

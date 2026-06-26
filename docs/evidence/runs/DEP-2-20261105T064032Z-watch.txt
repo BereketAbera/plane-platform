@@ -1,0 +1,569 @@
+# 2026-11-05T06:40:32Z commit b7d1bfa
+# command: python3 -B scratchpad/plane-dev/watch.py (copy: .local/evidence-raw/DEP-1-20261105T062323Z-watcher-source.txt). One JSON line per sample or change. Read-only.
+{"t": "2026-11-05T06:40:32.963Z", "src": "watch", "started": true, "max_seconds": 2400}
+{"t": "2026-11-05T06:40:32.981Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:40:32.986Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:40:32.990Z", "src": "metric", "name": "pg_up", "values": [["plane-dev", "", "1"], ["plane-prod-sim", "", "1"]]}
+{"t": "2026-11-05T06:40:32.996Z", "src": "metric", "name": "probe_plane_dev", "values": [["plane-dev", "api-db", "1"], ["plane-dev", "api-instance", "1"], ["plane-dev", "frontend", "1"], ["plane-dev", "frontend", "1"], ["plane-dev", "frontend", "1"], ["plane-dev", "live", "1"]]}
+{"t": "2026-11-05T06:40:33.001Z", "src": "alertmanager", "alerts": [{"fingerprint": "d68248beabce3f14", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-prometheus", "severity": "none"}, "state": "active", "inhibitedBy": [], "startsAt": "2026-11-04T21:35:26.617Z"}]}
+{"t": "2026-11-05T06:40:33.034Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 70}
+{"t": "2026-11-05T06:40:33.063Z", "src": "node", "used_gib": 9.78, "oom_kill": 62, "host_free_gib": 13.24}
+{"t": "2026-11-05T06:40:33.209Z", "src": "prodsim", "pods": [["iso-prod-sim-controller-manager-5cc86cc76-4r45n", "f6f15a8d", 0], ["plane-admin-wl-64b68f786-lxtxv", "e2bed27f", 0], ["plane-api-migrate-1-8cm79", "f3239dc3", 0], ["plane-api-wl-c4f9658c9-5k6hn", "e4d273b2", 0], ["plane-backup-20261104t225926z-csj5f", "c64f6a2e", 0], ["plane-backup-20261104t231335z-v9jm5", "d0c712f7", 0], ["plane-backup-20261105t000523z-qp2sl", "04b83a25", 0], ["plane-backup-20261105t000627z-dwm84", "53854fff", 0], ["plane-backup-20261105t022025z-hsbkj", "698cd137", 0], ["plane-backup-20261105t053351z-zjflc", "a09e18ef", 0], ["plane-beat-worker-wl-f44b9b987-mdv9p", "12429cb5", 0], ["plane-live-wl-5d5fd749c6-szdzq", "6a1a6c33", 0], ["plane-minio-wl-0", "d0a67b99", 0], ["plane-pgdb-wl-0", "6459f625", 0], ["plane-rabbitmq-wl-0", "a0bd612d", 0], ["plane-redis-wl-0", "dbaae805", 0], ["plane-space-wl-6c6c7c76c6-z4jwz", "47033f49", 0], ["plane-web-wl-545ff57fd4-fksxq", "14c40f5c", 0], ["plane-worker-wl-cd696f548-7tmq2", "eeab3bb5", 0], ["postgres-exporter-b6f657c47-p65fl", "a61160a4", 0], ["redis-exporter-5b59d6cb7c-xsw9t", "5f1cadc4", 0]]}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "iso-dev-controller-manager", "gen": 1, "observed": 1, "revision": "1", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "0edfbde22637", "template_annotations": {"kubectl.kubernetes.io/default-container": "manager"}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-admin-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "ce7adc37b1a7", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-api-wl", "gen": 12, "observed": 12, "revision": "9", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-beat-worker-wl", "gen": 9, "observed": 9, "revision": "8", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-live-wl", "gen": 7, "observed": 7, "revision": "6", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "30741b6d6552", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-space-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "5f0119ff2266", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-web-wl", "gen": 12, "observed": 12, "revision": "11", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "3d7575a1b934", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "plane-worker-wl", "gen": 9, "observed": 9, "revision": "8", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "postgres-exporter", "gen": 3, "observed": 3, "revision": "3", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "ac5ec343104f", "template_annotations": {"secrets.infisical.com/managed-secret.d0bb965f2f7d03613c7ead00e29fc9b4": "W/\"secrets-244-544C0B45\""}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "deploy", "name": "redis-exporter", "gen": 1, "observed": 1, "revision": "1", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "3d57b9eb142a", "template_annotations": {}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "rs", "name": "count", "by_owner": {"iso-dev-controller-manager": 1, "plane-admin-wl": 7, "plane-api-wl": 7, "plane-beat-worker-wl": 6, "plane-live-wl": 4, "plane-space-wl": 7, "plane-web-wl": 8, "plane-worker-wl": 6, "postgres-exporter": 3, "redis-exporter": 1}}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "iso-dev-controller-manager-85dbfbcb5b-vswbn", "uid": "ad45e6e0", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "0edfbde22637"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-admin-wl-545f5b8fcd-97kwj", "uid": "c352b645", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "ce7adc37b1a7"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-api-migrate-1-7rklf", "uid": "6b1cb2b6", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-api-wl-d7d5dcb7f-hs2gn", "uid": "fb649c47", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-backup-20261104t225855z-6s5fz", "uid": "4c02fea2", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "54e0dd8e8cdd"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-backup-20261104t231324z-98ktf", "uid": "cb8b9541", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "54e0dd8e8cdd"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-backup-20261105t000512z-ljml5", "uid": "3da9cdc5", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "54e0dd8e8cdd"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-backup-20261105t000616z-2gm22", "uid": "8bf0d783", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "54e0dd8e8cdd"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-backup-20261105t062141z-8zgjb", "uid": "368a8078", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "54e0dd8e8cdd"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-beat-worker-wl-645c56988f-mltb7", "uid": "0a6f1794", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-live-wl-5744d85f8b-qdb9d", "uid": "4b8adf33", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "30741b6d6552"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-minio-wl-0", "uid": "2792dd06", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "e6544a902f42"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-pgdb-wl-0", "uid": "c387d195", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "54e0dd8e8cdd"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-rabbitmq-wl-0", "uid": "4f622751", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "606d8c0d6b3c"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-redis-wl-0", "uid": "d7a8cef8", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "f8c1a646f4b3"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-space-wl-847f88bc46-h6vmn", "uid": "e08acdf2", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "5f0119ff2266"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-web-wl-748764649d-q72kc", "uid": "dda78f72", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "3d7575a1b934"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "plane-worker-wl-7f4494fd56-tlbbf", "uid": "35a0a98e", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "postgres-exporter-79f8bbdffd-p5q9g", "uid": "4604d538", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "ac5ec343104f"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "pod", "name": "redis-exporter-5b59d6cb7c-rp2rd", "uid": "f9d9f1ca", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "3d57b9eb142a"}
+{"t": "2026-11-05T06:40:33.259Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [10, "9", 7], "plane-api-wl": [12, "9", 7], "plane-beat-worker-wl": [9, "8", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [10, "9", 7], "plane-web-wl": [12, "11", 8], "plane-worker-wl": [9, "8", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:40:33.318Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Healthy", "revision": "b7d1bfab5bbd", "op_phase": "Succeeded", "op_started": "2026-11-05T06:23:45Z", "op_finished": "2026-11-05T06:35:36Z", "op_retry": 1, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:40:33.318Z", "src": "app", "name": "monitoring-extras", "sync": "Synced", "health": "Healthy", "revision": "b7d1bfab5bbd", "op_phase": "Succeeded", "op_started": "2026-11-05T02:26:45Z", "op_finished": "2026-11-05T02:26:47Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 10, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:40:33.318Z", "src": "app", "name": "root", "sync": "Synced", "health": "Healthy", "revision": "", "op_phase": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "op_finished": "2026-11-05T00:34:05Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 4, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:40:33.318Z", "src": "app", "name": "plane-prod-sim", "sync": "Synced", "health": "Healthy", "revision": "b7d1bfab5bbd", "op_phase": "Succeeded", "op_started": "2026-11-05T05:34:07Z", "op_finished": "2026-11-05T05:35:07Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 5, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:40:33.327Z", "src": "session", "note": "signed in"}
+{"t": "2026-11-05T06:40:33.350Z", "src": "session", "status": 200, "ok": true, "ms": 386}
+{"t": "2026-11-05T06:40:33.989Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:40:34.982Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:40:34.999Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:40:36.002Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:40:36.982Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:40:36.995Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:40:38.010Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:40:38.988Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:40:39.020Z", "src": "session", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:40:40.016Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:40:40.987Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:40:41.019Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:40:42.028Z", "src": "session", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:40:42.978Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:40:43.036Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 53}
+{"t": "2026-11-05T06:40:43.053Z", "src": "session", "status": 200, "ok": true, "ms": 49}
+{"t": "2026-11-05T06:40:44.031Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:40:45.002Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:40:45.040Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:40:46.035Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:40:47.005Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:40:47.044Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:40:48.061Z", "src": "session", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:40:49.005Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:40:49.065Z", "src": "session", "status": 200, "ok": true, "ms": 34}
+{"t": "2026-11-05T06:40:50.057Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:40:51.015Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 21}
+{"t": "2026-11-05T06:40:51.064Z", "src": "session", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:40:52.056Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:40:52.983Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:40:53.028Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 26}
+{"t": "2026-11-05T06:40:53.065Z", "src": "session", "status": 200, "ok": true, "ms": 28}
+{"t": "2026-11-05T06:40:54.069Z", "src": "session", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:40:55.019Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:40:55.079Z", "src": "session", "status": 200, "ok": true, "ms": 34}
+{"t": "2026-11-05T06:40:56.069Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:40:57.020Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:40:57.079Z", "src": "session", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:40:58.102Z", "src": "session", "status": 200, "ok": true, "ms": 42}
+{"t": "2026-11-05T06:40:59.018Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:40:59.082Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:41:00.094Z", "src": "session", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:41:01.029Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:41:01.088Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:41:02.093Z", "src": "session", "status": 200, "ok": true, "ms": 28}
+{"t": "2026-11-05T06:41:02.981Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:41:03.057Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 38}
+{"t": "2026-11-05T06:41:03.062Z", "src": "node", "used_gib": 9.73, "oom_kill": 62, "host_free_gib": 13.24}
+{"t": "2026-11-05T06:41:03.113Z", "src": "session", "status": 200, "ok": true, "ms": 44}
+{"t": "2026-11-05T06:41:03.369Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:03.369Z", "src": "app", "name": "root", "sync": "Synced", "health": "Progressing", "revision": "", "op_phase": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "op_finished": "2026-11-05T00:34:05Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 4, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:04.096Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:41:05.034Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:41:05.100Z", "src": "session", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:41:06.124Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [10, "9", 7], "plane-api-wl": [12, "9", 7], "plane-beat-worker-wl": [9, "8", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [10, "9", 7], "plane-web-wl": [12, "11", 8], "plane-worker-wl": [9, "8", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:41:06.126Z", "src": "session", "status": 200, "ok": true, "ms": 53}
+{"t": "2026-11-05T06:41:06.174Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of /ServiceAccount/plane and 2 more resources", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:07.040Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 19}
+{"t": "2026-11-05T06:41:07.100Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:41:08.097Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:41:09.035Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:41:09.099Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:41:09.150Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:10.098Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:41:11.040Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:41:11.111Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:41:12.114Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:41:12.177Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of secrets.infisical.com/InfisicalStaticSecret/plane-app-env and 5 more resources", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:12.981Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:41:13.048Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:41:13.119Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:41:14.125Z", "src": "session", "status": 200, "ok": true, "ms": 30}
+{"t": "2026-11-05T06:41:15.071Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 30}
+{"t": "2026-11-05T06:41:15.120Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:41:15.141Z", "src": "pod", "name": "plane-api-migrate-1-7rklf", "gone": true}
+{"t": "2026-11-05T06:41:15.195Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/StatefulSet/plane-minio-wl and 3 more resources", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:16.126Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:41:17.054Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:41:17.147Z", "src": "session", "status": 200, "ok": true, "ms": 30}
+{"t": "2026-11-05T06:41:18.101Z", "src": "pod", "name": "plane-api-migrate-1-l44q9", "uid": "e3250417", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:18.143Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:41:18.161Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for deletion of hook batch/Job/plane-api-migrate-1", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:19.059Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:41:19.147Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:41:20.150Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:41:21.078Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 25}
+{"t": "2026-11-05T06:41:21.176Z", "src": "session", "status": 200, "ok": true, "ms": 38}
+{"t": "2026-11-05T06:41:21.203Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for completion of hook batch/Job/plane-api-migrate-1", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:22.179Z", "src": "session", "status": 200, "ok": true, "ms": 37}
+{"t": "2026-11-05T06:41:22.990Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:41:23.072Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:41:23.162Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:41:24.178Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:41:25.072Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:41:25.190Z", "src": "session", "status": 200, "ok": true, "ms": 34}
+{"t": "2026-11-05T06:41:26.177Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:41:27.248Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 181}
+{"t": "2026-11-05T06:41:27.284Z", "src": "session", "status": 200, "ok": true, "ms": 124}
+{"t": "2026-11-05T06:41:27.326Z", "src": "deploy", "name": "plane-admin-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "ReplicaSetUpdated", "image": "c24ead5a02a1", "template_annotations": {}}
+{"t": "2026-11-05T06:41:27.326Z", "src": "deploy", "name": "plane-api-wl", "gen": 13, "observed": 12, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:27.326Z", "src": "deploy", "name": "plane-beat-worker-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 1, "ready": 1, "updated": null, "unavailable": 1, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:27.326Z", "src": "deploy", "name": "plane-space-wl", "gen": 11, "observed": 10, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "0a4ca742292d", "template_annotations": {}}
+{"t": "2026-11-05T06:41:27.326Z", "src": "deploy", "name": "plane-web-wl", "gen": 13, "observed": 13, "revision": "12", "replicas": 1, "ready": 1, "updated": null, "unavailable": 1, "progressing": "NewReplicaSetAvailable", "image": "96841278d02a", "template_annotations": {}}
+{"t": "2026-11-05T06:41:27.326Z", "src": "deploy", "name": "plane-worker-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 1, "ready": 1, "updated": null, "unavailable": 1, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-admin-wl-5df5d7f9f6-llv2z", "uid": "2c4983ed", "phase": "Pending", "ready": false, "restarts": 0, "waiting": "ContainerCreating", "terminated": null, "last_exit": null, "deleting": null, "image": "c24ead5a02a1"}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-api-migrate-1-l44q9", "uid": "e3250417", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-api-wl-596749bb8-2xnp7", "uid": "dc8de89e", "phase": "Pending", "ready": false, "restarts": 0, "waiting": "ContainerCreating", "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-beat-worker-wl-b64f64d68-mlkrz", "uid": "3b03b054", "phase": "Pending", "ready": false, "restarts": 0, "waiting": "ContainerCreating", "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-space-wl-6b65f54cf5-wr6tm", "uid": "1528901a", "phase": "Pending", "ready": false, "restarts": 0, "waiting": "ContainerCreating", "terminated": null, "last_exit": null, "deleting": null, "image": "0a4ca742292d"}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-web-wl-7f547975-gpxn7", "uid": "4403811d", "phase": "Pending", "ready": false, "restarts": 0, "waiting": "ContainerCreating", "terminated": null, "last_exit": null, "deleting": null, "image": "96841278d02a"}
+{"t": "2026-11-05T06:41:27.326Z", "src": "pod", "name": "plane-worker-wl-8c8968995-qtrlp", "uid": "e497b781", "phase": "Pending", "ready": false, "restarts": 0, "waiting": "ContainerCreating", "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:27.412Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for completion of hook batch/Job/plane-api-migrate-1", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:27.412Z", "src": "app", "name": "plane-prod-sim", "sync": "Synced", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Succeeded", "op_started": "2026-11-05T05:34:07Z", "op_finished": "2026-11-05T05:35:07Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 5, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:28.187Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:41:29.087Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 16}
+{"t": "2026-11-05T06:41:29.222Z", "src": "session", "status": 200, "ok": true, "ms": 58}
+{"t": "2026-11-05T06:41:30.161Z", "src": "deploy", "name": "plane-admin-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "c24ead5a02a1", "template_annotations": {}}
+{"t": "2026-11-05T06:41:30.161Z", "src": "deploy", "name": "plane-api-wl", "gen": 13, "observed": 13, "revision": "10", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:30.161Z", "src": "deploy", "name": "plane-beat-worker-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "ReplicaSetUpdated", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:30.161Z", "src": "deploy", "name": "plane-space-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "NewReplicaSetAvailable", "image": "0a4ca742292d", "template_annotations": {}}
+{"t": "2026-11-05T06:41:30.161Z", "src": "deploy", "name": "plane-web-wl", "gen": 13, "observed": 13, "revision": "12", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "96841278d02a", "template_annotations": {}}
+{"t": "2026-11-05T06:41:30.161Z", "src": "deploy", "name": "plane-worker-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "ReplicaSetUpdated", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-admin-wl-545f5b8fcd-97kwj", "uid": "c352b645", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:41:58Z", "image": "ce7adc37b1a7"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-admin-wl-5df5d7f9f6-llv2z", "uid": "2c4983ed", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "c24ead5a02a1"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-api-wl-596749bb8-2xnp7", "uid": "dc8de89e", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-beat-worker-wl-b64f64d68-mlkrz", "uid": "3b03b054", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-space-wl-6b65f54cf5-wr6tm", "uid": "1528901a", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "0a4ca742292d"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-web-wl-748764649d-q72kc", "uid": "dda78f72", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:41:58Z", "image": "3d7575a1b934"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-web-wl-7f547975-gpxn7", "uid": "4403811d", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "96841278d02a"}
+{"t": "2026-11-05T06:41:30.161Z", "src": "pod", "name": "plane-worker-wl-8c8968995-qtrlp", "uid": "e497b781", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:30.206Z", "src": "session", "status": 200, "ok": true, "ms": 37}
+{"t": "2026-11-05T06:41:30.232Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl and 3 more resources", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:31.122Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 48}
+{"t": "2026-11-05T06:41:31.197Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:41:32.214Z", "src": "session", "status": 200, "ok": true, "ms": 40}
+{"t": "2026-11-05T06:41:33.006Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:41:33.090Z", "src": "node", "used_gib": 10.18, "oom_kill": 62, "host_free_gib": 13.25}
+{"t": "2026-11-05T06:41:33.105Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 28}
+{"t": "2026-11-05T06:41:33.217Z", "src": "session", "status": 200, "ok": true, "ms": 42}
+{"t": "2026-11-05T06:41:34.218Z", "src": "session", "status": 200, "ok": true, "ms": 36}
+{"t": "2026-11-05T06:41:35.115Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 28}
+{"t": "2026-11-05T06:41:35.210Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:41:36.133Z", "src": "pod", "name": "plane-admin-wl-545f5b8fcd-97kwj", "gone": true}
+{"t": "2026-11-05T06:41:36.133Z", "src": "pod", "name": "plane-web-wl-748764649d-q72kc", "gone": true}
+{"t": "2026-11-05T06:41:36.133Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [11, "10", 7], "plane-api-wl": [13, "10", 7], "plane-beat-worker-wl": [10, "9", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [11, "10", 7], "plane-web-wl": [13, "12", 8], "plane-worker-wl": [10, "9", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:41:36.220Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:41:37.103Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:41:37.223Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:41:38.220Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:41:39.104Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:41:39.236Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:41:40.237Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:41:41.102Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:41:41.242Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:41:42.205Z", "src": "deploy", "name": "plane-space-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "0a4ca742292d", "template_annotations": {}}
+{"t": "2026-11-05T06:41:42.205Z", "src": "pod", "name": "plane-space-wl-6b65f54cf5-wr6tm", "uid": "1528901a", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "0a4ca742292d"}
+{"t": "2026-11-05T06:41:42.205Z", "src": "pod", "name": "plane-space-wl-847f88bc46-h6vmn", "uid": "e08acdf2", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:42:11Z", "image": "5f0119ff2266"}
+{"t": "2026-11-05T06:41:42.274Z", "src": "session", "status": 200, "ok": true, "ms": 51}
+{"t": "2026-11-05T06:41:42.329Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl and 2 more resources", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:43.001Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:41:43.128Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 31}
+{"t": "2026-11-05T06:41:43.291Z", "src": "session", "status": 200, "ok": true, "ms": 62}
+{"t": "2026-11-05T06:41:44.257Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:41:45.115Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:41:45.124Z", "src": "deploy", "name": "plane-worker-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:41:45.124Z", "src": "pod", "name": "plane-worker-wl-7f4494fd56-tlbbf", "uid": "35a0a98e", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:42:12Z", "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:41:45.124Z", "src": "pod", "name": "plane-worker-wl-8c8968995-qtrlp", "uid": "e497b781", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:41:45.180Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl and 1 more resources", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:41:45.260Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:41:46.307Z", "src": "session", "status": 200, "ok": true, "ms": 61}
+{"t": "2026-11-05T06:41:47.124Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 20}
+{"t": "2026-11-05T06:41:47.286Z", "src": "session", "status": 200, "ok": true, "ms": 36}
+{"t": "2026-11-05T06:41:48.135Z", "src": "pod", "name": "plane-space-wl-847f88bc46-h6vmn", "gone": true}
+{"t": "2026-11-05T06:41:48.291Z", "src": "session", "status": 200, "ok": true, "ms": 40}
+{"t": "2026-11-05T06:41:49.124Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 19}
+{"t": "2026-11-05T06:41:49.279Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:41:50.286Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:41:51.123Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:41:51.301Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:41:52.337Z", "src": "session", "status": 200, "ok": true, "ms": 55}
+{"t": "2026-11-05T06:41:53.008Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:41:53.142Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 24}
+{"t": "2026-11-05T06:41:53.346Z", "src": "session", "status": 200, "ok": true, "ms": 60}
+{"t": "2026-11-05T06:41:54.327Z", "src": "session", "status": 200, "ok": true, "ms": 39}
+{"t": "2026-11-05T06:41:55.142Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:41:55.319Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:41:56.323Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:41:57.137Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:41:57.343Z", "src": "session", "status": 200, "ok": true, "ms": 40}
+{"t": "2026-11-05T06:41:58.348Z", "src": "session", "status": 200, "ok": true, "ms": 42}
+{"t": "2026-11-05T06:41:59.149Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:41:59.327Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:42:00.173Z", "src": "deploy", "name": "plane-beat-worker-wl", "gen": 10, "observed": 10, "revision": "9", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:42:00.173Z", "src": "pod", "name": "plane-beat-worker-wl-645c56988f-mltb7", "uid": "0a6f1794", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:42:27Z", "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:42:00.173Z", "src": "pod", "name": "plane-beat-worker-wl-b64f64d68-mlkrz", "uid": "3b03b054", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:42:00.225Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "91ef477e5044", "op_phase": "Running", "op_started": "2026-11-05T06:41:03Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl", "in_flight": true, "history": 7, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:00.369Z", "src": "session", "status": 200, "ok": true, "ms": 50}
+{"t": "2026-11-05T06:42:01.155Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:42:01.345Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:42:02.385Z", "src": "session", "status": 200, "ok": true, "ms": 62}
+{"t": "2026-11-05T06:42:03.004Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:42:03.062Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:42:03.087Z", "src": "node", "used_gib": 10.31, "oom_kill": 62, "host_free_gib": 13.24}
+{"t": "2026-11-05T06:42:03.167Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 22}
+{"t": "2026-11-05T06:42:03.357Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:42:04.405Z", "src": "session", "status": 200, "ok": true, "ms": 66}
+{"t": "2026-11-05T06:42:05.166Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:42:05.362Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:42:06.156Z", "src": "deploy", "name": "plane-api-wl", "gen": 13, "observed": 13, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "9c7130942d90", "template_annotations": {}}
+{"t": "2026-11-05T06:42:06.156Z", "src": "pod", "name": "plane-api-wl-596749bb8-2xnp7", "uid": "dc8de89e", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "9c7130942d90"}
+{"t": "2026-11-05T06:42:06.156Z", "src": "pod", "name": "plane-api-wl-d7d5dcb7f-hs2gn", "uid": "fb649c47", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:42:33Z", "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:42:06.156Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [11, "10", 7], "plane-api-wl": [13, "10", 7], "plane-beat-worker-wl": [10, "9", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [11, "10", 7], "plane-web-wl": [13, "12", 8], "plane-worker-wl": [10, "9", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:42:06.212Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Healthy", "revision": "91ef477e5044", "op_phase": "Succeeded", "op_started": "2026-11-05T06:41:03Z", "op_finished": "2026-11-05T06:42:04Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:06.212Z", "src": "app", "name": "root", "sync": "Synced", "health": "Healthy", "revision": "", "op_phase": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "op_finished": "2026-11-05T00:34:05Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 4, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:06.369Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:42:07.173Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:42:07.363Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:42:08.370Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:42:09.151Z", "src": "pod", "name": "plane-api-wl-d7d5dcb7f-hs2gn", "uid": "fb649c47", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": "2026-11-05T06:42:33Z", "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:42:09.174Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:42:09.376Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:42:10.376Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:42:11.179Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:42:11.383Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:42:12.160Z", "src": "pod", "name": "plane-api-wl-d7d5dcb7f-hs2gn", "gone": true}
+{"t": "2026-11-05T06:42:12.432Z", "src": "session", "status": 200, "ok": true, "ms": 68}
+{"t": "2026-11-05T06:42:13.013Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:42:13.191Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:42:13.392Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:42:14.398Z", "src": "session", "status": 200, "ok": true, "ms": 30}
+{"t": "2026-11-05T06:42:15.166Z", "src": "pod", "name": "plane-worker-wl-7f4494fd56-tlbbf", "gone": true}
+{"t": "2026-11-05T06:42:15.202Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 23}
+{"t": "2026-11-05T06:42:15.421Z", "src": "session", "status": 200, "ok": true, "ms": 51}
+{"t": "2026-11-05T06:42:16.402Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:42:17.202Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:42:17.530Z", "src": "session", "status": 200, "ok": true, "ms": 153}
+{"t": "2026-11-05T06:42:18.073Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:42:18.414Z", "src": "session", "status": 200, "ok": true, "ms": 35}
+{"t": "2026-11-05T06:42:19.204Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:42:19.404Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:42:20.415Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:42:21.213Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:42:21.415Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:42:22.432Z", "src": "session", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:42:23.015Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:42:23.081Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:52.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:52.109597967Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:42:23.218Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:42:23.427Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:42:24.452Z", "src": "session", "status": 200, "ok": true, "ms": 43}
+{"t": "2026-11-05T06:42:25.221Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:42:25.440Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:42:26.446Z", "src": "session", "status": 200, "ok": true, "ms": 28}
+{"t": "2026-11-05T06:42:27.222Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:42:27.443Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:42:28.088Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:52.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:52.109597967Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:42:28.090Z", "src": "alertmanager", "alerts": [{"fingerprint": "31a7a0bb530246d8", "labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "prometheus": "monitoring/kps-prometheus", "severity": "none"}, "state": "suppressed", "inhibitedBy": ["d68248beabce3f14"], "startsAt": "2026-11-05T06:41:56.617Z"}, {"fingerprint": "d68248beabce3f14", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-prometheus", "severity": "none"}, "state": "active", "inhibitedBy": [], "startsAt": "2026-11-04T21:35:26.617Z"}]}
+{"t": "2026-11-05T06:42:28.441Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:29.240Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 19}
+{"t": "2026-11-05T06:42:29.449Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:42:30.191Z", "src": "pod", "name": "plane-beat-worker-wl-645c56988f-mltb7", "gone": true}
+{"t": "2026-11-05T06:42:30.451Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:42:31.240Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:42:31.454Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:42:32.468Z", "src": "session", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:42:33.018Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:42:33.062Z", "src": "node", "used_gib": 9.78, "oom_kill": 62, "host_free_gib": 13.24}
+{"t": "2026-11-05T06:42:33.243Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:42:33.461Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:42:34.467Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:42:35.238Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:42:35.473Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:42:36.204Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [11, "10", 7], "plane-api-wl": [13, "10", 7], "plane-beat-worker-wl": [10, "9", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [11, "10", 7], "plane-web-wl": [13, "12", 8], "plane-worker-wl": [10, "9", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:42:36.481Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:37.246Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:42:37.484Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:42:38.485Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:42:39.247Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 9}
+{"t": "2026-11-05T06:42:39.498Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:42:40.504Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:41.262Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:42:41.522Z", "src": "session", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:42:42.520Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:42:43.023Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:42:43.267Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 16}
+{"t": "2026-11-05T06:42:43.524Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:44.533Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:42:45.287Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 25}
+{"t": "2026-11-05T06:42:45.319Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:45.319Z", "src": "app", "name": "root", "sync": "Synced", "health": "Progressing", "revision": "", "op_phase": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "op_finished": "2026-11-05T00:34:05Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 4, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:45.542Z", "src": "session", "status": 200, "ok": true, "ms": 33}
+{"t": "2026-11-05T06:42:46.531Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:47.277Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:42:47.535Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:48.105Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:52.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:52.109597967Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:42:48.285Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of /ServiceAccount/plane and 2 more resources", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:48.551Z", "src": "session", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:42:49.287Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:42:49.552Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:42:50.561Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:42:51.268Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:51.288Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 9}
+{"t": "2026-11-05T06:42:51.571Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:42:52.576Z", "src": "session", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:42:53.028Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:42:53.108Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:42:53.412Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 128}
+{"t": "2026-11-05T06:42:53.574Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:42:54.439Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of /ConfigMap/plane-app-vars and 11 more resources", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:54.585Z", "src": "session", "status": 200, "ok": true, "ms": 34}
+{"t": "2026-11-05T06:42:55.297Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:42:55.586Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:42:56.611Z", "src": "session", "status": 200, "ok": true, "ms": 40}
+{"t": "2026-11-05T06:42:57.256Z", "src": "pod", "name": "plane-api-migrate-1-l44q9", "gone": true}
+{"t": "2026-11-05T06:42:57.308Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 16}
+{"t": "2026-11-05T06:42:57.318Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/StatefulSet/plane-minio-wl and 3 more resources", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:42:57.594Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:42:58.602Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:42:59.308Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:42:59.605Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:43:00.243Z", "src": "pod", "name": "plane-api-migrate-1-q42pk", "uid": "8b770318", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:00.308Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for deletion of hook batch/Job/plane-api-migrate-1", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:00.607Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:01.316Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 20}
+{"t": "2026-11-05T06:43:01.609Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:43:02.640Z", "src": "session", "status": 200, "ok": true, "ms": 45}
+{"t": "2026-11-05T06:43:03.027Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:43:03.069Z", "src": "node", "used_gib": 9.86, "oom_kill": 62, "host_free_gib": 13.23}
+{"t": "2026-11-05T06:43:03.320Z", "src": "app", "name": "plane-dev", "sync": "OutOfSync", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for completion of hook batch/Job/plane-api-migrate-1", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:03.326Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 20}
+{"t": "2026-11-05T06:43:03.620Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:04.631Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:43:05.329Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 19}
+{"t": "2026-11-05T06:43:05.633Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:43:06.257Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [11, "10", 7], "plane-api-wl": [13, "10", 7], "plane-beat-worker-wl": [10, "9", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [11, "10", 7], "plane-web-wl": [13, "12", 8], "plane-worker-wl": [10, "9", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:43:06.689Z", "src": "session", "status": 200, "ok": true, "ms": 75}
+{"t": "2026-11-05T06:43:07.325Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:43:07.640Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:43:08.645Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:09.317Z", "src": "pod", "name": "plane-api-migrate-1-q42pk", "uid": "8b770318", "phase": "Succeeded", "ready": false, "restarts": 0, "waiting": null, "terminated": "Completed", "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:09.351Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 33}
+{"t": "2026-11-05T06:43:09.672Z", "src": "session", "status": 200, "ok": true, "ms": 40}
+{"t": "2026-11-05T06:43:10.661Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:43:11.338Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:43:11.666Z", "src": "session", "status": 200, "ok": true, "ms": 30}
+{"t": "2026-11-05T06:43:12.287Z", "src": "deploy", "name": "plane-admin-wl", "gen": 12, "observed": 12, "revision": "11", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "ce7adc37b1a7", "template_annotations": {}}
+{"t": "2026-11-05T06:43:12.287Z", "src": "deploy", "name": "plane-api-wl", "gen": 14, "observed": 14, "revision": "11", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "ReplicaSetUpdated", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:43:12.287Z", "src": "deploy", "name": "plane-beat-worker-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:43:12.287Z", "src": "deploy", "name": "plane-space-wl", "gen": 12, "observed": 12, "revision": "11", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "ReplicaSetUpdated", "image": "5f0119ff2266", "template_annotations": {}}
+{"t": "2026-11-05T06:43:12.287Z", "src": "deploy", "name": "plane-web-wl", "gen": 14, "observed": 14, "revision": "13", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "3d7575a1b934", "template_annotations": {}}
+{"t": "2026-11-05T06:43:12.287Z", "src": "deploy", "name": "plane-worker-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 2, "ready": 1, "updated": 1, "unavailable": 1, "progressing": "ReplicaSetUpdated", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-admin-wl-545f5b8fcd-8prz5", "uid": "72dbb7a0", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "ce7adc37b1a7"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-admin-wl-5df5d7f9f6-llv2z", "uid": "2c4983ed", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:43:41Z", "image": "c24ead5a02a1"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-api-wl-d7d5dcb7f-7xq5z", "uid": "6d62f9b8", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-beat-worker-wl-645c56988f-bwtg8", "uid": "f780710f", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-space-wl-847f88bc46-pchg4", "uid": "439442e5", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "5f0119ff2266"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-web-wl-748764649d-5swbd", "uid": "085a3194", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "3d7575a1b934"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-web-wl-7f547975-gpxn7", "uid": "4403811d", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:43:41Z", "image": "96841278d02a"}
+{"t": "2026-11-05T06:43:12.287Z", "src": "pod", "name": "plane-worker-wl-7f4494fd56-q4gs2", "uid": "7a42e003", "phase": "Running", "ready": false, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:12.356Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl and 3 more resources", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:12.667Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:13.031Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:43:13.343Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 18}
+{"t": "2026-11-05T06:43:13.665Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:43:14.676Z", "src": "session", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:43:15.344Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:43:15.671Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:16.697Z", "src": "session", "status": 200, "ok": true, "ms": 40}
+{"t": "2026-11-05T06:43:17.348Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:43:17.694Z", "src": "session", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:43:18.280Z", "src": "pod", "name": "plane-admin-wl-5df5d7f9f6-llv2z", "gone": true}
+{"t": "2026-11-05T06:43:18.280Z", "src": "pod", "name": "plane-web-wl-7f547975-gpxn7", "gone": true}
+{"t": "2026-11-05T06:43:18.694Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:43:19.349Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:43:19.695Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:20.700Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:21.353Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:43:21.710Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:22.712Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:43:23.035Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:43:23.352Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:43:23.727Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:43:24.733Z", "src": "session", "status": 200, "ok": true, "ms": 33}
+{"t": "2026-11-05T06:43:25.355Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:43:25.735Z", "src": "session", "status": 200, "ok": true, "ms": 28}
+{"t": "2026-11-05T06:43:26.734Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:27.280Z", "src": "deploy", "name": "plane-space-wl", "gen": 12, "observed": 12, "revision": "11", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "5f0119ff2266", "template_annotations": {}}
+{"t": "2026-11-05T06:43:27.280Z", "src": "deploy", "name": "plane-worker-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:43:27.280Z", "src": "pod", "name": "plane-space-wl-6b65f54cf5-wr6tm", "uid": "1528901a", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:43:54Z", "image": "0a4ca742292d"}
+{"t": "2026-11-05T06:43:27.281Z", "src": "pod", "name": "plane-space-wl-847f88bc46-pchg4", "uid": "439442e5", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "5f0119ff2266"}
+{"t": "2026-11-05T06:43:27.281Z", "src": "pod", "name": "plane-worker-wl-7f4494fd56-q4gs2", "uid": "7a42e003", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:27.281Z", "src": "pod", "name": "plane-worker-wl-8c8968995-qtrlp", "uid": "e497b781", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:43:55Z", "image": "9c7130942d90"}
+{"t": "2026-11-05T06:43:27.340Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl and 1 more resources", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:27.367Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 16}
+{"t": "2026-11-05T06:43:27.734Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:43:28.746Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:29.376Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 22}
+{"t": "2026-11-05T06:43:29.752Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:43:30.512Z", "src": "pod", "name": "plane-space-wl-6b65f54cf5-wr6tm", "gone": true}
+{"t": "2026-11-05T06:43:30.809Z", "src": "session", "status": 200, "ok": true, "ms": 83}
+{"t": "2026-11-05T06:43:31.385Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 31}
+{"t": "2026-11-05T06:43:31.756Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:32.760Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:43:33.043Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:43:33.082Z", "src": "node", "used_gib": 10.3, "oom_kill": 62, "host_free_gib": 13.23}
+{"t": "2026-11-05T06:43:33.144Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppOutOfSync", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:02.417343552Z"}, {"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:43:33.369Z", "src": "app", "name": "plane-prod-sim", "sync": "Synced", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Succeeded", "op_started": "2026-11-05T05:34:07Z", "op_finished": "2026-11-05T05:35:07Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 5, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:33.381Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 26}
+{"t": "2026-11-05T06:43:33.755Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:43:34.757Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:43:35.375Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:43:35.765Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:43:36.281Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [12, "11", 7], "plane-api-wl": [14, "11", 7], "plane-beat-worker-wl": [11, "10", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [12, "11", 7], "plane-web-wl": [14, "13", 8], "plane-worker-wl": [11, "10", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:43:36.768Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:43:37.378Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:43:37.777Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:43:38.778Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:39.384Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:43:39.787Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:43:40.791Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:43:41.390Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:43:41.795Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:43:42.318Z", "src": "deploy", "name": "plane-beat-worker-wl", "gen": 11, "observed": 11, "revision": "10", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:43:42.318Z", "src": "pod", "name": "plane-beat-worker-wl-645c56988f-bwtg8", "uid": "f780710f", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:42.318Z", "src": "pod", "name": "plane-beat-worker-wl-b64f64d68-mlkrz", "uid": "3b03b054", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:44:10Z", "image": "9c7130942d90"}
+{"t": "2026-11-05T06:43:42.390Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Progressing", "revision": "29316f2bceff", "op_phase": "Running", "op_started": "2026-11-05T06:42:44Z", "op_finished": null, "op_retry": null, "op_message": "waiting for healthy state of apps/Deployment/plane-api-wl", "in_flight": true, "history": 8, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:42.800Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:43.043Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:43:43.397Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:43:43.801Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:43:44.806Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:43:45.400Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:43:45.831Z", "src": "session", "status": 200, "ok": true, "ms": 42}
+{"t": "2026-11-05T06:43:46.860Z", "src": "session", "status": 200, "ok": true, "ms": 61}
+{"t": "2026-11-05T06:43:47.411Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:43:47.832Z", "src": "session", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:43:48.320Z", "src": "deploy", "name": "plane-api-wl", "gen": 14, "observed": 14, "revision": "11", "replicas": 1, "ready": 1, "updated": 1, "unavailable": null, "progressing": "NewReplicaSetAvailable", "image": "8c04bd18bb08", "template_annotations": {}}
+{"t": "2026-11-05T06:43:48.320Z", "src": "pod", "name": "plane-api-wl-596749bb8-2xnp7", "uid": "dc8de89e", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": "2026-11-05T06:44:15Z", "image": "9c7130942d90"}
+{"t": "2026-11-05T06:43:48.320Z", "src": "pod", "name": "plane-api-wl-d7d5dcb7f-7xq5z", "uid": "6d62f9b8", "phase": "Running", "ready": true, "restarts": 0, "waiting": null, "terminated": null, "last_exit": null, "deleting": null, "image": "8c04bd18bb08"}
+{"t": "2026-11-05T06:43:48.381Z", "src": "app", "name": "plane-dev", "sync": "Synced", "health": "Healthy", "revision": "29316f2bceff", "op_phase": "Succeeded", "op_started": "2026-11-05T06:42:44Z", "op_finished": "2026-11-05T06:43:45Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 9, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:48.381Z", "src": "app", "name": "root", "sync": "Synced", "health": "Healthy", "revision": "", "op_phase": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "op_finished": "2026-11-05T00:34:05Z", "op_retry": null, "op_message": "successfully synced (all tasks run)", "in_flight": false, "history": 4, "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:43:48.825Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:43:49.412Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:43:49.826Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:43:50.840Z", "src": "session", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:43:51.348Z", "src": "pod", "name": "plane-api-wl-596749bb8-2xnp7", "gone": true}
+{"t": "2026-11-05T06:43:51.417Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 15}
+{"t": "2026-11-05T06:43:51.833Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:43:52.841Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:43:53.050Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:43:53.164Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppOutOfSync", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:02.417343552Z"}, {"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-api-wl-d7d5dcb7f-7xq5z", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-645c56988f-bwtg8", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-space-wl-847f88bc46-pchg4", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-worker-wl-7f4494fd56-q4gs2", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:43:53.420Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:43:53.841Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:43:54.992Z", "src": "session", "status": 200, "ok": true, "ms": 170}
+{"t": "2026-11-05T06:43:55.433Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 29}
+{"t": "2026-11-05T06:43:55.886Z", "src": "session", "status": 200, "ok": true, "ms": 63}
+{"t": "2026-11-05T06:43:56.858Z", "src": "session", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:43:57.309Z", "src": "pod", "name": "plane-worker-wl-8c8968995-qtrlp", "gone": true}
+{"t": "2026-11-05T06:43:57.418Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:43:57.855Z", "src": "session", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:43:58.877Z", "src": "session", "status": 200, "ok": true, "ms": 45}
+{"t": "2026-11-05T06:43:59.433Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 17}
+{"t": "2026-11-05T06:43:59.856Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:44:00.871Z", "src": "session", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:44:01.431Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 9}
+{"t": "2026-11-05T06:44:01.875Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:44:03.010Z", "src": "session", "status": 200, "ok": true, "ms": 152}
+{"t": "2026-11-05T06:44:03.055Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:44:03.065Z", "src": "node", "used_gib": 9.99, "oom_kill": 62, "host_free_gib": 13.23}
+{"t": "2026-11-05T06:44:03.185Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-api-wl-d7d5dcb7f-7xq5z", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-645c56988f-bwtg8", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-space-wl-847f88bc46-pchg4", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-worker-wl-7f4494fd56-q4gs2", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:44:03.440Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 18}
+{"t": "2026-11-05T06:44:03.886Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:44:04.886Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:44:05.433Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:44:05.902Z", "src": "session", "status": 200, "ok": true, "ms": 28}
+{"t": "2026-11-05T06:44:06.346Z", "src": "gens", "table": {"iso-dev-controller-manager": [1, "1", 1], "plane-admin-wl": [12, "11", 7], "plane-api-wl": [14, "11", 7], "plane-beat-worker-wl": [11, "10", 6], "plane-live-wl": [7, "6", 4], "plane-space-wl": [12, "11", 7], "plane-web-wl": [14, "13", 8], "plane-worker-wl": [11, "10", 6], "postgres-exporter": [3, "3", 3], "redis-exporter": [1, "1", 1]}, "note": "name: [generation, revision, replicasets]"}
+{"t": "2026-11-05T06:44:06.902Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:44:07.440Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:44:07.906Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:44:08.917Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:44:09.446Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:44:09.916Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:44:10.926Z", "src": "session", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:44:11.456Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:44:11.934Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:44:12.381Z", "src": "pod", "name": "plane-beat-worker-wl-b64f64d68-mlkrz", "gone": true}
+{"t": "2026-11-05T06:44:12.938Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:44:13.064Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:44:13.194Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-d7d5dcb7f-7xq5z", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-645c56988f-bwtg8", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-847f88bc46-pchg4", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-7f4494fd56-q4gs2", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-api-wl-d7d5dcb7f-7xq5z", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-645c56988f-bwtg8", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-space-wl-847f88bc46-pchg4", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "KubePodNotReady", "job": "kube-state-metrics", "namespace": "plane-dev", "pod": "plane-worker-wl-7f4494fd56-q4gs2", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:43:22.109597967Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:44:13.462Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:44:13.950Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:44:14.947Z", "src": "session", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:44:15.475Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 14}
+{"t": "2026-11-05T06:44:15.947Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:44:16.951Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:44:17.479Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:44:17.951Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:44:18.957Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:44:19.491Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 12}
+{"t": "2026-11-05T06:44:19.965Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:44:20.974Z", "src": "session", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:44:21.494Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 11}
+{"t": "2026-11-05T06:44:21.972Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:44:22.978Z", "src": "session", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:44:23.069Z", "src": "prodsim", "status": 200}
+{"t": "2026-11-05T06:44:23.201Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "ArgoAppStuckProgressing", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "severity": "warning"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "ArgoSyncFailed", "component": "argocd", "dest_namespace": "plane-dev", "name": "plane-dev", "phase": "Running", "severity": "critical"}, "state": "pending", "activeAt": "2026-11-05T06:41:32.417343552Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-596749bb8-2xnp7", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-api", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-api-wl-d7d5dcb7f-7xq5z", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-645c56988f-bwtg8", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-beat-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-beat-worker-wl-b64f64d68-mlkrz", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:42:13.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-6b65f54cf5-wr6tm", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-space", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-space-wl-847f88bc46-pchg4", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-7f4494fd56-q4gs2", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:43:43.139282231Z"}, {"labels": {"alertname": "CPUThrottlingHigh", "container": "plane-worker", "instance": "172.24.0.2:10250", "namespace": "plane-dev", "pod": "plane-worker-wl-8c8968995-qtrlp", "service": "kps-kubelet", "severity": "info"}, "state": "pending", "activeAt": "2026-11-05T06:41:43.139282231Z"}, {"labels": {"alertname": "InfoInhibitor", "namespace": "plane-dev", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T06:41:56.617154565Z"}, {"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:44:23.494Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 10}
+{"t": "2026-11-05T06:44:23.978Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:44:24.990Z", "src": "session", "status": 200, "ok": true, "ms": 30}
+{"t": "2026-11-05T06:44:25.497Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:44:25.984Z", "src": "session", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:44:26.987Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:44:27.574Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 84}
+{"t": "2026-11-05T06:44:28.023Z", "src": "session", "status": 200, "ok": true, "ms": 45}
+{"t": "2026-11-05T06:44:29.001Z", "src": "session", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:44:29.509Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 13}
+{"t": "2026-11-05T06:44:30.008Z", "src": "session", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:44:31.002Z", "src": "session", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:44:31.505Z", "src": "front", "/": 200, "/sign-in/": 200, "/god-mode/": 200, "/spaces/": 200, "ms": 8}
+{"t": "2026-11-05T06:44:32.013Z", "src": "session", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:44:33.499Z", "src": "watch", "stopped": true, "reason": "stop-file"}

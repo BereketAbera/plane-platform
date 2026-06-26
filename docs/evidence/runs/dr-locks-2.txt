@@ -1,0 +1,27 @@
+# make backup ENV=infisical, with who holds the most locks sampled from another session. 2026-11-05T02:09:37Z
+lock table: max_locks_per_transaction, max_connections, max_prepared_transactions = 64|30|0
+autovacuum_max_workers 3
+max_wal_senders 10
+max_wal_size 1024
+max_worker_processes 8
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T020938Z
+[pod/plane-backup-20261105t020938z-cjrqs/postgres] postgres: 20261105T020938Z complete, 785 tables counted from a scratch restore
+backup 20261105T020938Z: postgres/infisical.dump 4407394 B, postgres/infisical.toc.txt 942298 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m retention: removed 20261104T231433Z, past the newest 5 complete sets
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T020938Z
+make backup exit=0
+samples: 354
+# the highest totals, and who held the most at that moment: total held client database statement
+3422 3384 pg_restore scratch_20261105t020938z ALTER TABLE public.certificate_requests     ADD CO
+3364 3196 pg_restore scratch_20261105t020938z ALTER TABLE public.certificate_requests     ADD CO
+3255 3095 pg_restore scratch_20261105t020938z ALTER TABLE public.certificate_requests     ADD CO
+3042 2945 pg_restore scratch_20261105t020938z ALTER TABLE ONLY public.resource_metadata     ADD 
+2938 2929 psql scratch_20261105t020938z SELECT 'certificate_requests' AS t, count(*) AS c 
+2715 2672 pg_restore scratch_20261105t020938z ALTER TABLE public.certificate_requests     ADD CO
+2628 2543 pg_restore scratch_20261105t020938z ALTER TABLE public.certificate_requests     ADD CO
+2430 2399 psql scratch_20261105t020938z SELECT 'certificate_requests' AS t, count(*) AS c 
+# the highest for each client
+3422 3384 pg_restore scratch_20261105t020938z ALTER TABLE public.certificate_requests     ADD CO
+2938 2929 psql scratch_20261105t020938z SELECT 'certificate_requests' AS t, count(*) AS c 
+958 949 pg_dump infisical SELECT last_value, is_called FROM public.infisical
+43 31 infisical-core infisical select "memberships"."id" as "mId", "memberships".

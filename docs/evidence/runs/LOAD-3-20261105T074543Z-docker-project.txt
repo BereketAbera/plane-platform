@@ -1,0 +1,59 @@
+# LOAD-3 Docker storage, this project's volumes and images only. 2026-11-05T07:46:46Z
+# command: docker inspect <local service and node containers> for volume names
+/plane-platform-control-plane 91005102f57b63c4b370899ac0ac79e788943d795b15aafd89f4fb81f733573d=/var
+/plane-registry plane-platform-local_registry-data=/var/lib/registry
+/plane-git
+/plane-mirror-docker plane-platform-local_mirror-docker-data=/var/lib/registry
+/plane-mirror-k8s plane-platform-local_mirror-k8s-data=/var/lib/registry
+/plane-mirror-quay plane-platform-local_mirror-quay-data=/var/lib/registry
+# 2026-11-05T07:46:46Z command: docker system df -v --format json | jq (keep only the volumes above and only these images: kindest/node, makeplane/plane-backend, makeplane/plane-space, nginx:1.31-alpine, the local service images)
+{
+  "volumes": [
+    {
+      "Name": "91005102f57b63c4b370899ac0ac79e788943d795b15aafd89f4fb81f733573d",
+      "Size": "13.76GB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_mirror-k8s-data",
+      "Size": "37.64MB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_mirror-quay-data",
+      "Size": "447.5MB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_registry-data",
+      "Size": "1.159GB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_mirror-docker-data",
+      "Size": "2.52GB",
+      "Links": "1"
+    }
+  ],
+  "images": [
+    {
+      "Repository": "plane-platform-local-git",
+      "Tag": "latest",
+      "ID": "sha256:a213f581460f2b107a12d5489faa2d3813010bdda950db81beb0ff37635224fd",
+      "Size": "35MB",
+      "SharedSize": "0B",
+      "UniqueSize": "34.99MB",
+      "Containers": "1"
+    },
+    {
+      "Repository": "kindest/node",
+      "Tag": "v1.36.4",
+      "ID": "sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed",
+      "Size": "1.28GB",
+      "SharedSize": "0B",
+      "UniqueSize": "1.277GB",
+      "Containers": "1"
+    }
+  ]
+}
+# 2026-11-05T07:46:49Z done

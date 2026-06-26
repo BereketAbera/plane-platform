@@ -1,0 +1,100 @@
+date_utc: 2026-11-05T06:15:55Z
+commit: 0dde813
+command: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prodsim/ops7-raise.sh
+---
+### snapshot before at 2026-11-05T06:15:56.3NZ
+df -g:
+Filesystem   1G-blocks Used Available Capacity iused     ifree %iused  Mounted on
+/dev/disk3s5       460  416        13    97% 6396861 140004600    4%   /System/Volumes/Data
+jobs in plane-prod-sim:
+plane-api-migrate-1             8fe415cf-13fe-45cc-b298-320ef19fcaa0   1
+plane-backup-20261104t225926z   9178a55b-f9fa-4e0c-8e4f-702639256009   1
+plane-backup-20261104t231335z   0b740d3f-3942-46de-a88a-426914f26786   1
+plane-backup-20261105t000523z   c8890cc3-77b6-462f-bb28-f4c0bbdedbab   1
+plane-backup-20261105t000627z   521c34f6-e188-45bb-8f30-dca143f723a6   1
+plane-backup-20261105t022025z   38a35b6a-d525-48bf-942b-dfd7e4ea283b   1
+plane-backup-20261105t053351z   ca181431-9c13-4b66-ae32-7743c5e71af8   1
+backups on the host:
+20261104T231335Z
+20261105T000523Z
+20261105T000627Z
+20261105T022025Z
+20261105T053351Z
+low-disk-overrides.log:
+(no file)
+
+### 1. MIN_FREE_DISK_GIB=999 make backup ENV=prod-sim (scripts/backup.sh calls guard_disk with no argument)
+[1;31mfail[0m only 13 GiB free on the host, need at least 999 GiB. Free space first.
+make: *** [backup] Error 1
+exit code of make: 2
+
+### 2. MIN_FREE_DISK_GIB=999 ./scripts/backup.sh prod-sim, the row's form, with prod-sim in place of dev
+[1;31mfail[0m only 13 GiB free on the host, need at least 999 GiB. Free space first.
+exit code of script: 1
+
+### 3. MIN_FREE_DISK_GIB=999 make status. status.sh does not call guard_disk, by contract section 11, so this must not refuse
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 9c8e0982)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      9c8e0982
+    backup-storage                 Synced     Healthy      9c8e0982
+    infisical                      Synced     Healthy      9c8e0982
+    infisical-operator-dev         Synced     Healthy      9c8e0982
+    infisical-operator-prod-sim    Synced     Healthy      9c8e0982
+    kube-prometheus-stack          Synced     Healthy      9c8e0982
+    loki                           Synced     Healthy      9c8e0982
+    metrics-server                 Synced     Healthy      9c8e0982
+    monitoring-extras              Synced     Healthy      9c8e0982
+    network-policies               Synced     Healthy      9c8e0982
+    plane-dev                      Synced     Healthy      9c8e0982
+    plane-prod-sim                 Synced     Healthy      9c8e0982
+    root                           Synced     Healthy      9c8e0982
+    traefik                        Synced     Healthy      9c8e0982
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         200
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 8.418GiB / 13.63GiB, CPU 50.87%
+    argocd                    634 MiB
+    infisical                 742 MiB
+    kube-system              1565 MiB
+    local-path-storage         15 MiB
+    monitoring               1592 MiB
+    monitoring-agents          20 MiB
+    plane-dev                1233 MiB
+    plane-prod-sim           1205 MiB
+    traefik                    73 MiB
+    Host disk free: 13 GiB
+exit code of make status: 0
+
+### snapshot after at 2026-11-05T06:15:58.3NZ
+df -g:
+Filesystem   1G-blocks Used Available Capacity iused     ifree %iused  Mounted on
+/dev/disk3s5       460  416        13    97% 6396683 140000320    4%   /System/Volumes/Data
+jobs in plane-prod-sim:
+plane-api-migrate-1             8fe415cf-13fe-45cc-b298-320ef19fcaa0   1
+plane-backup-20261104t225926z   9178a55b-f9fa-4e0c-8e4f-702639256009   1
+plane-backup-20261104t231335z   0b740d3f-3942-46de-a88a-426914f26786   1
+plane-backup-20261105t000523z   c8890cc3-77b6-462f-bb28-f4c0bbdedbab   1
+plane-backup-20261105t000627z   521c34f6-e188-45bb-8f30-dca143f723a6   1
+plane-backup-20261105t022025z   38a35b6a-d525-48bf-942b-dfd7e4ea283b   1
+plane-backup-20261105t053351z   ca181431-9c13-4b66-ae32-7743c5e71af8   1
+backups on the host:
+20261104T231335Z
+20261105T000523Z
+20261105T000627Z
+20261105T022025Z
+20261105T053351Z
+low-disk-overrides.log:
+(no file)
+---
+finished_utc: 2026-11-05T06:15:58Z
+exit_code: 0

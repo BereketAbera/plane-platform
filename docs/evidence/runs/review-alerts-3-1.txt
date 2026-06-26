@@ -1,0 +1,517 @@
+# date: 2026-11-05T03:22:06Z
+# Adversarial review of the alerts track (commits ba72573, 91bf4b3, 70cb6b0, c32d27c, 9e86372), on main at 1936016. Read only against the cluster. The scripts are at the end.
+
+## 1. Argo CD look intervals. kubectl -n argocd logs argocd-application-controller-0 --since=90m, then looks.py and looks2.py
+expired looks: 402 min 120 median 193 p95 253 max 289
+   0..119        0  0%
+ 120..180      183  46%
+ 181..240      162  40%
+ 241..300       57  14%
+ 301..1000000    0  0%
+over 180s: 219 of 402
+alloy                          n= 29 min=120 max=266 over180=16
+backup-storage                 n= 28 min=122 max=267 over180=18
+infisical                      n= 29 min=120 max=289 over180=12
+infisical-operator-dev         n= 28 min=125 max=276 over180=17
+infisical-operator-prod-sim    n= 29 min=123 max=259 over180=16
+kube-prometheus-stack          n= 29 min=120 max=262 over180=17
+loki                           n= 28 min=120 max=279 over180=16
+metrics-server                 n= 30 min=121 max=246 over180=14
+monitoring-extras              n= 29 min=120 max=260 over180=14
+network-policies               n= 28 min=125 max=249 over180=17
+plane-dev                      n= 31 min=120 max=252 over180=14
+plane-prod-sim                 n= 28 min=124 max=275 over180=14
+root                           n= 29 min=121 max=256 over180=16
+traefik                        n= 27 min=120 max=281 over180=18
+live argocd-cm: timeout.reconciliation=120s timeout.reconciliation.jitter=60s
+
+## 2. Upstream lines, v3.5.7 from raw.githubusercontent.com, read for the ref cache and the grace
+	cmd.Flags().DurationVar(&revisionCacheExpiration, "revision-cache-expiration", env.ParseDurationFromEnv("ARGOCD_RECONCILIATION_TIMEOUT", 3*time.Minut
+repo-server env: ARGOCD_RECONCILIATION_TIMEOUT from argocd-cm timeout.reconciliation (live deploy/argocd-repo-server), so the ref cache lives 120s here
+	gitClientOpts := git.WithCache(s.cache, !settings.noRevisionCache && !settings.noCache)
+	if m.gitRefCache != nil && m.loadRefFromCache {
+		var res []*plumbing.Reference
+		foundLockId, err := m.gitRefCache.GetOrLockGitReferences(m.repoURL, myLockId, &res)
+		isLockOwner := myLockId == foundLockId
+		if !isLockOwner && err == nil {
+			// Valid value already in cache
+			return res, nil
+		} else if !isLockOwner && err != nil {
+			if firstSeen, ok := m.repoErrorCache.Load(app.Name); ok {
+				if time.Since(firstSeen.(time.Time)) <= m.repoErrorGracePeriod && !noRevisionCache {
+					// if first seen is less than grace period and it's not a Level 3 comparison,
+					// ignore error and short circuit
+					logCtx.Debugf("Ignoring repo error %v, already encountered error in grace period", err.Error())
+					return nil, ErrCompareStateRepo
+				}
+			} else if !noRevisionCache {
+				logCtx.Debugf("Ignoring repo error %v, new occurrence", err.Error())
+				m.repoErrorCache.Store(app.Name, time.Now())
+				return nil, ErrCompareStateRepo
+			}
+					if ctrl.statusRefreshJitter != 0 && oldApp.ResourceVersion == newApp.ResourceVersion {
+						// Handler is refreshing the apps, add a random jitter to spread the load and avoid spikes
+						jitter := time.Duration(float64(ctrl.statusRefreshJitter) * rand.Float64())
+						delay = &jitter
+					}
+var manifestFile = regexp.MustCompile(`^.*\.(yaml|yml|json|jsonnet)$`)
+		switch {
+		case obj.IsList():
+			err = obj.EachListItem(func(object runtime.Object) error {
+				unstructuredObj, ok := object.(*unstructured.Unstructured)
+
+## 3. Loki anon against ingest, query_range at 30s, loki_q.py and loki_q2.py
+highest anon since 22:10Z: 341.2 MiB at 22:26:00Z, ingest then 2500 B/s
+  local peak 341.2 MiB at 22:26:00Z, 5m ingest then 2500 B/s
+  local peak 323.5 MiB at 22:10:00Z, 5m ingest then 6263 B/s
+  local peak 304.3 MiB at 23:50:00Z, 5m ingest then 2841 B/s
+  local peak 295.8 MiB at 00:18:30Z, 5m ingest then 2333 B/s
+  local peak 294.9 MiB at 00:38:30Z, 5m ingest then 2782 B/s
+  local peak 287.2 MiB at 00:49:30Z, 5m ingest then 1670 B/s
+  local peak 283.2 MiB at 00:01:00Z, 5m ingest then 2567 B/s
+  local peak 282.1 MiB at 02:48:30Z, 5m ingest then 2090 B/s
+busiest 5m rate 86874 B/s at 23:11:00Z (window 23:06:00Z to 23:11:00Z)
+anon inside that window: min 127.0 max 157.8 at 23:10:30Z
+anon in the 15m after it: min 132.9 max 155.4 at 23:19:30Z
+anon in the 15m before the window: max 244.4 at 22:58:00Z
+query req/s: max 1.81 at 22:21:00Z
+  at 22:26:00Z: 0.000 req/s
+  at 22:58:00Z: 0.000 req/s
+  at 23:11:00Z: 0.000 req/s
+  at 23:50:00Z: 0.000 req/s
+  at 00:18:30Z: 0.000 req/s
+go heap inuse: max 322.1 at 22:24:00Z
+in-memory chunks: max 203 at 02:44:00Z
+in-memory streams: max 203 at 02:44:00Z; first 60; last 91
+highest anon / limit since about 4.6h ago, top 8 (rss, limit, ratio)
+  monitoring/kps-grafana-77cb96fc89-v8g6n/grafana 66%
+  monitoring/prometheus-kps-prometheus-0/prometheus 64%
+  infisical/infisical-567944c58f-4jxhp/infisical-standalone-infisical 64%
+  monitoring/kps-grafana-77cb96fc89-v8g6n/grafana-sc-dashboard 49%
+  monitoring/loki-0/loki 48%
+  argocd/argocd-redis-ff6755697-jcd8p/redis 47%
+  monitoring/kps-grafana-77cb96fc89-v8g6n/grafana-sc-datasources 47%
+  argocd/argocd-application-controller-0/application-controller 45%
+
+## 4. Infisical Postgres: pods, jobs and pod cgroup usage, pg_jobs.py
+pods seen in infisical with their first/last sample:
+   infisical-567944c58f-4jxhp 02:35:00Z 03:08:00Z
+   infisical-567944c58f-flb8d 02:28:00Z 02:29:30Z
+   infisical-567944c58f-q2vz7 02:30:30Z 02:30:30Z
+   infisical-567944c58f-qhwlw 01:30:00Z 02:27:30Z
+   infisical-567944c58f-qn8jg 02:31:30Z 02:32:30Z
+   infisical-567944c58f-r7fns 02:33:30Z 02:34:00Z
+   infisical-postgres-0 01:30:00Z 03:08:00Z
+   infisical-redis-0 01:30:00Z 03:08:00Z
+   plane-backup-20261104t225820z-mb74x 01:30:00Z 03:08:00Z
+   plane-backup-20261104t231305z-ztdjf 01:30:00Z 03:08:00Z
+   plane-backup-20261104t231433z-zb9gl 01:30:00Z 03:08:00Z
+   plane-backup-20261105t000452z-c87x5 01:30:00Z 03:08:00Z
+   plane-backup-20261105t000557z-9kxwg 01:30:00Z 03:08:00Z
+   plane-backup-20261105t001814z-t59hh 01:30:00Z 03:08:00Z
+   plane-backup-20261105t020824z-9bw5p 02:09:00Z 03:08:00Z
+   plane-backup-20261105t020938z-cjrqs 02:10:00Z 03:08:00Z
+   plane-backup-20261105t022627z-npxtl 02:27:00Z 03:08:00Z
+   plane-restore-20261104t231453z-t925x 01:30:00Z 03:08:00Z
+   plane-restore-20261105t001834z-vzjxf 01:30:00Z 03:08:00Z
+   plane-restore-20261105t022709z-x7vmk 02:28:00Z 03:08:00Z
+   plane-restore-20261105t022917z-x62sw 02:30:00Z 03:08:00Z
+   plane-restore-20261105t023024z-w5jx6 02:31:00Z 03:08:00Z
+   plane-restore-20261105t023222z-x5kn9 02:33:00Z 03:08:00Z
+   plane-restore-20261105t023343z-5g25j 02:34:30Z 03:08:00Z
+   plane-restore-guard-20261105t022709z-r7x7l 02:27:30Z 03:08:00Z
+   plane-restore-guard-20261105t022917z-fh8s6 02:30:00Z 03:08:00Z
+   plane-restore-guard-20261105t023024z-nnskb 02:31:00Z 03:08:00Z
+   plane-restore-guard-20261105t023222z-479wh 02:33:00Z 03:08:00Z
+   plane-restore-guard-20261105t023343z-7t5pk 02:34:00Z 03:08:00Z
+jobs in infisical:
+   plane-backup-20261104t225820z start 22:58:20Z
+   plane-backup-20261104t231305z start 23:13:05Z
+   plane-backup-20261104t231433z start 23:14:33Z
+   plane-backup-20261105t000452z start 00:04:53Z
+   plane-backup-20261105t000557z start 00:05:57Z
+   plane-backup-20261105t001814z start 00:18:14Z
+   plane-backup-20261105t020824z start 02:08:24Z
+   plane-backup-20261105t020938z start 02:09:38Z
+   plane-backup-20261105t022627z start 02:26:27Z
+   plane-restore-20261104t231453z start 23:15:08Z
+   plane-restore-20261105t001834z start 00:18:47Z
+   plane-restore-20261105t022709z start 02:27:22Z
+   plane-restore-20261105t022917z start 02:29:30Z
+   plane-restore-20261105t023024z start 02:30:38Z
+   plane-restore-20261105t023222z start 02:32:38Z
+   plane-restore-20261105t023343z start 02:33:56Z
+   plane-restore-guard-20261105t022709z start 02:27:10Z
+   plane-restore-guard-20261105t022917z start 02:29:19Z
+   plane-restore-guard-20261105t023024z start 02:30:26Z
+   plane-restore-guard-20261105t023222z start 02:32:23Z
+   plane-restore-guard-20261105t023343z start 02:33:44Z
+Postgres backends / xact if any exporter:
+   5faab9b091bc708acddfb572.scope [('02:27:00Z', 2652), ('02:28:00Z', 4098), ('02:29:00Z', 257), ('02:30:00Z', 5376), ('02:31:00Z', 3317), ('02:33:00Z', 813), ('02:34:00Z', 1470), ('02:35:00Z', 2448)]
+   6c1861d7ff4bea2b0bf470e7.scope [('02:09:00Z', 3783), ('02:10:00Z', 1350)]
+pod usage every 30s 02:05 to 02:13 and 02:28 to 02:40:
+   9_723583940239.slice [('02:28:00', 213), ('02:28:30', 186), ('02:29:00', 193), ('02:29:30', 89), ('02:30:00', 191), ('02:30:30', 133), ('02:31:00', 221), ('02:31:30', 193), ('02:32:00', 201), ('02:32:30', 193), ('02:33:00', 256), ('02:33:30', 180), ('02:34:00', 195), ('02:34:30', 197), ('02:35:00', 207), ('02:35:30', 202), ('02:36:00', 201), ('02:36:30', 197), ('02:37:00', 197), ('02:37:30', 191), ('02:38:00', 195), ('02:38:30', 190), ('02:39:00', 173), ('02:39:30', 167), ('02:40:00', 169)]
+   9_aa9750664410.slice [('02:05:00', 129), ('02:05:30', 108), ('02:06:00', 112), ('02:06:30', 107), ('02:07:00', 113), ('02:07:30', 89), ('02:08:00', 95), ('02:08:30', 88), ('02:09:00', 162), ('02:09:30', 158), ('02:10:00', 247), ('02:10:30', 164), ('02:11:00', 164), ('02:11:30', 165), ('02:12:00', 169), ('02:12:30', 165), ('02:13:00', 170)]
+commit: 7a3b783 2026-11-05T05:25:30+03:00 fix(infisical): double the Postgres lock table, because a backup's scratch restore held 3422 locks on a table of 3328
+
+## 5. Pod cgroup read on the node now (docker exec plane-platform-control-plane, cat of memory.events, read only)
+2026-11-05T03:22:06Z
+monitoring/loki-0 uid=78fea61b-bd12-4194-b552-bddc23a87cbe
+low 0 high 0 max 58931 oom 0 oom_kill 0 oom_group_kill 0 
+infisical/infisical-postgres-0 uid=29b67aa8-052b-422d-9139-723583940239
+low 0 high 0 max 876 oom 0 oom_kill 0 oom_group_kill 0 
+
+## 6. promtool 3.15.1: the drill series, first Degraded at D and the operation closed R later. gen2.py, rules-platform.yaml from yq -N .spec
+D=10
+{case="D10.0+R2 none firing"} 0E+00
+{case="D10.0+R2.5 none firing"} 0E+00
+{case="D10.0+R3 none firing"} 0E+00
+{case="D10.0+R3.5 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D10.0+R4"} 1E+00, {case="D10.0+R4 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D10.0+R4.5"} 1E+00, {case="D10.0+R4.5 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D10.0+R5"} 1E+00, {case="D10.0+R5 none firing"} 0E+00
+{alertname="ArgoAppDegraded", case="D10.0+R6"} 1E+00, {alertname="ArgoSyncFailed", case="D10.0+R6"} 1E+00, {case="D10.0+R6 none firing"} 0E+00
+D=11
+{case="D11.0+R2 none firing"} 0E+00
+{case="D11.0+R2.5 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D11.0+R3"} 1E+00, {case="D11.0+R3 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D11.0+R3.5"} 1E+00, {case="D11.0+R3.5 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D11.0+R4"} 1E+00, {case="D11.0+R4 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D11.0+R4.5"} 1E+00, {case="D11.0+R4.5 none firing"} 0E+00
+{alertname="ArgoSyncFailed", case="D11.0+R5"} 1E+00, {case="D11.0+R5 none firing"} 0E+00
+{alertname="ArgoAppDegraded", case="D11.0+R6"} 1E+00, {alertname="ArgoSyncFailed", case="D11.0+R6"} 1E+00, {case="D11.0+R6 none firing"} 0E+00
+the repo's own 1m series with the Degraded run one sample longer, closed 4m after first Degraded (t/repo-series.test.yaml):
+  FAILED:
+    name: repo series, Degraded 10m to 14m, stale at 15m,
+    alertname: ArgoSyncFailed, time: 15m, 
+        exp:[], 
+        got:[
+            0:
+              Labels:{alertname="ArgoSyncFailed", component="argocd", dest_namespace="plane-prod-sim", name="plane-prod-sim", phase="Running", severity="critical"}
+              Annotations:{description="Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets
+which rules are pending each minute at a 30s scrape, closed at 12m30s (t/over.test.yaml):
+    expr: "count by (alertname, alertstate) (ALERTS{name=\"plane-dev\"})", time: 10m,
+        got: {alertname="ArgoAppDegraded", alertstate="pending"} 1E+00, {alertname="ArgoAppStuckProgressing", alertstate="pending"} 1E+00, {alertname="ArgoSyncFailed", alertstate="pending"} 1E+00
+    expr: "count by (alertname, alertstate) (ALERTS{name=\"plane-dev\"})", time: 11m,
+        got: {alertname="ArgoAppDegraded", alertstate="pending"} 1E+00, {alertname="ArgoAppStuckProgressing", alertstate="pending"} 1E+00, {alertname="ArgoSyncFailed", alertstate="pending"} 1E+00
+    expr: "count by (alertname, alertstate) (ALERTS{name=\"plane-dev\"})", time: 11m30s,
+        got: {alertname="ArgoAppDegraded", alertstate="pending"} 1E+00, {alertname="ArgoSyncFailed", alertstate="pending"} 1E+00
+    expr: "count by (alertname, alertstate) (ALERTS{name=\"plane-dev\"})", time: 12m,
+        got: {alertname="ArgoAppDegraded", alertstate="pending"} 1E+00, {alertname="ArgoSyncFailed", alertstate="pending"} 1E+00
+a falling counter, 3 to 0, against PodRestarting (t/reset.test.yaml), and resets() over all retained history returned no series:
+  FAILED:
+    name: a counter that goes down reads as restarts,
+    alertname: PodRestarting, time: 11m, 
+        exp:[], 
+        got:[
+            0:
+              Labels:{alertname="PodRestarting", component="pod", container="c", namespace="monitoring", pod="reset-1", severity="warning", uid="u"}
+
+## 7. Conftest on planted documents, conftest test --policy policy --namespace gitops --namespace workloads --namespace plane
+empty-ns-tcp.yaml        exit=0  20 tests, 20 passed, 0 warnings, 0 failures, 0 exceptions
+empty-ns.yaml            exit=0  20 tests, 20 passed, 0 warnings, 0 failures, 0 exceptions
+list-wrapped.yaml        exit=0  20 tests, 20 passed, 0 warnings, 0 failures, 0 exceptions
+mw-namespaced-other.yaml exit=0  40 tests, 40 passed, 0 warnings, 0 failures, 0 exceptions
+operated-service.yaml    exit=0  20 tests, 20 passed, 0 warnings, 0 failures, 0 exceptions
+other-ns-middleware.yaml exit=0  20 tests, 20 passed, 0 warnings, 0 failures, 0 exceptions
+traefikservice.yaml      exit=0  40 tests, 40 passed, 0 warnings, 0 failures, 0 exceptions
+Traefik args live: --providers.kubernetescrd --providers.kubernetescrd.allowEmptyServices=true, so cross-namespace references stay off
+
+## 8. The real CI scripts on a scratch clone with one planted file (plant.sh, plant2.sh)
+base 1936016
+== control-no-namespace validate-manifests exit=1
+FAIL - /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.kCRIi9R7gi/in-repo/platform-network-policies.yaml - plane - IngressRoute -/planted: route "Host(`logs.localhos
+warn conftest: platform manifests FAILED
+   ownership exit=0
+== empty-string-namespace validate-manifests exit=0
+ ok manifests valid
+   ownership exit=0
+== blank-namespace validate-manifests exit=0
+ ok manifests valid
+   ownership exit=0
+== list-wrapped validate-manifests exit=0
+ ok manifests valid
+   ownership exit=0
+base 1936016
+== .yml validate-manifests exit=0
+ ok manifests valid
+   ownership exit=0
+   lint exit=0
+
+## 9. PATH=/bin:$PATH /bin/bash scripts/ci/negative-controls.sh at 1936016
+ ok lint.sh passes on 1936016b87faf30ae275d105998a8db707bb794b
+ ok validate-manifests.sh passes on 1936016b87faf30ae275d105998a8db707bb794b
+ ok ownership.sh passes on 1936016b87faf30ae275d105998a8db707bb794b
+ ok security.sh passes on 1936016b87faf30ae275d105998a8db707bb794b
+ ok 41 of 41 planted defects were caught, on 1936016b87faf30ae275d105998a8db707bb794b
+negative-controls exit=0
+
+## The scripts
+--- looks.py
+import re,sys,calendar,time,statistics
+pat=re.compile(r'time="([^"]+)".*Refreshing app status \(comparison expired, requesting refresh\. reconciledAt: (\S+ \S+) \+0000 UTC, expiry: 2m0s\).*application=(\S+)')
+gaps=[];byapp={}
+for line in open(sys.argv[1]):
+    m=pat.search(line)
+    if not m: continue
+    t=calendar.timegm(time.strptime(m.group(1),"%Y-%m-%dT%H:%M:%SZ"))
+    r=calendar.timegm(time.strptime(m.group(2),"%Y-%m-%d %H:%M:%S"))
+    gaps.append(t-r);byapp.setdefault(m.group(3),[]).append(t-r)
+gaps.sort()
+n=len(gaps)
+print("expired looks:",n,"min",gaps[0],"median",gaps[n//2],"p95",gaps[int(n*.95)],"max",gaps[-1])
+for lo,hi in [(0,119),(120,180),(181,240),(241,300),(301,10**6)]:
+    c=sum(1 for g in gaps if lo<=g<=hi)
+    print("%4d..%-7d %4d  %.0f%%"%(lo,hi,c,100*c/n))
+print("over 180s:",sum(1 for g in gaps if g>180),"of",n)
+--- looks2.py
+import re,sys,calendar,time
+pat=re.compile(r'time="([^"]+)".*Refreshing app status \(comparison expired, requesting refresh\. reconciledAt: (\S+ \S+) \+0000 UTC, expiry: 2m0s\).*application=(\S+)')
+by={}
+for line in open(sys.argv[1]):
+    m=pat.search(line)
+    if m:
+        t=calendar.timegm(time.strptime(m.group(1),"%Y-%m-%dT%H:%M:%SZ"));r=calendar.timegm(time.strptime(m.group(2),"%Y-%m-%d %H:%M:%S"))
+        by.setdefault(m.group(3),[]).append(t-r)
+for a,g in sorted(by.items()):
+    print("%-30s n=%3d min=%3d max=%3d over180=%d"%(a,len(g),min(g),max(g),sum(1 for x in g if x>180)))
+--- loki_q.py
+import json,urllib.request,urllib.parse,calendar,time,datetime as dt
+P="http://prometheus.localhost/api/v1"
+def qr(expr,start,end,step):
+    u=P+"/query_range?"+urllib.parse.urlencode(dict(query=expr,start=start,end=end,step=step))
+    return json.load(urllib.request.urlopen(u,timeout=60))["data"]["result"]
+ts=lambda s:calendar.timegm(time.strptime(s,"%Y-%m-%dT%H:%M:%SZ"))
+z=lambda t:dt.datetime.fromtimestamp(t,dt.timezone.utc).strftime("%H:%M:%SZ")
+A,B=ts("2026-11-04T22:10:00Z"),ts("2026-11-05T03:05:00Z")
+anon=qr('sum(container_memory_rss{pod="loki-0",namespace="monitoring",container="loki"})',A,B,30)[0]["values"]
+ing=qr('sum(rate(loki_distributor_bytes_received_total[5m]))',A,B,30)[0]["values"]
+a={float(t):float(v)/1048576 for t,v in anon}
+i={float(t):float(v) for t,v in ing}
+peak=max(a,key=a.get);print("highest anon since 22:10Z: %.1f MiB at %s, ingest then %.0f B/s"%(a[peak],z(peak),i.get(peak,-1)))
+top=sorted(a,key=a.get,reverse=True)
+seen=[]
+for t in top:
+    if all(abs(t-s)>600 for s in seen):
+        seen.append(t)
+        print("  local peak %.1f MiB at %s, 5m ingest then %.0f B/s"%(a[t],z(t),i.get(t,-1)))
+    if len(seen)==8:break
+bt=max(i,key=i.get);print("busiest 5m rate %.0f B/s at %s (window %s to %s)"%(i[bt],z(bt),z(bt-300),z(bt)))
+w=[t for t in a if bt-300<=t<=bt]
+print("anon inside that window: min %.1f max %.1f at %s"%(min(a[t] for t in w),max(a[t] for t in w),z(max(w,key=lambda t:a[t]))))
+w=[t for t in a if bt<t<=bt+900]
+print("anon in the 15m after it: min %.1f max %.1f at %s"%(min(a[t] for t in w),max(a[t] for t in w),z(max(w,key=lambda t:a[t]))))
+w=[t for t in a if bt-1200<=t<bt-300]
+print("anon in the 15m before the window: max %.1f at %s"%(max(a[t] for t in w),z(max(w,key=lambda t:a[t]))))
+--- loki_q2.py
+import json,urllib.request,urllib.parse,calendar,time,datetime as dt
+P="http://prometheus.localhost/api/v1"
+def qr(expr,start,end,step):
+    u=P+"/query_range?"+urllib.parse.urlencode(dict(query=expr,start=start,end=end,step=step))
+    return json.load(urllib.request.urlopen(u,timeout=60))["data"]["result"]
+def q(expr):
+    u=P+"/query?"+urllib.parse.urlencode(dict(query=expr))
+    return json.load(urllib.request.urlopen(u,timeout=60))["data"]["result"]
+ts=lambda s:calendar.timegm(time.strptime(s,"%Y-%m-%dT%H:%M:%SZ"))
+z=lambda t:dt.datetime.fromtimestamp(t,dt.timezone.utc).strftime("%H:%M:%SZ")
+A,B=ts("2026-11-04T22:10:00Z"),ts("2026-11-05T03:10:00Z")
+rs=qr('sum(rate(loki_request_duration_seconds_count{route=~"loki_api_v1_(query|query_range|index_stats|series|labels|index_volume.*)"}[2m]))',A,B,60)
+if rs:
+    v=[(float(t),float(x)) for t,x in rs[0]["values"]]
+    print("query req/s: max %.2f at %s"%(max(x for _,x in v),z(max(v,key=lambda y:y[1])[0])))
+    for name in ("2026-11-04T22:26:00Z","2026-11-04T22:58:00Z","2026-11-04T23:11:00Z","2026-11-04T23:50:00Z","2026-11-05T00:18:30Z"):
+        t=ts(name); near=min(v,key=lambda y:abs(y[0]-t)); print("  at %s: %.3f req/s"%(name[11:],near[1]))
+g=qr('sum(go_memstats_heap_inuse_bytes{pod="loki-0"})',A,B,60)
+if g:
+    v=[(float(t),float(x)/1048576) for t,x in g[0]["values"]]
+    print("go heap inuse: max %.1f at %s"%(max(x for _,x in v),z(max(v,key=lambda y:y[1])[0])))
+# what wrote chunks / flushes around 22:26
+c=qr('sum(loki_ingester_memory_chunks{pod="loki-0"})',A,B,60)
+if c:
+    v=[(float(t),float(x)) for t,x in c[0]["values"]]
+    print("in-memory chunks: max %.0f at %s"%(max(x for _,x in v),z(max(v,key=lambda y:y[1])[0])))
+s=qr('sum(loki_ingester_memory_streams{pod="loki-0"})',A,B,60)
+if s:
+    v=[(float(t),float(x)) for t,x in s[0]["values"]]
+    print("in-memory streams: max %.0f at %s; first %.0f; last %.0f"%(max(x for _,x in v),z(max(v,key=lambda y:y[1])[0]),v[0][1],v[-1][1]))
+# Highest anon against the limit for every container now, since 22:30Z
+print("highest anon / limit since about 4.6h ago, top 8 (rss, limit, ratio)")
+now=q('topk(8, max by (namespace,pod,container) (max_over_time(container_memory_rss{namespace=~"monitoring|monitoring-agents|argocd|traefik|infisical",container!="",container!="POD"}[4h])) / on (namespace,pod,container) group_left() max by (namespace,pod,container) (kube_pod_container_resource_limits{resource="memory"}))')
+for r in now:
+    m=r["metric"];print("  %s/%s/%s %.0f%%"%(m["namespace"],m["pod"],m["container"],float(r["value"][1])*100))
+--- pg_jobs.py
+import json,urllib.request,urllib.parse,calendar,time,datetime as dt
+P="http://prometheus.localhost/api/v1"
+def qr(expr,start,end,step):
+    u=P+"/query_range?"+urllib.parse.urlencode(dict(query=expr,start=start,end=end,step=step))
+    return json.load(urllib.request.urlopen(u,timeout=60))["data"]["result"]
+ts=lambda s:calendar.timegm(time.strptime(s,"%Y-%m-%dT%H:%M:%SZ"))
+z=lambda t:dt.datetime.fromtimestamp(t,dt.timezone.utc).strftime("%H:%M:%SZ")
+A,B=ts("2026-11-05T01:30:00Z"),ts("2026-11-05T03:08:00Z")
+print("pods seen in infisical with their first/last sample:")
+for s in qr('max by (pod) (kube_pod_info{namespace="infisical"})',A,B,30):
+    v=s["values"];print("  ",s["metric"]["pod"],z(float(v[0][0])),z(float(v[-1][0])))
+print("jobs in infisical:")
+for s in qr('kube_job_status_start_time{namespace="infisical"}',A,B,30):
+    print("  ",s["metric"]["job_name"],"start",z(float(s["values"][0][1])))
+print("Postgres backends / xact if any exporter:")
+for s in qr('sum by (id) (rate(container_fs_writes_bytes_total{pod="infisical-postgres-0",namespace="infisical",container="postgres"}[1m]))',ts("2026-11-05T02:00:00Z"),ts("2026-11-05T02:50:00Z"),60):
+    print("  ",s["metric"].get("id","")[-30:],[(z(float(t)),round(float(x)/1024)) for t,x in s["values"] if float(x)>1024*200][:30])
+print("pod usage every 30s 02:05 to 02:13 and 02:28 to 02:40:")
+for s in qr('max by (id) (container_memory_usage_bytes{pod="infisical-postgres-0",namespace="infisical",container="",image=""})',ts("2026-11-05T02:05:00Z"),ts("2026-11-05T02:40:00Z"),30):
+    print("  ",s["metric"]["id"][-20:],[(z(float(t))[:-1],round(float(x)/1048576)) for t,x in s["values"] if ts("2026-11-05T02:05:00Z")<=float(t)<=ts("2026-11-05T02:13:00Z") or ts("2026-11-05T02:28:00Z")<=float(t)<=ts("2026-11-05T02:40:00Z")])
+--- plant.sh
+#!/bin/bash
+# Plants one route document in a scratch clone and runs the real CI scripts on it. Nothing here touches the repository.
+R=/Users/bek/dev/pr/plane-platform
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-3
+C="$S/clone"
+rm -rf "$C"
+git clone --quiet "$R" "$C" || exit 9
+git -C "$C" remote remove origin
+mkdir -p "$C/.tools" "$C/.local"
+ln -s "$R/.tools/bin" "$C/.tools/bin"
+ln -s "$R/.local/kubeconform-schemas" "$C/.local/kubeconform-schemas"
+ln -s "$R/.local/trivy-cache" "$C/.local/trivy-cache"
+echo "base $(git -C "$C" rev-parse --short HEAD)"
+run() { # run <label>; document on stdin
+  local label="$1" st=0
+  cat > "$C/gitops/platform/network-policies/planted.yaml"
+  ( cd "$C" && SKIP_FLOWS=yes SKIP_CHARTS=yes ./scripts/ci/validate-manifests.sh ) > "$S/plant-$label.log" 2>&1 || st=$?
+  echo "== $label validate-manifests exit=$st"
+  grep -E 'FAILED|^FAIL|manifests valid' "$S/plant-$label.log" | cut -c1-190 | head -8
+  st=0
+  ( cd "$C" && ./scripts/ci/ownership.sh ) > "$S/plant-$label-own.log" 2>&1 || st=$?
+  echo "   ownership exit=$st"
+  rm -f "$C/gitops/platform/network-policies/planted.yaml"
+}
+run control-no-namespace <<'Y'
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`logs.localhost`)
+      kind: Rule
+      services:
+        - { name: loki, port: 3100 }
+Y
+run empty-string-namespace <<'Y'
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+  namespace: ""
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`logs.localhost`)
+      kind: Rule
+      services:
+        - { name: loki, port: 3100 }
+Y
+run blank-namespace <<'Y'
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+  namespace:
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`logs.localhost`)
+      kind: Rule
+      services:
+        - { name: loki, port: 3100 }
+Y
+run list-wrapped <<'Y'
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: traefik.io/v1alpha1
+    kind: IngressRoute
+    metadata:
+      name: planted
+      namespace: monitoring
+    spec:
+      entryPoints: [web]
+      routes:
+        - match: Host(`prometheus.localhost`)
+          kind: Rule
+          services:
+            - { name: kps-prometheus, port: 9090 }
+Y
+rm -rf "$C"
+--- plant2.sh
+#!/bin/bash
+# The same route under a file name Argo CD reads and CI does not. Scratch clone only.
+R=/Users/bek/dev/pr/plane-platform
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-3
+C="$S/clone2"
+rm -rf "$C"
+git clone --quiet "$R" "$C" || exit 9
+git -C "$C" remote remove origin
+mkdir -p "$C/.tools" "$C/.local"
+ln -s "$R/.tools/bin" "$C/.tools/bin"
+ln -s "$R/.local/kubeconform-schemas" "$C/.local/kubeconform-schemas"
+ln -s "$R/.local/trivy-cache" "$C/.local/trivy-cache"
+echo "base $(git -C "$C" rev-parse --short HEAD)"
+cat > "$C/gitops/platform/network-policies/planted.yml" <<'Y'
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+  namespace: monitoring
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`prometheus.localhost`)
+      kind: Rule
+      services:
+        - { name: kps-prometheus, port: 9090 }
+Y
+st=0; ( cd "$C" && SKIP_FLOWS=yes SKIP_CHARTS=yes ./scripts/ci/validate-manifests.sh ) > "$S/plant-yml.log" 2>&1 || st=$?
+echo "== .yml validate-manifests exit=$st"; grep -E 'FAILED|^FAIL|manifests valid' "$S/plant-yml.log" | cut -c1-160 | head -5
+st=0; ( cd "$C" && ./scripts/ci/ownership.sh ) > "$S/plant-yml-own.log" 2>&1 || st=$?
+echo "   ownership exit=$st"
+st=0; ( cd "$C" && ./scripts/ci/lint.sh ) > "$S/plant-yml-lint.log" 2>&1 || st=$?
+echo "   lint exit=$st"; grep -E 'FAILED' "$S/plant-yml-lint.log" | cut -c1-160 | head -5
+rm -rf "$C"
+--- t/gen2.py
+import sys
+D_min=float(sys.argv[1]); out=[]
+for R in (2,2.5,3,3.5,4,4.5,5,6):
+    p=int(D_min*2); d=int(R*2); tot=p+d
+    out.append(f"""  - name: first Degraded at {D_min}m and the operation closes {R}m later, at {D_min+R}m
+    interval: 30s
+    input_series:
+      - series: 'argocd_app_info{{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}}'
+        values: '1x{p-1} stale'
+      - series: 'argocd_app_info{{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}}'
+        values: '_x{p} 1x{d-1} stale'
+      - series: 'argocd_app_info{{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Healthy"}}'
+        values: '_x{tot} 1x60'
+    promql_expr_test:
+      - expr: label_replace(count by (alertname) (count_over_time(ALERTS{{name="plane-dev",alertstate="firing"}}[28m])), "case", "D{D_min}+R{R}", "", "") or label_replace(vector(0), "case", "D{D_min}+R{R} none firing", "", "")
+        eval_time: 28m
+        exp_samples: []
+""")
+print("rule_files:\n  - rules-platform.yaml\nevaluation_interval: 15s\ntests:\n"+"".join(out))
+
+## 10. One selector of PodRestarting narrowed (only min_over_time loses argocd, traefik, infisical, monitoring-agents), scratch rule file
+promtool test rules pod-restarting.test.yaml: exit 0
+crash loop in namespace argocd under that rule: exp one alert, got none, exit 1 (t/mut/ns.test.yaml)
+
+## 11. scripts/ci/validate-manifests.sh with charts and flows, on a scratch clone, bash 3.2
+base 1936016 start 03:20:15Z
+validate-manifests with charts and flows exit=0 end 03:24:10Z
+1776 tests, 1776 passed, 0 warnings, 0 failures, 0 exceptions
+2700 tests, 2700 passed, 0 warnings, 0 failures, 0 exceptions
+ ok 2 rule file(s) valid
+  SUCCESS
+  SUCCESS
+3298 tests, 3298 passed, 0 warnings, 0 failures, 0 exceptions
+ ok 26 rule file(s) valid
+ ok manifests valid

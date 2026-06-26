@@ -1,0 +1,13 @@
+# 2026-11-05T04:12:56Z Real plane-dev, GET only through Traefik: the bare /api/instances/ and a query only this read sends. Commands below.
+$ curl -sS -H 'Host: plane.dev.localhost' 'http://127.0.0.1/api/instances/' | jq '{changelog: .config.instance_changelog_url, is_setup_done: .instance.is_setup_done, name: .instance.instance_name}'
+HTTP/1.1 200 OK
+{"changelog":"","is_setup_done":true,"name":"Wayline"}
+$ curl -sS -H 'Host: plane.dev.localhost' 'http://127.0.0.1/api/instances/?smoke=check-041256' | jq '{changelog: .config.instance_changelog_url, is_setup_done: .instance.is_setup_done, name: .instance.instance_name}'
+HTTP/1.1 200 OK
+{"changelog":"","is_setup_done":true,"name":"Wayline"}
+7200
+1133
+# 2026-11-05T04:26:43Z kubectl -n plane-dev exec plane-redis-wl-0 -c plane-redis -- valkey-cli TTL, on the keys run d96072c1 of make test-e2e ENV=dev read, and the bare key
+:1:/api/instances/?smoke=d96072c1-before-setup 7079
+:1:/api/instances/?smoke=d96072c1-branding 7082
+:1:/api/instances/ 7091

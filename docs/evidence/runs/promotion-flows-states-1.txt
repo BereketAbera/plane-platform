@@ -1,0 +1,78 @@
+# date 2026-11-05T02:49:29Z, clean clone of 10d3ac6, bash 3.2.57(1)-release, uncommitted paths: 0
+# command: scripts/ci/test-promotion-flows.sh, in each state below, gated on its exit code
+=== state as-committed-level: 0 image(s) differ between dev and prod-sim, at 10d3ac6: test(ci): end the flows at once when the fixture cannot be built, and say in rollback.sh's
+    exit 0 in 200s.  ok 58 of 58 promotion flow scenarios passed, with a stub cluster
+rollback.sh prod-sim exit 0
+=== state behind: 4 image(s) differ between dev and prod-sim, at 22f2105: Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-fro
+    exit 0 in 194s.  ok 58 of 58 promotion flow scenarios passed, with a stub cluster
+promote.sh prod-sim exit 0
+=== state level-again-after-a-rollback: 0 image(s) differ between dev and prod-sim, at cb1c6d4: promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96
+    exit 0 in 191s.  ok 58 of 58 promotion flow scenarios passed, with a stub cluster
+# states failed: 0, end 2026-11-05T02:59:21Z
+
+--- state-as-committed-level.txt: 59 ok lines
+--- state-behind.txt: 59 ok lines
+--- state-level-again-after-a-rollback.txt: 59 ok lines
+--- diff of state-as-committed-level.txt and state-behind.txt, every line: 0 lines differ
+--- diff of state-as-committed-level.txt and state-level-again-after-a-rollback.txt, every line: 0 lines differ
+
+--- one run in full
+ ok promote-digest-under-another-image
+ ok promote-digest-never-recorded
+ ok promote-dev-healthy-and-running
+ ok promote-dev-out-of-sync
+ ok promote-dev-degraded
+ ok promote-dev-application-missing
+ ok promote-dev-running-another-digest
+ ok promote-dev-container-not-ready
+ ok promote-no-cluster-says-skipped
+ ok promote-override-is-logged
+ ok promote-override-unused-when-dev-is-fine
+ ok rollback-rerun-after-failed-publish
+ ok rollback-prod-sim-with-broken-backup
+ ok rollback-prod-sim-with-hung-backup
+ ok rollback-prod-sim-names-the-older-dump
+ ok rollback-prod-sim-skip-backup
+ ok rollback-prod-sim-past-a-later-change-beside-the-image
+ ok rollback-stops-on-a-conflict-in-the-overlay
+ ok rollback-dev-takes-no-dump
+ ok rollback-leaves-other-staged-files-alone
+ ok publish-warns-when-ahead-of-origin
+ ok publish-quiet-when-level-with-origin
+ ok publish-says-when-origin-is-unknown
+ ok publish-still-backs-up-prod-sim-change
+ ok publish-warns-when-a-shared-change-reaches-prod-sim
+ ok publish-warns-when-the-chart-reaches-prod-sim
+ ok publish-warns-when-only-prod-sim-changes
+ ok publish-warns-and-checks-a-mixed-push
+ ok publish-quiet-when-a-shared-change-renders-to-nothing
+ ok publish-quiet-when-only-dev-changes
+ ok publish-merged-promotion-dev-proven
+ ok publish-merged-promotion-dev-out-of-sync
+ ok publish-merged-promotion-dev-degraded
+ ok publish-merged-promotion-dev-application-missing
+ ok publish-merged-promotion-dev-running-another-digest
+ ok publish-merged-promotion-dev-container-not-ready
+ ok publish-merged-promotion-override-is-logged
+ ok publish-merged-promotion-refused-then-retried
+ ok publish-merged-promotion-no-cluster-says-skipped
+ ok publish-skip-backup-is-no-way-past-the-dev-check
+ ok publish-skip-dev-check-is-recorded
+ ok publish-prod-sim-not-deployed-needs-no-dev-check
+ ok publish-dev-change-needs-no-dev-check
+ ok promote-override-reaches-the-publish
+ ok rollback-prod-sim-with-unhealthy-dev
+ ok rollback-prod-sim-rerun-with-unhealthy-dev
+ ok make-passes-the-documented-options
+ ok promote-level-has-nothing-to-do
+ ok promote-four-images-through-make
+ ok promote-four-images-one-at-a-time
+ ok promote-four-images-each-must-run-in-dev
+ ok promote-four-images-each-must-be-recorded
+ ok promote-four-images-each-must-be-in-the-registry
+ ok promote-four-images-override-names-them-all
+ ok publish-merged-four-images-checks-each
+ ok rollback-four-images-together
+ ok drill-runs-to-a-pass
+ ok drill-failed-promotion-reverts-nothing-else
+ ok 58 of 58 promotion flow scenarios passed, with a stub cluster

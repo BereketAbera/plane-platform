@@ -1,0 +1,27 @@
+# make test-e2e ENV=dev and ENV=prod-sim, started together. 2026-11-05T01:05:52Z, commit 36713b626099
+Application plane-dev: Synced/Healthy
+Application plane-prod-sim: Synced/Healthy
+2026-11-05T01:07:37Z make test-e2e ENV=dev: exit 0
+2026-11-05T01:07:37Z make test-e2e ENV=prod-sim: exit 0
+dev: PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml
+dev: PASS    branding-web  title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/1563cbfbe895... (not followed: the repository is private for now), /licenses/ lists 6
+dev: PASS    branding-admin  /god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page
+dev: PASS    branding-space  /spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page
+dev: PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+dev: PASS    branding-seed  the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0
+dev: SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean insta
+dev: PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+dev: PASS    worker-negative-control  With 0 consumers: 4 messages parked, no activity after 15s. Asked the consumer back: activity within 16.6s. Worker pod replaced, so no emptied queue selection is left behind
+dev: PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+dev: RESULT  PASS
+dev: PASS lines: 45
+prod-sim: SKIP    branding-overlay  helm/plane/overlays/prod-sim/kustomization.yaml names no localhost:5001/wayline image, so this environment runs upstream's and has no branding to check. This runs once make promote puts them there
+prod-sim: PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+prod-sim: PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+prod-sim: RESULT  PASS
+prod-sim: PASS lines: 38
+dev: stored API token is the one run 06055991 created (compared by md5): True, result PASS, counts {'BLOCKED': 0, 'FAIL': 0, 'PASS': 45, 'SKIP': 1}
+prod-sim: stored API token is the one run 181b2c97 created (compared by md5): True, result PASS, counts {'BLOCKED': 0, 'FAIL': 0, 'PASS': 38, 'SKIP': 1}
+-rw-------@ .local/.test-accounts.env.lock
+-rw-------@ .local/test-accounts.env
+== 2026-11-05T01:07:37Z done

@@ -1,0 +1,8 @@
+# date 2026-11-05T06:04:14Z, scratch clone of e88f217, commands: SKIP_CHARTS=yes SKIP_FLOWS=yes scripts/ci/validate-manifests.sh and scripts/ci/ownership.sh, /bin/bash 3.2, with a file planted beside the rendered manifests, and removed
+=== nothing planted, validate: exit 0
+ ok manifests valid
+=== planted a Secret as gitops/environments/prod-sim/planted.yaml, validate: exit 0
+ ok manifests valid
+=== the same file, ownership: exit 0
+=== the same Secret as planted.yml, which the fix does refuse, validate: exit 1
+fail Argo CD would read these and no check here does, so name them *.yaml: gitops/environments/prod-sim/planted.yml

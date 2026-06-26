@@ -1,0 +1,47 @@
+2026-11-05T07:23:31Z starting value held in memory, length 48
+===== attempt 2026-11-05T07:23:37Z, commit d090624
+Secret holds the starting value: yes. Length of the current value: 48
+-- the value Plane used before the rotation
+   psql over pod IP:   plane|10.244.0.30 psql exit 0 
+   psycopg over Service: ACCEPTED over plane-pgdb.plane-dev.svc.cluster.local as plane, server 10.244.0.30 
+-- the value in Secret plane-pgdb now
+   psql over pod IP:   plane|10.244.0.30 psql exit 0 
+   psycopg over Service: ACCEPTED over plane-pgdb.plane-dev.svc.cluster.local as plane, server 10.244.0.30 
+-- a random value, the negative control
+   psql over pod IP:   psql: error: connection to server at "10.244.0.30", port 5432 failed: FATAL:  password authentication failed for user "plane" psql exit 2 
+   psycopg over Service: REFUSED over plane-pgdb.plane-dev.svc.cluster.local: connection failed: connection to server at "10.244.0.30", port 5432 failed: FATAL: password authentication failed for user "plane" 
+-- what the running pods hold
+   plane-api-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: yes
+   plane-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: yes
+   plane-beat-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: yes
+===== attempt 2026-11-05T07:25:15Z, commit 95113c9
+Secret holds the starting value: no. Length of the current value: 48
+-- the value Plane used before the rotation
+   psql over pod IP:   psql: error: connection to server at "10.244.0.30", port 5432 failed: FATAL:  password authentication failed for user "plane" psql exit 2 
+   psycopg over Service: REFUSED over plane-pgdb.plane-dev.svc.cluster.local: connection failed: connection to server at "10.244.0.30", port 5432 failed: FATAL: password authentication failed for user "plane" 
+-- the value in Secret plane-pgdb now
+   psql over pod IP:   plane|10.244.0.30 psql exit 0 
+   psycopg over Service: ACCEPTED over plane-pgdb.plane-dev.svc.cluster.local as plane, server 10.244.0.30 
+-- a random value, the negative control
+   psql over pod IP:   psql: error: connection to server at "10.244.0.30", port 5432 failed: FATAL:  password authentication failed for user "plane" psql exit 2 
+   psycopg over Service: REFUSED over plane-pgdb.plane-dev.svc.cluster.local: connection failed: connection to server at "10.244.0.30", port 5432 failed: FATAL: password authentication failed for user "plane" 
+-- what the running pods hold
+   plane-api-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: no
+   plane-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: no
+   plane-beat-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: no
+===== attempt 2026-11-05T07:32:41Z, commit 4aa0640
+Secret holds the starting value: no. Length of the current value: 48
+-- the value Plane used before the rotation
+   psql over pod IP:   psql: error: connection to server at "10.244.0.30", port 5432 failed: FATAL:  password authentication failed for user "plane" psql exit 2 
+   psycopg over Service: REFUSED over plane-pgdb.plane-dev.svc.cluster.local: connection failed: connection to server at "10.244.0.30", port 5432 failed: FATAL: password authentication failed for user "plane" 
+-- the value in Secret plane-pgdb now
+   psql over pod IP:   plane|10.244.0.30 psql exit 0 
+   psycopg over Service: ACCEPTED over plane-pgdb.plane-dev.svc.cluster.local as plane, server 10.244.0.30 
+-- a random value, the negative control
+   psql over pod IP:   psql: error: connection to server at "10.244.0.30", port 5432 failed: FATAL:  password authentication failed for user "plane" psql exit 2 
+   psycopg over Service: REFUSED over plane-pgdb.plane-dev.svc.cluster.local: connection failed: connection to server at "10.244.0.30", port 5432 failed: FATAL: password authentication failed for user "plane" 
+-- what the running pods hold
+   plane-api-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: no
+   plane-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: no
+   plane-beat-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: no
+2026-11-05T07:40:19Z stopped

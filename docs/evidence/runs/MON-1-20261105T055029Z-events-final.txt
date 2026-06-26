@@ -1,0 +1,185 @@
+# MON-1 Kubernetes events for the api Deployment and its ReplicaSets and pods
+# date_utc: 2026-11-05T06:01:32Z
+# commit: 9c8e098
+# command: kubectl -n plane-dev get events --sort-by=.lastTimestamp -o custom-columns=...
+LAST                   FIRST                  EVENTTIME   COUNT   TYPE      REASON              OBJECT                                  MESSAGE
+2026-11-05T05:30:03Z   2026-11-05T05:30:03Z   <nil>       1       Normal    Scheduled           plane-api-migrate-1-8hpmh               Successfully assigned plane-dev/plane-api-migrate-1-8hpmh to plane-platform-control-plane
+2026-11-05T05:30:03Z   2026-11-05T05:30:03Z   <nil>       1       Normal    SuccessfulCreate    plane-api-migrate-1                     Created pod: plane-api-migrate-1-8hpmh
+2026-11-05T05:30:03Z   2026-11-05T05:30:03Z   <nil>       1       Normal    Pulling             plane-api-migrate-1-8hpmh               Pulling image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe"
+2026-11-05T05:30:07Z   2026-11-05T05:30:07Z   <nil>       1       Normal    Started             plane-api-migrate-1-8hpmh               Container started
+2026-11-05T05:30:07Z   2026-11-05T05:30:07Z   <nil>       1       Normal    Created             plane-api-migrate-1-8hpmh               Container created
+2026-11-05T05:30:07Z   2026-11-05T05:30:07Z   <nil>       1       Normal    Pulled              plane-api-migrate-1-8hpmh               Successfully pulled image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" in 4.294s (4.294s including waiting). Image size: 102167772 bytes.
+2026-11-05T05:30:16Z   2026-11-05T05:30:16Z   <nil>       1       Normal    Completed           plane-api-migrate-1                     Job completed
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    SuccessfulCreate    plane-api-wl-d7d5dcb7f                  Created pod: plane-api-wl-d7d5dcb7f-5h8hf
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    ScalingReplicaSet   plane-web-wl                            Scaled up replica set plane-web-wl-748764649d from 0 to 1
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    ScalingReplicaSet   plane-admin-wl                          Scaled up replica set plane-admin-wl-545f5b8fcd from 0 to 1
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Scheduled           plane-web-wl-748764649d-q72kc           Successfully assigned plane-dev/plane-web-wl-748764649d-q72kc to plane-platform-control-plane
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    ScalingReplicaSet   plane-space-wl                          Scaled up replica set plane-space-wl-847f88bc46 from 0 to 1
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    SuccessfulCreate    plane-admin-wl-545f5b8fcd               Created pod: plane-admin-wl-545f5b8fcd-97kwj
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    SuccessfulCreate    plane-space-wl-847f88bc46               Created pod: plane-space-wl-847f88bc46-h6vmn
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Pulling             plane-space-wl-847f88bc46-h6vmn         Pulling image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039"
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Scheduled           plane-space-wl-847f88bc46-h6vmn         Successfully assigned plane-dev/plane-space-wl-847f88bc46-h6vmn to plane-platform-control-plane
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    ScalingReplicaSet   plane-beat-worker-wl                    Scaled up replica set plane-beat-worker-wl-645c56988f from 0 to 1
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    SuccessfulCreate    plane-web-wl-748764649d                 Created pod: plane-web-wl-748764649d-q72kc
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    SuccessfulCreate    plane-beat-worker-wl-645c56988f         Created pod: plane-beat-worker-wl-645c56988f-mltb7
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    ScalingReplicaSet   plane-worker-wl                         Scaled up replica set plane-worker-wl-7f4494fd56 from 0 to 1
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Scheduled           plane-api-wl-d7d5dcb7f-5h8hf            Successfully assigned plane-dev/plane-api-wl-d7d5dcb7f-5h8hf to plane-platform-control-plane
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Pulled              plane-api-wl-d7d5dcb7f-5h8hf            Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Created             plane-api-wl-d7d5dcb7f-5h8hf            Container created
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Created             plane-beat-worker-wl-645c56988f-mltb7   Container created
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Scheduled           plane-admin-wl-545f5b8fcd-97kwj         Successfully assigned plane-dev/plane-admin-wl-545f5b8fcd-97kwj to plane-platform-control-plane
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Pulled              plane-beat-worker-wl-645c56988f-mltb7   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Scheduled           plane-beat-worker-wl-645c56988f-mltb7   Successfully assigned plane-dev/plane-beat-worker-wl-645c56988f-mltb7 to plane-platform-control-plane
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    SuccessfulCreate    plane-worker-wl-7f4494fd56              Created pod: plane-worker-wl-7f4494fd56-wjpxv
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Scheduled           plane-worker-wl-7f4494fd56-wjpxv        Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-wjpxv to plane-platform-control-plane
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Pulled              plane-worker-wl-7f4494fd56-wjpxv        Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:30:17Z   2026-11-05T05:30:17Z   <nil>       1       Normal    Created             plane-worker-wl-7f4494fd56-wjpxv        Container created
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Pulling             plane-admin-wl-545f5b8fcd-97kwj         Pulling image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796"
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Started             plane-worker-wl-7f4494fd56-wjpxv        Container started
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Pulling             plane-web-wl-748764649d-q72kc           Pulling image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747"
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Started             plane-space-wl-847f88bc46-h6vmn         Container started
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Created             plane-space-wl-847f88bc46-h6vmn         Container created
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Pulled              plane-space-wl-847f88bc46-h6vmn         Successfully pulled image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039" in 647ms (648ms including waiting). Image size: 276764451 bytes.
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Created             plane-admin-wl-545f5b8fcd-97kwj         Container created
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Pulled              plane-admin-wl-545f5b8fcd-97kwj         Successfully pulled image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796" in 170ms (451ms including waiting). Image size: 31782460 bytes.
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Started             plane-api-wl-d7d5dcb7f-5h8hf            Container started
+2026-11-05T05:30:18Z   2026-11-05T05:30:18Z   <nil>       1       Normal    Started             plane-beat-worker-wl-645c56988f-mltb7   Container started
+2026-11-05T05:30:19Z   2026-11-05T05:30:19Z   <nil>       1       Warning   Unhealthy           plane-web-wl-748764649d-q72kc           Readiness probe failed: Get "http://10.244.0.239:3000/": dial tcp 10.244.0.239:3000: connect: connection refused
+2026-11-05T05:30:19Z   2026-11-05T05:30:19Z   <nil>       1       Normal    Started             plane-web-wl-748764649d-q72kc           Container started
+2026-11-05T05:30:19Z   2026-11-05T05:30:19Z   <nil>       1       Normal    Pulled              plane-web-wl-748764649d-q72kc           Successfully pulled image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747" in 603ms (1.027s including waiting). Image size: 42718100 bytes.
+2026-11-05T05:30:19Z   2026-11-05T05:30:19Z   <nil>       1       Warning   Unhealthy           plane-admin-wl-545f5b8fcd-97kwj         Readiness probe failed: Get "http://10.244.0.238:3000/god-mode/": dial tcp 10.244.0.238:3000: connect: connection refused
+2026-11-05T05:30:19Z   2026-11-05T05:30:19Z   <nil>       1       Normal    Created             plane-web-wl-748764649d-q72kc           Container created
+2026-11-05T05:30:19Z   2026-11-05T05:30:19Z   <nil>       1       Normal    Started             plane-admin-wl-545f5b8fcd-97kwj         Container started
+2026-11-05T05:30:20Z   2026-11-05T05:30:20Z   <nil>       1       Normal    SuccessfulDelete    plane-web-wl-7f547975                   Deleted pod: plane-web-wl-7f547975-2q7fx
+2026-11-05T05:30:20Z   2026-11-05T05:30:20Z   <nil>       1       Normal    Killing             plane-admin-wl-5df5d7f9f6-szn25         Stopping container plane-admin
+2026-11-05T05:30:20Z   2026-11-05T05:30:20Z   <nil>       1       Normal    Killing             plane-web-wl-7f547975-2q7fx             Stopping container plane-web
+2026-11-05T05:30:20Z   2026-11-05T05:30:20Z   <nil>       1       Normal    ScalingReplicaSet   plane-admin-wl                          Scaled down replica set plane-admin-wl-5df5d7f9f6 from 1 to 0
+2026-11-05T05:30:20Z   2026-11-05T05:30:20Z   <nil>       1       Normal    ScalingReplicaSet   plane-web-wl                            Scaled down replica set plane-web-wl-7f547975 from 1 to 0
+2026-11-05T05:30:20Z   2026-11-05T05:30:20Z   <nil>       1       Normal    SuccessfulDelete    plane-admin-wl-5df5d7f9f6               Deleted pod: plane-admin-wl-5df5d7f9f6-szn25
+2026-11-05T05:30:27Z   2026-11-05T05:30:22Z   <nil>       2       Warning   Unhealthy           plane-worker-wl-7f4494fd56-wjpxv        Startup probe failed: 
+2026-11-05T05:30:32Z   2026-11-05T05:30:22Z   <nil>       3       Warning   Unhealthy           plane-space-wl-847f88bc46-h6vmn         Startup probe failed: Get "http://10.244.0.234:3000/spaces/": dial tcp 10.244.0.234:3000: connect: connection refused
+2026-11-05T05:30:33Z   2026-11-05T05:30:33Z   <nil>       1       Normal    ScalingReplicaSet   plane-worker-wl                         Scaled down replica set plane-worker-wl-8c8968995 from 1 to 0
+2026-11-05T05:30:33Z   2026-11-05T05:30:33Z   <nil>       1       Normal    SuccessfulDelete    plane-worker-wl-8c8968995               Deleted pod: plane-worker-wl-8c8968995-z697v
+2026-11-05T05:30:33Z   2026-11-05T05:30:33Z   <nil>       1       Normal    Killing             plane-worker-wl-8c8968995-z697v         Stopping container plane-worker
+2026-11-05T05:30:37Z   2026-11-05T05:30:37Z   <nil>       1       Normal    Killing             plane-space-wl-6b65f54cf5-kjk4d         Stopping container plane-space
+2026-11-05T05:30:37Z   2026-11-05T05:30:37Z   <nil>       1       Normal    ScalingReplicaSet   plane-space-wl                          Scaled down replica set plane-space-wl-6b65f54cf5 from 1 to 0
+2026-11-05T05:30:37Z   2026-11-05T05:30:37Z   <nil>       1       Normal    SuccessfulDelete    plane-space-wl-6b65f54cf5               Deleted pod: plane-space-wl-6b65f54cf5-kjk4d
+2026-11-05T05:30:42Z   2026-11-05T05:30:22Z   <nil>       5       Warning   Unhealthy           plane-beat-worker-wl-645c56988f-mltb7   Startup probe failed: 
+2026-11-05T05:30:47Z   2026-11-05T05:30:22Z   <nil>       6       Warning   Unhealthy           plane-api-wl-d7d5dcb7f-5h8hf            Startup probe failed: Get "http://10.244.0.235:8000/": dial tcp 10.244.0.235:8000: connect: connection refused
+2026-11-05T05:30:47Z   2026-11-05T05:30:47Z   <nil>       1       Normal    Killing             plane-beat-worker-wl-b64f64d68-zk56x    Stopping container plane-beat-worker
+2026-11-05T05:30:47Z   2026-11-05T05:30:47Z   <nil>       1       Normal    SuccessfulDelete    plane-beat-worker-wl-b64f64d68          Deleted pod: plane-beat-worker-wl-b64f64d68-zk56x
+2026-11-05T05:30:47Z   2026-11-05T05:30:47Z   <nil>       1       Normal    ScalingReplicaSet   plane-beat-worker-wl                    Scaled down replica set plane-beat-worker-wl-b64f64d68 from 1 to 0
+2026-11-05T05:30:53Z   2026-11-05T05:30:53Z   <nil>       1       Normal    SuccessfulDelete    plane-api-wl-596749bb8                  Deleted pod: plane-api-wl-596749bb8-nbfk5
+2026-11-05T05:30:53Z   2026-11-05T05:30:53Z   <nil>       1       Normal    Killing             plane-api-wl-596749bb8-nbfk5            Stopping container plane-api
+2026-11-05T05:30:53Z   2026-11-05T05:30:53Z   <nil>       1       Normal    ScalingReplicaSet   plane-api-wl                            Scaled down replica set plane-api-wl-596749bb8 from 1 to 0
+2026-11-05T05:31:03Z   2026-11-05T05:30:33Z   <nil>       3       Warning   Unhealthy           plane-worker-wl-8c8968995-z697v         Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+2026-11-05T05:31:09Z   2026-11-05T05:30:54Z   <nil>       2       Warning   Unhealthy           plane-beat-worker-wl-b64f64d68-zk56x    Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+2026-11-05T05:32:42Z   2026-11-05T05:32:42Z   <nil>       1       Normal    Created             plane-worker-wl-7f4494fd56-vb5hb        Container created
+2026-11-05T05:32:42Z   2026-11-05T05:32:42Z   <nil>       1       Normal    SuccessfulCreate    plane-worker-wl-7f4494fd56              Created pod: plane-worker-wl-7f4494fd56-vb5hb
+2026-11-05T05:32:42Z   2026-11-05T05:32:42Z   <nil>       1       Normal    Killing             plane-worker-wl-7f4494fd56-wjpxv        Stopping container plane-worker
+2026-11-05T05:32:42Z   2026-11-05T05:32:42Z   <nil>       1       Normal    Started             plane-worker-wl-7f4494fd56-vb5hb        Container started
+2026-11-05T05:32:42Z   2026-11-05T05:32:42Z   <nil>       1       Normal    Scheduled           plane-worker-wl-7f4494fd56-vb5hb        Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-vb5hb to plane-platform-control-plane
+2026-11-05T05:32:42Z   2026-11-05T05:32:42Z   <nil>       1       Normal    Pulled              plane-worker-wl-7f4494fd56-vb5hb        Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:32:47Z   2026-11-05T05:32:47Z   <nil>       1       Warning   Unhealthy           plane-worker-wl-7f4494fd56-vb5hb        Startup probe failed: 
+2026-11-05T05:33:03Z   2026-11-05T05:32:48Z   <nil>       2       Warning   Unhealthy           plane-worker-wl-7f4494fd56-wjpxv        Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+2026-11-05T05:50:50Z   2026-11-05T05:50:50Z   <nil>       1       Normal    SuccessfulDelete    plane-api-wl-d7d5dcb7f                  Deleted pod: plane-api-wl-d7d5dcb7f-5h8hf
+2026-11-05T05:50:50Z   2026-11-05T05:50:50Z   <nil>       1       Normal    ScalingReplicaSet   plane-api-wl                            Scaled down replica set plane-api-wl-d7d5dcb7f from 1 to 0
+2026-11-05T05:50:50Z   2026-11-05T05:50:50Z   <nil>       1       Normal    Killing             plane-api-wl-d7d5dcb7f-5h8hf            Stopping container plane-api
+2026-11-05T05:52:07Z   2026-11-05T05:52:07Z   <nil>       1       Normal    Created             plane-api-wl-d7d5dcb7f-hs2gn            Container created
+2026-11-05T05:52:07Z   2026-11-05T05:52:07Z   <nil>       1       Normal    Scheduled           plane-api-wl-d7d5dcb7f-hs2gn            Successfully assigned plane-dev/plane-api-wl-d7d5dcb7f-hs2gn to plane-platform-control-plane
+2026-11-05T05:52:07Z   2026-11-05T05:30:17Z   <nil>       2       Normal    ScalingReplicaSet   plane-api-wl                            Scaled up replica set plane-api-wl-d7d5dcb7f from 0 to 1
+2026-11-05T05:52:07Z   2026-11-05T05:52:07Z   <nil>       1       Normal    Started             plane-api-wl-d7d5dcb7f-hs2gn            Container started
+2026-11-05T05:52:07Z   2026-11-05T05:52:07Z   <nil>       1       Normal    SuccessfulCreate    plane-api-wl-d7d5dcb7f                  Created pod: plane-api-wl-d7d5dcb7f-hs2gn
+2026-11-05T05:52:07Z   2026-11-05T05:52:07Z   <nil>       1       Normal    Pulled              plane-api-wl-d7d5dcb7f-hs2gn            Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:52:37Z   2026-11-05T05:52:12Z   <nil>       6       Warning   Unhealthy           plane-api-wl-d7d5dcb7f-hs2gn            Startup probe failed: Get "http://10.244.0.250:8000/": dial tcp 10.244.0.250:8000: connect: connection refused
+2026-11-05T06:00:38Z   2026-11-05T06:00:38Z   <nil>       1       Normal    Created             plane-worker-wl-7f4494fd56-tlbbf        Container created
+2026-11-05T06:00:38Z   2026-11-05T06:00:38Z   <nil>       1       Normal    Pulled              plane-worker-wl-7f4494fd56-tlbbf        Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T06:00:38Z   2026-11-05T06:00:38Z   <nil>       1       Normal    SuccessfulCreate    plane-worker-wl-7f4494fd56              Created pod: plane-worker-wl-7f4494fd56-tlbbf
+2026-11-05T06:00:38Z   2026-11-05T06:00:38Z   <nil>       1       Normal    Scheduled           plane-worker-wl-7f4494fd56-tlbbf        Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-tlbbf to plane-platform-control-plane
+2026-11-05T06:00:38Z   2026-11-05T06:00:38Z   <nil>       1       Normal    Killing             plane-worker-wl-7f4494fd56-vb5hb        Stopping container plane-worker
+2026-11-05T06:00:38Z   2026-11-05T06:00:38Z   <nil>       1       Normal    Started             plane-worker-wl-7f4494fd56-tlbbf        Container started
+2026-11-05T06:00:43Z   2026-11-05T06:00:43Z   <nil>       1       Warning   Unhealthy           plane-worker-wl-7f4494fd56-tlbbf        Startup probe failed: 
+2026-11-05T06:01:07Z   2026-11-05T06:00:52Z   <nil>       2       Warning   Unhealthy           plane-worker-wl-7f4494fd56-vb5hb        Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+
+# other environment plane-prod-sim
+LAST                   FIRST                  EVENTTIME   COUNT   TYPE      REASON              OBJECT                                  MESSAGE
+2026-11-05T05:33:53Z   2026-11-05T05:33:53Z   <nil>       1       Normal    Scheduled           plane-backup-20261105t053351z-zjflc     Successfully assigned plane-prod-sim/plane-backup-20261105t053351z-zjflc to plane-platform-control-plane
+2026-11-05T05:33:53Z   2026-11-05T05:33:53Z   <nil>       1       Normal    Pulled              plane-backup-20261105t053351z-zjflc     Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984" already present on machine and can be accessed by the pod
+2026-11-05T05:33:53Z   2026-11-05T05:33:53Z   <nil>       1       Normal    SuccessfulCreate    plane-backup-20261105t053351z           Created pod: plane-backup-20261105t053351z-zjflc
+2026-11-05T05:33:53Z   2026-11-05T05:33:53Z   <nil>       1       Normal    Created             plane-backup-20261105t053351z-zjflc     Container created
+2026-11-05T05:33:54Z   2026-11-05T05:33:54Z   <nil>       1       Normal    Started             plane-backup-20261105t053351z-zjflc     Container started
+2026-11-05T05:33:57Z   2026-11-05T05:33:57Z   <nil>       1       Normal    Started             plane-backup-20261105t053351z-zjflc     Container started
+2026-11-05T05:33:57Z   2026-11-05T05:33:57Z   <nil>       1       Normal    Pulled              plane-backup-20261105t053351z-zjflc     Container image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5" already present on machine and can be accessed by the pod
+2026-11-05T05:33:57Z   2026-11-05T05:33:57Z   <nil>       1       Normal    Created             plane-backup-20261105t053351z-zjflc     Container created
+2026-11-05T05:33:59Z   2026-11-05T05:33:59Z   <nil>       1       Normal    Pulled              plane-backup-20261105t053351z-zjflc     Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984" already present on machine and can be accessed by the pod
+2026-11-05T05:33:59Z   2026-11-05T05:33:59Z   <nil>       1       Normal    Created             plane-backup-20261105t053351z-zjflc     Container created
+2026-11-05T05:33:59Z   2026-11-05T05:33:59Z   <nil>       1       Normal    Started             plane-backup-20261105t053351z-zjflc     Container started
+2026-11-05T05:34:04Z   2026-11-05T05:34:04Z   <nil>       1       Normal    Completed           plane-backup-20261105t053351z           Job completed
+2026-11-05T05:34:21Z   2026-11-05T05:34:21Z   <nil>       1       Normal    Scheduled           plane-api-migrate-1-8cm79               Successfully assigned plane-prod-sim/plane-api-migrate-1-8cm79 to plane-platform-control-plane
+2026-11-05T05:34:21Z   2026-11-05T05:34:21Z   <nil>       1       Normal    Pulled              plane-api-migrate-1-8cm79               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:34:21Z   2026-11-05T05:34:21Z   <nil>       1       Normal    Created             plane-api-migrate-1-8cm79               Container created
+2026-11-05T05:34:21Z   2026-11-05T05:34:21Z   <nil>       1       Normal    Started             plane-api-migrate-1-8cm79               Container started
+2026-11-05T05:34:21Z   2026-11-05T05:34:21Z   <nil>       1       Normal    SuccessfulCreate    plane-api-migrate-1                     Created pod: plane-api-migrate-1-8cm79
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Scheduled           plane-web-wl-545ff57fd4-fksxq           Successfully assigned plane-prod-sim/plane-web-wl-545ff57fd4-fksxq to plane-platform-control-plane
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    ScalingReplicaSet   plane-space-wl                          Scaled up replica set plane-space-wl-6c6c7c76c6 from 0 to 1
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Scheduled           plane-space-wl-6c6c7c76c6-z4jwz         Successfully assigned plane-prod-sim/plane-space-wl-6c6c7c76c6-z4jwz to plane-platform-control-plane
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    ScalingReplicaSet   plane-beat-worker-wl                    Scaled up replica set plane-beat-worker-wl-f44b9b987 from 0 to 1
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    SuccessfulCreate    plane-beat-worker-wl-f44b9b987          Created pod: plane-beat-worker-wl-f44b9b987-mdv9p
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Scheduled           plane-beat-worker-wl-f44b9b987-mdv9p    Successfully assigned plane-prod-sim/plane-beat-worker-wl-f44b9b987-mdv9p to plane-platform-control-plane
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    SuccessfulCreate    plane-api-wl-c4f9658c9                  Created pod: plane-api-wl-c4f9658c9-5k6hn
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    ScalingReplicaSet   plane-api-wl                            Scaled up replica set plane-api-wl-c4f9658c9 from 0 to 1
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    SuccessfulCreate    plane-space-wl-6c6c7c76c6               Created pod: plane-space-wl-6c6c7c76c6-z4jwz
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Scheduled           plane-api-wl-c4f9658c9-5k6hn            Successfully assigned plane-prod-sim/plane-api-wl-c4f9658c9-5k6hn to plane-platform-control-plane
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Completed           plane-api-migrate-1                     Job completed
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    ScalingReplicaSet   plane-admin-wl                          Scaled up replica set plane-admin-wl-64b68f786 from 0 to 1
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Scheduled           plane-admin-wl-64b68f786-lxtxv          Successfully assigned plane-prod-sim/plane-admin-wl-64b68f786-lxtxv to plane-platform-control-plane
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    SuccessfulCreate    plane-web-wl-545ff57fd4                 Created pod: plane-web-wl-545ff57fd4-fksxq
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    SuccessfulCreate    plane-admin-wl-64b68f786                Created pod: plane-admin-wl-64b68f786-lxtxv
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    ScalingReplicaSet   plane-web-wl                            Scaled up replica set plane-web-wl-545ff57fd4 from 0 to 1
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    Scheduled           plane-worker-wl-cd696f548-7tmq2         Successfully assigned plane-prod-sim/plane-worker-wl-cd696f548-7tmq2 to plane-platform-control-plane
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    SuccessfulCreate    plane-worker-wl-cd696f548               Created pod: plane-worker-wl-cd696f548-7tmq2
+2026-11-05T05:34:30Z   2026-11-05T05:34:30Z   <nil>       1       Normal    ScalingReplicaSet   plane-worker-wl                         Scaled up replica set plane-worker-wl-cd696f548 from 0 to 1
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Pulled              plane-web-wl-545ff57fd4-fksxq           Container image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747" already present on machine and can be accessed by the pod
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Warning   Unhealthy           plane-admin-wl-64b68f786-lxtxv          Readiness probe failed: Get "http://10.244.0.249:3000/god-mode/": dial tcp 10.244.0.249:3000: connect: connection refused
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Pulled              plane-admin-wl-64b68f786-lxtxv          Container image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796" already present on machine and can be accessed by the pod
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Created             plane-admin-wl-64b68f786-lxtxv          Container created
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Started             plane-worker-wl-cd696f548-7tmq2         Container started
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Created             plane-worker-wl-cd696f548-7tmq2         Container created
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Pulled              plane-beat-worker-wl-f44b9b987-mdv9p    Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Created             plane-beat-worker-wl-f44b9b987-mdv9p    Container created
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Started             plane-beat-worker-wl-f44b9b987-mdv9p    Container started
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Pulled              plane-worker-wl-cd696f548-7tmq2         Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Started             plane-api-wl-c4f9658c9-5k6hn            Container started
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Created             plane-api-wl-c4f9658c9-5k6hn            Container created
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Started             plane-admin-wl-64b68f786-lxtxv          Container started
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Warning   Unhealthy           plane-web-wl-545ff57fd4-fksxq           Readiness probe failed: Get "http://10.244.0.248:3000/": dial tcp 10.244.0.248:3000: connect: connection refused
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Started             plane-web-wl-545ff57fd4-fksxq           Container started
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Pulled              plane-api-wl-c4f9658c9-5k6hn            Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe" already present on machine and can be accessed by the pod
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Pulled              plane-space-wl-6c6c7c76c6-z4jwz         Container image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039" already present on machine and can be accessed by the pod
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Created             plane-space-wl-6c6c7c76c6-z4jwz         Container created
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Started             plane-space-wl-6c6c7c76c6-z4jwz         Container started
+2026-11-05T05:34:31Z   2026-11-05T05:34:31Z   <nil>       1       Normal    Created             plane-web-wl-545ff57fd4-fksxq           Container created
+2026-11-05T05:34:32Z   2026-11-05T05:34:32Z   <nil>       1       Normal    Killing             plane-web-wl-5f74d4447c-phknn           Stopping container plane-web
+2026-11-05T05:34:32Z   2026-11-05T05:34:32Z   <nil>       1       Normal    ScalingReplicaSet   plane-admin-wl                          Scaled down replica set plane-admin-wl-7cf74f754d from 1 to 0
+2026-11-05T05:34:32Z   2026-11-05T05:34:32Z   <nil>       1       Normal    SuccessfulDelete    plane-admin-wl-7cf74f754d               Deleted pod: plane-admin-wl-7cf74f754d-pr952
+2026-11-05T05:34:32Z   2026-11-05T05:34:32Z   <nil>       1       Normal    ScalingReplicaSet   plane-web-wl                            Scaled down replica set plane-web-wl-5f74d4447c from 1 to 0
+2026-11-05T05:34:32Z   2026-11-05T05:34:32Z   <nil>       1       Normal    SuccessfulDelete    plane-web-wl-5f74d4447c                 Deleted pod: plane-web-wl-5f74d4447c-phknn
+2026-11-05T05:34:32Z   2026-11-05T05:34:32Z   <nil>       1       Normal    Killing             plane-admin-wl-7cf74f754d-pr952         Stopping container plane-admin
+2026-11-05T05:34:40Z   2026-11-05T05:34:35Z   <nil>       2       Warning   Unhealthy           plane-worker-wl-cd696f548-7tmq2         Startup probe failed: 
+2026-11-05T05:34:40Z   2026-11-05T05:34:35Z   <nil>       2       Warning   Unhealthy           plane-space-wl-6c6c7c76c6-z4jwz         Startup probe failed: Get "http://10.244.0.245:3000/spaces/": dial tcp 10.244.0.245:3000: connect: connection refused
+2026-11-05T05:34:45Z   2026-11-05T05:34:45Z   <nil>       1       Normal    ScalingReplicaSet   plane-space-wl                          Scaled down replica set plane-space-wl-57b7996fc from 1 to 0
+2026-11-05T05:34:46Z   2026-11-05T05:34:46Z   <nil>       1       Normal    SuccessfulDelete    plane-space-wl-57b7996fc                Deleted pod: plane-space-wl-57b7996fc-sbxpp
+2026-11-05T05:34:46Z   2026-11-05T05:34:46Z   <nil>       1       Normal    Killing             plane-space-wl-57b7996fc-sbxpp          Stopping container plane-space
+2026-11-05T05:34:46Z   2026-11-05T05:34:46Z   <nil>       1       Normal    ScalingReplicaSet   plane-worker-wl                         Scaled down replica set plane-worker-wl-5596b5864c from 1 to 0
+2026-11-05T05:34:46Z   2026-11-05T05:34:46Z   <nil>       1       Normal    Killing             plane-worker-wl-5596b5864c-8s4wc        Stopping container plane-worker
+2026-11-05T05:34:46Z   2026-11-05T05:34:46Z   <nil>       1       Normal    SuccessfulDelete    plane-worker-wl-5596b5864c              Deleted pod: plane-worker-wl-5596b5864c-8s4wc
+2026-11-05T05:34:56Z   2026-11-05T05:34:36Z   <nil>       5       Warning   Unhealthy           plane-beat-worker-wl-f44b9b987-mdv9p    Startup probe failed: 
+2026-11-05T05:35:00Z   2026-11-05T05:34:35Z   <nil>       6       Warning   Unhealthy           plane-api-wl-c4f9658c9-5k6hn            Startup probe failed: Get "http://10.244.0.247:8000/": dial tcp 10.244.0.247:8000: connect: connection refused
+2026-11-05T05:35:01Z   2026-11-05T05:35:01Z   <nil>       1       Normal    ScalingReplicaSet   plane-beat-worker-wl                    Scaled down replica set plane-beat-worker-wl-68db6c7f9d from 1 to 0
+2026-11-05T05:35:01Z   2026-11-05T05:35:01Z   <nil>       1       Normal    SuccessfulDelete    plane-beat-worker-wl-68db6c7f9d         Deleted pod: plane-beat-worker-wl-68db6c7f9d-4pz2w
+2026-11-05T05:35:01Z   2026-11-05T05:35:01Z   <nil>       1       Normal    Killing             plane-beat-worker-wl-68db6c7f9d-4pz2w   Stopping container plane-beat-worker
+2026-11-05T05:35:07Z   2026-11-05T05:35:07Z   <nil>       1       Normal    SuccessfulDelete    plane-api-wl-7675d8b644                 Deleted pod: plane-api-wl-7675d8b644-flq5c
+2026-11-05T05:35:07Z   2026-11-05T05:35:07Z   <nil>       1       Normal    Killing             plane-api-wl-7675d8b644-flq5c           Stopping container plane-api
+2026-11-05T05:35:07Z   2026-11-05T05:35:07Z   <nil>       1       Normal    ScalingReplicaSet   plane-api-wl                            Scaled down replica set plane-api-wl-7675d8b644 from 1 to 0
+2026-11-05T05:35:15Z   2026-11-05T05:35:00Z   <nil>       2       Warning   Unhealthy           plane-worker-wl-5596b5864c-8s4wc        Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+2026-11-05T05:35:29Z   2026-11-05T05:35:14Z   <nil>       2       Warning   Unhealthy           plane-beat-worker-wl-68db6c7f9d-4pz2w   Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled

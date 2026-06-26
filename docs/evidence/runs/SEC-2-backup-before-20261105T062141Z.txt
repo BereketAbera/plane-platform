@@ -1,0 +1,28 @@
+2026-11-05T06:21:41Z commit 0dde813
+# command: make backup ENV=dev
+# working tree of the scripts it runs:
+0ab174fa817f  scripts/backup.sh
+21e0726c9d5d  scripts/rotate.sh
+a0d2fab6bc4f  infisical/lib/api.sh
+cc6bb2c95652  infisical/lib/recovery.sh
+b039d05f28dd  monitoring/ops/lib.sh
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261105T062141Z
+[pod/plane-backup-20261105t062141z-8zgjb/objects] 2026/11/05 06:21:47 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t062141z-8zgjb/objects] 2026/11/05 06:21:48 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t062141z-8zgjb/objects] 2026/11/05 06:21:49 NOTICE: Local file system at /backups/20261105T062141Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t062141z-8zgjb/objects] 2026/11/05 06:21:49 NOTICE: Local file system at /backups/20261105T062141Z.partial/objects: 92 matching files
+[pod/plane-backup-20261105t062141z-8zgjb/objects] 2026/11/05 06:21:49 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t062141z-8zgjb/objects] objects: 92 checked
+[pod/plane-backup-20261105t062141z-8zgjb/objects] 2026/11/05 06:21:49 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t062141z-8zgjb/objects] GATE2: 59 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t062141z-8zgjb/finalize] retention: removed 20261104T231324Z
+[pod/plane-backup-20261105t062141z-8zgjb/finalize] finalize: 20261105T062141Z complete
+[pod/plane-backup-20261105t062141z-8zgjb/postgres] postgres: 110 tables counted from a scratch restore
+backup 20261105T062141Z: postgres/plane.dump 951191 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2120 B, postgres/content.tsv 127 B, objects.lsjson 34522 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261105T062141Z
+# exit code: 0
+# finished 2026-11-05T06:21:56Z
+20261105T000512Z
+20261105T000616Z
+20261105T062141Z

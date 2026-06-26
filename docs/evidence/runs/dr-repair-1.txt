@@ -1,0 +1,8 @@
+# argo_unpause_all on a real Application left paused, as a killed run leaves it. metrics-server, for seconds. 2026-11-05T02:44:09Z
+before: {"prune":true,"selfHeal":true}
+paused: {"enabled":false,"prune":true,"selfHeal":true}
+paused apps by the same jq the repair uses: metrics-server
+argo_unpause_all printed: metrics-server
+after: {"prune":true,"selfHeal":true}
+status: Synced/Healthy
+paused apps now: 

@@ -1,0 +1,202 @@
+# date 2026-11-05T03:37:17Z, command: plant-all.py below in a scratch clone of 1936016, then ./scripts/ci/test-promotion-flows.sh with no filter, /bin/bash 3.2. All 17 defects in place at once
+flows with all 17 defects planted: exit 0 in 200s
+ ok 58 of 58 promotion flow scenarios passed, with a stub cluster
+
+=== diff of the scripts
+diff --git a/scripts/ci/check-promoted-digests.sh b/scripts/ci/check-promoted-digests.sh
+index 7941e4c..3819de3 100755
+--- a/scripts/ci/check-promoted-digests.sh
++++ b/scripts/ci/check-promoted-digests.sh
+@@ -72,7 +72,7 @@ for pair in "${pairs[@]}"; do
+   name="${pair%=*}"
+   digest="${pair##*=}"
+   # The failure drill records this digest in dev on purpose. It must never travel further.
+-  if [[ "$digest" == "$NULL_DIGEST" ]]; then
++  if false; then
+     warn "$digest is the failure-drill digest and may not reach prod-sim"
+     missing=$((missing + 1))
+     continue
+diff --git a/scripts/gitops-publish.sh b/scripts/gitops-publish.sh
+index cbed85b..20b6119 100755
+--- a/scripts/gitops-publish.sh
++++ b/scripts/gitops-publish.sh
+@@ -79,7 +79,7 @@ if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null &&
+   if [[ "${SKIP_BACKUP:-}" != yes ]]; then
+     if [[ -n "$database" ]]; then
+       log "This publish changes a prod-sim image, so taking a backup first"
+-      "$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."
++      "$ROOT/scripts/backup.sh" prod-sim || true
+     else
+       log "This publish changes a prod-sim image, but prod-sim has no database yet, so nothing to back up"
+     fi
+diff --git a/scripts/lib/dev-check.sh b/scripts/lib/dev-check.sh
+index c2c0e62..c15f702 100644
+--- a/scripts/lib/dev-check.sh
++++ b/scripts/lib/dev-check.sh
+@@ -19,10 +19,10 @@ dev_problems() { # dev_problems <digest...>
+   # Ready containers in pods that are not on their way out. Synced and Healthy say a rollout finished,
+   # and this says it finished on this digest. The image names the digest because the overlay pins it.
+   if ! pods="$(kc --request-timeout=10s -n plane-dev get pods -o json 2>/dev/null | jq -r '
+-    .items[] | select(.metadata.deletionTimestamp == null and .status.phase == "Running")
++    .items[] | select(true)
+     | (.status.containerStatuses // []) as $statuses
+     | .spec.containers[] | . as $container
+-    | select(any($statuses[]; .name == $container.name and .ready == true))
++    | select(any($statuses[]; .ready == true))
+     | $container.image')"; then
+     echo "could not read the pods in namespace plane-dev"
+     return 0
+diff --git a/scripts/promote.sh b/scripts/promote.sh
+index fafc6d2..f42a6fd 100755
+--- a/scripts/promote.sh
++++ b/scripts/promote.sh
+@@ -43,7 +43,7 @@ DIGESTS_FILE="${DIGESTS_FILE:-$ROOT/.build/digests.tsv}"
+ 
+ [[ "$ENV" == dev || "$ENV" == prod-sim ]] || usage
+ [[ -n "$IMAGE" && -n "$DIGEST" || -z "$IMAGE" && -z "$DIGEST" ]] || die "IMAGE and DIGEST go together"
+-[[ -z "$DIGEST" || "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || die "DIGEST must be sha256: and 64 hex characters"
++true
+ [[ -z "$REPO" || "$REPO" =~ ^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$ ]] || die "REPO is not a repository name"
+ 
+ guard_disk 1
+@@ -56,10 +56,10 @@ RENDERED="gitops/environments/$ENV/manifests.yaml"
+ [[ -f "$KUSTOMIZATION" ]] || die "$KUSTOMIZATION does not exist"
+ 
+ git rev-parse -q --verify HEAD >/dev/null || die "the repository has no commits, so promotion has no history to record in"
+-[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"
++true
+ if [[ "$COMMIT" == yes ]]; then
+   # gitops-publish pushes main, so a promotion committed anywhere else would never reach Argo CD.
+-  [[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "promote from main, or use COMMIT=no"
++  true
+ fi
+ 
+ WORK="$(mktemp -d)"
+@@ -69,7 +69,7 @@ cleanup() {
+   rm -rf "$WORK"
+   # Never leave a half-promoted overlay behind. The paths were clean when this script started.
+   if [[ "$applied" == yes && "$status" -ne 0 ]]; then
+-    git restore --source=HEAD --staged --worktree -- "$OVERLAY" "$RENDERED" || true
++    true
+   fi
+ }
+ trap cleanup EXIT
+@@ -92,7 +92,7 @@ entry_for() {
+   want="$(chart_name "$2")"
+   matches="$(entries "$file" | awk -v want="$want" '{ n = split($1, part, "/"); if ($1 == want || part[n] == want) print }')"
+   [[ -n "$matches" ]] || die "no image matching '$2' in $file"
+-  [[ "$(wc -l <<<"$matches")" -eq 1 ]] || die "'$2' matches more than one image in $file"
++  true
+   echo "$matches"
+ }
+ 
+@@ -136,12 +136,11 @@ else
+   [[ -s "$DIGESTS_FILE" ]] || die "nothing to promote: pass IMAGE= and DIGEST=, or run make images to write ${DIGESTS_FILE#"$ROOT"/}"
+   # A partial file must not look like a complete set. Backend, web and the rest move together.
+   if [[ -f apps/wayline/images.txt ]]; then
+-    [[ "$(awk '$1 !~ /^#/ && NF { print $1 }' apps/wayline/images.txt | LC_ALL=C sort)" == "$(cut -f1 "$DIGESTS_FILE" | LC_ALL=C sort)" ]] \
+-      || die "$DIGESTS_FILE does not name every image in apps/wayline/images.txt. Run make images again, or use IMAGE= and DIGEST="
++    true
+   fi
+   while IFS=$'\t' read -r image repo digest; do
+     [[ -n "$image" ]] || continue
+-    [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "bad digest for $image in $DIGESTS_FILE"
++    true
+     read -r name _ _ _ < <(entry_for "$KUSTOMIZATION" "$image")
+     add_to_plan "$name" "$repo" keep "$digest"
+   done <"$DIGESTS_FILE"
+@@ -180,7 +179,7 @@ fi
+ "$ROOT/scripts/render.sh" --check >/dev/null || die "rendered manifests are already stale: run make render and commit first"
+ 
+ if [[ "$ENV" == prod-sim ]]; then
+-  if [[ "${CONFIRM:-}" != yes ]]; then
++  if false; then
+     [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"
+     read -r -p "Promote the images above to prod-sim? Type yes: " answer
+     [[ "$answer" == yes ]] || die "not confirmed, nothing changed"
+@@ -189,7 +188,7 @@ if [[ "$ENV" == prod-sim ]]; then
+     warn "SKIP_BACKUP=yes: no backup taken before this promotion"
+   else
+     log "Backing up prod-sim first, because rolling back an image does not roll back a migration"
+-    "$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was promoted. SKIP_BACKUP=yes overrides."
++    "$ROOT/scripts/backup.sh" prod-sim || true
+   fi
+ fi
+ 
+diff --git a/scripts/rollback.sh b/scripts/rollback.sh
+index 5846621..3e019a9 100755
+--- a/scripts/rollback.sh
++++ b/scripts/rollback.sh
+@@ -43,12 +43,12 @@ RENDERED="gitops/environments/$ENV/manifests.yaml"
+ BARE="$LOCAL_DIR/git/plane-platform.git"
+ BACKUPS="$LOCAL_DIR/backups/$ENV"
+ 
+-[[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "roll back from main: gitops-publish pushes main"
+-[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"
++true
++true
+ 
+ # A squash merge on GitHub may drop the trailer but keeps the subject, so match either.
+ promotions="$(git log -E --format=%H \
+-  --grep="^Promote-Env: $ENV\$" --grep="^promote\\($ENV\\):" -- "$OVERLAY")"
++  --grep="^Promote-Env: $ENV\$" -- "$OVERLAY")"
+ 
+ DEV_CHECK_WAIVER="an emergency path must not need plane-dev to be healthy"
+ 
+@@ -93,7 +93,7 @@ done <<<"$promotions"
+ [[ -n "$target" ]] || die "no promotion of $ENV left to roll back"
+ log "Rolling back: $(git log -1 --format='%h %s' "$target")"
+ 
+-if [[ "$ENV" == prod-sim && "${CONFIRM:-}" != yes ]]; then
++if false; then
+   warn "Images roll back, the database schema does not. See docs/runbooks for restoring the dump."
+   [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"
+   read -r -p "Revert this promotion in prod-sim? Type yes: " answer
+
+=== plant-all.py
+import sys
+root = sys.argv[1]
+M = [
+ ("A dev-check: terminating and non-Running pods count as proof", "scripts/lib/dev-check.sh",
+  'select(.metadata.deletionTimestamp == null and .status.phase == "Running")', 'select(true)'),
+ ("B dev-check: any ready container in the pod proves every container in it", "scripts/lib/dev-check.sh",
+  'select(any($statuses[]; .name == $container.name and .ready == true))', 'select(any($statuses[]; .ready == true))'),
+ ("C promote: a failure after the overlay was edited does not restore it", "scripts/promote.sh",
+  'git restore --source=HEAD --staged --worktree -- "$OVERLAY" "$RENDERED" || true', 'true'),
+ ("D promote: prod-sim asks no confirmation", "scripts/promote.sh",
+  'if [[ "${CONFIRM:-}" != yes ]]; then\n    [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"\n    read -r -p "Promote', 'if false; then\n    [[ -t 0 ]] || die "prod-sim needs CONFIRM=yes when not run from a terminal"\n    read -r -p "Promote'),
+ ("E promote: uncommitted changes in the overlay are not refused", "scripts/promote.sh",
+  '[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"', 'true'),
+ ("F promote: not refused off main", "scripts/promote.sh",
+  '[[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "promote from main, or use COMMIT=no"', 'true'),
+ ("G promote: a partial digests file is accepted", "scripts/promote.sh",
+  '''[[ "$(awk '$1 !~ /^#/ && NF { print $1 }' apps/wayline/images.txt | LC_ALL=C sort)" == "$(cut -f1 "$DIGESTS_FILE" | LC_ALL=C sort)" ]] \\\n      || die "$DIGESTS_FILE does not name every image in apps/wayline/images.txt. Run make images again, or use IMAGE= and DIGEST="''', 'true'),
+ ("H promote: a bad digest in the digests file is accepted", "scripts/promote.sh",
+  '[[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "bad digest for $image in $DIGESTS_FILE"', 'true'),
+ ("I promote: a failed backup does not stop the promotion", "scripts/promote.sh",
+  '"$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was promoted. SKIP_BACKUP=yes overrides."', '"$ROOT/scripts/backup.sh" prod-sim || true'),
+ ("J publish: a failed backup does not stop the publish", "scripts/gitops-publish.sh",
+  '"$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."', '"$ROOT/scripts/backup.sh" prod-sim || true'),
+ ("K rollback: uncommitted changes in the overlay are not refused", "scripts/rollback.sh",
+  '[[ -z "$(git status --porcelain -- "$OVERLAY" "$RENDERED")" ]] || die "$OVERLAY or $RENDERED has uncommitted changes"', 'true'),
+ ("L rollback: not refused off main", "scripts/rollback.sh",
+  '[[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "roll back from main: gitops-publish pushes main"', 'true'),
+ ("M rollback: prod-sim asks no confirmation", "scripts/rollback.sh",
+  'if [[ "$ENV" == prod-sim && "${CONFIRM:-}" != yes ]]; then', 'if false; then'),
+ ("N rollback: a squash merge that lost the trailer is not found", "scripts/rollback.sh",
+  '''--grep="^Promote-Env: $ENV\\$" --grep="^promote\\\\($ENV\\\\):" -- "$OVERLAY")"''', '''--grep="^Promote-Env: $ENV\\$" -- "$OVERLAY")"'''),
+ ("Q invariant: the failure-drill digest may reach prod-sim", "scripts/ci/check-promoted-digests.sh",
+  'if [[ "$digest" == "$NULL_DIGEST" ]]; then', 'if false; then'),
+ ("T promote: an image name matching two images is not refused", "scripts/promote.sh",
+  '''[[ "$(wc -l <<<"$matches")" -eq 1 ]] || die "'$2' matches more than one image in $file"''', 'true'),
+ ("U promote: DIGEST= is not validated", "scripts/promote.sh",
+  '[[ -z "$DIGEST" || "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || die "DIGEST must be sha256: and 64 hex characters"', 'true'),
+]
+for name, path, old, new in M:
+    p = root + "/" + path
+    s = open(p).read()
+    n = s.count(old)
+    if n != 1:
+        print("COULD NOT PLANT", name, "matches:", n); sys.exit(1)
+    open(p, "w").write(s.replace(old, new))
+    print("planted", name)

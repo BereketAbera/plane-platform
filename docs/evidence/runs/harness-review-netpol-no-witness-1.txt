@@ -1,0 +1,19 @@
+# PATH=<a docker that exits 1>:$PATH MATRIX=<two rows below> scripts/test-netpol.sh, on the real cluster, 2026-11-05T02:02:49Z
+cases:
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny, note: "review fixture: the witness cannot run" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 203.0.113.9, port: 443 }, expect: deny, note: "review fixture: nothing is there at all, and the witness cannot run" }
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;33mwarn[0m no network policy table found by name in nftables on the node. Continuing, the behaviour test decides.
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED
+[1;32m ok[0m sentinel: name that does not exist -> DNS
+[1;32m ok[0m sentinel: default-deny blocks a new connection -> TIMEOUT
+[1;32m ok[0m sentinel: allow rule admits only the labelled client -> CONNECTED
+[1;32m ok[0m enforcement is on, and timeouts, refusals and DNS failures are told apart
+[1;34m==>[0m Running 2 rows from 1 source identities
+PASS          deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> plane-pgdb.plane-dev.svc.cluster.local:5432  # no reference for the target: a timeout alone, which does not show the target was up
+PASS          deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> 203.0.113.9:443  # no reference for the target: a timeout alone, which does not show the target was up
+[1;34m==>[0m PASS 2, FAIL 0, INCONCLUSIVE 0, of which 0 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 2. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261105T015520Z.tsv
+[1;34m==>[0m A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target.
+[1;32m ok[0m network policy matrix passed
+exit 0

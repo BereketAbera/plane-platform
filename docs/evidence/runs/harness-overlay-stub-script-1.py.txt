@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Item 5: branding-overlay on a rollout in flight. Real overlay for dev and real Deployments read from the cluster, with one
+status at a time changed to what a rollout on its way shows. Nothing in the cluster changes."""
+import copy, json, sys, tempfile, contextlib, io
+sys.path.insert(0, "/Users/bek/dev/pr/plane-platform/tests/e2e")
+import smoke as S
+real = None
+failures = 0
+def run(label, mutate, want):
+    global real, failures
+    with tempfile.TemporaryDirectory() as d:
+        s = S.Smoke(S.parse_args(["--env", "dev", "--accounts", f"{d}/a.env", "--sentinel", f"{d}/s.json"]))
+        if real is None:
+            real = s.cluster.deployments()
+        deployments = copy.deepcopy(real)
+        mutate(deployments)
+        s.cluster.deployments = lambda: deployments
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            s.run("branding-overlay", s.step_branding_overlay)
+        line = out.getvalue().strip()
+        ok = line.startswith(want)
+        failures += 0 if ok else 1
+        print(f"{label}\n  want {want}: {line[:330]}")
+def status(**fields):
+    def mutate(deployments):
+        deployments["plane-web-wl"]["status"].update(fields)
+    return mutate
+def generation(deployments):
+    deployments["plane-web-wl"]["metadata"]["generation"] += 1
+def template(deployments):
+    deployments["plane-web-wl"]["spec"]["template"]["spec"]["containers"][0]["image"] = "docker.io/makeplane/plane-frontend@sha256:old"
+run("A. as the cluster is now", lambda d: None, "PASS")
+run("B. the reviewer's case: new template applied, updatedReplicas 0, the old pod still ready", status(updatedReplicas=0, replicas=1, readyReplicas=1, availableReplicas=1), "BLOCKED")
+run("C. the new pod surged, the old one still there", status(updatedReplicas=1, replicas=2), "BLOCKED")
+run("D. the controller has not read the newest spec", generation, "BLOCKED")
+run("E. the old pod is gone and the new one is not available yet", status(updatedReplicas=1, replicas=1, availableReplicas=0), "BLOCKED")
+run("F. the template itself is not what the overlay names", template, "BLOCKED")
+print(f"failures: {failures}")
+sys.exit(1 if failures else 0)

@@ -1,0 +1,24 @@
+# date 2026-11-05T02:48:25Z, command: the script in promotion-flows-negative-controls-script-1.txt, on a clean clone with the scripts as they were at 9dbe45e. The next commit, 10d3ac6, changed only fixture_commit and a comment. Each control plants one defect in a scratch clone's scripts and requires a non-zero exit and that scenario's FAILED line
+CAUGHT only-first-digest-in-dev-check: exit 1, promote-four-images-each-must-run-in-dev FAILED; a refusal when no pod runs sha256:2000000000000000000000000000000000000000000000000000000000000002;it names sha256:200000000000000000000000000000000000000000000
+CAUGHT plan-check-loop-eats-stdin: exit 1, promote-four-images-each-must-be-recorded FAILED; it says why;it says why;
+CAUGHT registry-check-only-first: exit 1, promote-four-images-each-must-be-in-the-registry FAILED; a refusal for sha256:2000000000000000000000000000000000000000000000000000000000000002;it says why;
+CAUGHT apply-loop-eats-stdin: exit 1, promote-four-images-through-make FAILED; the commit records sha256:2000000000000000000000000000000000000000000000000000000000000002;the commit records sha256:2000000000000000000000000000000000000000000
+CAUGHT tag-not-dropped: exit 1, promote-four-images-through-make FAILED; the commit records sha256:2000000000000000000000000000000000000000000000000000000000000001;the commit records sha256:2000000000000000000000000000000000000000000
+CAUGHT dump-after-a-change: exit 1, promote-four-images-through-make FAILED; the dump came before any change;
+CAUGHT promote-takes-other-staged-files: exit 1, promote-four-images-through-make FAILED; the staged file is still staged;of the overlay and its render only;
+CAUGHT publish-checks-only-first-digest: exit 1, publish-merged-four-images-checks-each FAILED; a refusal;the reason;
+CAUGHT one-at-a-time-moves-all: exit 1, promote-four-images-one-at-a-time FAILED; it goes ahead, whatever dev runs of the other three;one image in the plan;
+CAUGHT warning-removed: exit 1, publish-warns-when-a-shared-change-reaches-prod-sim FAILED; the warning;it says who gets it;
+CAUGHT warning-blocks: exit 1, publish-warns-when-the-chart-reaches-prod-sim FAILED; it publishes anyway;it names the source;
+CAUGHT warning-counts-images: exit 1, promote-four-images-through-make FAILED; no warning about anything but images;
+CAUGHT warning-reads-paths-not-render: exit 1, publish-quiet-when-a-shared-change-renders-to-nothing FAILED; no warning;
+CAUGHT warning-claims-both-always: exit 1, publish-warns-when-only-prod-sim-changes FAILED; dev is not in it;
+CAUGHT rollback-stops-on-generated-conflict: exit 1, rollback-prod-sim-past-a-later-change-beside-the-image FAILED; the rollback works;it says why it went on;
+CAUGHT rollback-ignores-overlay-conflict: exit 1, rollback-stops-on-a-conflict-in-the-overlay FAILED; the reason;git's own words are shown;
+CAUGHT rollback-keeps-conflict-comment: exit 1, rollback-prod-sim-past-a-later-change-beside-the-image FAILED; nothing left of the conflict in the message;
+CAUGHT rollback-four-leaves-one: exit 1, rollback-four-images-together FAILED; the overlay and its render are as they were;the same promotion can be made again;
+CAUGHT setup-failure-ends-one-scenario-not-the-run: exit 1, publish-still-backs-up-prod-sim-change FAILED; 
+warn   a command in the scenario itself failed, with status 1
+fail 1 of 1 promotion flow scenarios failed
+CAUGHT harness-keeps-going: exit 1, a scenario after the stopped one still ran, and the summary line printed: fail 14 of 24 promotion flow scenarios failed; stopped: 14
+controls: 20, missed: 0

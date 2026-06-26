@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Read-only snapshot of every alert and the state around it. snap.sh <output-file> <row> <label>
+set -u
+out="$1" row="$2" label="$3"
+R=/Users/bek/dev/pr/plane-platform
+cd "$R"
+K() { KUBECONFIG="$R/.local/kubeconfig" "$R/.tools/bin/kubectl" --context kind-plane-platform "$@"; }
+{
+  printf '# %s %s snapshot\n# date_utc: %s\n# commit: %s\n# command: scripts in the scratchpad mon/snap.sh, read-only: curl of Alertmanager and Prometheus through Traefik, kubectl get, /proc in the kind node\n' "$row" "$label" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD)"
+  echo; echo '## git status --short, and hashes of what the drill runs'
+  git status --short
+  shasum -a 256 scripts/test-alert.sh monitoring/ops/lib.sh scripts/lib/common.sh helm/values/kube-prometheus-stack.yaml monitoring/manifests/shared/rules-plane.yaml
+  echo; echo '## host clock against the kind node clock'
+  a=$(python3 -c 'import time;print(time.time())'); n=$(docker exec plane-platform-control-plane date -u +%s.%N); b=$(python3 -c 'import time;print(time.time())')
+  printf 'host_before=%s node=%s host_after=%s\n' "$a" "$n" "$b"
+  echo; echo '## curl http://alertmanager.localhost/api/v2/alerts (all, including silenced, inhibited and unprocessed)'
+  curl -sS -m 10 'http://alertmanager.localhost/api/v2/alerts'; echo " [curl exit $?]"
+  echo; echo '## curl http://alertmanager.localhost/api/v2/silences'
+  curl -sS -m 10 'http://alertmanager.localhost/api/v2/silences'; echo " [curl exit $?]"
+  echo; echo '## curl http://prometheus.localhost/api/v1/alerts'
+  curl -sS -m 10 'http://prometheus.localhost/api/v1/alerts'; echo " [curl exit $?]"
+  echo; echo '## probe_success, both environments'
+  curl -sS -m 10 -G 'http://prometheus.localhost/api/v1/query' --data-urlencode 'query=probe_success{namespace=~"plane-dev|plane-prod-sim"}'; echo " [curl exit $?]"
+  echo; echo '## kubectl -n argocd get applications'
+  K -n argocd get applications -o custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status,OP:.status.operationState.phase,REV:.status.sync.revision,AUTO:.spec.syncPolicy.automated'
+  for ns in plane-dev plane-prod-sim; do
+    echo; echo "## kubectl -n $ns get deployment plane-api-wl; pods"
+    K -n "$ns" get deployment plane-api-wl -o custom-columns='NAME:.metadata.name,SPEC:.spec.replicas,READY:.status.readyReplicas,AVAILABLE:.status.availableReplicas,IMAGE:.spec.template.spec.containers[0].image'
+    K -n "$ns" get pods -o wide
+  done
+  echo; echo '## kind node memory and oom_kill, docker stats of the node, host disk'
+  docker exec plane-platform-control-plane sh -c 'grep -E "^(MemTotal|MemFree|MemAvailable|Cached|Buffers):" /proc/meminfo; grep "^oom_kill " /proc/vmstat'
+  docker stats --no-stream --format '{{.Name}} {{.MemUsage}}' plane-platform-control-plane
+  df -h "$R"
+} >"$out" 2>&1
+echo "wrote $out"

@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+"""Read-only side watcher for scripts/test-alert.sh: what that script does not record.
+
+Writes one JSON line per API sample, and one per change of anything else, each with the host's UTC time.
+  watch.py <env> <output> <stop-file> [max-seconds]
+Reads only: GET through Traefik to Plane's /api/instances/, Prometheus and Alertmanager, kubectl get, and
+/proc in the kind node. API cadence stays under Plane's anonymous limit of 30 a minute (3s here, 10s in the
+other environment). Response bodies of the API are checked and not kept.
+"""
+import datetime, http.client, json, os, subprocess, sys, threading, time
+
+env, out, stop_file = sys.argv[1], sys.argv[2], sys.argv[3]
+max_seconds = int(sys.argv[4]) if len(sys.argv) > 4 else 1500
+NS = {"dev": "plane-dev", "prod-sim": "plane-prod-sim"}[env]
+OTHER = {"dev": "prod-sim", "prod-sim": "dev"}[env]
+OTHER_NS = {"dev": "plane-prod-sim", "prod-sim": "plane-dev"}[env]
+KUBECTL = ["/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl", "--context", "kind-plane-platform"]
+ENVIRON = dict(os.environ, KUBECONFIG="/Users/bek/dev/pr/plane-platform/.local/kubeconfig")
+lock = threading.Lock()
+fh = open(out, "a", buffering=1)
+start = time.time()
+
+
+def now():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def emit(src, **data):
+    line = json.dumps({"t": now(), "src": src, **data}, sort_keys=False)
+    with lock:
+        fh.write(line + "\n")
+
+
+def running():
+    return not os.path.exists(stop_file) and time.time() - start < max_seconds
+
+
+def http_get(host, path, timeout=4):
+    conn = http.client.HTTPConnection("127.0.0.1", 80, timeout=timeout)
+    try:
+        conn.request("GET", path, headers={"Host": host, "Accept": "application/json", "User-Agent": "mon-watch"})
+        r = conn.getresponse()
+        return r.status, r.read()
+    finally:
+        conn.close()
+
+
+def api_loop(name, ns_env, every):
+    host = f"plane.{ns_env}.localhost"
+    while running():
+        begun = time.time()
+        rec = {"env": ns_env, "name": name}
+        try:
+            status, body = http_get(host, "/api/instances/", timeout=2.5)
+            rec["status"] = status
+            ok = False
+            try:
+                parsed = json.loads(body)
+                ok = status == 200 and isinstance(parsed, dict) and "config" in parsed and "instance" in parsed
+            except ValueError:
+                rec["body"] = "not-json"
+            rec["ok"] = ok
+        except Exception as exc:
+            rec["ok"] = False
+            rec["error"] = type(exc).__name__
+        rec["ms"] = int((time.time() - begun) * 1000)
+        emit("api", **rec)
+        time.sleep(max(0.1, every - (time.time() - begun)))
+
+
+def alerts_loop():
+    last_p, last_a = None, None
+    while running():
+        begun = time.time()
+        try:
+            _, body = http_get("prometheus.localhost", "/api/v1/alerts")
+            alerts = json.loads(body)["data"]["alerts"]
+            view = sorted(
+                ({"labels": a["labels"], "state": a["state"], "activeAt": a.get("activeAt")} for a in alerts),
+                key=lambda a: json.dumps(a["labels"], sort_keys=True),
+            )
+            if view != last_p:
+                emit("prometheus", alerts=view)
+                last_p = view
+        except Exception as exc:
+            emit("prometheus", error=type(exc).__name__)
+        try:
+            _, body = http_get("alertmanager.localhost", "/api/v2/alerts")
+            alerts = json.loads(body)
+            view = sorted(
+                (
+                    {
+                        "fingerprint": a["fingerprint"],
+                        "labels": a["labels"],
+                        "state": a["status"]["state"],
+                        "inhibitedBy": a["status"]["inhibitedBy"],
+                        "silencedBy": a["status"]["silencedBy"],
+                        "startsAt": a["startsAt"],
+                    }
+                    for a in alerts
+                ),
+                key=lambda a: a["fingerprint"],
+            )
+            if view != last_a:
+                emit("alertmanager", alerts=view)
+                last_a = view
+        except Exception as exc:
+            emit("alertmanager", error=type(exc).__name__)
+        time.sleep(max(0.1, 3 - (time.time() - begun)))
+
+
+def kube_json(*args):
+    r = subprocess.run(KUBECTL + list(args) + ["-o", "json"], capture_output=True, text=True, env=ENVIRON, timeout=20)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip()[:300])
+    return json.loads(r.stdout)
+
+
+def kube_loop():
+    last = {}
+
+    def change(key, value):
+        if last.get(key) != value:
+            last[key] = value
+            emit(key, **value)
+
+    while running():
+        begun = time.time()
+        try:
+            d = kube_json("-n", NS, "get", "deployment", "plane-api-wl")
+            change("deployment", {"spec_replicas": d["spec"].get("replicas"), "status": {k: d["status"].get(k) for k in ("replicas", "readyReplicas", "availableReplicas", "unavailableReplicas", "updatedReplicas")}})
+            p = kube_json("-n", NS, "get", "pods", "-l", f"app.name={NS}-plane-api")
+            change("pods", {"pods": [
+                {
+                    "name": i["metadata"]["name"],
+                    "phase": i["status"].get("phase"),
+                    "deleting": i["metadata"].get("deletionTimestamp"),
+                    "conditions": {c["type"]: [c["status"], c.get("lastTransitionTime")] for c in i["status"].get("conditions", [])},
+                    "restarts": [c.get("restartCount") for c in i["status"].get("containerStatuses", [])],
+                }
+                for i in p["items"]
+            ]})
+            e = kube_json("-n", NS, "get", "endpointslices", "-l", "kubernetes.io/service-name=plane-api")
+            change("endpoints", {"endpoints": [
+                {"addresses": ep.get("addresses"), "conditions": ep.get("conditions")}
+                for s in e["items"] for ep in (s.get("endpoints") or [])
+            ]})
+            a = kube_json("-n", "argocd", "get", "applications", "root", "plane-dev", "plane-prod-sim")
+            change("argo", {"apps": [
+                {
+                    "name": i["metadata"]["name"],
+                    "sync": i["status"]["sync"].get("status"),
+                    "health": i["status"]["health"].get("status"),
+                    "op": (i["status"].get("operationState") or {}).get("phase"),
+                    "op_started": (i["status"].get("operationState") or {}).get("startedAt"),
+                    "automated": i["spec"]["syncPolicy"].get("automated"),
+                }
+                for i in a["items"]
+            ]})
+        except Exception as exc:
+            emit("kube", error=str(exc)[:300])
+        time.sleep(max(0.1, 5 - (time.time() - begun)))
+
+
+def node_loop():
+    cmd = [
+        "docker", "exec", "plane-platform-control-plane", "sh", "-c",
+        'date -u +%s.%N; grep -E "^(MemTotal|MemAvailable):" /proc/meminfo; grep "^oom_kill " /proc/vmstat',
+    ]
+    while running():
+        begun = time.time()
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            back = time.time()
+            lines = r.stdout.split("\n")
+            vals = dict(l.split(":")[0:2] if ":" in l else l.split(" ", 1) for l in lines[1:] if l)
+            total = int(vals["MemTotal"].split()[0])
+            avail = int(vals["MemAvailable"].split()[0])
+            emit("node", used_gib=round((total - avail) / 1048576, 2), avail_gib=round(avail / 1048576, 2), oom_kill=int(vals["oom_kill"]),
+                 node_minus_host_s=round(float(lines[0]) - (begun + back) / 2, 3))
+        except Exception as exc:
+            emit("node", error=str(exc)[:200])
+        time.sleep(max(0.1, 30 - (time.time() - begun)))
+
+
+threads = [
+    threading.Thread(target=api_loop, args=("target", env, 3), daemon=True),
+    threading.Thread(target=api_loop, args=("other", OTHER, 10), daemon=True),
+    threading.Thread(target=alerts_loop, daemon=True),
+    threading.Thread(target=kube_loop, daemon=True),
+    threading.Thread(target=node_loop, daemon=True),
+]
+for t in threads:
+    t.start()
+while running():
+    time.sleep(0.5)
+for t in threads:
+    t.join(timeout=25)
+emit("watch", stopped=True, reason="stop-file" if os.path.exists(stop_file) else "max-seconds")

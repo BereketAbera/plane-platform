@@ -1,0 +1,73 @@
+# MON-1 timeline DERIVED from MON-1-20261105T055029Z-watch.txt. The watch file is the raw record; this is a reading of it
+# date_utc: 2026-11-05T06:10:19Z
+# commit: 0bd3e2d
+# command: python3 -B timeline.py .local/evidence-raw/MON-1-20261105T055029Z-watch.txt
+2026-11-05T05:50:37.001Z prometheus ('Watchdog', '-', ''): None -> ('firing', '2026-11-05T00:34:26.617154565Z')
+2026-11-05T05:50:37.006Z alertmanager ('Watchdog', '-', 'd68248beabce3f14'): None -> ('active', '2026-11-04T21:35:26.617Z', (), ())
+2026-11-05T05:50:37.007Z api[target dev] ok=True status=200 error=None body=None ms=14
+2026-11-05T05:50:37.026Z api[other prod-sim] ok=True status=200 error=None body=None ms=34
+2026-11-05T05:50:37.052Z deployment spec=1 ready=1 replicas=1 unavailable=None
+2026-11-05T05:50:37.067Z node used=9.71GiB oom_kill=62 node-host=0.027s
+2026-11-05T05:50:37.096Z pods plane-api-wl-d7d5dcb7f-5h8hf Running deleting=None Ready=['True', '2026-11-05T05:30:53Z'] restarts=[0]
+2026-11-05T05:50:37.133Z endpoints [{"addresses": ["10.244.0.235"], "conditions": {"ready": true, "serving": true, "terminating": false}}]
+2026-11-05T05:50:37.192Z argo root Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True} | plane-dev Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True} | plane-prod-sim Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True}
+2026-11-05T05:50:47.231Z argo root Synced/Healthy op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-dev Synced/Healthy op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-prod-sim Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True}
+2026-11-05T05:50:52.055Z api[target dev] ok=False status=503 error=None body=not-json ms=39
+2026-11-05T05:50:52.097Z deployment spec=0 ready=None replicas=None unavailable=None
+2026-11-05T05:50:52.158Z pods plane-api-wl-d7d5dcb7f-5h8hf Running deleting=2026-11-05T05:51:20Z Ready=['True', '2026-11-05T05:30:53Z'] restarts=[0]
+2026-11-05T05:50:52.197Z endpoints [{"addresses": ["10.244.0.235"], "conditions": {"ready": false, "serving": true, "terminating": true}}]
+2026-11-05T05:50:52.249Z argo root Synced/Progressing op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-dev OutOfSync/Healthy op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-prod-sim Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True}
+2026-11-05T05:50:57.162Z pods none
+2026-11-05T05:50:57.200Z endpoints []
+2026-11-05T05:50:58.021Z prometheus ('PlaneApiDatabaseProbeFailing', 'plane-dev', 'api-db'): None -> ('pending', '2026-11-05T05:50:55.213278481Z')
+2026-11-05T05:50:58.021Z prometheus ('PlaneApiDown', 'plane-dev', 'api-instance'): None -> ('pending', '2026-11-05T05:50:55.213278481Z')
+2026-11-05T05:51:07.066Z node used=9.58GiB oom_kill=62 node-host=0.022s
+2026-11-05T05:51:34.062Z prometheus ('ArgoAppOutOfSync', 'plane-dev', 'plane-dev'): None -> ('pending', '2026-11-05T05:51:02.417343552Z')
+2026-11-05T05:51:37.071Z node used=9.56GiB oom_kill=62 node-host=0.02s
+2026-11-05T05:51:58.089Z prometheus ('PlaneApiDatabaseProbeFailing', 'plane-dev', 'api-db'): ('pending', '2026-11-05T05:50:55.213278481Z') -> ('firing', '2026-11-05T05:50:55.213278481Z')
+2026-11-05T05:51:58.089Z prometheus ('PlaneApiDown', 'plane-dev', 'api-instance'): ('pending', '2026-11-05T05:50:55.213278481Z') -> ('firing', '2026-11-05T05:50:55.213278481Z')
+2026-11-05T05:51:58.091Z alertmanager ('PlaneApiDatabaseProbeFailing', 'plane-dev', '2fe0e2c8ff192026'): None -> ('active', '2026-11-05T05:51:55.213Z', (), ())
+2026-11-05T05:51:58.091Z alertmanager ('PlaneApiDown', 'plane-dev', '0faa1d683d94c625'): None -> ('active', '2026-11-05T05:51:55.213Z', (), ())
+2026-11-05T05:52:07.087Z node used=9.57GiB oom_kill=62 node-host=0.028s
+2026-11-05T05:52:12.101Z deployment spec=1 ready=None replicas=1 unavailable=1
+2026-11-05T05:52:12.143Z pods plane-api-wl-d7d5dcb7f-hs2gn Running deleting=None Ready=['False', '2026-11-05T05:52:07Z'] restarts=[0]
+2026-11-05T05:52:12.188Z endpoints [{"addresses": ["10.244.0.250"], "conditions": {"ready": false, "serving": false, "terminating": false}}]
+2026-11-05T05:52:12.245Z argo root Synced/Progressing op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-dev Synced/Progressing op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-prod-sim Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True}
+2026-11-05T05:52:22.146Z prometheus ('KubePodNotReady', 'plane-dev', 'plane-api-wl-d7d5dcb7f-hs2gn'): None -> ('pending', '2026-11-05T05:52:22.109597967Z')
+2026-11-05T05:52:37.099Z node used=9.76GiB oom_kill=62 node-host=0.045s
+2026-11-05T05:52:46.122Z prometheus ('CPUThrottlingHigh', 'plane-dev', '172.24.0.2:10250'): None -> ('pending', '2026-11-05T05:52:43.139282231Z')
+2026-11-05T05:52:46.267Z api[target dev] ok=True status=200 error=None body=None ms=133
+2026-11-05T05:52:47.079Z deployment spec=1 ready=1 replicas=1 unavailable=None
+2026-11-05T05:52:47.128Z pods plane-api-wl-d7d5dcb7f-hs2gn Running deleting=None Ready=['True', '2026-11-05T05:52:43Z'] restarts=[0]
+2026-11-05T05:52:47.171Z endpoints [{"addresses": ["10.244.0.250"], "conditions": {"ready": true, "serving": true, "terminating": false}}]
+2026-11-05T05:52:47.241Z argo root Synced/Healthy op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-dev Synced/Healthy op=Succeeded auto={'enabled': False, 'prune': True, 'selfHeal': True} | plane-prod-sim Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True}
+2026-11-05T05:53:04.129Z prometheus ('ArgoAppOutOfSync', 'plane-dev', 'plane-dev'): ('pending', '2026-11-05T05:51:02.417343552Z') -> None
+2026-11-05T05:53:04.129Z prometheus ('ArgoAppStuckProgressing', 'plane-dev', 'plane-dev'): None -> ('pending', '2026-11-05T05:52:32.417343552Z')
+2026-11-05T05:53:07.046Z node used=9.75GiB oom_kill=62 node-host=0.03s
+2026-11-05T05:53:13.141Z prometheus ('PlaneApiDatabaseProbeFailing', 'plane-dev', 'api-db'): ('firing', '2026-11-05T05:50:55.213278481Z') -> None
+2026-11-05T05:53:13.141Z prometheus ('PlaneApiDown', 'plane-dev', 'api-instance'): ('firing', '2026-11-05T05:50:55.213278481Z') -> None
+2026-11-05T05:53:13.144Z alertmanager ('PlaneApiDatabaseProbeFailing', 'plane-dev', '2fe0e2c8ff192026'): ('active', '2026-11-05T05:51:55.213Z', (), ()) -> None
+2026-11-05T05:53:13.144Z alertmanager ('PlaneApiDown', 'plane-dev', '0faa1d683d94c625'): ('active', '2026-11-05T05:51:55.213Z', (), ()) -> None
+2026-11-05T05:53:22.163Z prometheus ('KubePodNotReady', 'plane-dev', 'plane-api-wl-d7d5dcb7f-hs2gn'): ('pending', '2026-11-05T05:52:22.109597967Z') -> None
+2026-11-05T05:53:28.169Z prometheus ('InfoInhibitor', 'plane-dev', ''): None -> ('firing', '2026-11-05T05:52:56.617154565Z')
+2026-11-05T05:53:28.172Z alertmanager ('InfoInhibitor', 'plane-dev', '31a7a0bb530246d8'): None -> ('suppressed', '2026-11-05T05:52:56.617Z', ('d68248beabce3f14',), ())
+2026-11-05T05:53:37.030Z node used=9.86GiB oom_kill=62 node-host=0.018s
+2026-11-05T05:53:42.231Z argo root Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True} | plane-dev Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True} | plane-prod-sim Synced/Healthy op=Succeeded auto={'prune': True, 'selfHeal': True}
+2026-11-05T05:54:07.045Z node used=9.82GiB oom_kill=62 node-host=0.019s
+2026-11-05T05:54:37.054Z node used=9.82GiB oom_kill=62 node-host=0.021s
+2026-11-05T05:55:04.261Z prometheus ('ArgoAppStuckProgressing', 'plane-dev', 'plane-dev'): ('pending', '2026-11-05T05:52:32.417343552Z') -> None
+2026-11-05T05:55:07.047Z node used=9.71GiB oom_kill=62 node-host=0.022s
+2026-11-05T05:55:37.058Z node used=9.69GiB oom_kill=62 node-host=0.024s
+2026-11-05T05:56:07.064Z node used=9.72GiB oom_kill=62 node-host=0.025s
+2026-11-05T05:56:13.351Z prometheus ('CPUThrottlingHigh', 'plane-dev', '172.24.0.2:10250'): ('pending', '2026-11-05T05:52:43.139282231Z') -> None
+2026-11-05T05:56:28.370Z prometheus ('InfoInhibitor', 'plane-dev', ''): ('firing', '2026-11-05T05:52:56.617154565Z') -> None
+2026-11-05T05:56:28.372Z alertmanager ('InfoInhibitor', 'plane-dev', '31a7a0bb530246d8'): ('suppressed', '2026-11-05T05:52:56.617Z', ('d68248beabce3f14',), ()) -> None
+2026-11-05T05:56:37.061Z node used=9.74GiB oom_kill=62 node-host=0.024s
+2026-11-05T05:57:07.073Z node used=9.78GiB oom_kill=62 node-host=0.03s
+2026-11-05T05:57:37.082Z node used=9.7GiB oom_kill=62 node-host=0.031s
+2026-11-05T05:58:07.077Z node used=9.71GiB oom_kill=62 node-host=0.03s
+2026-11-05T05:58:36.998Z watch {'stopped': True, 'reason': 'stop-file'}
+
+api samples: {'target': 157, 'other': 47} codes: {'target': {'200': 119, '503': 38}, 'other': {'200': 47}}
+target failing samples: 38 first: ['2026-11-05T05:50:52.055Z'] last: ['2026-11-05T05:52:43.147Z']
+other failing samples: 0 []

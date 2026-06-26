@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Independent of rotate.sh's own proof. At start it reads the password Plane uses now from Secret plane-pgdb
+# and holds it in this process's memory only: never in a file, an argument or the output. Each time the file
+# <work-dir>/trigger appears it tries that value, the Secret's current value and a random one against Postgres
+# by two routes, and appends what Postgres said to <output>. Stops when <work-dir>/stop appears.
+#   old-value-proof.sh <output> <work-dir>
+#
+# Route 1: psql inside the Postgres pod, over the pod IP, because the socket and 127.0.0.1 are trusted.
+# Route 2: psycopg from the api pod over Service plane-pgdb, the path Plane itself uses.
+set -uo pipefail
+ROOT=/Users/bek/dev/pr/plane-platform
+export PATH="$ROOT/.tools/bin:$PATH" KUBECONFIG="$ROOT/.local/kubeconfig"
+NS=plane-dev
+OUT="$1"
+WORK="$2"
+mkdir -p "$WORK"
+
+secret_value() { kubectl -n "$NS" get secret "$1" -o json | jq -r --arg k "$2" '.data[$k] // "" | @base64d'; }
+
+OLD="$(secret_value plane-pgdb POSTGRES_PASSWORD)"
+[[ -n "$OLD" ]] || { echo "could not read the starting value" >>"$OUT"; exit 1; }
+printf '%s starting value held in memory, length %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${#OLD}" >>"$OUT"
+
+scrub() { # Never let a value reach the file, even if a client echoed it.
+  local line
+  while IFS= read -r line; do
+    line="${line//$OLD/<scrubbed>}"
+    if [[ -n "${NEW:-}" ]]; then line="${line//$NEW/<scrubbed>}"; fi
+    printf '%s\n' "$line"
+  done
+}
+
+# shellcheck disable=SC2016  # Expanded by the shell in the pod.
+route_psql() { # password
+  local ip
+  ip="$(kubectl -n "$NS" get pod plane-pgdb-wl-0 -o jsonpath='{.status.podIP}')"
+  printf '%s\n' "$1" | kubectl -n "$NS" exec -i plane-pgdb-wl-0 -c plane-pgdb -- sh -c \
+    'IFS= read -r PGPASSWORD; export PGPASSWORD PGCONNECT_TIMEOUT=5; psql -X -w -h "$0" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select current_user, inet_client_addr()"; echo "psql exit $?"' \
+    "$ip" 2>&1
+}
+
+route_psycopg() { # password
+  printf '%s\n' "$1" | kubectl -n "$NS" exec -i deploy/plane-api-wl -c plane-api -- python3 -c '
+import os, sys, urllib.parse
+import psycopg
+pw = sys.stdin.readline().rstrip("\n")
+u = urllib.parse.urlparse(os.environ["DATABASE_URL"])
+try:
+    with psycopg.connect(host=u.hostname, port=u.port or 5432, dbname=u.path.lstrip("/"), user=u.username, password=pw, connect_timeout=5) as c:
+        row = c.execute("select current_user, inet_server_addr()").fetchone()
+        print("ACCEPTED over %s as %s, server %s" % (u.hostname, row[0], row[1]))
+except Exception as e:
+    print("REFUSED over %s: %s" % (u.hostname, " ".join(str(e).split()).replace(pw, "<scrubbed>")))
+' 2>&1
+}
+
+attempt() { # label password
+  printf -- '-- %s\n' "$1"
+  printf '   psql over pod IP:   '
+  route_psql "$2" | scrub | tr '\n' ' '
+  printf '\n   psycopg over Service: '
+  route_psycopg "$2" | scrub | tr '\n' ' '
+  printf '\n'
+}
+
+pod_env_check() { # What each running backend pod holds, compared here, printed as yes or no
+  local deploy held current
+  current="$(secret_value plane-app-env DATABASE_URL)"
+  for deploy in plane-api-wl plane-worker-wl plane-beat-worker-wl; do
+    held="$(kubectl -n "$NS" exec "deploy/$deploy" -c "${deploy%-wl}" -- printenv DATABASE_URL 2>/dev/null)"
+    printf '   %s: DATABASE_URL equals the current Secret: %s; contains the starting value: %s\n' "$deploy" \
+      "$([[ "$held" == "$current" ]] && echo yes || echo no)" \
+      "$([[ "$held" == *":$OLD@"* ]] && echo yes || echo no)"
+  done
+}
+
+run_once() {
+  local label
+  label="$(cat "$WORK/trigger" 2>/dev/null)"
+  NEW="$(secret_value plane-pgdb POSTGRES_PASSWORD)"
+  {
+    printf '===== %s %s, commit %s\n' "${label:-attempt}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git -C "$ROOT" rev-parse --short HEAD)"
+    printf 'Secret holds the starting value: %s. Length of the current value: %s\n' "$([[ "$NEW" == "$OLD" ]] && echo yes || echo no)" "${#NEW}"
+    attempt "the value Plane used before the rotation" "$OLD"
+    attempt "the value in Secret plane-pgdb now" "$NEW"
+    attempt "a random value, the negative control" "$(openssl rand -hex 24)"
+    printf -- '-- what the running pods hold\n'
+    pod_env_check
+  } >>"$OUT" 2>&1
+  rm -f "$WORK/trigger"
+  : >"$WORK/done"
+}
+
+while [[ ! -e "$WORK/stop" ]]; do
+  if [[ -e "$WORK/trigger" ]]; then run_once; fi
+  sleep 1
+done
+printf '%s stopped\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$OUT"

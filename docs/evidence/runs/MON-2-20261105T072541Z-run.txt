@@ -1,0 +1,18 @@
+# 2026-11-05T07:25:41Z commit 3227c91 command: make test-alert ENV=prod-sim. The owner approved this in chat.
+[1;34m==>[0m Preflight
+[1;32m ok[0m preflight passed; plane-dev baseline alerts: none
+[1;34m==>[0m Pausing auto-sync: root
+[1;34m==>[0m Pausing auto-sync: plane-prod-sim
+[1;34m==>[0m Injecting: scaling plane-prod-sim/plane-api-wl to 0
+[1;32m ok[0m pending after 24s
+[1;32m ok[0m firing in Prometheus after 83s
+[1;32m ok[0m active in Alertmanager after 83s
+[1;32m ok[0m firing webhook reached the sink after 83s
+[1;34m==>[0m Checking the other environment stayed quiet
+[1;32m ok[0m plane-dev stayed quiet
+[1;34m==>[0m Recovering: scaling plane-api-wl back to 1
+[1;32m ok[0m resolved webhook reached the sink 61s after recovery
+[1;32m ok[0m auto-sync restored on plane-prod-sim
+[1;32m ok[0m auto-sync restored on root
+[1;32m ok[0m PlaneApiDown delivered and resolved, plane-dev stayed quiet. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/alert-test-prod-sim-20261105T072541Z.json
+make exit=0

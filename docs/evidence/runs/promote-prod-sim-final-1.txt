@@ -1,0 +1,35 @@
+[1;34m==>[0m Promotion plan for prod-sim
+    plane-admin -> localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+    plane-backend -> localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+    plane-frontend -> localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    plane-space -> localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m passed: plane-dev was Synced and Healthy and running every digest here
+[1;34m==>[0m Backing up prod-sim first, because rolling back an image does not roll back a migration
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261105T022025Z
+[pod/plane-backup-20261105t022025z-hsbkj/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t022025z-hsbkj/objects] 2026/11/05 02:20:32 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t022025z-hsbkj/objects] 2026/11/05 02:20:32 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t022025z-hsbkj/objects] 2026/11/05 02:20:32 NOTICE: Local file system at /backups/20261105T022025Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t022025z-hsbkj/objects] 2026/11/05 02:20:32 NOTICE: Local file system at /backups/20261105T022025Z.partial/objects: 41 matching files
+[pod/plane-backup-20261105t022025z-hsbkj/objects] 2026/11/05 02:20:32 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t022025z-hsbkj/objects] objects: 41 checked
+[pod/plane-backup-20261105t022025z-hsbkj/finalize] finalize: 20261105T022025Z complete
+backup 20261105T022025Z: postgres/plane.dump 765363 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2109 B, postgres/content.tsv 127 B, objects.lsjson 15824 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261105T022025Z
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 0af8956: promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+[1;34m==>[0m This publish changes a prod-sim image, so plane-dev must have proven it
+[1;32m ok[0m passed: plane-dev was Synced and Healthy and running every digest here
+[1;33mwarn[0m publishing 151 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       0af8956 promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+       62699c9 promote(dev): plane-frontend 96841278d02a, plane-admin c24ead5a02a1, plane-space 0a4ca742292d, plane-backend 9c7130942d90
+       ba2ce63 docs(handoff): mark D12 as applied by agents with the owner's decision open, state the publish gate and the final build, and regenerate the appendix rows
+       1d8cc83 docs(index): define the result labels as validation.md does
+       c302ecb docs(case-study): correct the patch and separation counts, D12's limit and the stale-page fix against the final build, and say what was staged or read live
+[1;32m ok[0m published main 0af895603a79 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git

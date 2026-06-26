@@ -1,0 +1,2 @@
+scripts/test.sh e2e prod-sim, started 20261105T022210Z
+FAIL     e2e prod-sim               exit 1, evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T022210Z-2247.json

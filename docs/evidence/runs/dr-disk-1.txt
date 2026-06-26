@@ -1,0 +1,40 @@
+# What a new cluster costs the host. 2026-11-05T02:01:59Z. Commands and output, with both Plane environments, Infisical and monitoring up.
+
+$ df -k /System/Volumes/Data
+Filesystem   1024-blocks      Used Available Capacity iused     ifree %iused  Mounted on
+/dev/disk3s5   482797652 438952788  12789208    98% 6947541 127892080    5%   /System/Volumes/Data
+
+$ docker system df -v, volumes of this platform
+plane-platform-local_registry-data 919MB
+plane-platform-local_mirror-docker-data 2.486GB
+91005102f57b63c4b370899ac0ac79e788943d795b15aafd89f4fb81f733573d 12.35GB
+plane-platform-local_mirror-k8s-data 37.64MB
+plane-platform-local_mirror-quay-data 447.5MB
+
+$ docker inspect the node: the volume at /var
+91005102f57b63c4b370899ac0ac79e788943d795b15aafd89f4fb81f733573d
+
+$ du -xsk in the node, in KiB
+13567228	/var
+11018852	/var/lib/containerd
+1599804	/var/local-path-provisioner
+32040	/var/log
+
+$ docker images, the node image and what local services run on
+plane-platform-local-git latest 35MB
+ghcr.io/distribution/distribution 3.1.2 82.2MB
+kindest/node v1.36.4 1.28GB
+mirror.gcr.io/kindest/node <none> 1.28GB
+
+$ ls -ls Docker.raw: allocated KiB, then apparent bytes
+44225996 /Users/bek/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+
+# In GiB, from the lines above. Docker prints decimal GB, and du prints KiB.
+kind /var volume by du:              13567228 KiB = 12.94 GiB (images 11018852 KiB = 10.51, volumes 1599804 KiB = 1.53)
+kind /var volume by docker system df:      12.35 GB = 11.50 GiB
+local services' volumes: 0.919 + 2.486 + 0.038 + 0.448 = 3.89 GB = 3.62 GiB
+node image:                                 1.28 GB = 1.19 GiB
+first install, all three:           12.94 + 3.62 + 1.19 = 17.75 GiB
+re-create, with the rest kept:      12.94 GiB. Plus the 10 GiB floor of guard_disk = 22.94, so 25 leaves about 2 over
+cluster-up.sh alone:                12.94 GiB, so 15 leaves about 2 over
+Other agents were building and testing at the same time, so these move by a few hundred MB between reads.

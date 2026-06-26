@@ -1,0 +1,139 @@
+# Items 3, 6 and 7 on the real cluster, with fixture matrices, 2026-11-05 from 02:21Z, commit 62300a7 and after. /bin/bash scripts/test-netpol.sh. Fixtures and the two stub dockers are below.
+
+== fixture-witness.yaml
+cases:
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny, note: "review fixture: the witness cannot run" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 203.0.113.9, port: 443 }, expect: deny, note: "review fixture: nothing is there at all, and the witness cannot run" }
+
+== fixture-control.yaml
+cases:
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny, note: "fixture: blocked, target up, witness works" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 203.0.113.9, port: 443 }, expect: deny, note: "fixture: nothing is there, witness works, so free" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: offline-check.invalid, port: 443 }, expect: deny, note: "fixture: an internet name with no DNS answer, and the node has none either, so free" }
+
+== fixture-noreference.yaml
+cases:
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb-wl-0.plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny, note: "fixture: a pod's own name, which is no Service, so the node has no address for it" }
+
+== docker-fails/docker
+#!/bin/bash
+# A docker that cannot reach anything, as a stopped daemon reads.
+echo "stub docker: cannot connect to the daemon" >&2
+exit 1
+
+== docker-fails-later/docker
+#!/bin/bash
+# Lets the first witness through, the sentinel's, and fails every later one. Everything else goes to the real docker.
+count="<scratch>/docker-fails-later/count"
+if [[ "$1 $2" == "exec -i" ]]; then
+  n=$(cat "$count" 2>/dev/null || echo 0)
+  n=$((n + 1))
+  echo "$n" >"$count"
+  if [[ "$n" -gt 1 ]]; then
+    echo "stub docker: the daemon went away after the sentinel" >&2
+    exit 1
+  fi
+fi
+exec "/usr/local/bin/docker" "$@"
+
+--- PATH=<a docker that exits 1>:$PATH MATRIX=fixture-witness.yaml /bin/bash scripts/test-netpol.sh
+==> Sentinel: is NetworkPolicy really enforced?
+warn no network policy table found by name in nftables on the node. Continuing, the behaviour test decides.
+ ok sentinel: no policy, open port -> CONNECTED
+ ok sentinel: no policy, closed port -> REFUSED
+ ok sentinel: name that does not exist -> DNS
+ ok sentinel: default-deny blocks a new connection -> TIMEOUT
+ ok sentinel: allow rule admits only the labelled client -> CONNECTED
+fail sentinel: the node's witness could not run, so every row would lose its reference: stub docker: cannot connect to the daemon
+--- exit 1
+
+--- PATH=<a docker that lets the sentinel's witness through, then exits 1>:$PATH MATRIX=fixture-witness.yaml /bin/bash scripts/test-netpol.sh
+==> Sentinel: is NetworkPolicy really enforced?
+ ok sentinel: no policy, open port -> CONNECTED
+ ok sentinel: no policy, closed port -> REFUSED
+ ok sentinel: name that does not exist -> DNS
+ ok sentinel: default-deny blocks a new connection -> TIMEOUT
+ ok sentinel: allow rule admits only the labelled client -> CONNECTED
+ ok sentinel: the node's witness -> a blocked server answers it on an open and a closed port, and 192.0.2.1 does not
+ ok enforcement is on, and timeouts, refusals and DNS failures are told apart
+==> Running 2 rows from 1 source identities
+warn the node's witness could not run for group 1, before the probes, so its rows have no reading: stub docker: the daemon went away after the sentinel
+warn the node's witness could not run for group 1, after the probes, so its rows have no reading: stub docker: the daemon went away after the sentinel
+INCONCLUSIVE  deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> plane-pgdb.plane-dev.svc.cluster.local:5432  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+INCONCLUSIVE  deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> 203.0.113.9:443  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+==> PASS 0, FAIL 0, INCONCLUSIVE 2, of which 0 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 0. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261105T022223Z.tsv
+==> A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target.
+warn nothing failed, but a row could not prove anything. That is not a pass.
+--- exit 2
+
+--- MATRIX=fixture-control.yaml /bin/bash scripts/test-netpol.sh
+==> Sentinel: is NetworkPolicy really enforced?
+ ok sentinel: no policy, open port -> CONNECTED
+ ok sentinel: no policy, closed port -> REFUSED
+ ok sentinel: name that does not exist -> DNS
+ ok sentinel: default-deny blocks a new connection -> TIMEOUT
+ ok sentinel: allow rule admits only the labelled client -> CONNECTED
+ ok sentinel: the node's witness -> a blocked server answers it on an open and a closed port, and 192.0.2.1 does not
+ ok enforcement is on, and timeouts, refusals and DNS failures are told apart
+==> Running 3 rows from 1 source identities
+PASS          deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> plane-pgdb.plane-dev.svc.cluster.local:5432  # reference: the target answered the node and this pod's DNS answered, at the same moment
+INCONCLUSIVE  deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> 203.0.113.9:443  # nothing outside the cluster answered the node at this moment, so this proves nothing. Not counted against the run
+INCONCLUSIVE  deny   DNS        plane-dev {"probe":"unlabelled"} -> offline-check.invalid:443  # this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run
+==> PASS 1, FAIL 0, INCONCLUSIVE 2, of which 2 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 0. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261105T022321Z.tsv
+==> A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target.
+ ok network policy matrix passed
+--- exit 0
+
+--- MATRIX=fixture-noreference.yaml /bin/bash scripts/test-netpol.sh
+==> Sentinel: is NetworkPolicy really enforced?
+ ok sentinel: no policy, open port -> CONNECTED
+ ok sentinel: no policy, closed port -> REFUSED
+ ok sentinel: name that does not exist -> DNS
+ ok sentinel: default-deny blocks a new connection -> TIMEOUT
+ ok sentinel: allow rule admits only the labelled client -> CONNECTED
+ ok sentinel: the node's witness -> a blocked server answers it on an open and a closed port, and 192.0.2.1 does not
+ ok enforcement is on, and timeouts, refusals and DNS failures are told apart
+==> Running 1 rows from 1 source identities
+PASS          deny   TIMEOUT    plane-dev {"probe":"unlabelled"} -> plane-pgdb-wl-0.plane-pgdb.plane-dev.svc.cluster.local:5432  # no reference for the target: a timeout alone, which does not show the target was up
+==> PASS 1, FAIL 0, INCONCLUSIVE 0, of which 0 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 1. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261105T022416Z.tsv
+==> A deny PASS is a timeout. For 1 of them nothing shows the target was up, as each says. The rest had both references, and none of them can rule out loss only on that pod's path to that target.
+ ok network policy matrix passed
+--- exit 0
+
+== netpol-20261105T022223Z.tsv, a fixture run's rows, moved here so no one reads it as the matrix
+verdict	expect	observed	from	labels	to	port	note
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	plane-pgdb.plane-dev.svc.cluster.local	5432	review fixture: the witness cannot run; the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	203.0.113.9	443	review fixture: nothing is there at all, and the witness cannot run; the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+
+== netpol-20261105T022321Z.tsv, a fixture run's rows, moved here so no one reads it as the matrix
+verdict	expect	observed	from	labels	to	port	note
+PASS	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	plane-pgdb.plane-dev.svc.cluster.local	5432	fixture: blocked, target up, witness works; reference: the target answered the node and this pod's DNS answered, at the same moment
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	203.0.113.9	443	fixture: nothing is there, witness works, so free; nothing outside the cluster answered the node at this moment, so this proves nothing. Not counted against the run
+INCONCLUSIVE	deny	DNS	plane-dev	{"probe":"unlabelled"}	offline-check.invalid	443	fixture: an internet name with no DNS answer, and the node has none either, so free; this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run
+
+== netpol-20261105T022416Z.tsv, a fixture run's rows, moved here so no one reads it as the matrix
+verdict	expect	observed	from	labels	to	port	note
+PASS	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	plane-pgdb-wl-0.plane-pgdb.plane-dev.svc.cluster.local	5432	fixture: a pod's own name, which is no Service, so the node has no address for it; no reference for the target: a timeout alone, which does not show the target was up
+
+== netpol-20261105T023613Z.tsv, a fixture run's rows, moved here so no one reads it as the matrix
+verdict	expect	observed	from	labels	to	port	note
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"api"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"worker"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"beat"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"live"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"space"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"web"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"admin"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"postgres"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"valkey"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-dev	{"app.kubernetes.io/component":"rabbitmq"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"api"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"worker"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"beat"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"live"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"space"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"web"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"admin"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"postgres"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"valkey"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source
+PASS	allow	CONNECTED	plane-prod-sim	{"app.kubernetes.io/component":"rabbitmq"}	kube-dns.kube-system.svc.cluster.local	53	fixture: the positive control network.py now asks of this source

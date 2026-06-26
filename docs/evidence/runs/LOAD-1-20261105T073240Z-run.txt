@@ -1,0 +1,6 @@
+# 2026-11-05T07:32:40Z commit 4aa0640 command: make test-load ENV=dev. Prod-sim was being rotated and restored in the same minutes, so this is not a quiet machine.
+[1;34m==>[0m Recording the starting state in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/load-20261105T073241Z
+[1;34m==>[0m Running k6: 5, 10 then 20 VUs at THINK=1. About 10 minutes.
+[1;34m==>[0m Reading what Prometheus saw
+[1;32m ok[0m results: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/load-20261105T073241Z/results.json
+make exit=0

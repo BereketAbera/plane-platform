@@ -1,0 +1,47 @@
+# 2026-11-05T04:18:08Z python3 -B instance-stub.py tests/e2e <code>, the same stub on tests/e2e/smoke.py at 1936016 and at ef7a48d. Over real HTTP against StubPlane, with kubectl stubbed. No real sign-up race and no real promotion. Script: harness-instance-stub-script-1.py.txt
+##### OLD CODE, tests/e2e/smoke.py at 1936016
+== the sequence in the finding: a probe lands during the first sign-up, then a second run
+first run:   FAIL    instance-setup  is_setup_done is still false after admin sign-up
+  sign-ups: 1  bare key says is_setup_done: False  database says: True
+  stored password is the one the database holds: True
+second run:  FAIL    instance-setup  auth error 5000 ADMIN_ALREADY_EXIST
+  sign-ups: 2
+  stored password is the one the database holds: False
+== branding-backend after a promotion, with the previous image's answer in the bare key
+good image over a bad one: FAIL    branding-backend  the backend reports upstream's changelog: 'https://sites.plane.so/x'
+bad image over a good one: PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+== the sentinel, when its replacement cannot be created
+FAIL    sentinel-create  POST /api/workspaces/ answered 500
+  file still there: False  the line says Replaced: False
+== a pod being terminated after a finished rollout
+None
+== workloads-ready and the run's verdict, with one surge pod and a Progressing Application
+FAIL    workloads-ready  plane-web-wl has 2/1 ready; Application plane-dev is Synced/Progressing
+run's verdict: FAIL  exit 1
+
+##### NEW CODE, tests/e2e/smoke.py at ef7a48d
+== the sequence in the finding: a probe lands during the first sign-up, then a second run
+first run:   PASS    instance-setup  admin created, telemetry off
+  sign-ups: 1  bare key says is_setup_done: False  database says: True
+  stored password is the one the database holds: True
+second run:  PASS    instance-setup  already set up, reusing stored admin
+  sign-ups: 1
+  stored password is the one the database holds: True
+== branding-backend after a promotion, with the previous image's answer in the bare key
+good image over a bad one: PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+bad image over a good one: FAIL    branding-backend  the backend reports upstream's changelog: 'https://sites.plane.so/x'
+== the sentinel, when its replacement cannot be created
+FAIL    sentinel-create  Replaced s.json: this run found the instance not set up, so this new database cannot hold sentinel sentinel-old, written 2026-05-01T00:00:00Z. The new record could not be created, so none is on disk now, and the next full run creates o
+  file still there: False  the line says Replaced: True
+== a pod being terminated after a finished rollout
+1 replicas are still terminating
+== workloads-ready and the run's verdict, with one surge pod and a Progressing Application
+BLOCKED workloads-ready  a rollout is under way, so this says nothing yet, and this run cannot read PASS: plane-web-wl has 2/1 ready; Application plane-dev is Synced/Progressing
+run's verdict: BLOCKED  exit 2
+
+$ python3 -B tests/e2e/smoke.py --selftest
+selftest ok
+exit 0
+$ /usr/bin/python3 -B tests/e2e/smoke.py --selftest (3.9.6)
+selftest ok
+exit 0

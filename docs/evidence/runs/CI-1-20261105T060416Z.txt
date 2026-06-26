@@ -1,0 +1,69 @@
+UTC date: 2026-11-05T06:04:16Z
+commit: 9c8e098
+command: pr-ci-runs.sh, which runs each command shown below after its $ line
+
+$ gh run list --repo BereketAbera/plane-platform --event pull_request --limit 10 --json databaseId,workflowName,event,createdAt,updatedAt,status,conclusion,headSha,headBranch,displayTitle
+[{"conclusion":"failure","createdAt":"2026-11-05T05:57:04Z","databaseId":41977201138,"displayTitle":"promote(prod-sim): plane-frontend 96841278d02a","event":"pull_request","headBranch":"promote/prod-sim","headSha":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a","status":"completed","updatedAt":"2026-11-05T05:59:37Z","workflowName":"ci"},{"conclusion":"action_required","createdAt":"2026-11-05T05:47:21Z","databaseId":41976206674,"displayTitle":"promote(dev): plane-frontend 6c2686f9b850, plane-admin 823620826d9d, plane-space a1585e502352, plane-backend 737fccc5c547","event":"pull_request","headBranch":"bump/dev-images","headSha":"33b9109e495cf45e743d691f6a92739cf8d23eee","status":"completed","updatedAt":"2026-11-05T05:47:21Z","workflowName":"ci"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41976206674 --jq {id,name,event,status,conclusion,created_at,updated_at,run_started_at,actor:.actor.login,triggering_actor:.triggering_actor.login,head_sha,head_branch,pull_requests:[.pull_requests[].number],jobs_url}
+{"actor":"github-actions[bot]","conclusion":"action_required","created_at":"2026-11-05T05:47:21Z","event":"pull_request","head_branch":"bump/dev-images","head_sha":"33b9109e495cf45e743d691f6a92739cf8d23eee","id":41976206674,"jobs_url":"https://api.github.com/repos/BereketAbera/plane-platform/actions/runs/41976206674/jobs","name":"ci","pull_requests":[1],"run_started_at":"2026-11-05T05:47:21Z","status":"completed","triggering_actor":"github-actions[bot]","updated_at":"2026-11-05T05:47:21Z"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41976206674/jobs --jq {total_count,jobs:[.jobs[]|{name,status,conclusion}]}
+{"jobs":[],"total_count":0}
+[exit 0]
+
+$ gh run view 41976206674 --repo BereketAbera/plane-platform --log
+failed to get run log: log not found
+[exit 1]
+
+$ gh run view 41976206674 --repo BereketAbera/plane-platform
+
+X bump/dev-images ci BereketAbera/plane-platform#1 · 41976206674
+Triggered via pull_request about 17 minutes ago
+
+JOBS
+
+
+To see what failed, try: gh run view 41976206674 --log-failed
+View this run on GitHub: https://github.com/BereketAbera/plane-platform/actions/runs/41976206674
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41977201138 --jq {id,name,event,status,conclusion,created_at,updated_at,run_started_at,actor:.actor.login,triggering_actor:.triggering_actor.login,head_sha,head_branch,pull_requests:[.pull_requests[].number],jobs_url}
+{"actor":"github-actions[bot]","conclusion":"failure","created_at":"2026-11-05T05:57:04Z","event":"pull_request","head_branch":"promote/prod-sim","head_sha":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a","id":41977201138,"jobs_url":"https://api.github.com/repos/BereketAbera/plane-platform/actions/runs/41977201138/jobs","name":"ci","pull_requests":[],"run_started_at":"2026-11-05T05:57:04Z","status":"completed","triggering_actor":"github-actions[bot]","updated_at":"2026-11-05T05:59:37Z"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41977201138/jobs --jq {total_count,jobs:[.jobs[]|{name,status,conclusion}]}
+{"jobs":[],"total_count":0}
+[exit 0]
+
+$ gh run view 41977201138 --repo BereketAbera/plane-platform --log
+failed to get run log: log not found
+[exit 1]
+
+$ gh run view 41977201138 --repo BereketAbera/plane-platform
+
+X promote/prod-sim ci BereketAbera/plane-platform#2 · 41977201138
+Triggered via pull_request about 7 minutes ago
+
+X This run likely failed because of a workflow file issue.
+
+For more information, see: https://github.com/BereketAbera/plane-platform/actions/runs/41977201138
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/33b9109e495cf45e743d691f6a92739cf8d23eee/check-suites --jq [.check_suites[]|{id,status,conclusion,app:.app.slug,latest_check_runs_count,head_branch}]
+[{"app":"netlify","conclusion":null,"head_branch":"bump/dev-images","id":113743605210,"latest_check_runs_count":0,"status":"queued"},{"app":"builder-io-integration","conclusion":null,"head_branch":"bump/dev-images","id":113743605606,"latest_check_runs_count":0,"status":"queued"},{"app":"github-actions","conclusion":"action_required","head_branch":"bump/dev-images","id":113743616152,"latest_check_runs_count":0,"status":"completed"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a/check-suites --jq [.check_suites[]|{id,status,conclusion,app:.app.slug,latest_check_runs_count,head_branch}]
+[{"app":"netlify","conclusion":null,"head_branch":"promote/prod-sim","id":113746214212,"latest_check_runs_count":0,"status":"queued"},{"app":"builder-io-integration","conclusion":null,"head_branch":"promote/prod-sim","id":113746214754,"latest_check_runs_count":0,"status":"queued"},{"app":"github-actions","conclusion":"failure","head_branch":"promote/prod-sim","id":113746227593,"latest_check_runs_count":0,"status":"completed"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/33b9109e495cf45e743d691f6a92739cf8d23eee/status --jq {state,total_count}
+{"state":"pending","total_count":0}
+[exit 0]
+
+$ gh pr view 1 --repo BereketAbera/plane-platform --json mergeStateStatus,mergeable,state,statusCheckRollup
+{"mergeStateStatus":"UNSTABLE","mergeable":"MERGEABLE","state":"OPEN","statusCheckRollup":[]}
+[exit 0]

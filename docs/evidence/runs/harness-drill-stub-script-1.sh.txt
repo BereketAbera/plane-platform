@@ -1,0 +1,209 @@
+#!/bin/bash
+# tests/drills/failed-deploy-rollback.sh with kubectl and curl stubbed, in a throwaway clone with its own bare repository,
+# and the real promote.sh, rollback.sh, gitops-publish.sh and render.sh on disk. Nothing here reaches a cluster. It says what
+# the drill does given these answers, and nothing about what really fires.
+#   drill-stub.sh <repo> [scenario...]
+set -uo pipefail
+SOURCE="$1"; shift
+WORK="$(mktemp -d)"
+trap 'rm -rf "${WORK:?}"' EXIT
+export CLONE="$WORK/repo" STUB="$WORK/stub"
+mkdir -p "$STUB"
+git clone --quiet "$SOURCE" "$CLONE"
+git -C "$CLONE" remote remove origin
+git -C "$CLONE" checkout --quiet -B main
+git -C "$CLONE" config user.name stub; git -C "$CLONE" config user.email stub@invalid; git -C "$CLONE" config commit.gpgsign false
+rm -rf "${CLONE:?}/scripts" "${CLONE:?}/tests/drills"
+cp -R "$SOURCE/scripts" "$CLONE/scripts"; cp -R "$SOURCE/tests/drills" "$CLONE/tests/drills"
+mkdir -p "$CLONE/.tools/bin" "$CLONE/.local"
+for tool in "$SOURCE"/.tools/bin/*; do ln -sf "$tool" "$CLONE/.tools/bin/$(basename "$tool")"; done
+rm -f "${CLONE:?}/.tools/bin/kubectl"
+cat >"$CLONE/.tools/bin/kubectl" <<'K'
+#!/bin/bash
+args=" $* "
+echo "$*" >>"$STUB/kubectl-calls"
+image() { "$CLONE/.tools/bin/yq" -N -r 'select(.kind == "Deployment" and .metadata.name == "plane-web-wl") | .spec.template.spec.containers[0].image' "$CLONE/gitops/environments/dev/manifests.yaml"; }
+bad() { image | grep -F "sha256:0000000000" >/dev/null; }
+case "$args" in
+  *" get --raw /readyz "*) exit 0 ;;
+  *" annotate application "*) exit 0 ;;
+  *" get statefulset plane-pgdb-wl "*) echo statefulset.apps/plane-pgdb-wl ;;
+  *" get application plane-dev -o jsonpath={.status.sync.status}/{.status.health.status}/{.status.operationState.phase} "*)
+    if bad; then printf Synced/Degraded/Running; else printf Synced/Healthy/Succeeded; fi ;;
+  *" get application plane-dev -o jsonpath={.status.sync.status}/{.status.health.status} "*) if bad; then printf Synced/Degraded; else printf Synced/Healthy; fi ;;
+  *" get application plane-dev -o jsonpath={.status.sync.status} "*) printf Synced ;;
+  *" get application plane-dev -o jsonpath={.status.health.status} "*)
+    if bad; then
+      if [[ -e "$STUB/plant-prod-sim-change" ]]; then
+        rm -f "${STUB:?}/plant-prod-sim-change"
+        # A merged prod-sim promotion arrives while dev is broken.
+        sed -i.bak 's/@sha256:[a-f0-9]\{64\}/@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/' "$CLONE/gitops/environments/prod-sim/manifests.yaml"
+        rm -f "${CLONE:?}/gitops/environments/prod-sim/manifests.yaml.bak"
+        git -C "$CLONE" add -- gitops/environments/prod-sim/manifests.yaml
+        git -C "$CLONE" commit --quiet -m 'promote(prod-sim): planted during the drill'
+      fi
+      printf Degraded
+    else printf Healthy; fi ;;
+  *" get application plane-dev -o jsonpath={.status.operationState.message} "*) printf stubbed ;;
+  *" -n plane-dev get pods -o json "*) printf '{"items":[]}' ;;
+  *" get deployment plane-web-wl -o jsonpath={.spec.template.spec.containers[0].image} "*) image ;;
+  *" get deployment plane-web-wl -o jsonpath={.spec.progressDeadlineSeconds} "*) printf 60 ;;
+  *" get pods -l app.kubernetes.io/component=web -o jsonpath={.items[*].metadata.uid} "*) printf uid-old-pod ;;
+  *" get pods -l app.kubernetes.io/component=web -o jsonpath={range .items[*]}{.status.containerStatuses[0].state.waiting.reason}"*) if bad; then printf 'ImagePullBackOff\n'; fi ;;
+  *" get pods -o jsonpath={range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.uid}"*) printf 'uid-old-pod\n' ;;
+  *" get pods -o jsonpath={range .items[*]}{.spec.containers[0].image}"*) if [[ -e "$STUB/pods-unreadable" ]]; then exit 1; fi; image ;;
+  *" -n monitoring logs deploy/alert-sink "*)
+    printf '%s\n' 'not json' \
+      '{"received_at":"2026-11-05T05:15:00+00:00","path":"/alerts","payload":{"status":"firing","alerts":[{"status":"firing","labels":{"alertname":"Watchdog","severity":"none"}}]}}' \
+      '{"received_at":"2026-11-05T05:16:00+00:00","path":"/alerts","payload":{"status":"firing","alerts":[{"status":"firing","labels":{"alertname":"ArgoSyncFailed","severity":"critical","name":"plane-dev","dest_namespace":"plane-dev"}}]}}' \
+      '{"received_at":"2026-11-05T05:18:00+00:00","path":"/alerts","payload":{"status":"resolved","alerts":[{"status":"resolved","labels":{"alertname":"ArgoSyncFailed","severity":"critical","name":"plane-dev","dest_namespace":"plane-dev"}}]}}'
+    ;;
+  *) echo "stub kubectl: not expected: $*" >&2; exit 97 ;;
+esac
+K
+cat >"$CLONE/.tools/bin/curl" <<'C'
+#!/bin/bash
+echo "$*" >>"$STUB/curl-calls"
+case "$*" in
+  *"/api/v1/alerts"*)
+    count=$(( $(cat "$STUB/readings" 2>/dev/null || echo 0) + 1 )); echo "$count" >"$STUB/readings"
+    mode="$(cat "$STUB/prometheus")"
+    if [[ "$mode" == down ]]; then exit 7; fi
+    if [[ "$mode" == gap && "$count" -gt 3 && "$count" -lt 7 ]]; then exit 22; fi
+    if [[ "$mode" == not-the-api ]]; then printf 200; exit 0; fi
+    image="$("$CLONE/.tools/bin/yq" -N -r 'select(.kind == "Deployment" and .metadata.name == "plane-web-wl") | .spec.template.spec.containers[0].image' "$CLONE/gitops/environments/dev/manifests.yaml")"
+    alert() { printf '{"labels":{"alertname":"%s","severity":"%s","name":"plane-dev","dest_namespace":"plane-dev"},"state":"%s","activeAt":"2026-11-05T05:00:00Z","value":"1"}' "$1" "$2" "$3"; }
+    printf '{"status":"success","data":{"alerts":[{"labels":{"alertname":"Watchdog","severity":"none"},"state":"firing","activeAt":"2026-11-01T00:00:00Z","value":"1"}'
+    if [[ "$image" == *sha256:0000000000* ]]; then
+      echo seen >"$STUB/was-bad"
+      printf ','; alert ArgoAppStuckProgressing warning pending
+      printf ','; alert ArgoSyncFailed critical pending
+    elif [[ -e "$STUB/was-bad" ]]; then
+      after=$(( $(cat "$STUB/after" 2>/dev/null || echo 0) + 1 )); echo "$after" >"$STUB/after"
+      if [[ "$after" -lt 6 ]]; then printf ','; alert ArgoSyncFailed critical firing; fi
+    fi
+    printf ']}}\n'
+    ;;
+  *) printf 200 ;;
+esac
+C
+chmod +x "$CLONE/.tools/bin/kubectl" "$CLONE/.tools/bin/curl"
+cat >"$CLONE/scripts/backup.sh" <<'B'
+#!/bin/bash
+echo "$*" >>"$STUB/backup-calls"; exit 1
+B
+chmod +x "$CLONE/scripts/backup.sh"
+git -C "$CLONE" add -A -- scripts tests/drills >/dev/null
+git -C "$CLONE" commit --quiet --allow-empty -m 'scripts under test'
+BASE="$(git -C "$CLONE" rev-parse HEAD)"
+BARE="$CLONE/.local/git/plane-platform.git"
+OUT="$WORK/out"
+export ALERTS_EVERY=1 ALERTS_SETTLE=20 PATH="/bin:/usr/bin:$PATH"
+fails=0
+check() { if "${@:2}"; then echo "  ok   $1"; else echo "  WRONG $1"; fails=$((fails + 1)); fi; }
+said() { grep -qF -- "$1" "$OUT"; }
+equal() { [[ "$1" == "$2" ]]; }
+not() { ! "$@"; }
+reset() {
+  git -C "$CLONE" reset --quiet --hard "$BASE"
+  rm -rf "${CLONE:?}/.local/git" "${CLONE:?}/.local/evidence-raw" "${STUB:?}"
+  mkdir -p "$STUB"
+  touch "$CLONE/.local/kubeconfig"
+  echo ok >"$STUB/prometheus"
+  (cd "$CLONE" && ./scripts/gitops-publish.sh) >/dev/null 2>&1 || { echo "the starting state could not be published"; exit 3; }
+}
+drill() { (cd "$CLONE" && /bin/bash ./tests/drills/failed-deploy-rollback.sh) >"$OUT" 2>&1; status=$?; sleep 1; echo "--- exit $status"; sed 's/^/    /' "$OUT" | cut -c1-210; }
+head_is() { git -C "$CLONE" rev-parse HEAD; }
+published() { git --git-dir="$BARE" rev-parse refs/heads/main; }
+recorder_gone() { local size; size="$(wc -c <"$(alerts_tsv)")"; sleep 3; [[ "$(wc -c <"$(alerts_tsv)")" == "$size" ]]; }
+alerts_tsv() { ls "$CLONE"/.local/evidence-raw/drill-failed-deploy-*-alerts.tsv 2>/dev/null | head -1; }
+
+run_scenario() { case "$1" in
+  records)
+    echo "=== records: a full run, with an alert that fires and one that only goes pending"; reset; drill
+    check "exit 0" equal "$status" 0
+    check "RESULT PASS" said "RESULT PASS"
+    check "two commits on main" equal "$(git -C "$CLONE" rev-list --count "$BASE..HEAD")" 2
+    check "published" equal "$(published)" "$(head_is)"
+    check "the raw record exists" test -s "$(alerts_tsv)"
+    check "ArgoSyncFailed reads FIRED" grep -qE '^FIRED +ArgoSyncFailed severity=critical first_pending=[0-9T:Z-]+ first_firing=[0-9T:Z-]+ last_seen=' "$OUT"
+    check "ArgoAppStuckProgressing reads PENDING ONLY" grep -qE '^PENDING ONLY +ArgoAppStuckProgressing .*first_firing=- ' "$OUT"
+    check "Watchdog reads AT START" grep -qE '^AT START +Watchdog ' "$OUT"
+    check "the Application's changes are there" said "Synced/Degraded/Running"
+    check "the sink's lines are there, without Watchdog" grep -q "^SINK .*resolved  ArgoSyncFailed" "$OUT"
+    check "no Watchdog from the sink" not grep -q "^SINK .*Watchdog " "$OUT"
+    check "no gap" said ", 0 with no answer"
+    check "it waited for the new alerts to go" said "nothing is pending or firing that was not at the start"
+    check "prod-sim did not move" said "prod-sim's manifests did not move"
+    check "times to read against" grep -q '^AT .*+[0-9]*s  revert published' "$OUT"
+    check "no dump for a dev change" test ! -e "$STUB/backup-calls"
+    check "the recorder is gone" recorder_gone
+    echo "--- the raw record, first lines and last lines"; { head -6 "$(alerts_tsv)"; echo ...; tail -4 "$(alerts_tsv)"; } | sed 's/^/    /' | cut -c1-170
+    ;;
+  prometheus-down)
+    echo "=== prometheus-down: no answer at preflight stops it before anything moves"; reset; echo down >"$STUB/prometheus"; drill
+    check "exit non-zero" not equal "$status" 0
+    check "it says why" said "Prometheus does not answer"
+    check "HEAD did not move" equal "$(head_is)" "$BASE"
+    ;;
+  not-the-api)
+    echo "=== not-the-api: a 200 that is not the alerts API, as the CI flows' curl stub answers. The drill goes on and says so"; reset; echo not-the-api >"$STUB/prometheus"; drill
+    check "exit 0" equal "$status" 0
+    check "it says nothing was recorded" said "NOT RECORDED  no alert was read during this run"
+    ;;
+  gap)
+    echo "=== gap: Prometheus stops answering for a few readings mid-drill"; reset; echo gap >"$STUB/prometheus"; drill
+    check "exit 0" equal "$status" 0
+    check "the gaps are listed" grep -q '^GAP ' "$OUT"
+    check "and counted" grep -qE ', [1-9] with no answer' "$OUT"
+    ;;
+  pending-prod-sim)
+    echo "=== pending-prod-sim: a prod-sim change waits on main, so the drill does not start"; reset
+    sed -i.bak 's/@sha256:[a-f0-9]\{64\}/@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/' "$CLONE/gitops/environments/prod-sim/manifests.yaml"; rm -f "${CLONE:?}/gitops/environments/prod-sim/manifests.yaml.bak"
+    git -C "$CLONE" add -- gitops/environments/prod-sim/manifests.yaml; git -C "$CLONE" commit --quiet -m 'promote(prod-sim): waiting on main'; waiting="$(head_is)"
+    drill
+    check "exit non-zero" not equal "$status" 0
+    check "it names the commit" said "promote(prod-sim): waiting on main"
+    check "HEAD did not move" equal "$(head_is)" "$waiting"
+    check "nothing was published" not equal "$(published)" "$waiting"
+    check "no trap restore" not said "Restore (exit trap)"
+    ;;
+  revert-unpublished)
+    echo "=== revert-unpublished: rollback.sh commits the revert and its publish is refused once. The bare repository still names the digest"; reset
+    mkdir -p "$BARE/hooks"
+    cat >"$BARE/hooks/pre-receive" <<'H'
+#!/bin/bash
+while read -r _ new _; do
+  if git log -1 --format=%s "$new" | grep -q '^Revert' && [[ ! -e "$STUB/refused-once" ]]; then echo seen >"$STUB/refused-once"; echo "refused once by the stub" >&2; exit 1; fi
+done
+H
+    chmod +x "$BARE/hooks/pre-receive"
+    drill
+    check "exit non-zero" not equal "$status" 0
+    check "the old wording is not there" not said "the bad digest never reached main"
+    check "the trap published the revert" said "bad promotion reverted by the trap"
+    check "one revert on main, not two" equal "$(git -C "$CLONE" log --format=%B "$BASE..HEAD" | grep -c '^This reverts commit')" 1
+    check "published is HEAD" equal "$(published)" "$(head_is)"
+    check "the record is still printed" grep -qE '^PENDING ONLY|^FIRED' "$OUT"
+    check "the recorder is gone" recorder_gone
+    ;;
+  prod-sim-arrives)
+    echo "=== prod-sim-arrives: a prod-sim promotion lands on main while dev is broken. rollback.sh dev must not carry it, and the drill says so"; reset; touch "$STUB/plant-prod-sim-change"; drill
+    check "exit non-zero" not equal "$status" 0
+    check "rollback.sh refused to carry it" said "Main holds a change to prod-sim's images"
+    check "the drill says the restore failed" said "automatic restore failed"
+    check "nothing reached prod-sim" equal "$(git --git-dir="$BARE" show refs/heads/main:gitops/environments/prod-sim/manifests.yaml | grep -c 'sha256:cccc')" 0
+    check "the bad digest is still what Argo CD reads, which is the true state" git --git-dir="$BARE" grep -qF "sha256:0000000000" refs/heads/main -- helm/plane/overlays/dev/kustomization.yaml
+    ;;
+  pods-unreadable)
+    echo "=== pods-unreadable: a failed read is not proof that no pod has the digest"; reset; touch "$STUB/pods-unreadable"; drill
+    check "exit non-zero" not equal "$status" 0
+    check "it says so" said "could not read the pods"
+    check "no pass for it" not said "PASS  no pod references the bad digest"
+    ;;
+  *) echo "unknown scenario $1"; exit 3 ;;
+esac; }
+if [[ $# -eq 0 ]]; then set -- records prometheus-down not-the-api gap pending-prod-sim revert-unpublished prod-sim-arrives pods-unreadable; fi
+for scenario in "$@"; do run_scenario "$scenario"; done
+echo "=== wrong: $fails"
+exit "$fails"

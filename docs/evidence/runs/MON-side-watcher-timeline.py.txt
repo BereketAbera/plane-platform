@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""Derive a readable timeline from a side-watcher file. The raw file is the evidence; this only reads it."""
+import json, sys
+path = sys.argv[1]
+target_prev = None
+other_prev = None
+down_samples = {"target": [], "other": []}
+total = {"target": 0, "other": 0}
+codes = {"target": {}, "other": {}}
+last_prom = {}
+last_am = {}
+for line in open(path):
+    if line.startswith("#") or not line.strip():
+        continue
+    e = json.loads(line)
+    t, src = e["t"], e["src"]
+    if src == "api":
+        name = e["name"]
+        total[name] += 1
+        key = str(e.get("status", e.get("error")))
+        codes[name][key] = codes[name].get(key, 0) + 1
+        prev = target_prev if name == "target" else other_prev
+        cur = (e["ok"], e.get("status"), e.get("error"), e.get("body"))
+        if prev != cur:
+            print(f"{t} api[{name} {e['env']}] ok={e['ok']} status={e.get('status')} error={e.get('error')} body={e.get('body')} ms={e['ms']}")
+        if name == "target":
+            target_prev = cur
+        else:
+            other_prev = cur
+        if not e["ok"]:
+            down_samples[name].append(t)
+    elif src == "prometheus":
+        if "error" in e:
+            print(f"{t} prometheus error {e['error']}")
+            continue
+        cur = {}
+        for a in e["alerts"]:
+            l = a["labels"]
+            k = (l.get("alertname"), l.get("namespace") or l.get("dest_namespace") or "-", l.get("probe") or l.get("instance") or l.get("name") or l.get("pod") or "")
+            cur[k] = (a["state"], a["activeAt"])
+        for k in sorted(set(cur) | set(last_prom)):
+            if cur.get(k) != last_prom.get(k):
+                print(f"{t} prometheus {k}: {last_prom.get(k)} -> {cur.get(k)}")
+        last_prom = cur
+    elif src == "alertmanager":
+        if "error" in e:
+            print(f"{t} alertmanager error {e['error']}")
+            continue
+        cur = {}
+        for a in e["alerts"]:
+            l = a["labels"]
+            k = (l.get("alertname"), l.get("namespace") or l.get("dest_namespace") or "-", a["fingerprint"])
+            cur[k] = (a["state"], a["startsAt"], tuple(a["inhibitedBy"]), tuple(a["silencedBy"]))
+        for k in sorted(set(cur) | set(last_am)):
+            if cur.get(k) != last_am.get(k):
+                print(f"{t} alertmanager {k}: {last_am.get(k)} -> {cur.get(k)}")
+        last_am = cur
+    elif src == "deployment":
+        print(f"{t} deployment spec={e['spec_replicas']} ready={e['status'].get('readyReplicas')} replicas={e['status'].get('replicas')} unavailable={e['status'].get('unavailableReplicas')}")
+    elif src == "pods":
+        print(f"{t} pods " + "; ".join(f"{p['name']} {p['phase']} deleting={p['deleting']} Ready={p['conditions'].get('Ready')} restarts={p['restarts']}" for p in e["pods"]) if e["pods"] else f"{t} pods none")
+    elif src == "endpoints":
+        print(f"{t} endpoints " + json.dumps(e["endpoints"]))
+    elif src == "argo":
+        print(f"{t} argo " + " | ".join(f"{a['name']} {a['sync']}/{a['health']} op={a['op']} auto={a['automated']}" for a in e["apps"]))
+    elif src == "node":
+        if "error" in e:
+            print(f"{t} node error {e['error']}")
+        else:
+            print(f"{t} node used={e['used_gib']}GiB oom_kill={e['oom_kill']} node-host={e['node_minus_host_s']}s")
+    elif src in ("kube", "watch"):
+        print(t, src, {k: v for k, v in e.items() if k not in ("t", "src")})
+print()
+print("api samples:", total, "codes:", codes)
+print("target failing samples:", len(down_samples["target"]), "first:", down_samples["target"][:1], "last:", down_samples["target"][-1:])
+print("other failing samples:", len(down_samples["other"]), down_samples["other"][:5])

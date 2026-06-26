@@ -11,10 +11,10 @@ PASS     a forged token is refused                                      expected
 PASS     dev reader lists plane-dev                                     expected=200      got=200  9 keys
 PASS     prod-sim reader lists plane-prod-sim                           expected=200      got=200  9 keys
 PASS     dev reader lists plane-prod-sim                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
-PASS     dev reader reads plane-prod-sim PG_PASSWORD                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader reads plane-prod-sim <redacted>                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
 PASS     dev reader resolves slug plane-prod-sim (operator's first call) expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
 PASS     prod-sim reader lists plane-dev                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
-PASS     prod-sim reader reads plane-dev PG_PASSWORD                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader reads plane-dev <redacted>                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
 PASS     prod-sim reader resolves slug plane-dev                        expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
 [1;34m==>[0m Role limits on the reader's own project and organization
 PASS     dev reader cannot write to its own project                     expected=403      got=403  You are not allowed to create on secrets

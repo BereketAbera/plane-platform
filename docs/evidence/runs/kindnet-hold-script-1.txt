@@ -1,0 +1,171 @@
+# The scripts behind kindnet-hold-1.txt and kindnet-hold-2.txt, and the scratch pod. They read pq.py and sink.py, small readers of the Prometheus API and of the sink's log.
+
+## synthetic.yaml (first run)
+# Throwaway: stands in for kindnet so the real one stays untouched. Alloy keeps kube-system containers named
+# kindnet-cni, and counts this line exactly as it would count the real one.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kindnet-failopen-synthetic
+  namespace: kube-system
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 0
+  containers:
+    - name: kindnet-cni
+      image: docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c", "echo 'I1105 00:00:00.000000 1 main.go:0] synthetic test line: skipping network policies'; sleep 3600"]
+      resources: { limits: { memory: 16Mi }, requests: { memory: 16Mi, cpu: 1m } }
+
+## synthetic2.yaml (second run)
+# Throwaway: stands in for kindnet so the real one stays untouched. Alloy keeps kube-system containers named
+# kindnet-cni, and counts this line exactly as it would count the real one.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kindnet-failopen-synthetic-heartbeat
+  namespace: kube-system
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 0
+  containers:
+    - name: kindnet-cni
+      image: docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c", "echo 'I1105 00:00:00.000000 1 main.go:0] synthetic test line: skipping network policies'; while true; do echo 'I1105 00:00:01.000000 1 main.go:0] synthetic heartbeat'; sleep 10; done"]
+      resources: { limits: { memory: 16Mi }, requests: { memory: 16Mi, cpu: 1m } }
+
+## kindnet-proof.sh
+#!/bin/bash
+# Bash 3.2. Proof that KindnetSkippedNetworkPolicies holds across an in-place Alloy restart, and that PodRestarting
+# is quiet on one restart and fires on two, each through to the sink. The real kindnet is not touched.
+set -u
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/alert-truth
+K="/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl --context kind-plane-platform"
+export KUBECONFIG=/Users/bek/dev/pr/plane-platform/.local/kubeconfig
+say() { printf '[%s] %s\n' "$(date -u +%H:%M:%SZ)" "$*"; }
+q() { python3 "$S/pq.py" "$1" | cut -c1-200; }
+alloy_pod() { $K -n monitoring get pod -l app.kubernetes.io/name=alloy -o jsonpath='{.items[0].metadata.name}'; }
+alloy_id() { $K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.status.containerStatuses[0].containerID}' | sed 's#containerd://##'; }
+alloy_restarts() { $K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.status.containerStatuses[0].restartCount}'; }
+state() {
+  echo "  counter: $(q 'loki_process_custom_kindnet_netpol_skipped_total' | tr '\n' ' ')"
+  echo "  heartbeat: $(q 'sum(loki_process_custom_kindnet_log_lines_total)')"
+  echo "  ALERTS: $(q 'ALERTS{alertname=~"KindnetSkippedNetworkPolicies|PodRestarting|KindnetLogsNotRead"}' | tr '\n' ';')"
+  echo "  increase(alloy restarts[15m]): $(q 'increase(kube_pod_container_status_restarts_total{namespace="monitoring",container="alloy"}[15m])')"
+}
+wait_for() { # seconds description command...
+  local limit="$1" what="$2" start=$SECONDS; shift 2
+  while [ $((SECONDS - start)) -lt "$limit" ]; do
+    if "$@" >/dev/null 2>&1; then say "$what after $((SECONDS - start))s"; return 0; fi
+    sleep 5
+  done
+  say "NOT SEEN within ${limit}s: $what"; return 1
+}
+firing() { python3 "$S/pq.py" "ALERTS{alertname=\"$1\",alertstate=\"firing\"$2}" | grep -q alertstate; }
+sink_has() { python3 "$S/sink.py" "$T0" "$1" | grep -E "$2" | grep -q .; }
+stop_alloy() {
+  local before id
+  before="$(alloy_restarts)"; id="$(alloy_id)"
+  say "stopping the Alloy container in place, restartCount $before, pod $(alloy_pod) uid $($K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.metadata.uid}')"
+  docker exec plane-platform-control-plane crictl stop "$id" >/dev/null || { say "crictl stop refused"; return 1; }
+  ready_again() { [ "$(alloy_restarts)" != "$before" ] && [ "$($K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.status.containerStatuses[0].ready}')" = true ]; }
+  wait_for 180 "Alloy restarted in the same pod, restartCount $(($before + 1))" ready_again
+}
+
+echo "# date: $(date -u +%FT%TZ)"
+T0="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+say "real kindnet: $($K -n kube-system get pod -l app=kindnet -o jsonpath='{.items[0].metadata.name} restarts={.items[0].status.containerStatuses[0].restartCount}')"
+say "before"; state
+$K apply -f "$S/synthetic.yaml"
+wait_for 180 "firing in Prometheus" firing KindnetSkippedNetworkPolicies ',pod="kindnet-failopen-synthetic"'
+wait_for 120 "firing webhook at the sink" sink_has KindnetSkipped 'alert=firing .*kindnet-failopen-synthetic'
+state
+
+stop_alloy
+sleep 75
+say "75s after the first in-place restart, with one restart counted"; state
+say "sink resolved lines so far: $(python3 "$S/sink.py" "$T0" KindnetSkipped | grep -c 'alert=resolved')"
+sleep 120
+say "195s after the first restart"; state
+say "PodRestarting at one restart, firing or not: $(python3 "$S/pq.py" 'ALERTS{alertname="PodRestarting",container="alloy"}' | cut -c1-120)"
+
+stop_alloy
+wait_for 150 "PodRestarting firing in Prometheus on the second restart" firing PodRestarting ',container="alloy"'
+wait_for 120 "PodRestarting firing webhook at the sink" sink_has PodRestarting 'alert=firing .*alloy'
+state
+say "kindnet alert after both restarts: sink resolved lines $(python3 "$S/sink.py" "$T0" KindnetSkipped | grep -c 'alert=resolved')"
+
+say "deleting the scratch pod, so the count no longer applies"
+$K -n kube-system delete pod kindnet-failopen-synthetic --grace-period=0 --force 2>&1 | tail -1
+T3=$SECONDS
+wait_for 480 "resolved webhook at the sink" sink_has KindnetSkipped 'alert=resolved .*kindnet-failopen-synthetic'
+state
+say "every kindnet line at the sink:"; python3 "$S/sink.py" "$T0" Kindnet
+say "every PodRestarting line at the sink so far:"; python3 "$S/sink.py" "$T0" PodRestarting
+say "real kindnet: $($K -n kube-system get pod -l app=kindnet -o jsonpath='{.items[0].metadata.name} restarts={.items[0].status.containerStatuses[0].restartCount}')"
+echo "# done"
+
+## kindnet-proof-2.sh
+#!/bin/bash
+# Bash 3.2. The same hold as kindnet-proof.sh, with the case the first run could not show: the line followed by
+# heartbeats, as real kindnet logs it. A pod whose only line is the fail-open line gets it read again after a restart,
+# because the tail resumes at its last line. With heartbeats after it, the line is behind the read position for good.
+set -u
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/alert-truth
+K="/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl --context kind-plane-platform"
+export KUBECONFIG=/Users/bek/dev/pr/plane-platform/.local/kubeconfig
+POD=kindnet-failopen-synthetic-heartbeat
+say() { printf '[%s] %s\n' "$(date -u +%H:%M:%SZ)" "$*"; }
+q() { python3 "$S/pq.py" "$1" | cut -c1-210; }
+alloy_pod() { $K -n monitoring get pod -l app.kubernetes.io/name=alloy -o jsonpath='{.items[0].metadata.name}'; }
+alloy_id() { $K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.status.containerStatuses[0].containerID}' | sed 's#containerd://##'; }
+alloy_restarts() { $K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.status.containerStatuses[0].restartCount}'; }
+state() {
+  echo "  the count now: $(q "loki_process_custom_kindnet_netpol_skipped_total{pod=\"$POD\"}" | tr '\n' ' ')"
+  echo "  the count held for 3d: $(q "max_over_time(loki_process_custom_kindnet_netpol_skipped_total{pod=\"$POD\"}[3d])" | tr '\n' ' ')"
+  echo "  the old expression: $(q "max by (namespace, pod) (loki_process_custom_kindnet_netpol_skipped_total{pod=\"$POD\"}) and on (namespace, pod) kube_pod_info" | tr '\n' ' ')"
+  echo "  lines read from this pod: $(q "sum(loki_process_custom_kindnet_log_lines_total{pod=\"$POD\"})")"
+  echo "  ALERTS: $(q "ALERTS{alertname=\"KindnetSkippedNetworkPolicies\",pod=\"$POD\"}" | tr '\n' ';')"
+}
+wait_for() { # seconds description command...
+  local limit="$1" what="$2" start=$SECONDS; shift 2
+  while [ $((SECONDS - start)) -lt "$limit" ]; do
+    if "$@" >/dev/null 2>&1; then say "$what after $((SECONDS - start))s"; return 0; fi
+    sleep 5
+  done
+  say "NOT SEEN within ${limit}s: $what"; return 1
+}
+firing() { python3 "$S/pq.py" "ALERTS{alertname=\"KindnetSkippedNetworkPolicies\",alertstate=\"firing\",pod=\"$POD\"}" | grep -q alertstate; }
+sink_has() { python3 "$S/sink.py" "$T0" KindnetSkipped | grep -E "$1" | grep -q "$POD"; }
+count_gone() { [ "$(python3 "$S/pq.py" "loki_process_custom_kindnet_netpol_skipped_total{pod=\"$POD\"}")" = "(empty)" ]; }
+
+echo "# date: $(date -u +%FT%TZ)"
+T0="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+say "real kindnet: $($K -n kube-system get pod -l app=kindnet -o jsonpath='{.items[0].metadata.name} restarts={.items[0].status.containerStatuses[0].restartCount}')"
+$K apply -f "$S/synthetic2.yaml"
+wait_for 180 "firing in Prometheus" firing
+wait_for 120 "firing webhook at the sink" sink_has 'alert=firing'
+sleep 30
+state
+before="$(alloy_restarts)"
+say "stopping the Alloy container in place, restartCount $before, pod $(alloy_pod) uid $($K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.metadata.uid}')"
+docker exec plane-platform-control-plane crictl stop "$(alloy_id)" >/dev/null || say "crictl stop refused"
+ready_again() { [ "$(alloy_restarts)" != "$before" ] && [ "$($K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.status.containerStatuses[0].ready}')" = true ]; }
+wait_for 240 "Alloy restarted in the same pod, restartCount $((before + 1)), same uid $($K -n monitoring get pod "$(alloy_pod)" -o jsonpath='{.metadata.uid}')" ready_again
+wait_for 150 "the count gone from Alloy, and so from Prometheus" count_gone
+sleep 60
+say "the count is gone"; state
+sleep 120
+say "3 minutes later"; state
+say "resolved lines at the sink for this pod so far: $(python3 "$S/sink.py" "$T0" KindnetSkipped | grep "$POD" | grep -c 'alert=resolved')"
+say "deleting the scratch pod, so the count no longer applies"
+$K -n kube-system delete pod "$POD" --grace-period=0 --force 2>&1 | tail -1
+wait_for 480 "resolved webhook at the sink" sink_has 'alert=resolved'
+state
+say "every line at the sink for this pod:"; python3 "$S/sink.py" "$T0" KindnetSkipped | grep "$POD"
+say "real kindnet: $($K -n kube-system get pod -l app=kindnet -o jsonpath='{.items[0].metadata.name} restarts={.items[0].status.containerStatuses[0].restartCount}')"
+echo "# done"

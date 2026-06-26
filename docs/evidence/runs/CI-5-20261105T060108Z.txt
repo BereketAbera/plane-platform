@@ -1,0 +1,63 @@
+UTC date: 2026-11-05T06:01:08Z
+commit: 9c8e098
+command: copy-prefer-index-test.sh, which runs each command shown below after its $ line
+
+$ docker run -d --rm --name ci-track-copy-test-80111 --tmpfs /var/lib/registry:size=1g --publish 127.0.0.1:5058:5000 ghcr.io/distribution/distribution@sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9
+e001d3590fb31f6655cf1851035b098e9d408efb08838adfcf797c1a8046c208
+[exit 0]
+throwaway registry answered after 1s
+
+=== The source, a plain manifest
+
+$ head_of http://localhost:5001/v2/wayline/admin/manifests/sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+HTTP 200 digest=sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 type=application/vnd.oci.image.manifest.v1+json
+[exit 0]
+
+=== The command as scripts/ci/copy-to-local-registry.sh has it, with the target moved to the throwaway registry
+
+$ docker buildx imagetools create -t localhost:5058/wayline/admin:ce7adc37b1a7 localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+#1 [internal] pushing localhost:5058/wayline/admin
+#1 0.000 copying sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 from localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 to localhost:5058/wayline/admin
+#1 0.562 pushing sha256:f3665ee332aafec52321eed62b8972e1b817326d645635a4d3cb66083da37c4d to localhost:5058/wayline/admin:ce7adc37b1a7
+#1 DONE 0.6s
+[exit 0]
+--- the tag it made:
+
+$ head_of http://localhost:5058/v2/wayline/admin/manifests/ce7adc37b1a7
+HTTP 200 digest=sha256:f3665ee332aafec52321eed62b8972e1b817326d645635a4d3cb66083da37c4d type=application/vnd.oci.image.index.v1+json
+[exit 0]
+--- the digest the overlay pins:
+
+$ head_of http://localhost:5058/v2/wayline/admin/manifests/sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+HTTP 200 digest=sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 type=application/vnd.oci.image.manifest.v1+json
+[exit 0]
+
+$ docker buildx imagetools inspect localhost:5058/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+Name:      localhost:5058/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+MediaType: application/vnd.oci.image.manifest.v1+json
+Digest:    sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+[exit 0]
+
+=== The same with --prefer-index=false, as scripts/ci/build-images.sh has it, to another name
+
+$ docker buildx imagetools create --prefer-index=false -t localhost:5058/wayline/admin2:ce7adc37b1a7 localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+#1 [internal] pushing localhost:5058/wayline/admin2
+#1 0.000 copying sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 from localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 to localhost:5058/wayline/admin2
+#1 0.465 pushing sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 to localhost:5058/wayline/admin2:ce7adc37b1a7
+#1 DONE 0.5s
+[exit 0]
+--- the tag it made:
+
+$ head_of http://localhost:5058/v2/wayline/admin2/manifests/ce7adc37b1a7
+HTTP 200 digest=sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 type=application/vnd.oci.image.manifest.v1+json
+[exit 0]
+--- the digest the overlay pins:
+
+$ head_of http://localhost:5058/v2/wayline/admin2/manifests/sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+HTTP 200 digest=sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 type=application/vnd.oci.image.manifest.v1+json
+[exit 0]
+
+
+$ docker rm -f ci-track-copy-test-80111
+ci-track-copy-test-80111
+[exit 0]

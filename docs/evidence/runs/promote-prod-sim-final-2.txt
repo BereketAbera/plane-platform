@@ -1,0 +1,39 @@
+[1;34m==>[0m Promotion plan for prod-sim
+    plane-admin -> localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+    plane-backend -> localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+    plane-frontend -> localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+    plane-space -> localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m 1 image(s) were recorded for dev under the same name
+[1;32m ok[0m passed: plane-dev was Synced and Healthy and running every digest here
+[1;34m==>[0m Backing up prod-sim first, because rolling back an image does not roll back a migration
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261105T053351Z
+[pod/plane-backup-20261105t053351z-zjflc/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t053351z-zjflc/objects] 2026/11/05 05:33:57 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t053351z-zjflc/objects] 2026/11/05 05:33:58 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t053351z-zjflc/objects] 2026/11/05 05:33:58 NOTICE: Local file system at /backups/20261105T053351Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t053351z-zjflc/objects] 2026/11/05 05:33:58 NOTICE: Local file system at /backups/20261105T053351Z.partial/objects: 61 matching files
+[pod/plane-backup-20261105t053351z-zjflc/objects] 2026/11/05 05:33:58 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t053351z-zjflc/objects] objects: 61 checked
+[pod/plane-backup-20261105t053351z-zjflc/objects] 2026/11/05 05:33:58 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t053351z-zjflc/objects] GATE2: 40 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t053351z-zjflc/finalize] finalize: 20261105T053351Z complete
+backup 20261105T053351Z: postgres/plane.dump 806858 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2116 B, postgres/content.tsv 127 B, objects.lsjson 23092 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261105T053351Z
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 9c8e098: promote(prod-sim): plane-admin ce7adc37b1a7, plane-backend 8c04bd18bb08, plane-frontend 3d7575a1b934, plane-space 5f0119ff2266
+[1;34m==>[0m This publish moves prod-sim's images, through:
+       9c8e098 promote(prod-sim): plane-admin ce7adc37b1a7, plane-backend 8c04bd18bb08, plane-frontend 3d7575a1b934, plane-space 5f0119ff2266
+[1;34m==>[0m This publish changes a prod-sim image, so plane-dev must have proven it
+[1;32m ok[0m passed: plane-dev was Synced and Healthy and running every digest here
+[1;33mwarn[0m publishing 214 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       9c8e098 promote(prod-sim): plane-admin ce7adc37b1a7, plane-backend 8c04bd18bb08, plane-frontend 3d7575a1b934, plane-space 5f0119ff2266
+       1fc9fbe promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08
+       5f48b19 fix(restore): keep the machine file when a backup's state disagrees with its set, and spell out what starting over costs
+       c5ee1c3 docs(evidence): record the rebuild at 84b63d9, every gate on it, what differs from the images of b2ba587, and which sender mail goes from
+       e88f217 fix(restore): treat a closed terminal as a stop, and do not let the backup's new comparison cost a backup
+[1;32m ok[0m published main 9c8e09828be3 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git

@@ -1,0 +1,26 @@
+# First attempt, commit 25935f5: a file with no metadata: in it. Argo CD ignored it and read Synced at the new revision. Stopped by hand at 01:09:38Z.
+# date: 2026-11-05T01:08:20Z
+[01:08:20Z] committing a file that cannot be parsed into the directory alert-truth-stuck-progressing reads
+[1;32m ok[0m published main 25935f589f9b to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+[01:08:20Z] published, watching with no refresh asked for
+[01:08:20Z +0s] sync=Synced health=Progressing operation_open=False last_op=Succeeded rev=a9baf8b4 conditions=[]
+[01:09:03Z +43s] sync=Synced health=Progressing operation_open=False last_op=Succeeded rev=25935f58 conditions=[]
+
+# Second attempt, commit a76b0bb: the same file with metadata:, so Argo CD treats it as a manifest. Commit 4d12301 removed it.
+# date: 2026-11-05T01:09:42Z
+[01:09:42Z] committing a file that cannot be parsed into the directory alert-truth-stuck-progressing reads
+[1;32m ok[0m published main a76b0bbcd818 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+[01:09:42Z] published, watching with no refresh asked for
+[01:09:42Z +0s] sync=Synced health=Progressing operation_open=False last_op=Succeeded rev=25935f58 conditions=[]
+[01:15:39Z +357s] sync=Unknown health=Progressing operation_open=False last_op=Succeeded rev=main conditions=[('ComparisonError', 'Failed to load target state: failed to generate manifest for source 1 of 1: rpc error: cod')]
+[01:15:39Z] seconds from publish to this point: 357
+[01:15:39Z] the Service it had deployed: service/alert-truth-stuck-progressing
+[01:16:24Z] metric: autosync_enabled=true,container=application-controller,dest_namespace=monitoring,dest_server=https://kubernetes.default.svc,exported_namespace=argocd,health_status=Progressing,namespace=argocd,pod=argocd-application-cont
+[01:16:24Z] ALERTS_FOR_STATE: alertname=ArgoAppSyncUnknown,component=argocd,dest_namespace=monitoring,severity=warning 1793841362 01:16:24Z
+[01:16:25Z] ALERTS: alertname=ArgoAppSyncUnknown,alertstate=pending,component=argocd,dest_namespace=monitoring,severity=warning 1 01:16:25Z;
+[01:16:25Z] taking the file back out
+[1;32m ok[0m published main 4d12301d23d0 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+[01:16:25Z +0s] sync=Unknown health=Progressing operation_open=False last_op=Succeeded rev=main conditions=[('ComparisonError', 'Failed to load target state: failed to generate manifest for source 1 of 1: rpc error: cod')]
+[01:16:28Z +3s] sync=Synced health=Progressing operation_open=False last_op=Succeeded rev=4d12301d conditions=[]
+[01:16:28Z] the Service: service/alert-truth-stuck-progressing
+# done

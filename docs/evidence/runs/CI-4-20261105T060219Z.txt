@@ -1,0 +1,220 @@
+UTC date: 2026-11-05T06:02:19Z
+commit: 9c8e098
+command: python3 -I published-compare.py, which is at the end of this file
+
+=== 1. What the run's second walk read from ghcr.io, per image, compared with its first walk in the throwaway registry
+web: digest sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+  recorded as published: sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67, same as walked: True
+  config sha256:156b0134bc8f4a32013acf5ea795632db28113bbbba5dc718f0225f2f80a1444 clean
+  15 layers, 15 clean, 3951 tar entries, compressed 40.7 MiB (sum of the rounded values in the log)
+  summary line on ghcr.io:   clean        0 hit(s)   0 not opened ghcr.io/bereketabera/wayline/web@sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+  summary line in staging:   clean        0 hit(s)   0 not opened localhost:5059/wayline/web@sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+  same digest, config and layer list in both walks: True
+admin: digest sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+  recorded as published: sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51, same as walked: True
+  config sha256:c1af4fce03cea98f892d31e5709a3d564412edd833bd9eff1bb8374f45de86e0 clean
+  13 layers, 13 clean, 2948 tar entries, compressed 30.3 MiB (sum of the rounded values in the log)
+  summary line on ghcr.io:   clean        0 hit(s)   0 not opened ghcr.io/bereketabera/wayline/admin@sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+  summary line in staging:   clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+  same digest, config and layer list in both walks: True
+space: digest sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+  recorded as published: sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43, same as walked: True
+  config sha256:6d271cf044a96e9fcf3395ed9b4263f408c24ca1d6108af58d758786aa59d657 clean
+  21 layers, 21 clean, 95227 tar entries, compressed 263.9 MiB (sum of the rounded values in the log)
+  summary line on ghcr.io:   clean        0 hit(s)   0 not opened ghcr.io/bereketabera/wayline/space@sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+  summary line in staging:   clean        0 hit(s)   0 not opened localhost:5059/wayline/space@sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+  same digest, config and layer list in both walks: True
+backend: digest sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+  recorded as published: sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e, same as walked: True
+  config sha256:b462f75c3bb556bac61c6ceb5a32d429f150e30147daaec4e5a84dfe88f941cc clean
+  2 layers, 2 clean, 28235 tar entries, compressed 97.4 MiB (sum of the rounded values in the log)
+  summary line on ghcr.io:   clean        0 hit(s)   0 not opened ghcr.io/bereketabera/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+  summary line in staging:   clean        0 hit(s)   0 not opened localhost:5059/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+  same digest, config and layer list in both walks: True
+all four, counting a shared layer once per image: 432.3 MiB. Counting each distinct layer once: 401.8 MiB
+
+=== 2. The dev digest bump pull request, read now, against what the run recorded
+web: proposed ['sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67'], the run published sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67, match: True
+admin: proposed ['sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51'], the run published sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51, match: True
+space: proposed ['sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43'], the run published sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43, match: True
+backend: proposed ['sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e'], the run published sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e, match: True
+digests the overlay diff adds: 4, all of them published by the run: True
+
+=== 3. Those digests against what the two environments run now, read from the local registry
+web: local sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747, ghcr sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67, same: False
+  layers: local 15, ghcr 15, in both 9
+  only in the ghcr image: [('sha256:4aa20904c302', 1.4), ('sha256:f59fc814a284', 0.0), ('sha256:a34dcee8cae7', 14.2), ('sha256:c68aa23a4f08', 0.0), ('sha256:2c716e653859', 0.0), ('sha256:fa37a272a422', 0.0)]
+  only in the local image: [('sha256:986092e40873', 1.4), ('sha256:52be770b5106', 0.0), ('sha256:a65484573877', 14.2), ('sha256:b627ceb902e6', 0.0), ('sha256:8f7da5006c64', 0.0), ('sha256:8f5e811ba1b4', 0.0)]
+  the local registry holds the ghcr digest now: HTTP 404
+admin: local sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796, ghcr sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51, same: False
+  layers: local 13, ghcr 13, in both 9
+  only in the ghcr image: [('sha256:4aa20904c302', 1.4), ('sha256:5d7979f1009b', 0.0), ('sha256:6f44515e50d0', 3.8), ('sha256:2fd8d4b8e00c', 0.0)]
+  only in the local image: [('sha256:986092e40873', 1.4), ('sha256:7c85ca6ce807', 0.0), ('sha256:96878e3f966a', 3.8), ('sha256:6577c471a0ca', 0.0)]
+  the local registry holds the ghcr digest now: HTTP 404
+space: local sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039, ghcr sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43, same: False
+  layers: local 21, ghcr 21, in both 16
+  only in the ghcr image: [('sha256:cf8d8ef3d6e5', 0.0), ('sha256:aaaf3d38c5c0', 8.1), ('sha256:f5d00689db09', 0.0), ('sha256:5709ecb980ae', 0.0), ('sha256:c49152bf4a53', 0.0)]
+  only in the local image: [('sha256:7c28d13c9296', 0.0), ('sha256:d4a4d9dbc300', 8.1), ('sha256:7a8c860df646', 0.0), ('sha256:f433c207bc22', 0.0), ('sha256:d288de7eaf2d', 0.0)]
+  the local registry holds the ghcr digest now: HTTP 404
+backend: local sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe, ghcr sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e, same: False
+  layers: local 2, ghcr 2, in both 1
+  only in the ghcr image: [('sha256:0759095b48d4', 97.4)]
+  only in the local image: [('sha256:e774d955df3b', 97.4)]
+  the local registry holds the ghcr digest now: HTTP 404
+
+=== 4. The scan step of the run, as logged
+./scripts/ci/scan-images.sh
+==> Disk limits for this run: 5 GiB free to start, 5 GiB free to keep going. 30 GiB free now.
+ ok 5 image(s) to scan, listed in .local/evidence-raw/scan-images-20261105T054545Z/inventory.tsv
+==> Making sure the vulnerability database is current
+==> [1/5] ghcr.io/bereketabera/wayline/admin@sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+==> [2/5] ghcr.io/bereketabera/wayline/backend@sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+==> [3/5] ghcr.io/bereketabera/wayline/space@sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+==> [4/5] ghcr.io/bereketabera/wayline/web@sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+==> [5/5] wayline-source-lockfiles
+image                                                                                    CRITICAL         HIGH       MEDIUM    LOW  os
+ghcr.io/bereketabera/wayline/space@a1585e502352                                         0 (0 fix)  30 (30 fix)  22 (22 fix)      5  alpine 3.24.3
+ghcr.io/bereketabera/wayline/backend@737fccc5c547                                       0 (0 fix)    4 (4 fix)  11 (11 fix)      2  alpine 3.23.7
+ghcr.io/bereketabera/wayline/admin@823620826d9d                                         0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+ghcr.io/bereketabera/wayline/web@6c2686f9b850                                           0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+wayline-source-lockfiles                                                                1 (1 fix)  31 (31 fix)  24 (24 fix)      7  none
+
+5 of 5 targets scanned, 4 of the scanned ones built here.
+Findings across all images: 1 CRITICAL, 65 HIGH, 57 MEDIUM, 14 LOW, 0 UNKNOWN.
+Reported, not failing: 1 upstream target(s) have a CRITICAL finding with a fix, so a newer version may help:
+PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.
+[exit 0]
+
+--- published-compare.py
+#!/usr/bin/env python3
+"""CI-4 and CI-5: reads the run log's walk of what GHCR served, the pull request's digests, and the local registry, and compares them.
+Reads only. Prints everything it compares, so the output is the evidence."""
+import json
+import re
+import subprocess
+import sys
+import urllib.request
+
+LOG = "/Users/bek/dev/pr/plane-platform/docs/evidence/ci/ci-4-20261105T053955Z-run-41975430939.log"
+ACCEPT = "application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json"
+LOCAL = {
+    "web": "sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747",
+    "admin": "sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796",
+    "space": "sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039",
+    "backend": "sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe",
+}
+ANSI = re.compile(r"\x1b\[[0-9;]*m|\^\[\[[0-9;]*m")
+
+
+def lines():
+    with open(LOG, encoding="utf-8", errors="replace") as handle:
+        for raw in handle:
+            parts = raw.rstrip("\n").split("\t")
+            if len(parts) >= 3:
+                text = "\t".join(parts[2:])
+                text = re.sub(r"^﻿?\d{4}-\d\d-\d\dT[\d:.]+Z ", "", text)
+                yield parts[0], parts[1], ANSI.sub("", text)
+
+
+walks = {}  # (registry host, name) -> {digest, config, layers:[(short, mib, entries, state)], summary}
+current = None
+published = {}
+recorded_output = []
+scan = []
+for job, step, text in lines():
+    if job != "Build and push":
+        if job == "Open digest bump for dev" and "DIGESTS: " in text:
+            recorded_output.append(text)
+        continue
+    if step.startswith("Scan what"):
+        scan.append(text)
+        continue
+    match = re.match(r"== ((localhost:5059|ghcr\.io)/\S*?/([a-z]+))@(sha256:[0-9a-f]{64})", text)
+    if match:
+        current = (match.group(2), match.group(3))
+        walks[current] = {"digest": match.group(4), "layers": [], "summary": None, "config": None}
+        continue
+    if current:
+        layer = re.match(r"layer\s+(\d+)/(\d+) (sha256:[0-9a-f]{12})\s+([\d.]+) MiB\s+(\d+) entries, (\d+) archives opened: (.+)$", text)
+        if layer:
+            walks[current]["layers"].append((layer.group(3), float(layer.group(4)), int(layer.group(5)), layer.group(7)))
+            continue
+        config = re.match(r"config (sha256:[0-9a-f]{64}): (\w+)", text)
+        if config:
+            walks[current]["config"] = (config.group(1), config.group(2))
+            continue
+        summary = re.match(r"(clean|HIT|hit|incomplete)\S*\s+(\d+) hit\(s\)\s+(\d+) not opened (\S+)", text)
+        if summary:
+            walks[current]["summary"] = text.strip()
+            continue
+    ok = re.match(r"\s*ok (ghcr\.io/\S+/([a-z]+))@(sha256:[0-9a-f]{64})$", text)
+    if ok:
+        published[ok.group(2)] = ok.group(3)
+
+print("=== 1. What the run's second walk read from ghcr.io, per image, compared with its first walk in the throwaway registry")
+total_all = 0.0
+unique = {}
+for name in ("web", "admin", "space", "backend"):
+    ghcr = walks[("ghcr.io", name)]
+    staging = walks[("localhost:5059", name)]
+    same = [l[0] for l in ghcr["layers"]] == [l[0] for l in staging["layers"]] and ghcr["digest"] == staging["digest"] and ghcr["config"] == staging["config"]
+    size = sum(l[1] for l in ghcr["layers"])
+    total_all += size
+    for layer in ghcr["layers"]:
+        unique[layer[0]] = layer[1]
+    print(f"{name}: digest {ghcr['digest']}")
+    print(f"  recorded as published: {published.get(name)}, same as walked: {published.get(name) == ghcr['digest']}")
+    print(f"  config {ghcr['config'][0]} {ghcr['config'][1]}")
+    print(f"  {len(ghcr['layers'])} layers, {sum(1 for l in ghcr['layers'] if l[3] == 'clean')} clean, {sum(l[2] for l in ghcr['layers'])} tar entries, compressed {size:.1f} MiB (sum of the rounded values in the log)")
+    print(f"  summary line on ghcr.io:   {ghcr['summary']}")
+    print(f"  summary line in staging:   {staging['summary']}")
+    print(f"  same digest, config and layer list in both walks: {same}")
+print(f"all four, counting a shared layer once per image: {total_all:.1f} MiB. Counting each distinct layer once: {sum(unique.values()):.1f} MiB")
+
+print()
+print("=== 2. The dev digest bump pull request, read now, against what the run recorded")
+diff = subprocess.run(["gh", "pr", "diff", "1", "--repo", "BereketAbera/plane-platform"], capture_output=True, text=True, check=True).stdout
+proposed = {}
+for name, digest in re.findall(r"^\+.*localhost:5001/wayline/([a-z]+)@(sha256:[0-9a-f]{64})", diff, re.M):
+    proposed.setdefault(name, set()).add(digest)
+overlay_lines = re.findall(r"^\+- digest: (sha256:[0-9a-f]{64})", diff, re.M)
+for name in ("web", "admin", "space", "backend"):
+    print(f"{name}: proposed {sorted(proposed.get(name, []))}, the run published {published.get(name)}, match: {proposed.get(name) == {published.get(name)}}")
+print(f"digests the overlay diff adds: {len(overlay_lines)}, all of them published by the run: {set(overlay_lines) == set(published.values())}")
+
+print()
+print("=== 3. Those digests against what the two environments run now, read from the local registry")
+def local_manifest(name, digest):
+    request = urllib.request.Request(f"http://localhost:5001/v2/wayline/{name}/manifests/{digest}", headers={"Accept": ACCEPT})
+    with urllib.request.urlopen(request, timeout=20) as reply:
+        return reply.headers.get("Docker-Content-Digest"), json.load(reply)
+
+def local_has(name, digest):
+    request = urllib.request.Request(f"http://localhost:5001/v2/wayline/{name}/manifests/{digest}", headers={"Accept": ACCEPT}, method="HEAD")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as reply:
+            return reply.status
+    except urllib.error.HTTPError as err:
+        return err.code
+
+for name in ("web", "admin", "space", "backend"):
+    served, manifest = local_manifest(name, LOCAL[name])
+    local_layers = [layer["digest"][:19] for layer in manifest["layers"]]
+    ghcr_layers = [layer[0] for layer in walks[("ghcr.io", name)]["layers"]]
+    shared = [digest for digest in ghcr_layers if digest in local_layers]
+    only_ci = [digest for digest in ghcr_layers if digest not in local_layers]
+    only_local = [digest for digest in local_layers if digest not in ghcr_layers]
+    sizes = {layer["digest"][:19]: layer["size"] for layer in manifest["layers"]}
+    ci_sizes = {layer[0]: layer[1] for layer in walks[("ghcr.io", name)]["layers"]}
+    print(f"{name}: local {served}, ghcr {published.get(name)}, same: {served == published.get(name)}")
+    print(f"  layers: local {len(local_layers)}, ghcr {len(ghcr_layers)}, in both {len(shared)}")
+    print(f"  only in the ghcr image: {[(digest, ci_sizes[digest]) for digest in only_ci]}")
+    print(f"  only in the local image: {[(digest, round(sizes[digest] / 1048576, 1)) for digest in only_local]}")
+    print(f"  the local registry holds the ghcr digest now: HTTP {local_has(name, published[name])}")
+
+print()
+print("=== 4. The scan step of the run, as logged")
+for text in scan:
+    if text.startswith("##[") or text.startswith("shell:") or text.startswith("env:") or text.startswith("  "):
+        continue
+    print(text)

@@ -1,0 +1,97 @@
+#!/bin/bash
+# On throwaway containers only, on an internal network: the same backend image and Celery as the platform's worker.
+# Question: can a worker keep or get back a clean queue selection with no pod replacement? Nothing here touches the cluster.
+set -u
+IMAGE="${IMAGE:-localhost:5001/wayline/backend:1563cbfbe895}"
+RABBIT_IMAGE="${RABBIT_IMAGE:-rabbitmq:3-management}"
+REDIS_IMAGE="${REDIS_IMAGE:-redis:8}"
+run="harness-scratch-$$"
+net="$run"
+cleanup() { docker rm -f "$run-rabbit" "$run-redis" "$run-worker" >/dev/null 2>&1; docker network rm "$net" >/dev/null 2>&1; }
+trap cleanup EXIT
+now() { date -u +%H:%M:%S; }
+docker network create --internal "$net" >/dev/null
+docker run -d --name "$run-rabbit" --hostname rabbit --network "$net" --network-alias rabbit --memory 512m "$RABBIT_IMAGE" >/dev/null || echo "docker run rabbit failed"
+docker run -d --name "$run-redis" --network "$net" --network-alias redis --memory 64m "$REDIS_IMAGE" redis-server --save '' --appendonly no >/dev/null
+rq() { docker exec -u rabbitmq "$run-rabbit" rabbitmqctl -q "$@"; }
+consumers() { rq list_queues name consumers --no-table-headers 2>/dev/null | awk -F'\t' '$1 == "celery" { print $2 }'; }
+wait_broker() { for _ in $(seq 1 90); do docker exec -u rabbitmq "$run-rabbit" rabbitmq-diagnostics -q check_running >/dev/null 2>&1 && return 0; sleep 1; done; echo "broker never came up"; docker ps -a --filter "name=$run" --format '{{.Names}} {{.Status}}'; docker logs --tail 15 "$run-rabbit" 2>&1 | cut -c1-200; exit 1; }
+wait_consumer() { # wait_consumer <seconds>: prints how long the consumer took, or that it did not come
+  local started=$SECONDS
+  while (( SECONDS - started < $1 )); do
+    [[ "$(consumers)" == 1 ]] && { echo "consumer on queue celery after $((SECONDS - started))s"; return 0; }
+    sleep 1
+  done
+  echo "NO consumer on queue celery after $1s (consumers=$(consumers))"
+  return 1
+}
+wait_broker
+# The same process tree as the chart's entrypoint: bash is PID 1 and stays, Celery's main process is its child.
+docker run -d --name "$run-worker" --network "$net" --user 1000:1000 --memory 768m \
+  -e DJANGO_SETTINGS_MODULE=plane.settings.production -e SECRET_KEY="$(openssl rand -hex 24)" \
+  -e DATABASE_URL=postgres://nobody:nothing@nothing:5432/nothing -e REDIS_URL=redis://redis:6379/ \
+  -e AMQP_URL=amqp://guest:guest@rabbit:5672// -e WEB_URL=https://x.test -e CELERY_WORKER_CONCURRENCY=2 \
+  --entrypoint bash "$IMAGE" -c 'celery -A plane worker -l info; echo celery exited $?' >/dev/null
+main() { docker exec "$run-worker" sh -c 'pgrep -P 1 -f "celery -A plane worker"'; }
+signal() { docker exec "$run-worker" sh -c 'm=$(pgrep -P 1 -f "celery -A plane worker"); kill -'"$1"' "$m"; sleep 0.3; echo "main process $m, state $(sed "s/.*) //" /proc/$m/stat | cut -c1)"'; }
+active() { docker exec "$run-worker" celery -A plane inspect active_queues -t 10 2>&1 | cut -c1-80 | grep -E "name|empty|Error" | head -3; }
+restart_broker() { docker restart "$run-rabbit" >/dev/null; wait_broker; echo "$(now) broker restarted"; }
+ping_task() { # a real message through the queue, and whether the worker ran it
+  docker exec "$run-worker" celery -A plane call celery.ping 2>&1 | tail -1 | cut -c1-60
+  sleep 3
+  # celery.ping is not a registered task here, so the worker logs and rejects it. That still shows the message reached it.
+  echo "messages named celery.ping the worker has received so far: $(docker logs "$run-worker" 2>&1 | grep -c "^\[.*unregistered task of type 'celery.ping'")"
+}
+echo "# image $IMAGE, broker $RABBIT_IMAGE, $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+docker exec "$run-worker" python -c 'import celery, kombu; print("celery", celery.__version__, "kombu", kombu.__version__)'
+wait_consumer 120 || { docker logs --tail 40 "$run-worker" 2>&1 | cut -c1-200; exit 1; }
+echo "process tree: PID 1 and main process $(main)"
+ping_task
+
+echo; echo "== A. Freeze the main process and close its connections at the broker, with no Celery command"
+signal STOP
+rq list_connections pid --no-table-headers | while read -r pid; do rq close_connection "$pid" "harness test"; done
+sleep 3
+echo "$(now) frozen, connections closed: consumers=$(consumers)"
+signal CONT
+wait_consumer 120
+active
+ping_task
+echo "-- then a broker restart, which is what an emptied selection does not survive"
+restart_broker
+wait_consumer 120
+active
+ping_task
+
+echo; echo "== B. Reproduce: cancel_consumer, add_consumer, broker restart"
+docker exec "$run-worker" celery -A plane control -t 15 cancel_consumer celery 2>&1 | tail -1 | cut -c1-80
+sleep 2; echo "after cancel: consumers=$(consumers)"
+docker exec "$run-worker" celery -A plane control -t 15 add_consumer celery 2>&1 | tail -1 | cut -c1-80
+wait_consumer 30
+restart_broker
+wait_consumer 60
+active
+
+echo; echo "== C. add_consumer again on that worker: does a remote control command repair it?"
+docker exec "$run-worker" celery -A plane control -t 15 add_consumer celery 2>&1 | tail -1 | cut -c1-80
+wait_consumer 30
+active
+restart_broker
+wait_consumer 60
+active
+
+echo; echo "== D. SIGHUP, Celery's own restart: the main process execs itself, same PID, same container"
+docker inspect "$run-worker" --format 'container restarts before: {{.RestartCount}}'
+echo "before: $(main)"
+signal HUP
+wait_consumer 120
+echo "after: $(main)"
+active
+ping_task
+echo "-- then a broker restart"
+restart_broker
+wait_consumer 120
+active
+ping_task
+docker inspect "$run-worker" --format 'container restarts after: {{.RestartCount}}, running {{.State.Running}}'
+echo "== done $(date -u +%Y-%m-%dT%H:%M:%SZ)"

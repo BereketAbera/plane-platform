@@ -1,0 +1,18 @@
+# How missing-rule-evaluations-1.txt read the node's clock: docker exec -i plane-platform-control-plane perl - <seconds> < clock.pl
+# REALTIME minus MONOTONIC on the node, once a second, bracketed by two MONOTONIC reads to cancel preemption.
+# aarch64 syscall 113 is clock_gettime. Prints when it moves by more than 50us, and the range every 5 minutes.
+$| = 1;
+sub now { my ($id) = @_; my $b = "\0" x 16; syscall(113, $id, $b) == 0 or die "syscall: $!"; my ($s, $n) = unpack("qq", $b); return $s * 1000000000 + $n; }
+sub sample { my ($best, $off); for (1 .. 7) { my $m1 = now(1); my $r = now(0); my $m2 = now(1); my $w = $m2 - $m1; if (!defined $best || $w < $best) { $best = $w; $off = $r - int(($m1 + $m2) / 2); } } return ($off, $best); }
+my $n = shift || 60; my ($last, $base, $min, $max);
+sub hms { my @t = gmtime(now(0) / 1000000000); return sprintf "%02d:%02d:%02d", @t[2,1,0]; }
+for my $i (1 .. $n) {
+  my ($off, $w) = sample();
+  $base //= $off; my $rel = ($off - $base) / 1000;
+  $min = $rel if !defined $min || $rel < $min; $max = $rel if !defined $max || $rel > $max;
+  if (defined $last && abs($off - $last) > 50000) { printf "%s step_us=%+.1f rel_us=%.1f bracket_ns=%d\n", hms(), ($off - $last) / 1000, $rel, $w; }
+  $last = $off;
+  if ($i % 300 == 0) { printf "%s range_us=[%.1f,%.1f] rel_us=%.1f\n", hms(), $min, $max, $rel; }
+  select(undef, undef, undef, 1);
+}
+printf "%s end range_us=[%.1f,%.1f]\n", hms(), $min, $max;

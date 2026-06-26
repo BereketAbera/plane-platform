@@ -2,15 +2,16 @@
   "counts": {
     "BLOCKED": 0,
     "FAIL": 0,
-    "PASS": 3
+    "PASS": 3,
+    "SKIP": 0
   },
   "environment": "prod-sim",
-  "finished_at": "2026-11-04T23:54:51Z",
+  "finished_at": "2026-11-05T07:24:24Z",
   "host": "plane.prod-sim.localhost",
   "mode": "verify",
   "result": "PASS",
-  "run_id": "e8fcc995",
-  "started_at": "2026-11-04T23:54:41Z",
+  "run_id": "cf851028",
+  "started_at": "2026-11-05T07:24:15Z",
   "steps": [
     {
       "data": {
@@ -18,7 +19,7 @@
         "web_status": 200
       },
       "detail": "web 200, /api/instances/ 200 via plane.prod-sim.localhost",
-      "duration_ms": 29,
+      "duration_ms": 36,
       "name": "reachable",
       "status": "PASS"
     },
@@ -29,16 +30,16 @@
         "work_item_id": "a693f95c-cf82-4764-a694-e737d1a64b92"
       },
       "detail": "sentinel row and attachment intact",
-      "duration_ms": 120,
+      "duration_ms": 141,
       "name": "sentinel-reread",
       "status": "PASS"
     },
     {
       "data": {
-        "seconds_until_activity": 9.2
+        "seconds_until_activity": 9.3
       },
-      "detail": "new work item got its activity in 9.2s",
-      "duration_ms": 9212,
+      "detail": "new work item got its activity in 9.3s",
+      "duration_ms": 9371,
       "name": "job-probe",
       "status": "PASS"
     }

@@ -1,0 +1,58 @@
+# date: 2026-11-05T05:20:25Z
+# The Plane backup Job's objects and finalize scripts, extracted from scripts/backup.sh in the working tree with yq, run on BusyBox v1.37 (local image sha256:a7dbc319b143), with a stub rclone, on four older backup folders and a .partial with one row marked uploaded and no object. Then the same with the stub's lsf failing. No cluster touched.
+# docker run --rm -i busybox sh -c "... sh objects.sh; sh finalize.sh; ls /backups; ..."
+=== the comparison runs
+objects: 1 checked
+GATE2: 2 rows marked uploaded, 1 with no object in this backup
+--- finalize
+retention: removed 20261102T000000Z
+retention: kept 20261101T000000Z past KEEP=3, the newest backup that holds users
+finalize: 20261105T000000Z complete
+--- left
+20261101T000000Z
+20261103T000000Z
+20261104T000000Z
+20261105T000000Z
+--- manifest
+uploaded_objects: {"rows": 2, "missing": 1},
+--- missing
+c/no-object.png
+--- working files left
+--- postgres folder
+content.tsv
+pg_dump_version.txt
+plane.dump
+plane.toc.txt
+rowcounts.tsv
+server_version.txt
+uploaded-keys.txt
+uploaded-missing.txt
+
+=== rclone lsf fails: the backup still completes, with no result recorded
+objects: 1 checked
+stub rclone: lsf failing
+objects: could not compare the uploaded rows with the objects, so this backup records no result for them
+--- finalize
+retention: removed 20261102T000000Z
+retention: kept 20261101T000000Z past KEEP=3, the newest backup that holds users
+finalize: 20261105T000000Z complete
+--- left
+20261101T000000Z
+20261103T000000Z
+20261104T000000Z
+20261105T000000Z
+--- manifest
+uploaded_objects: null,
+--- missing
+cat: can't open '/backups/20261105T000000Z/postgres/uploaded-missing.txt': No such file or directory
+--- working files left
+--- postgres folder
+content.tsv
+pg_dump_version.txt
+plane.dump
+plane.toc.txt
+rowcounts.tsv
+server_version.txt
+uploaded-keys.txt
+
+BusyBox v1.37.0 (2024-09-26 21:31:42 UTC) multi-call binary.

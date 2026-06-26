@@ -1,0 +1,37 @@
+# 2026-11-05T07:46:09Z command: kubectl exec <pod> -c <container> -- df -k <mount>, for each pod with a PVC. Node volumes share one filesystem, so df shows that filesystem; per-volume use is du in the host file.
+--- infisical/infisical-postgres-0 container=postgres pvc=data-infisical-postgres-0 mount=/var/lib/postgresql/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489060 408450420   9% /tmp
+--- infisical/infisical-redis-0 container=redis pvc=data-infisical-redis-0 mount=/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489064 408450416   9% /data
+--- monitoring/loki-0 container=loki pvc=storage-loki-0 mount=/var/loki
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "2e3ea5e2605303621c699dbd0b72f3c72f98e61fad64d291911377a160d238f8": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+--- monitoring/prometheus-kps-prometheus-0 container=prometheus pvc=prometheus-kps-prometheus-db-prometheus-kps-prometheus-0 mount=/prometheus
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "ba41e85d7deedc28f14a41744fb595766bf347ddce090b955c69732071d47600": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+--- plane-dev/plane-minio-wl-0 container=plane-minio pvc=pvc-plane-minio-vol-plane-minio-wl-0 mount=/data
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "fdc4650616be4274851b8ae587690ed5ea4d568b889ce21d2a2d5a907cf33c8f": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+--- plane-dev/plane-pgdb-wl-0 container=plane-pgdb pvc=pvc-plane-pgdb-vol-plane-pgdb-wl-0 mount=/var/lib/postgresql/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489072 408450408   9% /etc/hosts
+--- plane-dev/plane-rabbitmq-wl-0 container=plane-rabbitmq pvc=pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 mount=/var/lib/rabbitmq
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489072 408450408   9% /etc/hosts
+--- plane-dev/plane-redis-wl-0 container=plane-redis pvc=pvc-plane-redis-vol-plane-redis-wl-0 mount=/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489072 408450408   9% /data
+--- plane-prod-sim/plane-minio-wl-0 container=plane-minio pvc=pvc-plane-minio-vol-plane-minio-wl-0 mount=/data
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "85503e991dc59aaac2c7f74159fa2ea5ed13f31ed19179507c0c907026df22ab": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+--- plane-prod-sim/plane-pgdb-wl-0 container=plane-pgdb pvc=pvc-plane-pgdb-vol-plane-pgdb-wl-0 mount=/var/lib/postgresql/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489084 408450396   9% /etc/hosts
+--- plane-prod-sim/plane-rabbitmq-wl-0 container=plane-rabbitmq pvc=pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 mount=/var/lib/rabbitmq
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489084 408450396   9% /etc/hosts
+--- plane-prod-sim/plane-redis-wl-0 container=plane-redis pvc=pvc-plane-redis-vol-plane-redis-wl-0 mount=/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  41489084 408450396   9% /data

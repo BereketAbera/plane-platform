@@ -1,0 +1,57 @@
+#!/bin/bash
+# Throwaway containers on an internal network only. Same backend image and Celery as the platform's worker.
+# Question: does the plain remote control command `shutdown`, plus a restart policy like the pod's restartPolicy: Always,
+# return a worker that went through cancel_consumer to a clean selection? Touches nothing in the cluster.
+set -u
+IMAGE="${IMAGE:-localhost:5001/wayline/backend:1563cbfbe895}"
+run="harness-review-$$"
+cleanup() { docker rm -f "$run-rabbit" "$run-redis" "$run-worker" >/dev/null 2>&1; docker network rm "$run" >/dev/null 2>&1; }
+trap cleanup EXIT
+now() { date -u +%H:%M:%S; }
+docker network create --internal "$run" >/dev/null
+docker run -d --name "$run-rabbit" --hostname rabbit --network "$run" --network-alias rabbit --memory 512m rabbitmq:3-management >/dev/null
+docker run -d --name "$run-redis" --network "$run" --network-alias redis --memory 64m redis:8 redis-server --save '' --appendonly no >/dev/null
+rq() { docker exec -u rabbitmq "$run-rabbit" rabbitmqctl -q "$@"; }
+consumers() { rq list_queues name consumers --no-table-headers 2>/dev/null | awk -F'\t' '$1 == "celery" { print $2 }'; }
+wait_broker() { for _ in $(seq 1 90); do docker exec -u rabbitmq "$run-rabbit" rabbitmq-diagnostics -q check_running >/dev/null 2>&1 && return 0; sleep 1; done; echo "broker never came up"; exit 1; }
+wait_consumer() {
+  local started=$SECONDS
+  while (( SECONDS - started < $1 )); do
+    [[ "$(consumers)" == 1 ]] && { echo "$(now) consumer on queue celery after $((SECONDS - started))s"; return 0; }
+    sleep 1
+  done
+  echo "$(now) NO consumer on queue celery after $1s (consumers=$(consumers))"
+  return 1
+}
+wait_broker
+docker run -d --name "$run-worker" --restart=always --network "$run" --user 1000:1000 --memory 768m \
+  -e DJANGO_SETTINGS_MODULE=plane.settings.production -e SECRET_KEY="$(openssl rand -hex 24)" \
+  -e DATABASE_URL=postgres://nobody:nothing@nothing:5432/nothing -e REDIS_URL=redis://redis:6379/ \
+  -e AMQP_URL=amqp://guest:guest@rabbit:5672// -e WEB_URL=https://x.test -e CELERY_WORKER_CONCURRENCY=2 \
+  --entrypoint bash "$IMAGE" -c 'celery -A plane worker -l info; rc=$?; echo "celery exited $rc"; exit $rc' >/dev/null
+ctl() { docker exec "$run-worker" celery -A plane control -t 15 "$@" 2>&1 | tail -1 | cut -c1-80; }
+restarts() { docker inspect "$run-worker" --format 'container restarts {{.RestartCount}}, running {{.State.Running}}, pid {{.State.Pid}}, exit {{.State.ExitCode}}'; }
+echo "# image $IMAGE, $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+wait_consumer 120 || { docker logs --tail 30 "$run-worker" 2>&1 | cut -c1-200; exit 1; }
+restarts
+echo; echo "== 1. cancel_consumer, add_consumer: the dirty worker, as the control leaves it"
+ctl cancel_consumer celery; sleep 2; echo "after cancel: consumers=$(consumers)"
+ctl add_consumer celery; wait_consumer 30
+echo "Canceling queue lines in the container's log: $(docker logs "$run-worker" 2>&1 | grep -c 'Canceling queue')"
+echo; echo "== 2. remote control shutdown, the same kind of command as the two above"
+ctl shutdown
+sleep 8
+restarts
+wait_consumer 120
+restarts
+echo "celery exited line: $(docker logs "$run-worker" 2>&1 | grep -a 'celery exited' | tail -2 | tr '\n' ' ')"
+echo; echo "== 3. a broker restart, which is what an emptied selection does not survive"
+docker restart "$run-rabbit" >/dev/null; wait_broker; echo "$(now) broker restarted"
+wait_consumer 120
+docker exec "$run-worker" celery -A plane inspect active_queues -t 10 2>&1 | cut -c1-60 | grep -E "'name'|empty|Error" | head -2
+restarts
+echo; echo "== 4. control: the same broker restart with a dirty worker and no shutdown"
+ctl cancel_consumer celery; sleep 2; ctl add_consumer celery; wait_consumer 30
+docker restart "$run-rabbit" >/dev/null; wait_broker; echo "$(now) broker restarted"
+wait_consumer 45
+echo "== done $(date -u +%Y-%m-%dT%H:%M:%SZ)"

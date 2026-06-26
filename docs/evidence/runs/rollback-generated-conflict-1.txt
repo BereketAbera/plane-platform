@@ -1,0 +1,46 @@
+# date 2026-11-05T02:45:24Z, clean clone of 9e86372, bash 3.2.57(1)-release
+# command: SKIP_BACKUP=yes CONFIRM=yes scripts/rollback.sh prod-sim
+
+=== the later change, in the prod-sim render
+--- a/gitops/environments/prod-sim/manifests.yaml
++++ b/gitops/environments/prod-sim/manifests.yaml
+-        imagePullPolicy: IfNotPresent
++        imagePullPolicy: Always
+
+=== rollback.sh from 053ebf2, before the fix
+==> Rolling back: 0af8956 promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+warn SKIP_BACKUP=yes: no dump taken before this rollback
+error: could not revert 0af8956... promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+hint: after resolving the conflicts, mark the corrected paths
+hint: with 'git add <paths>' or 'git rm <paths>'
+hint: Disable this message with "git config set advice.mergeConflict false"
+fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+exit 1, HEAD moved: no, changed paths under helm and gitops: 0
+(scripts/rollback.sh is back to the committed file)
+
+=== rollback.sh at 2058623, with the fix
+==> Rolling back: 0af8956 promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+warn SKIP_BACKUP=yes: no dump taken before this rollback
+==> The revert conflicts only in gitops/environments/prod-sim/manifests.yaml, which is generated, so rendering replaces it
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed b73e289: Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+warn plane-dev check not run for this publish: rollback of 0af895603a79: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main b73e289710bf to .local/git/plane-platform.git
+warn Images are back, the schema is not, and no finished dump from before this rollback exists in .local/backups/prod-sim.
+exit 0
+--- the commit
+b73e289 Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+
+This reverts commit 0af895603a79a5a6793f9c85dd1efa67c91bfe41.
+
+Promote-Dev-Check: not run: an emergency path must not need plane-dev to be healthy
+
+ gitops/environments/prod-sim/manifests.yaml     | 14 +++++++-------
+ helm/plane/overlays/prod-sim/kustomization.yaml | 20 ++++++++++++--------
+ 2 files changed, 19 insertions(+), 15 deletions(-)
+--- render --check
+exit 0
+--- wayline images left in the prod-sim render: 0; the later change still there: 1 line; changed paths: 0

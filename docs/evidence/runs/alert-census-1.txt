@@ -1,0 +1,6 @@
+# date: 2026-11-05T01:29:12Z
+== Prometheus rules API: every rule not inactive
+firing   Watchdog                           for=0s active=2026-11-05T00:34:26 value=1e+00 
+rules read: 152 groups: 19
+== Alertmanager /api/v2/alerts?active=true
+active     Watchdog                           since=2026-11-04T21:35:26 severity=none

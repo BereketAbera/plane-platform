@@ -1,0 +1,24 @@
+{
+  "environment": "infisical",
+  "backup": "20261105T022627Z",
+  "started_at": "20261105T023217Z",
+  "result": "FAIL",
+  "steps": [
+    {
+      "step": "checksums",
+      "status": "PASS",
+      "detail": "7 files match"
+    },
+    {
+      "step": "key-fingerprint",
+      "status": "PASS",
+      "detail": "ENCRYPTION_KEY matches the backup"
+    },
+    {
+      "step": "version",
+      "status": "PASS",
+      "detail": "backup v0.167.6, running v0.167.6"
+    }
+  ],
+  "not_run": []
+}

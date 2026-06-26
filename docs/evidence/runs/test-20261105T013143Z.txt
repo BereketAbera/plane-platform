@@ -1,0 +1,3 @@
+scripts/test.sh infisical, started 20261105T013143Z
+PASS     infisical isolation        evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/infisical-isolation-20261105T013143Z.txt
+PASS     infisical rendered-secrets evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/infisical-rendered-secrets-20261105T013143Z.txt

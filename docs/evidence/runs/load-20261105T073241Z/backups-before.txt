@@ -1,0 +1,3 @@
+134M	/Users/bek/dev/pr/plane-platform/.local/backups/dev
+ 30M	/Users/bek/dev/pr/plane-platform/.local/backups/infisical
+122M	/Users/bek/dev/pr/plane-platform/.local/backups/prod-sim

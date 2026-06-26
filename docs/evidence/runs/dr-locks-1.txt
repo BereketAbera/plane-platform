@@ -1,0 +1,19 @@
+# make backup ENV=infisical with pg_locks sampled from another session. 2026-11-05T02:08:23Z
+lock table: max_locks_per_transaction, max_connections, max_prepared_transactions = 64|30|0
+VM before: 9924 MiB used of 13959
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T020824Z
+[pod/plane-backup-20261105t020824z-9bw5p/postgres] postgres: 20261105T020824Z complete, 785 tables counted from a scratch restore
+backup 20261105T020824Z: postgres/infisical.dump 4407394 B, postgres/infisical.toc.txt 942298 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T020824Z
+make backup exit=0, 30s since the script started, 29s for the backup
+pg_locks: 352 samples, highest 3318, lowest 2
+VM after: 9903 MiB used of 13959
+newest backup: 20261105T020824Z
+{"complete":true,"admin":{"email":"<redacted>","token_exp":1801603532,"identity":"Instance Admin Identity"},"zero":["AUTH_SECRET","DB_PASSWORD","ENCRYPTION_KEY","REDIS_PASSWORD","infisical-admin-password","infisical-admin.json","infisical-machine.json"],"serial":12}
+tables in the dump: 785
+every file matches SHA256SUMS
+20261104T231433Z
+20261105T000452Z
+20261105T000557Z
+20261105T001814Z
+20261105T020824Z

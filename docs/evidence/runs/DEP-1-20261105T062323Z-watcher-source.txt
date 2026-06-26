@@ -1,0 +1,359 @@
+#!/usr/bin/env python3
+"""Read-only side watcher for the plane-dev validation track. Changes nothing in the cluster.
+
+  watch.py <output> <stop-file> [max-seconds]
+
+Writes one JSON line per sample or per change, each with the host's UTC time:
+  session    GET /api/users/me/ on plane.dev.localhost with a signed-in session, once a second. It needs the
+             database, and an authenticated request is outside Plane's anonymous limit of 30 a minute, so this
+             does not spend the bucket that rotate.sh's own probe uses. Bodies of a 200 are not kept.
+  front      GET /, /sign-in/, /god-mode/ and /spaces/ through Traefik, once per 2 seconds.
+  deploy, rs, pod, app   every change in plane-dev Deployments, ReplicaSet counts, Pods, and the Applications
+             plane-dev, monitoring-extras, root and plane-prod-sim. Read every 3 seconds.
+  gens       every 30 seconds, a full table of generation, revision and ReplicaSet count, so a quiet period
+             shows it was read and not missed.
+  prometheus, alertmanager   every change in pending and firing alerts, read every 5 seconds.
+  metric     pg_up per namespace, and Plane's probes, on change, read every 15 seconds.
+  node       VM memory, oom_kill counter, host free disk, every 30 seconds.
+  prodsim    GET /sign-in/ on plane.prod-sim.localhost every 10 seconds (nginx, no API), and any change in its pods.
+
+Credentials come from .local/test-accounts.env and are never written. The session cookie stays in memory.
+"""
+import datetime, http.client, json, os, re, shutil, subprocess, sys, threading, time
+from http.cookies import SimpleCookie
+from urllib.parse import urlencode
+
+ROOT = "/Users/bek/dev/pr/plane-platform"
+out, stop_file = sys.argv[1], sys.argv[2]
+max_seconds = int(sys.argv[3]) if len(sys.argv) > 3 else 7200
+KUBECTL = [f"{ROOT}/.tools/bin/kubectl", "--context", "kind-plane-platform"]
+ENVIRON = dict(os.environ, KUBECONFIG=f"{ROOT}/.local/kubeconfig")
+HOST = "plane.dev.localhost"
+lock = threading.Lock()
+fh = open(out, "a", buffering=1)
+start = time.time()
+
+
+def now():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def emit(src, **data):
+    line = json.dumps({"t": now(), "src": src, **data})
+    with lock:
+        fh.write(line + "\n")
+
+
+def running():
+    return not os.path.exists(stop_file) and time.time() - start < max_seconds
+
+
+def request(method, host, path, headers=None, body=None, timeout=4):
+    conn = http.client.HTTPConnection("127.0.0.1", 80, timeout=timeout)
+    try:
+        h = {"Host": host, "Accept": "application/json", "User-Agent": "plane-dev-watch", "Connection": "close"}
+        h.update(headers or {})
+        conn.request(method, path, body=body, headers=h)
+        r = conn.getresponse()
+        return r.status, r.getheaders(), r.read()
+    finally:
+        conn.close()
+
+
+def accounts():
+    values = {}
+    with open(f"{ROOT}/.local/test-accounts.env") as handle:
+        for line in handle:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                values[key] = value
+    return values
+
+
+def sign_in():
+    acc = accounts()
+    cookies = {}
+
+    def keep(headers):
+        for name, value in headers:
+            if name.lower() == "set-cookie":
+                parsed = SimpleCookie()
+                parsed.load(value)
+                for k, m in parsed.items():
+                    cookies[k] = m.value
+
+    status, headers, body = request("GET", HOST, "/auth/get-csrf-token/")
+    keep(headers)
+    token = json.loads(body)["csrf_token"]
+    form = urlencode({"csrfmiddlewaretoken": token, "email": acc["PLANE_DEV_ADMIN_EMAIL"], "password": acc["PLANE_DEV_ADMIN_PASSWORD"]})
+    status, headers, _ = request(
+        "POST", HOST, "/auth/sign-in/",
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": f"http://{HOST}",
+            "Referer": f"http://{HOST}/",
+            "Cookie": "; ".join(f"{k}={v}" for k, v in cookies.items()),
+        },
+        body=form,
+    )
+    keep(headers)
+    if "session-id" not in cookies:
+        raise RuntimeError(f"sign-in gave HTTP {status} and no session-id")
+    return cookies["session-id"]
+
+
+def session_loop():
+    session = None
+    failures_401 = 0
+    while running():
+        begun = time.time()
+        rec = {}
+        try:
+            if session is None:
+                session = sign_in()
+                emit("session", note="signed in")
+            status, _, body = request("GET", HOST, "/api/users/me/", headers={"Cookie": f"session-id={session}"}, timeout=4)
+            rec["status"] = status
+            rec["ok"] = status == 200
+            if status != 200:
+                # An error page, not user data. Kept short, for telling a 500 from a gateway error.
+                rec["body"] = re.sub(r"\s+", " ", body[:120].decode("utf-8", "replace"))
+            failures_401 = failures_401 + 1 if status == 401 else 0
+            if failures_401 >= 30:
+                emit("session", note="30 consecutive 401s, signing in again")
+                session = None
+                failures_401 = 0
+        except Exception as exc:
+            rec["ok"] = False
+            rec["error"] = type(exc).__name__
+        rec["ms"] = int((time.time() - begun) * 1000)
+        emit("session", **rec)
+        time.sleep(max(0.05, 1 - (time.time() - begun)))
+
+
+def front_loop():
+    paths = ["/", "/sign-in/", "/god-mode/", "/spaces/"]
+    while running():
+        begun = time.time()
+        rec = {}
+        for path in paths:
+            try:
+                status, _, _ = request("GET", HOST, path, headers={"Accept": "text/html"}, timeout=4)
+                rec[path] = status
+            except Exception as exc:
+                rec[path] = type(exc).__name__
+        rec["ms"] = int((time.time() - begun) * 1000)
+        emit("front", **rec)
+        time.sleep(max(0.05, 2 - (time.time() - begun)))
+
+
+def kube_json(*args):
+    r = subprocess.run(KUBECTL + list(args) + ["-o", "json"], capture_output=True, text=True, env=ENVIRON, timeout=30)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip()[:300])
+    return json.loads(r.stdout)
+
+
+def pod_view(item):
+    statuses = item["status"].get("containerStatuses") or []
+    first = statuses[0] if statuses else {}
+    state = first.get("state") or {}
+    last = (first.get("lastState") or {}).get("terminated") or {}
+    return {
+        "uid": item["metadata"]["uid"][:8],
+        "phase": item["status"].get("phase"),
+        "ready": first.get("ready"),
+        "restarts": first.get("restartCount"),
+        "waiting": (state.get("waiting") or {}).get("reason"),
+        "terminated": (state.get("terminated") or {}).get("reason"),
+        "last_exit": [last.get("reason"), last.get("exitCode"), last.get("finishedAt")] if last else None,
+        "deleting": item["metadata"].get("deletionTimestamp"),
+        "image": (item["spec"]["containers"][0]["image"].split("@sha256:") + [""])[1][:12],
+    }
+
+
+def kube_loop():
+    last = {}
+    last_gens = 0.0
+
+    def change(src, key, value):
+        if last.get((src, key)) != value:
+            last[(src, key)] = value
+            emit(src, name=key, **value)
+
+    while running():
+        begun = time.time()
+        try:
+            listing = kube_json("-n", "plane-dev", "get", "deployments,replicasets,pods")
+            deployments = [i for i in listing["items"] if i["kind"] == "Deployment"]
+            replicasets = [i for i in listing["items"] if i["kind"] == "ReplicaSet"]
+            pods = [i for i in listing["items"] if i["kind"] == "Pod"]
+            rs_by_owner = {}
+            for rs in replicasets:
+                for owner in rs["metadata"].get("ownerReferences") or []:
+                    rs_by_owner[owner["name"]] = rs_by_owner.get(owner["name"], 0) + 1
+            table = {}
+            for d in deployments:
+                name = d["metadata"]["name"]
+                conditions = {c["type"]: c.get("reason") for c in d["status"].get("conditions", [])}
+                revision = d["metadata"].get("annotations", {}).get("deployment.kubernetes.io/revision")
+                change("deploy", name, {
+                    "gen": d["metadata"].get("generation"),
+                    "observed": d["status"].get("observedGeneration"),
+                    "revision": revision,
+                    "replicas": d["status"].get("replicas"),
+                    "ready": d["status"].get("readyReplicas"),
+                    "updated": d["status"].get("updatedReplicas"),
+                    "unavailable": d["status"].get("unavailableReplicas"),
+                    "progressing": conditions.get("Progressing"),
+                    "image": (d["spec"]["template"]["spec"]["containers"][0]["image"].split("@sha256:") + [""])[1][:12],
+                    "template_annotations": d["spec"]["template"]["metadata"].get("annotations") or {},
+                })
+                table[name] = [d["metadata"].get("generation"), revision, rs_by_owner.get(name, 0)]
+            change("rs", "count", {"by_owner": rs_by_owner})
+            seen = set()
+            for p in pods:
+                name = p["metadata"]["name"]
+                seen.add(name)
+                change("pod", name, pod_view(p))
+            for (src, key) in list(last):
+                if src == "pod" and key not in seen:
+                    del last[(src, key)]
+                    emit("pod", name=key, gone=True)
+            if time.time() - last_gens >= 30:
+                last_gens = time.time()
+                emit("gens", table=table, note="name: [generation, revision, replicasets]")
+            apps = kube_json("-n", "argocd", "get", "applications", "plane-dev", "monitoring-extras", "root", "plane-prod-sim")
+            for a in apps["items"]:
+                op = a["status"].get("operationState") or {}
+                change("app", a["metadata"]["name"], {
+                    "sync": a["status"].get("sync", {}).get("status"),
+                    "health": a["status"].get("health", {}).get("status"),
+                    "revision": (a["status"].get("sync", {}).get("revision") or "")[:12],
+                    "op_phase": op.get("phase"),
+                    "op_started": op.get("startedAt"),
+                    "op_finished": op.get("finishedAt"),
+                    "op_retry": op.get("retryCount"),
+                    "op_message": (op.get("message") or "")[:200],
+                    "in_flight": bool(a.get("operation")),
+                    "history": len(a["status"].get("history") or []),
+                    "automated": a["spec"].get("syncPolicy", {}).get("automated"),
+                })
+        except Exception as exc:
+            emit("kube", error=str(exc)[:300])
+        time.sleep(max(0.2, 3 - (time.time() - begun)))
+
+
+def alerts_loop():
+    last_p, last_a = None, None
+    while running():
+        begun = time.time()
+        try:
+            _, _, body = request("GET", "prometheus.localhost", "/api/v1/alerts")
+            alerts = json.loads(body)["data"]["alerts"]
+            view = sorted(
+                ({"labels": a["labels"], "state": a["state"], "activeAt": a.get("activeAt")} for a in alerts),
+                key=lambda a: json.dumps(a["labels"], sort_keys=True),
+            )
+            if view != last_p:
+                emit("prometheus", alerts=view)
+                last_p = view
+        except Exception as exc:
+            emit("prometheus", error=type(exc).__name__)
+        try:
+            _, _, body = request("GET", "alertmanager.localhost", "/api/v2/alerts")
+            alerts = json.loads(body)
+            view = sorted(
+                (
+                    {
+                        "fingerprint": a["fingerprint"],
+                        "labels": a["labels"],
+                        "state": a["status"]["state"],
+                        "inhibitedBy": a["status"]["inhibitedBy"],
+                        "startsAt": a["startsAt"],
+                    }
+                    for a in alerts
+                ),
+                key=lambda a: a["fingerprint"],
+            )
+            if view != last_a:
+                emit("alertmanager", alerts=view)
+                last_a = view
+        except Exception as exc:
+            emit("alertmanager", error=type(exc).__name__)
+        time.sleep(max(0.2, 5 - (time.time() - begun)))
+
+
+def metric_loop():
+    last = {}
+    queries = {
+        "pg_up": "pg_up",
+        "probe_plane_dev": 'probe_success{namespace="plane-dev"}',
+    }
+    while running():
+        begun = time.time()
+        for name, query in queries.items():
+            try:
+                _, _, body = request("GET", "prometheus.localhost", "/api/v1/query?" + urlencode({"query": query}))
+                result = json.loads(body)["data"]["result"]
+                view = sorted((r["metric"].get("namespace", ""), r["metric"].get("probe", ""), r["value"][1]) for r in result)
+                if last.get(name) != view:
+                    last[name] = view
+                    emit("metric", name=name, values=view)
+            except Exception as exc:
+                emit("metric", name=name, error=type(exc).__name__)
+        time.sleep(max(0.2, 15 - (time.time() - begun)))
+
+
+def node_loop():
+    cmd = ["docker", "exec", "plane-platform-control-plane", "sh", "-c",
+           'grep -E "^(MemTotal|MemAvailable):" /proc/meminfo; grep "^oom_kill " /proc/vmstat']
+    while running():
+        begun = time.time()
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            vals = {}
+            for line in r.stdout.splitlines():
+                key, value = re.split(r":?\s+", line, maxsplit=1)
+                vals[key] = value
+            total = int(vals["MemTotal"].split()[0])
+            avail = int(vals["MemAvailable"].split()[0])
+            free = shutil.disk_usage(ROOT).free / 2**30
+            emit("node", used_gib=round((total - avail) / 1048576, 2), oom_kill=int(vals["oom_kill"]), host_free_gib=round(free, 2))
+        except Exception as exc:
+            emit("node", error=str(exc)[:200])
+        time.sleep(max(0.2, 30 - (time.time() - begun)))
+
+
+def prodsim_loop():
+    last = None
+    while running():
+        begun = time.time()
+        rec = {}
+        try:
+            status, _, _ = request("GET", "plane.prod-sim.localhost", "/sign-in/", headers={"Accept": "text/html"}, timeout=4)
+            rec["status"] = status
+        except Exception as exc:
+            rec["error"] = type(exc).__name__
+        emit("prodsim", **rec)
+        try:
+            pods = kube_json("-n", "plane-prod-sim", "get", "pods")
+            view = sorted((p["metadata"]["name"], p["metadata"]["uid"][:8], (p["status"].get("containerStatuses") or [{}])[0].get("restartCount")) for p in pods["items"])
+            if view != last:
+                emit("prodsim", pods=view)
+                last = view
+        except Exception as exc:
+            emit("prodsim", error=str(exc)[:200])
+        time.sleep(max(0.2, 10 - (time.time() - begun)))
+
+
+threads = [threading.Thread(target=f, daemon=True) for f in (session_loop, front_loop, kube_loop, alerts_loop, metric_loop, node_loop, prodsim_loop)]
+emit("watch", started=True, max_seconds=max_seconds)
+for t in threads:
+    t.start()
+while running():
+    time.sleep(0.5)
+for t in threads:
+    t.join(timeout=35)
+emit("watch", stopped=True, reason="stop-file" if os.path.exists(stop_file) else "max-seconds")

@@ -66,7 +66,7 @@ reset() {
   jq -n '{serial:3,lineage:"local"}' > "$H/.local/terraform/local/terraform.tfstate"
   python3 - <<PY
 import json, secrets
-keys = ["PG_USER","PG_PASSWORD","PG_DB","RABBITMQ_USER","RABBITMQ_PASSWORD","SILO_ACCESS_KEY","SILO_SECRET_KEY","SECRET_KEY","LIVE_SERVER_SECRET_KEY"]
+keys = ["PG_USER","<redacted>","PG_DB","RABBITMQ_USER","RABBITMQ_PASSWORD","SILO_ACCESS_KEY","SILO_SECRET_KEY","SECRET_KEY","LIVE_SERVER_SECRET_KEY"]
 def env():
     return {k: ("plane" if k in ("PG_USER","PG_DB","RABBITMQ_USER") else secrets.token_hex(24)) for k in keys}
 d, p = env(), env()
@@ -327,7 +327,7 @@ scenario "S14. Rotation guard on an in-place restore"
 reset; take_backups
 python3 - <<PY
 import json
-r = json.load(open("$H/state/rendered.json")); r["dev"]["PG_PASSWORD"] = "rotated-since-the-dump"; json.dump(r, open("$H/state/rendered.json", "w"))
+r = json.load(open("$H/state/rendered.json")); r["dev"]["<redacted>"] = "rotated-since-the-dump"; json.dump(r, open("$H/state/rendered.json", "w"))
 PY
 : > "$H/state/calls.log"
 run scripts/restore.sh infisical latest CONFIRM=yes
@@ -572,11 +572,11 @@ if args[0] == "get" and args[1] == "secret":
     elif env:
         ren = jload("rendered.json", {}).get(env)
         if ren:
-            m = {"plane-pgdb": {"POSTGRES_USER":"PG_USER","POSTGRES_PASSWORD":"PG_PASSWORD","POSTGRES_DB":"PG_DB"},
+            m = {"plane-pgdb": {"POSTGRES_USER":"PG_USER","POSTGRES_PASSWORD":"<redacted>","POSTGRES_DB":"PG_DB"},
                  "plane-rabbitmq": {"RABBITMQ_DEFAULT_USER":"RABBITMQ_USER","RABBITMQ_DEFAULT_PASS":"RABBITMQ_PASSWORD"},
                  "plane-doc-store": {"MINIO_ROOT_USER":"SILO_ACCESS_KEY","MINIO_ROOT_PASSWORD":"SILO_SECRET_KEY","AWS_ACCESS_KEY_ID":"SILO_ACCESS_KEY","AWS_SECRET_ACCESS_KEY":"SILO_SECRET_KEY"},
                  "plane-app-keys": {"SECRET_KEY":"SECRET_KEY","LIVE_SERVER_SECRET_KEY":"LIVE_SERVER_SECRET_KEY"},
-                 "plane-app-env": {"DATABASE_URL":"PG_PASSWORD"}, "plane-live-env": {"REDIS_URL":"PG_DB"}}
+                 "plane-app-env": {"DATABASE_URL":"<redacted>"}, "plane-live-env": {"REDIS_URL":"PG_DB"}}
             if name in m: data = {k: ren[v] for k, v in m[name].items()}
     if data is None:
         print(f'secret "{name}" not found', file=sys.stderr); sys.exit(1)
