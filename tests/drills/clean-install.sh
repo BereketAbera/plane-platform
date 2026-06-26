@@ -82,6 +82,16 @@ if [[ "$before" != "$after" ]]; then say "the set of pods changed across the sec
 tf_dir="infrastructure/terraform/environments/local"
 step terraform-plan-local env KUBECONFIG="$CLONE/.local/kubeconfig" "$ROOT/.tools/bin/terraform" -chdir="$CLONE/$tf_dir" plan -lock=false -detailed-exitcode -input=false || true
 
+# BKP-5: a backup from the other install holds another SECRET_KEY, so a restore must refuse it. If it did not refuse,
+# only this throwaway install would lose anything.
+foreign="$(ls -1t "$ROOT/.local/backups/dev" 2>/dev/null | grep -E '^[0-9]{8}T[0-9]{6}Z$' | head -1 || true)"
+if [[ -n "$foreign" ]]; then
+  mkdir -p "$CLONE/.local/backups/dev"
+  cp -R "$ROOT/.local/backups/dev/$foreign" "$CLONE/.local/backups/dev/"
+  step restore-foreign-key-refused bash -c "! make restore ENV=dev BACKUP=$foreign CONFIRM=yes" || true
+  rm -rf "${CLONE:?}/.local/backups/dev/$foreign"
+fi
+
 # TEAR-1: refused with no confirmation, and nothing changes.
 step destroy-refused bash -c '! make destroy' || true
 step destroy make destroy CONFIRM=yes SKIP_BACKUP=yes
