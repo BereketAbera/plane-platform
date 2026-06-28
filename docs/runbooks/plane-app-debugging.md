@@ -1,6 +1,6 @@
 # Plane application debugging
 
-The platform is up, and Plane itself misbehaves. Wayline is a customized Plane Community Edition v1.4.3 deployment, so most of these behaviours come from upstream code. The facts below were read from upstream source (research notes `plane-app.md`, `plane-helm.md` and critique section 1), and a link says where one was checked on the running environments. Marked ones still need a run.
+The platform is up, and Plane itself misbehaves. Wayline is a customized Plane Community Edition v1.4.3 deployment, so most of these behaviours come from upstream code. The facts below were read from upstream source (research notes `plane-app.md`, `plane-helm.md` and critique section 1), and a link says where one was checked on the running environments. Where Pass 1 did not test one, it says so.
 
 Preamble for raw commands:
 
@@ -42,14 +42,14 @@ curl -s -w '\nanchor %{http_code}\n' "http://$HOST/api/public/anchor/__probe__/s
 curl -s "http://$HOST/live/health"; echo
 ```
 
-Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. On 2026-11-04, on upstream images, each Postgres round of the pod restart drill took Postgres away for under a minute: the anchor route answered 500 for one 15s probe sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)). On the final images on 2026-11-05 in dev, that round gave seven 500s on a signed-in `GET /api/users/me/`, read once a second, while the four pages stayed 200 (`.local/evidence-raw/PERS-1-20261105T070358Z-timeline.txt`, not yet published). A longer outage has not been tried.
+Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. On 2026-11-04, on upstream images, each Postgres round of the pod restart drill took Postgres away for under a minute: the anchor route answered 500 for one 15s probe sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)). On the final images on 2026-11-05 in dev, that round gave seven 500s on a signed-in `GET /api/users/me/`, read once a second, while the four pages stayed 200 ([PERS-1-20261105T070358Z-timeline.txt](../evidence/runs/PERS-1-20261105T070358Z-timeline.txt)). A longer outage has not been tried.
 
 | `/api/instances/` | `/api/public/anchor/__probe__/settings/` | Likely |
 |---|---|---|
 | 200 JSON | 404 "does not exist" | API and database are fine. This 404 is the healthy answer |
 | 200 JSON | 500 | **Postgres is unreachable or empty**, and the first answer is from cache |
 | 200 HTML | any | API has no endpoints, and Traefik fell through to the web route. Not seen so far, see the 503 row |
-| 500 | 500 | Valkey or the API itself. Expected for Valkey down, as `CACHES` does not ignore exceptions. Not seen so far: in the drills' Valkey rounds the pod is back within seconds, and the `api-instance` probe read no failure, so the outage may have fallen between its 15s samples. [[VERIFY: with Valkey down /api/instances/ answers 500]] |
+| 500 | 500 | Valkey or the API itself. Expected for Valkey down, as `CACHES` does not ignore exceptions. Not seen so far: in the drills' Valkey rounds the pod is back within seconds, and the `api-instance` probe read no failure, so the outage may have fallen between its 15s samples. Valkey held down was not tested in Pass 1 |
 | 429 | any | Anonymous rate limit, 30 a minute per IP |
 | 502, 503, 504 | same | No ready API pods. Look at the pods. With the only API pod deleted on 2026-11-04, both answered 503 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)) |
 
@@ -132,7 +132,7 @@ kubectl -n "$NS" exec deploy/plane-worker-wl -c plane-worker -- celery -A plane 
 kubectl -n "$NS" delete pod -l app.kubernetes.io/component=worker
 ```
 
-Replacing the pod is the repair to use. `add_consumer` a second time did not bring it back through a broker restart on a scratch worker. SIGHUP, Celery's own restart, did, in that same scratch container, but that has not been tried on a Plane pod (`.local/evidence-raw/harness-worker-scratch-1.txt`, not yet published). Replacing the pod is no drift for Argo CD, though the Application reads `Progressing` until the new pod is ready.
+Replacing the pod is the repair to use. `add_consumer` a second time did not bring it back through a broker restart on a scratch worker. SIGHUP, Celery's own restart, did, in that same scratch container, but that has not been tried on a Plane pod ([harness-worker-scratch-1.txt](../evidence/runs/harness-worker-scratch-1.txt)). Replacing the pod is no drift for Argo CD, though the Application reads `Progressing` until the new pod is ready.
 
 ### Configuration silently empty
 
@@ -180,19 +180,19 @@ An HTTP 101 alone does not prove anything: the Hocuspocus handshake is unauthent
 
 `LIVE_SERVER_SECRET_KEY` is not consumed by anything in v1.4.3, so it is not the cause.
 
-The WebSocket works through Traefik's buffering middleware. Smoke held two connections idle for 330s, with pings answered, and then an update got through ([plane-dev-smoke-soak-1.txt](../evidence/runs/plane-dev-smoke-soak-1.txt)). In a real browser on the branded images on 2026-11-05, tab 2 showed what was typed in tab 1 within 2 seconds, and a reload brought it back from the server ([live-dev](../evidence/branding/live-dev/README.md)).
+The WebSocket works through Traefik's buffering middleware. Smoke held two connections idle for 330s, with pings answered, and then an update got through ([plane-dev-smoke-soak-1.txt](../evidence/runs/plane-dev-smoke-soak-1.txt)). In a real browser on the branded images on 2026-11-05, tab 2 showed what was typed in tab 1 within 2 seconds, and a reload brought it back from the server ([live-dev](../evidence/branding/live-dev/README.md)). Two tabs on the final images, with a load test running on dev, passed edits both ways within 2 seconds at the start, and one more 5m54s after the page opened ([RT-2b-RT-3-20261105T073208Z.txt](../evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)).
 
-A `live` restart keeps stored edits. An edit still inside the 10-second debounce was not on the server afterwards, and the client took about 21 seconds to reconnect ([plane-dev-live-restart-1.txt](../evidence/runs/plane-dev-live-restart-1.txt)). Whether an open tab sends that edit again has not been tested.
+A `live` restart keeps stored edits. With smoke's client, an edit still inside the 10-second debounce was not on the server afterwards, and the client took about 21 seconds to reconnect ([plane-dev-live-restart-1.txt](../evidence/runs/plane-dev-live-restart-1.txt)). A real tab does send it again. In one restart on 2026-11-05 in dev, text typed 13 seconds after the delete stayed in that tab, showed in both tabs 100 seconds later with no reload, and was still there after a reload ([RT-2b-RT-3-20261105T073208Z.txt](../evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)). That is one restart in Chromium. A tab closed before it reconnects has not been tried.
 
 ### Login or rate limit trouble
 
 Auth counters live in Valkey, and retry-heavy tests can trip them. `API_KEY_RATE_LIMIT` defaults to 60 a minute per key, and `api_tokens.allowed_rate_limit` is not read. Requests with an API key are also logged through Celery into `api_activity_logs`, so API-token load writes to the database. `tests/load/` uses session auth for this reason.
 
-Cookies are host-only, with no `Domain` attribute, and a dev session gets 401 on the prod-sim host, over plain HTTP ([plane-dev-cookies-1.txt](../evidence/runs/plane-dev-cookies-1.txt)). In Chromium on 2026-11-05, a profile signed in on dev read 200 from dev's `GET /api/users/me/` and 401 from prod-sim's, in two tabs at once (`.local/evidence-raw/AUTH-4-20261105T062750Z.txt`, not yet published). That is one session, and no sign-in on prod-sim happened, because the session's permission system refused reading that test account. So both hosts signed in at once has not been tried. [[VERIFY: logging in to both hosts at once in one browser keeps sessions apart]]
+Cookies are host-only, with no `Domain` attribute, and a dev session gets 401 on the prod-sim host, over plain HTTP ([plane-dev-cookies-1.txt](../evidence/runs/plane-dev-cookies-1.txt)). In Chromium on 2026-11-05, a profile signed in on dev read 200 from dev's `GET /api/users/me/` and 401 from prod-sim's, in two tabs at once ([AUTH-4-20261105T062750Z.txt](../evidence/runs/AUTH-4-20261105T062750Z.txt)). That is one session, and no sign-in on prod-sim happened, because the session's permission system refused reading that test account. Both hosts signed in at once was not tested in Pass 1, and neither were Safari and Firefox.
 
 ### What a browser shows
 
-An old page after a promotion was the browser's cache on the first branded images. On 2026-11-05 the upstream sign-in page kept showing after they landed, with no error, because nginx in the web and admin images sent `ETag` and `Last-Modified` with no `Cache-Control` ([live-dev](../evidence/branding/live-dev/README.md)). The final images send `cache-control: no-cache` on HTML, from `apps/wayline/runtime/nginx-web.conf` and `nginx-admin.conf`. In Chromium with no hard reload, a browser holding the old `/sign-in/` got the new file after a promotion in dev and in prod-sim, and got the older file after a rollback in dev (`.local/evidence-raw/auth-6-browser-promotion-dev-1.txt`, `.local/evidence-raw/AUTH-6-rollback-20261105T064032Z.txt`, not yet published). That was one route, read by `etag`, after a navigation. A tab left open across a rollout, and other browsers, have not been tried. If an old page shows anyway, reload past the cache to tell.
+An old page after a promotion was the browser's cache on the first branded images. On 2026-11-05 the upstream sign-in page kept showing after they landed, with no error, because nginx in the web and admin images sent `ETag` and `Last-Modified` with no `Cache-Control` ([live-dev](../evidence/branding/live-dev/README.md)). The final images send `cache-control: no-cache` on HTML, from `apps/wayline/runtime/nginx-web.conf` and `nginx-admin.conf`. In Chromium with no hard reload, a browser holding the old `/sign-in/` got the new file after a promotion in dev and in prod-sim, and got the older file after a rollback in dev ([auth-6-browser-promotion-dev-1.txt](../evidence/runs/auth-6-browser-promotion-dev-1.txt), [AUTH-6-rollback-20261105T064032Z.txt](../evidence/runs/AUTH-6-rollback-20261105T064032Z.txt)). That was one route, read by `etag`, after a navigation. A tab left open across a rollout, and other browsers, have not been tried. If an old page shows anyway, reload past the cache to tell.
 
 React errors #418 and #423 in the console are hydration mismatches. They appear on upstream's images as well, and the app works past them. Their cause has not been found ([plane-dev-browser-1.txt](../evidence/runs/plane-dev-browser-1.txt)).
 
@@ -204,7 +204,7 @@ kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli ping
 kubectl -n "$NS" exec plane-rabbitmq-wl-0 -c plane-rabbitmq -- rabbitmq-diagnostics status
 ```
 
-Treat Valkey as a cache. A cold cache after it restarts is normal. The pod restart drill deletes each StatefulSet's pod in turn, Valkey's included, and checks the sentinel row, the attachment and a new background job after each: PASS in dev and prod-sim on upstream images ([drill-pod-restart-dev-20261104T224424Z.log](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log), [drill-pod-restart-prod-sim-20261104T235402Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)), and PASS again in both on the final images on 2026-11-05 (`.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log`, `.local/evidence-raw/drill-pod-restart-prod-sim-20261105T072331Z.log`, not yet published).
+Treat Valkey as a cache. A cold cache after it restarts is normal. The pod restart drill deletes each StatefulSet's pod in turn, Valkey's included, and checks the sentinel row, the attachment and a new background job after each: PASS in dev and prod-sim on upstream images ([drill-pod-restart-dev-20261104T224424Z.log](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log), [drill-pod-restart-prod-sim-20261104T235402Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)), and PASS again in both on the final images on 2026-11-05 ([drill-pod-restart-dev-20261105T070414Z.log](../evidence/runs/drill-pod-restart-dev-20261105T070414Z.log), [drill-pod-restart-prod-sim-20261105T072331Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log)).
 
 Valkey logging `Possible SECURITY ATTACK` means something sent HTTP to its port. Here that was the NetworkPolicy matrix's probes, and one direct HTTP request reproduced it ([plane-prod-sim-valkey-security-line-1.txt](../evidence/runs/plane-prod-sim-valkey-security-line-1.txt)).
 
@@ -216,7 +216,7 @@ make test-e2e ENV=dev
 
 Check the Platform overview dashboard: all four probes green for the environment. Then check that relevant alerts have resolved in `http://alertmanager.localhost`.
 
-On the final images on 2026-11-05, `make test-e2e ENV=dev` read 45 PASS and 1 SKIP, and `make test-e2e ENV=prod-sim` read 44 PASS and 1 SKIP (`.local/evidence-raw/smoke-dev-20261105T053137Z-52811.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`, not yet published). The skip is `branding-fresh-install`, which needs a clean database. Dev read the same at 07:07Z, after the drills had moved it away and back (`.local/evidence-raw/smoke-dev-20261105T070735Z-94252.json`). They drive the API and the WebSocket, not a browser.
+On the final images on 2026-11-05, `make test-e2e ENV=dev` read 45 PASS and 1 SKIP, and `make test-e2e ENV=prod-sim` read 44 PASS and 1 SKIP ([smoke-dev-20261105T053137Z-52811.json](../evidence/runs/smoke-dev-20261105T053137Z-52811.json), [smoke-prod-sim-20261105T053533Z-8468.json](../evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json)). The skip is `branding-fresh-install`, which needs a clean database. Dev read the same at 07:07Z, after the drills had moved it away and back ([smoke-dev-20261105T070735Z-94252.json](../evidence/runs/smoke-dev-20261105T070735Z-94252.json)). Each read the same again after its rotation and in-place restore, prod-sim at 07:37Z and dev at 07:46Z ([smoke-prod-sim-20261105T073741Z-73161.json](../evidence/runs/smoke-prod-sim-20261105T073741Z-73161.json), [smoke-dev-20261105T074635Z-6532.json](../evidence/runs/smoke-dev-20261105T074635Z-6532.json)). They drive the API and the WebSocket, not a browser.
 
 ## What not to do
 
