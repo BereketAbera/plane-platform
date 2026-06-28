@@ -31,7 +31,7 @@ On 2026-11-05 the running kubelet reported `imageGCHighThresholdPercent` 100 and
 
 | Symptom | Where |
 |---|---|
-| `only N GiB free on the host, need at least M GiB` | `guard_disk`, from most scripts. The default floor is 10 GiB. On a new cluster `up.sh` needs 25 and `cluster-up.sh` 15. `make test` and the failed-deploy, failing-migrator and pod-restart drills need 2, and `make promote`, `make rollback`, `make gitops-publish`, `make render` and `make test-netpol` need 1. `ALLOW_LOW_DISK="<reason>"` goes past the check for a new cluster, and `MIN_FREE_DISK_GIB=<n>` lowers the floor. A value below 10 and each reason are logged in `.local/evidence-raw/low-disk-overrides.log`. The refusal was seen on 2026-11-05: `MIN_FREE_DISK_GIB=999` stopped `make backup` before a Job started, and `make status`, which does not call the guard, still ran (`.local/evidence-raw/OPS-7-20261105T061555Z.txt`, not yet published) |
+| `only N GiB free on the host, need at least M GiB` | `guard_disk`, from most scripts. The default floor is 10 GiB. On a new cluster `up.sh` needs 25 and `cluster-up.sh` 15. `make test` and the failed-deploy, failing-migrator and pod-restart drills need 2, and `make promote`, `make rollback`, `make gitops-publish`, `make render` and `make test-netpol` need 1. `ALLOW_LOW_DISK="<reason>"` goes past the check for a new cluster, and `MIN_FREE_DISK_GIB=<n>` lowers the floor. A value below 10 and each reason are logged in `.local/evidence-raw/low-disk-overrides.log`. The refusal was seen on 2026-11-05: `MIN_FREE_DISK_GIB=999` stopped `make backup` before a Job started, and `make status`, which does not call the guard, still ran ([OPS-7-20261105T061555Z.txt](../evidence/runs/OPS-7-20261105T061555Z.txt)) |
 | `the host is below N GiB free, so stopping here` | `make scan-images` wants 15 GiB to start and stops below its floor, reporting the rest as not scanned. `SCAN_MIN_FREE_GIB` and `SCAN_FLOOR_GIB` change those. One run stopped at 2 of 35 images this way ([security README](../evidence/security/README.md)) |
 | `fail N GiB free ... 25 GiB is the minimum` | `scripts/prereqs.sh`. 35 GiB is the recommendation |
 | Postgres logs `No space left on device`, or pods fail on writes | The VM's disk could not grow |
@@ -71,7 +71,9 @@ docker system df -v | grep plane-platform-local
 
 Budget, for comparing what you see. Both figures are estimates from critique section 5, made before anything was deployed. Workload images on the node come to about 8.56 GiB unpacked, derived from each gzip layer's size trailer in the registry. Total host growth of 16.7 to 22 GiB adds planning figures for volumes and logs. [Resource utilization](../resource-utilization.md#disk) adds the caches.
 
-Read on the running platform on 2026-11-05 at 02:01Z, with both environments up: the node's `/var` volume 12.94 GiB by `du`, of which images 10.51 and volumes 1.53, local services' volumes 3.62 GiB and the node image 1.19 GiB, so about 17.75 GiB for this platform. `Docker.raw` allocated 42.18 GiB, which holds whatever else is on this host's Docker too (`.local/evidence-raw/dr-disk-1.txt`, not yet published). That comes from a platform that has been running and promoted several times, not from a first install on an empty disk, so it does not answer the line below.
+Read on the running platform on 2026-11-05 at 02:01Z, with both environments up: the node's `/var` volume 12.94 GiB by `du`, of which images 10.51 and volumes 1.53, local services' volumes 3.62 GiB and the node image 1.19 GiB, so about 17.75 GiB for this platform. `Docker.raw` allocated 42.18 GiB, which holds whatever else is on this host's Docker too ([dr-disk-1.txt](../evidence/runs/dr-disk-1.txt)). That comes from a platform that has been running and promoted several times, not from a first install on an empty disk, so it does not answer the line below. Read again on 2026-11-05 at 07:44Z, just after the load test: `Docker.raw` allocated 39.59 GiB and the host had 18 GiB free ([LOAD-3-20261105T074440Z-host.txt](../evidence/runs/LOAD-3-20261105T074440Z-host.txt)). `make test-load ENV=dev` itself moved the VM's `/var` by about 60 MiB, and the host stayed at 17 GiB free ([results.json](../evidence/runs/load-20261105T073241Z/results.json)).
+
+`make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is in progress as this is written, and only it can answer the two markers left on this page. Its result is not yet recorded.
 
 [[MEASURE: actual Docker.raw growth and host free space after a first full install]]
 
@@ -93,7 +95,7 @@ Remove by hand only with a newer good backup in place.
 docker exec "$NODE" crictl rmi --prune
 ```
 
-Anything removed is pulled again when next needed. Jobs such as the backup's rclone image and k6 will re-pull from the pull-through caches, so expect a delay. [[VERIFY: crictl rmi --prune leaves running workloads unaffected and frees space inside the VM]]
+Anything removed is pulled again when next needed. Jobs such as the backup's rclone image and k6 will re-pull from the pull-through caches, so expect a delay. Running this on the platform was not tested in Pass 1.
 
 **3. Trivy cache and other host caches.** `.local/trivy-cache` is rebuildable. Its Java vulnerability database, needed because Infisical's image holds JARs, comes back on the next `make scan-images`:
 
@@ -110,7 +112,7 @@ docker volume rm plane-platform-local_mirror-quay-data
 docker compose -f infrastructure/local-services/compose.yaml up -d mirror-quay
 ```
 
-Do not do this to `registry-data`. It holds the branded images that both overlays name, and those digests exist nowhere else until rebuilt, and a rebuild can give other digests. [[VERIFY: removing one mirror volume and restarting it leaves pulls working through the cache]]
+Do not do this to `registry-data`. It holds the branded images that both overlays name, and those digests exist nowhere else until rebuilt, and a rebuild can give other digests. Removing a mirror's volume and pulling through it again was not tested in Pass 1.
 
 **5. Return freed VM space to the Mac.** Docker's FAQ recommends this after deleting data inside containers:
 
@@ -118,7 +120,7 @@ Do not do this to `registry-data`. It holds the branded images that both overlay
 docker run --privileged --pid=host docker/desktop-reclaim-space
 ```
 
-It runs a privileged container from Docker Hub, so read what it does first. [[VERIFY: docker/desktop-reclaim-space shrinks Docker.raw on this host, measured with ls -klsh before and after]]
+It runs a privileged container from Docker Hub, so read what it does first. Its effect on this host was not tested in Pass 1.
 
 **6. Delete the cluster.** See [Clean rebuild](clean-rebuild.md). Whether `kind delete cluster` alone shrinks `Docker.raw` here is unresolved, so measure it. [[VERIFY: Docker.raw allocated size before and after kind delete cluster]]
 
