@@ -247,7 +247,7 @@ a PVC named `backups` in each namespace. `/backups` on the node is `.local/backu
 cluster. Pods mount a PVC rather than `hostPath`, so they stay PSA-compatible. See [data-operations.md](data-operations.md).
 UID 70 writes `/backups/<env>` through the VirtioFS mount: `make backup` completed in dev and prod-sim on 2026-11-04
 ([dev](evidence/runs/dr-backup-dev-1.txt), [prod-sim](evidence/runs/dr-backup-prod-sim-1.txt)). rclone logs that the mount has no xattrs, and goes on.
-On 2026-11-05, on the final images, a backup taken minutes earlier was restored in place in each environment with result PASS, and `make test-e2e` passed after it
+On 2026-11-05, on the final images, a backup taken just before was restored in place in each environment with result PASS, and `make test-e2e` passed after it
 ([dev](evidence/runs/BKP-2-20261105T074322Z.txt), [prod-sim](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). That restores over the same volumes, so it does not show a restore into a new cluster.
 
 ## Ingress and hostnames
