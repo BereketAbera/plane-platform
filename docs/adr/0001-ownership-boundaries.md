@@ -1,6 +1,6 @@
 # 0001. One owner per resource
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked.
+**Status:** Accepted, 2026-11-04. The result on a clean host is not yet recorded.
 
 ## Context
 
@@ -52,10 +52,10 @@ The reasons behind the less obvious lines:
 - `terraform destroy` deletes the namespaces, with every PVC and all Plane data, and removes the CoreDNS `Corefile` key. Normal teardown is `make destroy`, which deletes the cluster and the foundation root's state together.
 - `scripts/ci/ownership.sh` is static. A name Terraform computes at plan time is covered only by the per-kind rules.
 - **This boundary separates tools, not environments.** `plane-dev` and `plane-prod-sim` share one node, one API server, one etcd, one CNI, one Argo CD, one Traefik, one Infisical server and one monitoring stack. Namespace separation is not equivalent to independent production clusters.
-- [[VERIFY: make up on a clean host creates every resource through its listed owner with no two-writer conflict]]
+- This has not been shown on a clean host. The clean install from a fresh clone in `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is in progress, and its result is not yet recorded.
 
 ## What we found when we ran it
 
-Added 2026-11-05. The bring-up on 2026-11-04 was staged, on a host that had run earlier builds, so it is not the clean host the marker above asks for. It showed no two-writer conflict: re-running each stage changed nothing Terraform owns, and `scripts/ci/ownership.sh` passes ([h17-ownership-1.txt](../evidence/runs/h17-ownership-1.txt)).
+Added 2026-11-05. The bring-up on 2026-11-04 was staged, on a host that had run earlier builds, so it is not the clean host the line above asks for. It showed no two-writer conflict: re-running each stage changed nothing Terraform owns, and `scripts/ci/ownership.sh` passes ([h17-ownership-1.txt](../evidence/runs/h17-ownership-1.txt)).
 
 One gap in the reasoning. "An Application in Git must not be able to widen its own permissions" held for what a project allows, but an Application could still name a wider project. `policy/gitops.rego` has refused that since `b19fe26`, and a planted defect showed it fails ([negative controls](../evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). That is a check in CI, and on this GitHub plan a failing check cannot block a merge.
