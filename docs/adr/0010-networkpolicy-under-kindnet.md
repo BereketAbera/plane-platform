@@ -1,6 +1,6 @@
 # 0010. NetworkPolicy under kindnet, and its limits
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked.
+**Status:** Accepted, 2026-11-04.
 
 ## Context
 
@@ -55,10 +55,10 @@ These limits apply however well the policies are written.
 Runtime items:
 
 - Day-1 gate 2 records PASS on this host on 2026-11-04, with the platform's 60 policies loaded, in a test namespace: traffic flows before any policy, default-deny times out a new connection while a reference answers the same client and the node reaches the target, and under the allow rule the labelled client connects while an unlabelled one times out. The node also shows the `kindnet-network-policies` nftables table ([day1-gates-20261104T231136Z.txt](../evidence/day1-gates-20261104T231136Z.txt)). Loss only on the target's path would read the same as a block, and the script says so. This shows enforcement exists on this kernel. It says nothing about the platform's own rules.
-- The sentinel passes before every run of `scripts/test-netpol.sh`. `make test-netpol` ran the whole matrix on 2026-11-05 at 04:19 UTC: 418 PASS, 0 FAIL and 0 INCONCLUSIVE, with all 292 deny rows ending in a timeout while both references answered (`.local/evidence-raw/harness-make-test-netpol-4.txt`, `.local/evidence-raw/netpol-20261105T041921Z.tsv`, raw output that is not published yet). [Security](../security.md#networkpolicy-model) has the table. A timeout cannot rule out loss only on that pod's path to that target.
+- The sentinel passes before every run of `scripts/test-netpol.sh`. `make test-netpol` ran the whole matrix on 2026-11-05 at 04:19 UTC: 418 PASS, 0 FAIL and 0 INCONCLUSIVE, with all 292 deny rows ending in a timeout while both references answered ([harness-make-test-netpol-4.txt](../evidence/runs/harness-make-test-netpol-4.txt), [netpol-20261105T041921Z.tsv](../evidence/runs/netpol-20261105T041921Z.tsv)). [Security](../security.md#networkpolicy-model) has the table. A timeout cannot rule out loss only on that pod's path to that target. The final `make test` comes after the rebuild in progress, and its result is not yet recorded.
 - NodePort traffic reaches Traefik from `172.24.0.1`, the kind gateway, inside `172.16.0.0/12`. The second range played no part ([traefik-nodeport-source-1.txt](../evidence/runs/traefik-nodeport-source-1.txt)).
 - Operator token review works under default-deny with the node IP on 6443 ([infisical-isolation-3.txt](../evidence/runs/infisical-isolation-3.txt), [netpol-real-pods-1.txt](../evidence/runs/netpol-real-pods-1.txt)).
-- kind issue 4222 reported intermittent stalls of about 81s under a NetworkPolicy (research, 2026-11-04). None was seen under the full policy set. Signed-in requests sampled about once a second through Traefik on 2026-11-05 took at most 1,625 ms in 913 samples and 386 ms in 239 (`.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`, `.local/evidence-raw/DEP-2-20261105T064032Z-timeline.txt`). That is one path for about 19 minutes, so it does not rule a stall out elsewhere.
+- kind issue 4222 reported intermittent stalls of about 81s under a NetworkPolicy (research, 2026-11-04). None was seen under the full policy set. Signed-in requests sampled about once a second through Traefik on 2026-11-05 took at most 1,625 ms in 913 samples and 386 ms in 239 ([DEP-1-20261105T062323Z-timeline.txt](../evidence/runs/DEP-1-20261105T062323Z-timeline.txt), [DEP-2-20261105T064032Z-timeline.txt](../evidence/runs/DEP-2-20261105T064032Z-timeline.txt)). That is one path for about 19 minutes, so it does not rule a stall out elsewhere.
 
 The matrix holds 418 rows since `01ab74c`, 292 of them `deny`. Those counts are configuration, not results.
 
