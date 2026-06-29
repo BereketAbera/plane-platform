@@ -1,6 +1,6 @@
 # 0002. The kind CLI creates the cluster, not Terraform
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked.
+**Status:** Accepted, 2026-11-04.
 
 ## Context
 
@@ -47,10 +47,10 @@ The last row is the honest cost of this decision. The two-root option is viable.
 
 - **Terraform does not create or manage the cluster in Pass 1.** It manages only what is listed in [0001](0001-ownership-boundaries.md), inside a cluster that already exists. Any description of this platform has to keep that distinction.
 - Changing a port mapping, a mount or the node image means deleting and recreating the cluster. `make destroy` does that and takes a backup first unless `SKIP_BACKUP=yes`.
-- `make down` stops the node container and the local services. `make up` starts them again. [[VERIFY: make down followed by make up keeps Plane data in both environments]]
+- `make down` stops the node container and the local services. `make up` starts them again. That this keeps Plane data in both environments: Not tested in Pass 1. The pod restart drills replaced each data pod and kept its claim and data ([dev](../evidence/runs/drill-pod-restart-dev-20261105T070414Z.log), [prod-sim](../evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log)), which is not a node stop.
 - The Pass 2 seam is the pair `kubeconfig_path` and `kube_context`. `infrastructure/terraform/environments/{dev,prod}/INTERFACE.md` proposes a separate `cluster` root for Hetzner that produces them. That is an untested contract for a root that does not exist yet.
 - The cluster gets kind's kubelet defaults, including no image garbage collection and no disk-based eviction (research, 2026-11-04, `pkg/cluster/internal/kubeadm/config.go`). So `guard_disk` runs on the host in the scripts that write, because the Docker VM reports free space the host does not have. Contract section 11 lists which do not.
-- `scripts/cluster-up.sh` finished in 2s against the running cluster on 2026-11-04 ([bootstrap-up-traefik-1.txt](../evidence/runs/bootstrap-up-traefik-1.txt)). The stopped-node path has not run, because nobody has run `make down`. [[VERIFY: scripts/cluster-up.sh is idempotent when run against a running cluster and a stopped node]]
+- `scripts/cluster-up.sh` finished in 2s against the running cluster on 2026-11-04 ([bootstrap-up-traefik-1.txt](../evidence/runs/bootstrap-up-traefik-1.txt)). Against a stopped node: Not tested in Pass 1, because nobody has run `make down`.
 
 ## What we found when we ran it
 
