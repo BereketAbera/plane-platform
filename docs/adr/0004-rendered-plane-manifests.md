@@ -1,6 +1,6 @@
 # 0004. Commit rendered Plane manifests instead of an Argo CD Helm source
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked.
+**Status:** Accepted, 2026-11-04.
 
 ## Context
 
