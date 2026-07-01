@@ -2,7 +2,7 @@
 
 Postgres, Valkey, RabbitMQ and Silo in each Plane environment, where their bytes live, what a backup contains, and how to restore it.
 
-**Status, 2026-11-05.** Backups of dev, prod-sim and Infisical have run, and Infisical has been restored in place. A Plane restore into its real database and bucket has not run, and neither has a restore into a clean cluster. Each `VERIFY` or `MEASURE` marker left here waits on one of those runs, or on the load test. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published.
+**Status, 2026-11-05.** Backups of dev, prod-sim and Infisical have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a clean cluster is in progress as this is written, inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, with no result recorded here yet. A result links to its file under `docs/evidence/runs/`.
 
 These are single-replica services on a local kind node. There is no replication, no failover and no point-in-time recovery. "prod-sim" is a simulation, and sharing one node with dev is not equivalent to an independent production cluster.
 
@@ -63,7 +63,7 @@ Why volumes stay on the VM and backups go to the host: PVs on VirtioFS would put
 
 Backup PVs and PVCs come from the `backup-storage` Application at wave -10. Each environment's PVC, named `backups`, binds to a PV with a fixed `claimRef` on `/backups/<env>`. A pod that names a `hostPath` fails PSA `baseline`, while a pod that mounts a PVC does not, so backup Jobs mount only the PVC and see only their own folder.
 
-A Job as UID 70 writes to `/backups/<env>` through the VirtioFS mount. On the host each backup is a folder at 0700 and its files at 0600, belonging to the Docker Desktop user, so the host user reads them, and `shasum -c` passes there (`dr-backup-modes-1.txt`, `dr-backup-job-real-1.txt`).
+A Job as UID 70 writes to `/backups/<env>` through the VirtioFS mount. On the host each backup is a folder at 0700 and its files at 0600, belonging to the Docker Desktop user, so the host user reads them, and `shasum -c` passes there ([dr-backup-modes-1.txt](evidence/runs/dr-backup-modes-1.txt), [dr-backup-job-real-1.txt](evidence/runs/dr-backup-job-real-1.txt)).
 
 ## Operating each service
 
@@ -109,9 +109,7 @@ kubectl -n "$NS" exec plane-redis-wl-0 -c plane-redis -- valkey-cli dbsize
 
 `/api/instances/` is cached here for two hours. In each Postgres round of the pod restart drill, under a minute, the database probe answered 500 for one 15 s sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). A longer outage has not been tried. A green result from that route says nothing about the database. That is why the probes and `rotate.sh` use a database-backed route.
 
-Deleting the Valkey pod in the drill, on the final images, left a signed-in session answering 200 throughout. The new pod reattached the same volume, so that is not a loss of Valkey's data (`PERS-1-20261105T070358Z-timeline.txt`). A flush has run only on stubs.
-
-[[VERIFY: flushing or losing Valkey costs only cache and throttle state, and existing sessions keep working]]
+Deleting the Valkey pod in the drill, on the final images, left a signed-in session answering 200 throughout. The new pod reattached the same volume, so that is not a loss of Valkey's data ([PERS-1-20261105T070358Z-timeline.txt](evidence/runs/PERS-1-20261105T070358Z-timeline.txt)). A real flush ran inside each in-place restore (`valkey` step in [restore-dev-20261105T074337Z.json](evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](evidence/runs/restore-prod-sim-20261105T073438Z.json)), and `make test-e2e` then passed, signing in anew ([BKP-2-20261105T074322Z.txt](evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). The apps were stopped across that flush. So a session held across a flush, and losing Valkey's volume: Not tested in Pass 1.
 
 ### RabbitMQ
 
@@ -127,7 +125,7 @@ The management port 15672 stays closed by NetworkPolicy. Prometheus scrapes 1569
 
 Losing the volume loses queued tasks. A restore purges the `celery` queue, because queued tasks describe rows from before the restore. A password change needs `rabbitmqctl change_password` as well as the Secret, since `RABBITMQ_DEFAULT_*` acts only on a new data directory. No script implements that.
 
-The watermark applies: `make test-e2e` reads `{absolute,"256Mi"}`, 268435456 bytes, with no alarms, in both environments. The worker attaches 1 consumer on queue `celery`, 0 messages waiting, on `rabbitmq:3.13.7-management-alpine` (`plane-dev-final-e2e-20261105T070735Z.txt`, `final-prod-sim-smoke-3.txt`). The dev run also stops the consumer as a negative control: messages park, and no activity appears until it comes back.
+The watermark applies: `make test-e2e` reads `{absolute,"256Mi"}`, 268435456 bytes, with no alarms, in both environments. The worker attaches 1 consumer on queue `celery`, 0 messages waiting, on `rabbitmq:3.13.7-management-alpine` ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [final-prod-sim-smoke-3.txt](evidence/runs/final-prod-sim-smoke-3.txt)). The dev run also stops the consumer as a negative control: messages park, and no activity appears until it comes back.
 
 ### Silo
 
@@ -146,7 +144,7 @@ Port 9090, the console, stays closed. Only `/uploads` is routed publicly, and th
 
 Silo metrics are scraped. `MINIO_PROMETHEUS_AUTH_TYPE=public` is set in `helm/plane/components/hardening/patches/silo.yaml`, and `up` reads 1 on both metrics paths in both namespaces ([monitoring-silo-metrics-1.txt](evidence/runs/monitoring-silo-metrics-1.txt)).
 
-Uploads work with no bucket Job. `make test-e2e` uploads through a presigned URL and checks the checksum on download and in the bucket, sends 4718592 bytes through Traefik, has 5 MiB plus 1 byte refused with 400, gets 403 with no signature or a tampered one, and downloads an export through its link (`plane-dev-final-e2e-20261105T070735Z.txt`, `final-prod-sim-smoke-3.txt`, and on an earlier image [branded-dev-smoke-1.txt](evidence/runs/branded-dev-smoke-1.txt)).
+Uploads work with no bucket Job. `make test-e2e` uploads through a presigned URL and checks the checksum on download and in the bucket, sends 4718592 bytes through Traefik, has 5 MiB plus 1 byte refused with 400, gets 403 with no signature or a tampered one, and downloads an export through its link ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [final-prod-sim-smoke-3.txt](evidence/runs/final-prod-sim-smoke-3.txt), and on an earlier image [branded-dev-smoke-1.txt](evidence/runs/branded-dev-smoke-1.txt)).
 
 ## Backups
 
@@ -166,7 +164,7 @@ make backup ENV=all
 | `make promote ENV=prod-sim`, unless `SKIP_BACKUP=yes` | prod-sim |
 | `make gitops-publish` when the diff changes a prod-sim image digest, unless `SKIP_BACKUP=yes` | prod-sim |
 | `make destroy CONFIRM=yes`, unless `SKIP_BACKUP=yes` | All three. A failed backup stops the delete |
-| `make rotate`, once a rotation finishes, unless `SKIP_BACKUP=yes` | Infisical, as the dev rotation did on 2026-11-05 (`SEC-2-20261105T072331Z.txt`). A failure there exits 3 with the rotation standing |
+| `make rotate`, once a rotation finishes, unless `SKIP_BACKUP=yes` | Infisical, as both rotations did on 2026-11-05 ([SEC-2-20261105T072331Z.txt](evidence/runs/SEC-2-20261105T072331Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). A failure there exits 3 with the rotation standing |
 | `make drill-clean-restore CONFIRM=yes`, unless it names a backup and `SKIP_BACKUP=yes` | All three, before it deletes the cluster |
 
 ### Paths and layout
@@ -220,7 +218,7 @@ An Infisical backup without a whole `set.json` keeps its dump, and an in-place r
 | Fingerprint of `SECRET_KEY` | First 16 hex of its sha256, never the key |
 | Sentinel record | Ids and a hash, from `tests/e2e/smoke.py`. No secrets |
 | Test accounts | Rows in this dump, so a later `make test-e2e` signs in with them. Those lines hold test credentials, and the folder is 0700 |
-| Count of rows marked uploaded, and of those with no object | `uploaded_objects` in the manifest. The last backup read recorded 59 rows and 0 missing in dev, and 40 and 0 in prod-sim |
+| Count of rows marked uploaded, and of those with no object | `uploaded_objects` in the manifest. The backups taken for the real restores recorded 62 rows and 0 missing in dev, and 43 and 0 in prod-sim ([BKP-2-20261105T074322Z.txt](evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)) |
 
 | Not in a backup | Why, and what it means |
 |---|---|
@@ -252,25 +250,25 @@ This proves a dump restores on this server, and it does not prove that Plane run
 
 The Job uses the same Postgres image as the server, read from the live StatefulSet, because `pg_dump` refuses a server newer than itself. Rclone is pinned in `monitoring/ops/lib.sh`.
 
-Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-sentinel-<env>.json`, which `backup.sh` copies into the manifest. Without it, the restore reports its sentinel proof as NOT RUN, not as a pass. `make test-e2e` passes on the final images: dev 45 PASS and 1 SKIP, prod-sim 44 PASS and 1 SKIP. The skip needs a clean database (`plane-dev-final-e2e-20261105T070735Z.txt`, `final-prod-sim-smoke-3.txt`).
+Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-sentinel-<env>.json`, which `backup.sh` copies into the manifest. Without it, the restore reports its sentinel proof as NOT RUN, not as a pass. `make test-e2e` passes on the final images: dev 45 PASS and 1 SKIP, prod-sim 44 PASS and 1 SKIP. The skip needs a clean database ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [final-prod-sim-smoke-3.txt](evidence/runs/final-prod-sim-smoke-3.txt)).
 
 ### Retention
 
 Dev keeps 3, prod-sim and Infisical keep 5, and `KEEP=<n>` overrides. Nothing checks age, and nothing alerts on an old backup.
 
-Plane's retention runs in its backup Job. It keeps the newest `KEEP` finished backups and, past that, the newest one whose `rowcounts.tsv` counts users above 0, so backups of an empty environment cannot push out the last real one. Only folders with a final timestamped name and a manifest are removed. The "kept" branch has run only on BusyBox and stubs (`dr-backup-job-real-1.txt`, `dr-job-lines-busybox-2.txt`).
+Plane's retention runs in its backup Job. It keeps the newest `KEEP` finished backups and, past that, the newest one whose `rowcounts.tsv` counts users above 0, so backups of an empty environment cannot push out the last real one. Only folders with a final timestamped name and a manifest are removed. The "kept" branch has run only on BusyBox and stubs ([dr-backup-job-real-1.txt](evidence/runs/dr-backup-job-real-1.txt), [dr-job-lines-busybox-2.txt](evidence/runs/dr-job-lines-busybox-2.txt)).
 
-Infisical's runs from the host, once the backup just taken has a complete recovery set, and only a complete set counts toward `KEEP`. A backup with no complete set stays while it is newer than the oldest set kept. On real folders it removed only what was past `KEEP` ([dr-backup-retention-1.txt](evidence/runs/dr-backup-retention-1.txt), `dr-retention-2.txt`, `dr-locks-1.txt`, `SEC-2-20261105T072331Z.txt`).
+Infisical's runs from the host, once the backup just taken has a complete recovery set, and only a complete set counts toward `KEEP`. A backup with no complete set stays while it is newer than the oldest set kept. On real folders it removed only what was past `KEEP` ([dr-backup-retention-1.txt](evidence/runs/dr-backup-retention-1.txt), [dr-retention-2.txt](evidence/runs/dr-retention-2.txt), [dr-locks-1.txt](evidence/runs/dr-locks-1.txt), [SEC-2-20261105T072331Z.txt](evidence/runs/SEC-2-20261105T072331Z.txt)).
 
 `PlaneBackupFailed` fires on a failed backup Job, which stays around for 7 days. A later successful backup deletes it.
 
-**What ran.** `make backup ENV=all` exited 0, with `SHA256SUMS` checked again on the host ([dr-backup-4.txt](evidence/runs/dr-backup-4.txt)). The first two attempts failed, and stay as evidence ([dr-backup-1.txt](evidence/runs/dr-backup-1.txt), [dr-backup-2.txt](evidence/runs/dr-backup-2.txt)). `make promote ENV=prod-sim` took a backup at 05:33 UTC on 2026-11-05 with the current lines: 61 objects checked, 40 rows marked uploaded, 0 with no object, every checksum good (`dr-backup-job-real-1.txt`). This shows backups complete and restore into a scratch database. It does not show that Plane runs on the result.
+**What ran.** `make backup ENV=all` exited 0, with `SHA256SUMS` checked again on the host ([dr-backup-4.txt](evidence/runs/dr-backup-4.txt)). The first two attempts failed, and stay as evidence ([dr-backup-1.txt](evidence/runs/dr-backup-1.txt), [dr-backup-2.txt](evidence/runs/dr-backup-2.txt)). `make promote ENV=prod-sim` took a backup at 05:33 UTC on 2026-11-05 with the current lines: 61 objects checked, 40 rows marked uploaded, 0 with no object, every checksum good ([dr-backup-job-real-1.txt](evidence/runs/dr-backup-job-real-1.txt)). On its own this shows backups complete and restore into a scratch database. The [real restores](#plane-restore-step-by-step) are what show Plane running on the result.
 
 | `make backup` | Duration | Size of the newest, `du -sh` on 2026-11-05 | Evidence |
 |---|---|---|---|
-| `ENV=dev` | 15 s on 2026-11-05 with 92 objects, 31 s on 2026-11-04 with 17 | 78 MiB, of which 80264131 bytes are objects. The dump is 951191 bytes | `SEC-2-backup-before-20261105T062141Z.txt`, [dr-backup-dev-1.txt](evidence/runs/dr-backup-dev-1.txt), the manifest of `.local/backups/dev/20261105T062141Z` |
-| `ENV=prod-sim` | 11 s with 0 objects. Not timed since it held more | 51 MiB, of which 51935206 bytes are objects | [dr-backup-prod-sim-1.txt](evidence/runs/dr-backup-prod-sim-1.txt), `dr-backup-job-real-1.txt` |
-| `ENV=infisical` | 22 s and 29 s | 6.0 MiB. The dump is 4.4 MB | [dr-backup-3.txt](evidence/runs/dr-backup-3.txt), `dr-locks-1.txt` |
+| `ENV=dev` | 15 s on 2026-11-05 with 92 objects, 31 s on 2026-11-04 with 17 | 78 MiB, of which 80264131 bytes are objects. The dump is 951191 bytes | [SEC-2-backup-before-20261105T062141Z.txt](evidence/runs/SEC-2-backup-before-20261105T062141Z.txt), [dr-backup-dev-1.txt](evidence/runs/dr-backup-dev-1.txt), the manifest of `.local/backups/dev/20261105T062141Z` |
+| `ENV=prod-sim` | 11 s with 0 objects. About 17 s with 66, from the backup's stamp to the next command's ([SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)) | 51 MiB, of which 51935206 bytes are objects | [dr-backup-prod-sim-1.txt](evidence/runs/dr-backup-prod-sim-1.txt), [dr-backup-job-real-1.txt](evidence/runs/dr-backup-job-real-1.txt) |
+| `ENV=infisical` | 22 s and 29 s | 6.0 MiB. The dump is 4.4 MB | [dr-backup-3.txt](evidence/runs/dr-backup-3.txt), [dr-locks-1.txt](evidence/runs/dr-locks-1.txt) |
 | `ENV=all` | 42 s | Each environment's folder, all kept backups: dev 134 MiB, prod-sim 122 MiB, Infisical 30 MiB | [dr-backup-4.txt](evidence/runs/dr-backup-4.txt) |
 
 Smoke runs upload test files, one of them 4718592 bytes, so these sizes describe a test instance and not a real workload.
@@ -324,11 +322,13 @@ Every refusal comes before anything is touched.
 
 `dropdb` and not `pg_restore --clean`, so tables newer than the dump cannot survive. `--single-transaction` rules out `--jobs`, so restore is serial.
 
-If the client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it first removes that Job, because the Job would otherwise carry on and drop a database with the apps back up. If it cannot, the apps stay down and auto-sync stays paused, and it prints what to run. This has run only on stubs (`dr-stop-sweep-1.txt`).
+If the client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it first removes that Job, because the Job would otherwise carry on and drop a database with the apps back up. If it cannot, the apps stay down and auto-sync stays paused, and it prints what to run. This has run only on stubs ([dr-stop-sweep-1.txt](evidence/runs/dr-stop-sweep-1.txt)).
 
-These steps have not run against a real Plane database and bucket. Into a scratch database and bucket, the exact Job passed its Postgres gates, synced objects and checked them by download through the read-only mount, and put Content-Type back on 14 of 22 objects, because VirtioFS keeps no xattrs ([dr-plane-restore-rehearsal-1.txt](evidence/runs/dr-plane-restore-rehearsal-1.txt)).
+These steps ran against the real database and bucket on 2026-11-05, once in each environment, on the final images: dev from backup `20261105T074322Z`, prod-sim from `20261105T073411Z`. Every step and proof reads PASS, `not_run` is empty, Gate 1 matched all 110 tables, Gate 2 found every uploaded asset, 62 in dev and 43 in prod-sim, and `make test-e2e` passed afterwards ([restore-dev-20261105T074337Z.json](evidence/runs/restore-dev-20261105T074337Z.json), [BKP-2-20261105T074322Z.txt](evidence/runs/BKP-2-20261105T074322Z.txt), [restore-prod-sim-20261105T073438Z.json](evidence/runs/restore-prod-sim-20261105T073438Z.json), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)).
 
-The role and its password are not in the dump, so a Plane restore leaves the Postgres role as it is. Restoring an older Plane dump after a rotation should need no password change. [[VERIFY: a Plane dump taken before make rotate restores and Plane connects with the current password]]
+**What this does not prove.** Each restore used the backup taken moments before, over the same rows, so no real loss was repaired. The database really was dropped and recreated from the dump. The bucket already held the objects, and Content-Type went back on 0 of them, so objects being copied back has run only in a rehearsal. There, into a scratch database and bucket, the exact Job passed its Postgres gates, synced objects and checked them by download through the read-only mount, and put Content-Type back on 14 of 22 objects, because VirtioFS keeps no xattrs ([dr-plane-restore-rehearsal-1.txt](evidence/runs/dr-plane-restore-rehearsal-1.txt)). A restore after a lost volume: Not tested in Pass 1.
+
+The role and its password are not in the dump, so a Plane restore leaves the Postgres role as it is. Restoring an older Plane dump after a rotation should need no password change. Not tested in Pass 1: both real restores used dumps taken after that environment's rotation.
 
 ### Proofs
 
@@ -351,21 +351,17 @@ Then: pause auto-sync on `infisical` only, scale the server to zero, restore int
 
 The proofs: `/api/status` answers 200 through Traefik, the server reads the restored admin config, and every Plane secret decrypts to the value, version and id the backup recorded. The next step is `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh`, to refresh the cluster CA and the identity Secrets. See [disaster-recovery.md](disaster-recovery.md#scenario-infisical-lost).
 
-`make restore ENV=infisical` has run in place on the live instance: 51 s to 71 s in all, five times, with the server not answering for 39 s to 52 s by a probe once a second. Every Plane pod uid and restart count, workload generation and Secret resourceVersion stayed the same, apart from probe pods of another test and one worker another test replaced. After all five, `make test-infisical` exited 0 with 118 PASS lines and all 14 Applications read Synced and Healthy, none paused (`dr-inplace-restore-3.txt`, `dr-inplace-token-lost-1.txt`, `dr-inplace-token-back-1.txt`, `dr-after-restores-1.txt`, and earlier [dr-inplace-restore-1.txt](evidence/runs/dr-inplace-restore-1.txt), [dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt)). So the operators keep syncing after an in-place restore. That does not show a restore into a new cluster.
+`make restore ENV=infisical` has run in place on the live instance: 51 s to 71 s in all, five times, with the server not answering for 39 s to 52 s by a probe once a second. Every Plane pod uid and restart count, workload generation and Secret resourceVersion stayed the same, apart from probe pods of another test and one worker another test replaced. After all five, `make test-infisical` exited 0 with 118 PASS lines and all 14 Applications read Synced and Healthy, none paused ([dr-inplace-restore-3.txt](evidence/runs/dr-inplace-restore-3.txt), [dr-inplace-token-lost-1.txt](evidence/runs/dr-inplace-token-lost-1.txt), [dr-inplace-token-back-1.txt](evidence/runs/dr-inplace-token-back-1.txt), [dr-after-restores-1.txt](evidence/runs/dr-after-restores-1.txt), and earlier [dr-inplace-restore-1.txt](evidence/runs/dr-inplace-restore-1.txt), [dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt)). So the operators keep syncing after an in-place restore. That does not show a restore into a new cluster.
 
-A Plane restore is still to run, so the markers below stay. A refusal has run only on stubs: `make drill-clean-restore-harness` covers them with kubectl and the API stubbed (`dr-harness-stubbed-4.txt`), which shows the logic and not the platform. Terminating a running sync has run on real Applications ([argocd-terminate-2.txt](evidence/runs/argocd-terminate-2.txt)). The path through `argo_wait_idle`, which terminates at 180 s and gives up at 300 s, has run only on a stub ([test_lib-stub-1.txt](evidence/runs/test_lib-stub-1.txt)).
+**Refusals.** With no `CONFIRM`, `make restore ENV=prod-sim` refused on the real environment: 31 users and 66 objects already there, "Nothing was changed", make exit 2 ([restore-prod-sim-20261105T073428Z.json](evidence/runs/restore-prod-sim-20261105T073428Z.json), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). Dev was not asked that. The real refusal of a `SECRET_KEY` mismatch is a step of the clean install in progress, not yet recorded here. It and the other refusals have run on stubs: `make drill-clean-restore-harness` covers them with kubectl and the API stubbed ([dr-harness-stubbed-4.txt](evidence/runs/dr-harness-stubbed-4.txt)), which shows the logic and not the platform.
 
-[[VERIFY: make restore ENV=dev completes into a populated environment with CONFIRM=yes, and every proof reports PASS]]
+**During a failing sync.** A restore while the environment's sync is failing: Not tested in Pass 1. Terminating a running sync has run on real Applications ([argocd-terminate-2.txt](evidence/runs/argocd-terminate-2.txt)). The path through `argo_wait_idle`, which terminates at 180 s and gives up at 300 s, has run only on a stub ([test_lib-stub-1.txt](evidence/runs/test_lib-stub-1.txt)).
 
-[[VERIFY: make restore refuses a non-empty target without CONFIRM=yes, and refuses a SECRET_KEY mismatch]]
-
-[[VERIFY: make restore works while the environment's sync is failing. By static reading, argo_wait_idle dies after 180 s in that case, because infinite retries keep the operation phase at Running]]
-
-[[MEASURE: duration of make restore ENV=dev with the sentinel dataset]]
+**Duration.** From the start stamp to the evidence file's last write ([MANIFEST.tsv](evidence/runs/MANIFEST.tsv)): dev 178 s with 51 users and 97 objects, prod-sim 183 s with 31 users and 66 objects. That includes the checks and all the proofs. Prod-sim's ran while the dev load test was running, so that machine was not quiet ([LOAD-1-20261105T073240Z-run.txt](evidence/runs/LOAD-1-20261105T073240Z-run.txt)). These sizes describe a test instance.
 
 ## Capacity limits
 
-Items labelled estimate have no measurement behind them on a running Plane. Disk figures come from `dr-disk-1.txt`, read with both Plane environments up.
+Items labelled estimate have no measurement behind them on a running Plane. Disk figures come from [dr-disk-1.txt](evidence/runs/dr-disk-1.txt), read with both Plane environments up.
 
 | Limit | Value | Enforced by | Note |
 |---|---|---|---|
@@ -389,13 +385,11 @@ du -sh .local/backups/*
 df -h .
 ```
 
-The volumes are there: 1599804 KiB under `/var/local-path-provisioner`, of 13567228 KiB in the node's `/var` (`dr-disk-1.txt`), and each Plane PVC maps to a path there ([harness-separation-state-1.txt](evidence/runs/harness-separation-state-1.txt)).
+The volumes are there: 1599804 KiB under `/var/local-path-provisioner`, of 13567228 KiB in the node's `/var` ([dr-disk-1.txt](evidence/runs/dr-disk-1.txt)), and each Plane PVC maps to a path there ([harness-separation-state-1.txt](evidence/runs/harness-separation-state-1.txt)).
 
-Load tests grow the database. Each `X-Api-Key` request stores its body in `api_activity_logs` through Celery. Estimate from research: 8 requests per second times 20 KB responses is about 10 MiB per minute uncompressed. [[MEASURE: pg_database_size_bytes growth per minute during make test-load]]
+`make test-load` signs in with a session on purpose, because each `X-Api-Key` request stores its body in `api_activity_logs` through Celery (`tests/load/plane.js`). So the load run on dev on 2026-11-05 grew `pg_database_size_bytes` by about 730 KB in 608 s, about 72 KB a minute, at 5.3 requests a second ([results.json](evidence/runs/load-20261105T073241Z/results.json)). That says nothing about API-key traffic. The estimate from research, 8 requests per second times 20 KB responses, about 10 MiB per minute uncompressed, has no measurement behind it: API-key traffic under load is Not tested in Pass 1.
 
-Reclaiming disk: removing a 273 MB kind volume gave back 254 MB on the host within 15 s, the first reading (`KIND_RECLAIM_PERCENT` in `scripts/lib/up-checks.sh`, which records it with no evidence file behind it). A 12 GB volume has not been measured, so do not count on the same for a whole cluster. Do not run `docker system prune -a` to free space on this host: unrelated containers run from a cached MinIO image that can no longer be pulled anonymously.
-
-[[MEASURE: Docker.raw allocated size before and after kind delete cluster, from ls -klsh]]
+Reclaiming disk: removing a 273 MB kind volume gave back 254 MB on the host within 15 s, the first reading (`KIND_RECLAIM_PERCENT` in `scripts/lib/up-checks.sh`, which records it with no evidence file behind it). A 12 GB volume has no recorded result yet, so do not count on the same for a whole cluster. The drill in progress deletes one, and [Clean rebuild](runbooks/clean-rebuild.md#destroy) holds that open reading. Do not run `docker system prune -a` to free space on this host: unrelated containers run from a cached MinIO image that can no longer be pulled anonymously.
 
 ## Related documents
 
