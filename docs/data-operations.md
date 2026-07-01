@@ -250,7 +250,7 @@ This proves a dump restores on this server, and it does not prove that Plane run
 
 The Job uses the same Postgres image as the server, read from the live StatefulSet, because `pg_dump` refuses a server newer than itself. Rclone is pinned in `monitoring/ops/lib.sh`.
 
-Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-sentinel-<env>.json`, which `backup.sh` copies into the manifest. Without it, the restore reports its sentinel proof as NOT RUN, not as a pass. `make test-e2e` passes on the final images: dev 45 PASS and 1 SKIP, prod-sim 44 PASS and 1 SKIP. The skip needs a clean database ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [final-prod-sim-smoke-3.txt](evidence/runs/final-prod-sim-smoke-3.txt)).
+Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-sentinel-<env>.json`, which `backup.sh` copies into the manifest. Without it, the restore reports its sentinel proof as NOT RUN, not as a pass. `make test-e2e` passes on the final images: dev 45 PASS and 1 SKIP, prod-sim 44 PASS and 1 SKIP, and the same counts after the real restores. The skip needs a clean database ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [final-prod-sim-smoke-3.txt](evidence/runs/final-prod-sim-smoke-3.txt), [BKP-2-20261105T074322Z.txt](evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)).
 
 ### Retention
 
