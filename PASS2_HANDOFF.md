@@ -1,16 +1,63 @@
 # Pass 2 handoff: moving the platform to Hetzner Cloud and Cloudflare
 
-This document describes everything needed for the Hetzner migration. It is written for an engineer who did not build Pass 1.
+This document describes everything needed for the Hetzner migration. It is written for an engineer who has never seen this repository. Begin at [Start here](#start-here).
 
-The application is a customized deployment of open-source Plane Community Edition v1.4.3 (AGPL-3.0), under the name Wayline. It is not an original product, and nothing here should present it as one.
+The application is a customized deployment of open-source Plane Community Edition v1.4.3 (AGPL-3.0), under the name Wayline. It is not an original product, and nothing here should present it as one. Pass 1 is local and production-inspired.
 
-Written 2026-11-04, and corrected on 2026-11-05 against the code at that date and against what real runs showed. Pass 1's validation is not finished, so check [`docs/validation.md`](docs/validation.md) for what has run since. Nothing about Hetzner or Cloudflare in this document has been built or tested.
+Written 2026-11-04, and corrected on 2026-11-05 against the code at that date and against the real runs published by 07:50Z. One destructive run was still going then, so check [`docs/validation.md`](docs/validation.md) for what has been recorded since. Nothing about Hetzner or Cloudflare in this document has been built or tested.
 
 Names such as `critique`, `plane-branding.md` and `cicd-security.md` are the build's research notes. They are not in this repository, so treat what they are cited for as a reading, not a source you can check here.
 
-**Markers.** A sentence starting "Unverified:" or "Not measured:" is a question Pass 1 cannot answer. Anything about Hetzner or Cloudflare in one is from the author's memory and was not checked against current documentation, so treat it as a question to answer, not a fact, and check it at the start of Pass 2. `git grep -n -E '(Unverified|Not measured):' -- PASS2_HANDOFF.md` lists them. The `VERIFY` and `MEASURE` markers left here wait for a Pass 1 run that has not happened yet: a clean install, a full restore, or the load test. Results from Pass 1 cite their evidence, and they come from a kind node on a laptop. A plain path under `.local/evidence-raw/` names a run not yet published.
+**Markers.** A sentence starting "Unverified:" or "Not measured:" is a question Pass 1 cannot answer. Anything about Hetzner or Cloudflare in one is from the author's memory and was not checked against current documentation, so treat it as a question to answer, not a fact, and check it at the start of Pass 2. `git grep -n -E '(Unverified|Not measured):' -- PASS2_HANDOFF.md` lists them. The only `VERIFY` and `MEASURE` markers left are listed under [Still in progress](#still-in-progress), and only that run can answer them. Results from Pass 1 cite their evidence, and they come from a kind node on a laptop.
 
 **Nothing on Hetzner or Cloudflare exists.** No Hetzner or Cloudflare resource, account, token, or Terraform code has been created. `infrastructure/terraform/environments/{dev,prod}` holds only interface documents. Outside the laptop there is only the private GitHub repository, its Actions runs, and four private GHCR packages.
+
+## Start here
+
+Read this section, then [section 1](#1-what-pass-1-hands-over) and [section 11](#11-phased-migration-plan-with-verification-gates).
+
+**What you are taking over.** A customized Plane Community Edition v1.4.3 deployment, branded Wayline, on one kind node on one laptop. Two Plane namespaces, `plane-dev` and `plane-prod-sim`, share Argo CD, Infisical, Traefik, Prometheus, Grafana and Loki. Rendered manifests live in Git, and `make` targets call scripts. Pass 2 moves this to independent dev and prod on Hetzner Cloud behind Cloudflare. None of that exists yet.
+
+**To read and run it.** The repository, `BereketAbera/plane-platform`, is private, so ask the owner, Bereket Abera, for access. [README.md](README.md) and [docs/install.md](docs/install.md) give the local commands: `make setup`, `make up`, `make status`, `make test`. `make ci` needs no cluster. The laptop's `.local/` holds secret zero, backups, test accounts and Terraform state. It is not in Git, so a clone does not carry it, and all of it belongs to that local test instance.
+
+**What is proven.** On kind, with test data: end-to-end tests in both environments, first real secret rotations, including one killed and resumed, a failed deploy and a failing migrator with the old pods still serving, rollback and forward promotion, in-place restores of Plane and Infisical, an alert reaching an in-cluster sink, pod restarts, self-heal, real use in Chromium, one load test and the NetworkPolicy matrix. [The table in section 1](#what-is-proven) gives the evidence and what each result does not prove.
+
+**What is not proven.** Anything on Hetzner or Cloudflare. A real CNI, CSI, TLS, load balancer or second node. Independent environments. One `make up` from nothing, and a full restore into a new cluster, which were [still running](#still-in-progress) when this was written. Off-host backups. An alert reaching a person. Load at a target, because no target is stated. Any legal review. [The full list](#what-is-not-proven) is in section 1.
+
+### Decide first
+
+These shape everything after them. Options and recommendations are in [section 12](#12-open-decisions).
+
+| Order | Decision | Why it comes first |
+|---|---|---|
+| 1 | D8: target users, availability, RPO and RTO | Sizing and the node count depend on it, and Pass 1 has no target to size against |
+| 2 | D1 and D14: topology and location | They set how many Hetzner projects and accounts the owner creates. The recommended topology depends on API tokens being per project, which is unverified |
+| 3 | D3 and D13: architecture and Plane version | Needed by phase 1. x86 means multi-arch builds and new digests |
+| 4 | D15: how a prod promotion proves itself on dev | Needed by phase 1. Pass 1's check asks one cluster's API, which independent clusters must not allow, and nothing is designed |
+
+### Owner decisions still open
+
+Only the owner can settle these. All four come before the repository goes public (phase 2), and the fourth comes before anyone else uses an instance.
+
+1. **D12, the `email.py` header.** Upstream's v1.4.3 tag heads this one file with a commercial licence. AI agents replaced it in the backend image with upstream's own later AGPL-3.0-only version and flattened the image. The agent coordinating the work also removed the requirement that the repository be private. The owner was told and has not reviewed any of this, and no legal review has happened ([details](docs/agpl-compliance.md#the-commercial-header-in-emailpy)).
+2. **D16, the licence for platform code.** The root `LICENSE` is upstream's AGPL-3.0 text, unchanged, and new files under `apps/wayline/` carry `AGPL-3.0-only`. Nearly all the scripts and manifests around them carry no header, and `LICENSE` does not say "only". No decision is recorded.
+3. **D17, two GitHub Apps that appear to have access to the repository.** `netlify` and `builder-io-integration` left check suites on pushed commits. As GitHub describes those Apps, netlify can have `contents` read, and Builder.io `contents`, `administration` and `workflows` write. What each installation really covers was not read, because the token gets 403 ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). So nothing shows that only the owner can read this repository.
+4. **`/source` needs a public repository (D10).** AGPL section 13 applies once anyone else uses an instance over a network. `/source` answers 302 to `84b63d9`, and that target answers 404 to outsiders while the repository is private ([record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). That row reads FAIL until the source is public. See [section 9](#9-agpl-section-13).
+
+### First steps
+
+1. Get repository access, and take the decisions above to the owner.
+2. Run `git log origin/main`. When this was written `origin/main` was `0dde813`, 99 commits behind the laptop's `main` at 07:52Z, and those commits hold this page and most of the evidence it cites. If they are still missing, ask the owner to push first, and read the traps below before that push.
+3. Run `make setup` and `make ci`. Then `make up` and `make test` on a machine that meets [the prerequisites](docs/install.md).
+4. Work through `git grep -n -E '(Unverified|Not measured):' -- PASS2_HANDOFF.md docs/future-hetzner.md`, starting with what could change a decision: token scope, arm64 availability, the CSI driver, Object Storage.
+5. Start phase 1 of [section 11](#11-phased-migration-plan-with-verification-gates), which stays on kind. The Terraform contracts for later phases are in [docs/future-hetzner.md](docs/future-hetzner.md).
+
+### Traps
+
+- **Another machine cannot get the digests Pass 1 ran.** The running images were built on the owner's Mac from `84b63d9`, and the laptop's local registry holds the only copy. GHCR holds a different build, from `9c8e098`, with other digests. By reading `scripts/up.sh`, `make up` elsewhere rebuilds, gets other digests, exits 1 and prints what to do. Not tested in Pass 1: the clean install now running keeps the local registry.
+- **Do not merge pull request 1 as a routine step.** The merge changes nothing running, because Argo CD reads a local bare repository. `make gitops-publish` afterwards has no registry check, so by reading the code it would point `plane-dev` at four digests the local registry answers 404 for. `scripts/ci/copy-to-local-registry.sh` has never finished a copy ([pull request](docs/evidence/ci/ci-5-20261105T055743Z-pr-1.txt), [copy](docs/evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt), [limitation](docs/known-limitations.md#delivery)).
+- **A push can rebuild images.** The laptop's `main` holds drill promotions and their reverts. A push touching what `.github/workflows/images.yml` watches, such as `apps/wayline/**`, `LICENSE`, `NOTICE.md` or `scripts/lib/common.sh`, rebuilds the images and force-updates pull request 1. At 08:00Z the laptop's `main` differed from `origin/main` in none of those paths.
+- **Some green readings say less than they seem to.** During the failing-migrator drill the Application read OutOfSync and Healthy for the whole failure. `scripts/ci/check-promoted-digests.sh` shows that dev recorded a digest, not that dev ran it. Each result below says what it does not prove.
 
 ## Contents
 
@@ -43,19 +90,53 @@ Pass 1 is one kind node on a laptop, with two Plane namespaces. It is a rehearsa
 | Everything else in the cluster | Argo CD | `gitops/applications` |
 | Secret values | Infisical, with secret zero in `.local/secret-zero/` | Scripts |
 
-Runtime status on 2026-11-05, on one laptop, brought up stage by stage rather than by one `make up`:
+### What is proven
 
-- All 14 Argo CD Applications read Synced and Healthy ([`make status`](docs/evidence/runs/plane-prod-sim-status-1.txt), and read live with `kubectl` at 07:09Z, not in a saved file).
-- Both environments run the final images, built from `84b63d9`: web `3d7575a1`, admin `ce7adc37`, space `5f0119ff` and backend `8c04bd18`, with a flattened backend and cache headers on HTML ([digests](docs/evidence/branding/digests.tsv)). `live` stays upstream's image.
-- `make test-e2e` passes in both on those images: dev 45 PASS, 1 SKIP, at 07:07Z (`.local/evidence-raw/smoke-dev-20261105T070735Z-94252.json`, unpublished), and prod-sim 44 PASS, 1 SKIP, at 05:35Z (`.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`, unpublished). The skip needs a clean database.
-- One `make test-netpol` read 418 PASS, 0 FAIL, 0 INCONCLUSIVE at 04:19Z, before the final images (`.local/evidence-raw/harness-make-test-netpol-4.txt`, unpublished). Published, the matrix passes from both Plane namespaces as it stood before `01ab74c`, and real attempts to cross between the environments all failed as they should ([network](docs/evidence/runs/harness-separation-network-1.txt), [state](docs/evidence/runs/harness-separation-state-1.txt)).
-- In dev on the final images, each reading PASS and unpublished in `.local/evidence-raw/`: `make test-alert` (`alert-test-dev-20261105T055044Z.json`), the failed-deploy drill (`drill-failed-deploy-20261105T062343Z.log`), a failing-migrator drill (`drill-failed-migrator-20261105T064940Z.log`) and the pod-restart drill (`drill-pod-restart-dev-20261105T070414Z.log`). In prod-sim on the final images none of these has run.
-- A browser sees new HTML after a promotion with no hard reload: Chromium on dev, one route, one rollback and one promotion (`.local/evidence-raw/AUTH-6-rollback-20261105T064032Z.txt`, unpublished).
-- **NOT RUN:** a clean install, teardown and recreation, a full restore into a clean cluster, in-place Plane restores, secret rotation, and a load test. Each waits for its run, or for the owner's approval. [[VERIFY: docs/validation.md records the final Pass 1 result of make up and make test]]
-- **GitHub:** `main` is pushed through `0dde813`, and `ci.yml` passes on it ([evidence](docs/evidence/ci/README.md)). `images.yml` run 41975430939 at `9c8e098` published four private GHCR packages and opened pull request 1, which stays open and unmerged. Its digests differ from the ones the Mac built from `84b63d9`, which are what the cluster runs. Promotion pull request 2 was opened and closed as a test. D12 (section 12) went to the owner, who has not reviewed it.
-- Read [`docs/validation.md`](docs/validation.md) for what actually ran before relying on any "carries over" row below.
+Every row is one laptop, one kind node and test data, run on 2026-11-05 on the final images unless it says otherwise. Those images were built from `84b63d9`: web `3d7575a1`, admin `ce7adc37`, space `5f0119ff` and backend `8c04bd18`, flattened, with cache headers on HTML ([digests](docs/evidence/branding/digests.tsv)). `live` stays upstream's image. The platform came up stage by stage on one cluster, not by one `make up` ([record](docs/evidence/runs/bootstrap-1.txt)). Files in `docs/evidence/runs/` start with the row id used in [`docs/validation.md`](docs/validation.md).
 
-The reasons a kind result does not transfer are listed in [known limitations](docs/known-limitations.md#what-pass-1-does-not-prove).
+| Area | What happened | Evidence | What it does not prove |
+|---|---|---|---|
+| End to end | `make test-e2e`: dev 45 PASS, 1 SKIP, and prod-sim 44 PASS, 1 SKIP, and the same counts after the restores. The skip needs a clean database | [dev](docs/evidence/runs/smoke-dev-20261105T070735Z-94252.json), [prod-sim](docs/evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json), after restore [dev](docs/evidence/runs/smoke-dev-20261105T074635Z-6532.json), [prod-sim](docs/evidence/runs/smoke-prod-sim-20261105T073741Z-73161.json) | A public host, TLS, Cloudflare, or real email |
+| Secret rotation | First real runs. `make rotate ENV=dev` passed. A signed-in watcher got 500 on 38 requests, 07:23:51Z to 07:24:29Z, about 38 s. The script's own probe printed 60 s, and it reads high because it also counts Plane's anonymous rate limit. Prod-sim passed. A rotation killed with SIGKILL 4 seconds in was finished by `RESUME=yes`, and Postgres refused the old passwords. No sync loop in 14 minutes on dev. `SECRET_KEY` untouched | [dev](docs/evidence/runs/SEC-2-20261105T072331Z.txt), [watcher](docs/evidence/runs/SEC-2-20261105T072331Z-watch.txt), [prod-sim](docs/evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), [kill and resume](docs/evidence/runs/SEC-4-20261105T073843Z.txt), [sync](docs/evidence/runs/SEC-6-20261105T072331Z-application-watch.txt) | Undo, which was not run. Rotating `SECRET_KEY`, which contract section 8 forbids. Any error window under real traffic |
+| Failed deploy | `make drill-failed-deploy` passed on dev. Bad web digest at 06:23:45Z, `ErrImagePull` 25 s later, `ProgressDeadlineExceeded` at 10m24s, revert published at 10m32s, Synced and Healthy at 11m51s. The old web pod kept serving: 913 signed-in samples, 0 failures. Nothing fired, because the revert came first. `ArgoAppOutOfSync`, `ArgoSyncFailed`, `KubeContainerWaiting`, `KubePodNotReady`, `ArgoAppStuckProgressing`, `KubeDeploymentRolloutStuck` and `ArgoAppDegraded` went pending only | [drill](docs/evidence/runs/drill-failed-deploy-20261105T062343Z.log), [alerts](docs/evidence/runs/drill-failed-deploy-20261105T062343Z-alerts.tsv), [timeline](docs/evidence/runs/DEP-1-20261105T062323Z-timeline.txt) | A crash loop or bad config. "Nothing fired" holds only for a revert within about 10.5 minutes, and no run shows what fires later |
+| Rollback and forward promotion | `make rollback ENV=dev`, then `make promote ENV=dev`, each operation 61 s. 239 of 239 signed-in samples and 120 of 120 route cycles were good, and prod-sim did not move | [rollback](docs/evidence/runs/DEP-2-20261105T064032Z-rollback.txt), [forward](docs/evidence/runs/DEP-2-20261105T064032Z-promote-forward.txt), [timeline](docs/evidence/runs/DEP-2-20261105T064032Z-timeline.txt) | Old code on a newer schema, because these image sets differ in no migration |
+| Failing migrator | On dev the Job hit `BackoffLimitExceeded` at 58 s and wave 3 did not move. 820 of 820 signed-in samples were good. After the revert the operation closed only 4m08s later, on its retry timer. Nothing fired. The Application read OutOfSync and Healthy for the whole failure | [drill](docs/evidence/runs/drill-failed-migrator-20261105T064940Z.log), [alerts](docs/evidence/runs/drill-failed-migrator-20261105T064940Z-alerts.tsv), [timeline](docs/evidence/runs/DEP-3-20261105T064517Z-timeline.txt) | A migration failing part way, a hanging migrator, or what fires if nobody reverts |
+| Backups and in-place restores | First real runs for Plane. `make backup`, then `make restore BACKUP=latest CONFIRM=yes`, read PASS with all proofs in dev and prod-sim, and e2e passed after. Each took about 3 minutes to the start of its verify. A restore with no `CONFIRM` refused and changed nothing, and its record reads FAIL for that reason. Infisical's backup and in-place restore ran earlier | [dev](docs/evidence/runs/BKP-2-20261105T074322Z.txt), [prod-sim](docs/evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), results [dev](docs/evidence/runs/restore-dev-20261105T074337Z.json), [prod-sim](docs/evidence/runs/restore-prod-sim-20261105T073438Z.json), [refusal](docs/evidence/runs/restore-prod-sim-20261105T073428Z.json), [Infisical](docs/evidence/runs/restore-infisical-20261105T001834Z.json) and [its README](infisical/README.md) | A restore into a new cluster, which is [in progress](#still-in-progress). A lost machine, because backups sit on the same laptop. Real data sizes |
+| Alert path | `make test-alert`: `PlaneApiDown` fired and resolved at the sink, with the other environment quiet. Dev fired at 68 s and reached the sink at 78 s. Prod-sim did both at 83 s | [dev](docs/evidence/runs/alert-test-dev-20261105T055044Z.json), [prod-sim](docs/evidence/runs/MON-2-20261105T072541Z-run.txt) | That anyone is told, because the in-cluster sink is the end of the path. Any other alert |
+| Pod restarts | `make drill-pod-restart` in each environment: all four StatefulSet pods replaced, the same claims reattached, the sentinel row and attachment intact, background jobs ran. In dev, 7 of 180 signed-in samples answered 500 during the Postgres restart | [dev](docs/evidence/runs/drill-pod-restart-dev-20261105T070414Z.log), [timeline](docs/evidence/runs/PERS-1-20261105T070358Z-timeline.txt), [prod-sim](docs/evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log) | A crash or forced kill, a node restart, or writes in flight |
+| Self-heal | A replica change on `plane-admin-wl` in dev, reverted by Argo CD in 3 s | [run](docs/evidence/runs/GITOPS-4-20261105T073240Z.txt) | Any other kind of drift |
+| Real browser | Sign-in, onboarding, board, page editor, admin and public page, in Chromium on dev, on the earlier images from `1563cbf`. On the final images: two tabs of one page synced and held about 5 minutes, and text typed during a live pod restart reached the other tab after reconnect and survived a reload. After a promotion and after a rollback, new HTML arrived with no hard reload. A dev session did not carry to the prod-sim host | [walk-through](docs/evidence/branding/live-dev/README.md), [tabs and restart](docs/evidence/runs/RT-2b-RT-3-20261105T073208Z.txt), [promotion](docs/evidence/runs/auth-6-browser-promotion-dev-1.txt), [rollback](docs/evidence/runs/AUTH-6-rollback-20261105T064032Z.txt), [sessions](docs/evidence/runs/AUTH-4-20261105T062750Z.txt) | Safari and Firefox, which were not run. Sessions on both hosts at once. Any of this through Cloudflare |
+| Load | `make test-load ENV=dev` passed its thresholds: k6 at 5, 10 and 20 VUs with 1 s of think time, 2,883 requests, 0 failed, p95 664 ms overall and 1,109 ms at 20 VUs. Prod-sim was being rotated and restored in the same minutes, so the machine was not quiet | [run](docs/evidence/runs/LOAD-1-20261105T073240Z-run.txt), [results](docs/evidence/runs/load-20261105T073241Z/results.json), [resources](docs/resource-utilization.md) | Any target load, since none is stated (D8). At about 5 requests a second, this is a small load on a laptop |
+| Network and separation | `make test-netpol` read 418 of 418. `make test-routes` passed. 364 network checks with real clients found no way across between the environments. All before the final images, and the final `make test` comes after the rebuild | [matrix](docs/evidence/runs/harness-make-test-netpol-4.txt), [routes](docs/evidence/runs/harness-make-test-routes-2.txt), [network](docs/evidence/runs/harness-separation-network-1.txt), [state](docs/evidence/runs/harness-separation-state-1.txt) | Anything about another CNI, or isolation between clusters. A deny PASS is a timeout |
+| GitHub | `ci.yml` passes on push and `make ci` exits 0 in clean clones. `images.yml` published four private GHCR packages from an arm runner, with clean layer walks. Pull request 1, the digest bump, stays open and unmerged. Promotion pull request 2 was opened and closed as a test | [CI records](docs/evidence/ci/README.md), [what was published](docs/evidence/ci/ci-4-20261105T060219Z-published-compare.txt), [visibility](docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt) | That the GHCR images run, because they were never deployed and their digests differ from what the cluster ran. Any job on `on: pull_request`, which GitHub holds at `action_required`. A review, merge and publish of a promotion. A prune that deletes |
+| Source offer | **FAIL.** `/source` answers 302 to `84b63d9`, and that target answers 404 to outsiders while the repository is private | [record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt) | Read with `curl`, not a logged-out browser |
+
+Left on GitHub for the owner: branch `promote/prod-sim`, and run 41976206674, held for pull request 1. Approving that run would be the first `on: pull_request` job.
+
+### What is not proven
+
+- Anything on Hetzner or Cloudflare, and anything on a real CNI, CSI driver, load balancer, TLS or second node. [Known limitations](docs/known-limitations.md#what-pass-1-does-not-prove) says why a kind result does not transfer.
+- That dev and prod are independent. Pass 1's two namespaces share one API server, etcd, kernel, ingress, Argo CD and Infisical.
+- One `make up` from nothing, teardown and recreation, and a full restore into a new cluster. See [Still in progress](#still-in-progress).
+- Off-host backups, encrypted backups and a backup schedule. Backups are manual and on the laptop.
+- An alert reaching a person, or any receiver but the in-cluster sink.
+- Growth over time and retention. Pass 1 has run for under two days on test data.
+- Legal questions. No legal review has happened.
+- Not tested in Pass 1: Safari and Firefox, a chart or Plane upgrade, the rotation's undo, stopping kindnet, and `make up` on a machine with no local registry.
+
+Runs also found defects that were fixed, and limits that stay: see [what real runs found](docs/known-limitations.md#what-real-runs-found). The working backlog, `.local/hardening-backlog.md`, is on the owner's laptop and not in Git. It still lists some fixed items as open, so check each item against the code.
+
+### Still in progress
+
+When this was written, `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` was running, at `7d5ff62`. It deletes the cluster, does a clean install from a fresh clone with new secrets, tests that install and deletes it, then restores dev, prod-sim and Infisical from backup into a new cluster. It keeps the local registry and pull-through caches and copies `.tools` rather than downloading it, so it is not a run on a new machine. No result of it is recorded here. The final `make test` comes after it.
+
+Only that run can answer these markers. A marker still here means no result has been recorded, so treat it as not done, and read [`docs/validation.md`](docs/validation.md):
+
+- [[MEASURE: time of one make up from a clean cluster]]
+- [[MEASURE: disk growth of a first install]]
+- [[MEASURE: Docker.raw size after a cluster delete]]
+- [[VERIFY: data across the rebuild: a backup restored into a newly created cluster passes tests/e2e/smoke.py]]
+- [[MEASURE: restore duration to a fresh cluster, as the RTO input]]
 
 ## 2. Target topology and how to choose
 
@@ -193,7 +274,7 @@ Compare Postgres on a network block volume with the server's local disk before c
 | Pull auth | None | Private packages need `imagePullSecrets` on the `plane` ServiceAccount, sourced from Infisical, and public packages need none. The packages are private today. Read each package's visibility again if that changes, because making the repository public no longer stops publishing (D12) |
 | Digest kind | Index digests for upstream, one plain manifest for branded (`--provenance=false --sbom=false`) | Keep. On x86, branded builds must become multi-arch and digests change |
 
-On 2026-11-05 both `helm/plane/overlays/*/kustomization.yaml` name the four branded images built from `84b63d9`, in `localhost:5001/wayline`, and both environments run them ([digests](docs/evidence/branding/digests.tsv)). `live` stays upstream's image in both. The digests on GHCR come from the build at `9c8e098`, and all four differ, because copying keeps a digest and rebuilding does not.
+On 2026-11-05 both `helm/plane/overlays/*/kustomization.yaml` name the four branded images built from `84b63d9`, in `localhost:5001/wayline`, and both environments ran them ([digests](docs/evidence/branding/digests.tsv)). `live` stays upstream's image in both. The digests on GHCR come from the build at `9c8e098`, and all four differ, because copying keeps a digest and rebuilding does not.
 
 `.github/workflows/README.md` records what is known about GHCR limits: GitHub's Packages billing page gives Free 500 MB of storage and 1 GB of transfer a month, and says Container registry storage and bandwidth are free for now, with a month's notice before that changes. The four images take 401.8 MiB compressed, as read from GHCR. Unverified: the limits for public and private packages at migration time. Check it at the start of Pass 2.
 
@@ -236,7 +317,7 @@ Options for the pre-promotion dump:
 - Trust forwarded headers, or uploads get `http://` URLs and Plane's throttle shares one bucket. `SECURE_PROXY_SSL_HEADER` is set in Plane's `settings/production.py`, and presigned URLs use `request.scheme`. Set `ports.web.forwardedHeaders.trustedIPs` in `helm/values/traefik.yaml` to the real proxy source only.
 - Rewrite `traefik-ingress` in `gitops/platform/network-policies/traefik.yaml`. It allows `172.16.0.0/12`, which is specific to Docker. On kind the NodePort source is the kind gateway, measured with conntrack ([source](docs/evidence/runs/traefik-nodeport-source-1.txt)). The policy once also allowed Docker Desktop's `192.168.65.0/24`, and no traffic used it. Expect a different source on real nodes.
 - Change the `node-network-only` Middleware in `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml` and `monitoring/manifests/shared/ingress-routes.yaml`. It admits `172.16.0.0/12`. On another network each internal UI answers 403, and behind a proxy or Tunnel it means nothing, because every request arrives from the proxy. `policy/plane.rego` holds that range too.
-- Decide what happens to the websocket path through `/live`. It held through Traefik and the buffering middleware for a 330-second idle soak on kind ([soak](docs/evidence/runs/plane-dev-smoke-soak-1.txt)). Cloudflare's WebSocket support was read in its docs, and the behaviour through that edge is unproven. Unverified: whether `/live` collaboration holds a WebSocket through Cloudflare, Traefik, and the buffering middleware for a 5 minute soak. Pass 1 has nothing to test this on, so set up the check at the start of Pass 2.
+- Decide what happens to the websocket path through `/live`. It held through Traefik and the buffering middleware for a 330-second idle soak on kind ([soak](docs/evidence/runs/plane-dev-smoke-soak-1.txt)), and two real browser tabs carried edits about 5 minutes after opening ([tabs](docs/evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)). Cloudflare's WebSocket support was read in its docs, and the behaviour through that edge is unproven. Unverified: whether `/live` collaboration holds a WebSocket through Cloudflare, Traefik, and the buffering middleware for a 5 minute soak. Pass 1 has nothing to test this on, so set up the check at the start of Pass 2.
 - Check proxied request size limits against `FILE_SIZE_LIMIT=5242880`. Unverified: Cloudflare's request body limit on the chosen plan. Check it at the start of Pass 2.
 
 Tunnel behaviour, client IP header, and pricing are from memory. Unverified: Cloudflare Tunnel's current terms, headers, and origin settings. Check them at the start of Pass 2.
@@ -300,13 +381,9 @@ Pass 1 writes to `.local/backups` on the laptop through `/backups`, a static hos
 | Quota | `persistentvolumeclaims` in `modules/foundation/main.tf` counts the backup PVC. Adjust if it goes |
 | Volume snapshots | Useful as a second layer, not a substitute. They share the provider and are crash-consistent only |
 | Recovery set | `infisical/lib/recovery.sh`. Each Infisical backup holds its Terraform state and hashes of secret zero, and each Plane backup holds its test accounts and sentinel. Secret zero is never copied into a backup. Decide what of this belongs off-host, and keep test accounts out of real backups |
-| Restore | `scripts/restore.sh` uses local paths, and `infisical/lib/api.sh` defaults to `http://infisical.localhost`. Rewrite both. `make restore-clean` is the order to keep: Infisical first, then Plane. On kind, only an in-place Infisical restore has run for real ([JSON](docs/evidence/runs/restore-infisical-20261105T001834Z.json)), plus rehearsals in throwaway places |
+| Restore | `scripts/restore.sh` uses local paths, and `infisical/lib/api.sh` defaults to `http://infisical.localhost`. Rewrite both. `make restore-clean` is the order to keep: Infisical first, then Plane. On kind, in-place restores have run for real: Infisical ([JSON](docs/evidence/runs/restore-infisical-20261105T001834Z.json)), dev ([JSON](docs/evidence/runs/restore-dev-20261105T074337Z.json)) and prod-sim ([JSON](docs/evidence/runs/restore-prod-sim-20261105T073438Z.json)). The clean restore is [in progress](#still-in-progress) |
 
-On kind, with test data, a backup took 11 to 31 seconds per environment, and `make backup ENV=all` took 42 seconds. A Postgres dump was 0.7 to 4.4 MB ([run](docs/evidence/runs/dr-backup-retention-1.txt), [resource-utilization.md](docs/resource-utilization.md#persistent-storage)). Real data will not look like this, so measure again.
-
-[[MEASURE: restore duration to a fresh cluster, as the RTO input]]
-
-[[VERIFY: a backup restored into a newly created cluster passes tests/e2e/smoke.py]]
+On kind, with test data, a backup took 11 to 31 seconds per environment, and `make backup ENV=all` took 42 seconds. A Postgres dump was 0.7 to 4.4 MB ([run](docs/evidence/runs/dr-backup-retention-1.txt), [resource-utilization.md](docs/resource-utilization.md#persistent-storage)). An in-place restore took about 3 minutes to the start of its verify (section 1). Real data will not look like this, so measure again. The restore into a new cluster, and its time as the RTO input, are markers under [Still in progress](#still-in-progress).
 
 ### 4.8 Infisical hosting and secret zero
 
@@ -318,7 +395,7 @@ Each environment has its own Infisical project in Pass 1, on one shared instance
 | One instance on a separate operations host | Environments share a secret store, which is a shared failure and shared compromise | A third server | Requires Kubernetes Auth to reach each API server across networks, which widens API exposure |
 | Hosted Infisical | Hands custody to a vendor | Plan pricing | The free tier's limits on hosted differ from the self-hosted limits. Unverified: hosted Infisical's limits and plan cost. Check them at the start of Pass 2 |
 
-Limits to keep in mind for self-hosted, read in source at v0.167.6: no custom roles or RBAC, no native rotation, zero audit log retention. Per-project isolation with built-in `viewer` is the free-tier boundary. A cross-project read gets a real 403 in both directions on kind ([run](docs/evidence/runs/infisical-isolation-3.txt)). `scripts/rotate.sh` is a demonstration script, not a rotation system, and it has not run yet.
+Limits to keep in mind for self-hosted, read in source at v0.167.6: no custom roles or RBAC, no native rotation, zero audit log retention. Per-project isolation with built-in `viewer` is the free-tier boundary. A cross-project read gets a real 403 in both directions on kind ([run](docs/evidence/runs/infisical-isolation-3.txt)). `scripts/rotate.sh` is a script with an error window, not a rotation system. Its first real runs are in section 1, and its undo has not run.
 
 Required changes:
 
@@ -370,7 +447,7 @@ Monitoring in each cluster fails with that cluster. An outside check is required
 
 ### 4.11 Alert routing to real receivers
 
-Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints lines. Nobody is paged. `make test-alert` read PASS in dev on 2026-11-05: `PlaneApiDown` fired at 68 s and reached the sink at 78 s, with prod-sim quiet (`.local/evidence-raw/alert-test-dev-20261105T055044Z.json`, unpublished). It has not run on prod-sim. A temporary rule took 70 seconds from pending to the sink ([path](docs/evidence/runs/monitoring-alert-path-1.txt)), and `PlaneWorkerNoConsumer` fired on a real fault ([record](docs/evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). A failed deploy fired nothing, because the revert ended it with `ArgoSyncFailed` still pending (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`, unpublished).
+Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints lines. Nobody is paged. `make test-alert` read PASS in both environments on 2026-11-05. In dev `PlaneApiDown` fired at 68 s and reached the sink at 78 s, with prod-sim quiet ([dev](docs/evidence/runs/alert-test-dev-20261105T055044Z.json)). In prod-sim it did both at 83 s, with dev quiet ([prod-sim](docs/evidence/runs/MON-2-20261105T072541Z-run.txt)). A temporary rule took 70 seconds from pending to the sink ([path](docs/evidence/runs/monitoring-alert-path-1.txt)), and `PlaneWorkerNoConsumer` fired on a real fault ([record](docs/evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). A failed deploy fired nothing, because the revert ended it with `ArgoSyncFailed` still pending ([drill](docs/evidence/runs/drill-failed-deploy-20261105T062343Z.log)).
 
 | Task | Detail |
 |---|---|
@@ -388,8 +465,8 @@ Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints l
 | Email | No SMTP config and no egress rule. Password reset and invitations cannot send | Provide SMTP in Infisical and an egress rule, and set a sender. On a started instance the image's entrypoint stores `EMAIL_FROM` once, empty if unset, and the stored value wins, so mail goes from Django's `webmaster@localhost` until someone sets a sender in god-mode, and setting the variable later changes nothing ([sender](docs/evidence/branding/default-sender.txt)). The fallback `noreply@wayline.invalid` applies only while no sender is stored. It is a reserved domain that real mail servers should not be expected to accept, which is not tested, and only a scratch server has taken it ([mail](docs/evidence/branding/backend-db.txt)) |
 | Signup | Default | Set `ENABLE_SIGNUP` to match the audience |
 | Telemetry | Off through `tests/e2e/smoke.py`, and denied by NetworkPolicy, both measured on upstream images ([smoke](docs/evidence/runs/smoke-dev-20261104T221730Z.json), [matrix](docs/evidence/runs/netpol-20261104T232752Z.tsv)). The branded images default it off in the setup form and at registration | Check it for an admin made through the UI, which has not been done. Upstream's images turn it on for a hand-made admin, so egress denial is the backstop. Also keep it denied after adding SMTP egress |
-| HTML caching | The final images send `Cache-Control: no-cache` on HTML, on every error and on anything without a content hash in its name, keyed on status, with byte ranges off ([errors](docs/evidence/branding/cache-errors.txt)). On dev, in Chromium with no hard reload, the new file arrived after a rollback and after a promotion (`.local/evidence-raw/AUTH-6-rollback-20261105T064032Z.txt`, unpublished). A browser still holding HTML from an image without the header reuses it unasked until its own time runs out, and nobody timed that | Confirm the header on the images you deploy, and set Cloudflare's cache rules to match, or a promotion may not reach returning users |
-| `/api/instances/` | Upstream caches this response for 2 hours in Valkey, so a value that comes from the image can read stale after a promotion. The first smoke after prod-sim's promotion failed on it, and a re-run passed (`.local/evidence-raw/final-prod-sim-smoke-1.txt`, `final-prod-sim-smoke-2.txt`, unpublished) | Clear the key on a promotion, or accept up to 2 hours |
+| HTML caching | The final images send `Cache-Control: no-cache` on HTML, on every error and on anything without a content hash in its name, keyed on status, with byte ranges off ([errors](docs/evidence/branding/cache-errors.txt)). On dev, in Chromium with no hard reload, the new file arrived after a rollback and after a promotion ([record](docs/evidence/runs/AUTH-6-rollback-20261105T064032Z.txt)). A browser still holding HTML from an image without the header reuses it unasked until its own time runs out, and nobody timed that | Confirm the header on the images you deploy, and set Cloudflare's cache rules to match, or a promotion may not reach returning users |
+| `/api/instances/` | Upstream caches this response for 2 hours in Valkey, so a value that comes from the image can read stale after a promotion. The first smoke after prod-sim's promotion failed on it, and a re-run passed ([failed](docs/evidence/runs/final-prod-sim-smoke-1.txt), [passed](docs/evidence/runs/final-prod-sim-smoke-2.txt)) | Clear the key on a promotion, or accept up to 2 hours |
 | `enable_drf_spectacular` | On in dev, off in prod-sim | Off wherever public |
 | Terms, privacy | None | The owner must supply them if others use it |
 
@@ -489,6 +566,8 @@ No values belong in Git or chat. Every token below should be created with the na
 | Domain, and Cloudflare account with the zone | DNS, TLS, Tunnel, Access | | |
 | Cloudflare API token | Terraform | DNS and Tunnel for one zone and account | `TF_VAR_cloudflare_api_token` at runtime |
 | GitHub repository settings | Public visibility, branch protection. The setting that lets Actions open pull requests is on already, since pull requests 1 and 2 opened | Owner | GitHub |
+| GitHub App installations | Read what `netlify` and `builder-io-integration` hold on this repository, and remove what is not needed (D17) | Owner | GitHub |
+| GitHub token with `read:packages` | Read the private GHCR packages from an operator's machine. The local token lacks it, so the GHCR digests could not be confirmed from the Mac ([record](docs/evidence/ci/ci-4-20261105T055130Z-ghcr-local-token.txt)) | Read packages only | Operator's machine |
 | Docker Hub account and token, if authenticated pulls are chosen | Pull quota | Read-only | Infisical, kubelet config |
 | Alert receiver accounts | Alerts, dead-man check | One integration each | Infisical |
 | SMTP provider | Plane email | Send only | Infisical |
@@ -501,14 +580,15 @@ Do not pick a server type from this document or from memory. Derive it from meas
 
 ### Inputs
 
-Collect from [docs/resource-utilization.md](docs/resource-utilization.md). It holds quiet readings and peaks under smoke tests and drills, on upstream images. `make test-load` has not run, so nothing there is under load:
+Collect from [docs/resource-utilization.md](docs/resource-utilization.md). It holds quiet readings and peaks under smoke tests and drills, mostly on upstream images. `make test-load` ran once, on dev, on the final images ([results](docs/evidence/runs/load-20261105T073241Z/results.json)), and the rows below give what it adds:
 
 | Input | Source | Marker |
 |---|---|---|
-| Idle working set per workload | `kubectl top`, Prometheus `container_memory_working_set_bytes` | Quiet readings per workload, 2026-11-05T00:03:44Z, in [resource-utilization.md](docs/resource-utilization.md#plane-per-environment). A strict idle capture has not run |
-| Peak working set per workload during first boot and load | Prometheus `max_over_time` over the run. Cgroup peaks under smoke tests and drills are in the same page | [[MEASURE: peak working set per pod]] |
-| CPU p95 per workload under load | `tests/load/run.sh` samples | [[MEASURE: CPU p95 per pod under load]] |
-| Image store size on the node | Node disk, per architecture | arm64: 10.51 GiB in `/var/lib/containerd` by `du`, on the running platform at 2026-11-05T02:01Z (`.local/evidence-raw/dr-disk-1.txt`, unpublished). It moves by a few hundred MB while builds run, and it holds older image versions too, since kind disables image garbage collection. Not measured: x86. Measure it on the target at the start of Pass 2 |
+| Idle working set per workload | `kubectl top`, Prometheus `container_memory_working_set_bytes` | Quiet readings per workload, 2026-11-05T00:03:44Z, in [resource-utilization.md](docs/resource-utilization.md#plane-per-environment). A 30-minute quiet window from Prometheus, 03:40Z to 04:10Z, before the final images, is in [windows](docs/evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json). A strict idle capture has not run |
+| Peak working set per workload during first boot and load | Prometheus `max_over_time` over the run. Cgroup peaks under smoke tests and drills are in the same page | Under the load test on dev, MiB: worker 269, api 172, rabbitmq 158, live 154, beat-worker 149, silo 136, space 94, pgdb 63, redis 13, admin 3, web 3 ([results](docs/evidence/runs/load-20261105T073241Z/results.json)). The `plane-dev` namespace reached 1,229 MiB in all, and the VM 10.33 GiB with prod-sim running, with no OOM event in that window ([windows](docs/evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). This is one small load, run once. First boot on a clean install waits for the run [in progress](#still-in-progress) |
+| CPU p95 per workload under load | `tests/load/run.sh` samples, and Prometheus series | The load test records average and peak, not a p95. Computed for this page by nearest rank from a 1-minute rate at 15 s steps, 07:33:48Z to 07:42:51Z, in cores: api 0.375, pgdb 0.364, live 0.112, worker 0.109, rabbitmq 0.032, the rest under 0.02 ([series](docs/evidence/runs/LOAD-3-20261105T074543Z-prometheus-series.json)). A 1-minute rate smooths bursts. Not measured: CPU p95 at the target load, because no target is set (D8). Measure it on the target at the start of Pass 2 |
+| Image store size on the node | Node disk, per architecture | arm64: 10.51 GiB in `/var/lib/containerd` by `du`, on the running platform at 2026-11-05T02:01Z ([reading](docs/evidence/runs/dr-disk-1.txt)). It moves by a few hundred MB while builds run, and it holds older image versions too, since kind disables image garbage collection. Not measured: x86. Measure it on the target at the start of Pass 2 |
+| Disk growth of a first install | Docker's disk file, before and after | A marker under [Still in progress](#still-in-progress) |
 | Data growth per day | PV usage over time | Not measured: PV growth per day per service. Pass 1 holds test data and has run for under two days, so measure it on the target at the start of Pass 2 |
 | Load the target must carry | Owner's expectation of users | Open decision D8 |
 
@@ -579,19 +659,20 @@ Pass 1 makes no claim of production readiness, and neither does this document. A
 | Accepted risks | RabbitMQ 3.13 is out of community support. Re-decide. 4.2.9 is the candidate, 4.3 breaks Celery per upstream | Accepted for Pass 1 |
 | Git | Clean `gitleaks` history before going public, branch protection with required review | Advisory only on GitHub Free private |
 | Terraform | Remote encrypted state with separate keys per environment, lock tested | Local state |
-| Backups | Encrypted, off-host, restore proven, alert on age | Manual, local |
+| Backups | Encrypted, off-host, restore proven, alert on age | Manual, local, unencrypted. In-place restores proven on kind (section 1) |
 | Abuse and privacy | Rate limits work with true client IP, an operator contact, terms, privacy, retention, and data location reviewed | None |
-| Rollback | Rollback and restore drills repeated on real infrastructure | On kind, dev's failed-deploy and failing-migrator drills read PASS, unpublished, and the clean restore has not run. Unverified: `tests/drills` results on Hetzner dev. Pass 1 has nothing to test this on, so set up the check at the start of Pass 2 |
+| Upstream finding | Read the invitation-flow finding and decide what to do. It is item H51 in `.local/hardening-backlog.md`, left out of this repository's docs because it may need reporting to Plane privately first. Ask the owner | Not patched and not reported |
+| Rollback | Rollback and restore drills repeated on real infrastructure | On kind, dev's failed-deploy, rollback and failing-migrator drills read PASS (section 1), and the clean restore is [in progress](#still-in-progress). Unverified: `tests/drills` results on Hetzner dev. Pass 1 has nothing to test this on, so set up the check at the start of Pass 2 |
 
 ## 9. AGPL section 13
 
 Read [docs/agpl-compliance.md](docs/agpl-compliance.md). This summary is engineering guidance, not legal advice.
 
 - A modified version must offer its Corresponding Source to all users who interact with it over a network, at no charge. Patched branded images are modified versions.
-- **The repository must be public, or source otherwise offered, before anyone other than the owner uses the instance.** `origin` is private today. A `/source` link to a private repository offers nothing to someone without access. Two third-party GitHub Apps, `netlify` and `builder-io-integration`, left check suites on pushed commits, and this token cannot list what they hold ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). The owner should check that before relying on "private".
+- **The repository must be public, or source otherwise offered, before anyone other than the owner uses the instance.** `origin` is private today. A `/source` link to a private repository offers nothing to someone without access. Two third-party GitHub Apps, `netlify` and `builder-io-integration`, left check suites on pushed commits, and this token cannot list what they hold ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). The owner should check that before relying on "private" (D17).
 - Corresponding Source includes the pinned upstream ref, patches, overlay, codemod, build scripts, and Dockerfiles, not only application code.
 - `/source` must lead to the exact commit of the running build. The web image stamps that commit at build time, and through Traefik in both environments it answers 302 to `84b63d9`. That commit is on GitHub, and with no credentials its page answers 404, because the repository is private, so this reads FAIL until the source is public ([record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). That reading used `curl`, not a logged-out browser.
-- Before the first outside user: pass the checklist in [docs/agpl-compliance.md](docs/agpl-compliance.md#checklist-before-the-first-other-user). The repository's `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` are in place. AI agents applied the `email.py` replacement and the flattening. The owner, Bereket Abera, was told and has not reviewed them (D12), no legal review has happened, and going public is still open.
+- Before the first outside user: pass the checklist in [docs/agpl-compliance.md](docs/agpl-compliance.md#checklist-before-the-first-other-user). The repository's `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` are in place. AI agents applied the `email.py` replacement and the flattening. The owner, Bereket Abera, was told and has not reviewed them (D12), no legal review has happened, and going public is still open. The licence for the platform code around `apps/wayline/` is not decided either (D16).
 
 ## 10. Cost items to price
 
@@ -623,9 +704,9 @@ Each phase has one exit gate. Do not start the next phase until evidence for the
 
 | Phase | Work | Exit gate |
 |---|---|---|
-| 0. Close Pass 1 | Finish validation, resolve markers, measure resources | `docs/validation.md` complete. `docs/resource-utilization.md` has measured values. Every BLOCKED item has a Pass 2 decision |
+| 0. Close Pass 1 | Record the run under [Still in progress](#still-in-progress), answer its markers, run the final `make test` | `docs/validation.md` complete, with that run's result. `docs/resource-utilization.md` has measured values. Every BLOCKED item has a Pass 2 decision |
 | 1. Remove hard-coding, on kind | Parameterise repo URL, hostnames, storage class, per-cluster Applications, foundation environments, CNI-specific tests. Everything stays on kind | `make up` then `make test` on kind give the same results as Phase 0. `make render` diff contains only intended lines |
-| 2. Public source | Clean history, working `/source`, go public, GHCR packages as D12 allows, protect `main`. Point kind's Argo CD at GitHub | `gitleaks` clean over full history. Kind syncs from GitHub. A logged-out browser reaches the exact commit's source |
+| 2. Public source | The owner settles D10, D12, D16 and D17 first. Clean history, working `/source`, go public, GHCR packages as D12 allows, protect `main`. Point kind's Argo CD at GitHub | `gitleaks` clean over full history. Kind syncs from GitHub. A logged-out browser reaches the exact commit's source |
 | 3. Accounts and state | Owner supplies section 6 items. State buckets created | `terraform init` on each root, against real state. Two concurrent plans prove locking |
 | 4. Dev infrastructure | Network, firewall, servers, Kubernetes, CNI, CSI | Nodes Ready. Policy sentinel: default-deny blocks and allow admits on a new connection. PVC survives pod move and node reboot. Digest pull from each registry path. External port scan shows only intended ports |
 | 5. Dev platform | `modules/foundation`, `modules/argocd`, root Application, Infisical, secrets | All Applications Synced and Healthy. `tests/network-policy-matrix.yaml` executed with zero unexpected results. Cross-project 403 proven |
@@ -653,12 +734,14 @@ Each needs an owner decision before the phase shown. Recommendations are the aut
 | D7 | Alert receivers | Owner's choice of email, chat, or pager | One real channel plus an external dead-man | 7 |
 | D8 | Target load and availability | Users, RPO, RTO | Owner must state these. The sizing method and D1 depend on them | 3 |
 | D9 | Public hostname and name | `plane.` vs. a Wayline-named host | Wayline-named host, since the upstream name is not licensed for branding | 2 |
-| D10 | Repository visibility | Public, or a separate source offer | Public | 2 |
+| D10 | Repository visibility | Public, or a separate source offer | Public. `/source` ends in a 404 while the repository is private, so this comes before anyone but the owner uses an instance | 2 |
 | D11 | Object storage for uploads | Silo in cluster, external S3 | Silo first, since `uploads` is constrained by Plane code | 6 |
 | D12 | `email.py` header | Applied by AI agents, and the owner's decision is still open: the owner, Bereket Abera, was told and has not reviewed it, and no legal review has happened. The image replaces the file with upstream's own AGPL-3.0-only version, pinned by commit, and the image is flattened, so both environments run a backend where a walk of every layer reads 0 hits ([walk](docs/evidence/branding/layer-check.txt)). It publishes only to the local registry or the owner's GHCR namespace, with a job failure otherwise and no check on visibility (`apps/wayline/backend/email-py-decision.txt`, `apps/wayline/scripts/publish-gate.sh`). The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the owner has not reviewed that either. The push has happened, and four private packages built from `9c8e098` are on GHCR | Review what the agents did before the packages or the repository become public. Take advice before any public distribution of the backend image, or move to an upstream release that carries the fix. See [docs/agpl-compliance.md](docs/agpl-compliance.md#the-commercial-header-in-emailpy) | 2 |
 | D13 | Plane version at migration | Stay on v1.4.3 or upgrade first | Stay. Change one thing at a time. Security fixes may override this | 1 |
 | D14 | Hosted location and privacy | Hetzner location, data residency | Owner's decision, with legal input if real user data is held | 3 |
 | D15 | How a prod promotion proves itself on dev, with independent clusters | A record dev writes to Git after its checks, a CI status, or a person's review. Pass 1's `scripts/lib/dev-check.sh` asks the one cluster directly, which independent clusters must not allow | A record in Git that dev writes and prod's promotion check reads. Nothing is designed yet | 1 |
+| D16 | Licence for platform code | AGPL-3.0-only for the whole repository, or another licence for what is not derived from Plane. `LICENSE` is upstream's AGPL-3.0 text and does not say "only", and nearly all scripts and manifests carry no header. Build scripts count as Corresponding Source | AGPL-3.0-only for the whole repository as the cautious default. This is not legal advice, so take advice before choosing otherwise | 2 |
+| D17 | The two GitHub Apps, `netlify` and `builder-io-integration` | Keep or remove each. Their check suites suggest they are installed. What each covers was not read ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)) | The owner reads both in GitHub's settings and removes what is not needed. Do this before relying on "private", and before giving the repository any secret | 2 |
 
 ## 13. Appendix: local values hard-coded in the repository
 
