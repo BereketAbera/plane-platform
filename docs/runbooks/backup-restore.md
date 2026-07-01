@@ -3,7 +3,7 @@
 Take a backup, bring data back, and handle the failures in between. For wider scenarios, such as losing the whole cluster, see
 [Disaster recovery](../disaster-recovery.md). For the design, see [Data operations](../data-operations.md).
 
-**Status, 2026-11-05.** Backups of all three have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a new cluster is in progress as this is written, with no result recorded here yet. The one marker left here waits on that run.
+**Status, 2026-11-05.** Backups of all three have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a new cluster is in progress as this is written, with no result recorded here yet.
 
 Preamble for raw commands:
 
@@ -143,7 +143,7 @@ Restore evidence has one line per step, labelled PASS, FAIL or NOT RUN. A `NOT R
 
 `make restore ENV=infisical` returned `/api/status` 200 in all five runs, with `proof-values` PASS. Afterwards `make test-infisical` exited 0 with 118 PASS lines, including each rendered Secret, and all 14 Applications read Synced and Healthy ([dr-inplace-restore-3.txt](../evidence/runs/dr-inplace-restore-3.txt), [dr-after-restores-1.txt](../evidence/runs/dr-after-restores-1.txt)). The operators kept syncing on the same database contents, so this does not show a change of value reaching a Secret after a restore.
 
-[[VERIFY: restore.sh refuses a backup whose SECRET_KEY fingerprint differs, from the restore-foreign-key-refused step of the clean install in progress]]
+`restore.sh` refusing a backup whose `SECRET_KEY` fingerprint differs has run on stubs ([dr-harness-stubbed-4.txt](../evidence/runs/dr-harness-stubbed-4.txt)). On a real install it is a step of the clean install in progress, `restore-foreign-key-refused`, not yet recorded here.
 
 Backup duration and size: dev 15 s and 78 MiB, prod-sim 11 s with no objects, about 17 s with 66, and 51 MiB with 61, Infisical 22 s and 6.0 MiB. See [Data operations](../data-operations.md#retention) for what each rests on.
 
