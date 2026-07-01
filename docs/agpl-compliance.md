@@ -6,7 +6,7 @@ Wayline is a customized deployment of open-source Plane Community Edition v1.4.3
 
 Written 2026-11-04, and reconciled on 2026-11-05 against `apps/wayline/` as committed then, the final images built from `84b63d9`, which both environments run, the first image build on GitHub, and the first real browser session on the branded images. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes.
 
-Two kinds of proof are kept apart below. **Built output verified** means it was checked in the build output or by running the image (`docs/evidence/branding/`). **Seen on `plane-dev`** means it was checked on the deployed platform on 2026-11-05 ([the browser session](evidence/branding/live-dev/README.md)), on the images built from `1563cbf`, unless the row names a later record. What neither has checked carries a `VERIFY` marker.
+Two kinds of proof are kept apart below. **Built output verified** means it was checked in the build output or by running the image (`docs/evidence/branding/`). **Seen on `plane-dev`** means it was checked on the deployed platform on 2026-11-05 ([the browser session](evidence/branding/live-dev/README.md)), on the images built from `1563cbf`, unless the row names a later record. What neither has checked says so in its row.
 
 ## Status at a glance
 
@@ -71,10 +71,10 @@ A small "Source code" link, in places that already hold version or footer inform
 
 | Audience | Surface | Where | Built output | Runtime |
 |---|---|---|---|---|
-| Signed-in users | Help menu, above the version line | `patches/30-surfaces.patch`, `help-section/root.tsx` | Verified, and rendered against a stub API | [[VERIFY: source link is visible in the help menu when signed in]] |
+| Signed-in users | Help menu, above the version line | `patches/30-surfaces.patch`, `help-section/root.tsx` | Verified, and rendered against a stub API | Not tested in Pass 1 |
 | Before sign-in | Auth footer, replacing the customer logo strip | `patches/20-auth.patch`, `auth-screens/footer.tsx` | Verified, and rendered | Seen on `plane-dev` ([screenshot](evidence/branding/live-dev/01-sign-in-dark.jpg)) |
-| God-mode admins | Help section, and admin sign-in | `patches/40-admin.patch`, `overlay/.../(home)/auth-split.tsx` | Verified, and rendered at sign-in | Admin sign-in seen on `plane-dev` ([screenshot](evidence/branding/live-dev/07-admin-sign-in.jpg)). The help section inside god-mode was not opened. [[VERIFY: source link is visible in god-mode and on its sign-in page]] |
-| Anonymous public pages | Corner badge, repurposed | `patches/50-space.patch`, `powered-by.tsx` | Verified | Seen on `plane-dev` while signed in, on the `/spaces/` landing page ([screenshot](evidence/branding/live-dev/09-public-space.jpg)). No anonymous view of a public page has been checked on the branded images, and a published board with real content was not opened. [[VERIFY: source link is visible on a public space page]] |
+| God-mode admins | Help section, and admin sign-in | `patches/40-admin.patch`, `overlay/.../(home)/auth-split.tsx` | Verified, and rendered at sign-in | Admin sign-in seen on `plane-dev` ([screenshot](evidence/branding/live-dev/07-admin-sign-in.jpg)). The help section inside god-mode was not opened. Not tested in Pass 1 |
+| Anonymous public pages | Corner badge, repurposed | `patches/50-space.patch`, `powered-by.tsx` | Verified | Seen on `plane-dev` while signed in, on the `/spaces/` landing page ([screenshot](evidence/branding/live-dev/09-public-space.jpg)). No anonymous view of a public page has been checked on the branded images, and a published board with real content was not opened. Not tested in Pass 1 |
 | API clients, optional | `Link: <url>; rel="source"` at ingress | Traefik middleware | Not built | Unverified: nobody has decided whether to add this header, and nothing has tested it. Check it at the start of Pass 2 |
 | The route itself | `/source` | `runtime/nginx-web.conf` | Verified by `checks/smoke-images.sh`: 302 to `<repo>/tree/<commit>` | Through Traefik in both environments, `curl -I` with no session answers 302 to the tree at `84b63d9`, the commit that built the deployed images, and that target answers 404 with no credentials ([record](evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). BR-3 is FAIL. No browser has followed it |
 
@@ -208,7 +208,7 @@ What this platform does:
 |---|---|---|
 | Create the admin with `is_telemetry_enabled=False`, then check it | `step_instance_setup` in `tests/e2e/smoke.py` | PASS: the instance API read telemetry off when each admin was created, on upstream images, in [dev](evidence/runs/smoke-dev-20261104T221730Z.json) and [prod-sim](evidence/runs/smoke-prod-sim-20261104T231359Z.json) |
 | Deny the egress | `gitops/platform/network-policies/plane-{dev,prod-sim}.yaml` (no internet route) | PASS: rows from api and worker to `telemetry.plane.so` time out in [dev](evidence/runs/netpol-20261104T232752Z.tsv) and [prod-sim](evidence/runs/netpol-20261104T233304Z.tsv) |
-| A branded default of off | `apps/wayline/patches/40-admin.patch`, `backend/edit_strings.py` | Built output verified: the setup form starts unticked with no `\|\| true`, and instance registration writes false. God-mode on `plane-dev` shows telemetry off ([screenshot](evidence/branding/live-dev/08-admin-general.jpg)), but for an admin the smoke test created through the API. [[VERIFY: an admin created through the UI on the deployed instance has telemetry off]] |
+| A branded default of off | `apps/wayline/patches/40-admin.patch`, `backend/edit_strings.py` | Built output verified: the setup form starts unticked with no `\|\| true`, and instance registration writes false. God-mode on `plane-dev` shows telemetry off ([screenshot](evidence/branding/live-dev/08-admin-general.jpg)), but for an admin the smoke test created through the API. An admin created through the UI was not tested in Pass 1 |
 
 An instance that already exists keeps its stored setting. In Pass 2 the API may gain outbound paths (SMTP, self-dial), so re-check the egress denial. Infisical's and Grafana's own telemetry are off in `helm/values/`.
 
