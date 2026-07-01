@@ -110,6 +110,8 @@ make status
 run again.
 
 It ran in stages with `UP_STOP_AFTER` on 2026-11-04 ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt)). One run from nothing is in progress in the clean-restore drill, not yet recorded.
+That drill keeps the local registry and pull-through caches and copies `.tools`. A new machine has none of them, so it also needs
+`make images` and `make promote` first ([registry lost](disaster-recovery.md#scenario-registry-lost)): Not tested in Pass 1.
 The sequence:
 
 | # | Step | Script or owner | What it needs and what it leaves |
