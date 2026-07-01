@@ -11,7 +11,7 @@ A scenario can make it fail as a broken API does: $H_STATE/kubectl-fail holds on
 against the namespace and the command, and a line that starts with once: is used up by its first match.
 What must never happen is logged as a line starting ERROR, and S1 and others look for those.
 """
-import base64, json, os, re, subprocess, sys
+import base64, json, os, re, subprocess, sys, time
 
 S = os.environ["H_STATE"]
 ROOT = os.environ["H_ROOT"]
@@ -92,6 +92,15 @@ if asked_to_fail():
     log(f"kc failed, as the scenario asked: {ns or ''} {cmd}")
     print("Unable to connect to the server: net/http: TLS handshake timeout", file=sys.stderr)
     sys.exit(1)
+# A call that does not answer until something stops it, as a wedged API does. One regular expression, matched as above,
+# and only once, because what runs after the stop must not hang on the same thing.
+if os.path.exists(f"{S}/kubectl-hang"):
+    with open(f"{S}/kubectl-hang") as f:
+        pattern = f.read().strip()
+    if pattern and re.search(pattern, f"{ns or ''} {cmd}"):
+        os.remove(f"{S}/kubectl-hang")
+        log(f"kc hung, as the scenario asked: {ns or ''} {cmd}")
+        time.sleep(600)
 api = jload("api.json", {})
 b64 = lambda s: base64.b64encode(s.encode()).decode()
 PLANE_APPS = ["plane-api-wl", "plane-worker-wl", "plane-beat-worker-wl", "plane-live-wl"]
