@@ -2,7 +2,7 @@
 
 Delete the cluster and bring the platform back, with or without its data.
 
-**Status, 2026-11-05.** None of this has run end to end. `make destroy`, a whole `make up` from nothing, and `make restore-clean` past its plan are all still to run, and need the owner's go-ahead. `make up` has run stage by stage. Each `VERIFY` or `MEASURE` marker here waits on those runs. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published.
+**Status, 2026-11-05.** No end-to-end result is recorded here yet. `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is in progress as this is written: it deletes the cluster through `scripts/destroy.sh`, runs a clean install from a fresh clone with new secrets, tests it and deletes it, then restores Infisical, dev and prod-sim from backup into a new cluster. It keeps the local registry and the pull-through caches, and `.tools` is copied rather than downloaded, so it is not a new machine. Before it, `make up` had run stage by stage. Each marker left here waits on that run: one `make up`'s time, a first install's disk growth, `Docker.raw` after a delete, and data across the rebuild.
 
 Pick the smallest thing that solves your problem:
 
@@ -38,10 +38,10 @@ Check these:
 
 | Check | Why |
 |---|---|
-| The cluster is running, if you want a backup | `backup.sh` needs the API. If it is stopped, `make destroy` fails with "backup failed, so nothing was deleted". Run `make up` first, or pass `SKIP_BACKUP=yes` knowingly |
+| The cluster is running, if you want a backup | `backup.sh` needs the API. If it is stopped, `make destroy` fails with "backup failed, so nothing was deleted". Run `make up` first, or pass `SKIP_BACKUP=yes` knowingly. While a clean restore is marked as under way, its backup also refuses an environment that restore has not finished. Finish the restore, or pass `ALLOW_BACKUP_DURING_RESTORE=yes` |
 | `.local/secret-zero/` exists, and you have a copy of what you cannot lose | Without `ENCRYPTION_KEY`, an Infisical dump is unreadable |
 | All work is committed to `main` | `make up` publishes commits only. Argo CD reads nothing else |
-| At least 25 GiB free on the host to create a cluster | `scripts/prereqs.sh` and `make up` refuse below 25. A first install measured 17.75 GiB (`dr-disk-1.txt`). A delete gives space back first, which a plan counts: on 2026-11-05 it read about 24.9 GiB after a delete, and refused (`dr-plan-4.txt`). `ALLOW_LOW_DISK="<reason>"` goes past it, and logs the reason |
+| At least 25 GiB free on the host to create a cluster | `scripts/prereqs.sh` and `make up` refuse below 25. A first install measured 17.75 GiB ([dr-disk-1.txt](../evidence/runs/dr-disk-1.txt)). A delete gives space back first, which a plan counts: on 2026-11-05 it read about 24.9 GiB after a delete, and refused ([dr-plan-4.txt](../evidence/runs/dr-plan-4.txt)). `ALLOW_LOW_DISK="<reason>"` goes past it, and logs the reason |
 | A recent `make test-e2e` ran before the backup | Otherwise the restore's sentinel proofs report `NOT RUN` |
 
 ## Destroy
@@ -71,7 +71,7 @@ What survives without `PURGE`:
 | Registry and mirrors | Docker volumes `plane-platform-local_*` |
 | Test accounts and sentinels | `.local/test-accounts.env`, `.local/test-sentinel-*.json`. On an empty platform the first `make test-e2e` replaces a kept sentinel, because a new database cannot hold it. A restore puts back the ones in its backup |
 
-Check whether space came back. A 273 MB kind volume gave back 254 MB within 15 s (`scripts/lib/up-checks.sh`). A whole cluster has not been measured, so record it:
+Check whether space came back. A 273 MB kind volume gave back 254 MB within 15 s (`scripts/lib/up-checks.sh`). A whole cluster has no recorded result yet, so record it:
 
 ```bash
 ls -klsh ~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
@@ -87,9 +87,7 @@ make up
 make status
 ```
 
-`scripts/up.sh` exists, and each stage has run on its own with `UP_STOP_AFTER` ([bootstrap-up-terraform-1.txt](../evidence/runs/bootstrap-up-terraform-1.txt), [bootstrap-up-secret-zero-1.txt](../evidence/runs/bootstrap-up-secret-zero-1.txt), [bootstrap-up-traefik-1.txt](../evidence/runs/bootstrap-up-traefik-1.txt)). It has not yet run whole from nothing.
-
-[[VERIFY: scripts/up.sh exists and make up completes; at commit f733b87 the Makefile called it and the file was missing]]
+`scripts/up.sh` exists, and each stage has run on its own with `UP_STOP_AFTER` ([bootstrap-up-terraform-1.txt](../evidence/runs/bootstrap-up-terraform-1.txt), [bootstrap-up-secret-zero-1.txt](../evidence/runs/bootstrap-up-secret-zero-1.txt), [bootstrap-up-traefik-1.txt](../evidence/runs/bootstrap-up-traefik-1.txt)). Its first whole run from nothing is in progress as this is written, as the clean install step of the drill, with no result recorded here yet.
 
 The steps, in `scripts/up.sh`. `UP_STOP_AFTER=<step>` stops after one, and running it again continues:
 
@@ -103,9 +101,13 @@ The steps, in `scripts/up.sh`. `UP_STOP_AFTER=<step>` stops after one, and runni
 
 It refuses uncommitted changes under `gitops`, `helm`, `monitoring` and `infisical`, because Argo CD reads only commits.
 
-A first install measured about 17.75 GiB on the host: 10.51 GiB of images on the node, with both environments up, and the rest in volumes and the node image (`dr-disk-1.txt`). So expect it to take a while.
+A first install measured about 17.75 GiB on the host: 10.51 GiB of images on the node, with both environments up, and the rest in volumes and the node image ([dr-disk-1.txt](../evidence/runs/dr-disk-1.txt)). So expect it to take a while.
 
-[[MEASURE: duration of make up from nothing, with empty mirrors and with full mirrors]]
+[[MEASURE: time of one make up from nothing with the mirrors full, from the clean install's summary.txt]]
+
+[[MEASURE: disk growth of a first install, from the clean install]]
+
+With empty mirrors: Not tested in Pass 1, because the drill keeps them. A new machine also needs `make images` and `make promote`, and pulls more.
 
 **Do not wait on `root` alone.** Its operation can succeed right after applying the last wave, and `plane-dev` stays `Degraded` until bootstrap publishes the identity Secret ([infisical-unready-sync-1.txt](../evidence/runs/infisical-unready-sync-1.txt)).
 
@@ -121,11 +123,9 @@ It runs `make up` as far as Traefik, replaces Infisical's database, runs `make u
 
 Don't change `gitops`, `helm`, `monitoring` or `infisical` until it ends. `make up` runs twice inside it, and refuses uncommitted changes there.
 
-[[VERIFY: this order on a new cluster gives matching SECRET_KEY fingerprints and restore results of PASS]]
+[[VERIFY: data across the rebuild: this order on a new cluster gives matching SECRET_KEY fingerprints, restore results of PASS, all 14 Applications Synced and Healthy, and make test passing]]
 
-Restored mode finds `initialized=true` and reuses the credentials. It updates only the Kubernetes Auth CA, publishes the identity Secrets, writes no value, and refuses a fresh instance, a token the server rejects, or Terraform wanting to create or delete anything. On the live instance and on a throwaway new server it ran that way ([dr-restored-bootstrap-1.txt](../evidence/runs/dr-restored-bootstrap-1.txt), [dr-fresh-instance-rehearsal-2.txt](../evidence/runs/dr-fresh-instance-rehearsal-2.txt)). A real new cluster has not been involved.
-
-[[VERIFY: bootstrap's behaviour when Infisical was restored from a dump onto a new cluster, using the existing infisical-admin.json]]
+Restored mode finds `initialized=true` and reuses the credentials. It updates only the Kubernetes Auth CA, publishes the identity Secrets, writes no value, and refuses a fresh instance, a token the server rejects, or Terraform wanting to create or delete anything. On the live instance and on a throwaway new server it ran that way ([dr-restored-bootstrap-1.txt](../evidence/runs/dr-restored-bootstrap-1.txt), [dr-fresh-instance-rehearsal-2.txt](../evidence/runs/dr-fresh-instance-rehearsal-2.txt)). A real new cluster is what the drill in progress adds, with no result recorded here yet.
 
 If you run `make up` with no restore, seeding generates new secrets, including a new `SECRET_KEY`. Those are not compatible with old Plane dumps. To go back to the old data later, you must restore Infisical from its matching dump as well, which `make destroy CONFIRM=yes SKIP_BACKUP=yes` and `make restore-clean BACKUP=<id>` do. While `.local/restore-clean.state` exists, a plain `make up` refuses to bootstrap a fresh instance. Removing that file by hand ends the restore and deletes nothing.
 
@@ -140,9 +140,7 @@ kubectl -n argocd get applications -o custom-columns='NAME:.metadata.name,SYNC:.
 make test-alert ENV=dev
 ```
 
-[[VERIFY: a rebuild from nothing ends with all 14 Applications Synced and Healthy]]
-
-[[VERIFY: make test passes after a rebuild]]
+What these commands show after a rebuild is not yet recorded. The marker under [Restore data](#restore-data) holds it.
 
 Save output to `docs/evidence/`, labelled with date and command. A rebuild that needed a manual step counts as that, and must say so.
 
@@ -157,5 +155,5 @@ Save output to `docs/evidence/`, labelled with date and command. A rebuild that 
 | `helm install` anything by hand | Argo CD owns workloads. A second owner is a bug that CI checks for |
 | `kind load docker-image` | It cannot work with this host's containerd image store (kind #3795). Use the registry at `localhost:5001` |
 | Restore Plane before Infisical | `SECRET_KEY` mismatch |
-| `PURGE=yes` without a way to rebuild images | No backup holds the digests Git deploys, and GHCR holds other ones. `make images` needs the branding inputs. It has built and pushed the four images here (`docs/evidence/branding/build.txt`), not from a purged registry. [[VERIFY: make images rebuilds the branded images from a clean registry; at commit f733b87 apps/wayline/images.txt was missing]] |
+| `PURGE=yes` without a way to rebuild images | No backup holds the digests Git deploys, and GHCR holds other ones. `make images` needs the branding inputs. It has built and pushed the four images here (`docs/evidence/branding/build.txt`). From a purged registry: Not tested in Pass 1 |
 | Claim a rebuild proves production recovery | This rebuilds one laptop's kind cluster. Pass 2 on Hetzner is a different system, and has its own proof to make |
