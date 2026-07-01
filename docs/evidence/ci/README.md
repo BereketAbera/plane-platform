@@ -22,7 +22,7 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 
 Everything up to 9c8e098 reached GitHub at 2026-11-05T05:39Z, and runs 41975431001 and 41975430939 cover that commit, so the policy
 rules, promtool on Linux, the digest binding, the stubbed promotion scenarios and the image scan have now run on real runners. A commit
-after 0dde813 is covered by no run here, and `origin/main` was still at 0dde813 at 2026-11-05T07:59Z, with well over 100 local commits after it, the drills and fixes among them. Run 41978707479 covers 0dde813, and `images.yml` did not run on it, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner
+after 0dde813 is covered by no run here, and `origin/main` read 0dde813 by the local ref at 2026-11-05T07:59Z, with well over 100 local commits after it, the drills and fixes among them. Run 41978707479 covers 0dde813, and `images.yml` did not run on it, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner
 since run 41907873100: no job failed on the 9c8e098 push, so nothing new shows a check going red there.
 
 ## Files
