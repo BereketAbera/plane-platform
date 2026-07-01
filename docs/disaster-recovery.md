@@ -2,7 +2,11 @@
 
 What fails, what survives, how to recover, and how to restore the whole platform into a clean environment.
 
-**Status, 2026-11-05.** The pod restart drill has run in both environments, backups have run, and Infisical has been restored in place. The destroying run has not: `make drill-clean-restore CONFIRM=yes` has never deleted a cluster, and no Plane environment has been restored into its real database and bucket. `make restore-clean` has run only as far as its plan on the live cluster, and against stubs. So the [clean restore](#full-restoration-into-a-clean-environment) is read from the scripts, backed by rehearsals on throwaway copies. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. This platform is local, production-inspired and single-node, and nothing here is a claim about any other environment.
+**Status, 2026-11-05.** The pod restart drill has run in both environments on the final images, and backups have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after.
+
+**The destroying run is in progress as this is written, and no result is recorded here yet.** `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` deletes the cluster, runs a clean install from a fresh clone with new secrets, tests it and deletes it, then restores Infisical, dev and prod-sim from backup into a new cluster. It keeps the local registry and the pull-through caches, and `.tools` is copied rather than downloaded. So until it reports, the [clean restore](#full-restoration-into-a-clean-environment) is read from the scripts, backed by rehearsals on throwaway copies. The two markers left here wait on that run.
+
+A result links to its file under `docs/evidence/runs/`. This platform is local, production-inspired and single-node, and nothing here is a claim about any other environment.
 
 ## Principles
 
@@ -28,7 +32,7 @@ What fails, what survives, how to recover, and how to restore the whole platform
 | Working Git repo | Yes | Yes | Yes | Yes | Yes | No |
 | GitHub `origin` | Yes | Yes | Yes | Yes | Yes | Yes, as of the last push |
 
-This table is read from what each path and volume is. The pod column has run. The others wait on the runs named in [RPO and RTO](#rpo-and-rto-to-measure-not-promised).
+This table is read from what each path and volume is. The pod column has run. The `make destroy` column is being exercised by the drill in progress, with no result recorded here yet. The other columns: Not tested in Pass 1.
 
 ## Before anything fails
 
@@ -67,15 +71,16 @@ No RPO or RTO is promised. Few numbers exist yet, and nothing automates the inpu
 
 | Scenario | RPO by design | RTO | Evidence |
 |---|---|---|---|
-| Pod lost | Zero, the volume survives | Dev, final images, read every 3 s: Silo and Postgres about 9 s, RabbitMQ about 12 s, Valkey under 3 s. A signed-in request answered 500 for about 7 s during the Postgres round. Prod-sim's drill was not timed | PASS: `PERS-1-20261105T070358Z-timeline.txt`, `drill-pod-restart-dev-20261105T070414Z.log`, `drill-pod-restart-prod-sim-20261105T072331Z.log` |
-| `make down` then `make up` | Zero | [[MEASURE: seconds from make up to all Applications Healthy after make down]] | NOT RUN |
-| Node container lost | Age of last backup | [[MEASURE: time from cluster-up to verified restore after docker rm of the node]] | NOT RUN |
-| Infisical Postgres lost | Age of last Infisical backup | In place with the volume kept: 51 s to 71 s, with the server not answering for 39 s to 52 s. The operators' resync was not timed. [[MEASURE: time for make restore ENV=infisical, including operators resyncing]] | NOT RUN with the volume deleted. In place, PASS: `dr-inplace-restore-3.txt`, `dr-after-restores-1.txt` |
-| Plane Postgres lost | Age of last backup | [[MEASURE: time for make restore ENV=dev after deleting the Postgres PVC]] | NOT RUN |
-| Docker VM disk lost | Age of last backup | [[MEASURE: time from empty Docker to verified restore with images re-pulled]] | NOT RUN |
-| Whole machine lost | Age of last off-machine copy | [[MEASURE: time from a clean clone and recovery archive to verified restore]] | NOT RUN |
+| Pod lost | Zero, the volume survives | Dev, final images, read every 3 s: Silo and Postgres about 9 s, RabbitMQ about 12 s, Valkey under 3 s. A signed-in request answered 500 for about 7 s during the Postgres round. Prod-sim's drill was not timed | PASS: [PERS-1-20261105T070358Z-timeline.txt](evidence/runs/PERS-1-20261105T070358Z-timeline.txt), [drill-pod-restart-dev-20261105T070414Z.log](evidence/runs/drill-pod-restart-dev-20261105T070414Z.log), [drill-pod-restart-prod-sim-20261105T072331Z.log](evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log) |
+| `make down` then `make up` | Zero | Not tested in Pass 1 | NOT RUN |
+| Cluster deleted, host state kept | Age of last backup | [[MEASURE: time of the clean restore into the new cluster, from the drill's log, without its clean install]] | In progress, no result recorded |
+| Node container lost with `docker rm` | Age of last backup | Not tested in Pass 1 | NOT RUN |
+| Infisical Postgres lost | Age of last Infisical backup | In place with the volume kept: 51 s to 71 s, with the server not answering for 39 s to 52 s. The operators' resync was not timed. With the volume deleted: Not tested in Pass 1 | NOT RUN with the volume deleted. In place, PASS: [dr-inplace-restore-3.txt](evidence/runs/dr-inplace-restore-3.txt), [dr-after-restores-1.txt](evidence/runs/dr-after-restores-1.txt) |
+| Plane Postgres lost | Age of last backup | Over the live database with the volume kept: dev 178 s, prod-sim 183 s, checks and proofs included. After deleting the PVC: Not tested in Pass 1 | NOT RUN with the volume deleted. In place, PASS: [restore-dev-20261105T074337Z.json](evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](evidence/runs/restore-prod-sim-20261105T073438Z.json) |
+| Docker VM disk lost | Age of last backup | Not tested in Pass 1 | NOT RUN |
+| Whole machine lost | Age of last off-machine copy | Not tested in Pass 1. The clean install in progress is not this: it keeps the registry and caches and copies `.tools`, so by its design it builds nothing and pulls nothing from the internet | NOT RUN |
 
-Record each result in `docs/evidence/` with date and command, labelled **PASS**, **FAIL**, **BLOCKED** or **NOT RUN**. A first boot on an empty Docker also pulls every image again, which can hit Docker Hub limits. Measured with both environments up: 10.51 GiB of images on the node, and 17.75 GiB for a first install in all (`dr-disk-1.txt`).
+Record each result in `docs/evidence/` with date and command, labelled **PASS**, **FAIL**, **BLOCKED** or **NOT RUN**. A first boot on an empty Docker also pulls every image again, which can hit Docker Hub limits. Measured with both environments up: 10.51 GiB of images on the node, and 17.75 GiB for a first install in all ([dr-disk-1.txt](evidence/runs/dr-disk-1.txt)).
 
 ## Failure scenarios
 
@@ -91,7 +96,7 @@ make drill-pod-restart ENV=dev
 
 The drill deletes each StatefulSet's pod in turn, checks each reattached the same claim, re-reads the sentinel written by `tests/e2e/smoke.py`, and creates a new work item to prove the async path after a broker restart.
 
-Both environments passed on the final images on 2026-11-05 (`drill-pod-restart-dev-20261105T070414Z.log`, `drill-pod-restart-prod-sim-20261105T072331Z.log`). On 2026-11-04, on upstream images, prod-sim also passed, after a failed run that stays as evidence ([drill-pod-restart-prod-sim-20261104T235402Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), [drill-pod-restart-prod-sim-20261104T233500Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log)). This shows data surviving a pod, not a volume.
+Both environments passed on the final images on 2026-11-05 ([drill-pod-restart-dev-20261105T070414Z.log](evidence/runs/drill-pod-restart-dev-20261105T070414Z.log), [drill-pod-restart-prod-sim-20261105T072331Z.log](evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log)). On 2026-11-04, on upstream images, prod-sim also passed, after a failed run that stays as evidence ([drill-pod-restart-prod-sim-20261104T235402Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), [drill-pod-restart-prod-sim-20261104T233500Z.log](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log)). This shows data surviving a pod, not a volume.
 
 ### Scenario: node lost
 
@@ -102,9 +107,7 @@ The node is one Docker container, `plane-platform-control-plane`.
 | Stopped by `make down`, Docker restart or host reboot | Data intact | `make up` |
 | Container deleted, or `kind delete cluster` by hand | PVs and etcd gone, since they live in the node's `/var` volume. Host state intact | `make restore-clean BACKUP=latest`. See [Full restoration](#full-restoration-into-a-clean-environment). With no cluster, it moves the stale `.local/terraform/local` aside by itself |
 
-[[VERIFY: a stopped node resumes with its data, kubeconfig valid and API server reachable, including when its Docker IP changes]]
-
-[[VERIFY: compose services restart with Docker, and plane-git answers after a resume]]
+A stopped node resuming with its data, kubeconfig and API server, including when its Docker IP changes: Not tested in Pass 1. Compose services restarting with Docker, and `plane-git` answering after a resume: Not tested in Pass 1.
 
 ### Scenario: Infisical lost
 
@@ -135,13 +138,9 @@ make restore ENV=infisical BACKUP=latest CONFIRM=yes
 INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
 ```
 
-Plane's password check matters here. If `PG_PASSWORD` was rotated after this dump was taken, Infisical would hold the old value, the operator would write it to the Secret, and Plane would fail on its next restart. So the restore refuses that dump unless `ALLOW_STALE_PLANE_SECRETS=yes`, and `rotate.sh` refuses to run in that state. `make rotate` takes an Infisical backup when it finishes, as it did in the dev rotation, so the newest dump holds the new value (`SEC-2-20261105T072331Z.txt`).
+Plane's password check matters here. If `PG_PASSWORD` was rotated after this dump was taken, Infisical would hold the old value, the operator would write it to the Secret, and Plane would fail on its next restart. So the restore refuses that dump unless `ALLOW_STALE_PLANE_SECRETS=yes`, and `rotate.sh` refuses to run in that state. `make rotate` takes an Infisical backup when it finishes, as it did in both rotations, so the newest dump holds the new value ([SEC-2-20261105T072331Z.txt](evidence/runs/SEC-2-20261105T072331Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). `SKIP_BACKUP=yes` leaves that to you.
 
-The restore itself has run in place, five times, with the volume kept: Plane's pods, generations and Secrets did not move, and `make test-infisical` exited 0 afterwards (`dr-inplace-restore-3.txt`, `dr-after-restores-1.txt`). The same Job restored into a brand-new server on an empty database, in a throwaway namespace ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). Deleting the real volume has not run, and no Plane pod was restarted on purpose during an outage.
-
-[[VERIFY: Infisical volume loss recovers with the commands above and the operators resume syncing]]
-
-[[VERIFY: Plane continues serving through an Infisical outage and through a Plane pod restart during it]]
+The restore itself has run in place, five times, with the volume kept: Plane's pods, generations and Secrets did not move, and `make test-infisical` exited 0 afterwards ([dr-inplace-restore-3.txt](evidence/runs/dr-inplace-restore-3.txt), [dr-after-restores-1.txt](evidence/runs/dr-after-restores-1.txt)). The same Job restored into a brand-new server on an empty database, in a throwaway namespace ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). Deleting the real volume and following the commands above, with the operators resuming: Not tested in Pass 1. A Plane pod restarted on purpose during an outage: Not tested in Pass 1.
 
 ### Scenario: Git repository lost
 
@@ -157,9 +156,7 @@ Three copies exist, and each has a role.
 
 Repo rights do not imply data. A Git restore brings no secret zero and no backups.
 
-[[VERIFY: deleting .local/git and running make gitops-publish restores Argo CD sync without restarting workloads]]
-
-[[VERIFY: plane-git keeps serving after the bare repo is recreated while its container runs]]
+Deleting `.local/git` and running `make gitops-publish`, with Argo CD syncing again and no workload restarted: Not tested in Pass 1. `plane-git` serving a bare repo recreated while its container runs: Not tested in Pass 1.
 
 ### Scenario: registry lost
 
@@ -192,11 +189,9 @@ A rebuild does not reproduce the digest. Prod-sim accepts only a digest recorded
 
 **As things stand, GHCR does not hold what `main` deploys.** `main` names digests built on this Mac. The four private GHCR packages hold the digests built by `images.yml` at `9c8e098`, which are different, and pull request 1, open and unmerged, is the only thing that names those ([ci-4-20261105T055033Z-ghcr-visibility.txt](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt), `helm/plane/overlays/dev/kustomization.yaml`). So today the way back is the rebuild. GitHub's quota for private packages is documented and has not been measured, and the prune in `images.yml` has deleted nothing so far. A digest that exists nowhere means the pinned version is lost.
 
-The copy command keeps the digest: with `--prefer-index=false`, a throwaway registry answered with the source's digest, and without it a new index's ([ci-5-20261105T060108Z-copy-keeps-digest.txt](evidence/ci/ci-5-20261105T060108Z-copy-keeps-digest.txt)). The script has never finished a copy. It stopped at the first image with a 401, for want of a token with `read:packages` ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Pods do pull the digests built here through `localhost:5001`, on the final images, and `make test-e2e` checks they run the digests in the overlay (`plane-dev-final-e2e-20261105T070735Z.txt`).
+The copy command keeps the digest: with `--prefer-index=false`, a throwaway registry answered with the source's digest, and without it a new index's ([ci-5-20261105T060108Z-copy-keeps-digest.txt](evidence/ci/ci-5-20261105T060108Z-copy-keeps-digest.txt)). The script has never finished a copy. It stopped at the first image with a 401, for want of a token with `read:packages` ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Pods do pull the digests built here through `localhost:5001`, on the final images, and `make test-e2e` checks they run the digests in the overlay ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt)).
 
-[[VERIFY: copy-to-local-registry.sh preserves digests and pods pull them through localhost:5001]]
-
-[[VERIFY: a full pull with empty caches completes without exhausting the Docker Hub quota]]
+A finished copy from GHCR, and pods pulling what it copied: Not tested in Pass 1. A full pull with empty caches against the Docker Hub quota: Not tested in Pass 1, and the drill in progress keeps the caches, so it does not answer this.
 
 ### Scenario: Docker VM disk lost
 
@@ -206,7 +201,7 @@ Resetting Docker Desktop also destroys every unrelated container and image on th
 
 **Do.** [Full restoration](#full-restoration-into-a-clean-environment), Path A, from step 2. The registry is gone too, so the plan refuses until the [images are back](#scenario-registry-lost). With no cluster at the start, `up.sh` moves `.local/terraform/local` to `local.stale-<time>` by itself, since that state describes a cluster that is gone. `.local/terraform/infisical` stays in place. This has run only on stubs.
 
-[[VERIFY: terraform apply in environments/local succeeds on a new cluster after removing only .local/terraform/local]]
+The drill in progress removes only `.local/terraform/local` and applies on a new cluster, with no result recorded here yet. Starting from an empty Docker: Not tested in Pass 1.
 
 Disk full is a more likely version of this. kind disables eviction and image GC, so it shows up as write errors, not evictions. `guard_disk` is the check, since the VM reports hundreds of free GiB on a sparse disk.
 
@@ -224,8 +219,8 @@ Prerequisites on the new machine: Docker Desktop with the memory and disk below,
 
 | Requirement | Value | Status |
 |---|---|---|
-| Docker Desktop memory | 14 GiB, which shows as 13.63 GiB inside the VM. 16 GiB to keep unrelated containers running | With both environments up, the VM used 9.81 to 9.87 GiB during the drill, and read 9.7 to 9.85 GiB before and after the Infisical restores (`PERS-1-20261105T070358Z-timeline.txt`, `dr-inplace-restore-3.txt`, `dr-inplace-token-lost-1.txt`). See [resource-utilization.md](resource-utilization.md). A clean restore's first boots have not been measured |
-| Free host disk | 25 GiB for `make up` to create a cluster | A first install measured 17.75 GiB (`dr-disk-1.txt`). Before a delete, a plan counts what is free plus 93% of the kind volume, which came from a 273 MB volume and has not been measured on 12 GB |
+| Docker Desktop memory | 14 GiB, which shows as 13.63 GiB inside the VM. 16 GiB to keep unrelated containers running | With both environments up, the VM used 9.81 to 9.87 GiB during the drill, and read 9.7 to 9.85 GiB before and after the Infisical restores ([PERS-1-20261105T070358Z-timeline.txt](evidence/runs/PERS-1-20261105T070358Z-timeline.txt), [dr-inplace-restore-3.txt](evidence/runs/dr-inplace-restore-3.txt), [dr-inplace-token-lost-1.txt](evidence/runs/dr-inplace-token-lost-1.txt)). See [resource-utilization.md](resource-utilization.md). A clean restore's first boots have not been measured |
+| Free host disk | 25 GiB for `make up` to create a cluster | A first install measured 17.75 GiB ([dr-disk-1.txt](evidence/runs/dr-disk-1.txt)). Before a delete, a plan counts what is free plus 93% of the kind volume, which came from a 273 MB volume and has no recorded result on 12 GB yet |
 
 ## Full restoration into a clean environment
 
@@ -270,7 +265,7 @@ ls .local/secret-zero/ENCRYPTION_KEY .local/secret-zero/AUTH_SECRET
 ls .local/backups/infisical .local/backups/dev .local/backups/prod-sim
 ```
 
-[[VERIFY: backups unpacked from an archive keep modes the Job's UID 70 can read through VirtioFS]]
+Backups unpacked from an archive keeping modes the Job's UID 70 can read through VirtioFS: Not tested in Pass 1.
 
 **Step 2. Plan.** This checks everything and changes nothing, and it works on a live cluster.
 
@@ -280,7 +275,7 @@ make restore-clean BACKUP=latest PLAN_ONLY=yes
 
 It checks every checksum, the keys the set names, that each Plane backup was taken with the `SECRET_KEY` this Infisical backup holds, that it records no row marked uploaded with no object, and that Git does not deploy an older Infisical than the dump came from. Then it checks what `make up` would stop on, by the same code: uncommitted changes under `gitops`, `helm`, `monitoring` and `infisical`, digests the registry cannot serve, and free disk. It refuses a cluster that holds data, or one it cannot read. The plan prints what each backup holds, and warns if a Plane backup has 0 users. [`infisical/README.md`](../infisical/README.md#refusals-and-their-overrides) lists each refusal and the way past it.
 
-On the live cluster the plan read the real volumes, registry and manifests, and changed nothing. It refused for disk, at about 24.9 GiB after a delete against 25, and with a reason given it passed (`dr-plan-4.txt`). A real run refused a cluster holding data, a backup with no recovery set, and an unknown id ([dr-plan-refusals-1.txt](evidence/runs/dr-plan-refusals-1.txt)).
+On the live cluster the plan read the real volumes, registry and manifests, and changed nothing. It refused for disk, at about 24.9 GiB after a delete against 25, and with a reason given it passed ([dr-plan-4.txt](evidence/runs/dr-plan-4.txt)). A real run refused a cluster holding data, a backup with no recovery set, and an unknown id ([dr-plan-refusals-1.txt](evidence/runs/dr-plan-refusals-1.txt)).
 
 **Step 3. Run it.** Keep other work off `gitops`, `helm`, `monitoring` and `infisical` until it ends, because `make up` runs twice inside it. It can resume: run the same command again after any failure, including a hard stop.
 
@@ -290,27 +285,21 @@ make restore-clean BACKUP=latest
 
 | Stage | What happens | What has shown it |
 |---|---|---|
-| a. `make up` as far as Traefik | Cluster, publish, Terraform, secret zero. With no cluster at the start, `.local/terraform/local` moves aside | Each stage of `make up` has run on its own ([terraform](evidence/runs/bootstrap-up-terraform-1.txt), [secret-zero](evidence/runs/bootstrap-up-secret-zero-1.txt), [traefik](evidence/runs/bootstrap-up-traefik-1.txt)). Not from nothing |
-| b. Replace Infisical's database | Waits for the fresh server's migrations, pauses auto-sync on `infisical` only, stops the server, restores into a second database, checks row counts, renames it into place, flushes Redis, starts the server, makes sure something here can log in | The exact Job on a brand-new server in a throwaway namespace ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)), and five times in place (`dr-inplace-restore-3.txt`) |
+| a. `make up` as far as Traefik | Cluster, publish, Terraform, secret zero. With no cluster at the start, `.local/terraform/local` moves aside | Each stage of `make up` has run on its own ([terraform](evidence/runs/bootstrap-up-terraform-1.txt), [secret-zero](evidence/runs/bootstrap-up-secret-zero-1.txt), [traefik](evidence/runs/bootstrap-up-traefik-1.txt)). From nothing, no result recorded yet |
+| b. Replace Infisical's database | Waits for the fresh server's migrations, pauses auto-sync on `infisical` only, stops the server, restores into a second database, checks row counts, renames it into place, flushes Redis, starts the server, makes sure something here can log in | The exact Job on a brand-new server in a throwaway namespace ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)), and five times in place ([dr-inplace-restore-3.txt](evidence/runs/dr-inplace-restore-3.txt)) |
 | c. `make up` from there, restored mode | Same credentials. Terraform updates the CA in Kubernetes Auth and nothing else, the seed writes nothing, and the identity Secrets are published | Against the rehearsal instance and the live one |
 | d. Wait for all Applications | Plane comes up empty, using the original passwords on new volumes | Not on a restored instance |
-| e. Restore each Plane environment | As `make restore`, dev first, then prod-sim. Then it checks everything again from outside | The exact Job into a scratch database and bucket ([dr-plane-restore-rehearsal-1.txt](evidence/runs/dr-plane-restore-rehearsal-1.txt)) |
+| e. Restore each Plane environment | As `make restore`, dev first, then prod-sim. Then it checks everything again from outside | `make restore` in place on the real database and bucket in both environments ([restore-dev-20261105T074337Z.json](evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](evidence/runs/restore-prod-sim-20261105T073438Z.json)), and the exact Job into a scratch database and bucket ([dr-plane-restore-rehearsal-1.txt](evidence/runs/dr-plane-restore-rehearsal-1.txt)). Not into a new cluster |
 
 What is known about each stage:
 
 - **Waves.** On the first boot, Traefik read Healthy at 20:46:21Z and `infisical` at 21:11:00Z, both before Plane was unblocked: the `plane-dev` sync failed and retried from 21:11:38Z until the retry after bootstrap at 21:28:54Z ([bootstrap-timeline-1.txt](evidence/runs/bootstrap-timeline-1.txt), [infisical-unready-sync-1.txt](evidence/runs/infisical-unready-sync-1.txt)).
 - **Plane's data waits.** Plane's data pods are not created while `InfisicalAuth` is unready, so they cannot initialize with a wrong value. On that boot they were created at 21:29:03Z, 9 s after the retry ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)).
 - **The pause.** Root is left alone, because its sync is waiting for Plane, and terminating it would stop Argo CD retrying that revision. Root does not undo a paused child ([dr-child-pause-1.txt](evidence/runs/dr-child-pause-1.txt)). So the Terminating patch an earlier version of this page needed is gone.
-- **The token.** The pre-restore admin token authenticates against the restored database, read through the API on the rehearsal instance ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). A token that has ended, or a lost file, is replaced by a password login after the swap. That login ran on the live instance (`dr-mint-1.txt`, `dr-inplace-token-lost-1.txt`). An ended token has run only on stubs.
+- **The token.** The pre-restore admin token authenticates against the restored database, read through the API on the rehearsal instance ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). A token that has ended, or a lost file, is replaced by a password login after the swap. That login ran on the live instance ([dr-mint-1.txt](evidence/runs/dr-mint-1.txt), [dr-inplace-token-lost-1.txt](evidence/runs/dr-inplace-token-lost-1.txt)). An ended token has run only on stubs.
 - **Terraform.** With the backup's state against that instance it planned no changes. With a stored CA that differs it planned 2 updates and 8 no-ops, applied them, and both identities logged in ([dr-fresh-instance-rehearsal-1.txt](evidence/runs/dr-fresh-instance-rehearsal-1.txt), [-2](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). No real new cluster has been involved.
 
-[[VERIFY: scripts/restore.sh infisical latest succeeds in this state, with or without the Terminating patch]]
-
-[[VERIFY: operators log in with the new CA and materialise all six Secrets with their original values]]
-
-[[VERIFY: both Plane environments reach Healthy on first boot within the VM's memory]]
-
-[[VERIFY: an environment that has only run its migrator reports zero users and zero objects, so CONFIRM is not needed]]
+Only the drill in progress can show the rest, and no result is recorded here yet: whether Infisical restores in this state, whether the operators log in with the new CA and materialise all six Secrets with their original values, whether both Plane environments reach Healthy on first boot within the VM's memory, and whether an environment that has only run its migrator holds no users and no objects, so that `CONFIRM` is not needed.
 
 **How it ends.** `scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2 when nothing failed but a proof could not run or a person has to act, which is not a pass. Through `make`, any of these but 0 is make's own exit 2, and make prints which. So read the evidence: `jq '.result, .not_run' .local/evidence-raw/restore-clean-*.json`. With 2 the restore stays marked as under way, and the same command goes on from there. `ALLOW_NO_SENTINEL=yes` accepts a sentinel proof that could not run, and the step still reads NOT RUN.
 
@@ -328,13 +317,11 @@ make backup ENV=all
 
 Copy `.local/evidence-raw/restore-*.json` and `.local/evidence-raw/restore-smoke-*.json` into `docs/evidence/` with `make publish-evidence`. A proof reported NOT RUN stays NOT RUN.
 
-Each Plane backup holds that environment's test accounts and sentinel in `recovery/`, and a restore puts them back, so `.local/test-accounts.env` need not be in the archive. That has run only on stubs.
+Each Plane backup holds that environment's test accounts and sentinel in `recovery/`, and a restore puts them back, so `.local/test-accounts.env` need not be in the archive. With those files absent, `make test-e2e` on a restored environment has run only on stubs, and the drill in progress starts with them present: Not tested in Pass 1.
 
-[[VERIFY: make test-e2e works on a restored environment when .local/test-accounts.env and .local/test-sentinel-ENV.json are absent]]
+**The drill.** `make drill-clean-restore CONFIRM=yes` takes a fresh backup, deletes the cluster, does all of the above, and compares truncated hashes and ids across the delete. `CLEAN_INSTALL_FIRST=yes` runs `tests/drills/clean-install.sh` between the delete and the restore. `LOSE_CLUSTER=yes` deletes with kind alone, as a disaster would, and has not run. Before today's run it had gone only as far as the delete ([dr-drill-planonly-1.txt](evidence/runs/dr-drill-planonly-1.txt), [dr-drill-planonly-2.txt](evidence/runs/dr-drill-planonly-2.txt)). `make drill-clean-restore-harness` runs the logic against stubs: 905 checks PASS, 73 of 73 lines taken out one at a time are noticed, and 61 sampled stops recovered ([dr-harness-stubbed-4.txt](evidence/runs/dr-harness-stubbed-4.txt), [dr-mutants-1.txt](evidence/runs/dr-mutants-1.txt), [dr-stop-sweep-1.txt](evidence/runs/dr-stop-sweep-1.txt)). That shows the logic, not the platform.
 
-**The drill.** `make drill-clean-restore CONFIRM=yes` takes a fresh backup, deletes the cluster, does all of the above, and compares truncated hashes and ids across the delete. `LOSE_CLUSTER=yes` deletes with kind alone, as a disaster would. It has run only as far as the delete ([dr-drill-planonly-1.txt](evidence/runs/dr-drill-planonly-1.txt), `dr-drill-planonly-2.txt`). `make drill-clean-restore-harness` runs the logic against stubs: 905 checks PASS, 73 of 73 lines taken out one at a time are noticed, and 61 sampled stops recovered (`dr-harness-stubbed-4.txt`, `dr-mutants-1.txt`, `dr-stop-sweep-1.txt`). That shows the logic, not the platform.
-
-[[VERIFY: the full Path A procedure has run end to end from a deleted cluster, with evidence in docs/evidence/]]
+[[VERIFY: data across the rebuild: the drill's stage 6 finds the same data and secrets on the new cluster, and restore-clean's result reads PASS, with evidence in docs/evidence/runs/]]
 
 ### Path B: `ENCRYPTION_KEY` is lost
 
@@ -353,13 +340,11 @@ scripts/restore.sh prod-sim latest ALLOW_SECRET_KEY_MISMATCH=yes
 
 **What this costs.** Encrypted instance configuration rows, such as SMTP and OAuth settings, decrypt silently to `""`. Reconfigure them in the instance admin UI. The script reports the mismatch, the proofs fail, and it exits non-zero even though the data is back. That exit code is correct, so do not read it as a failed restore of rows. Check the row-count gates in the evidence file. API tokens are not bound to the key, and should survive. Users may need to log in again. No part of this path has run.
 
-Clear the affected rows so `proof-no-empty-decrypt` can pass later: [[VERIFY: the procedure to reset undecryptable InstanceConfiguration rows, including WAYLINE_RESTORE_SENTINEL, works and is documented with the exact command]]
-
-[[VERIFY: Path B has run, and restored rows and objects are readable with the new SECRET_KEY]]
+`proof-no-empty-decrypt` will go on failing until the affected rows are cleared, and no command for that is written down here. Resetting undecryptable `InstanceConfiguration` rows, including `WAYLINE_RESTORE_SENTINEL`: Not tested in Pass 1. Path B as a whole, with rows and objects read back under the new `SECRET_KEY`: Not tested in Pass 1.
 
 ### Path C: nothing to restore
 
-`make up` gives a new empty platform from Git. Infisical generates new values. Plane starts with no data. `make up` has run stage by stage, and not yet whole from nothing.
+`make up` gives a new empty platform from Git. Infisical generates new values. Plane starts with no data. `make up` has run stage by stage. Its first whole run from nothing is in progress as this is written, with no result recorded here yet.
 
 ## Known gaps
 
@@ -367,11 +352,11 @@ Recorded plainly, because each changes what a real recovery needs.
 
 | Gap | Where | Effect | Mitigation today |
 |---|---|---|---|
-| The destroying run has not happened | `make drill-clean-restore CONFIRM=yes` | Nothing has shown the sequence on a real new cluster with a new CA, Plane's data services initializing with the old values, `make restore` of Plane against its real database and bucket, or how much of a 12 GB kind volume comes back. This page is unproven until then | Run it. Free disk first, or give `ALLOW_LOW_DISK="<reason>"` |
+| The destroying run has no result yet | `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, in progress as this is written | Nothing recorded here shows the sequence on a real new cluster with a new CA, Plane's data services initializing with the old values, or how much of a 12 GB kind volume comes back. This page is unproven until it reports | Read its result when it arrives. A FAIL there changes this page |
 | Paths that have run only on stubs | `infisical/README.md`, Not yet proven | The repair after a hard stop, the stop for a sign-in and its resume, an admin token that has really ended, a registry that cannot serve a digest, a client ending during a Job, every refusal of a resume | The harness, which shows the logic |
-| The sign-in steps by hand | `ia_print_sign_in_steps` | Their labels come from this image's frontend build, and nobody has clicked through them. The API calls behind a password login ran on the live instance | `dr-mint-1.txt` |
+| The sign-in steps by hand | `ia_print_sign_in_steps` | Their labels come from this image's frontend build, and nobody has clicked through them. The API calls behind a password login ran on the live instance | [dr-mint-1.txt](evidence/runs/dr-mint-1.txt) |
 | Images built here are in no backup | `plane-platform-local_registry-data` | A new machine, a lost `Docker.raw` or `PURGE=yes` loses them, and GHCR holds other digests | [Registry lost](#scenario-registry-lost) |
-| Terraform state lost with no Infisical backup | `.local/terraform/infisical`, `recovery/terraform.tfstate` | Bootstrap fails, because Terraform would create what the restored database already holds | Copy it from the newest Infisical backup. Otherwise import, or a fresh instance. [[VERIFY: an import path exists for every resource in infisical/terraform/main.tf]] |
+| Terraform state lost with no Infisical backup | `.local/terraform/infisical`, `recovery/terraform.tfstate` | Bootstrap fails, because Terraform would create what the restored database already holds | Copy it from the newest Infisical backup. Otherwise a fresh instance. Importing each resource in `infisical/terraform/main.tf`: Not tested in Pass 1 |
 | A dump older than the last rotation | `SKIP_BACKUP=yes` on `make rotate`, or a backup that failed there | Restoring it in place gives Infisical a stale `PG_PASSWORD`, so `make restore` refuses it unless `ALLOW_STALE_PLANE_SECRETS=yes` | `make backup ENV=infisical` |
 | No off-machine copy | No script | Machine loss is total without a manual archive | [Before anything fails](#before-anything-fails) |
 | No scheduled backup, no backup-age alert | No CronJob, `PlaneBackupFailed` covers only failed Jobs | RPO unbounded | Run `make backup` deliberately |
