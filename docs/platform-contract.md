@@ -307,7 +307,7 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
 `test-load`, `scan-images`, `publish-evidence`, `drill-failed-deploy`, `drill-pod-restart`, `drill-clean-restore`,
 `drill-clean-restore-harness`, `wayline-upgrade-check`, `wayline-upstream-check`.
 `make help` lists them. Options are passed as `make <target> NAME=value`. `tests/drills/failed-migrator.sh` has no target and runs directly.
-`make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` deletes the cluster, runs `tests/drills/clean-install.sh` from a fresh clone with
+`make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` backs up, deletes the cluster, runs `tests/drills/clean-install.sh` from a fresh clone with
 new secrets, deletes that, and restores from backup into a new cluster. It keeps the local registry and the pull-through caches, and copies `.tools`.
 
 - `make down` stops the cluster and **keeps all data**. `make up` resumes it.
@@ -317,7 +317,7 @@ new secrets, deletes that, and restores from backup into a new cluster. It keeps
 - `make test` keeps going after a failure and labels each test PASS, FAIL or BLOCKED. `scripts/test.sh` exits 0,
   1 or 2 for those, as `tests/e2e/smoke.py` does. `make` itself exits 2 on any failure, and prints which.
 - `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`. That backup refuses an
-  environment an unfinished clean restore has not reached, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. It removes
+  environment an unfinished clean restore has not finished, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. It removes
   `.local/terraform/local` and keeps backups, secret zero and `.local/terraform/infisical`, because a clean restore needs them.
   `PURGE=yes` also removes the local services and their volumes.
 - `make restore` refuses to overwrite a non-empty environment without `CONFIRM=yes`. `make restore-clean` brings the whole platform
@@ -327,7 +327,7 @@ new secrets, deletes that, and restores from backup into a new cluster. It keeps
   Infisical is back, and a person has to sign in to prove it. Through `make`, any of these but 0 is make's own exit 2, and make prints the script's.
 - Scripts that write to the cluster, a registry or the disk check free host disk through `guard_disk`, because the Docker VM
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
-  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB, and it refuses a reason with no words. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
+  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB, and it refuses a reason of fewer than two words. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
   asks for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh` and `gitops-publish.sh`.
   `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it, so the first four
   still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
