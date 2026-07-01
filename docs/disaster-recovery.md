@@ -258,7 +258,7 @@ gpg --decrypt plane-platform-recovery-<stamp>.tar.gpg | tar -C .local -xf -
 chmod 700 .local/secret-zero .local/backups
 ```
 
-`origin` is private today, so that clone needs a GitHub login ([BR-3-20261105T060937Z.txt](evidence/runs/BR-3-20261105T060937Z.txt)).
+`origin` is private today, so that clone needs a GitHub login ([BR-3-20261105T054812Z.txt](evidence/runs/BR-3-20261105T054812Z.txt)).
 
 Check before continuing:
 
