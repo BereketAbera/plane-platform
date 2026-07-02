@@ -1456,6 +1456,17 @@ V1() {
   stop_detached INT
   dead_output_in_a_job "a tee and Ctrl-C in dev's Job"
 
+  # Only stderr is dead, with stdout in a file: warn's messages still have to land somewhere.
+  reset
+  take_backups
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached bash -c 'scripts/restore.sh dev latest CONFIRM=yes 2>&1 >"$H_STATE/stdout.txt" | tee "$H_STATE/tee.txt"'
+  wait_for_running_job
+  stop_detached INT
+  dead_output_in_a_job "stderr alone through a tee, Ctrl-C"
+  check "stderr alone through a tee, Ctrl-C: what it warned is beside the evidence" grep -F "its Job was stopped before it finished" "$(newest_evidence restore-dev).log"
+
   # So a person who saw the warning about a 0-user backup and pressed Ctrl-C, through a pipe, keeps the data.
   reset
   plane_counts 0

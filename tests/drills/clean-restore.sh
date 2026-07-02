@@ -60,7 +60,7 @@ finish_trap() {
   set +e
   trap '' HUP INT TERM PIPE
   { printf '\n'; } 2>/dev/null || exec >>"$DRILL_EVIDENCE" 2>&1
-  { printf '\n' >&2; } 2>/dev/null || exec 2>>"$DRILL_EVIDENCE"
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$DRILL_EVIDENCE"
   rm -rf "$WORK"
   if [[ "$status" -ne 0 ]]; then
     case "$DELETED" in

@@ -133,7 +133,7 @@ clean_on_exit() {
   set +e
   trap '' HUP INT TERM PIPE
   { printf '\n'; } 2>/dev/null || exec >>"$CLEAN_EVIDENCE.log" 2>&1
-  { printf '\n' >&2; } 2>/dev/null || exec 2>>"$CLEAN_EVIDENCE.log"
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$CLEAN_EVIDENCE.log"
   if [[ -n "$CLEAN_STEPS" && -f "$CLEAN_STEPS" ]]; then
     case "$rc" in
       0) result=PASS ;;
@@ -958,11 +958,12 @@ on_exit() {
   # That includes a client that can no longer print: a terminal that closed, or a tee that took the same Ctrl-C. Under
   # set -e and a default SIGPIPE its first print would end this, with the Job still running and auto-sync still paused.
   # So no error stops this, and what it has to say goes to a file beside the evidence. The probes are needed: a failed
-  # print stays in stdio's buffer, and the next $(...) would capture it.
+  # print stays in stdio's buffer, and the next $(...) would capture it. The second goes through fd 3, because inside
+  # 2>/dev/null a print to fd 2 goes to /dev/null, and could never see that stderr is dead.
   set +e
   trap '' HUP INT TERM PIPE
   { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
-  { printf '\n' >&2; } 2>/dev/null || exec 2>>"$evidence.log"
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$evidence.log"
   stop_this_runs_jobs
   if [[ -n "$JOBS_LEFT_RUNNING" ]]; then
     warn "COULD NOT REMOVE these restore Jobs in $NS:$JOBS_LEFT_RUNNING. One may still drop or replace a database, so nothing is being started: auto-sync stays paused, and what was stopped stays stopped. When the cluster answers, run these, in this order:"
