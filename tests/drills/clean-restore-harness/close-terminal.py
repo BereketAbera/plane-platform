@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """For tests/drills/clean-restore-harness.sh: runs a command on a real terminal, and closes that terminal once a pattern
-shows in a file, as closing a window does. The command gets SIGHUP, and from then on its prints fail. Exits as it did.
+shows in a file, as closing a window does. From then on its prints fail. On this OS the close signals only the session
+leader, and with a person's shell as that leader, the shell passes SIGHUP on to the foreground job. So this does that part.
+Exits as the command did.
 
   close-terminal.py <file> <regular expression> <limit in seconds> <command...>"""
 import os, pty, re, select, signal, sys, time
@@ -33,6 +35,10 @@ while time.time() < deadline:
     except FileNotFoundError:
         pass
 os.close(terminal)
+try:
+    os.killpg(pid, signal.SIGHUP)
+except ProcessLookupError:
+    pass
 
 
 def too_long(*_):

@@ -185,7 +185,7 @@ That file has no age limit, and exit 2 keeps it with the platform up and in use,
 | `BACKUP_DEV`, `BACKUP_PROD_SIM` or `ENVS` differ from what it started with | Names both | The same |
 | An environment it has not finished holds other users or objects than its backup | Both counts. The same users and no more objects, or no users and no more objects, is that backup part way through, and goes on | `ALLOW_RESUME_OVERWRITE=yes`, recorded as a FAIL with what was there. `make backup ENV=<env> ALLOW_BACKUP_DURING_RESTORE=yes` keeps it first. A target with the same counts and other rows is not caught |
 
-While that file is there, `make backup` refuses an environment the restore has not finished, which is empty or partly restored, and goes ahead with a warning for one it has. `ALLOW_BACKUP_DURING_RESTORE=yes` goes past it, and `make destroy` needs `SKIP_BACKUP=yes` then.
+While that file is there, `make backup` refuses an environment the restore has not finished, because nothing has looked at what it holds: a backup of an empty or partly restored one would become the newest, and it may also be real data. It goes ahead with a warning for an environment whose data has come back, or that the restore has finished. `ALLOW_BACKUP_DURING_RESTORE=yes` goes past it. `make destroy` passes that by itself, because what it deletes may be all there is, and retention keeps the newest backup with users. `SKIP_BACKUP=yes` on `make destroy` then deletes what is there with no backup.
 
 ### Refusals and their overrides
 
