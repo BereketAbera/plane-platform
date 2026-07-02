@@ -43,7 +43,7 @@ no-prepare-admin	scripts/backup.sh	S25	s/^  recovery_prepare_admin\n//m
 no-version-check	scripts/restore.sh	S35	s/if recovery_version_newer "\$backup_version" "\$live_version"; then/if false; then/
 repair-leaves-the-job	scripts/restore.sh	S31	s/^      kc -n "\$ns" delete job "\$job" --cascade=foreground --timeout=180s >\/dev\/null \|\| die [^\n]*\n//m
 restored-mode-applies-anything	scripts/infisical-bootstrap.sh	S1 S10	s/^  apply_restored$/  tf apply -lock-timeout=10m -input=false -auto-approve/m
-stale-done-lines-kept	scripts/restore.sh	S15	s/^    if ! cluster_exists && grep -q '\^done ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
+stale-done-lines-kept	scripts/restore.sh	S15	s/^    if ! cluster_exists && grep -qE '\^\(done\|data-back\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
 no-overwrite-guard-infisical	scripts/restore.sh	R8	s/^  refuse_if_not_empty "\$users" 0\n//m
 marker-not-compared-with-latest	scripts/restore.sh	R1	s/^    if \[\[ "\$requested" == latest \]\]; then clean_refuse_stale_marker; fi\n//m
 marker-plane-choice-stands	scripts/restore.sh	R1	s/^  if cluster_exists; then return 0; fi\n  for env in \$CLEAN_ENVS; do\n    id="\$\(clean_marker_value "\$env"\)"\n    fresh=/  return 0\n  for env in \$CLEAN_ENVS; do\n    id="\$(clean_marker_value "\$env")"\n    fresh=/m
@@ -95,6 +95,17 @@ in-place-ignores-a-dangling-row	scripts/restore.sh	R22	s/^  if \[\[ "\$missing" 
 manifest-does-not-record-it	scripts/backup.sh	R22	s/^ *"uploaded_objects": \$UPLOADED,\n//m
 comparison-failure-costs-the-backup	scripts/backup.sh	R22	s/^( *)echo "objects: could not compare[^\n]*\n/$1exit 1\n/m
 comparison-the-wrong-way-round	scripts/backup.sh	R22	s/LC_ALL=C comm -23 "\$D\/postgres\/uploaded-keys.txt"/LC_ALL=C comm -13 "\$D\/postgres\/uploaded-keys.txt"/
+stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$evidence\.log" 2>&1\n)/  trap '' HUP INT TERM\n$1/m
+stop-says-nothing-on-a-dead-client	scripts/restore.sh	V1	s/^  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$evidence\.log" 2>&1\n//m
+clean-stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$CLEAN_EVIDENCE\.log" 2>&1\n)/$1/m
+drill-stop-dies-on-a-dead-client	tests/drills/clean-restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n//m
+destroy-stopped-by-the-marker	scripts/destroy.sh	V2	s/ALLOW_BACKUP_DURING_RESTORE=yes "\$ROOT/"\$ROOT/
+bare-yes-accepted	scripts/restore.sh	V3	s/\(infisical\|dev\|prod-sim\)\( \+\|\$\)/(yes|infisical|dev|prod-sim)( +|\$)/
+override-reaches-every-environment	scripts/restore.sh	V3	s/^resume_overwrite_names_this\(\) \{[^\n]*\n/resume_overwrite_names_this() { [[ -n "\$\{ALLOW_RESUME_OVERWRITE:-\}" ]]; }\n/m
+override-reads-as-a-pass	scripts/restore.sh	V3	s/^      OVERWROTE=yes\n      if[^\n]*\n//m
+data-back-not-written	scripts/restore.sh	V4	s/^ +data_back_mark\n//mg
+data-back-not-read	scripts/restore.sh	V4	s/^  elif data_back_on_resume && ! resume_overwrite_names_this; then/  elif false; then/m
+data-back-beats-the-override	scripts/restore.sh	V4	s/^  elif data_back_on_resume && ! resume_overwrite_names_this; then/  elif data_back_on_resume; then/m
 TABLE
 }
 

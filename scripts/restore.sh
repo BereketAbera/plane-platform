@@ -1212,7 +1212,7 @@ refuse_if_not_empty() { # users objects
     elif resume_overwrite_names_this; then
       record overwrite-guard FAIL "a resume: $held, overwriting on ALLOW_RESUME_OVERWRITE=\"$ALLOW_RESUME_OVERWRITE\""
       OVERWROTE=yes
-      printf 'overwrote %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"
+      if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then printf 'overwrote %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"; fi
     else
       die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. Nothing was changed. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME, which reaches only this environment, and that run does not read PASS."
     fi
