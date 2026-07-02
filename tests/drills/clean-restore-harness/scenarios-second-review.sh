@@ -362,7 +362,7 @@ R4() {
   run scripts/restore.sh clean latest
   check "SIGKILL in the migrator's Job: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
   show_tail
-  check "SIGKILL in the migrator's Job: the resume removes it first" order 'kc delete job plane-restore-migrate ns=plane-dev' 'kc patch application plane-dev resume' 'kc apply Job plane-restore ns=plane-dev'
+  check "SIGKILL in the migrator's Job: the resume removes it first" order 'kc delete job plane-restore-migrate ns=plane-dev' 'kc patch application plane-dev resume' 'kc apply Job plane-restore-migrate ns=plane-dev'
   check "SIGKILL in the migrator's Job: nothing started over it" no_log '^ERROR'
 
   # A repair starts things again, so it must not read a kubectl error as no Job there.
@@ -1674,4 +1674,155 @@ V3() {
   check "naming Infisical: exit 4 (got $RC)" test "$RC" -eq 4
   show_tail 4
   check "naming Infisical: its evidence does not read PASS" jq -e '.result == "OVERWROTE"' "$(newest_evidence restore-infisical)"
+}
+
+V4() {
+  scenario "V4. A resume does not replace data that came back, and goes on from the migrator"
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  check "fixture: prod-sim's migrator fails (got $RC)" test "$RC" -ne 0
+  rm -f "$H/state/fail-jobs.json"
+  check "the marker says its data is back" grep -qx 'data-back prod-sim' "$H/.local/restore-clean.state"
+  check "and that it has not finished it" test -z "$(grep -x 'done prod-sim' "$H/.local/restore-clean.state" || true)"
+  check "dev's data came back too" grep -qx 'data-back dev' "$H/.local/restore-clean.state"
+
+  # The same counts, and the platform used since: new work items change neither, which is why this does not compare.
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "a plan says what a resume will do" out_has "its data came back on an earlier run, so a resume keeps what is there"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the same counts: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the same counts: the data is not replaced" no_log 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "the same counts: it stops the apps, runs the migrator, starts the apps" order 'kc scale deployment/plane-api-wl --replicas=0 ns=plane-prod-sim' 'kc apply Job plane-restore-migrate ns=plane-prod-sim' 'kc scale deployment/plane-api-wl --replicas=1 ns=plane-prod-sim'
+  check "the same counts: the proofs run" log_has 'kc exec proof-decrypt ns=plane-prod-sim'
+  check "the same counts: nothing started over anything" no_log '^ERROR'
+  check "the same counts: the evidence says so" jq -e 'any(.steps[]; .step == "data-back" and .status == "PASS") and all(.steps[]; .step != "postgres") and any(.steps[]; .step == "migrator" and .status == "PASS")' "$(newest_evidence restore-prod-sim)"
+  check "the same counts: nothing was overwritten, so a pass is a pass" jq -e '.result == "PASS"' "$(newest_evidence restore-clean)"
+  check "the same counts: finished" test ! -e "$H/.local/restore-clean.state"
+
+  # Written to since, in the counts as well. Without the line this is the refusal, and there is nothing to refuse now.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  cluster_holds plane-prod-sim 500 777
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "500 users since: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "500 users since: they stay" test "$(cluster_value '.users["plane-prod-sim"]')" = 500
+  check "500 users since: and the objects" test "$(cluster_value '.objects["plane-prod-sim"]')" = 777
+  check "500 users since: not replaced" no_log 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "500 users since: the evidence says what it held" jq -e 'any(.steps[]; .step == "data-back" and (.detail | test("500 users and 777 objects")))' "$(newest_evidence restore-prod-sim)"
+
+  # The override replaces it, and that is not a pass, even with counts that look like this backup.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  : > "$H/state/calls.log"
+  run env ALLOW_RESUME_OVERWRITE=prod-sim scripts/restore.sh clean latest
+  check "the override, and the same counts: exit 4 (got $RC)" test "$RC" -eq 4
+  show_tail 4
+  check "the override: replaced" log_has 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "the override: recorded as a FAIL" jq -e 'any(.steps[]; .step == "overwrite-guard" and .status == "FAIL") and .result == "OVERWROTE"' "$(newest_evidence restore-prod-sim)"
+  check "the override on prod-sim: dev stays as it was" no_log 'kc apply Job plane-restore ns=plane-dev'
+
+  # The line outlived what it was about, as with a new empty cluster. An empty target has nothing to lose.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  cluster_holds plane-prod-sim 0 0
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the line, and an empty target: restores it, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the line, and an empty target: the data Job runs" log_has 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "the line, and an empty target: no override was needed, so it reads PASS" jq -e '.result == "PASS"' "$(newest_evidence restore-clean)"
+
+  # The cluster is lost: nothing on that cluster counts any more, with no done line to say so.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: only a data-back line, for dev" test "$(grep -c '^done dev' "$H/.local/restore-clean.state")" = 0
+  lose_cluster
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the cluster lost: starts again, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the cluster lost: says so" out_has "so it starts again from the beginning"
+  check "the cluster lost: dev's data comes back" log_has 'kc apply Job plane-restore ns=plane-dev'
+
+  # A stop in the migrator's Job, with the same result.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached scripts/restore.sh clean latest
+  wait_for_log 'kc apply Job plane-restore-migrate ns=plane-prod-sim'
+  wait_for_running_job
+  stop_detached TERM
+  rm -f "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "SIGTERM in the migrator's Job: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "SIGTERM in the migrator's Job: the data is not replaced" no_log 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "SIGTERM in the migrator's Job: the migrator runs" log_has 'kc apply Job plane-restore-migrate ns=plane-prod-sim'
+
+  # A proof that fails on what was kept says what there is to do.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  printf '1' > "$H/state/smoke-rc-verify"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/smoke-rc-verify"
+  check "a proof fails on what it kept: not a pass (got $RC)" test "$RC" -ne 0
+  check "a proof fails on what it kept: says it kept it, and the way on" out_has "this resume kept what plane-prod-sim holds, and at least one proof failed on it"
+  check "a proof fails on what it kept: names the override" out_has "ALLOW_RESUME_OVERWRITE=prod-sim replaces it"
+
+  # Infisical: a failure after the swap keeps the database too, which now holds whatever it was given since.
+  reset
+  take_backups
+  lose_cluster
+  printf 'once:infisical exec infisical-redis-0\n' > "$H/state/kubectl-fail"
+  run scripts/restore.sh clean latest
+  check "fixture: Infisical's flush fails after the swap (got $RC)" test "$RC" -ne 0
+  check "Infisical: the marker says its data is back" grep -qx 'data-back infisical' "$H/.local/restore-clean.state"
+  cluster_holds infisical 7 0
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "Infisical: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "Infisical: its database is not replaced" no_log 'kc apply Job plane-restore ns=infisical'
+  check "Infisical: the server comes back" log_has 'kc scale deployment/infisical --replicas=1 ns=infisical'
+  check "Infisical: nothing started over anything" no_log '^ERROR'
+
+  # In place, under a marker, it is another backup or a person's choice, so it says nothing about the restore under way.
+  reset
+  take_backups
+  write_marker infisical
+  run scripts/restore.sh dev latest CONFIRM=yes
+  check "in place under a marker: goes on as asked (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "in place under a marker: writes no line" test -z "$(grep '^data-back ' "$H/.local/restore-clean.state" || true)"
 }
