@@ -1481,16 +1481,18 @@ V1() {
   check "and Ctrl-C after it removes the Job" test "$(jobs_running_now)" = 0
   check "and the data stays" test "$(cluster_value '.users["plane-dev"]')" = 500
 
+  # Stopped in the wait after the pause, and not in a kc call with >/dev/null on it. A trap that runs inside one still has
+  # that redirection, so the prints that would kill it go nowhere, and the old code passes this.
   reset
   take_backups
-  printf 'plane-dev scale deployment/plane-api-wl --replicas=0' > "$H/state/kubectl-hang"
+  printf 'argocd get application plane-dev -o json\nkc patch application plane-dev pause\n' > "$H/state/kubectl-hang"
   : > "$H/state/calls.log"
   run_on_terminal "$H/state/calls.log" 'kc hung' scripts/restore.sh dev latest CONFIRM=yes
   dead_output_before_a_job "a terminal that closes before any Job"
 
   reset
   take_backups
-  printf 'plane-dev scale deployment/plane-api-wl --replicas=0' > "$H/state/kubectl-hang"
+  printf 'argocd get application plane-dev -o json\nkc patch application plane-dev pause\n' > "$H/state/kubectl-hang"
   : > "$H/state/calls.log"
   start_detached bash -c 'scripts/restore.sh dev latest CONFIRM=yes 2>&1 | tee "$H_STATE/tee.txt"'
   wait_for_log 'kc hung'
@@ -1804,9 +1806,9 @@ V4() {
   printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
   run scripts/restore.sh clean latest
   rm -f "$H/state/fail-jobs.json"
-  printf '1' > "$H/state/smoke-rc-verify"
+  printf '1' > "$H/state/smoke-rc-proof"
   run scripts/restore.sh clean latest
-  rm -f "$H/state/smoke-rc-verify"
+  rm -f "$H/state/smoke-rc-proof"
   check "a proof fails on what it kept: not a pass (got $RC)" test "$RC" -ne 0
   check "a proof fails on what it kept: says it kept it, and the way on" out_has "this resume kept what plane-prod-sim holds, and at least one proof failed on it"
   check "a proof fails on what it kept: names the override" out_has "ALLOW_RESUME_OVERWRITE=prod-sim replaces it"
