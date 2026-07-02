@@ -936,10 +936,12 @@ stop_this_runs_jobs() {
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
       continue
     fi
-    # The last line only. If the client's output dies after on_exit's probe, a print that failed since then is still in
-    # stdio's buffer, and a $(...) captures it ahead of the answer. Read as anything but running, the Job would stay.
-    state="${state##*$'\n'}"
-    [[ "$state" == running ]] || continue
+    # Any whole line. If the client's output dies after on_exit's probe, a print that failed since then is still in
+    # stdio's buffer, and a $(...) captures it after the answer. Read as anything but running, the Job would stay.
+    case $'\n'"$state"$'\n' in
+      *$'\n'running$'\n'*) ;;
+      *) continue ;;
+    esac
     log "Removing restore Job $NS/$job, which would otherwise go on without this client (up to 180s)"
     if kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null; then
       JOB_STOPPED=yes
