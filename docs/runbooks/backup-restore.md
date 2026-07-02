@@ -68,7 +68,7 @@ df -h .
 | Connection refused or timeout to `plane-pgdb` | Postgres is down, or NetworkPolicy dropped the Job. The Job needs label `app.kubernetes.io/component: backup` | Check the pod and the policy |
 | `exceeded quota` | The Job would pass the namespace's pod or memory quota, typically during a rollout | Wait for the rollout to finish |
 | `*.partial` folder left behind | Backup died midway. A final name appears only after all checks. Partials older than a day are removed by the next run | Safe to ignore |
-| `a clean restore is under way` | That environment is empty or partly restored, and a backup of it could push out the one that holds the data | Finish the restore. `ALLOW_BACKUP_DURING_RESTORE=yes` backs it up anyway |
+| `a clean restore is under way` | The restore has not finished that environment, and nothing has looked at what it holds. A backup of an empty or partly restored one would become the newest, and it may also be real data. An environment whose data has come back is not refused | Finish the restore. `ALLOW_BACKUP_DURING_RESTORE=yes` backs it up anyway, and `make destroy` does that by itself |
 | `its recovery set is not whole` | Infisical's dump is good, but a file the set names, or the API, was missing. Retention did not run | An in-place restore can use this dump, and `make restore-clean` refuses it. Fix what the warnings name and back up again |
 
 ## Restore
