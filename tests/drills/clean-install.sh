@@ -81,6 +81,16 @@ step make-up make up || die "make up failed after $((SECONDS - pull_started))s. 
 say "make up took $((SECONDS - pull_started))s. From the start of the first make up: $((SECONDS - up_started))s"
 
 step make-status make status || true
+# What the first boot did: when each Application's first operation ran, how much the caches took in, and what it cost the host.
+step app-timeline bash -c '"$0" --kubeconfig "$1" --context "kind-$2" -n argocd get applications -o json | python3 -I -c "
+import json,sys
+rows=[]
+for a in json.load(sys.stdin)[\"items\"]:
+    s=a.get(\"status\",{}); h=s.get(\"history\") or [{}]; op=s.get(\"operationState\") or {}
+    rows.append((h[0].get(\"deployStartedAt\",\"-\"),h[0].get(\"deployedAt\",\"-\"),a[\"metadata\"][\"name\"],a[\"metadata\"].get(\"annotations\",{}).get(\"argocd.argoproj.io/sync-wave\",\"-\"),op.get(\"phase\",\"-\")))
+for r in sorted(rows): print(*r)
+"' "$ROOT/.tools/bin/kubectl" "$CLONE/.local/kubeconfig" "$CLUSTER_NAME" || true
+step disk-after-install bash -c 'df -h /; du -sk "$HOME/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw"; docker system df; for v in $(docker volume ls -q | grep plane-platform-local); do printf "%s " "$v"; docker system df -v 2>/dev/null | grep -F "$v" | head -1; done' || true
 step apps-after-up "$ROOT/.tools/bin/kubectl" --kubeconfig "$CLONE/.local/kubeconfig" --context "kind-$CLUSTER_NAME" -n argocd get applications || true
 
 # The first smoke on a clean database is the only one that can read what the images registered.
