@@ -14,9 +14,10 @@ Raw results of `scripts/ci/scan-images.sh`, captured on 2026-11-04 and 2026-11-0
 | `scan-images-20261105T025857Z` | The same command, on the images built from b2ba587. Its [README](scan-images-20261105T025857Z/README.md) has more | 11 GiB to start, 10 GiB floor | 5 of 5 targets | 0 | PASS, with the same findings |
 | `scan-images-20261105T052024Z` | The same command, on the images built from 84b63d9, which both environments run. Its [README](scan-images-20261105T052024Z/README.md) has more | 11 GiB to start, 10 GiB floor | 5 of 5 targets | 0 | PASS, with the same findings |
 
-The limits changed between the first two runs. The Docker VM was growing while agents deployed, and the coordinator set 13 and 12 GiB for
-the second run because each image's temp space comes back after that image. The script's defaults stayed at 15 GiB. The lowest
-free space sampled during the second run was about 13 GiB. It was sampled by hand every few minutes, not continuously.
+The limits changed between the first two runs. The Docker VM was growing while agents deployed, and the second run used 13 and 12 GiB,
+because each image's temp space comes back after that image. The script's defaults stayed at 15 GiB. That run started with 14 GiB free,
+as its `run.log` says, and scanned every target, so the script's check between images never read below 12 GiB. No other reading of free
+space from that run is kept.
 
 Across all targets in the complete run: 26 CRITICAL, 600 HIGH, 837 MEDIUM, 392 LOW, 122 UNKNOWN. `run.log` has the table by image.
 
@@ -58,7 +59,7 @@ The policy is unchanged. These remain, and each HIGH and MEDIUM has a fix upstre
 
 - **The CRITICAL in the lockfile row is proxy-addr 2.0.7, CVE-2026-90711, in upstream's `pnpm-lock.yaml`.** It does not ship in any bundle: its code is in none of the
   web, admin or space build output, and the space server loads it from `node_modules`, where it is now 2.0.8. `docs/evidence/branding/lockfile-critical.txt` has the
-  check. Upstream's unmodified `plane-live` image, which this platform runs, still has 2.0.7 and was reported in the complete run.
+  check, read at 1563cbf, and the frontends have not changed since, apart from their nginx settings. Upstream's unmodified `plane-live` image, which this platform runs, still has 2.0.7 and was reported in the complete run.
 - PyJWT 2.14.0 is the version the CRITICAL names. Two MEDIUM findings on it, CVE-2026-101918 and CVE-2026-102275, need 2.15.0.
 - The fixes replace or remove files in the container's filesystem. In `wayline/space` the old packages are still bytes in the `FROM` layers, which an image scan does not report. The backend is flattened since ec45e21, so no layer holds them.
 - On GitHub, the step `Scan what was just pushed` in run 41975430939 ran this policy on the 4 images it published from 9c8e098, with exit 0. Those are other digests than the ones deployed, and only the table in the log remains: [ci/README.md](../ci/README.md).
