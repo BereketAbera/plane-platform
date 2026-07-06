@@ -1,6 +1,6 @@
 # Plane application debugging
 
-The platform is up, and Plane itself misbehaves. Wayline is a customized Plane Community Edition v1.4.3 deployment, so most of these behaviours come from upstream code. The facts below were read from upstream source (research notes `plane-app.md`, `plane-helm.md` and critique section 1), and a link says where one was checked on the running environments. Where Pass 1 did not test one, it says so.
+The platform is up, and Plane itself misbehaves. Wayline is a customized Plane Community Edition v1.4.3 deployment, so most of these behaviours come from upstream code. The facts below were read from upstream source. The research notes that recorded those readings are not in this repository, so without a link treat one as a reading you can repeat against upstream, not as a result. A link says where one was checked on the running environments. Where Pass 1 did not test one, it says so.
 
 Preamble for raw commands:
 
@@ -65,7 +65,7 @@ Read these two API answers together. **`/api/instances/` is cached in Valkey for
 | `SECRET_KEY` error from `configure_instance` | Key is missing. It is mandatory for the API | Check `plane-app-keys` |
 | Hangs at boot on `.delay()`, or a connection error to RabbitMQ | `register_instance` calls `push_instance_metrics.delay()` unconditionally, so **the API needs RabbitMQ at boot** | Fix RabbitMQ first |
 | Permission errors on `plane/logs` or `static-assets` | Non-root needs writable paths. Every workload ran as its intended non-root UID on 2026-11-04 ([plane-dev-psa-1.txt](../evidence/runs/plane-dev-psa-1.txt), [plane-prod-sim-host-and-identity-1.txt](../evidence/runs/plane-prod-sim-host-and-identity-1.txt)). Read-only root has not been tried | Check the hardening patch |
-| Slow start under CPU limits | Boot runs migration checks, registration and collectstatic before gunicorn binds. Container start to Ready: 31s in dev ([plane-dev-startup-1.txt](../evidence/runs/plane-dev-startup-1.txt)), and 36s on prod-sim's first boot ([plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)). The budget is 300s | Wait |
+| Slow start under CPU limits | Boot runs migration checks, registration and collectstatic before gunicorn binds. Container start to Ready, on 2026-11-04 on upstream images: 31s in dev ([plane-dev-startup-1.txt](../evidence/runs/plane-dev-startup-1.txt)), and 36s on prod-sim's first boot ([plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)). The budget is 300s | Wait |
 
 Migrator:
 
@@ -81,7 +81,7 @@ kubectl -n "$NS" exec deploy/plane-api-wl -c plane-api -- python manage.py showm
 
 Activity feeds are empty, notifications do not go out, exports never finish. The POST itself still returns 201, because the API only queues.
 
-**Celery and RabbitMQ must be paired.** Contract section 9 allows RabbitMQ 3.13 or 4.2 only. On 4.3, Celery attaches **zero consumers** (upstream chart PR #304, with pidbox queue errors and a fix only in a private repo). The broker looks healthy and the worker looks alive. `CELERY_CONTROL_QUEUE_EXCLUSIVE` is absent from CE v1.4.3, so there is no setting to fall back on. This repo pins `3.13.7-management-alpine`, an end-of-life series accepted as a risk. Celery on 4.2.9 has not been tried.
+**Celery and RabbitMQ must be paired.** Contract section 9 allows RabbitMQ 3.13 or 4.2 only. On 4.3, Celery attaches **zero consumers** (upstream chart PR #304, with pidbox queue errors and a fix only in a private repo). The broker looks healthy and the worker looks alive. `CELERY_CONTROL_QUEUE_EXCLUSIVE` is absent from CE v1.4.3, so there is no setting to fall back on. This repo pins `3.13.7-management-alpine`, an end-of-life series. Pass 1 leaves that in force, with no owner decision recorded ([ADR 0016](../adr/0016-datastore-versions.md)). Celery on 4.2.9 has not been tried.
 
 ```bash
 kubectl -n "$NS" exec plane-rabbitmq-wl-0 -c plane-rabbitmq -- rabbitmqctl -q list_queues name messages consumers
@@ -165,7 +165,7 @@ kubectl -n "$NS" exec deploy/plane-api-wl -c plane-api -- python -c "import sock
 kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' | grep -n rewrite
 ```
 
-These work, with no bucket-creation Job. In both environments, smoke's steps `attachment-upload`, `attachment-download`, `object-in-silo`, `uploads-private`, `asset-duplicate`, `avatar` and `export` pass ([smoke-dev-20261105T001213Z.json](../evidence/runs/smoke-dev-20261105T001213Z.json), [smoke-prod-sim-20261104T235926Z.json](../evidence/runs/smoke-prod-sim-20261104T235926Z.json)). `copy_object` goes through the CoreDNS rewrite: the copied bytes match, and Traefik's PUT counter moved by one per run ([plane-dev-copy-object-path-1.txt](../evidence/runs/plane-dev-copy-object-path-1.txt)). An attachment through a browser's file dialog has not been tried.
+These work, with no bucket-creation Job. In both environments on the final images on 2026-11-05, smoke's steps `attachment-upload`, `attachment-download`, `object-in-silo`, `uploads-private`, `asset-duplicate`, `avatar` and `export` pass ([smoke-dev-20261105T053137Z-52811.json](../evidence/runs/smoke-dev-20261105T053137Z-52811.json), [smoke-prod-sim-20261105T053533Z-8468.json](../evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json)). `copy_object` goes through the CoreDNS rewrite: on 2026-11-04 on upstream images, the copied bytes match, and Traefik's PUT counter moved by one per run ([plane-dev-copy-object-path-1.txt](../evidence/runs/plane-dev-copy-object-path-1.txt)). An attachment through a browser's file dialog has not been tried.
 
 The object store is Silo, a MinIO-compatible fork. Official MinIO images no longer pull anonymously. Silo images are distroless, so there is no shell in the pod. Inspect it with `rclone` Jobs, as `scripts/backup.sh` does, not with `kubectl exec`.
 
@@ -178,7 +178,7 @@ curl -s "http://$HOST/live/health"; echo
 
 An HTTP 101 alone does not prove anything: the Hocuspocus handshake is unauthenticated, and auth happens in the first frame, by calling `GET /api/users/me/` with the cookie. So a socket can open while auth fails. `tests/e2e/smoke.py` sends the auth frame for this reason. Live also needs `REDIS_URL`, and may crash on a bad one.
 
-`LIVE_SERVER_SECRET_KEY` is not consumed by anything in v1.4.3, so it is not the cause.
+No route uses `LIVE_SERVER_SECRET_KEY` in v1.4.3, so a wrong value is not the cause. A missing one is: `apps/live/src/env.ts` requires the variable, and `live` exits at start without it. That is read from the source and has not been tried.
 
 The WebSocket works through Traefik's buffering middleware. Smoke held two connections idle for 330s, with pings answered, and then an update got through ([plane-dev-smoke-soak-1.txt](../evidence/runs/plane-dev-smoke-soak-1.txt)). In a real browser on the branded images on 2026-11-05, tab 2 showed what was typed in tab 1 within 2 seconds, and a reload brought it back from the server ([live-dev](../evidence/branding/live-dev/README.md)). Two tabs on the final images, with a load test running on dev, passed edits both ways within 2 seconds at the start, and one more 5m54s after the page opened ([RT-2b-RT-3-20261105T073208Z.txt](../evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)).
 

@@ -50,7 +50,7 @@ docker network inspect kind --format '{{range $id, $c := .Containers}}{{$c.Name}
    make up
    ```
 
-2. Keep your pool and change the policies: replace `172.16.0.0/12` in `gitops/platform/network-policies/` and in `scripts/cluster-up.sh`, then commit and publish. This changes a contract value (section 3), so update the contract too.
+2. Keep your pool and change the policies. Replace `172.16.0.0/12` in `gitops/platform/network-policies/`, in the `node-network-only` Middlewares in `gitops/bootstrap/argocd-route/ingressroute.yaml`, `infisical/manifests/ingressroute.yaml` and `monitoring/manifests/shared/ingress-routes.yaml`, and in `policy/plane.rego` with its test `policy/tests/plane_test.rego`, which requires exactly that value. Replace it too in `scripts/cluster-up.sh` and `tests/routes/internal-routes.sh`, each with the `case` pattern beside it. Then commit and publish. Miss the Middlewares and the host gets 403 from all five UIs. This changes a contract value (section 3), so update the contract too. This path has not been run.
 
 **Confirm.** `make up` prints `kind network <subnet> is inside 172.16.0.0/12`.
 
@@ -160,7 +160,7 @@ The count stands for a pod name, so `KindnetSkippedNetworkPolicies` can stick af
 kubectl -n kube-system delete pod -l app=kindnet
 ```
 
-The count stops applying 5 minutes after its pod has gone. On a scratch pod the resolved line reached the sink 321s after the delete ([kindnet-hold-1.txt](../evidence/runs/kindnet-hold-1.txt)). In the other direction, an in-place Alloy restart forgets the count, so the rule holds it for 3 days. `monitoring/README.md` has the detail.
+The count stops applying 5 minutes after its pod has gone. On a scratch pod the resolved line reached the sink 321s after the delete ([kindnet-hold-1.txt](../evidence/runs/kindnet-hold-1.txt)). In the other direction, an in-place Alloy restart forgets the count, so the rule holds it for 3 days ([kindnet-hold-2.txt](../evidence/runs/kindnet-hold-2.txt)). `monitoring/README.md` has the detail.
 
 **When testing by hand:**
 
@@ -170,7 +170,7 @@ The count stops applying 5 minutes after its pod has gone. On a scratch pod the 
 
 `make test-netpol` proves its sentinel in a throwaway namespace first. A deny row passes only on a timeout, and INCONCLUSIVE is never a pass: `scripts/test-netpol.sh` exits 0 when every row passed, 1 when a row or the sentinel failed, and 2 when nothing failed but a row was INCONCLUSIVE. There is one exception: a row that needs something outside the cluster still reads INCONCLUSIVE offline, and does not make the run non-zero, when neither of the node's two readings reached the target. If either reached it, the row counts, so a flaky outside target can give exit 2. So an exit 0 can carry such rows. On an exit 0, read how many the summary says "need something outside the cluster".
 
-`make test-netpol` passes its full allow and deny matrix. On 2026-11-05 at 04:19Z it exited 0 with 418 PASS, 0 FAIL and 0 INCONCLUSIVE, none needing anything outside the cluster, and no deny row passing without a reference: `plane-dev` 153, `plane-prod-sim` 151, `monitoring` 50, `traefik` 28, `argocd` 19, `infisical` 14 and `kube-system` 3 ([harness-make-test-netpol-4.txt](../evidence/runs/harness-make-test-netpol-4.txt), [netpol-20261105T041921Z.tsv](../evidence/runs/netpol-20261105T041921Z.tsv)). A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. That run came before the final images were promoted, and the final `make test` comes after the rebuild now in progress, with its result not yet recorded. Earlier runs, published and by source namespace, are [`plane-dev`](../evidence/runs/netpol-20261104T232752Z.tsv), [`plane-prod-sim`](../evidence/runs/netpol-20261104T233304Z.tsv), [`monitoring`](../evidence/runs/netpol-20261104T221150Z.tsv) and [`infisical`](../evidence/runs/netpol-20261104T215857Z.tsv).
+`make test-netpol` passes its full allow and deny matrix. On 2026-11-05 at 04:19Z it exited 0 with 418 PASS, 0 FAIL and 0 INCONCLUSIVE, none needing anything outside the cluster, and no deny row passing without a reference: `plane-dev` 153, `plane-prod-sim` 151, `monitoring` 50, `traefik` 28, `argocd` 19, `infisical` 14 and `kube-system` 3 ([harness-make-test-netpol-4.txt](../evidence/runs/harness-make-test-netpol-4.txt), [netpol-20261105T041921Z.tsv](../evidence/runs/netpol-20261105T041921Z.tsv)). A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. That run came before the final images were promoted, and the final `make test` comes after the rebuild, with its result not yet recorded. Earlier runs, published and by source namespace, are [`plane-dev`](../evidence/runs/netpol-20261104T232752Z.tsv), [`plane-prod-sim`](../evidence/runs/netpol-20261104T233304Z.tsv), [`monitoring`](../evidence/runs/netpol-20261104T221150Z.tsv) and [`infisical`](../evidence/runs/netpol-20261104T215857Z.tsv).
 
 **Fallback, if enforcement really fails.** The research names Calico, at the cost of more memory. That would be a change to the kind config and to the contract.
 
@@ -178,7 +178,7 @@ The count stops applying 5 minutes after its pod has gone. On a scratch pod the 
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Pods sit in `ContainerCreating` for minutes, one after another | The kubelet pulls one image at a time. Four new images took 175s, 216s, 52s and 5s in turn on the first boot, 448s for the last ([plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)) | Wait. The rollout deadline is 600s, and a retry recovers a miss, about a minute after it ([DEP-1-20261105T062323Z-timeline.txt](../evidence/runs/DEP-1-20261105T062323Z-timeline.txt)) |
+| Pods sit in `ContainerCreating` for minutes, one after another | The kubelet pulls one image at a time. Four new images took 175s, 216s, 52s and 5s in turn on the first boot, 448s for the last ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt), [plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)) | Wait. The rollout deadline is 600s, and a retry recovers a miss, about a minute after it ([DEP-1-20261105T062323Z-timeline.txt](../evidence/runs/DEP-1-20261105T062323Z-timeline.txt)) |
 | `ErrImagePull` with 429 | Docker Hub quota. The window is not settled: docs say 100 per 6 hours, while the header showed a 3600-second window | The mirror chain falls back to Hub. Wait, or read `ratelimit-remaining` |
 | Blob 404 from `mirror.gcr.io` | The mirror has the manifest but not the blob. It was seen for `plane-live` and the operator during research | containerd should fall through to the `server` in `hosts.toml`. Check `infrastructure/kind/containerd-certs.d/docker.io/hosts.toml` |
 | `localhost:5001/wayline/...` not found | Branded digest was never pushed. Dev's overlay names these since `4f622e3`, and prod-sim's since `0af8956` | `make images`, or `scripts/ci/copy-to-local-registry.sh`. Promotion checks this unless `SKIP_REGISTRY_CHECK=yes`, and `make up` checks it before it publishes. A rebuild can give other digests, and `make up` then prints what to do |
@@ -218,7 +218,7 @@ kubectl get events -A --field-selector reason=FailedCreate --sort-by=.lastTimest
 | Symptom | Cause | Fix |
 |---|---|---|
 | Bootstrap stops on an `InfisicalAuth` mismatch | Rendered overlay disagrees with `plane-infisical-auth` or the identity Secret | Fix the overlay. The error names the field |
-| Infisical killed for memory at first boot | Not seen: 602 migrations in 11.5s, a peak of 807 MiB of 1 GiB, and 0 OOM kills ([infisical-firstboot-1.txt](../evidence/runs/infisical-firstboot-1.txt)) | See [Memory pressure](memory-pressure.md) |
+| Infisical killed for memory at first boot | Not seen: 602 migrations in about 11s, a peak of 807 MiB of 1 GiB, and 0 OOM kills ([infisical-firstboot-1.txt](../evidence/runs/infisical-firstboot-1.txt)) | See [Memory pressure](memory-pressure.md) |
 | Pods wait in `CreateContainerConfigError` | Secret not synced yet | `kubectl -n plane-dev get infisicalstaticsecrets`, operator logs |
 | Operator crash-looping in `plane-prod-sim` only | CRDs arrive from the dev release. Predicted from the chart, and not seen on the first boot | Recovers once they exist |
 | 403 on secrets | Identity or project mismatch. Per-project isolation is the free-tier boundary | Check `.local/secret-zero/infisical-machine.json` values against the overlay, without printing secrets |
