@@ -1,12 +1,12 @@
 # Argo CD
 
-Argo CD deploys everything in the cluster except namespaces, quotas and itself. Wayline, the application it delivers, is
+Argo CD deploys the workloads. Terraform owns namespaces, quotas and the rest that [the bootstrap chain](#the-bootstrap-chain) lists, and Argo CD itself. Wayline, the application Argo CD delivers, is
 a customized Plane Community Edition v1.4.3 deployment, not an original product.
 
 **Status of this page.** It describes the configuration in the code, and what ran on the one local kind cluster on
 2026-11-04 and 2026-11-05 with Argo CD v3.5.7. A measured statement links its file under
-[`docs/evidence/runs/`](evidence/README.md). Three things were not tested in Pass 1: a cluster-scoped refusal, a restore during a failing sync and a rollback of prod-sim.
-A clean install is in progress as this is written, through `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, and its result is not yet recorded here. Several results come from scratch
+[`docs/evidence/runs/`](evidence/README.md). What Pass 1 did not test is stated where it comes up, among them a cluster-scoped refusal, a restore during a failing sync and a rollback of prod-sim.
+The clean install inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` finished at about 08:10Z on 2026-11-05. Its evidence is not yet published, and what this page says of it is marked that way. Several results come from scratch
 Applications on the real controller. They show how Argo CD behaves, not how a first boot from nothing would go.
 
 ## Access
@@ -44,6 +44,7 @@ flowchart TD
 | `plane-git` | Compose | Read-only `git daemon` on the `kind` network. GitHub runs CI, but Argo CD does not read it in Pass 1 |
 | Argo CD release | Terraform | Values in `helm/values/argocd.yaml`. **A change there needs `terraform apply`, not a publish** |
 | AppProjects, root Application | Terraform, through local chart `gitops/bootstrap/chart` | Not synced from Git, so a commit cannot edit what a project allows. A commit can still set `project: platform` on an Application. `policy/gitops.rego` refuses that for both Plane Applications, for anything that syncs `gitops/environments`, and for project `default`, in `make ci` and in CI. GitHub Free cannot make a failing check block a merge. See [`.github/workflows/README.md`](../.github/workflows/README.md) |
+| Namespaces, quotas, LimitRanges, the CoreDNS rewrite | Terraform, through `infrastructure/terraform/modules/foundation` | No project may deploy a `Namespace`, `ResourceQuota` or `LimitRange`. See [terraform.md](terraform.md#what-terraform-owns) |
 | Everything else | Argo CD | |
 
 The root Application has two sources, so its status carries `status.sync.revisions` and `status.sync.revision` is empty.
@@ -139,8 +140,8 @@ What the gate costs and misses:
   the later waves through, and the root does not go back. This happened on the first real run, with Grafana's sidecars being
   killed for memory ([bootstrap-timeline-1.txt](evidence/runs/bootstrap-timeline-1.txt),
   [monitoring-grafana-before-1.txt](evidence/runs/monitoring-grafana-before-1.txt)).
-- **A Prometheus with no ready pod reads Progressing, not Degraded.** Before the override, each Prometheus start failed the root
-  sync and sent it into backoff. After it, the root waits with no retry
+- **A Prometheus with no ready pod reads Progressing, not Degraded.** Before the override, a root sync open during a Prometheus start
+  failed and went into backoff: asked for 2s after the pod was deleted, it failed at +12s and next ran at +72s. After it, the root waits with no retry
   ([h43-repro-before-1.txt](evidence/runs/h43-repro-before-1.txt), [h43-repro-after-1.txt](evidence/runs/h43-repro-after-1.txt)). So a fix
   to `gitops/applications/kube-prometheus-stack.yaml` needs root's operation ended by hand, as under
   [Retry behaviour](#retry-behaviour).
@@ -181,7 +182,7 @@ The waves are in the rendered manifests, from `helm/plane/components/hardening`,
 The order held on `plane-dev`'s first boot on 2026-11-04, at commit `e95a6f8`: data pods at 21:29:03Z, 164 migrations from 21:33:49Z
 to 21:35:12Z, Deployments at 21:35:15Z, operation closed at 21:46:40Z
 ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)). That was a first boot on a running platform, not `make up`
-from nothing, which is row INST-1. The clean install that would answer it is in progress as this is written, and its result is not yet recorded.
+from nothing, which is row INST-1. The clean install of 2026-11-05 finished at about 08:10Z: one `make up` on a fresh clone took 955s, and all 14 Applications read `Synced` and `Healthy`. It kept the local registry and the pull-through caches, so it does not meet that row's definition of clean, and its evidence is not yet published. That row stays NOT RUN.
 
 While `InfisicalAuth` is unready the sync fails and retries. It does not wait. The identity Secret was published at 21:25:44Z,
 and the next attempt, #5 after backoff, moved on at 21:28:54Z
@@ -191,7 +192,7 @@ and the next attempt, #5 after backoff, moved on at 21:28:54Z
 queued ahead of it. On `plane-dev`'s first boot, through a cold mirror, four new images took 175s, 216s, 52s and 5s in turn, and
 the last pod was Ready 448s in ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt),
 [plane-prod-sim-firstboot-1.txt](evidence/runs/plane-prod-sim-firstboot-1.txt)). The deadline was 360s then, so web, admin and space missed
-it and the sync held until a retry. It is 600s now. That value has not been through a cold first boot.
+it and the sync held until a retry. That event was read live and is not in a saved file. The nearest saved trace is `ArgoAppDegraded` pending on `plane-dev` and `root` from 21:41:45Z to 21:43:00Z ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). It is 600s now, since `4b33f75`. That value has not been through a cold first boot.
 
 ### Sync hook: the migrator
 
@@ -247,8 +248,8 @@ kubectl -n argocd annotate application plane-dev argocd.argoproj.io/refresh=norm
 ```
 
 The controller removes the annotation once it has compared, which took 18s after a hard refresh in one test
-([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)). In each real promotion, rollback and drill revert of 2026-11-05 the controller logged a refresh asked for by annotation,
-and the sync began within a second of it ([argocd-refresh-reasons-1.txt](evidence/runs/argocd-refresh-reasons-1.txt)). `make promote` and `make rollback` do not ask for one themselves, and the log does not say who did. So after either, expect to wait for a look, or ask. The times below include a refresh for this reason.
+([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)). In each promotion and the rollback of 2026-11-05 the controller logged a refresh asked for by annotation,
+and the sync began within a second of it ([argocd-refresh-reasons-1.txt](evidence/runs/argocd-refresh-reasons-1.txt)). The drills ask for it themselves, through `refresh_app` in `tests/drills/lib.sh`. `make promote` and `make rollback` do not, and for those the log does not say who did. So after either, expect to wait for a look, or ask. The times below include a refresh for this reason. A refresh does not hurry a revert in a retry loop: the controller read each drill's revert at once, and the sync waited for the next attempt, 54s and 226s after the publish ([DEP-1-20261105T062323Z-timeline.txt](evidence/runs/DEP-1-20261105T062323Z-timeline.txt), [DEP-3-20261105T064517Z-timeline.txt](evidence/runs/DEP-3-20261105T064517Z-timeline.txt)).
 
 Two things that look like drift and should not fight:
 
@@ -365,8 +366,7 @@ above the longest startup budget (api, worker and beat, 300 seconds), because im
 the same deadline, and first-boot pulls measured 448s. The drill's rollout read `ProgressDeadlineExceeded` about 10 minutes after it started. Stage 4 of the drill can wait the deadline plus 120 seconds, so up to 12 minutes.
 
 web, admin, space, live and api keep serving for a 5-second `preStop` sleep after SIGTERM, so that Traefik stops sending to a pod
-before it goes. How long Traefik takes to react has not been measured. The "about 2 seconds" in contract section 6 and in the comment in
-`helm/plane/components/hardening/kustomization.yaml` has no run behind it.
+before it goes. How long Traefik takes to react has not been measured.
 
 What ran, on 2026-11-04 in plane-dev on upstream images: each of the 5 routes sampled at 10 Hz through Traefik while all seven
 Deployments rolled, with a failure meaning no answer in 2 seconds or a 5xx. One rollout before the sleep failed 10 of 2,757 samples
@@ -508,7 +508,7 @@ registry, so steps 2 and 3 have not run, and what runs in the cluster came from 
 
 1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It needs the repository setting that lets workflows open pull requests, on since 2026-11-05 by the owner's decision.
 2. Merge it, and `git pull`.
-3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not.
+3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not. `<owner>` must be in lower case.
 
 ```bash
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
@@ -517,7 +517,7 @@ make gitops-publish
 
 A merge changes nothing running. GitHub Actions cannot reach the cluster. It reaches the cluster only at `make gitops-publish`.
 
-That copy has never finished. From this Mac it stopped at the first image with a 401, because the packages are private and nothing here can read them, and the local registry stayed at 404 for those digests
+That copy has never finished. From this Mac, with the owner as GitHub spells it, `BereketAbera`, it stopped at the first image with `invalid reference format`. In lower case it stopped there with a 401, because the packages are private and nothing here can read them. The local registry stayed at 404 for those digests
 ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt), [ci-4-20261105T055130Z-ghcr-local-token.txt](evidence/ci/ci-4-20261105T055130Z-ghcr-local-token.txt)). `scripts/gitops-publish.sh` has no registry check, so a publish without the copy would point `plane-dev` at digests nothing can pull. That last part is read from the code, and no run has done it.
 
 ### Prod-sim
@@ -577,8 +577,8 @@ make test-e2e ENV=prod-sim
 ```
 
 Both halves have run. On 2026-11-05, `make promote ENV=dev` published `1fc9fbe` and `make promote ENV=prod-sim` published `9c8e098`, carrying the final images from `84b63d9` through the local registry
-([promote-dev-final-2.txt](evidence/runs/promote-dev-final-2.txt), [promote-prod-sim-final-2.txt](evidence/runs/promote-prod-sim-final-2.txt)). After them, `make test-e2e` read 45 PASS and 1 SKIP in dev, and 44 PASS and 1 SKIP in prod-sim, with the running digests equal to the overlay's. The skip needs a clean
-database, so it waits for the clean install ([smoke-dev-20261105T053137Z-52811.json](evidence/runs/smoke-dev-20261105T053137Z-52811.json), [smoke-prod-sim-20261105T053533Z-8468.json](evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json)).
+([promote-dev-final-2.txt](evidence/runs/promote-dev-final-2.txt), [promote-prod-sim-final-2.txt](evidence/runs/promote-prod-sim-final-2.txt)). After them, `make test-e2e` read 45 PASS and 1 SKIP in dev, and 44 PASS and 1 SKIP in prod-sim, with the running digests equal to the overlay's ([smoke-dev-20261105T053137Z-52811.json](evidence/runs/smoke-dev-20261105T053137Z-52811.json), [smoke-prod-sim-20261105T053533Z-8468.json](evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json)). The skip needs a clean
+database. The clean install's first smoke ran it, and read 46 PASS in dev and 45 PASS in prod-sim, in evidence not yet published.
 
 **The dump comes first.** Prod-sim's promotion checked each digest against dev's record, asked plane-dev, and took backup `20261105T053351Z` with its row counts and object check before it committed `9c8e098` at 05:34:06Z. The publish then asked plane-dev
 again, and took no second dump ([promote-prod-sim-final-2.txt](evidence/runs/promote-prod-sim-final-2.txt)). That backup has not been restored, so this shows it exists and came first. A later prod-sim backup was restored in place with result PASS ([restore-prod-sim-20261105T073438Z.json](evidence/runs/restore-prod-sim-20261105T073438Z.json)), on the same schema, so going back past a migration was not tested in Pass 1.
