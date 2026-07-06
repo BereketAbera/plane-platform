@@ -2,7 +2,7 @@
 
 The security posture of a local, single-node, single-operator platform that runs Wayline, a customized Plane Community Edition v1.4.3 deployment, on kind. This is a learning and portfolio platform, local and production-inspired, and nothing here claims it is ready for production.
 
-**Status on 2026-11-05.** This file describes configuration, and links the runs that bear on it: separation attempts between the environments ([environments.md](environments.md#what-real-attempts-showed)), the NetworkPolicy matrix, Infisical isolation, route tests, image scans, and CI ([ci evidence](evidence/ci/README.md), [security evidence](evidence/security/README.md)). Both environments ran the images built from `84b63d9`. Secret rotation has real runs in both environments ([below](#secret-rotation-runs)). Every cluster reading here comes from the cluster that `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` has since deleted. That rebuild is in progress, with no result recorded, and the final `make test` comes after it.
+**Status on 2026-11-05.** This file describes configuration, and links the runs that bear on it: separation attempts between the environments ([environments.md](environments.md#what-real-attempts-showed)), the NetworkPolicy matrix, Infisical isolation, route tests, image scans, and CI ([ci evidence](evidence/ci/README.md), [security evidence](evidence/security/README.md)). Both environments ran the images built from `84b63d9`. Secret rotation has real runs in both environments ([below](#secret-rotation-runs)). Every cluster reading here comes from the cluster that `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` has since deleted. That rebuild has finished, its evidence is not published yet, so it has no result here, and the final `make test` comes after it.
 
 ## Read this first
 
@@ -30,8 +30,8 @@ The security posture of a local, single-node, single-operator platform that runs
 |---|---|---|
 | A compromised workload in one environment trying to reach the other, or Infisical | Yes | NetworkPolicy, per-environment identity, no API tokens in pods, non-root, dropped capabilities |
 | A mistake by the operator | Yes | Guards on `destroy`, `restore`, `rotate` and prod-sim promotion. A restore with no `CONFIRM` [refused in prod-sim](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt) and changed nothing. Git as source of truth |
-| A secret committed to Git | Yes | gitleaks in `make ci` and CI, zero `kind: Secret` rule |
-| A malicious or hijacked CI dependency | Partly | SHA-pinned actions, no secrets in CI jobs, read-only tokens, no cluster access from CI |
+| A secret committed to Git | Yes | gitleaks in `make ci` and CI, zero `kind: Secret` rule. gitleaks knows only its rules: a plane-dev session value in commit `7d5ff62` fit none of them, and got past it and the evidence scrub ([what happened](evidence/README.md#the-scrub)). That commit is local, and its history has to be rewritten before the next push (H67 in `.local/hardening-backlog.md`) |
+| A malicious or hijacked CI dependency | Partly | SHA-pinned actions, and no cluster access from any workflow. `ci.yml` holds no secrets and read-only tokens. `images.yml`'s `Build and push` job runs the whole image build with a `packages: write` token, so a hijacked build dependency there could publish to GHCR. Its prune and digest bump jobs, and `promote-prod-sim.yml`, hold write tokens too ([CI hardening](#ci-hardening)) |
 | Another device on the LAN | Yes | Host ports bind to `127.0.0.1` only. On 2026-11-05 `lsof` read 80, 443 and 5001 listening on `127.0.0.1` and on nothing else, and all three refused a connection on the LAN address ([readings](evidence/security/README.md#host-listeners)). One reading, with `lsof` under the owner's account, taken from the Mac itself and not from another device |
 | A malicious process running as the same macOS user | **No** | It can read `.local/` and own everything. Nothing here defends against it |
 | Physical theft of the laptop | **No** | Depends on full-disk encryption, which this repository does not check |
@@ -81,7 +81,7 @@ Terraform creates every namespace and sets these labels.
 
 `baseline` is what is enforced. `warn` shows at admission. `audit` writes to the API server's audit log, and no audit backend is configured on this kind cluster, so that label leaves nothing to read. The Plane workloads are configured to meet `restricted`: `helm/plane/components/hardening` sets `runAsNonRoot`, a per-image UID, `seccompProfile: RuntimeDefault`, `allowPrivilegeEscalation: false` and `capabilities: {drop: [ALL]}` on every Plane Deployment, StatefulSet and Job. Backup and restore Jobs follow the same shape and mount a PVC rather than a `hostPath`, so they pass admission.
 
-Read-only root filesystem is not set on Plane application containers. `.trivyignore` accepts `KSV-0014` until 2027-02-01 for that reason. The Infisical data pods, the backup Jobs and the operators do set it.
+Read-only root filesystem is not set on Plane application containers. `.trivyignore` accepts `KSV-0014` until 2027-02-01 for that reason. The Infisical data pods and the backup Jobs do set it, in `infisical/manifests/` and `scripts/backup.sh`. What the operators' chart sets has no file here ([what each reading rests on](known-limitations.md#security)).
 
 Measured on 2026-11-04, on upstream images in both environments: each Plane container with a shell reported its configured UID, Silo was read from its pod spec, and a server-side dry run of `enforce=restricted` gave no warnings ([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). The finished migrator was read from its pod spec too, in dev that day and in prod-sim on 2026-11-05, still on upstream's image ([cluster-readings-1.txt](evidence/runs/cluster-readings-1.txt)). That meets the condition in contract section 2 for tightening `plane-prod-sim`, and the label has not moved. The branded images, which both environments now run, have not had the dry run repeated.
 
@@ -111,19 +111,19 @@ Valkey has no password in this chart (chart issue 113). The `valkey` NetworkPoli
 
 `tests/network-policy-matrix.yaml` declares the expected reachability: 126 allow rows and 292 deny rows since `01ab74c`. `make test-netpol` runs it. A deny passes only on a timeout, because connection refused means the packet arrived. A row that cannot prove anything, such as a DNS failure, reads INCONCLUSIVE, which is never a pass. Since `01ab74c` each probe also has references at the same moment: the node dials each target, and the pod resolves a cluster name, so a target that is down no longer reads as a block.
 
-Results, latest run for each source namespace, by `FROM_NS`. They predate `01ab74c`, so these runs had 383 rows and no node reference on a row.
+Results, latest run for each source namespace, by `FROM_NS`. The runs from `plane-dev` and `plane-prod-sim`, at 2026-11-05T00:57Z and 00:59Z, with dev on the first branded images and prod-sim on upstream's, came minutes before `01ab74c` was committed and hold the same rows as the matrix today. 0 deny rows passed with no reference ([dev log](evidence/runs/harness-netpol-dev-1.txt), [prod-sim log](evidence/runs/harness-netpol-prod-sim-1.txt)). The others come from the 383-row matrix before it, and have no node reference on a row. On that matrix the last runs from `plane-dev` and `plane-prod-sim` read [135 PASS](evidence/runs/netpol-20261104T232752Z.tsv) and [134 PASS](evidence/runs/netpol-20261104T233304Z.tsv), on upstream images.
 
-| Source namespace | Rows then | Result | Evidence |
+| Source namespace | Rows | Result | Evidence |
 |---|---:|---|---|
-| `plane-dev` | 135 | 135 PASS | [netpol-20261104T232752Z.tsv](evidence/runs/netpol-20261104T232752Z.tsv) |
-| `plane-prod-sim` | 134 | 134 PASS | [netpol-20261104T233304Z.tsv](evidence/runs/netpol-20261104T233304Z.tsv) |
+| `plane-dev` | 153 | 153 PASS | [netpol-20261105T005726Z.tsv](evidence/runs/netpol-20261105T005726Z.tsv) |
+| `plane-prod-sim` | 151 | 151 PASS | [netpol-20261105T005954Z.tsv](evidence/runs/netpol-20261105T005954Z.tsv) |
 | `monitoring` | 50 | 50 PASS | [netpol-20261104T221150Z.tsv](evidence/runs/netpol-20261104T221150Z.tsv) |
 | `infisical` | 14 | 14 PASS | [netpol-20261104T215857Z.tsv](evidence/runs/netpol-20261104T215857Z.tsv) |
 | `argocd` | 19 | 18 PASS, 1 INCONCLUSIVE, before Plane's Services existed | [netpol-20261104T204822Z.tsv](evidence/runs/netpol-20261104T204822Z.tsv) |
 | `traefik` | 28 | 10 PASS, 18 INCONCLUSIVE, before Plane's Services existed | [netpol-20261104T210010Z.tsv](evidence/runs/netpol-20261104T210010Z.tsv) |
 | `kube-system` | 3 | NOT RUN | none |
 
-The whole matrix in one run, all seven namespaces, read 418 PASS, 0 FAIL and 0 INCONCLUSIVE at 2026-11-05T01:08Z, 02:38Z and 04:19Z, with all 126 allow rows connecting and all 292 deny rows ending in a timeout ([01:08Z](evidence/runs/netpol-20261105T010838Z.tsv), [02:38Z](evidence/runs/netpol-20261105T023831Z.tsv) with [its log](evidence/runs/harness-make-test-netpol-3.txt), [04:19Z](evidence/runs/netpol-20261105T041921Z.tsv) with [its log](evidence/runs/harness-make-test-netpol-4.txt)). The final images were promoted after those runs, and neither the policies nor the matrix have changed since. The final `make test` comes after the rebuild, with no result yet. A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
+The whole matrix in one run, all seven namespaces, read 418 PASS, 0 FAIL and 0 INCONCLUSIVE at 2026-11-05T01:08Z, 02:38Z and 04:19Z, with all 126 allow rows connecting and all 292 deny rows ending in a timeout ([01:08Z](evidence/runs/netpol-20261105T010838Z.tsv), [02:38Z](evidence/runs/netpol-20261105T023831Z.tsv) with [its log](evidence/runs/harness-make-test-netpol-3.txt), [04:19Z](evidence/runs/netpol-20261105T041921Z.tsv) with [its log](evidence/runs/harness-make-test-netpol-4.txt)). A fourth whole run, at 02:25Z, read 412 PASS, 0 FAIL and 6 INCONCLUSIVE, exit 2: the 6 are deny rows to the Infisical Service, which had no ready endpoint during another agent's `make restore ENV=infisical`, and that is not a pass ([tsv](evidence/runs/netpol-20261105T022535Z.tsv), [its log](evidence/runs/harness-make-test-netpol-2.txt)). The final images were promoted after those runs, and neither the policies nor the matrix have changed since. The final `make test` comes after the rebuild, with no result yet. A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
 
 ### kindnet limits
 
@@ -167,7 +167,7 @@ What this leaves open:
 - No disk quota exists. kind's `standard` class ignores PVC capacity.
 - The pod quota budgets the exporters since `bc8bb91`. All seven Plane Deployments surging at once reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](evidence/runs/plane-dev-rollout-quota-1.txt)). Every Deployment surging, exporters included, with the migrator, a backup and an ad-hoc pod would be 26, over the quota, by static count ([quota-budget-1.txt](evidence/runs/quota-budget-1.txt)). A backup Job while exporters and rolling updates run was not tested in Pass 1.
 
-Highest VM use so far, with both environments running: 10.49 GiB of the 13.63 GiB, at 23:23:42 on 2026-11-04, in a low-load separation run while replaced Argo CD pods overlapped. Under both smokes and the matrices the top was 9.87 GiB, and under the restart drills 9.90 GiB. Swap reached 0.60 GiB, and about 1 GiB of each figure is the owner's unrelated containers. A quiet reading on 2026-11-05 was `kubectl top` node 8,331 MiB and `docker stats` node 8.155 GiB ([memory](evidence/runs/plane-prod-sim-memory-1.txt), [snapshot](evidence/runs/plane-prod-sim-snapshot-final-1.txt)). Prometheus, Loki and Infisical's Postgres touched their cgroup limits, with 0 OOM kills ([limits-breakdown-1.txt](evidence/runs/limits-breakdown-1.txt)). Those readings predate the load test. In its window, at 5, 10 and 20 virtual users on dev, the VM reached 10.33 GiB by Prometheus, with prod-sim being rotated and restored in the same minutes ([results](evidence/runs/load-20261105T073241Z/results.json)). That says nothing about a higher load, or a quieter machine.
+Highest VM use so far, with both environments running: 10.93 GiB of the 13.63 GiB, at 2026-11-05T01:50:00Z, in 60-second Prometheus readings of the whole VM from 00:35Z ([timeline](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)). What ran in that minute was not read. The 5-second samples from the node, which ended at about 00:06Z, topped out at 10.49 GiB at 23:23:42 on 2026-11-04, in a low-load separation run while replaced Argo CD pods overlapped. In those samples the top under both smokes and the matrices was 9.87 GiB, and under the restart drills 9.90 GiB. Swap reached 0.60 GiB, and about 1 GiB of each of those figures is the owner's unrelated containers. A quiet reading on 2026-11-05 was `kubectl top` node 8,331 MiB and `docker stats` node 8.155 GiB ([memory](evidence/runs/plane-prod-sim-memory-1.txt), [snapshot](evidence/runs/plane-prod-sim-snapshot-final-1.txt)). Prometheus, Loki and Infisical's Postgres touched their cgroup limits, with 0 OOM kills ([limits-breakdown-1.txt](evidence/runs/limits-breakdown-1.txt)). Those samples predate the load test. In its window, at 5, 10 and 20 virtual users on dev, the VM reached 10.33 GiB by Prometheus, with prod-sim being rotated and restored in the same minutes ([results](evidence/runs/load-20261105T073241Z/results.json)). That says nothing about a higher load, or a quieter machine.
 
 ## Secret isolation
 
@@ -196,7 +196,7 @@ A cross-project read returns 403. On 2026-11-04 each reader got 403 on the other
 | Prod-sim | PASS | Only the anonymous probe ran: 37 of 60 over 39s. No signed-in session was watched | [log](evidence/runs/rotate-prod-sim-20261105T073240Z.log) |
 | Prod-sim, killed with SIGKILL 4 seconds in, then `RESUME=yes` | PASS | Anonymous probe on the resume: 46 of 55 over 57s | [record](evidence/runs/SEC-4-20261105T073843Z.txt), [log](evidence/runs/rotate-prod-sim-20261105T073847Z.log) |
 
-Postgres refused the replaced password in each, and `SECRET_KEY` did not move. In the 14 minutes after dev's rollout Argo CD started one sync operation, for GITOPS-4's replica change, so there was no sync loop ([watch](evidence/runs/SEC-6-20261105T072331Z-application-watch.txt)). `ROLLBACK=yes` was not run. This shows one password on test data, and nothing about any other secret or about Jobs in flight. `SECRET_KEY` itself [cannot be rotated](known-limitations.md#application-what-is-customized-and-what-is-not).
+Postgres refused the replaced password in each, and `SECRET_KEY` did not move. In the 16 minutes after dev's rollout Argo CD started one sync operation, for GITOPS-4's replica change, so there was no sync loop ([watch](evidence/runs/SEC-6-20261105T072331Z-application-watch.txt)). `ROLLBACK=yes` was not run. This shows one password on test data, and nothing about any other secret or about Jobs in flight. `SECRET_KEY` itself [cannot be rotated](known-limitations.md#application-what-is-customized-and-what-is-not).
 
 ## Image pinning
 
@@ -247,7 +247,7 @@ Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`,
 
 `.trivyignore` holds one accepted finding with an expiry, so it gets reviewed.
 
-`make ci` exited 0 in clean clones from GitHub of `9c8e098` and `0dde813` on 2026-11-05, each with 132 stubbed scenarios ([log](evidence/ci/ci-2-20261105T061644Z-make-ci.log), [exit code](evidence/ci/ci-2-20261105T061644Z-make-ci.rc)). 33 of 33 planted defects were caught at `283b51a` ([negative controls](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). No `make ci` run is recorded after `0dde813`, so later commits, the final one among them, have no such run.
+`make ci` exited 0 in clean clones from GitHub of `9c8e098` and `0dde813` on 2026-11-05, each with 132 stubbed scenarios ([log](evidence/ci/ci-2-20261105T061644Z-make-ci.log), [exit code](evidence/ci/ci-2-20261105T061644Z-make-ci.rc)). On this Mac 45 of 45 planted defects were caught at `cc88450` ([negative controls](evidence/runs/negative-controls-alerts-track-3.txt)), after 33 of 33 at `283b51a` ([earlier](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). On a real runner the count is 21 of 21, at `b350fdc`, and it has not run there since. No `make ci` run is recorded after `0dde813`, so later commits, the final one among them, have no such run.
 
 ## CI hardening
 
@@ -258,7 +258,7 @@ Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`,
 | `persist-credentials: false` on every checkout | All workflows |
 | Actions pinned to commit SHA | All workflows |
 | No `pull_request_target` | All workflows |
-| Write tokens only in the jobs that open a pull request or push to GHCR | `images.yml`, `promote-prod-sim.yml` |
+| Write tokens only in the jobs that open a pull request, push to GHCR, or delete old versions from GHCR (`prune`) | `images.yml`, `promote-prod-sim.yml` |
 | `actionlint`, `zizmor`, `shellcheck`, `hadolint`, `tflint` | `scripts/ci/lint.sh` |
 | Render drift, kubeconform, conftest, promtool, promotion invariant, stubbed promotion flows | `scripts/ci/validate-manifests.sh` |
 | One owner per resource | `scripts/ci/ownership.sh` |
