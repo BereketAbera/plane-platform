@@ -31,7 +31,7 @@ flowchart LR
 | Stage | Path | Who edits it |
 |---|---|---|
 | Vendored chart | `helm/plane/vendor/plane-ce-1.8.6/plane-ce/` | Nobody. It is the release tarball untarred. `VENDOR.md` records the tarball sha256 and a tree hash |
-| Overlay | `helm/plane/overlays/{dev,prod-sim}/` | You, except `images:` lines, which only `make promote` writes |
+| Overlay | `helm/plane/overlays/{dev,prod-sim}/` | You, except `images:` lines: only `make promote` edits them, and `make rollback` takes an edit back with `git revert` |
 | Hardening component | `helm/plane/components/hardening/` | You. Shared by both environments |
 | Rendered output | `gitops/environments/{dev,prod-sim}/manifests.yaml` | Only `make render`. The file header says so |
 
@@ -123,8 +123,8 @@ The reasons are the useful part:
 - **api liveness hits `/`**, which touches no dependency, so a database outage does not restart the pod. The entrypoint runs seven `manage.py` steps before binding, which is why it has a startup gate.
 - **postgres uses TCP to `127.0.0.1`.** During `initdb` the server listens only on the Unix socket, so this stays unready until the real server is up. The migrator depends on that.
 - **worker liveness is infrequent** because it loads all of Django. It needs the broker, so three failures take about six minutes of RabbitMQ outage before a restart.
-- **beat's probe proves only that the process exists.** Beat has no ping. The alert on `last_run_at` is the real check. See [monitoring.md](monitoring.md).
-- **worker and beat probes use `exec` with no shell**, because under `sh -c` `pgrep -f` would match the shell's own command line.
+- **beat's probe proves only that the process exists.** Beat has no ping and exposes no metrics, so no alert reads whether it dispatches anything. The only proof that it does is one reading by hand of `total_run_count` in Postgres, in dev on 2026-11-04 (JOB-3 in [validation.md](validation.md)). `tests/e2e/smoke.py --job-probe` shows a worker running a task, not beat sending one. See [monitoring.md](monitoring.md).
+- **The `pgrep` probes on worker and beat use `exec` with no shell**, because under `sh -c` `pgrep -f` would match the shell's own command line. The worker's liveness probe does use `sh -c`, to read the hostname, and `pgrep` is not involved there.
 
 The budgets held. Seconds to Ready with the image already on the node, in dev on 2026-11-04, on upstream images: web and admin 1, worker 10,
 space 10, live 20, beat 25, api 31 ([plane-dev-startup-1.txt](evidence/runs/plane-dev-startup-1.txt)). On the first boot of each environment, under
@@ -160,14 +160,16 @@ server and the other control plane containers have no limit, and come on top ([c
 is deliberate overcommit. Bring the two environments up serially, because simultaneous first boots are the worst case.
 
 Real use has stayed inside that so far, with 0 OOM kills in any Plane container. Read after both smokes ran at once on 2026-11-04, no Plane
-container was above 66% of its memory limit, and the worker was highest at 426 of 768 MiB. The VM peaked at 10.49 GiB of 13.63 across all the tests
-([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)). The closest any reading came was `live` at 309 of 384 MiB, 80% of its
+container was above 66% of its memory limit, and the worker was highest at 426 of 768 MiB. The closest any reading came was `live` at 309 of 384 MiB, 80% of its
 limit, in dev earlier that day ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Those are cgroup peaks, which include page cache.
+From 23:17 UTC that night to 00:04 UTC the VM peaked at 10.49 GiB of 13.63, just after another agent's change replaced the Argo CD pods, and VM use includes about 1 GiB of the
+owner's unrelated containers ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)). Later readings went higher: 10.93 GiB at 01:50 UTC on 2026-11-05, in
+60-second readings ([LOAD-3-20261105T074543Z-timeline.json](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)).
 
 `make test-load ENV=dev` then ran on the final images on 2026-11-05 at 07:32 UTC and passed its thresholds at 5, 10 and 20 virtual users, with
-2,883 requests and 0 failed ([results.json](evidence/runs/load-20261105T073241Z/results.json)). Peak working set by pod, in MiB: worker 269, api 172, RabbitMQ 158,
-live 154, beat 149, Silo 137, space 94, Postgres 63, Valkey 13, web and admin 3. The highest share of a limit was beat, at 58%. No pod restarted, and
-`container_oom_events_total` rose for none ([windows](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). Averages in the quietest window found, 03:40 to 04:10 UTC, in `plane-dev`
+2,883 requests and 0 failed. Peak working set by pod over that run, 07:32:49 to 07:42:57 UTC, in MiB: worker 269, api 172, RabbitMQ 158,
+live 154, beat 149, Silo 137, space 94, Postgres 63, Valkey 13, web and admin 3 ([results.json](evidence/runs/load-20261105T073241Z/results.json)). The highest share of a limit was beat, at 58%. No pod restarted, and
+`container_oom_events_total` rose for none in the narrower window from 07:33:48 to 07:42:51 UTC, where beat reads 148 ([windows](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). Averages in the quietest window found, 03:40 to 04:10 UTC, in `plane-dev`
 and on the build before the final one: worker 278, api 157, beat 148, live 145, RabbitMQ 129, Silo 115, space 96, Postgres 65, Valkey 4, web and admin 3
 ([how it was picked](evidence/runs/LOAD-3-20261105T074543Z-quiet-window.txt)). These are working set from Prometheus, and RSS itself was not read. Prod-sim was being rotated and restored during the
 load, so this is not a quiet machine, and it says nothing about a server. See [resource-utilization.md](resource-utilization.md).
@@ -333,7 +335,7 @@ planned migration with a backup. The migrator Job's template is also immutable, 
 recreates it on each sync, so that one is handled.
 
 **Secrets rollouts.** api, worker, beat and live carry `secrets.infisical.com/auto-reload: "true"`, so the operator restarts them
-when a referenced Secret changes. postgres-exporter carries it too, from `monitoring/manifests`. `make rotate ENV=dev` on 2026-11-05 rolled api, worker, beat and postgres-exporter, and left live and Postgres alone. `plane-dev` stayed Synced with no new sync operation, so auto-reload and self-heal did not fight in that run ([rotate-dev-20261105T072345Z.log](evidence/runs/rotate-dev-20261105T072345Z.log), [SEC-6-20261105T072331Z-application-watch.txt](evidence/runs/SEC-6-20261105T072331Z-application-watch.txt)). `make rotate ENV=prod-sim` rolled api, worker and beat, and left Postgres alone ([SEC-3-BKP-3](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)).
+when a referenced Secret changes. postgres-exporter carries it too, from `monitoring/manifests`. `make rotate ENV=dev` on 2026-11-05 rolled api, worker, beat and postgres-exporter, and left live and Postgres alone. `plane-dev` stayed Synced with no new sync operation, so auto-reload and self-heal did not fight in that run ([rotate-dev-20261105T072345Z.log](evidence/runs/rotate-dev-20261105T072345Z.log), [SEC-6-20261105T072331Z-application-watch.txt](evidence/runs/SEC-6-20261105T072331Z-application-watch.txt)). `make rotate ENV=prod-sim` rolled api, worker, beat and postgres-exporter, and left live and Postgres alone. Its log names only the three it waits for ([SEC-3-BKP-3](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)), and a watch of prod-sim's pods shows the exporter's new pod at 07:32:51 UTC ([SEC-2-20261105T072331Z-watch.txt](evidence/runs/SEC-2-20261105T072331Z-watch.txt)).
 
 ## How the determinism check works
 
