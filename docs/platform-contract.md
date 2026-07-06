@@ -19,7 +19,7 @@ code on 2026-11-05, and [section 14](#14-changes-to-this-contract) lists what th
 | Plane chart | `plane-ce` 1.8.6, `https://helm.plane.so/`, tgz sha256 `c70244eefa7dfa94e8636048fe4032640999c7d4e265b1fec68d13060cf70e4f` |
 | Helm release name | `plane` in both environments, so object names match and one patch set fits both |
 | Distinct product name | **Wayline**, a customized Plane Community Edition deployment. Never present it as an original product |
-| Host-only state | `.local/` (gitignored): `kubeconfig`, `kind-cluster.yaml`, `git/`, `backups/`, `secret-zero/`, `terraform/` (with `terraform/local.stale-<time>` once `make up` has moved a lost cluster's state aside), `rendered/`, `evidence-raw/`, `evidence-scrub-values`, `publishes.log`, `restore-clean.state`, `test-accounts.env`, `test-sentinel-<env>.json`, `kubeconform-schemas/`, `trivy-cache/`. Build output goes to `.build/`, also gitignored |
+| Host-only state | `.local/` (gitignored): `kubeconfig`, `kind-cluster.yaml`, `git/`, `backups/`, `secret-zero/`, `terraform/` (with `terraform/local.stale-<time>` once `make up` has moved a lost cluster's state aside), `rendered/`, `evidence-raw/`, `evidence-scrub-values`, `publishes.log`, `restore-clean.state`, `registry-snapshot.tar` while a cold install runs, `test-accounts.env`, `test-sentinel-<env>.json`, `kubeconform-schemas/`, `trivy-cache/`. Build output goes to `.build/`, also gitignored |
 
 ## 2. Namespaces
 
@@ -130,8 +130,8 @@ Rule: if `git grep` finds the same resource under two owners, it is a bug. CI ch
   pull request, `make gitops-publish` repeats the `plane-dev` check and the dump. It runs `check-promoted-digests.sh` only as a warning,
   because rollback uses that path. That check blocks in `scripts/promote.sh`, and a check in CI cannot block a merge on this plan.
   A changed prod-sim line that is not an image also gets a warning, and goes out. `OVERRIDE_DEV_CHECK="<reason>"` goes
-  past the `plane-dev` check and is logged, `SKIP_BACKUP=yes` skips the dump, and with no cluster in reach the check is skipped and
-  the commit message says so.
+  past the `plane-dev` check and is logged, and `SKIP_BACKUP=yes` skips the dump. With no cluster in reach the check is skipped: `scripts/promote.sh`
+  says so in the commit message, and `make gitops-publish`, which makes no commit, only warns.
 - **Rollback:** `make rollback ENV=<env>` is a `git revert` and a publish. For prod-sim the publish has `SKIP_BACKUP=yes` and
   `SKIP_DEV_CHECK`, so it needs neither a healthy `plane-dev` nor a working backup, and prod-sim gets one best-effort dump first, limited
   to 300s. Dev needs neither, because a publish that moves no prod-sim image asks the cluster nothing. A publish is all of `main`, so a
@@ -241,7 +241,7 @@ Hard rules, each learned from reading upstream code:
   comes from each environment having its own Silo.
 - Passwords are hex. The chart does not URL-encode them into connection strings.
 - `FILE_SIZE_LIMIT` is bytes. `5MB` crashes Django at import.
-- **Never rotate `SECRET_KEY`.** It derives the key for 7 encrypted config rows and `decrypt_data` fails silently to `""`.
+- **Never rotate `SECRET_KEY`.** It derives the key for the encrypted config rows, 7 on a fresh instance and 8 once `scripts/backup.sh` has added its sentinel row, and `decrypt_data` fails silently to `""`.
 - Each environment has its own Infisical project, machine identity (built-in `viewer`), and org role `no-access`.
   Custom roles and folder RBAC are paid features, so per-project isolation is the free-tier boundary.
 - Secret zero (Infisical's `ENCRYPTION_KEY`, `AUTH_SECRET`, database and Redis passwords) lives in `.local/secret-zero/`, mode 0600,
@@ -308,7 +308,8 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
 `drill-clean-restore-harness`, `wayline-upgrade-check`, `wayline-upstream-check`.
 `make help` lists them. Options are passed as `make <target> NAME=value`. `tests/drills/failed-migrator.sh` has no target and runs directly.
 `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` backs up, deletes the cluster, runs `tests/drills/clean-install.sh` from a fresh clone with
-new secrets, deletes that, and restores from backup into a new cluster. It keeps the local registry and the pull-through caches, and copies `.tools`.
+new secrets, deletes that, and restores from backup into a new cluster. It keeps the local registry and the pull-through caches, and copies `.tools`. `COLD_INSTALL=yes`, which goes only with `CLEAN_INSTALL_FIRST=yes`, removes the local services and their volumes instead, so the clean
+install builds and promotes its images and pulls everything through empty caches. It still copies `.tools`, and it saves the registry to `.local/registry-snapshot.tar` and puts it back at the end.
 
 - `make down` stops the cluster and **keeps all data**. `make up` resumes it.
 - `make up` is idempotent, so it is also how to continue after a failure. It refuses uncommitted changes under
@@ -329,8 +330,8 @@ new secrets, deletes that, and restores from backup into a new cluster. It keeps
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
   creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB, and it refuses a reason of fewer than two words. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
   asks for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh` and `gitops-publish.sh`.
-  `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it, so the first four
-  still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
+  `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it directly, so the first four
+  still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`, and `scripts/ci/validate-manifests.sh`, so `make ci`, reaches it through `render.sh --check`, at 1 GiB. `prereqs.sh` has its own floor of 25 GiB.
 
 ## 12. Evidence rule
 
@@ -364,7 +365,7 @@ docs/                          adr/, runbooks/, evidence/{runs,ci,security,brand
 ```
 
 Image digests for a Plane environment live in `helm/plane/overlays/<env>/kustomization.yaml` under `images:`.
-`make promote` edits them and re-renders; nothing else writes those lines.
+`make promote` edits them and re-renders, and `make rollback` takes an edit back with `git revert`. Nothing else writes those lines.
 
 The root app also includes `backup-storage` (wave -10), pointing at `gitops/platform/backup-storage`: a static hostPath PV
 on `/backups/<name>`, `Retain`, for each of `dev`, `prod-sim` and `infisical` (`backups-dev`, `backups-prod-sim`,
@@ -405,4 +406,8 @@ Each line settles a place where the code and this file disagreed, by changing th
 | 2026-11-05 | 11 | `scripts/restore.sh` has a documented exit 2, and `failed-migrator.sh` has no make target | `scripts/restore.sh`, `1c6adbe` |
 | 2026-11-05 | 13 | `scripts/lib/up-checks.sh` is named | `scripts/lib/up-checks.sh` |
 | 2026-11-05 | 5 | A rollback of a commit touching both environments stops | `53aab26`, `scripts/rollback.sh` |
-| 2026-11-05 | 11 | `make drill-clean-restore` takes `CLEAN_INSTALL_FIRST=yes`. A backup refuses an environment a clean restore has not finished, a resume refuses to overwrite, and `ALLOW_LOW_DISK` needs words | `tests/drills/clean-install.sh`, `scripts/backup.sh`, `scripts/restore.sh`, `scripts/lib/up-checks.sh` |
+| 2026-11-05 | 1, 11 | `make drill-clean-restore` takes `CLEAN_INSTALL_FIRST=yes`, and with it `COLD_INSTALL=yes`, which removes the local services and keeps a registry snapshot. A backup refuses an environment a clean restore has not finished, a resume refuses to overwrite, and `ALLOW_LOW_DISK` needs words | `tests/drills/clean-install.sh`, `15d24fd`, `scripts/backup.sh`, `scripts/restore.sh`, `scripts/lib/up-checks.sh` |
+| 2026-11-04 | 5 | With no cluster in reach, `scripts/promote.sh` records the skipped check in the commit, and `make gitops-publish`, which makes no commit, only warns. The code always did this | `3f500ab`, `3a67ba0`, `scripts/lib/dev-check.sh` |
+| 2026-11-04 | 8 | `SECRET_KEY` covers 7 encrypted rows on an instance no backup has touched, and 8 once `scripts/backup.sh` has added its sentinel. The code always did this | `scripts/backup.sh`, [smoke-dev-20261104T225624Z.json](evidence/runs/smoke-dev-20261104T225624Z.json), [smoke-dev-20261105T001213Z.json](evidence/runs/smoke-dev-20261105T001213Z.json) |
+| 2026-11-04 | 11 | `scripts/ci/validate-manifests.sh` reaches `guard_disk` through `render.sh --check`, at 1 GiB. The code always did this | `scripts/render.sh`, `scripts/ci/validate-manifests.sh` |
+| 2026-11-04 | 13 | `make rollback` also writes the overlay's `images:` lines, through `git revert`. The code always did this | `scripts/rollback.sh`, `91ef477` |
