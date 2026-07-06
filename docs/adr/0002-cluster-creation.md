@@ -56,6 +56,6 @@ The last row is the honest cost of this decision. The two-root option is viable.
 
 Added 2026-11-05.
 
-- Docker gave the `kind` network `172.24.0.0/16` on this host, inside the assumed pool ([traefik-nodeport-source-1.txt](../evidence/runs/traefik-nodeport-source-1.txt)).
+- Docker gave the `kind` network `172.24.0.0/16` on this host, inside the assumed pool ([bootstrap-up-traefik-1.txt](../evidence/runs/bootstrap-up-traefik-1.txt)).
 - Each run of the script recreated `plane-git`, because buildx stamped a provenance attestation that gave the same layers a new image ID. `7708cc8` sets `BUILDX_NO_DEFAULT_ATTESTATIONS=1`, since Argo CD reads Git through that container.
 - A disk floor of 15 GiB on every run could strand a platform whose first install had already used the space. So since `7708cc8` a resume needs only the default floor, and 15 GiB applies only when creating a cluster.
