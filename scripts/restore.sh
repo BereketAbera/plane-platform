@@ -161,6 +161,8 @@ clean_on_exit() {
 clean_done() { grep -qx "done $1" "$RESTORE_CLEAN_MARKER"; }
 clean_mark() { printf 'done %s\n' "$1" >> "$RESTORE_CLEAN_MARKER"; }
 clean_marker_value() { sed -n "s/^$1=//p" "$RESTORE_CLEAN_MARKER"; }
+# Before a run clears what no longer counts, a done line has to be asked about like this.
+clean_done_stands() { clean_done "$1" && ! recovery_marker_cluster_gone; }
 
 # Prints why this environment is not clean, and nothing if it is. Real data must never be overwritten
 # by a command meant for a cluster that is gone. So anything but a clear answer is a problem: a volume that is
@@ -264,7 +266,10 @@ clean_refuse_marker_gone() {
   [[ -f "$LOCAL_DIR/backups/infisical/$CLEAN_IID/manifest.json" ]] || gone="$gone infisical/$CLEAN_IID"
   for env in $CLEAN_ENVS; do
     id="$(clean_marker_value "$env")"
-    if [[ -z "$id" || ! -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]]; then gone="$gone $env/${id:-none}"; fi
+    # A backup of a finished environment goes ahead, and its retention can take the one named here. Nothing left to do
+    # reads that one, so what the other environment still needs does not stop on it.
+    if [[ -n "$id" && -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]] || clean_done_stands "$env"; then continue; fi
+    gone="$gone $env/${id:-none}"
   done
   [[ -z "$gone" ]] || die "a clean restore is marked as under way ($RESTORE_CLEAN_MARKER), and these backups it names are no longer here:$gone. Retention does not know about a marker. Nothing was changed. $(clean_start_over_advice)"
 }
@@ -367,6 +372,8 @@ clean_resolve() {
       fi
     fi
     printf -v "$var" '%s' "$id"
+    # Past clean_refuse_marker_gone, a backup that is not here belongs to an environment this restore has finished.
+    if [[ ! -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]]; then continue; fi
     if ! (cd "$LOCAL_DIR/backups/$env/$id" && shasum -a 256 -c SHA256SUMS >/dev/null 2>&1); then
       clean_add_problem "backup $env/$id does not match its SHA256SUMS"
     fi
@@ -473,6 +480,10 @@ clean_print_plan() {
     id="${!var:-}"
     if [[ -z "$id" ]]; then
       printf '    %-10s no backup matches\n' "$env"
+      continue
+    fi
+    if [[ ! -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]]; then
+      printf '    %-10s %s, which this restore has finished. That backup is no longer here, and nothing left to do reads it\n' "$env" "$id"
       continue
     fi
     printf '    %-10s %s, SECRET_KEY %s, %s users, %s workspaces, %s projects, %s work items, %s file rows, %s objects, sentinel %s, uploaded rows with no object: %s\n' "$env" "$id" \
@@ -688,7 +699,7 @@ clean_wait_applications() {
 # Step 5's last part: everything once more from outside the restore that made it. Returns 0, 1 if something failed,
 # 2 if nothing failed and a proof could not run, as the exit status means for the whole script.
 clean_verify() {
-  local set_file="$1" env var problems failed=0 not_run=0 rc paused apps_json sentinel step
+  local set_file="$1" env var problems failed=0 not_run=0 rc paused apps_json sentinel step slug no_sentinel
   ia_init
   ia_load_admin
   if problems="$(recovery_compare_values "$set_file")"; then
@@ -707,8 +718,16 @@ clean_verify() {
     # With the files a later make test-e2e uses, unlike the proof in the restore, which reads the database.
     sentinel="$LOCAL_DIR/test-sentinel-$env.json"
     var="$(clean_plane_var "$env")"
-    if [[ "$(jq -r '.sentinel // empty | .slug' "$LOCAL_DIR/backups/$env/${!var}/manifest.json")" == "" ]]; then
-      clean_record "verify-sentinel-$env" "NOT RUN" "backup ${!var} was taken before tests/e2e/smoke.py created a sentinel"
+    no_sentinel="backup ${!var} was taken before tests/e2e/smoke.py created a sentinel"
+    if [[ -f "$LOCAL_DIR/backups/$env/${!var}/manifest.json" ]]; then
+      slug="$(jq -r '.sentinel // empty | .slug' "$LOCAL_DIR/backups/$env/${!var}/manifest.json")"
+    else
+      # Retention took the backup of an environment this restore had finished, whose restore put this file in place.
+      slug="$(jq -r '.slug // ""' "$sentinel" 2>/dev/null || true)"
+      no_sentinel="backup ${!var} is no longer here, and this machine has no sentinel file for $env"
+    fi
+    if [[ -z "$slug" ]]; then
+      clean_record "verify-sentinel-$env" "NOT RUN" "$no_sentinel"
       not_run=1
     else
       rc=0
