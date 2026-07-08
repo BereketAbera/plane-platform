@@ -81,6 +81,10 @@ free_disk_kib() { df -k "$ROOT" | awk 'NR==2{print $4}'; }
 
 kib_as_gib() { awk -v k="$1" 'BEGIN { printf "%.1f", k / 1048576 }'; }
 
+# For a number set beside a limit. Two decimals, like the limits, and rounded down, so what is under a limit cannot
+# print as that limit, as "about 25.0 GiB ... and up.sh asks for 25 GiB" did on a plan that then refused.
+kib_as_gib_down() { awk -v k="$1" 'BEGIN { printf "%.2f", int(k * 100 / 1048576) / 100 }'; }
+
 # The Docker volume at the node's /var, as docker system df measures it. Docker prints decimal units, and the
 # number is lower than du in the node, so an estimate built on it errs towards refusing. Prints KiB, or nothing
 # if there is no such volume or Docker will not say.
@@ -166,20 +170,20 @@ up_empty_cluster_words() {
 up_disk_report() {
   local after
   if ! cluster_exists; then
-    printf '%s GiB free, no cluster to delete, %s' "$(kib_as_gib "$(free_disk_kib)")" "$(up_new_cluster_need_words)"
+    printf '%s GiB free, no cluster to delete, %s' "$(kib_as_gib_down "$(free_disk_kib)")" "$(up_new_cluster_need_words)"
     return 0
   fi
   after="$(disk_after_delete_kib)"
   if [[ -z "$after" ]]; then
-    printf '%s GiB free, the kind volume could not be measured, %s' "$(kib_as_gib "$(free_disk_kib)")" "$(up_new_cluster_need_words)"
+    printf '%s GiB free, the kind volume could not be measured, %s' "$(kib_as_gib_down "$(free_disk_kib)")" "$(up_new_cluster_need_words)"
     return 0
   fi
   printf '%s GiB free, kind volume %s GiB, about %s GiB after a delete at %s%%, %s' \
-    "$(kib_as_gib "$(free_disk_kib)")" "$(kib_as_gib "$(kind_volume_kib)")" "$(kib_as_gib "$after")" "$KIND_RECLAIM_PERCENT" "$(up_new_cluster_need_words)"
+    "$(kib_as_gib_down "$(free_disk_kib)")" "$(kib_as_gib_down "$(kind_volume_kib)")" "$(kib_as_gib_down "$after")" "$KIND_RECLAIM_PERCENT" "$(up_new_cluster_need_words)"
 }
 
 up_disk_report_empty_cluster() {
-  printf '%s GiB free, %s' "$(kib_as_gib "$(free_disk_kib)")" "$(up_empty_cluster_words)"
+  printf '%s GiB free, %s' "$(kib_as_gib_down "$(free_disk_kib)")" "$(up_empty_cluster_words)"
 }
 
 # Prints why a new cluster should not be created, counting a delete first if a cluster exists, and nothing if it
@@ -191,16 +195,16 @@ up_disk_problem() {
   free="$(free_disk_kib)"
   if ! cluster_exists; then
     if [[ "$free" -lt "$need_kib" ]]; then
-      printf 'only %s GiB free on the host, and %s to create a cluster' "$(kib_as_gib "$free")" "$(up_new_cluster_need_words)"
+      printf 'only %s GiB free on the host, and %s to create a cluster' "$(kib_as_gib_down "$free")" "$(up_new_cluster_need_words)"
     fi
     return 0
   fi
   after="$(disk_after_delete_kib)"
   if [[ -z "$after" ]]; then
-    printf 'the kind volume could not be measured, so what a delete brings back is unknown, with %s GiB free, and %s' "$(kib_as_gib "$free")" "$(up_new_cluster_need_words)"
+    printf 'the kind volume could not be measured, so what a delete brings back is unknown, with %s GiB free, and %s' "$(kib_as_gib_down "$free")" "$(up_new_cluster_need_words)"
   elif [[ "$after" -lt "$need_kib" ]]; then
     printf 'about %s GiB would be free after the delete: %s GiB now plus %s%% of the %s GiB kind volume, and %s to create a cluster' \
-      "$(kib_as_gib "$after")" "$(kib_as_gib "$free")" "$KIND_RECLAIM_PERCENT" "$(kib_as_gib "$(kind_volume_kib)")" "$(up_new_cluster_need_words)"
+      "$(kib_as_gib_down "$after")" "$(kib_as_gib_down "$free")" "$KIND_RECLAIM_PERCENT" "$(kib_as_gib_down "$(kind_volume_kib)")" "$(up_new_cluster_need_words)"
   fi
 }
 
@@ -209,7 +213,7 @@ up_disk_problem_empty_cluster() {
   local free
   free="$(free_disk_kib)"
   if [[ "$free" -lt "$(up_gib_as_kib "$(up_pull_plus_floor_gib "$(up_empty_cluster_pull_gib)")")" ]]; then
-    printf 'only %s GiB free on the host, and %s' "$(kib_as_gib "$free")" "$(up_empty_cluster_words)"
+    printf 'only %s GiB free on the host, and %s' "$(kib_as_gib_down "$free")" "$(up_empty_cluster_words)"
   fi
 }
 
