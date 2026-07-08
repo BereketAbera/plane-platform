@@ -624,6 +624,20 @@ clean_scale_to_git() { # namespace deployment replicas
   clean_record "repair-$2" PASS "$1/$2 was at $have replicas after a hard stop, and Git says $3"
 }
 
+# A stop between a data Job's end and the line that says so, which a SIGKILL can do at any moment. Its data is back all
+# the same, and counts cannot tell that from what has been written since. So the marker names the last data Job this
+# restore started, and that Job, once finished, says so for a day, by its ttlSecondsAfterFinished. After that a resume
+# compares counts. Only that Job: an earlier one says nothing about a later one that was stopped and removed.
+clean_note_finished_data_job() { # env jobs-json
+  local env="$1" job
+  job="$(sed -n "s/^data-job $env //p" "$RESTORE_CLEAN_MARKER")"
+  [[ -n "$job" ]] || return 0
+  if clean_done "$env" || grep -qx "data-back $env" "$RESTORE_CLEAN_MARKER"; then return 0; fi
+  jq -e --arg job "$job" 'any(.items[]; .metadata.name == $job and any(.status.conditions[]?; .type == "Complete" and .status == "True"))' <<<"$2" >/dev/null || return 0
+  printf 'data-back %s\n' "$env" >> "$RESTORE_CLEAN_MARKER"
+  clean_record "repair-data-back-$env" PASS "data Job $job finished on an earlier run, which stopped before it could say so"
+}
+
 # What a hard stop can leave, with the marker still there: a restore Job with no client, auto-sync paused, and
 # Infisical or Plane at zero. A clean-path wait would then run out on a state only this can change. Runs before
 # anything waits. A Job is removed and not awaited, since nothing it finished counts until the marker says so,
@@ -645,6 +659,7 @@ clean_repair_after_hard_stop() {
       kc -n "$ns" delete job "$job" --cascade=foreground --timeout=180s >/dev/null || die "could not remove $ns/$job, left running by an earlier run"
       clean_record "repair-$job" PASS "$ns/$job was left running by an earlier run. Removed, and its step starts over"
     done
+    clean_note_finished_data_job "${ns#plane-}" "$jobs_json"
   done
   for name in $(argo_unpause_all); do
     clean_record "repair-auto-sync-$name" PASS "auto-sync on $name was left paused by an earlier run"
@@ -807,7 +822,7 @@ restore_clean() {
     # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not.
     if recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so it starts again from the beginning"
-      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' -e '/^data-job /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
       mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
     fi
   else
@@ -1238,6 +1253,15 @@ resume_overwrite_names_this() { case " ${ALLOW_RESUME_OVERWRITE:-} " in *" $ENV_
 data_back_mark() {
   if [[ "$RESTORE_MODE" == clean && -f "$RESTORE_CLEAN_MARKER" ]]; then printf 'data-back %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"; fi
 }
+# Written before a data Job starts. Until it has finished the target is neither what it held nor the backup, so a line
+# from an earlier Job no longer holds, as after a stop in what ALLOW_RESUME_OVERWRITE asked for. The Job's name is for
+# the next run's repair: see clean_note_finished_data_job.
+data_job_mark() {
+  [[ "$RESTORE_MODE" == clean && -f "$RESTORE_CLEAN_MARKER" ]] || return 0
+  sed -e "/^data-back $ENV_NAME\$/d" -e "/^data-job $ENV_NAME /d" "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+  printf 'data-job %s plane-restore-%s\n' "$ENV_NAME" "$JOB_SUFFIX" >> "$RESTORE_CLEAN_MARKER.tmp"
+  mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+}
 data_back_on_resume() {
   [[ "$RESTORE_RESUME" == yes && -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $ENV_NAME" "$RESTORE_CLEAN_MARKER"
 }
@@ -1607,6 +1631,7 @@ restore_plane() {
   record apps-stopped PASS "api, worker, beat and live at zero with auto-sync paused"
 
   if [[ "$KEEP_DATA" == no ]]; then
+    data_job_mark
     restore_data "$pg_image"
     data_back_mark
     record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
@@ -1842,6 +1867,7 @@ restore_infisical() {
 
   INFISICAL_REDIS_STALE=yes
   if [[ "$KEEP_DATA" == no ]]; then
+    data_job_mark
     restore_infisical_db "$pg_image"
     data_back_mark
     record postgres PASS "dump restored into a second database, row counts equal the backup, swapped in"
