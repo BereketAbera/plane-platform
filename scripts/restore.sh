@@ -933,7 +933,7 @@ secret_tmp=""
 sentinel_tmp=""
 INFISICAL_STOPPED=no
 ANYTHING_CHANGED=no # Until a refusal has passed, a failure is a refusal.
-JOBS_STARTED=no     # Set before this run's first Job, so a stop knows there may be one to remove.
+JOB_MAY_RUN=no      # Yes from just before this run's first Job until its last has finished, so a stop knows to look.
 JOB_STOPPED=no
 JOBS_LEFT_RUNNING=""
 OVERWROTE=no             # This run used ALLOW_RESUME_OVERWRITE, so it does not read PASS.
@@ -953,7 +953,7 @@ record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contrac
 # does not end them, and one carrying on would drop or replace a database under whatever comes back up.
 stop_this_runs_jobs() {
   local job state
-  [[ "$JOBS_STARTED" == yes ]] || return 0
+  [[ "$JOB_MAY_RUN" == yes ]] || return 0
   for job in "plane-restore-guard-$JOB_SUFFIX" "plane-restore-guard-objects-$JOB_SUFFIX" "plane-restore-$JOB_SUFFIX" "plane-restore-migrate-$JOB_SUFFIX"; do
     if ! state="$(job_state_if_any "$NS" "$job" 2>/dev/null)"; then
       warn "kubectl cannot say whether restore Job $NS/$job is running"
@@ -1568,7 +1568,7 @@ restore_plane() {
     kc -n "$NS" rollout status "statefulset/$deployment" --timeout=300s >/dev/null || die "$deployment is not ready"
   done
 
-  JOBS_STARTED=yes
+  JOB_MAY_RUN=yes
   inspect="$(inspect_target "$pg_image" plane-pgdb plane-pgdb)" || { printf '%s\n' "$inspect" >&2; die "could not inspect the database"; }
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
   inspect="$(inspect_bucket)" || { printf '%s\n' "$inspect" >&2; die "could not list the bucket"; }
@@ -1608,6 +1608,9 @@ restore_plane() {
 
   run_migrator
   record migrator PASS "completed"
+  # Every Job of this run has finished. So a kubectl error from here on cannot read as one that may still be running,
+  # which leaves auto-sync paused and the apps down with nothing to do it for.
+  JOB_MAY_RUN=no
 
   # API first: its boot clears the cache and re-registers, and worker and live want it up.
   log "Starting the apps"
@@ -1799,7 +1802,7 @@ restore_infisical() {
 
   kc -n "$NS" rollout status statefulset/infisical-postgres --timeout=300s >/dev/null || die "infisical-postgres is not ready"
   kc -n "$NS" rollout status statefulset/infisical-redis --timeout=300s >/dev/null || die "infisical-redis is not ready"
-  JOBS_STARTED=yes
+  JOB_MAY_RUN=yes
   inspect="$(inspect_target "$pg_image" infisical-postgres infisical-db)" || { printf '%s\n' "$inspect" >&2; die "could not inspect the database"; }
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
   [[ -n "$users" ]] || die "could not read the state of $NS"
@@ -1829,6 +1832,7 @@ restore_infisical() {
     recovery_install_tf_state "$backup_dir"
     if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
   fi
+  JOB_MAY_RUN=no # Every Job of this run has finished, as in restore_plane.
 
   # The server caches into Redis what describes the old database: admin config, secrets, permissions,
   # identity revocation versions, KMS material, and queued jobs. From a list of its keys, 2026-11-05.
