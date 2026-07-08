@@ -369,6 +369,26 @@ if args[0] == "get" and args[1] == "job":
     print(json.dumps({"status": {"conditions": conditions}}))
     sys.exit(0)
 
+# What scripts/rotate.sh reads before its probe loop starts. H66 stops it soon after, so nothing here has to change.
+if args[0] == "get" and args[1] == "pod":
+    if "podIP" in cmd:
+        print("10.244.0.9", end="")
+    elif "startTime" in cmd:
+        print("2026-11-05T00:00:00Z", end="")
+    sys.exit(0)
+
+if args[0] == "get" and args[1].startswith("infisicalstaticsecrets"):
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "secrets":
+    print(json.dumps({"items": []}))
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "deployments,statefulsets":
+    print(json.dumps({"items": [{"kind": "Deployment", "metadata": {"name": "plane-api-wl", "annotations": {"secrets.infisical.com/auto-reload": "true"}},
+                                 "spec": {"template": {"spec": {"containers": [{"envFrom": [{"secretRef": {"name": "plane-app-env"}}]}]}}}}]}))
+    sys.exit(0)
+
 if args[0] == "get" and args[1] == "configmap":
     # The drill's first read after its restore, which only it makes with -o json on a new cluster. So a scenario can
     # change what a comparison looks at, between the restore that finished and the comparison.
@@ -450,6 +470,10 @@ if args[0] == "exec":
         if not os.path.exists(f"{S}/rabbitmq-no-queue"):
             print("celery")
         sys.exit(0)
+    if "psql -X -w -h" in joined:
+        # scripts/rotate.sh's negative control: a random password over the pod IP.
+        print("psql: error: FATAL:  password authentication failed for user")
+        sys.exit(1)
     if "manage.py shell" in joined:
         if "SENTINEL=" in joined:
             log(f"kc exec proof-decrypt ns={ns}")

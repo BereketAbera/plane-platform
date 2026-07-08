@@ -148,6 +148,13 @@ class H(BaseHTTPRequestHandler):
                 out.append(item)
             log(f"api GET secrets project={pid} view={view}")
             return self.out(200, {"secrets": out, "imports": []})
+        if u.path.startswith("/api/v4/secrets/"):
+            if not self.identity_ok(d):
+                return self.refuse()
+            secret = d["projects"].get(q["projectId"][0], {}).get(u.path.split("/")[4])
+            if secret is None:
+                return self.out(404, {"message": "no such secret"})
+            return self.out(200, {"secret": {"secretValue": secret["value"], "version": secret["version"], "id": secret["id"]}})
         self.out(404, {"message": "not stubbed " + u.path})
 
     def do_POST(self):

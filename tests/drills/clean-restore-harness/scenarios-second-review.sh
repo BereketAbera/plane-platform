@@ -1523,7 +1523,7 @@ V1() {
   check "a clean restore through a tee, Ctrl-C: nothing stays paused" test -z "$(paused_now)"
   check "a clean restore through a tee, Ctrl-C: its evidence is written, and says FAIL" jq -e '.result == "FAIL"' "$(newest_evidence restore-clean)"
   check "a clean restore through a tee, Ctrl-C: what it had to say is beside that" grep -F "stopped. Fix the cause" "$(newest_evidence restore-clean).log"
-  check "a clean restore through a tee, Ctrl-C: no steps file is left" test -z "$(ls -a "$H/.local" | grep -F .restore-clean-steps. || true)"
+  check "a clean restore through a tee, Ctrl-C: no steps file is left" test -z "$(find "$H/.local" -maxdepth 1 -name '.restore-clean-steps.*')"
   : > "$H/state/calls.log"
   run scripts/restore.sh clean latest
   check "and the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
@@ -1838,4 +1838,576 @@ V4() {
   check "in place under a marker: goes on as asked (got $RC)" test "$RC" -eq 0
   show_tail
   check "in place under a marker: writes no line" test -z "$(grep '^data-back ' "$H/.local/restore-clean.state" || true)"
+}
+
+V4b() {
+  scenario "V4b. A stop between the data Job's end and its data-back line: the finished Job says so"
+  local sig
+  for sig in TERM KILL; do
+    reset
+    take_backups
+    lose_cluster
+    printf 'plane-dev logs job/plane-restore-[0-9tz]+ \n' > "$H/state/kubectl-hang"
+    : > "$H/state/calls.log"
+    start_detached scripts/restore.sh clean latest
+    wait_for_log 'kc hung'
+    stop_detached "$sig"
+    check "SIG$sig: fixture: no line" test -z "$(grep -x 'data-back dev' "$H/.local/restore-clean.state" || true)"
+    check "SIG$sig: fixture: and the data Job finished" jq -e --arg j "$(sed -n 's/^data-job dev //p' "$H/.local/restore-clean.state")" '.[$j].state == "Complete"' "$H/state/jobs.json"
+    # The same counts, and the platform used since: only the line, or this Job, can tell that from this backup.
+    : > "$H/state/calls.log"
+    run scripts/restore.sh clean latest
+    check "SIG$sig: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+    show_tail
+    check "SIG$sig: dev's data is not replaced" no_log 'kc apply Job plane-restore ns=plane-dev'
+    check "SIG$sig: it goes on from the migrator" log_has 'kc apply Job plane-restore-migrate ns=plane-dev'
+    check "SIG$sig: the evidence says why" jq -e 'any(.steps[]; .step == "repair-data-back-dev" and .status == "PASS")' "$(newest_evidence restore-clean)"
+    check "SIG$sig: and dev's says what it kept" jq -e 'any(.steps[]; .step == "data-back" and .status == "PASS") and all(.steps[]; .step != "postgres")' "$(newest_evidence restore-dev)"
+    check "SIG$sig: nothing started over anything" no_log '^ERROR'
+    check "SIG$sig: a pass is a pass" jq -e '.result == "PASS"' "$(newest_evidence restore-clean)"
+  done
+
+  # Infisical's Job in its containers, not its initContainers, and what it held since stays.
+  reset
+  take_backups
+  lose_cluster
+  printf 'infisical logs job/plane-restore-[0-9tz]+ \n' > "$H/state/kubectl-hang"
+  : > "$H/state/calls.log"
+  start_detached scripts/restore.sh clean latest
+  wait_for_log 'kc hung'
+  stop_detached KILL
+  check "Infisical: fixture: no line" test -z "$(grep -x 'data-back infisical' "$H/.local/restore-clean.state" || true)"
+  cluster_holds infisical 7 0
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "Infisical: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "Infisical: its database is not replaced" no_log 'kc apply Job plane-restore ns=infisical'
+  check "Infisical: the evidence says why" jq -e 'any(.steps[]; .step == "repair-data-back-infisical")' "$(newest_evidence restore-clean)"
+
+  # A finished data Job the marker does not name, as an in-place restore under it leaves, says nothing about this restore.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  /bin/sleep 1
+  run scripts/restore.sh dev latest CONFIRM=yes
+  check "fixture: an in-place restore under the marker finished (got $RC)" test "$RC" -eq 0
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "a finished Job the marker does not name: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "a finished Job the marker does not name: it does not count, and the data Job runs" log_has 'kc apply Job plane-restore ns=plane-dev'
+
+  # A Job that failed says nothing either.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: the marker names dev's data Job, which failed" jq -e --arg j "$(sed -n 's/^data-job dev //p' "$H/.local/restore-clean.state")" '.[$j].state == "Failed"' "$H/state/jobs.json"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the data Job failed: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the data Job failed: no line for it" jq -e 'all(.steps[]; .step != "repair-data-back-dev")' "$(newest_evidence restore-clean)"
+  check "the data Job failed: it runs again" log_has 'kc apply Job plane-restore ns=plane-dev'
+
+  # The line and the Job speak for the last data Job only. The override stopped part way through a second one, which
+  # is removed, and the first is still there, finished. Read as the data being back, the part that came back would stay.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: prod-sim's data is back" grep -qx 'data-back prod-sim' "$H/.local/restore-clean.state"
+  /bin/sleep 1
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached env ALLOW_RESUME_OVERWRITE=prod-sim scripts/restore.sh clean latest
+  wait_for_log 'kc apply Job plane-restore ns=plane-prod-sim'
+  wait_for_running_job
+  check "the override in its Job: the line has gone" test -z "$(grep -x 'data-back prod-sim' "$H/.local/restore-clean.state" || true)"
+  stop_detached TERM
+  rm -f "$H/state/hang-jobs.json"
+  check "fixture: the earlier data Job is still there, finished" jq -e 'any(to_entries[]; .value.ns == "plane-prod-sim" and .value.state == "Complete" and (.key | test("^plane-restore-[0-9]{8}t[0-9]{6}z$")))' "$H/state/jobs.json"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the override stopped in its Job: a resume is not a pass, exit 4 (got $RC)" test "$RC" -eq 4
+  show_tail 4
+  check "the override stopped in its Job: it does not keep what is there" no_out "so this keeps what plane-prod-sim holds"
+  check "the override stopped in its Job: the data Job runs again" log_has 'kc apply Job plane-restore ns=plane-prod-sim'
+
+  # The same for an emptied target, restored again, whose second Job fails.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  cluster_holds plane-prod-sim 0 0
+  /bin/sleep 1
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  check "an emptied target whose second data Job fails: stops (got $RC)" test "$RC" -ne 0
+  check "an emptied target whose second data Job fails: the line has gone" test -z "$(grep -x 'data-back prod-sim' "$H/.local/restore-clean.state" || true)"
+  rm -f "$H/state/fail-jobs.json"
+  cluster_holds plane-prod-sim 23 0
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "an emptied target whose second data Job fails: a resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "an emptied target whose second data Job fails: and restores it" log_has 'kc apply Job plane-restore ns=plane-prod-sim'
+
+  # And a target emptied since has nothing to lose, as with the line.
+  reset
+  take_backups
+  lose_cluster
+  printf 'plane-dev logs job/plane-restore-[0-9tz]+ \n' > "$H/state/kubectl-hang"
+  start_detached scripts/restore.sh clean latest
+  wait_for_log 'kc hung'
+  stop_detached KILL
+  cluster_holds plane-dev 0 0
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the finished Job, and an empty target: restores it, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the finished Job, and an empty target: the data Job runs" log_has 'kc apply Job plane-restore ns=plane-dev'
+}
+
+# ----- The same review's MINOR problems. M and a number is the one of that number. -----
+
+M1() {
+  scenario "M1. A resume refuses an environment only after its repair and make up, says so, and does not walk the state back"
+  local state="$H/.local/terraform/infisical/terraform.tfstate"
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: Infisical is done" grep -qx 'done infisical' "$H/.local/restore-clean.state"
+  cluster_holds plane-prod-sim 500 777
+  jq '.serial = 99' "$state" > "$H/state/t" && cp "$H/state/t" "$state" # make up has applied on top of it since.
+  leave_paused monitoring-extras
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "refuses, exit 1 (got $RC)" test "$RC" -eq 1
+  check "says the target was not changed" out_has "plane-prod-sim was not changed"
+  check "and it was not" test "$(cluster_value '.users["plane-prod-sim"]')" = 500
+  check "says what had run by then" out_has "its repair, and make up as far as this step"
+  check "and does not say nothing was changed" no_out "Nothing was changed"
+  check "the child's last word speaks for the target alone" out_has "refused, as said above. plane-prod-sim was not changed"
+  check "what it says had run did run: the repair" log_has 'kc patch application monitoring-extras resume'
+  check "what it says had run did run: make up" order 'tf local apply' 'tf plan' 'kc publish identity ns=plane-prod-sim'
+  check "the state stays where make up left it, serial 99" test "$(jq -r .serial "$state")" = 99
+  check "and nothing replaced it, so no copy" test -z "$(find "${state%/*}" -name 'terraform.tfstate.pre-restore-*')"
+
+  # Infisical's own refusal comes after the first make up, and speaks the same way.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","infisical"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: nothing says Infisical's data is back" test -z "$(grep -E '^(done|data-back) infisical$' "$H/.local/restore-clean.state" || true)"
+  cluster_holds infisical 7 0
+  run scripts/restore.sh clean latest
+  check "Infisical holds 7 users: refuses, exit 1 (got $RC)" test "$RC" -eq 1
+  check "Infisical holds 7 users: says it was not changed" out_has "refused, as said above. infisical was not changed"
+  check "Infisical holds 7 users: and does not say nothing was changed" no_out "Nothing was changed"
+  cluster_holds infisical 1 0
+
+  # While its database is still to come back the state goes in, and what it replaced is kept.
+  jq '.serial = 99' "$state" > "$H/state/t" && cp "$H/state/t" "$state"
+  run scripts/restore.sh clean latest
+  check "Infisical not back yet: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "Infisical not back yet: the state is the backup's" test "$(jq -r .serial "$state")" = 12
+  check "Infisical not back yet: what it replaced is kept" test -n "$(find "${state%/*}" -name 'terraform.tfstate.pre-restore-*')"
+
+  # Its data back and no done line: the same as done, the state stays, and so does the child's copy of the step.
+  reset
+  take_backups
+  lose_cluster
+  printf 'once:infisical exec infisical-redis-0\n' > "$H/state/kubectl-fail"
+  run scripts/restore.sh clean latest
+  check "fixture: Infisical's data is back, with no done line" grep -qx 'data-back infisical' "$H/.local/restore-clean.state"
+  check "fixture: and it has no done line" test -z "$(grep -x 'done infisical' "$H/.local/restore-clean.state" || true)"
+  cluster_holds infisical 7 0
+  jq '.serial = 99' "$state" > "$H/state/t" && cp "$H/state/t" "$state"
+  run scripts/restore.sh clean latest
+  check "its data back, no done line: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "its data back, no done line: the state stays" test "$(jq -r .serial "$state")" = 99
+
+  # With no state at all there is nothing to walk back, and restored mode needs one.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  rm -f "$state"
+  run scripts/restore.sh clean latest
+  check "Infisical done, the state gone: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "Infisical done, the state gone: it is put back" test "$(jq -r .serial "$state")" = 12
+}
+
+M2() {
+  scenario "M2. A marker's lines belong to a cluster: on a new one, nothing that run finished counts"
+  local way
+  for way in "up.sh refuses at bootstrap" "up.sh UP_STOP_AFTER=cluster"; do
+    reset
+    take_backups
+    lose_cluster
+    printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+    run scripts/restore.sh clean latest
+    rm -f "$H/state/fail-jobs.json"
+    check "$way: fixture: dev is done" grep -qx 'done dev' "$H/.local/restore-clean.state"
+    check "$way: fixture: the marker names the cluster" grep -qE '^cluster=.' "$H/.local/restore-clean.state"
+    lose_cluster
+    if [[ "$way" == "up.sh refuses at bootstrap" ]]; then
+      run scripts/up.sh
+      check "$way: it does (got $RC)" test "$RC" -ne 0
+      check "$way: and names the command to run" out_has "Finish it with: make restore-clean BACKUP=latest"
+    else
+      run env UP_STOP_AFTER=cluster scripts/up.sh
+      check "$way: goes through (got $RC)" test "$RC" -eq 0
+    fi
+    check "$way: and a new cluster is here, empty" test "$(cluster_value '.exists')/$(cluster_value '.users // {} | length')" = true/0
+    : > "$H/state/calls.log"
+    run scripts/restore.sh clean latest PLAN_ONLY=yes
+    check "$way: a plan says it will start again" out_has "so a real run starts again from the beginning"
+    check "$way: and changes nothing" grep -qx 'done dev' "$H/.local/restore-clean.state"
+    : > "$H/state/calls.log"
+    run scripts/restore.sh clean latest
+    check "$way: the command it names finishes, exit 0 (got $RC)" test "$RC" -eq 0
+    show_tail
+    check "$way: says the cluster is gone" out_has "so it starts again from the beginning"
+    check "$way: and nothing that run finished counts" no_out "already restored by an earlier run"
+    check "$way: and it is no sign-in dead end" no_out "and sign in as"
+    check "$way: Infisical comes back" log_has 'kc apply Job plane-restore ns=infisical'
+    check "$way: dev's data comes back" log_has 'kc apply Job plane-restore ns=plane-dev'
+    check "$way: with what the backup holds" test "$(cluster_value '.users["plane-dev"]')" = 23
+    check "$way: and so does prod-sim" test "$(cluster_value '.users["plane-prod-sim"]')" = 23
+    check "$way: nothing started over anything" no_log '^ERROR'
+    check "$way: finished" test ! -e "$H/.local/restore-clean.state"
+    check "$way: a pass" jq -e '.result == "PASS"' "$(newest_evidence restore-clean)"
+  done
+
+  # A data-back line, too: the empty target's data comes back, and the line does not read as the new cluster's.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-migrate","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: dev's data came back" grep -qx 'data-back dev' "$H/.local/restore-clean.state"
+  lose_cluster
+  ( cd "$H" && UP_STOP_AFTER=cluster scripts/up.sh ) > /dev/null 2>&1
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "a data-back line from the old cluster: a plan makes no promise about what came back" no_out "its data came back on an earlier run"
+  # A new cluster's backup: what those lines would have let through.
+  run scripts/backup.sh dev
+  check "a data-back line from the old cluster: a backup of dev is refused, as of what it has not finished (got $RC)" test "$RC" -ne 0
+  check "a data-back line from the old cluster: says so" out_has "it has not finished dev"
+  run scripts/restore.sh clean latest
+  check "a data-back line from the old cluster: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "a data-back line from the old cluster: dev's data comes back" test "$(cluster_value '.users["plane-dev"]')" = 23
+
+  # A done line, the same way for make backup.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  lose_cluster
+  ( cd "$H" && UP_STOP_AFTER=cluster scripts/up.sh ) > /dev/null 2>&1
+  : > "$H/state/calls.log"
+  run scripts/backup.sh dev
+  check "a done line from the old cluster: a backup of dev is refused (got $RC)" test "$RC" -ne 0
+  check "a done line from the old cluster: no Job ran" no_log 'kc apply Job plane-backup'
+
+  # What it chose goes with what it finished, as with no cluster at all.
+  reset
+  take_backups
+  local old_d new_d
+  old_d="$(ls "$H/.local/backups/dev" | tail -1)"
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  plane_counts 99
+  ( cd "$H" && scripts/backup.sh dev ) > /dev/null 2>&1
+  /bin/sleep 1
+  new_d="$(ls "$H/.local/backups/dev" | tail -1)"
+  check "fixture: a newer backup of dev" test "$new_d" != "$old_d"
+  lose_cluster
+  ( cd "$H" && UP_STOP_AFTER=cluster scripts/up.sh ) > /dev/null 2>&1
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "a new cluster, and a newer Plane backup: BACKUP=latest refuses (got $RC)" test "$RC" -eq 1
+  check "a new cluster, and a newer Plane backup: names both" out_has "dev/$old_d against the newer dev/$new_d"
+  check "a new cluster, and a newer Plane backup: and nothing ran" no_log 'kc apply|kc scale'
+
+  # The same cluster: a stop and a start of its node is no reason to start over, and Docker not saying is no reason either.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  edit_cluster 'c["stopped"] = True'
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "its node stopped and started: the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "its node stopped and started: the node first" order 'docker start' 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "its node stopped and started: what it finished still counts" out_has "already restored by an earlier run"
+  check "its node stopped and started: dev is left alone" no_log 'kc apply Job plane-restore ns=plane-dev'
+  check "its node stopped and started: it does not start again" no_out "so it starts again from the beginning"
+
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  touch "$H/state/docker-id-fails"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "Docker will not say which cluster: it cannot tell, and the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "Docker will not say which cluster: dev is left alone" no_log 'kc apply Job plane-restore ns=plane-dev'
+
+  # A marker from before this line: it cannot tell, the lines stand, and the run that goes on notes the cluster.
+  reset
+  take_backups
+  write_marker infisical up-all
+  : > "$H/state/calls.log"
+  printf '2' > "$H/state/smoke-rc-verify"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/smoke-rc-verify"
+  check "a marker naming no cluster: its lines stand" no_log 'kc apply Job plane-restore ns=infisical'
+  check "a marker naming no cluster: and now it names this one" grep -qx 'cluster=node-of-cluster-generation-1' "$H/.local/restore-clean.state"
+}
+
+M3() {
+  scenario "M3. One kubectl error after a run's last Job has finished does not read as a Job that may still run"
+  reset
+  take_backups
+  printf 'plane-dev get job .*--ignore-not-found\n' > "$H/state/kubectl-fail"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh dev latest CONFIRM=yes
+  check "a passed restore: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "a passed restore: it does not say a Job may still run" no_out "COULD NOT REMOVE"
+  check "a passed restore: nothing stays paused" test -z "$(paused_now)"
+  check "a passed restore: reads PASS" jq -e '.result == "PASS"' "$(newest_evidence restore-dev)"
+  check "a passed restore: says complete" out_has "into dev complete"
+
+  reset
+  take_backups
+  printf 'infisical get job .*--ignore-not-found\n' > "$H/state/kubectl-fail"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh infisical latest CONFIRM=yes
+  check "Infisical: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "Infisical: it does not say a Job may still run" no_out "COULD NOT REMOVE"
+  check "Infisical: nothing stays paused" test -z "$(paused_now)"
+  check "Infisical: the server is back" test "$(/usr/bin/curl -s -o /dev/null -w '%{http_code}' "$INFISICAL_URL/api/status")" = 200
+
+  # A proof that fails comes after the last Job too. It is a failure, and auto-sync comes back as with any other.
+  reset
+  take_backups
+  printf 'plane-dev get job .*--ignore-not-found\n' > "$H/state/kubectl-fail"
+  printf '1' > "$H/state/smoke-rc-proof"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh dev latest CONFIRM=yes
+  check "a proof fails: not a pass (got $RC)" test "$RC" -eq 1
+  check "a proof fails: it does not say a Job may still run" no_out "COULD NOT REMOVE"
+  check "a proof fails: nothing stays paused" test -z "$(paused_now)"
+
+  # The last Job has not finished: the same kubectl error still means what it said.
+  reset
+  take_backups
+  printf '[["plane-restore-migrate","plane-dev"]]' > "$H/state/hang-jobs.json"
+  printf 'plane-dev get job .*--ignore-not-found\n' > "$H/state/kubectl-fail"
+  : > "$H/state/calls.log"
+  start_detached scripts/restore.sh dev latest CONFIRM=yes
+  wait_for_log 'kc apply Job plane-restore-migrate ns=plane-dev'
+  wait_for_running_job
+  stop_detached TERM
+  check "a stop in the migrator's Job: not a pass (got $RC)" test "$RC" -ne 0
+  check "a stop in the migrator's Job: it cannot tell, and says so" out_has "COULD NOT REMOVE these restore Jobs"
+  check "a stop in the migrator's Job: auto-sync stays paused" test -n "$(paused_now)"
+  check "a stop in the migrator's Job: nothing started over it" no_log '^ERROR'
+
+  # A clean restore's child: a pass stays a pass, with nothing for a resume to repair.
+  reset
+  take_backups
+  lose_cluster
+  printf 'plane-dev get job .*--ignore-not-found\n' > "$H/state/kubectl-fail"
+  run scripts/restore.sh clean latest
+  check "a clean restore: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "a clean restore: nothing stays paused" test -z "$(paused_now)"
+}
+
+M4() {
+  scenario "M4. Retention took the backup of an environment a restore has finished: the other still finishes"
+  local id
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: dev is done" grep -qx 'done dev' "$H/.local/restore-clean.state"
+  id="$(sed -n 's/^dev=//p' "$H/.local/restore-clean.state")"
+  ( cd "$H" && for _ in 1 2 3; do scripts/backup.sh dev; /bin/sleep 1; done ) > /dev/null 2>&1
+  check "fixture: three more backups of dev, and retention took the one it names" test ! -e "$H/.local/backups/dev/$id"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "a plan goes on (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "a plan says what it no longer has, and why that is fine" out_has "$id, which this restore has finished. That backup is no longer here, and nothing left to do reads it"
+  check "a plan: no raw cd error" no_out "No such file or directory"
+  check "a plan: no raw jq error" no_out "jq: error"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "prod-sim is restored" log_has 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "dev is left alone" no_log 'kc apply Job plane-restore ns=plane-dev'
+  check "dev is still checked at the end, from this machine's sentinel file" log_has 'smoke --env dev --mode verify$'
+  check "and that passes" jq -e 'any(.steps[]; .step == "verify-sentinel-dev" and .status == "PASS")' "$(newest_evidence restore-clean)"
+  check "no raw jq error" no_out "jq: error"
+  check "a pass" jq -e '.result == "PASS"' "$(newest_evidence restore-clean)"
+  check "finished" test ! -e "$H/.local/restore-clean.state"
+
+  # With no sentinel file either, that check cannot run, and the words say why.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  id="$(sed -n 's/^dev=//p' "$H/.local/restore-clean.state")"
+  ( cd "$H" && for _ in 1 2 3; do scripts/backup.sh dev; /bin/sleep 1; done ) > /dev/null 2>&1
+  rm -f "$H/.local/test-sentinel-dev.json"
+  run scripts/restore.sh clean latest
+  check "and no sentinel file: not a pass, exit 2 (got $RC)" test "$RC" -eq 2
+  check "and no sentinel file: says why" jq -e 'any(.steps[]; .step == "verify-sentinel-dev" and .status == "NOT RUN" and (.detail | test("no longer here, and this machine has no sentinel file")))' "$(newest_evidence restore-clean)"
+
+  # What it has not finished still needs its backup, and so does what a lost cluster took with it.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  id="$(sed -n 's/^prod-sim=//p' "$H/.local/restore-clean.state")"
+  rm -rf "$H/.local/backups/prod-sim/$id"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the backup of what it has not finished: refuses, exit 1 (got $RC)" test "$RC" -eq 1
+  check "the backup of what it has not finished: names it" out_has "prod-sim/$id"
+  check "the backup of what it has not finished: nothing ran" no_log 'kc apply|kc scale'
+
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  id="$(sed -n 's/^dev=//p' "$H/.local/restore-clean.state")"
+  rm -rf "$H/.local/backups/dev/$id"
+  lose_cluster
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "dev's backup gone, and the cluster lost, so dev is to do again: refuses, exit 1 (got $RC)" test "$RC" -eq 1
+  check "dev's backup gone, and the cluster lost: names it" out_has "dev/$id"
+  check "dev's backup gone, and the cluster lost: nothing ran" no_log 'kind create|kc apply'
+}
+
+M5() {
+  scenario "M5. A plan that refuses does not show the same number twice, because of how it rounds"
+  # 12.22 GB of kind volume, as docker system df prints it, is 11933593 KiB, and 93% of that is 11098241.
+  reset
+  take_backups
+  printf '%s' "$((25 * 1048576 - 10000 - 11098241))" > "$H/state/free-kib"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "10 MB short of 25 GiB after a delete: refuses (got $RC)" test "$RC" -eq 1
+  check "and says 24.99, not 25.0" out_has "about 24.99 GiB would be free after the delete"
+  check "and the plan's disk line says it too" out_has "about 24.99 GiB after a delete"
+  check "beside the limit" out_has "up.sh asks for 25 GiB"
+  printf '%s' "$((25 * 1048576 - 11098241))" > "$H/state/free-kib"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "exactly 25 GiB after a delete: passes (got $RC)" test "$RC" -eq 0
+  check "and prints 25.00" out_has "about 25.00 GiB after a delete"
+
+  reset
+  take_backups
+  lose_cluster
+  printf '%s' "$((25 * 1048576 - 10000))" > "$H/state/free-kib"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "no cluster, 10 MB short: refuses (got $RC)" test "$RC" -eq 1
+  check "no cluster, 10 MB short: says 24.99, not 25.0" out_has "only 24.99 GiB free on the host"
+  check "no cluster, 10 MB short: the disk line too" out_has "24.99 GiB free, no cluster to delete"
+
+  # An empty cluster that stays, whose limit has two decimals of its own.
+  reset
+  take_backups
+  empty_cluster
+  printf '%s' "$(awk 'BEGIN { printf "%d", 22.94 * 1048576 - 1000 }')" > "$H/state/free-kib"
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "an empty cluster, 1 MB short of 22.94: refuses (got $RC)" test "$RC" -eq 1
+  check "an empty cluster, 1 MB short of 22.94: says 22.93" out_has "only 22.93 GiB free on the host"
+}
+
+H66() {
+  scenario "H66. scripts/rotate.sh's probe loop goes with the script, after a SIGKILL too"
+  local journal="$H/.local/secret-zero/rotation-dev" probe lines waited=0
+  loop_processes() { ps -ax -o pgid=,command= | awk -v g="$DETACHED" '$1 == g && /rotate\.sh/ { n++ } END { print n + 0 }'; }
+  reset
+  # What a rotation that stopped halfway leaves, so RESUME=yes goes straight to the loop and then to its first read.
+  mkdir -p "$journal"
+  printf 'old' > "$journal/old"
+  printf 'new' > "$journal/new"
+  : > "$journal/version"
+  printf 'plane-dev get pod plane-pgdb-wl-0 -o jsonpath=[{].status.startTime\n' > "$H/state/kubectl-hang"
+  : > "$H/state/calls.log"
+  start_detached scripts/rotate.sh ENV=dev RESUME=yes
+  wait_for_log 'kc hung'
+  probe="$(ls -t "$H"/.local/evidence-raw/rotate-dev-*.probe | head -1)"
+  check "fixture: the script got as far as the loop" test -n "$probe"
+  lines="$(wc -l < "$probe")"
+  until [[ "$(wc -l < "$probe")" -gt "$lines" ]] || [[ "$waited" -gt 100 ]]; do
+    /bin/sleep 0.2
+    waited=$((waited + 1))
+  done
+  check "with the script alive, the loop goes on probing" test "$(wc -l < "$probe")" -gt "$lines"
+  check "with the script alive, it is a process of its own" test "$(loop_processes)" -ge 2
+  # The script alone, and not its group, which leaves the loop as a real SIGKILL does. The stub that hangs, and the
+  # subshell waiting for it, are not the loop, so they go too, and what is left of this script after that is the loop.
+  kill -KILL "$DETACHED" 2>/dev/null
+  wait "$DETACHED" 2>/dev/null
+  ps -ax -o pid=,pgid=,command= | awk -v g="$DETACHED" '$2 == g && /kubectl/ { print $1 }' | xargs kill -KILL 2>/dev/null
+  waited=0
+  until [[ "$(loop_processes)" -eq 0 ]] || [[ "$waited" -gt 100 ]]; do
+    /bin/sleep 0.2
+    waited=$((waited + 1))
+  done
+  check "a SIGKILL of the script: the loop has gone by itself" test "$(loop_processes)" -eq 0
+  lines="$(wc -l < "$probe")"
+  /bin/sleep 1
+  check "a SIGKILL of the script: and it probes no more" test "$(wc -l < "$probe")" -eq "$lines"
+  kill -KILL -- "-$DETACHED" 2>/dev/null
 }
