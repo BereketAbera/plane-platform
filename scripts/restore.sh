@@ -278,9 +278,9 @@ clean_refuse_stale_marker() {
   if [[ -n "$newest" && "$newest" > "$CLEAN_IID" ]]; then
     die "a clean restore of Infisical backup $CLEAN_IID is marked as under way ($RESTORE_CLEAN_MARKER), and a newer complete set exists: $newest. BACKUP=latest cannot mean both, so this stops. Nothing was changed. To resume the one under way: make restore-clean BACKUP=$CLEAN_IID. $(clean_start_over_advice)"
   fi
-  # With no cluster, nothing that run finished still counts, and neither does what it chose. Infisical's set is the
-  # newest, so what is left to ask is whether it would still choose the same Plane backups.
-  if cluster_exists; then return 0; fi
+  # With no cluster, or another one, nothing that run finished still counts, and neither does what it chose. Infisical's
+  # set is the newest, so what is left to ask is whether it would still choose the same Plane backups.
+  if ! recovery_marker_cluster_gone; then return 0; fi
   for env in $CLEAN_ENVS; do
     id="$(clean_marker_value "$env")"
     fresh="$(recovery_pick_plane "$env" "$CLEAN_IID" "" || true)"
@@ -485,7 +485,7 @@ clean_print_plan() {
       "$(jq -r '.uploaded_objects.missing // "not recorded"' "$LOCAL_DIR/backups/$env/$id/manifest.json")"
     clean_warn_plane_content "$env" "$id"
     clean_warn_newer_plane "$env" "$id" "$set_file"
-    if [[ -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $env" "$RESTORE_CLEAN_MARKER" && ! clean_done "$env"; then
+    if [[ -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $env" "$RESTORE_CLEAN_MARKER" && ! clean_done "$env" && ! recovery_marker_cluster_gone; then
       printf '    %-10s its data came back on an earlier run, so a resume keeps what is there and goes on from the migrator, unless ALLOW_RESUME_OVERWRITE=%s\n' "" "$env"
     fi
   done
@@ -581,6 +581,17 @@ clean_refuse_another_run() {
 clean_claim_marker() { # So the next run can tell whether this one is still alive.
   sed '/^pid=/d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
   printf 'pid=%s\n' "$$" >> "$RESTORE_CLEAN_MARKER.tmp"
+  mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+}
+
+# So the next run can tell whether the cluster here is the one the lines below were written on. Once make up has run,
+# since with no cluster at the start that is what makes it, and before anything writes such a line.
+clean_note_cluster() {
+  local id
+  id="$(recovery_cluster_id)"
+  [[ -n "$id" ]] || return 0
+  sed '/^cluster=/d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+  printf 'cluster=%s\n' "$id" >> "$RESTORE_CLEAN_MARKER.tmp"
   mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
 }
 
@@ -764,6 +775,8 @@ restore_clean() {
     if [[ ! -f "$RESTORE_CLEAN_MARKER" ]]; then
       problem="$(clean_environment_problem)"
       if [[ -n "$problem" ]]; then warn "a real run would refuse right now: $problem. $(clean_replace_advice)"; fi
+    elif recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+      warn "the cluster that restore was working on is gone, so a real run starts again from the beginning"
     fi
     ok "PLAN_ONLY=yes: nothing was changed"
     return 0
@@ -772,8 +785,8 @@ restore_clean() {
   clean_refuse_another_run
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
     under_way=yes
-    # The cluster it was restoring into is gone, so nothing it finished still counts.
-    if ! cluster_exists && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+    # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not.
+    if recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so it starts again from the beginning"
       sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
       mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
@@ -810,6 +823,7 @@ restore_clean() {
 
   log "make up as far as Traefik. Plane waits for an identity Secret that does not exist yet."
   UP_STOP_AFTER=traefik "$ROOT/scripts/up.sh"
+  clean_note_cluster
   clean_record up-to-traefik PASS "cluster, Terraform, secret zero, Traefik"
 
   if clean_done infisical; then
