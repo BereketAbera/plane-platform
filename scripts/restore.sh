@@ -62,10 +62,14 @@
 #   5. Restore each Plane environment's database and objects, as above, then check it all again.
 # It can resume: run it again after any failure, including a hard stop that ran no trap. With the marker still
 # there, a new run first puts back any auto-sync left paused and any Deployment left at zero. A resume refuses, and
-# changes nothing, if the marker has been overtaken: BACKUP=latest with a newer complete set than it names, a backup
-# it names that is gone, or an environment not yet done that holds something other than its backup. An environment
-# whose data Job finished has a line saying so in the marker, and a resume does not replace it, whatever it holds: it
-# goes on from the migrator, unless ALLOW_RESUME_OVERWRITE names it. Options:
+# changes nothing, if the marker has been overtaken: BACKUP=latest with a newer complete set than it names, or a backup
+# it still needs that is gone. The backup of an environment it has finished is not needed any more. It also refuses
+# an environment not yet done that holds something other than its backup, and only a look inside the cluster can tell
+# that, so its repair and make up have run by then, and only that environment is left as it was. An environment whose
+# last data Job finished has a line saying so in the marker, or a Job that says so for a day after, and a resume does
+# not replace it, whatever it holds: it goes on from the migrator, unless ALLOW_RESUME_OVERWRITE names it. The marker's
+# lines belong to the cluster it names. On another one, nothing that run finished counts, and it starts again.
+# Options:
 #   PLAN_ONLY=yes                  do step 1 and print the plan. Changes nothing, and works on a live cluster
 #   ENVS="dev"                     restore only these Plane environments. Default: dev prod-sim
 #   BACKUP_DEV=<id> BACKUP_PROD_SIM=<id>  instead of the Plane backup step 1 would pick
