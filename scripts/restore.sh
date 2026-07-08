@@ -584,6 +584,16 @@ clean_claim_marker() { # So the next run can tell whether this one is still aliv
   mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
 }
 
+# The state belongs with Infisical's database, so it goes in while that is still to come back. Past that, make up has
+# applied on top of it, and putting it back would only leave the next make up to apply over an older state, whatever
+# else this resume finds. If it is not there at all, nothing is lost by putting it back.
+clean_install_tf_state() { # backup-dir
+  if clean_done infisical || grep -qx 'data-back infisical' "$RESTORE_CLEAN_MARKER"; then
+    [[ ! -f "$RECOVERY_TF_STATE" ]] || return 0
+  fi
+  recovery_install_tf_state "$1"
+}
+
 clean_scale_to_git() { # namespace deployment replicas
   local have
   have="$(kc -n "$1" get deployment "$2" -o jsonpath='{.spec.replicas}' 2>/dev/null || true)"
@@ -795,7 +805,7 @@ restore_clean() {
 
   # Before anything reads them: secret-zero.sh applies these files, and bootstrap reads the state.
   recovery_reinstate_zero "$set_file"
-  recovery_install_tf_state "$dir"
+  clean_install_tf_state "$dir"
   recovery_rebuild_machine_file "$dir"
 
   log "make up as far as Traefik. Plane waits for an identity Secret that does not exist yet."
@@ -1019,7 +1029,10 @@ on_exit() {
     "$EXIT_NEEDS_SIGN_IN") warn "the data of $BACKUP_ID is back in $ENV_NAME, and nothing here can log in to prove it, as the steps above say. Evidence: $evidence" ;;
     "$EXIT_OVERWROTE") warn "restore of $BACKUP_ID into $ENV_NAME is proven, and this is not a pass: it overwrote what $NS held, because ALLOW_RESUME_OVERWRITE named it. Evidence: $evidence" ;;
     *)
-      if [[ "$ANYTHING_CHANGED" == no ]]; then
+      if [[ "$ANYTHING_CHANGED" == no && "$RESTORE_MODE" == clean ]]; then
+        # Its parent has run make up by now, and on a resume its repair too, so this can speak only for the target.
+        warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. $NS was not changed. Evidence: $evidence"
+      elif [[ "$ANYTHING_CHANGED" == no ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. Nothing was changed. Evidence: $evidence"
       elif [[ -n "$JOBS_LEFT_RUNNING" ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME FAILED, and its Job may still be running, as said above. Auto-sync is still paused. Evidence: $evidence"
@@ -1217,7 +1230,7 @@ refuse_if_not_empty() { # users objects
       OVERWROTE=yes
       if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then printf 'overwrote %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"; fi
     else
-      die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. Nothing was changed. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME, which reaches only this environment, and that run does not read PASS."
+      die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. $NS was not changed. What this resume did before it could look stands: its repair, and make up as far as this step. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME, which reaches only this environment, and that run does not read PASS."
     fi
   elif [[ "${CONFIRM:-}" == yes ]]; then
     have="$(clean_count "$backup_dir" users)"
@@ -1796,12 +1809,12 @@ restore_infisical() {
     restore_infisical_db "$pg_image"
     data_back_mark
     record postgres PASS "dump restored into a second database, row counts equal the backup, swapped in"
+    # State, machine file and database are a pair, so these change when the database does. Before that, a failed Job
+    # would leave the old database with this backup's state, for the next make up to apply. A clean restore installed
+    # them earlier, for what make up needs, and these then change nothing.
+    recovery_install_tf_state "$backup_dir"
+    if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
   fi
-  # State, machine file and database are a pair, so these change when the database does. Before that, a failed Job
-  # would leave the old database with this backup's state, for the next make up to apply. A clean restore installed
-  # them earlier, for what make up needs, and these then change nothing.
-  recovery_install_tf_state "$backup_dir"
-  if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
 
   # The server caches into Redis what describes the old database: admin config, secrets, permissions,
   # identity revocation versions, KMS material, and queued jobs. From a list of its keys, 2026-11-05.
