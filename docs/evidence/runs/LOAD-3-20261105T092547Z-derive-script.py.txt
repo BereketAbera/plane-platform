@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+# LOAD-3: derive the tables in docs/resource-utilization.md from the raw captures with the same stamp.
+# Usage: python3 -I derive.py <evidence-dir> <stamp> <realistic-run-dir> <saturation-run-dir>
+import json, sys, re, datetime
+EV, ST, RUN1, RUN0 = sys.argv[1:5]
+W = json.load(open(f"{EV}/LOAD-3-{ST}-prometheus-windows.json"))
+SER = json.load(open(f"{EV}/LOAD-3-{ST}-prometheus-series.json"))
+STEPS = json.load(open(f"{EV}/LOAD-3-{ST}-prometheus-steps.json"))
+BK = json.load(open(f"{EV}/LOAD-3-{ST}-traefik-buckets.json"))
+TL = json.load(open(f"{EV}/LOAD-3-{ST}-timeline.json"))
+R = {"realistic": json.load(open(f"{RUN1}/results.json")), "saturation": json.load(open(f"{RUN0}/results.json"))}
+MIB = 1024*1024
+WINS = ("idle", "realistic", "saturation")
+UTC = datetime.timezone.utc
+ts = lambda t: datetime.datetime.fromtimestamp(t, UTC).strftime("%H:%M:%S")
+def entries(win, name):
+    for e in W["entries"]:
+        if e.get("window") == win and e.get("name") == name: return e.get("result") or []
+    return []
+def table(win, name, keys=("namespace", "container")):
+    return {tuple(r["metric"].get(k, "") for k in keys): float(r["value"][1]) for r in entries(win, name)}
+def series(win, name):
+    for e in SER["entries"]:
+        if e.get("window") == win and e.get("name") == name: return e.get("result") or []
+    return []
+print("windows:", W["windows"]); print("api route:", W["api_route"])
+f = lambda v, s=1, w=8, d=1: (f"{v*s:{w}.{d}f}" if v is not None else f"{'-':>{w}}")
+print("\n== per container, MiB and millicores, avg/max of the sum per container (one row per container name; only one pod each in these windows)")
+for ns in ("plane-dev", "plane-prod-sim"):
+    print(f"-- {ns}")
+    print(f"{'container':26} {'cpu lim':>7} {'mem lim':>7} |" + "|".join(f" {w[:4]} mem avg/max  cpu avg/max " for w in WINS))
+    conts = sorted({k[1] for w in WINS for k in table(w, "ctr_mem_max") if k[0] == ns})
+    for c in conts:
+        lim = table("idle", "cpu_limit").get((ns, c)); ml = table("idle", "mem_limit").get((ns, c))
+        row = f"{c:26} {f(lim,1000,7,0)} {f(ml,1/MIB,7,0)} |"
+        for w in WINS:
+            g = lambda n: table(w, n).get((ns, c))
+            row += f"{f(g('ctr_mem_avg'),1/MIB,6)} {f(g('ctr_mem_max'),1/MIB,6)} {f(g('ctr_cpu_avg'),1000,6)} {f(g('ctr_cpu_max'),1000,6)} |"
+        print(row)
+print("\n== per namespace, MiB and millicores")
+print(f"{'namespace':22} |" + "|".join(f" {w[:4]} mem avg/max  cpu avg/max " for w in WINS))
+for ns in sorted({k[0] for w in WINS for k in table(w, "ns_mem_max", ("namespace",))}):
+    row = f"{ns:22} |"
+    for w in WINS:
+        g = lambda n: table(w, n, ("namespace",)).get((ns,))
+        row += f"{f(g('ns_mem_avg'),1/MIB,6)} {f(g('ns_mem_max'),1/MIB,6)} {f(g('ns_cpu_avg'),1000,6)} {f(g('ns_cpu_max'),1000,6)} |"
+    print(row)
+print("\n== cluster and VM")
+for w in WINS:
+    for n, s, u in (("pods_total_mem_avg",1/MIB,"MiB"),("pods_total_mem_max",1/MIB,"MiB"),("pods_total_cpu_avg",1000,"m"),("pods_total_cpu_max",1000,"m"),("vm_used_avg",1/2**30,"GiB"),("vm_used_max",1/2**30,"GiB"),("vm_cpu_busy_avg",1000,"m"),("vm_cpu_busy_max",1000,"m"),("vm_swap_used_max",1/2**30,"GiB"),("node_load1_max",1,""),("node_cpu_pressure_rate",1,"s/s"),("node_mem_pressure_rate",1,"s/s"),("node_io_pressure_rate",1,"s/s")):
+        rs = entries(w, n)
+        print(f"{w:11} {n:24} {float(rs[0]['value'][1])*s:10.3f} {u}" if rs else f"{w:11} {n:24} none")
+print("vm cpus", [r["value"][1] for r in entries("idle", "vm_cpu_count")], "vm mem total GiB", [round(float(r["value"][1])/2**30, 2) for r in entries("idle", "vm_mem_total")])
+for e in W["entries"]:
+    if e.get("window") == "now" and e.get("result"):
+        if e["name"] == "vm_used_max_whole_retention": print(e["name"], round(float(e["result"][0]["value"][1])/2**30, 2), "GiB")
+        if e["name"] == "prometheus_lowest_timestamp": print("prometheus history starts", datetime.datetime.fromtimestamp(float(e["result"][0]["value"][1]), UTC).isoformat())
+PLANE11 = {"plane-web","plane-admin","plane-space","plane-live","plane-api","plane-worker","plane-beat-worker","plane-pgdb","plane-redis","plane-rabbitmq","plane-silo"}
+def group_of(m):
+    ns, pod, c = m.get("namespace",""), m.get("pod",""), m.get("container","")
+    if ns in ("plane-dev","plane-prod-sim"):
+        if c in ("postgres-exporter","redis-exporter") or pod.startswith(("postgres-exporter","redis-exporter")): return "exporters"
+        if pod.startswith("iso-"): return "infisical"
+        if pod.startswith("k6-"): return "k6"
+        if re.match(r"plane-(backup|restore|api-migrate|rollback)|.*-migrate-|.*-(guard)", pod): return f"jobs-{ns}"
+        if c in PLANE11 or re.match(r"plane-(web|admin|space|live|api|worker|beat-worker|pgdb|redis|rabbitmq|minio|silo)-wl", pod): return f"plane-{ns}"
+        return f"other-{ns}"
+    if ns == "traefik": return "traefik+metrics-server"
+    if ns == "kube-system": return "traefik+metrics-server" if pod.startswith("metrics-server") else "control-plane"
+    if ns == "local-path-storage": return "control-plane"
+    if ns == "argocd": return "argocd"
+    if ns == "infisical": return "infisical"
+    if ns in ("monitoring","monitoring-agents"):
+        if pod.startswith(("loki","alloy")) or c in ("loki","alloy"): return "loki+alloy"
+        return "monitoring"
+    return "other-"+ns
+print("\n== groups at one moment, from the raw series, 15 s step")
+for w in WINS:
+    mem, cpu, names = {}, {}, {}
+    for name, d in (("mem", mem), ("cpu", cpu)):
+        for s in series(w, name):
+            g = group_of(s["metric"]); names.setdefault(g, set()).add(s["metric"].get("namespace","")+"/"+s["metric"].get("pod","")+"/"+s["metric"].get("container",""))
+            for t, v in s["values"]:
+                d.setdefault(g, {}).setdefault(t, 0.0); d[g][t] += float(v)
+    print(f"-- {w}")
+    for g in sorted(set(mem) | set(cpu)):
+        mv = list(mem.get(g, {}).values()); cv = list(cpu.get(g, {}).values())
+        pm = max(mem[g].items(), key=lambda x: x[1]) if mv else (0, 0); pc = max(cpu[g].items(), key=lambda x: x[1]) if cv else (0, 0)
+        print(f"{g:26} ctrs={len(names[g]):3} mem avg {sum(mv)/max(1,len(mv))/MIB:8.1f} max {pm[1]/MIB:8.1f} at {ts(pm[0])} | cpu avg {sum(cv)/max(1,len(cv))*1000:7.1f} max {pc[1]*1000:7.1f} at {ts(pc[0])}")
+    allm, allc = {}, {}
+    for s in series(w, "mem"):
+        for t, v in s["values"]: allm[t] = allm.get(t, 0) + float(v)
+    for s in series(w, "cpu"):
+        for t, v in s["values"]: allc[t] = allc.get(t, 0) + float(v)
+    pm = max(allm.items(), key=lambda x: x[1]); pc = max(allc.items(), key=lambda x: x[1])
+    print(f"ALL PODS mem avg {sum(allm.values())/len(allm)/MIB:.1f} max {pm[1]/MIB:.1f} at {ts(pm[0])} | cpu avg {sum(allc.values())/len(allc)*1000:.1f} max {pc[1]*1000:.1f} at {ts(pc[0])}")
+    for nm in ("vm_used", "vm_cpu_busy"):
+        for s in series(w, nm):
+            vals = [(t, float(v)) for t, v in s["values"]]; p = max(vals, key=lambda x: x[1]); a = sum(v for _, v in vals)/len(vals)
+            print(nm, "avg", round(a/2**30, 2) if nm == "vm_used" else round(a*1000), "max", round(p[1]/2**30, 2) if nm == "vm_used" else round(p[1]*1000), "at", ts(p[0]))
+    mm, cc = {}, {}
+    for name, d in (("mem", mm), ("cpu", cc)):
+        for s in series(w, name):
+            g = group_of(s["metric"])
+            if g in ("plane-plane-dev", "plane-plane-prod-sim"):
+                for t, v in s["values"]: d[t] = d.get(t, 0) + float(v)
+    pm = max(mm.items(), key=lambda x: x[1]); pc = max(cc.items(), key=lambda x: x[1])
+    print(f"BOTH PLANE ENVS mem avg {sum(mm.values())/len(mm)/MIB:.1f} max {pm[1]/MIB:.1f} at {ts(pm[0])} | cpu avg {sum(cc.values())/len(cc)*1000:.1f} max {pc[1]*1000:.1f} at {ts(pc[0])}")
+print("\n== 11 workloads, one environment at one moment")
+for w in WINS:
+    for ns in ("plane-dev", "plane-prod-sim"):
+        mm, cc = {}, {}
+        for name, d in (("mem", mm), ("cpu", cc)):
+            for s in series(w, name):
+                if group_of(s["metric"]) == f"plane-{ns}":
+                    for t, v in s["values"]: d[t] = d.get(t, 0) + float(v)
+        pm = max(mm.items(), key=lambda x: x[1]); pc = max(cc.items(), key=lambda x: x[1])
+        print(f"{w:11} {ns:15} mem avg {sum(mm.values())/len(mm)/MIB:8.1f} max {pm[1]/MIB:8.1f} at {ts(pm[0])} | cpu avg {sum(cc.values())/len(cc)*1000:7.1f} max {pc[1]*1000:7.1f} at {ts(pc[0])}")
+print("\n== window checks")
+for w in WINS:
+    print(w, "alerts firing", sorted({r["metric"].get("alertname") for r in entries(w, "alerts_firing")}))
+    for n in ("argocd_not_synced", "argocd_not_healthy", "argocd_sync_ops", "restarts_by_pod", "oom_events", "pods_created_in_window"):
+        print(" ", n, [r["metric"].get("name") or r["metric"].get("pod") for r in entries(w, n)])
+    rq = entries(w, "all_requests_by_service_method_code")
+    print("  traefik total", round(sum(float(r["value"][1]) for r in rq)), "by code", {c: round(sum(float(r["value"][1]) for r in rq if r["metric"].get("code") == c)) for c in sorted({r["metric"].get("code") for r in rq})}, "by method", {c: round(sum(float(r["value"][1]) for r in rq if r["metric"].get("method") == c)) for c in sorted({r["metric"].get("method") for r in rq})})
+    rq = entries(w, "api_route_requests_by_method_code")
+    print("  api route", {(r["metric"].get("method"), r["metric"].get("code")): round(float(r["value"][1]), 1) for r in rq if float(r["value"][1]) > 0})
+    print("  throttled whole window, plane-dev and plane-prod-sim, share of CFS periods", {k[0][6:9]+"/"+k[1]: round(v, 3) for k, v in sorted(table(w, "throttled_share_by_ctr").items()) if v == v and v > 0.0005})
+print("sync count at", [(ts(t), v) for (t, v), (t0, v0) in zip(next(e for e in TL["entries"] if e["name"] == "argocd_sync_total")["values"][1:], next(e for e in TL["entries"] if e["name"] == "argocd_sync_total")["values"][:-1]) if v != v0], "last in timeline:", next(e for e in TL["entries"] if e["name"] == "argocd_sync_total")["values"][-1])
+print("sync ops in the 20 minutes before the idle window:", [(r["metric"].get("name"), round(float(r["value"][1]), 2)) for r in entries("idle", "argocd_sync_ops_20m_before") if float(r["value"][1]) > 0])
+print("\n== k6 per step")
+for w in ("realistic", "saturation"):
+    r = R[w]; M = r["k6"]["metrics"]
+    print(f"-- {w}: think {r.get('think_seconds')}, started {datetime.datetime.fromtimestamp(r['started_epoch'], UTC).isoformat()}, ended {datetime.datetime.fromtimestamp(r['ended_epoch'], UTC).isoformat()}")
+    for s in ("vus_05", "vus_10", "vus_20"):
+        fa = M[f"http_req_failed{{scenario:{s}}}"]; d = M[f"http_req_duration{{scenario:{s}}}"]
+        fa = fa.get("values", fa); d = d.get("values", d)
+        n = fa["passes"] + fa["fails"]
+        print(s, "requests", n, "per s (180s)", round(n/180, 2), "failed", fa["passes"], "p50", round(d["med"], 1), "p90", round(d.get("p(90)", 0), 1), "p95", round(d["p(95)"], 1), "p99", round(d.get("p(99)", 0), 1), "max", round(d["max"], 1))
+    for k in ("http_req_duration{name:read}", "http_req_duration{name:write}", "http_req_duration", "http_req_failed", "http_reqs", "iterations", "checks", "throttled", "vus_max"):
+        if k in M: v = M[k]; print(k, json.dumps(v.get("values", v))[:240])
+    print("thresholds", json.dumps(r.get("k6_thresholds"))[:900])
+    print("disk", json.dumps(r.get("disk"))[:600])
+    P = r["prometheus"]
+    print("throttle by pod", {x["metric"]["pod"]: round(float(x["value"][1]), 3) for x in P["throttled_share_by_pod"] if x["value"][1] != "NaN"})
+    print("api rps", P["api_requests_per_second"][0]["value"][1], "p95", P["api_p95_seconds"][0]["value"][1], "5xx", (P["api_5xx_total"] or [{"value": [0, "none"]}])[0]["value"][1])
+    print("db growth", [(x["metric"]["datname"], x["value"][1]) for x in P["database_growth_bytes"]])
+    print("restarts", [(x["metric"]["pod"], x["value"][1]) for x in P["restarts_by_pod"] if float(x["value"][1]) > 0])
+    print("celery_ready_peak", P.get("celery_ready_peak"))
+    sm = r["samples"]
+    pm = lambda s: (float(re.match(r"([\d.]+)(GiB|MiB)", s).group(1))*(1024 if "GiB" in s.split("/")[0] else 1)) if s else None
+    a, b = W["windows"][w]["start"], W["windows"][w]["end"]
+    ss = [x for x in sm if a <= x["at"] <= b]
+    mems = [(pm(x["node_memory"]), x["at"]) for x in ss if x.get("node_memory")]; cpus = [(float(x["node_cpu"].rstrip("%")), x["at"]) for x in ss if x.get("node_cpu")]
+    print("docker stats on the node: samples", len(ss), "mem avg", round(sum(m for m, _ in mems)/len(mems)), "MiB max", max(mems), "| cpu% avg", round(sum(c for c, _ in cpus)/len(cpus), 1), "max", max(cpus))
+    print("vm_var_used_kib first,last", sm[0]["vm_var_used_kib"], sm[-1]["vm_var_used_kib"], "growth MiB", round((sm[-1]["vm_var_used_kib"]-sm[0]["vm_var_used_kib"])/1024, 1), "host_free first,last", sm[0]["host_free_gib"], sm[-1]["host_free_gib"])
+print("\n== per step from Prometheus")
+def st(k, n): return next((e.get("result") or [] for e in STEPS["entries"] if e["window"] == k and e["name"] == n), [])
+KEEP = ("plane-api", "plane-worker", "plane-pgdb", "plane-redis", "plane-rabbitmq", "plane-beat-worker", "k6", "plane-live", "plane-silo")
+for k in [x for x in STEPS["steps"] if x != "note"]:
+    print(f"-- {k} {STEPS['steps'][k]}")
+    for n in ("ctr_cpu_increase_avg", "ctr_cpu_avg", "ctr_cpu_max"):
+        print("  ", n, {r["metric"].get("container"): round(float(r["value"][1])*1000) for r in st(k, n) if r["metric"].get("container") in KEEP})
+    print("   ctr_mem_max", {r["metric"].get("container"): round(float(r["value"][1])/MIB) for r in st(k, "ctr_mem_max") if r["metric"].get("container") in KEEP})
+    tp = {r["metric"].get("container"): float(r["value"][1]) for r in st(k, "ctr_throttled_periods")}; cp = {r["metric"].get("container"): float(r["value"][1]) for r in st(k, "ctr_cfs_periods")}
+    print("   throttled share", {c: f"{tp[c]/cp[c]*100:.1f}% ({tp[c]:.0f}/{cp[c]:.0f})" for c in KEEP if c in tp and c in cp and cp[c] > 0})
+    print("   api rps", [round(float(r["value"][1]), 3) for r in st(k, "api_route_rps")], "mean duration s", [round(float(r["value"][1]), 3) for r in st(k, "api_route_mean_duration")], "p95 by method", {r["metric"].get("method"): round(float(r["value"][1]), 3) for r in st(k, "api_route_p95_by_method") if r["value"][1] != "NaN"}, "p50", {r["metric"].get("method"): round(float(r["value"][1]), 3) for r in st(k, "api_route_p50_by_method") if r["value"][1] != "NaN"})
+    print("   api requests by method,code", {(r["metric"].get("method"), r["metric"].get("code")): round(float(r["value"][1]), 1) for r in st(k, "api_route_requests_by_method_code") if float(r["value"][1]) > 0})
+    print("   pg", {n: [round(float(r["value"][1]), 1) for r in st(k, n)] for n in ("pg_xact_commit_rate", "pg_rollback_rate", "pg_tup_fetched_rate", "pg_tup_returned_rate", "pg_tup_inserted_rate", "pg_blks_read_rate", "pg_blks_hit_rate", "pg_numbackends_max")}, "activity max by state", {r["metric"].get("state"): float(r["value"][1]) for r in st(k, "pg_activity_max_by_state") if float(r["value"][1]) > 0})
+    print("   celery", {n: [float(r["value"][1]) for r in st(k, n)] for n in ("celery_ready_peak", "celery_messages_peak", "celery_unacked_peak")})
+    print("   vm", {n: [round(float(r["value"][1])*(1000 if "cpu_busy" in n else 1/2**30 if "used" in n else 1), 2) for r in st(k, n)] for n in ("vm_cpu_busy_avg", "vm_cpu_busy_max", "vm_used_max", "node_load1_max", "node_cpu_pressure_rate", "node_io_pressure_rate")}, "traefik cpu max m", [round(float(r["value"][1])*1000) for r in st(k, "traefik_cpu_max")])
+print("\n== Traefik latency buckets on the API route, per step and method")
+def p_of(bs, q=0.95):
+    bs = [(float(b["le"]) if b["le"] != "+Inf" else float("inf"), b["count"]) for b in bs]; bs.sort()
+    tot = bs[-1][1]; rank = q*tot; pl, pc = 0.0, 0.0
+    for le, c in bs:
+        if c >= rank: return tot, rank, pl, le, (pl+(rank-pc)/(c-pc)*(le-pl) if le != float("inf") and c > pc else None)
+        pl, pc = le, c
+for e in BK["entries"]:
+    if not e["buckets"] or e["buckets"][-1]["count"] == 0: continue
+    tot, rank, lo, hi, v = p_of(e["buckets"])
+    print(e["window"], e["method"], f"count {tot:.0f} p95 rank {rank:.1f} bucket {lo}-{hi} s interpolated {round(v*1000) if v is not None else 'none'} ms", "buckets", {b["le"]: round(b["count"]) for b in e["buckets"]})
+print("\n== series checks: the API at its limit? 15 s samples of CPU and throttling")
+for w in ("realistic", "saturation"):
+    apic = next((s for s in series(w, "cpu") if s["metric"].get("container") == "plane-api" and s["metric"].get("namespace") == "plane-dev"), None)
+    pg = next((s for s in series(w, "cpu") if s["metric"].get("container") == "plane-pgdb" and s["metric"].get("namespace") == "plane-dev"), None)
+    for nm, s in (("api", apic), ("pgdb", pg)):
+        vs = [float(v)*1000 for _, v in s["values"]]
+        print(w, nm, "cpu m: n", len(vs), "avg", round(sum(vs)/len(vs)), "max", round(max(vs)), "min", round(min(vs)))
+    th = {s["metric"]["container"]: s["values"] for s in series(w, "throttled_share")}
+    for c in ("plane-api", "plane-pgdb", "plane-worker"):
+        if c in th:
+            vs = [float(v) for _, v in th[c] if v != "NaN"]
+            print(w, c, "throttled share of periods per minute: n", len(vs), "avg", round(sum(vs)/max(1, len(vs)), 3), "max", round(max(vs or [0]), 3))
+    rp = series(w, "api_route_rps")
+    if rp: print(w, "api rps per 15 s:", " ".join(f"{float(v):.1f}" for _, v in rp[0]["values"]))
+
+print("\n== idle split, from the 15 s series. A browser tab polled dev's API from 08:56:59 (see the api-access-summary file). The first sample's 1-minute rate reaches back before the window, to prod-sim pods that started 08:46:21-08:46:31")
+def ep(s): return int(datetime.datetime(2026,11,5,int(s[:2]),int(s[3:5]),int(s[6:8]),tzinfo=UTC).timestamp())
+PARTS = {"probes_only": ("08:48:35", "08:56:59"), "tab_open": ("08:57:59", "09:02:35"), "whole_cpu_from": ("08:48:35", "09:02:35")}
+RAMPARTS = {"probes_only": ("08:47:35", "08:56:59"), "tab_open": ("08:56:59", "09:02:35"), "whole": ("08:47:35", "09:02:35")}
+def ctr_stats(name, a, b, scale):
+    out = {}
+    for s in series("idle", name):
+        m = s["metric"]; k = (m.get("namespace"), m.get("container"))
+        for t, v in s["values"]:
+            if ep(a) <= t <= ep(b): out.setdefault(k, {}).setdefault(t, 0.0); out[k][t] += float(v)
+    return {k: (sum(d.values())/len(d)*scale, max(d.values())*scale, len(d)) for k, d in out.items() if d}
+for ns in ("plane-dev", "plane-prod-sim"):
+    print(f"-- {ns}: RAM MiB avg/top then CPU m avg/top per part")
+    keys = sorted({k[1] for k in ctr_stats("mem", "08:47:35", "09:02:35", 1) if k[0] == ns})
+    for c in keys:
+        row = f"{c:22}"
+        for p, (a, b) in RAMPARTS.items():
+            v = ctr_stats("mem", a, b, 1/MIB).get((ns, c)); row += f" | {p} ram {v[0]:7.1f} {v[1]:7.1f}" if v else f" | {p} ram -"
+        for p, (a, b) in PARTS.items():
+            v = ctr_stats("cpu", a, b, 1000).get((ns, c)); row += f" | {p} cpu {v[0]:6.1f} {v[1]:6.1f}" if v else f" | {p} cpu -"
+        print(row)
+def sum_stats(name, a, b, scale, flt):
+    d = {}
+    for s in series("idle", name):
+        if not flt(s["metric"]): continue
+        for t, v in s["values"]:
+            if ep(a) <= t <= ep(b): d[t] = d.get(t, 0.0) + float(v)
+    p = max(d.items(), key=lambda x: x[1]) if d else (0, 0)
+    return (round(sum(d.values())/max(1, len(d))*scale, 1), round(p[1]*scale, 1), ts(p[0]), len(d))
+GROUPS = {"plane-dev 11 workloads": lambda m: group_of(m) == "plane-plane-dev",
+          "plane-prod-sim 11 workloads": lambda m: group_of(m) == "plane-plane-prod-sim",
+          "plane-dev namespace": lambda m: m.get("namespace") == "plane-dev",
+          "plane-prod-sim namespace": lambda m: m.get("namespace") == "plane-prod-sim",
+          "kube-system": lambda m: m.get("namespace") == "kube-system",
+          "monitoring": lambda m: m.get("namespace") == "monitoring",
+          "monitoring-agents": lambda m: m.get("namespace") == "monitoring-agents",
+          "infisical": lambda m: m.get("namespace") == "infisical",
+          "argocd": lambda m: m.get("namespace") == "argocd",
+          "traefik": lambda m: m.get("namespace") == "traefik",
+          "local-path-storage": lambda m: m.get("namespace") == "local-path-storage",
+          "control-plane group": lambda m: group_of(m) == "control-plane",
+          "traefik+metrics-server group": lambda m: group_of(m) == "traefik+metrics-server",
+          "monitoring group": lambda m: group_of(m) == "monitoring",
+          "loki+alloy group": lambda m: group_of(m) == "loki+alloy",
+          "exporters group": lambda m: group_of(m) == "exporters",
+          "infisical group": lambda m: group_of(m) == "infisical",
+          "argocd group": lambda m: group_of(m) == "argocd",
+          "both plane envs": lambda m: group_of(m) in ("plane-plane-dev", "plane-plane-prod-sim"),
+          "all pods": lambda m: True}
+for g, flt in GROUPS.items():
+    print(f"{g:30} probes_only ram {sum_stats('mem','08:47:35','08:56:59',1/MIB,flt)} cpu {sum_stats('cpu','08:48:35','08:56:59',1000,flt)} | tab_open ram {sum_stats('mem','08:56:59','09:02:35',1/MIB,flt)} cpu {sum_stats('cpu','08:57:59','09:02:35',1000,flt)} | whole ram {sum_stats('mem','08:47:35','09:02:35',1/MIB,flt)} cpu {sum_stats('cpu','08:48:35','09:02:35',1000,flt)}")
+for nm, sc in (("vm_used", 1/2**30), ("vm_cpu_busy", 1000), ("vm_swap_used", 1/2**30)):
+    print(f"{nm:30} probes_only {sum_stats(nm,'08:48:35','08:56:59',sc,lambda m: True)} tab_open {sum_stats(nm,'08:57:59','09:02:35',sc,lambda m: True)} whole {sum_stats(nm,'08:48:35','09:02:35',sc,lambda m: True)}")
+print("\n== same group sums in the load windows, namespace rows at one moment, 15 s step")
+def sum_win(w, name, scale, flt):
+    d = {}
+    for s in series(w, name):
+        if not flt(s["metric"]): continue
+        for t, v in s["values"]: d[t] = d.get(t, 0.0) + float(v)
+    p = max(d.items(), key=lambda x: x[1]) if d else (0, 0)
+    return (round(sum(d.values())/max(1, len(d))*scale, 1), round(p[1]*scale, 1), ts(p[0]))
+for g, flt in GROUPS.items():
+    print(f"{g:30} " + " | ".join(f"{w} ram {sum_win(w,'mem',1/MIB,flt)} cpu {sum_win(w,'cpu',1000,flt)}" for w in ("realistic", "saturation")))
+print("\n== cost per API request, per step: CPU and rows read, from the steps file")
+for k in [x for x in STEPS["steps"] if x != "note"]:
+    rps = float(st(k, "api_route_rps")[0]["value"][1])
+    cpu = {r["metric"].get("container"): float(r["value"][1])*1000 for r in st(k, "ctr_cpu_increase_avg")}
+    ret = float(st(k, "pg_tup_returned_rate")[0]["value"][1]); fetched = float(st(k, "pg_tup_fetched_rate")[0]["value"][1])
+    print(f"{k:20} api route rps {rps:5.2f} | api cpu m {cpu['plane-api']:5.0f} = {cpu['plane-api']/rps:4.0f} ms per request | pgdb cpu m {cpu['plane-pgdb']:5.0f} = {cpu['plane-pgdb']/rps:4.0f} ms per request | worker cpu m {cpu['plane-worker']:4.0f} | rows returned per request {ret/rps:8.0f} | rows fetched per request {fetched/rps:7.0f}")
+print("\n== Little's law check on the API route, saturation steps: rps x mean duration should come to the VUs")
+for k in [x for x in STEPS["steps"] if x != "note"]:
+    rps = float(st(k, "api_route_rps")[0]["value"][1]); md = float(st(k, "api_route_mean_duration")[0]["value"][1])
+    print(k, "rps", round(rps, 2), "mean s", round(md, 3), "in flight", round(rps*md, 2))
+print("\n== Celery after the saturation run, from the after-saturation file")
+AF = json.load(open(f"{EV}/LOAD-3-{ST}-after-saturation.json"))
+for e in AF["entries"]:
+    if e["name"] == "celery_messages":
+        v = [(t, float(x)) for t, x in e["values"]]; p = max(v, key=lambda x: x[1])
+        print("celery messages top", p[1], "at", ts(p[0]), "; first zero after the top at", next((ts(t) for t, x in v if t > p[0] and x == 0), "none"))
+        print("first non-zero run start", next((ts(t) for t, x in v if x > 5), "none"))
+
+print("\n== disk sums at 09:25:50Z to 09:25:54Z, from the host and docker-project files with this stamp")
+G = 2**30
+vols = {"node /var": 11.11e9, "registry": 1.159e9, "mirror-docker": 2.52e9, "mirror-quay": 447.5e6, "mirror-k8s": 37.64e6}
+imgs = {"kindest/node": 1.28e9, "plane-platform-local-git": 35e6, "ghcr.io/distribution/distribution": 82.2e6}
+kib = {".tools": 960144, ".local": 2252472, ".build": 235180}
+for k, v in vols.items(): print(k, round(v/G, 3), "GiB")
+print("mirrors", round((2.52e9+447.5e6+37.64e6)/G, 3))
+for k, v in imgs.items(): print(k, round(v/G, 3), "GiB")
+for k, v in kib.items(): print(k, round(v/2**20, 3), "GiB")
+print(".tools+.local", round((960144+2252472)/2**20, 3), "; .local/backups", round(506940/2**20, 3))
+tot = sum(vols.values())/G + sum(imgs.values())/G + sum(kib.values())/2**20
+print("sum of the parts", round(tot, 2), "GiB")
+pv = {"prod-sim rabbitmq": 328, "dev minio": 98188, "infisical redis": 6788, "dev redis": 48, "loki": 9468, "prod-sim minio": 70216, "prod-sim redis": 8, "dev pgdb": 81304, "infisical postgres": 205872, "prod-sim pgdb": 77800, "prometheus": 63908, "dev rabbitmq": 324}
+print("pv sum", sum(pv.values()), "KiB", round(sum(pv.values())/1024, 1), "MiB", round(sum(pv.values())/2**20, 3), "GiB")
+print("imagefs", round(10817617920/G, 2), "GiB; /var/log/pods", round(25804/1024, 1), "MiB; /var/lib/containerd", round(10969028/2**20, 2), "GiB; /var/lib/kubelet", round(373296/2**20, 2), "GiB")
+print("host free", round(18526996/2**20, 2), "GiB; Docker.raw allocated", round(38844288/2**20, 2), "GiB; logical", round(494384709632/G, 1), "GiB; VM fs avail", round(411183296/2**20, 1), "GiB; VM fs used", round(38756184/2**20, 2), "GiB")
+print("docker df total", round(17.91+0.005788+18.05+0.02584, 2), "GB", round((17.91e9+5.788e6+18.05e9+25.84e6)/G, 2), "GiB")
+print("kubectl top at 09:25:47Z: node 6930 MiB 649 m; pods 5949 MiB 359 m; node less pods", 6930-5949, "MiB", 649-359, "m")
+print("local services docker stats at 09:25:47Z MiB", round(0.890625+27.72+29.41+28.48+30.34, 1))
+print("VM used at 09:25:50Z from /proc/meminfo", round((14294756-4921612)/2**20, 2), "GiB; less node 6.846 and local services", round((14294756-4921612)/2**20-6.846-(0.890625+27.72+29.41+28.48+30.34)/1024, 2), "GiB")
+
+print("\n== VM and swap, two decimals, 15 s series")
+def two(nm, a, b, sc):
+    d = {}
+    for s in series("idle", nm):
+        for t, v in s["values"]:
+            if ep(a) <= t <= ep(b): d[t] = d.get(t, 0.0) + float(v)
+    return round(sum(d.values())/len(d)*sc, 2), round(max(d.values())*sc, 2), len(d)
+print("vm_used GiB probes_only", two("vm_used", "08:47:35", "08:56:59", 1/2**30), "whole", two("vm_used", "08:47:35", "09:02:35", 1/2**30))
+print("swap GiB probes_only", two("vm_swap_used", "08:47:35", "08:56:59", 1/2**30), "whole", two("vm_swap_used", "08:47:35", "09:02:35", 1/2**30))
+print("vm_cpu_busy m probes_only", two("vm_cpu_busy", "08:48:35", "08:56:59", 1000), "whole", two("vm_cpu_busy", "08:48:35", "09:02:35", 1000))
+for w in ("realistic", "saturation"):
+    for nm, sc in (("vm_used", 1/2**30), ("vm_swap_used", 1/2**30), ("vm_cpu_busy", 1000)):
+        d = {}
+        for s in series(w, nm):
+            for t, v in s["values"]: d[t] = d.get(t, 0.0) + float(v)
+        p = max(d.items(), key=lambda x: x[1])
+        print(w, nm, "avg", round(sum(d.values())/len(d)*sc, 2), "top", round(p[1]*sc, 2), "at", ts(p[0]))

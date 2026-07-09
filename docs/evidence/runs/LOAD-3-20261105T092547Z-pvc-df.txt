@@ -1,0 +1,90 @@
+# 2026-11-05T09:26:16Z command: kubectl exec <pod> -c <container> -- df -k <mount>, then du -sk <mount>, for each running pod with a PVC. Node volumes share one filesystem, so df shows that filesystem and du shows the volume.
+--- infisical/infisical-postgres-0 container=postgres pvc=data-infisical-postgres-0 mount=/var/lib/postgresql/data at 2026-11-05T09:26:15Z
+$ df -k /var/lib/postgresql/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758164 411181316   9% /tmp
+$ du -sk /var/lib/postgresql/data
+205872	/var/lib/postgresql/data
+
+--- infisical/infisical-redis-0 container=redis pvc=data-infisical-redis-0 mount=/data at 2026-11-05T09:26:15Z
+$ df -k /data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758164 411181316   9% /data
+$ du -sk /data
+6828	/data
+
+--- monitoring/loki-0 container=loki pvc=storage-loki-0 mount=/var/loki at 2026-11-05T09:26:15Z
+$ df -k /var/loki
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "b0bad54a03f01a727108ecc95b944c122698959b36ebee9f1af7d89f5b9ac763": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+$ du -sk /var/loki
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "58b529b4c99fd9e1de09c806e1c0bbd705ab79ba694e3b8d5162aa70955609b1": OCI runtime exec failed: exec failed: unable to start container process: exec: "du": executable file not found in $PATH
+[could not read: exit 1]
+
+--- monitoring/prometheus-kps-prometheus-0 container=prometheus pvc=prometheus-kps-prometheus-db-prometheus-kps-prometheus-0 mount=/prometheus at 2026-11-05T09:26:15Z
+$ df -k /prometheus
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "3ffe45e2531fbfe266709e54a5ad4c16d13d7bce6080be9e72529e85cb813c8a": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+$ du -sk /prometheus
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "969786cdbe6c8ea874cd1f5c32e23b260b7e8e7ddfd12780d82344972ab21c4a": OCI runtime exec failed: exec failed: unable to start container process: exec: "du": executable file not found in $PATH
+[could not read: exit 1]
+
+--- plane-dev/plane-minio-wl-0 container=plane-minio pvc=pvc-plane-minio-vol-plane-minio-wl-0 mount=/data at 2026-11-05T09:26:15Z
+$ df -k /data
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "7b15467c05d3ec575ce955842bea801197f3aa19e9be7e55ecd6a9fd845891cc": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+$ du -sk /data
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "a02281361ac31b2c856d8463f0d856100176f41d8bb2ade190c403c0905d6799": OCI runtime exec failed: exec failed: unable to start container process: exec: "du": executable file not found in $PATH
+[could not read: exit 1]
+
+--- plane-dev/plane-pgdb-wl-0 container=plane-pgdb pvc=pvc-plane-pgdb-vol-plane-pgdb-wl-0 mount=/var/lib/postgresql/data at 2026-11-05T09:26:15Z
+$ df -k /var/lib/postgresql/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758144 411181336   9% /etc/hosts
+$ du -sk /var/lib/postgresql/data
+81304	/var/lib/postgresql/data
+
+--- plane-dev/plane-rabbitmq-wl-0 container=plane-rabbitmq pvc=pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 mount=/var/lib/rabbitmq at 2026-11-05T09:26:15Z
+$ df -k /var/lib/rabbitmq
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758144 411181336   9% /etc/hosts
+$ du -sk /var/lib/rabbitmq
+324	/var/lib/rabbitmq
+
+--- plane-dev/plane-redis-wl-0 container=plane-redis pvc=pvc-plane-redis-vol-plane-redis-wl-0 mount=/data at 2026-11-05T09:26:15Z
+$ df -k /data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758144 411181336   9% /data
+$ du -sk /data
+48	/data
+
+--- plane-prod-sim/plane-minio-wl-0 container=plane-minio pvc=pvc-plane-minio-vol-plane-minio-wl-0 mount=/data at 2026-11-05T09:26:15Z
+$ df -k /data
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "5ecb58a0351394f0424b6d593e258d3c70b85b6983e94bef8259c8251be8c285": OCI runtime exec failed: exec failed: unable to start container process: exec: "df": executable file not found in $PATH
+[could not read: exit 1]
+$ du -sk /data
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "7eab80cee3b6a30c28f59ab33e394881ab877f0c5995ba60a928cc7d998641d1": OCI runtime exec failed: exec failed: unable to start container process: exec: "du": executable file not found in $PATH
+[could not read: exit 1]
+
+--- plane-prod-sim/plane-pgdb-wl-0 container=plane-pgdb pvc=pvc-plane-pgdb-vol-plane-pgdb-wl-0 mount=/var/lib/postgresql/data at 2026-11-05T09:26:15Z
+$ df -k /var/lib/postgresql/data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758148 411181332   9% /etc/hosts
+$ du -sk /var/lib/postgresql/data
+77800	/var/lib/postgresql/data
+
+--- plane-prod-sim/plane-rabbitmq-wl-0 container=plane-rabbitmq pvc=pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 mount=/var/lib/rabbitmq at 2026-11-05T09:26:15Z
+$ df -k /var/lib/rabbitmq
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758148 411181332   9% /etc/hosts
+$ du -sk /var/lib/rabbitmq
+328	/var/lib/rabbitmq
+
+--- plane-prod-sim/plane-redis-wl-0 container=plane-redis pvc=pvc-plane-redis-vol-plane-redis-wl-0 mount=/data at 2026-11-05T09:26:15Z
+$ df -k /data
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/vda1            474095688  38758148 411181332   9% /data
+$ du -sk /data
+8	/data
+
+# 2026-11-05T09:26:16Z done

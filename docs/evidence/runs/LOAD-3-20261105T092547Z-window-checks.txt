@@ -1,0 +1,832 @@
+# 2026-11-05T09:31:06Z command: kubectl get applications.argoproj.io -n argocd -o json | jq (name, sync, health, last operation start and finish, reconciledAt)
+{"name":"alloy","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:13:53Z","op_finished":"2026-11-05T08:13:53Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:31Z"}
+{"name":"backup-storage","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:11:30Z","op_finished":"2026-11-05T08:11:31Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:29:44Z"}
+{"name":"infisical","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:16:03Z","op_finished":"2026-11-05T08:16:03Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:33Z"}
+{"name":"infisical-operator-dev","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:16:07Z","op_finished":"2026-11-05T08:16:07Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:12Z"}
+{"name":"infisical-operator-prod-sim","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:16:06Z","op_finished":"2026-11-05T08:16:07Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:27:50Z"}
+{"name":"kube-prometheus-stack","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:12:36Z","op_finished":"2026-11-05T08:12:39Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:12Z"}
+{"name":"loki","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:13:53Z","op_finished":"2026-11-05T08:13:53Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:14Z"}
+{"name":"metrics-server","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:11:56Z","op_finished":"2026-11-05T08:11:56Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:28:03Z"}
+{"name":"monitoring-extras","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:14:39Z","op_finished":"2026-11-05T08:14:41Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:28:24Z"}
+{"name":"network-policies","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:11:30Z","op_finished":"2026-11-05T08:11:30Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:10Z"}
+{"name":"plane-dev","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:16:18Z","op_finished":"2026-11-05T08:20:56Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:09Z"}
+{"name":"plane-prod-sim","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:20:57Z","op_finished":"2026-11-05T08:23:33Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:33Z"}
+{"name":"root","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:20:56Z","op_finished":"2026-11-05T08:20:57Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:29:34Z"}
+{"name":"traefik","sync":"Synced","health":"Healthy","op_started":"2026-11-05T08:11:39Z","op_finished":"2026-11-05T08:11:39Z","op_phase":"Succeeded","reconciled":"2026-11-05T09:30:05Z"}
+# 2026-11-05T09:31:06Z command: kubectl get events -n plane-prod-sim --sort-by=.lastTimestamp, kept for about an hour
+LAST SEEN   TYPE      REASON                  OBJECT                                                             MESSAGE
+44m         Normal    Scheduled               pod/plane-api-wl-688d9f5b95-x78lk                                  Successfully assigned plane-prod-sim/plane-api-wl-688d9f5b95-x78lk to plane-platform-control-plane
+50m         Normal    Scheduled               pod/isolation-probe-1793868052                                     Successfully assigned plane-prod-sim/isolation-probe-1793868052 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-46                                               Successfully assigned plane-prod-sim/netpol-083542-46 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-45                                               Successfully assigned plane-prod-sim/netpol-083542-45 to plane-platform-control-plane
+44m         Normal    Scheduled               pod/plane-worker-wl-5795f875bd-hzqsr                               Successfully assigned plane-prod-sim/plane-worker-wl-5795f875bd-hzqsr to plane-platform-control-plane
+44m         Normal    Scheduled               pod/postgres-exporter-7fd68c6cdf-2dh22                             Successfully assigned plane-prod-sim/postgres-exporter-7fd68c6cdf-2dh22 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-44                                               Successfully assigned plane-prod-sim/netpol-083542-44 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-48                                               Successfully assigned plane-prod-sim/netpol-083542-48 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-43                                               Successfully assigned plane-prod-sim/netpol-083542-43 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-42                                               Successfully assigned plane-prod-sim/netpol-083542-42 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-49                                               Successfully assigned plane-prod-sim/netpol-083542-49 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-41                                               Successfully assigned plane-prod-sim/netpol-083542-41 to plane-platform-control-plane
+44m         Normal    Scheduled               pod/postgres-exporter-6c9b4f6486-xlltp                             Successfully assigned plane-prod-sim/postgres-exporter-6c9b4f6486-xlltp to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-39                                               Successfully assigned plane-prod-sim/netpol-083542-39 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-47                                               Successfully assigned plane-prod-sim/netpol-083542-47 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-50                                               Successfully assigned plane-prod-sim/netpol-083542-50 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-51                                               Successfully assigned plane-prod-sim/netpol-083542-51 to plane-platform-control-plane
+44m         Normal    Scheduled               pod/plane-api-wl-76f9dccd47-h955s                                  Successfully assigned plane-prod-sim/plane-api-wl-76f9dccd47-h955s to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-40                                               Successfully assigned plane-prod-sim/netpol-083542-40 to plane-platform-control-plane
+44m         Normal    Scheduled               pod/plane-beat-worker-wl-7c85f5dd7c-bcvbb                          Successfully assigned plane-prod-sim/plane-beat-worker-wl-7c85f5dd7c-bcvbb to plane-platform-control-plane
+44m         Normal    Scheduled               pod/plane-beat-worker-wl-7dd9c84ff7-6hlf4                          Successfully assigned plane-prod-sim/plane-beat-worker-wl-7dd9c84ff7-6hlf4 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-37                                               Successfully assigned plane-prod-sim/netpol-083542-37 to plane-platform-control-plane
+50m         Normal    Scheduled               pod/netpol-083542-54                                               Successfully assigned plane-prod-sim/netpol-083542-54 to plane-platform-control-plane
+50m         Normal    Scheduled               pod/netpol-083542-53                                               Successfully assigned plane-prod-sim/netpol-083542-53 to plane-platform-control-plane
+44m         Normal    Scheduled               pod/plane-worker-wl-77b6dbc84d-trnzq                               Successfully assigned plane-prod-sim/plane-worker-wl-77b6dbc84d-trnzq to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-38                                               Successfully assigned plane-prod-sim/netpol-083542-38 to plane-platform-control-plane
+51m         Normal    Scheduled               pod/netpol-083542-52                                               Successfully assigned plane-prod-sim/netpol-083542-52 to plane-platform-control-plane
+76m         Normal    ScalingReplicaSet       deployment/redis-exporter                                          Scaled up replica set redis-exporter-5b59d6cb7c from 0 to 1
+76m         Normal    Scheduled               pod/redis-exporter-5b59d6cb7c-7lc4j                                Successfully assigned plane-prod-sim/redis-exporter-5b59d6cb7c-7lc4j to plane-platform-control-plane
+76m         Normal    Scheduled               pod/postgres-exporter-7dbf9ccd58-jng6l                             Successfully assigned plane-prod-sim/postgres-exporter-7dbf9ccd58-jng6l to plane-platform-control-plane
+76m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled up replica set postgres-exporter-7dbf9ccd58 from 0 to 1
+76m         Normal    SuccessfulCreate        replicaset/redis-exporter-5b59d6cb7c                               Created pod: redis-exporter-5b59d6cb7c-7lc4j
+76m         Normal    SuccessfulCreate        replicaset/postgres-exporter-7dbf9ccd58                            Created pod: postgres-exporter-7dbf9ccd58-jng6l
+76m         Normal    Pulled                  pod/redis-exporter-5b59d6cb7c-7lc4j                                Successfully pulled image "docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41c
+76m         Normal    Pulling                 pod/redis-exporter-5b59d6cb7c-7lc4j                                Pulling image "docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81b
+76m         Normal    Pulling                 pod/postgres-exporter-7dbf9ccd58-jng6l                             Pulling image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b3
+76m         Normal    Created                 pod/redis-exporter-5b59d6cb7c-7lc4j                                Container created
+76m         Normal    Pulled                  pod/postgres-exporter-7dbf9ccd58-jng6l                             Successfully pulled image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d8
+76m         Warning   Unhealthy               pod/redis-exporter-5b59d6cb7c-7lc4j                                Readiness probe failed: Get "http://10.244.0.21:9121/health": dial tcp 10.244.0.21:9121: connect: connectio
+76m         Normal    Started                 pod/redis-exporter-5b59d6cb7c-7lc4j                                Container started
+75m         Normal    ScalingReplicaSet       deployment/iso-prod-sim-controller-manager                         Scaled up replica set iso-prod-sim-controller-manager-5cc86cc76 from 0 to 1
+75m         Normal    SuccessfulCreate        replicaset/iso-prod-sim-controller-manager-5cc86cc76               Created pod: iso-prod-sim-controller-manager-5cc86cc76-b42gj
+75m         Normal    Scheduled               pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Successfully assigned plane-prod-sim/iso-prod-sim-controller-manager-5cc86cc76-b42gj to plane-platform-cont
+75m         Normal    Pulled                  pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Successfully pulled image "docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b
+75m         Normal    Pulling                 pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Pulling image "docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc
+75m         Normal    Created                 pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Container created
+74m         Normal    LeaderElection          lease/cf2b8c44.infisical.com                                       iso-prod-sim-controller-manager-5cc86cc76-b42gj_258dc433-5ef3-4a48-97c0-46fd7c2d7153 became leader
+74m         Normal    Started                 pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Container started
+71m         Normal    Pulled                  pod/postgres-exporter-7dbf9ccd58-jng6l                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+71m         Warning   Failed                  pod/postgres-exporter-7dbf9ccd58-jng6l                             Error: secret "plane-pgdb" not found
+70m         Normal    Pulled                  pod/postgres-exporter-7fd68c6cdf-sgjlc                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+70m         Normal    Scheduled               pod/postgres-exporter-7fd68c6cdf-sgjlc                             Successfully assigned plane-prod-sim/postgres-exporter-7fd68c6cdf-sgjlc to plane-platform-control-plane
+70m         Warning   Unhealthy               pod/postgres-exporter-7fd68c6cdf-sgjlc                             Readiness probe failed: Get "http://10.244.0.54:9187/": dial tcp 10.244.0.54:9187: connect: connection refu
+70m         Normal    Created                 pod/postgres-exporter-7fd68c6cdf-sgjlc                             Container created
+70m         Normal    Started                 pod/postgres-exporter-7fd68c6cdf-sgjlc                             Container started
+70m         Normal    SuccessfulCreate        replicaset/postgres-exporter-7fd68c6cdf                            Created pod: postgres-exporter-7fd68c6cdf-sgjlc
+70m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled up replica set postgres-exporter-7fd68c6cdf from 0 to 1
+70m         Normal    SuccessfulDelete        replicaset/postgres-exporter-7dbf9ccd58                            Deleted pod: postgres-exporter-7dbf9ccd58-jng6l
+70m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled down replica set postgres-exporter-7dbf9ccd58 from 1 to 0
+70m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+70m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         waiting for first consumer to be created before binding
+70m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+70m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         External provisioner is provisioning volume for claim "plane-prod-sim/pvc-plane-minio-vol-plane-minio-wl-0"
+70m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         External provisioner is provisioning volume for claim "plane-prod-sim/pvc-plane-redis-vol-plane-redis-wl-0"
+70m         Normal    SuccessfulCreate        statefulset/plane-redis-wl                                         Create Pod plane-redis-wl-0 in StatefulSet plane-redis-wl successful
+70m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           waiting for first consumer to be created before binding
+70m         Normal    SuccessfulCreate        statefulset/plane-redis-wl                                         Create Claim pvc-plane-redis-vol-plane-redis-wl-0 Pod plane-redis-wl-0 in StatefulSet plane-redis-wl succes
+70m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+70m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         waiting for first consumer to be created before binding
+70m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+70m         Normal    SuccessfulCreate        statefulset/plane-minio-wl                                         Create Claim pvc-plane-minio-vol-plane-minio-wl-0 Pod plane-minio-wl-0 in StatefulSet plane-minio-wl succes
+70m         Normal    SuccessfulCreate        statefulset/plane-minio-wl                                         Create Pod plane-minio-wl-0 in StatefulSet plane-minio-wl successful
+70m         Normal    SuccessfulCreate        statefulset/plane-rabbitmq-wl                                      Create Pod plane-rabbitmq-wl-0 in StatefulSet plane-rabbitmq-wl successful
+70m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           External provisioner is provisioning volume for claim "plane-prod-sim/pvc-plane-pgdb-vol-plane-pgdb-wl-0"
+70m         Normal    SuccessfulCreate        statefulset/plane-rabbitmq-wl                                      Create Claim pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 Pod plane-rabbitmq-wl-0 in StatefulSet plane-rabbit
+70m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   External provisioner is provisioning volume for claim "plane-prod-sim/pvc-plane-rabbitmq-vol-plane-rabbitmq
+70m         Normal    SuccessfulCreate        statefulset/plane-pgdb-wl                                          Create Claim pvc-plane-pgdb-vol-plane-pgdb-wl-0 Pod plane-pgdb-wl-0 in StatefulSet plane-pgdb-wl success
+70m         Normal    SuccessfulCreate        statefulset/plane-pgdb-wl                                          Create Pod plane-pgdb-wl-0 in StatefulSet plane-pgdb-wl successful
+70m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   waiting for first consumer to be created before binding
+69m         Normal    Scheduled               pod/plane-rabbitmq-wl-0                                            Successfully assigned plane-prod-sim/plane-rabbitmq-wl-0 to plane-platform-control-plane
+69m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   Successfully provisioned volume pvc-2303c939-59ac-46a6-871d-cece886127fd
+69m         Normal    Pulled                  pod/plane-rabbitmq-wl-0                                            Container image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2
+69m         Normal    Created                 pod/plane-rabbitmq-wl-0                                            Container created
+69m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           Successfully provisioned volume pvc-d400ab80-3b91-44ec-9201-382a392e5146
+69m         Normal    Started                 pod/plane-rabbitmq-wl-0                                            Container started
+69m         Normal    Scheduled               pod/plane-pgdb-wl-0                                                Successfully assigned plane-prod-sim/plane-pgdb-wl-0 to plane-platform-control-plane
+69m         Normal    Started                 pod/plane-pgdb-wl-0                                                Container started
+69m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         Successfully provisioned volume pvc-9ff4facc-1eae-4030-8b16-c6ddb4e015ba
+69m         Normal    Created                 pod/plane-pgdb-wl-0                                                Container created
+69m         Normal    Pulled                  pod/plane-pgdb-wl-0                                                Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+69m         Normal    Scheduled               pod/plane-redis-wl-0                                               Successfully assigned plane-prod-sim/plane-redis-wl-0 to plane-platform-control-plane
+69m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         Successfully provisioned volume pvc-971c8c73-0885-4b79-abe8-3785ce887fb3
+69m         Normal    Scheduled               pod/plane-minio-wl-0                                               Successfully assigned plane-prod-sim/plane-minio-wl-0 to plane-platform-control-plane
+69m         Normal    Created                 pod/plane-redis-wl-0                                               Container created
+69m         Normal    Started                 pod/plane-redis-wl-0                                               Container started
+69m         Normal    Pulled                  pod/plane-redis-wl-0                                               Container image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b97
+69m         Normal    Created                 pod/plane-minio-wl-0                                               Container created
+69m         Normal    Pulled                  pod/plane-minio-wl-0                                               Container image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b
+69m         Normal    Started                 pod/plane-minio-wl-0                                               Container started
+69m         Warning   Unhealthy               pod/plane-rabbitmq-wl-0                                            Startup probe failed: dial tcp 10.244.0.59:5672: connect: connection refused
+69m         Normal    SuccessfulCreate        job/plane-api-migrate-1                                            Created pod: plane-api-migrate-1-t5wtr
+69m         Normal    Pulled                  pod/plane-api-migrate-1-t5wtr                                      Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+69m         Normal    Started                 pod/plane-api-migrate-1-t5wtr                                      Container started
+69m         Normal    Created                 pod/plane-api-migrate-1-t5wtr                                      Container created
+69m         Normal    Scheduled               pod/plane-api-migrate-1-t5wtr                                      Successfully assigned plane-prod-sim/plane-api-migrate-1-t5wtr to plane-platform-control-plane
+68m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-cd696f548                               Created pod: plane-worker-wl-cd696f548-44982
+68m         Normal    Scheduled               pod/plane-admin-wl-64b68f786-dfxfc                                 Successfully assigned plane-prod-sim/plane-admin-wl-64b68f786-dfxfc to plane-platform-control-plane
+68m         Normal    SuccessfulCreate        replicaset/plane-admin-wl-64b68f786                                Created pod: plane-admin-wl-64b68f786-dfxfc
+68m         Normal    SuccessfulCreate        replicaset/plane-beat-worker-wl-f44b9b987                          Created pod: plane-beat-worker-wl-f44b9b987-xwmrc
+68m         Normal    Completed               job/plane-api-migrate-1                                            Job completed
+68m         Normal    Scheduled               pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Successfully assigned plane-prod-sim/plane-beat-worker-wl-f44b9b987-xwmrc to plane-platform-control-plane
+68m         Normal    Scheduled               pod/plane-web-wl-545ff57fd4-fz5jv                                  Successfully assigned plane-prod-sim/plane-web-wl-545ff57fd4-fz5jv to plane-platform-control-plane
+68m         Normal    Scheduled               pod/plane-live-wl-5d5fd749c6-p8lps                                 Successfully assigned plane-prod-sim/plane-live-wl-5d5fd749c6-p8lps to plane-platform-control-plane
+68m         Normal    SuccessfulCreate        replicaset/plane-live-wl-5d5fd749c6                                Created pod: plane-live-wl-5d5fd749c6-p8lps
+68m         Normal    ScalingReplicaSet       deployment/plane-admin-wl                                          Scaled up replica set plane-admin-wl-64b68f786 from 0 to 1
+68m         Normal    SuccessfulCreate        replicaset/plane-api-wl-c4f9658c9                                  Created pod: plane-api-wl-c4f9658c9-bf7z5
+68m         Normal    Scheduled               pod/plane-api-wl-c4f9658c9-bf7z5                                   Successfully assigned plane-prod-sim/plane-api-wl-c4f9658c9-bf7z5 to plane-platform-control-plane
+68m         Normal    Scheduled               pod/plane-space-wl-6c6c7c76c6-f655t                                Successfully assigned plane-prod-sim/plane-space-wl-6c6c7c76c6-f655t to plane-platform-control-plane
+68m         Normal    Scheduled               pod/plane-worker-wl-cd696f548-44982                                Successfully assigned plane-prod-sim/plane-worker-wl-cd696f548-44982 to plane-platform-control-plane
+68m         Normal    ScalingReplicaSet       deployment/plane-web-wl                                            Scaled up replica set plane-web-wl-545ff57fd4 from 0 to 1
+68m         Normal    SuccessfulCreate        replicaset/plane-web-wl-545ff57fd4                                 Created pod: plane-web-wl-545ff57fd4-fz5jv
+68m         Normal    SuccessfulCreate        replicaset/plane-space-wl-6c6c7c76c6                               Created pod: plane-space-wl-6c6c7c76c6-f655t
+68m         Normal    ScalingReplicaSet       deployment/plane-space-wl                                          Scaled up replica set plane-space-wl-6c6c7c76c6 from 0 to 1
+68m         Normal    Pulled                  pod/plane-admin-wl-64b68f786-dfxfc                                 Container image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0a
+68m         Normal    Started                 pod/plane-api-wl-c4f9658c9-bf7z5                                   Container started
+68m         Normal    Created                 pod/plane-web-wl-545ff57fd4-fz5jv                                  Container created
+68m         Normal    Started                 pod/plane-web-wl-545ff57fd4-fz5jv                                  Container started
+68m         Warning   Unhealthy               pod/plane-web-wl-545ff57fd4-fz5jv                                  Readiness probe failed: Get "http://10.244.0.70:3000/": dial tcp 10.244.0.70:3000: connect: connection refu
+68m         Warning   Unhealthy               pod/plane-admin-wl-64b68f786-dfxfc                                 Readiness probe failed: Get "http://10.244.0.69:3000/god-mode/": dial tcp 10.244.0.69:3000: connect: connec
+68m         Normal    Started                 pod/plane-space-wl-6c6c7c76c6-f655t                                Container started
+68m         Normal    Created                 pod/plane-space-wl-6c6c7c76c6-f655t                                Container created
+68m         Normal    Pulled                  pod/plane-space-wl-6c6c7c76c6-f655t                                Container image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d848
+68m         Normal    Pulled                  pod/plane-worker-wl-cd696f548-44982                                Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+68m         Normal    Started                 pod/plane-admin-wl-64b68f786-dfxfc                                 Container started
+68m         Normal    Started                 pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Container started
+68m         Normal    Created                 pod/plane-worker-wl-cd696f548-44982                                Container created
+68m         Normal    Pulled                  pod/plane-api-wl-c4f9658c9-bf7z5                                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+68m         Normal    Created                 pod/plane-api-wl-c4f9658c9-bf7z5                                   Container created
+68m         Normal    Pulled                  pod/plane-web-wl-545ff57fd4-fz5jv                                  Container image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b076996
+68m         Normal    Created                 pod/plane-admin-wl-64b68f786-dfxfc                                 Container created
+68m         Normal    Created                 pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Container created
+68m         Normal    Started                 pod/plane-worker-wl-cd696f548-44982                                Container started
+68m         Normal    Pulled                  pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+68m         Normal    Pulled                  pod/plane-live-wl-5d5fd749c6-p8lps                                 Container image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840
+68m         Normal    Created                 pod/plane-live-wl-5d5fd749c6-p8lps                                 Container created
+68m         Normal    Started                 pod/plane-live-wl-5d5fd749c6-p8lps                                 Container started
+68m         Warning   Unhealthy               pod/plane-space-wl-6c6c7c76c6-f655t                                Startup probe failed: Get "http://10.244.0.66:3000/spaces/": dial tcp 10.244.0.66:3000: connect: connection
+67m         Warning   Unhealthy               pod/plane-worker-wl-cd696f548-44982                                Startup probe failed:
+67m         Warning   Unhealthy               pod/plane-live-wl-5d5fd749c6-p8lps                                 Startup probe failed: Get "http://10.244.0.64:3000/live/health": dial tcp 10.244.0.64:3000: connect: connec
+67m         Warning   Unhealthy               pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Startup probe failed:
+67m         Warning   Unhealthy               pod/plane-api-wl-c4f9658c9-bf7z5                                   Startup probe failed: Get "http://10.244.0.65:8000/": dial tcp 10.244.0.65:8000: connect: connection refuse
+64m         Normal    SuccessfulCreate        job/plane-restore-guard-20261105t082657z                           Created pod: plane-restore-guard-20261105t082657z-zdnsv
+64m         Normal    Scheduled               pod/plane-restore-guard-20261105t082657z-zdnsv                     Successfully assigned plane-prod-sim/plane-restore-guard-20261105t082657z-zdnsv to plane-platform-control-p
+64m         Normal    Pulled                  pod/plane-restore-guard-20261105t082657z-zdnsv                     Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+64m         Normal    Started                 pod/plane-restore-guard-20261105t082657z-zdnsv                     Container started
+64m         Normal    Created                 pod/plane-restore-guard-20261105t082657z-zdnsv                     Container created
+64m         Normal    Completed               job/plane-restore-guard-20261105t082657z                           Job completed
+64m         Normal    Started                 pod/plane-restore-guard-objects-20261105t082657z-b95st             Container started
+64m         Normal    Created                 pod/plane-restore-guard-objects-20261105t082657z-b95st             Container created
+64m         Normal    Pulled                  pod/plane-restore-guard-objects-20261105t082657z-b95st             Container image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb8808
+64m         Normal    SuccessfulCreate        job/plane-restore-guard-objects-20261105t082657z                   Created pod: plane-restore-guard-objects-20261105t082657z-b95st
+64m         Normal    Scheduled               pod/plane-restore-guard-objects-20261105t082657z-b95st             Successfully assigned plane-prod-sim/plane-restore-guard-objects-20261105t082657z-b95st to plane-platform-c
+63m         Normal    Completed               job/plane-restore-guard-objects-20261105t082657z                   Job completed
+63m         Normal    SuccessfulDelete        replicaset/plane-api-wl-c4f9658c9                                  Deleted pod: plane-api-wl-c4f9658c9-bf7z5
+63m         Normal    Killing                 pod/plane-api-wl-c4f9658c9-bf7z5                                   Stopping container plane-api
+63m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled down replica set plane-api-wl-c4f9658c9 from 1 to 0
+63m         Normal    SuccessfulDelete        replicaset/plane-worker-wl-cd696f548                               Deleted pod: plane-worker-wl-cd696f548-44982
+63m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled down replica set plane-beat-worker-wl-f44b9b987 from 1 to 0
+63m         Normal    ScalingReplicaSet       deployment/plane-live-wl                                           Scaled down replica set plane-live-wl-5d5fd749c6 from 1 to 0
+63m         Normal    SuccessfulDelete        replicaset/plane-live-wl-5d5fd749c6                                Deleted pod: plane-live-wl-5d5fd749c6-p8lps
+63m         Normal    Killing                 pod/plane-worker-wl-cd696f548-44982                                Stopping container plane-worker
+63m         Normal    Killing                 pod/plane-live-wl-5d5fd749c6-p8lps                                 Stopping container plane-live
+63m         Normal    Killing                 pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Stopping container plane-beat-worker
+63m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled down replica set plane-worker-wl-cd696f548 from 1 to 0
+63m         Normal    SuccessfulDelete        replicaset/plane-beat-worker-wl-f44b9b987                          Deleted pod: plane-beat-worker-wl-f44b9b987-xwmrc
+63m         Warning   Unhealthy               pod/plane-worker-wl-cd696f548-44982                                Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+63m         Warning   Unhealthy               pod/plane-beat-worker-wl-f44b9b987-xwmrc                           Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+63m         Normal    Scheduled               pod/plane-restore-20261105t082657z-wbvx2                           Successfully assigned plane-prod-sim/plane-restore-20261105t082657z-wbvx2 to plane-platform-control-plane
+63m         Normal    Pulled                  pod/plane-restore-20261105t082657z-wbvx2                           Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+63m         Normal    Created                 pod/plane-restore-20261105t082657z-wbvx2                           Container created
+63m         Normal    Started                 pod/plane-restore-20261105t082657z-wbvx2                           Container started
+63m         Normal    SuccessfulCreate        job/plane-restore-20261105t082657z                                 Created pod: plane-restore-20261105t082657z-wbvx2
+63m         Normal    Pulled                  pod/plane-restore-20261105t082657z-wbvx2                           Container image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb8808
+63m         Normal    Created                 pod/plane-restore-20261105t082657z-wbvx2                           Container created
+63m         Normal    Started                 pod/plane-restore-20261105t082657z-wbvx2                           Container started
+63m         Normal    Created                 pod/plane-restore-20261105t082657z-wbvx2                           Container created
+63m         Normal    Pulled                  pod/plane-restore-20261105t082657z-wbvx2                           Container image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb8808
+63m         Normal    Started                 pod/plane-restore-20261105t082657z-wbvx2                           Container started
+63m         Normal    Completed               job/plane-restore-20261105t082657z                                 Job completed
+62m         Normal    SuccessfulCreate        job/plane-restore-migrate-20261105t082657z                         Created pod: plane-restore-migrate-20261105t082657z-bjfhf
+62m         Normal    Scheduled               pod/plane-restore-migrate-20261105t082657z-bjfhf                   Successfully assigned plane-prod-sim/plane-restore-migrate-20261105t082657z-bjfhf to plane-platform-control
+62m         Normal    Pulled                  pod/plane-restore-migrate-20261105t082657z-bjfhf                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+62m         Normal    Created                 pod/plane-restore-migrate-20261105t082657z-bjfhf                   Container created
+62m         Normal    Started                 pod/plane-restore-migrate-20261105t082657z-bjfhf                   Container started
+62m         Normal    SuccessfulCreate        replicaset/plane-api-wl-c4f9658c9                                  Created pod: plane-api-wl-c4f9658c9-8xrnd
+62m         Normal    Pulled                  pod/plane-api-wl-c4f9658c9-8xrnd                                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+62m         Normal    Started                 pod/plane-api-wl-c4f9658c9-8xrnd                                   Container started
+62m         Normal    Created                 pod/plane-api-wl-c4f9658c9-8xrnd                                   Container created
+62m         Normal    Completed               job/plane-restore-migrate-20261105t082657z                         Job completed
+62m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled up replica set plane-api-wl-c4f9658c9 from 0 to 1
+62m         Normal    Scheduled               pod/plane-api-wl-c4f9658c9-8xrnd                                   Successfully assigned plane-prod-sim/plane-api-wl-c4f9658c9-8xrnd to plane-platform-control-plane
+62m         Warning   Unhealthy               pod/plane-api-wl-c4f9658c9-8xrnd                                   Startup probe failed: Get "http://10.244.0.83:8000/": dial tcp 10.244.0.83:8000: connect: connection refuse
+62m         Normal    Created                 pod/plane-worker-wl-cd696f548-gp8ss                                Container created
+62m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-cd696f548                               Created pod: plane-worker-wl-cd696f548-gp8ss
+62m         Normal    Scheduled               pod/plane-worker-wl-cd696f548-gp8ss                                Successfully assigned plane-prod-sim/plane-worker-wl-cd696f548-gp8ss to plane-platform-control-plane
+62m         Normal    Pulled                  pod/plane-worker-wl-cd696f548-gp8ss                                Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+62m         Normal    Started                 pod/plane-worker-wl-cd696f548-gp8ss                                Container started
+62m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled up replica set plane-worker-wl-cd696f548 from 0 to 1
+61m         Warning   Unhealthy               pod/plane-worker-wl-cd696f548-gp8ss                                Startup probe failed:
+61m         Normal    SuccessfulCreate        replicaset/plane-beat-worker-wl-f44b9b987                          Created pod: plane-beat-worker-wl-f44b9b987-c4nd8
+61m         Normal    Scheduled               pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Successfully assigned plane-prod-sim/plane-beat-worker-wl-f44b9b987-c4nd8 to plane-platform-control-plane
+61m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled up replica set plane-beat-worker-wl-f44b9b987 from 0 to 1
+61m         Normal    Created                 pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Container created
+61m         Normal    Pulled                  pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+61m         Normal    Started                 pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Container started
+61m         Warning   Unhealthy               pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Startup probe failed:
+61m         Normal    SuccessfulCreate        replicaset/plane-live-wl-5d5fd749c6                                Created pod: plane-live-wl-5d5fd749c6-zzbfw
+61m         Normal    ScalingReplicaSet       deployment/plane-live-wl                                           Scaled up replica set plane-live-wl-5d5fd749c6 from 0 to 1
+61m         Normal    Started                 pod/plane-live-wl-5d5fd749c6-zzbfw                                 Container started
+61m         Normal    Created                 pod/plane-live-wl-5d5fd749c6-zzbfw                                 Container created
+61m         Normal    Pulled                  pod/plane-live-wl-5d5fd749c6-zzbfw                                 Container image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840
+61m         Normal    Scheduled               pod/plane-live-wl-5d5fd749c6-zzbfw                                 Successfully assigned plane-prod-sim/plane-live-wl-5d5fd749c6-zzbfw to plane-platform-control-plane
+61m         Warning   Unhealthy               pod/plane-live-wl-5d5fd749c6-zzbfw                                 Startup probe failed: Get "http://10.244.0.86:3000/live/health": dial tcp 10.244.0.86:3000: connect: connec
+60m         Normal    Created                 pod/isolation-probe-1793867428                                     Container created
+60m         Normal    Started                 pod/isolation-probe-1793867428                                     Container started
+60m         Normal    Pulled                  pod/isolation-probe-1793867428                                     Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+60m         Normal    Scheduled               pod/isolation-probe-1793867428                                     Successfully assigned plane-prod-sim/isolation-probe-1793867428 to plane-platform-control-plane
+57m         Normal    SandboxChanged          pod/postgres-exporter-7fd68c6cdf-sgjlc                             Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-rabbitmq-wl-0                                            Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-pgdb-wl-0                                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-web-wl-545ff57fd4-fz5jv                                  Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-minio-wl-0                                               Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-redis-wl-0                                               Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-worker-wl-cd696f548-gp8ss                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/redis-exporter-5b59d6cb7c-7lc4j                                Container image "docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d8
+57m         Normal    SandboxChanged          pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/plane-space-wl-6c6c7c76c6-f655t                                Container image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d848
+57m         Normal    SandboxChanged          pod/plane-space-wl-6c6c7c76c6-f655t                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-api-wl-c4f9658c9-8xrnd                                   Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/redis-exporter-5b59d6cb7c-7lc4j                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/postgres-exporter-7fd68c6cdf-sgjlc                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+57m         Normal    SandboxChanged          pod/plane-admin-wl-64b68f786-dfxfc                                 Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-live-wl-5d5fd749c6-zzbfw                                 Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/plane-live-wl-5d5fd749c6-zzbfw                                 Container image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840
+57m         Normal    Pulled                  pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+57m         Normal    Created                 pod/plane-live-wl-5d5fd749c6-zzbfw                                 Container created
+57m         Normal    Created                 pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Container created
+57m         Normal    Created                 pod/postgres-exporter-7fd68c6cdf-sgjlc                             Container created
+57m         Normal    Started                 pod/postgres-exporter-7fd68c6cdf-sgjlc                             Container started
+57m         Normal    Created                 pod/plane-space-wl-6c6c7c76c6-f655t                                Container created
+57m         Normal    Created                 pod/redis-exporter-5b59d6cb7c-7lc4j                                Container created
+57m         Normal    Started                 pod/redis-exporter-5b59d6cb7c-7lc4j                                Container started
+57m         Normal    Pulled                  pod/plane-minio-wl-0                                               Container image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b
+57m         Normal    Pulled                  pod/plane-redis-wl-0                                               Container image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b97
+57m         Normal    Pulled                  pod/plane-web-wl-545ff57fd4-fz5jv                                  Container image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b076996
+57m         Normal    Pulled                  pod/plane-pgdb-wl-0                                                Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+57m         Normal    Pulled                  pod/plane-rabbitmq-wl-0                                            Container image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2
+57m         Normal    Started                 pod/plane-live-wl-5d5fd749c6-zzbfw                                 Container started
+57m         Normal    Pulled                  pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Container image "docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397
+57m         Normal    Created                 pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Container created
+57m         Normal    Started                 pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Container started
+57m         Normal    Pulled                  pod/plane-admin-wl-64b68f786-dfxfc                                 Container image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0a
+57m         Normal    Started                 pod/plane-space-wl-6c6c7c76c6-f655t                                Container started
+57m         Normal    Created                 pod/plane-admin-wl-64b68f786-dfxfc                                 Container created
+57m         Normal    Created                 pod/plane-redis-wl-0                                               Container created
+57m         Normal    Created                 pod/plane-pgdb-wl-0                                                Container created
+57m         Normal    Created                 pod/plane-minio-wl-0                                               Container created
+57m         Normal    Created                 pod/plane-rabbitmq-wl-0                                            Container created
+57m         Normal    Started                 pod/plane-pgdb-wl-0                                                Container started
+57m         Normal    Created                 pod/plane-web-wl-545ff57fd4-fz5jv                                  Container created
+57m         Normal    Started                 pod/plane-admin-wl-64b68f786-dfxfc                                 Container started
+57m         Normal    Started                 pod/plane-web-wl-545ff57fd4-fz5jv                                  Container started
+57m         Normal    Started                 pod/iso-prod-sim-controller-manager-5cc86cc76-b42gj                Container started
+57m         Normal    Started                 pod/plane-minio-wl-0                                               Container started
+57m         Normal    Started                 pod/plane-rabbitmq-wl-0                                            Container started
+57m         Normal    Started                 pod/plane-redis-wl-0                                               Container started
+57m         Warning   Unhealthy               pod/plane-minio-wl-0                                               Startup probe failed: Get "http://10.244.0.43:9000/minio/health/live": dial tcp 10.244.0.43:9000: connect: 
+57m         Warning   Unhealthy               pod/plane-space-wl-6c6c7c76c6-f655t                                Startup probe failed: Get "http://10.244.0.10:3000/spaces/": dial tcp 10.244.0.10:3000: connect: connection
+57m         Normal    LeaderElection          lease/cf2b8c44.infisical.com                                       iso-prod-sim-controller-manager-5cc86cc76-b42gj_084fdd41-41bf-46bc-bfae-821ce65560da became leader
+57m         Warning   Unhealthy               pod/plane-rabbitmq-wl-0                                            Startup probe failed: dial tcp 10.244.0.41:5672: connect: connection refused
+57m         Warning   Unhealthy               pod/plane-worker-wl-cd696f548-gp8ss                                Startup probe errored and resulted in unknown state: rpc error: code = Unknown desc = failed to exec in con
+57m         Warning   BackOff                 pod/plane-api-wl-c4f9658c9-8xrnd                                   Back-off restarting failed container plane-api in pod plane-api-wl-c4f9658c9-8xrnd_plane-prod-sim(032e3794-
+57m         Warning   BackOff                 pod/plane-worker-wl-cd696f548-gp8ss                                Back-off restarting failed container plane-worker in pod plane-worker-wl-cd696f548-gp8ss_plane-prod-sim(0d2
+57m         Normal    Started                 pod/plane-api-wl-c4f9658c9-8xrnd                                   Container started
+57m         Warning   Unhealthy               pod/plane-live-wl-5d5fd749c6-zzbfw                                 Startup probe failed: Get "http://10.244.0.18:3000/live/health": dial tcp 10.244.0.18:3000: connect: connec
+57m         Normal    Pulled                  pod/plane-api-wl-c4f9658c9-8xrnd                                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+57m         Normal    Created                 pod/plane-api-wl-c4f9658c9-8xrnd                                   Container created
+57m         Normal    Pulled                  pod/plane-worker-wl-cd696f548-gp8ss                                Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+57m         Normal    Created                 pod/plane-worker-wl-cd696f548-gp8ss                                Container created
+57m         Normal    Started                 pod/plane-worker-wl-cd696f548-gp8ss                                Container started
+56m         Warning   Unhealthy               pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Startup probe failed:
+56m         Warning   Unhealthy               pod/plane-worker-wl-cd696f548-gp8ss                                Startup probe failed:
+56m         Warning   Unhealthy               pod/plane-api-wl-c4f9658c9-8xrnd                                   Startup probe failed: Get "http://10.244.0.13:8000/": dial tcp 10.244.0.13:8000: connect: connection refuse
+52m         Normal    Pulled                  pod/netpol-083542-39                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-39                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-40                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-40                                               Container created
+52m         Normal    Started                 pod/netpol-083542-39                                               Container started
+52m         Normal    Created                 pod/netpol-083542-37                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-38                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Started                 pod/netpol-083542-37                                               Container started
+52m         Normal    Pulled                  pod/netpol-083542-37                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-38                                               Container created
+52m         Normal    Started                 pod/netpol-083542-38                                               Container started
+52m         Normal    Started                 pod/netpol-083542-40                                               Container started
+51m         Normal    Pulled                  pod/netpol-083542-41                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-41                                               Container started
+51m         Normal    Started                 pod/netpol-083542-44                                               Container started
+51m         Normal    Created                 pod/netpol-083542-44                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-44                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-43                                               Container started
+51m         Normal    Created                 pod/netpol-083542-43                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-43                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-42                                               Container started
+51m         Normal    Created                 pod/netpol-083542-42                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-42                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Created                 pod/netpol-083542-41                                               Container created
+51m         Normal    Started                 pod/netpol-083542-48                                               Container started
+51m         Normal    Created                 pod/netpol-083542-47                                               Container created
+51m         Normal    Started                 pod/netpol-083542-46                                               Container started
+51m         Normal    Pulled                  pod/netpol-083542-46                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-45                                               Container started
+51m         Normal    Created                 pod/netpol-083542-45                                               Container created
+51m         Normal    Created                 pod/netpol-083542-46                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-48                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Pulled                  pod/netpol-083542-47                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-47                                               Container started
+51m         Normal    Created                 pod/netpol-083542-48                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-45                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-52                                               Container started
+51m         Normal    Created                 pod/netpol-083542-52                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-52                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Started                 pod/netpol-083542-51                                               Container started
+51m         Normal    Pulled                  pod/netpol-083542-50                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Pulled                  pod/netpol-083542-51                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Created                 pod/netpol-083542-51                                               Container created
+51m         Normal    Started                 pod/netpol-083542-49                                               Container started
+51m         Normal    Created                 pod/netpol-083542-49                                               Container created
+51m         Normal    Pulled                  pod/netpol-083542-49                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+51m         Normal    Created                 pod/netpol-083542-50                                               Container created
+51m         Normal    Started                 pod/netpol-083542-50                                               Container started
+50m         Normal    Created                 pod/netpol-083542-53                                               Container created
+50m         Normal    Created                 pod/netpol-083542-54                                               Container created
+50m         Normal    Pulled                  pod/netpol-083542-54                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+50m         Normal    Pulled                  pod/netpol-083542-53                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+50m         Normal    Started                 pod/netpol-083542-54                                               Container started
+50m         Normal    Started                 pod/netpol-083542-53                                               Container started
+50m         Normal    Started                 pod/isolation-probe-1793868052                                     Container started
+50m         Normal    Pulled                  pod/isolation-probe-1793868052                                     Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+50m         Normal    Created                 pod/isolation-probe-1793868052                                     Container created
+44m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled up replica set postgres-exporter-6c9b4f6486 from 0 to 1
+44m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-77b6dbc84d                              Created pod: plane-worker-wl-77b6dbc84d-trnzq
+44m         Normal    SuccessfulCreate        replicaset/postgres-exporter-6c9b4f6486                            Created pod: postgres-exporter-6c9b4f6486-xlltp
+44m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled up replica set plane-api-wl-688d9f5b95 from 0 to 1
+44m         Normal    SuccessfulCreate        replicaset/plane-api-wl-688d9f5b95                                 Created pod: plane-api-wl-688d9f5b95-x78lk
+44m         Normal    SuccessfulCreate        replicaset/plane-beat-worker-wl-7dd9c84ff7                         Created pod: plane-beat-worker-wl-7dd9c84ff7-6hlf4
+44m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled up replica set plane-worker-wl-77b6dbc84d from 0 to 1
+44m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled up replica set plane-beat-worker-wl-7dd9c84ff7 from 0 to 1
+44m         Warning   Unhealthy               pod/postgres-exporter-6c9b4f6486-xlltp                             Readiness probe failed: Get "http://10.244.0.125:9187/": dial tcp 10.244.0.125:9187: connect: connection re
+44m         Normal    Created                 pod/postgres-exporter-6c9b4f6486-xlltp                             Container created
+44m         Normal    Started                 pod/plane-beat-worker-wl-7dd9c84ff7-6hlf4                          Container started
+44m         Normal    Created                 pod/plane-beat-worker-wl-7dd9c84ff7-6hlf4                          Container created
+44m         Normal    Pulled                  pod/plane-beat-worker-wl-7dd9c84ff7-6hlf4                          Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+44m         Normal    Pulled                  pod/plane-api-wl-688d9f5b95-x78lk                                  Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+44m         Normal    Pulled                  pod/postgres-exporter-6c9b4f6486-xlltp                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+44m         Normal    Started                 pod/plane-worker-wl-77b6dbc84d-trnzq                               Container started
+44m         Normal    Started                 pod/postgres-exporter-6c9b4f6486-xlltp                             Container started
+44m         Normal    Started                 pod/plane-api-wl-688d9f5b95-x78lk                                  Container started
+44m         Normal    Created                 pod/plane-api-wl-688d9f5b95-x78lk                                  Container created
+44m         Normal    Created                 pod/plane-worker-wl-77b6dbc84d-trnzq                               Container created
+44m         Normal    Pulled                  pod/plane-worker-wl-77b6dbc84d-trnzq                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+44m         Normal    Killing                 pod/postgres-exporter-7fd68c6cdf-sgjlc                             Stopping container postgres-exporter
+44m         Normal    SuccessfulDelete        replicaset/postgres-exporter-7fd68c6cdf                            Deleted pod: postgres-exporter-7fd68c6cdf-sgjlc
+44m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled down replica set postgres-exporter-7fd68c6cdf from 1 to 0
+44m         Normal    SuccessfulCreate        replicaset/postgres-exporter-7fd68c6cdf                            Created pod: postgres-exporter-7fd68c6cdf-2dh22
+44m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled down replica set plane-worker-wl-77b6dbc84d from 1 to 0
+44m         Normal    Pulled                  pod/plane-api-wl-76f9dccd47-h955s                                  Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+44m         Normal    SuccessfulDelete        replicaset/plane-worker-wl-77b6dbc84d                              Deleted pod: plane-worker-wl-77b6dbc84d-trnzq
+44m         Normal    Killing                 pod/plane-worker-wl-77b6dbc84d-trnzq                               Stopping container plane-worker
+44m         Normal    Pulled                  pod/postgres-exporter-7fd68c6cdf-2dh22                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+44m         Normal    Created                 pod/postgres-exporter-7fd68c6cdf-2dh22                             Container created
+44m         Normal    Started                 pod/postgres-exporter-7fd68c6cdf-2dh22                             Container started
+44m         Warning   Unhealthy               pod/postgres-exporter-7fd68c6cdf-2dh22                             Readiness probe failed: Get "http://10.244.0.129:9187/": dial tcp 10.244.0.129:9187: connect: connection re
+44m         Normal    Killing                 pod/plane-api-wl-688d9f5b95-x78lk                                  Stopping container plane-api
+44m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled down replica set plane-beat-worker-wl-7dd9c84ff7 from 1 to 0
+44m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled up replica set plane-beat-worker-wl-7c85f5dd7c from 0 to 1
+44m         Normal    SuccessfulDelete        replicaset/plane-beat-worker-wl-7dd9c84ff7                         Deleted pod: plane-beat-worker-wl-7dd9c84ff7-6hlf4
+44m         Normal    Killing                 pod/plane-beat-worker-wl-7dd9c84ff7-6hlf4                          Stopping container plane-beat-worker
+44m         Normal    SuccessfulDelete        replicaset/plane-api-wl-688d9f5b95                                 Deleted pod: plane-api-wl-688d9f5b95-x78lk
+44m         Normal    Created                 pod/plane-api-wl-76f9dccd47-h955s                                  Container created
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-2hw9r" is forbidden: exceeded quota: plane-budget, request
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-g8dlc" is forbidden: exceeded quota: plane-budget, request
+44m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled up replica set plane-worker-wl-5795f875bd from 0 to 1
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-wf6k5" is forbidden: exceeded quota: plane-budget, request
+44m         Normal    SuccessfulCreate        replicaset/plane-beat-worker-wl-7c85f5dd7c                         Created pod: plane-beat-worker-wl-7c85f5dd7c-bcvbb
+44m         Normal    Created                 pod/plane-beat-worker-wl-7c85f5dd7c-bcvbb                          Container created
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-ss4mt" is forbidden: exceeded quota: plane-budget, request
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-2dndv" is forbidden: exceeded quota: plane-budget, request
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-6bk92" is forbidden: exceeded quota: plane-budget, request
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-9ck9p" is forbidden: exceeded quota: plane-budget, request
+44m         Normal    Pulled                  pod/plane-beat-worker-wl-7c85f5dd7c-bcvbb                          Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+44m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled up replica set postgres-exporter-7fd68c6cdf from 0 to 1
+44m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled up replica set plane-api-wl-76f9dccd47 from 0 to 1
+44m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled down replica set plane-api-wl-688d9f5b95 from 1 to 0
+44m         Normal    SuccessfulCreate        replicaset/plane-api-wl-76f9dccd47                                 Created pod: plane-api-wl-76f9dccd47-h955s
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-hhk76" is forbidden: exceeded quota: plane-budget, request
+44m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled down replica set postgres-exporter-6c9b4f6486 from 1 to 0
+44m         Normal    SuccessfulDelete        replicaset/postgres-exporter-6c9b4f6486                            Deleted pod: postgres-exporter-6c9b4f6486-xlltp
+44m         Normal    Started                 pod/plane-api-wl-76f9dccd47-h955s                                  Container started
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              Error creating: pods "plane-worker-wl-5795f875bd-br2fg" is forbidden: exceeded quota: plane-budget, request
+44m         Normal    Killing                 pod/postgres-exporter-6c9b4f6486-xlltp                             Stopping container postgres-exporter
+44m         Normal    Started                 pod/plane-beat-worker-wl-7c85f5dd7c-bcvbb                          Container started
+44m         Warning   FailedCreate            replicaset/plane-worker-wl-5795f875bd                              (combined from similar events): Error creating: pods "plane-worker-wl-5795f875bd-7z8ws" is forbidden: excee
+44m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-5795f875bd                              Created pod: plane-worker-wl-5795f875bd-hzqsr
+44m         Normal    Started                 pod/plane-worker-wl-5795f875bd-hzqsr                               Container started
+44m         Normal    Created                 pod/plane-worker-wl-5795f875bd-hzqsr                               Container created
+44m         Normal    Pulled                  pod/plane-worker-wl-5795f875bd-hzqsr                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+44m         Warning   Unhealthy               pod/plane-worker-wl-5795f875bd-hzqsr                               Startup probe failed:
+44m         Normal    SuccessfulDelete        replicaset/plane-worker-wl-cd696f548                               Deleted pod: plane-worker-wl-cd696f548-gp8ss
+44m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled down replica set plane-worker-wl-cd696f548 from 1 to 0
+44m         Normal    Killing                 pod/plane-worker-wl-cd696f548-gp8ss                                Stopping container plane-worker
+44m         Warning   Unhealthy               pod/plane-beat-worker-wl-7c85f5dd7c-bcvbb                          Startup probe failed:
+44m         Warning   Unhealthy               pod/plane-api-wl-76f9dccd47-h955s                                  Startup probe failed: Get "http://10.244.0.130:8000/": dial tcp 10.244.0.130:8000: connect: connection refu
+44m         Normal    SuccessfulDelete        replicaset/plane-beat-worker-wl-f44b9b987                          Deleted pod: plane-beat-worker-wl-f44b9b987-c4nd8
+44m         Normal    Killing                 pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Stopping container plane-beat-worker
+44m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled down replica set plane-beat-worker-wl-f44b9b987 from 1 to 0
+44m         Normal    Killing                 pod/plane-api-wl-c4f9658c9-8xrnd                                   Stopping container plane-api
+44m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled down replica set plane-api-wl-c4f9658c9 from 1 to 0
+44m         Normal    SuccessfulDelete        replicaset/plane-api-wl-c4f9658c9                                  Deleted pod: plane-api-wl-c4f9658c9-8xrnd
+44m         Warning   Unhealthy               pod/plane-worker-wl-cd696f548-gp8ss                                Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+43m         Warning   Unhealthy               pod/plane-beat-worker-wl-f44b9b987-c4nd8                           Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+# 2026-11-05T09:31:06Z command: kubectl get events -n plane-dev --sort-by=.lastTimestamp, kept for about an hour
+LAST SEEN   TYPE      REASON                  OBJECT                                                             MESSAGE
+52m         Normal    Scheduled               pod/netpol-083542-32                                               Successfully assigned plane-dev/netpol-083542-32 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-23                                               Successfully assigned plane-dev/netpol-083542-23 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-22                                               Successfully assigned plane-dev/netpol-083542-22 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-21                                               Successfully assigned plane-dev/netpol-083542-21 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-20                                               Successfully assigned plane-dev/netpol-083542-20 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-19                                               Successfully assigned plane-dev/netpol-083542-19 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-24                                               Successfully assigned plane-dev/netpol-083542-24 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-25                                               Successfully assigned plane-dev/netpol-083542-25 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-26                                               Successfully assigned plane-dev/netpol-083542-26 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-27                                               Successfully assigned plane-dev/netpol-083542-27 to plane-platform-control-plane
+18m         Normal    Scheduled               pod/k6-20261105t091213z-wjlt8                                      Successfully assigned plane-dev/k6-20261105t091213z-wjlt8 to plane-platform-control-plane
+48m         Normal    Scheduled               pod/plane-worker-wl-7f4494fd56-55dw2                               Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-55dw2 to plane-platform-control-plane
+53m         Normal    Scheduled               pod/netpol-083542-28                                               Successfully assigned plane-dev/netpol-083542-28 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-29                                               Successfully assigned plane-dev/netpol-083542-29 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-30                                               Successfully assigned plane-dev/netpol-083542-30 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-31                                               Successfully assigned plane-dev/netpol-083542-31 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-36                                               Successfully assigned plane-dev/netpol-083542-36 to plane-platform-control-plane
+50m         Normal    Scheduled               pod/isolation-probe-1793868049                                     Successfully assigned plane-dev/isolation-probe-1793868049 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-35                                               Successfully assigned plane-dev/netpol-083542-35 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-34                                               Successfully assigned plane-dev/netpol-083542-34 to plane-platform-control-plane
+52m         Normal    Scheduled               pod/netpol-083542-33                                               Successfully assigned plane-dev/netpol-083542-33 to plane-platform-control-plane
+28m         Normal    Scheduled               pod/k6-20261105t090247z-2kn2j                                      Successfully assigned plane-dev/k6-20261105t090247z-2kn2j to plane-platform-control-plane
+76m         Normal    SuccessfulCreate        replicaset/postgres-exporter-7dbf9ccd58                            Created pod: postgres-exporter-7dbf9ccd58-8dqnb
+76m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled up replica set postgres-exporter-7dbf9ccd58 from 0 to 1
+76m         Normal    ScalingReplicaSet       deployment/redis-exporter                                          Scaled up replica set redis-exporter-5b59d6cb7c from 0 to 1
+76m         Normal    Scheduled               pod/postgres-exporter-7dbf9ccd58-8dqnb                             Successfully assigned plane-dev/postgres-exporter-7dbf9ccd58-8dqnb to plane-platform-control-plane
+76m         Normal    Pulled                  pod/postgres-exporter-7dbf9ccd58-8dqnb                             Successfully pulled image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d8
+76m         Normal    Pulling                 pod/postgres-exporter-7dbf9ccd58-8dqnb                             Pulling image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b3
+76m         Normal    Scheduled               pod/redis-exporter-5b59d6cb7c-n4hdp                                Successfully assigned plane-dev/redis-exporter-5b59d6cb7c-n4hdp to plane-platform-control-plane
+76m         Normal    Created                 pod/redis-exporter-5b59d6cb7c-n4hdp                                Container created
+76m         Normal    Pulling                 pod/redis-exporter-5b59d6cb7c-n4hdp                                Pulling image "docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81b
+76m         Normal    Pulled                  pod/redis-exporter-5b59d6cb7c-n4hdp                                Successfully pulled image "docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41c
+76m         Normal    SuccessfulCreate        replicaset/redis-exporter-5b59d6cb7c                               Created pod: redis-exporter-5b59d6cb7c-n4hdp
+76m         Normal    Started                 pod/redis-exporter-5b59d6cb7c-n4hdp                                Container started
+76m         Warning   Unhealthy               pod/redis-exporter-5b59d6cb7c-n4hdp                                Readiness probe failed: Get "http://10.244.0.24:9121/health": dial tcp 10.244.0.24:9121: connect: connectio
+75m         Normal    SuccessfulCreate        replicaset/iso-dev-controller-manager-85dbfbcb5b                   Created pod: iso-dev-controller-manager-85dbfbcb5b-s49h2
+75m         Normal    Scheduled               pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Successfully assigned plane-dev/iso-dev-controller-manager-85dbfbcb5b-s49h2 to plane-platform-control-plane
+75m         Normal    ScalingReplicaSet       deployment/iso-dev-controller-manager                              Scaled up replica set iso-dev-controller-manager-85dbfbcb5b from 0 to 1
+74m         Normal    Pulled                  pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Container image "docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397
+74m         Normal    Started                 pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Container started
+74m         Normal    Created                 pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Container created
+74m         Normal    LeaderElection          lease/cf2b8c44.infisical.com                                       iso-dev-controller-manager-85dbfbcb5b-s49h2_529532ed-544a-469a-ad0f-80555cf59c86 became leader
+73m         Warning   Failed                  pod/postgres-exporter-7dbf9ccd58-8dqnb                             Error: secret "plane-pgdb" not found
+73m         Normal    Pulled                  pod/postgres-exporter-7dbf9ccd58-8dqnb                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+73m         Normal    Scheduled               pod/postgres-exporter-76cb56b89b-9h6nc                             Successfully assigned plane-dev/postgres-exporter-76cb56b89b-9h6nc to plane-platform-control-plane
+73m         Normal    Pulled                  pod/postgres-exporter-76cb56b89b-9h6nc                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+73m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled up replica set postgres-exporter-76cb56b89b from 0 to 1
+73m         Normal    SuccessfulCreate        replicaset/postgres-exporter-76cb56b89b                            Created pod: postgres-exporter-76cb56b89b-9h6nc
+73m         Warning   Unhealthy               pod/postgres-exporter-76cb56b89b-9h6nc                             Readiness probe failed: Get "http://10.244.0.37:9187/": dial tcp 10.244.0.37:9187: connect: connection refu
+73m         Normal    Started                 pod/postgres-exporter-76cb56b89b-9h6nc                             Container started
+73m         Normal    Created                 pod/postgres-exporter-76cb56b89b-9h6nc                             Container created
+73m         Normal    SuccessfulDelete        replicaset/postgres-exporter-7dbf9ccd58                            Deleted pod: postgres-exporter-7dbf9ccd58-8dqnb
+73m         Normal    ScalingReplicaSet       deployment/postgres-exporter                                       Scaled down replica set postgres-exporter-7dbf9ccd58 from 1 to 0
+73m         Normal    SuccessfulCreate        statefulset/plane-rabbitmq-wl                                      Create Claim pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 Pod plane-rabbitmq-wl-0 in StatefulSet plane-rabbit
+73m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   waiting for first consumer to be created before binding
+73m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+73m         Normal    SuccessfulCreate        statefulset/plane-redis-wl                                         Create Claim pvc-plane-redis-vol-plane-redis-wl-0 Pod plane-redis-wl-0 in StatefulSet plane-redis-wl succes
+73m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         External provisioner is provisioning volume for claim "plane-dev/pvc-plane-redis-vol-plane-redis-wl-0"
+73m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         External provisioner is provisioning volume for claim "plane-dev/pvc-plane-minio-vol-plane-minio-wl-0"
+73m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+73m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         waiting for first consumer to be created before binding
+73m         Normal    SuccessfulCreate        statefulset/plane-rabbitmq-wl                                      Create Pod plane-rabbitmq-wl-0 in StatefulSet plane-rabbitmq-wl successful
+73m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   External provisioner is provisioning volume for claim "plane-dev/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+73m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+73m         Normal    SuccessfulCreate        statefulset/plane-minio-wl                                         Create Claim pvc-plane-minio-vol-plane-minio-wl-0 Pod plane-minio-wl-0 in StatefulSet plane-minio-wl succes
+73m         Normal    SuccessfulCreate        statefulset/plane-minio-wl                                         Create Pod plane-minio-wl-0 in StatefulSet plane-minio-wl successful
+73m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           waiting for first consumer to be created before binding
+73m         Normal    ExternalProvisioning    persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           Waiting for a volume to be created either by the external provisioner 'rancher.io/local-path' or manually b
+73m         Normal    SuccessfulCreate        statefulset/plane-redis-wl                                         Create Pod plane-redis-wl-0 in StatefulSet plane-redis-wl successful
+73m         Normal    SuccessfulCreate        statefulset/plane-pgdb-wl                                          Create Pod plane-pgdb-wl-0 in StatefulSet plane-pgdb-wl successful
+73m         Normal    Provisioning            persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           External provisioner is provisioning volume for claim "plane-dev/pvc-plane-pgdb-vol-plane-pgdb-wl-0"
+73m         Normal    WaitForFirstConsumer    persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         waiting for first consumer to be created before binding
+73m         Normal    SuccessfulCreate        statefulset/plane-pgdb-wl                                          Create Claim pvc-plane-pgdb-vol-plane-pgdb-wl-0 Pod plane-pgdb-wl-0 in StatefulSet plane-pgdb-wl success
+73m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-pgdb-vol-plane-pgdb-wl-0           Successfully provisioned volume pvc-b4d103b8-db58-454d-9aeb-c0a0e6e6a818
+73m         Normal    Pulling                 pod/plane-pgdb-wl-0                                                Pulling image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c68
+73m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-minio-vol-plane-minio-wl-0         Successfully provisioned volume pvc-439940dc-fb6a-430a-be47-5a631b668b39
+73m         Normal    Scheduled               pod/plane-pgdb-wl-0                                                Successfully assigned plane-dev/plane-pgdb-wl-0 to plane-platform-control-plane
+73m         Normal    Pulling                 pod/plane-minio-wl-0                                               Pulling image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89
+73m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0   Successfully provisioned volume pvc-f040d975-741e-439a-afe7-cc346ee09ed8
+73m         Normal    ProvisioningSucceeded   persistentvolumeclaim/pvc-plane-redis-vol-plane-redis-wl-0         Successfully provisioned volume pvc-74888deb-f121-4ecb-a072-8b47b30a0447
+73m         Normal    Scheduled               pod/plane-minio-wl-0                                               Successfully assigned plane-dev/plane-minio-wl-0 to plane-platform-control-plane
+73m         Normal    Scheduled               pod/plane-redis-wl-0                                               Successfully assigned plane-dev/plane-redis-wl-0 to plane-platform-control-plane
+73m         Normal    Scheduled               pod/plane-rabbitmq-wl-0                                            Successfully assigned plane-dev/plane-rabbitmq-wl-0 to plane-platform-control-plane
+73m         Normal    Pulling                 pod/plane-rabbitmq-wl-0                                            Pulling image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8
+73m         Normal    Pulling                 pod/plane-redis-wl-0                                               Pulling image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796
+73m         Normal    Started                 pod/plane-pgdb-wl-0                                                Container started
+73m         Normal    Created                 pod/plane-pgdb-wl-0                                                Container created
+73m         Normal    Created                 pod/plane-minio-wl-0                                               Container created
+73m         Normal    Pulled                  pod/plane-minio-wl-0                                               Successfully pulled image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f42
+73m         Normal    Started                 pod/plane-minio-wl-0                                               Container started
+73m         Normal    Pulled                  pod/plane-pgdb-wl-0                                                Successfully pulled image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43e
+73m         Normal    Pulled                  pod/plane-rabbitmq-wl-0                                            Successfully pulled image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9af
+73m         Normal    Created                 pod/plane-redis-wl-0                                               Container created
+73m         Normal    Created                 pod/plane-rabbitmq-wl-0                                            Container created
+73m         Normal    Pulled                  pod/plane-redis-wl-0                                               Successfully pulled image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b53
+73m         Normal    Started                 pod/plane-redis-wl-0                                               Container started
+73m         Normal    Started                 pod/plane-rabbitmq-wl-0                                            Container started
+72m         Warning   Unhealthy               pod/plane-rabbitmq-wl-0                                            Startup probe failed: dial tcp 10.244.0.45:5672: connect: connection refused
+72m         Normal    Pulling                 pod/plane-api-migrate-1-ctsqp                                      Pulling image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a36
+72m         Normal    Scheduled               pod/plane-api-migrate-1-ctsqp                                      Successfully assigned plane-dev/plane-api-migrate-1-ctsqp to plane-platform-control-plane
+72m         Normal    SuccessfulCreate        job/plane-api-migrate-1                                            Created pod: plane-api-migrate-1-ctsqp
+72m         Normal    Pulled                  pod/plane-api-migrate-1-ctsqp                                      Successfully pulled image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c6
+72m         Normal    Created                 pod/plane-api-migrate-1-ctsqp                                      Container created
+72m         Normal    Started                 pod/plane-api-migrate-1-ctsqp                                      Container started
+71m         Normal    Completed               job/plane-api-migrate-1                                            Job completed
+71m         Normal    SuccessfulCreate        replicaset/plane-api-wl-d7d5dcb7f                                  Created pod: plane-api-wl-d7d5dcb7f-sk8lj
+71m         Normal    ScalingReplicaSet       deployment/plane-web-wl                                            Scaled up replica set plane-web-wl-748764649d from 0 to 1
+71m         Normal    Pulling                 pod/plane-live-wl-5744d85f8b-mc7r2                                 Pulling image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce
+71m         Normal    Scheduled               pod/plane-live-wl-5744d85f8b-mc7r2                                 Successfully assigned plane-dev/plane-live-wl-5744d85f8b-mc7r2 to plane-platform-control-plane
+71m         Normal    SuccessfulCreate        replicaset/plane-live-wl-5744d85f8b                                Created pod: plane-live-wl-5744d85f8b-mc7r2
+71m         Normal    SuccessfulCreate        replicaset/plane-beat-worker-wl-645c56988f                         Created pod: plane-beat-worker-wl-645c56988f-fb8bb
+71m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-7f4494fd56                              Created pod: plane-worker-wl-7f4494fd56-6trdz
+71m         Normal    Started                 pod/plane-worker-wl-7f4494fd56-6trdz                               Container started
+71m         Normal    Created                 pod/plane-worker-wl-7f4494fd56-6trdz                               Container created
+71m         Normal    Pulled                  pod/plane-worker-wl-7f4494fd56-6trdz                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+71m         Normal    Scheduled               pod/plane-worker-wl-7f4494fd56-6trdz                               Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-6trdz to plane-platform-control-plane
+71m         Normal    SuccessfulCreate        replicaset/plane-admin-wl-545f5b8fcd                               Created pod: plane-admin-wl-545f5b8fcd-g8sxn
+71m         Normal    ScalingReplicaSet       deployment/plane-admin-wl                                          Scaled up replica set plane-admin-wl-545f5b8fcd from 0 to 1
+71m         Normal    Scheduled               pod/plane-admin-wl-545f5b8fcd-g8sxn                                Successfully assigned plane-dev/plane-admin-wl-545f5b8fcd-g8sxn to plane-platform-control-plane
+71m         Normal    SuccessfulCreate        replicaset/plane-web-wl-748764649d                                 Created pod: plane-web-wl-748764649d-tb84g
+71m         Normal    Pulled                  pod/plane-beat-worker-wl-645c56988f-fb8bb                          Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+71m         Normal    Scheduled               pod/plane-beat-worker-wl-645c56988f-fb8bb                          Successfully assigned plane-dev/plane-beat-worker-wl-645c56988f-fb8bb to plane-platform-control-plane
+71m         Normal    Scheduled               pod/plane-web-wl-748764649d-tb84g                                  Successfully assigned plane-dev/plane-web-wl-748764649d-tb84g to plane-platform-control-plane
+71m         Normal    Started                 pod/plane-api-wl-d7d5dcb7f-sk8lj                                   Container started
+71m         Normal    Created                 pod/plane-api-wl-d7d5dcb7f-sk8lj                                   Container created
+71m         Normal    Pulled                  pod/plane-api-wl-d7d5dcb7f-sk8lj                                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+71m         Normal    Scheduled               pod/plane-api-wl-d7d5dcb7f-sk8lj                                   Successfully assigned plane-dev/plane-api-wl-d7d5dcb7f-sk8lj to plane-platform-control-plane
+71m         Normal    Scheduled               pod/plane-space-wl-847f88bc46-j7xf4                                Successfully assigned plane-dev/plane-space-wl-847f88bc46-j7xf4 to plane-platform-control-plane
+71m         Normal    Pulling                 pod/plane-space-wl-847f88bc46-j7xf4                                Pulling image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d84855
+71m         Normal    ScalingReplicaSet       deployment/plane-space-wl                                          Scaled up replica set plane-space-wl-847f88bc46 from 0 to 1
+71m         Normal    SuccessfulCreate        replicaset/plane-space-wl-847f88bc46                               Created pod: plane-space-wl-847f88bc46-j7xf4
+70m         Normal    Pulling                 pod/plane-web-wl-748764649d-tb84g                                  Pulling image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668
+70m         Normal    Started                 pod/plane-beat-worker-wl-645c56988f-fb8bb                          Container started
+70m         Normal    Pulling                 pod/plane-admin-wl-545f5b8fcd-g8sxn                                Pulling image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2
+70m         Normal    Created                 pod/plane-beat-worker-wl-645c56988f-fb8bb                          Container created
+70m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-6trdz                               Startup probe failed:
+70m         Normal    Started                 pod/plane-space-wl-847f88bc46-j7xf4                                Container started
+70m         Normal    Pulled                  pod/plane-space-wl-847f88bc46-j7xf4                                Successfully pulled image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6
+70m         Normal    Created                 pod/plane-space-wl-847f88bc46-j7xf4                                Container created
+70m         Warning   Unhealthy               pod/plane-space-wl-847f88bc46-j7xf4                                Startup probe failed: Get "http://10.244.0.47:3000/spaces/": dial tcp 10.244.0.47:3000: connect: connection
+70m         Normal    Pulled                  pod/plane-live-wl-5744d85f8b-mc7r2                                 Successfully pulled image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6b
+70m         Normal    Created                 pod/plane-live-wl-5744d85f8b-mc7r2                                 Container created
+70m         Normal    Created                 pod/plane-admin-wl-545f5b8fcd-g8sxn                                Container created
+70m         Normal    Started                 pod/plane-live-wl-5744d85f8b-mc7r2                                 Container started
+70m         Normal    Pulled                  pod/plane-admin-wl-545f5b8fcd-g8sxn                                Successfully pulled image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7
+70m         Normal    Started                 pod/plane-admin-wl-545f5b8fcd-g8sxn                                Container started
+70m         Warning   Unhealthy               pod/plane-admin-wl-545f5b8fcd-g8sxn                                Readiness probe failed: Get "http://10.244.0.52:3000/god-mode/": dial tcp 10.244.0.52:3000: connect: connec
+70m         Normal    Pulled                  pod/plane-web-wl-748764649d-tb84g                                  Successfully pulled image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6ab
+70m         Normal    Created                 pod/plane-web-wl-748764649d-tb84g                                  Container created
+70m         Warning   Unhealthy               pod/plane-web-wl-748764649d-tb84g                                  Readiness probe failed: Get "http://10.244.0.53:3000/": dial tcp 10.244.0.53:3000: connect: connection refu
+70m         Normal    Started                 pod/plane-web-wl-748764649d-tb84g                                  Container started
+70m         Warning   Unhealthy               pod/plane-beat-worker-wl-645c56988f-fb8bb                          Startup probe failed:
+70m         Warning   Unhealthy               pod/plane-api-wl-d7d5dcb7f-sk8lj                                   Startup probe failed: Get "http://10.244.0.48:8000/": dial tcp 10.244.0.48:8000: connect: connection refuse
+70m         Warning   Unhealthy               pod/plane-live-wl-5744d85f8b-mc7r2                                 Startup probe failed: Get "http://10.244.0.51:3000/live/health": dial tcp 10.244.0.51:3000: connect: connec
+67m         Normal    SuccessfulCreate        job/plane-restore-guard-20261105t082337z                           Created pod: plane-restore-guard-20261105t082337z-gflls
+67m         Normal    Started                 pod/plane-restore-guard-20261105t082337z-gflls                     Container started
+67m         Normal    Created                 pod/plane-restore-guard-20261105t082337z-gflls                     Container created
+67m         Normal    Pulled                  pod/plane-restore-guard-20261105t082337z-gflls                     Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+67m         Normal    Scheduled               pod/plane-restore-guard-20261105t082337z-gflls                     Successfully assigned plane-dev/plane-restore-guard-20261105t082337z-gflls to plane-platform-control-plane
+67m         Normal    Pulling                 pod/plane-restore-guard-objects-20261105t082337z-4vqql             Pulling image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f
+67m         Normal    Completed               job/plane-restore-guard-20261105t082337z                           Job completed
+67m         Normal    SuccessfulCreate        job/plane-restore-guard-objects-20261105t082337z                   Created pod: plane-restore-guard-objects-20261105t082337z-4vqql
+67m         Normal    Scheduled               pod/plane-restore-guard-objects-20261105t082337z-4vqql             Successfully assigned plane-dev/plane-restore-guard-objects-20261105t082337z-4vqql to plane-platform-contro
+67m         Normal    Created                 pod/plane-restore-guard-objects-20261105t082337z-4vqql             Container created
+67m         Normal    Pulled                  pod/plane-restore-guard-objects-20261105t082337z-4vqql             Successfully pulled image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed54
+67m         Normal    Started                 pod/plane-restore-guard-objects-20261105t082337z-4vqql             Container started
+67m         Normal    Completed               job/plane-restore-guard-objects-20261105t082337z                   Job completed
+67m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled down replica set plane-worker-wl-7f4494fd56 from 1 to 0
+67m         Normal    SuccessfulDelete        replicaset/plane-worker-wl-7f4494fd56                              Deleted pod: plane-worker-wl-7f4494fd56-6trdz
+67m         Normal    SuccessfulDelete        replicaset/plane-api-wl-d7d5dcb7f                                  Deleted pod: plane-api-wl-d7d5dcb7f-sk8lj
+67m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled down replica set plane-beat-worker-wl-645c56988f from 1 to 0
+67m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled down replica set plane-api-wl-d7d5dcb7f from 1 to 0
+67m         Normal    ScalingReplicaSet       deployment/plane-live-wl                                           Scaled down replica set plane-live-wl-5744d85f8b from 1 to 0
+67m         Normal    SuccessfulDelete        replicaset/plane-beat-worker-wl-645c56988f                         Deleted pod: plane-beat-worker-wl-645c56988f-fb8bb
+67m         Normal    SuccessfulDelete        replicaset/plane-live-wl-5744d85f8b                                Deleted pod: plane-live-wl-5744d85f8b-mc7r2
+67m         Normal    Killing                 pod/plane-api-wl-d7d5dcb7f-sk8lj                                   Stopping container plane-api
+67m         Normal    Killing                 pod/plane-worker-wl-7f4494fd56-6trdz                               Stopping container plane-worker
+67m         Normal    Killing                 pod/plane-beat-worker-wl-645c56988f-fb8bb                          Stopping container plane-beat-worker
+67m         Normal    Killing                 pod/plane-live-wl-5744d85f8b-mc7r2                                 Stopping container plane-live
+66m         Warning   Unhealthy               pod/plane-beat-worker-wl-645c56988f-fb8bb                          Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+66m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-6trdz                               Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+66m         Normal    Started                 pod/plane-restore-20261105t082337z-6fwcw                           Container started
+66m         Normal    Created                 pod/plane-restore-20261105t082337z-6fwcw                           Container created
+66m         Normal    Scheduled               pod/plane-restore-20261105t082337z-6fwcw                           Successfully assigned plane-dev/plane-restore-20261105t082337z-6fwcw to plane-platform-control-plane
+66m         Normal    SuccessfulCreate        job/plane-restore-20261105t082337z                                 Created pod: plane-restore-20261105t082337z-6fwcw
+66m         Normal    Pulled                  pod/plane-restore-20261105t082337z-6fwcw                           Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+66m         Normal    Pulled                  pod/plane-restore-20261105t082337z-6fwcw                           Container image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb8808
+66m         Normal    Started                 pod/plane-restore-20261105t082337z-6fwcw                           Container started
+66m         Normal    Created                 pod/plane-restore-20261105t082337z-6fwcw                           Container created
+66m         Normal    Started                 pod/plane-restore-20261105t082337z-6fwcw                           Container started
+66m         Normal    Created                 pod/plane-restore-20261105t082337z-6fwcw                           Container created
+66m         Normal    Pulled                  pod/plane-restore-20261105t082337z-6fwcw                           Container image "docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb8808
+66m         Normal    Completed               job/plane-restore-20261105t082337z                                 Job completed
+66m         Normal    Pulled                  pod/plane-restore-migrate-20261105t082337z-glmtg                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+66m         Normal    Scheduled               pod/plane-restore-migrate-20261105t082337z-glmtg                   Successfully assigned plane-dev/plane-restore-migrate-20261105t082337z-glmtg to plane-platform-control-plan
+66m         Normal    Created                 pod/plane-restore-migrate-20261105t082337z-glmtg                   Container created
+66m         Normal    Started                 pod/plane-restore-migrate-20261105t082337z-glmtg                   Container started
+66m         Normal    SuccessfulCreate        job/plane-restore-migrate-20261105t082337z                         Created pod: plane-restore-migrate-20261105t082337z-glmtg
+66m         Normal    Completed               job/plane-restore-migrate-20261105t082337z                         Job completed
+66m         Normal    ScalingReplicaSet       deployment/plane-api-wl                                            Scaled up replica set plane-api-wl-d7d5dcb7f from 0 to 1
+66m         Normal    Started                 pod/plane-api-wl-d7d5dcb7f-hddn6                                   Container started
+66m         Normal    Created                 pod/plane-api-wl-d7d5dcb7f-hddn6                                   Container created
+66m         Normal    Pulled                  pod/plane-api-wl-d7d5dcb7f-hddn6                                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+66m         Normal    Scheduled               pod/plane-api-wl-d7d5dcb7f-hddn6                                   Successfully assigned plane-dev/plane-api-wl-d7d5dcb7f-hddn6 to plane-platform-control-plane
+66m         Normal    SuccessfulCreate        replicaset/plane-api-wl-d7d5dcb7f                                  Created pod: plane-api-wl-d7d5dcb7f-hddn6
+65m         Warning   Unhealthy               pod/plane-api-wl-d7d5dcb7f-hddn6                                   Startup probe failed: Get "http://10.244.0.75:8000/": dial tcp 10.244.0.75:8000: connect: connection refuse
+65m         Normal    Started                 pod/plane-worker-wl-7f4494fd56-gkh7j                               Container started
+65m         Normal    Created                 pod/plane-worker-wl-7f4494fd56-gkh7j                               Container created
+65m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-7f4494fd56                              Created pod: plane-worker-wl-7f4494fd56-gkh7j
+65m         Normal    ScalingReplicaSet       deployment/plane-worker-wl                                         Scaled up replica set plane-worker-wl-7f4494fd56 from 0 to 1
+65m         Normal    Pulled                  pod/plane-worker-wl-7f4494fd56-gkh7j                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+65m         Normal    Scheduled               pod/plane-worker-wl-7f4494fd56-gkh7j                               Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-gkh7j to plane-platform-control-plane
+65m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-gkh7j                               Startup probe failed:
+65m         Normal    Scheduled               pod/plane-beat-worker-wl-645c56988f-ngp4c                          Successfully assigned plane-dev/plane-beat-worker-wl-645c56988f-ngp4c to plane-platform-control-plane
+65m         Normal    SuccessfulCreate        replicaset/plane-beat-worker-wl-645c56988f                         Created pod: plane-beat-worker-wl-645c56988f-ngp4c
+65m         Normal    Created                 pod/plane-beat-worker-wl-645c56988f-ngp4c                          Container created
+65m         Normal    Pulled                  pod/plane-beat-worker-wl-645c56988f-ngp4c                          Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+65m         Normal    ScalingReplicaSet       deployment/plane-beat-worker-wl                                    Scaled up replica set plane-beat-worker-wl-645c56988f from 0 to 1
+65m         Normal    Started                 pod/plane-beat-worker-wl-645c56988f-ngp4c                          Container started
+64m         Warning   Unhealthy               pod/plane-beat-worker-wl-645c56988f-ngp4c                          Startup probe failed:
+64m         Normal    ScalingReplicaSet       deployment/plane-live-wl                                           Scaled up replica set plane-live-wl-5744d85f8b from 0 to 1
+64m         Normal    Scheduled               pod/plane-live-wl-5744d85f8b-swcl4                                 Successfully assigned plane-dev/plane-live-wl-5744d85f8b-swcl4 to plane-platform-control-plane
+64m         Normal    SuccessfulCreate        replicaset/plane-live-wl-5744d85f8b                                Created pod: plane-live-wl-5744d85f8b-swcl4
+64m         Normal    Started                 pod/plane-live-wl-5744d85f8b-swcl4                                 Container started
+64m         Normal    Created                 pod/plane-live-wl-5744d85f8b-swcl4                                 Container created
+64m         Normal    Pulled                  pod/plane-live-wl-5744d85f8b-swcl4                                 Container image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840
+64m         Warning   Unhealthy               pod/plane-live-wl-5744d85f8b-swcl4                                 Startup probe failed: Get "http://10.244.0.78:3000/live/health": dial tcp 10.244.0.78:3000: connect: connec
+60m         Normal    Scheduled               pod/isolation-probe-1793867424                                     Successfully assigned plane-dev/isolation-probe-1793867424 to plane-platform-control-plane
+60m         Normal    Pulling                 pod/isolation-probe-1793867424                                     Pulling image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e
+60m         Normal    Pulled                  pod/isolation-probe-1793867424                                     Successfully pulled image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7
+60m         Normal    Created                 pod/isolation-probe-1793867424                                     Container created
+60m         Normal    Started                 pod/isolation-probe-1793867424                                     Container started
+59m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-7f4494fd56                              Created pod: plane-worker-wl-7f4494fd56-gtwzk
+59m         Normal    Pulled                  pod/plane-worker-wl-7f4494fd56-gtwzk                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+59m         Normal    Scheduled               pod/plane-worker-wl-7f4494fd56-gtwzk                               Successfully assigned plane-dev/plane-worker-wl-7f4494fd56-gtwzk to plane-platform-control-plane
+59m         Normal    Killing                 pod/plane-worker-wl-7f4494fd56-gkh7j                               Stopping container plane-worker
+59m         Normal    Started                 pod/plane-worker-wl-7f4494fd56-gtwzk                               Container started
+59m         Normal    Created                 pod/plane-worker-wl-7f4494fd56-gtwzk                               Container created
+59m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-gtwzk                               Startup probe failed:
+59m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-gkh7j                               Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+57m         Normal    SandboxChanged          pod/plane-beat-worker-wl-645c56988f-ngp4c                          Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/plane-admin-wl-545f5b8fcd-g8sxn                                Container image "localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0a
+57m         Normal    SandboxChanged          pod/plane-pgdb-wl-0                                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-space-wl-847f88bc46-j7xf4                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/plane-beat-worker-wl-645c56988f-ngp4c                          Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+57m         Normal    SandboxChanged          pod/plane-rabbitmq-wl-0                                            Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-api-wl-d7d5dcb7f-hddn6                                   Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-redis-wl-0                                               Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-admin-wl-545f5b8fcd-g8sxn                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-worker-wl-7f4494fd56-gtwzk                               Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-minio-wl-0                                               Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/plane-web-wl-748764649d-tb84g                                  Container image "localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b076996
+57m         Normal    Pulled                  pod/redis-exporter-5b59d6cb7c-n4hdp                                Container image "docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d8
+57m         Normal    SandboxChanged          pod/redis-exporter-5b59d6cb7c-n4hdp                                Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/plane-web-wl-748764649d-tb84g                                  Pod sandbox changed, it will be killed and re-created.
+57m         Normal    SandboxChanged          pod/postgres-exporter-76cb56b89b-9h6nc                             Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/postgres-exporter-76cb56b89b-9h6nc                             Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69
+57m         Normal    SandboxChanged          pod/plane-live-wl-5744d85f8b-swcl4                                 Pod sandbox changed, it will be killed and re-created.
+57m         Normal    Pulled                  pod/plane-live-wl-5744d85f8b-swcl4                                 Container image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840
+57m         Normal    Pulled                  pod/plane-space-wl-847f88bc46-j7xf4                                Container image "localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d848
+57m         Normal    Started                 pod/plane-web-wl-748764649d-tb84g                                  Container started
+57m         Normal    Created                 pod/plane-live-wl-5744d85f8b-swcl4                                 Container created
+57m         Normal    Created                 pod/plane-admin-wl-545f5b8fcd-g8sxn                                Container created
+57m         Normal    Created                 pod/plane-beat-worker-wl-645c56988f-ngp4c                          Container created
+57m         Normal    Started                 pod/redis-exporter-5b59d6cb7c-n4hdp                                Container started
+57m         Normal    Created                 pod/plane-web-wl-748764649d-tb84g                                  Container created
+57m         Normal    Created                 pod/redis-exporter-5b59d6cb7c-n4hdp                                Container created
+57m         Normal    Created                 pod/postgres-exporter-76cb56b89b-9h6nc                             Container created
+57m         Normal    Started                 pod/postgres-exporter-76cb56b89b-9h6nc                             Container started
+57m         Normal    Started                 pod/plane-space-wl-847f88bc46-j7xf4                                Container started
+57m         Normal    Created                 pod/plane-space-wl-847f88bc46-j7xf4                                Container created
+57m         Normal    Pulled                  pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Container image "docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397
+57m         Normal    Pulled                  pod/plane-pgdb-wl-0                                                Container image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+57m         Normal    Started                 pod/plane-live-wl-5744d85f8b-swcl4                                 Container started
+57m         Normal    Pulled                  pod/plane-rabbitmq-wl-0                                            Container image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2
+57m         Normal    Pulled                  pod/plane-redis-wl-0                                               Container image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b97
+57m         Normal    Started                 pod/plane-admin-wl-545f5b8fcd-g8sxn                                Container started
+57m         Normal    Started                 pod/plane-beat-worker-wl-645c56988f-ngp4c                          Container started
+57m         Normal    Created                 pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Container created
+57m         Normal    Started                 pod/iso-dev-controller-manager-85dbfbcb5b-s49h2                    Container started
+57m         Normal    Pulled                  pod/plane-minio-wl-0                                               Container image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b
+57m         Normal    Created                 pod/plane-rabbitmq-wl-0                                            Container created
+57m         Normal    Created                 pod/plane-redis-wl-0                                               Container created
+57m         Normal    Started                 pod/plane-minio-wl-0                                               Container started
+57m         Normal    Started                 pod/plane-rabbitmq-wl-0                                            Container started
+57m         Normal    Started                 pod/plane-redis-wl-0                                               Container started
+57m         Normal    Created                 pod/plane-pgdb-wl-0                                                Container created
+57m         Normal    Started                 pod/plane-pgdb-wl-0                                                Container started
+57m         Normal    Created                 pod/plane-minio-wl-0                                               Container created
+57m         Warning   Unhealthy               pod/plane-rabbitmq-wl-0                                            Startup probe failed: dial tcp 10.244.0.42:5672: connect: connection refused
+57m         Warning   Unhealthy               pod/plane-space-wl-847f88bc46-j7xf4                                Startup probe failed: Get "http://10.244.0.8:3000/spaces/": dial tcp 10.244.0.8:3000: connect: connection r
+57m         Warning   BackOff                 pod/plane-api-wl-d7d5dcb7f-hddn6                                   Back-off restarting failed container plane-api in pod plane-api-wl-d7d5dcb7f-hddn6_plane-dev(c0c688f9-747c-
+57m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-gtwzk                               Startup probe errored and resulted in unknown state: rpc error: code = NotFound desc = failed to exec in co
+57m         Normal    LeaderElection          lease/cf2b8c44.infisical.com                                       iso-dev-controller-manager-85dbfbcb5b-s49h2_61330bb2-cdcd-4f6a-8794-8c6373565353 became leader
+57m         Warning   BackOff                 pod/plane-worker-wl-7f4494fd56-gtwzk                               Back-off restarting failed container plane-worker in pod plane-worker-wl-7f4494fd56-gtwzk_plane-dev(7e4ac81
+57m         Normal    Pulled                  pod/plane-api-wl-d7d5dcb7f-hddn6                                   Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+57m         Normal    Created                 pod/plane-api-wl-d7d5dcb7f-hddn6                                   Container created
+57m         Normal    Started                 pod/plane-api-wl-d7d5dcb7f-hddn6                                   Container started
+57m         Warning   Unhealthy               pod/plane-live-wl-5744d85f8b-swcl4                                 Startup probe failed: Get "http://10.244.0.15:3000/live/health": dial tcp 10.244.0.15:3000: connect: connec
+57m         Warning   Unhealthy               pod/plane-beat-worker-wl-645c56988f-ngp4c                          Startup probe failed:
+56m         Normal    Created                 pod/plane-worker-wl-7f4494fd56-gtwzk                               Container created
+56m         Normal    Pulled                  pod/plane-worker-wl-7f4494fd56-gtwzk                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+56m         Normal    Started                 pod/plane-worker-wl-7f4494fd56-gtwzk                               Container started
+56m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-gtwzk                               Startup probe failed:
+56m         Warning   Unhealthy               pod/plane-api-wl-d7d5dcb7f-hddn6                                   Startup probe failed: Get "http://10.244.0.11:8000/": dial tcp 10.244.0.11:8000: connect: connection refuse
+53m         Normal    Created                 pod/netpol-083542-20                                               Container created
+53m         Normal    Started                 pod/netpol-083542-20                                               Container started
+53m         Normal    Created                 pod/netpol-083542-19                                               Container created
+53m         Normal    Pulled                  pod/netpol-083542-19                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Started                 pod/netpol-083542-19                                               Container started
+53m         Normal    Pulled                  pod/netpol-083542-20                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Started                 pod/netpol-083542-21                                               Container started
+53m         Normal    Created                 pod/netpol-083542-22                                               Container created
+53m         Normal    Created                 pod/netpol-083542-23                                               Container created
+53m         Normal    Started                 pod/netpol-083542-23                                               Container started
+53m         Normal    Pulled                  pod/netpol-083542-24                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Created                 pod/netpol-083542-24                                               Container created
+53m         Normal    Started                 pod/netpol-083542-22                                               Container started
+53m         Normal    Pulled                  pod/netpol-083542-21                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Created                 pod/netpol-083542-21                                               Container created
+53m         Normal    Pulled                  pod/netpol-083542-22                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Started                 pod/netpol-083542-24                                               Container started
+53m         Normal    Pulled                  pod/netpol-083542-23                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Created                 pod/netpol-083542-27                                               Container created
+53m         Normal    Started                 pod/netpol-083542-28                                               Container started
+53m         Normal    Pulled                  pod/netpol-083542-25                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Pulled                  pod/netpol-083542-27                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Started                 pod/netpol-083542-27                                               Container started
+53m         Normal    Pulled                  pod/netpol-083542-28                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Created                 pod/netpol-083542-25                                               Container created
+53m         Normal    Created                 pod/netpol-083542-28                                               Container created
+53m         Normal    Started                 pod/netpol-083542-26                                               Container started
+53m         Normal    Created                 pod/netpol-083542-26                                               Container created
+53m         Normal    Pulled                  pod/netpol-083542-26                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+53m         Normal    Started                 pod/netpol-083542-25                                               Container started
+52m         Normal    Created                 pod/netpol-083542-30                                               Container created
+52m         Normal    Started                 pod/netpol-083542-32                                               Container started
+52m         Normal    Created                 pod/netpol-083542-31                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-29                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-29                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-31                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-32                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-32                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Pulled                  pod/netpol-083542-30                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Started                 pod/netpol-083542-30                                               Container started
+52m         Normal    Started                 pod/netpol-083542-29                                               Container started
+52m         Normal    Started                 pod/netpol-083542-31                                               Container started
+52m         Normal    Pulled                  pod/netpol-083542-34                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-34                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-35                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Created                 pod/netpol-083542-35                                               Container created
+52m         Normal    Created                 pod/netpol-083542-33                                               Container created
+52m         Normal    Started                 pod/netpol-083542-34                                               Container started
+52m         Normal    Started                 pod/netpol-083542-36                                               Container started
+52m         Normal    Created                 pod/netpol-083542-36                                               Container created
+52m         Normal    Pulled                  pod/netpol-083542-36                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Started                 pod/netpol-083542-35                                               Container started
+52m         Normal    Pulled                  pod/netpol-083542-33                                               Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+52m         Normal    Started                 pod/netpol-083542-33                                               Container started
+50m         Normal    Started                 pod/isolation-probe-1793868049                                     Container started
+50m         Normal    Created                 pod/isolation-probe-1793868049                                     Container created
+50m         Normal    Pulled                  pod/isolation-probe-1793868049                                     Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb5
+48m         Normal    Pulled                  pod/plane-worker-wl-7f4494fd56-55dw2                               Container image "localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a
+48m         Normal    Created                 pod/plane-worker-wl-7f4494fd56-55dw2                               Container created
+48m         Normal    Started                 pod/plane-worker-wl-7f4494fd56-55dw2                               Container started
+48m         Normal    SuccessfulCreate        replicaset/plane-worker-wl-7f4494fd56                              Created pod: plane-worker-wl-7f4494fd56-55dw2
+48m         Normal    Killing                 pod/plane-worker-wl-7f4494fd56-gtwzk                               Stopping container plane-worker
+48m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-55dw2                               Startup probe failed:
+48m         Warning   Unhealthy               pod/plane-worker-wl-7f4494fd56-gtwzk                               Readiness probe errored and resulted in unknown state: rpc error: code = Canceled desc = context canceled
+28m         Normal    Pulling                 pod/k6-20261105t090247z-2kn2j                                      Pulling image "docker.io/grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0
+28m         Normal    SuccessfulCreate        job/k6-20261105t090247z                                            Created pod: k6-20261105t090247z-2kn2j
+28m         Normal    Pulled                  pod/k6-20261105t090247z-2kn2j                                      Successfully pulled image "docker.io/grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df
+28m         Normal    Created                 pod/k6-20261105t090247z-2kn2j                                      Container created
+28m         Normal    Started                 pod/k6-20261105t090247z-2kn2j                                      Container started
+19m         Normal    Completed               job/k6-20261105t090247z                                            Job completed
+18m         Normal    Pulled                  pod/k6-20261105t091213z-wjlt8                                      Container image "docker.io/grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bd
+18m         Normal    Created                 pod/k6-20261105t091213z-wjlt8                                      Container created
+18m         Normal    Started                 pod/k6-20261105t091213z-wjlt8                                      Container started
+18m         Normal    SuccessfulCreate        job/k6-20261105t091213z                                            Created pod: k6-20261105t091213z-wjlt8
+9m43s       Warning   BackoffLimitExceeded    job/k6-20261105t091213z                                            Job has reached the specified backoff limit

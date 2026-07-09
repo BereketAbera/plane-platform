@@ -1,0 +1,315 @@
+# LOAD-3 host capture, read-only. Filtered to this project's containers and volumes. Taken after the three windows, with no load running.
+
+# 2026-11-05T09:25:47Z command: kubectl top nodes
+NAME                           CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+plane-platform-control-plane   649m         5%       6930Mi          49%         
+
+# 2026-11-05T09:25:47Z command: kubectl top pods -A --containers
+NAMESPACE            POD                                                    NAME                             CPU(cores)   MEMORY(bytes)   
+argocd               argocd-application-controller-0                        application-controller           72m          439Mi           
+argocd               argocd-redis-ff6755697-vmthh                           redis                            4m           16Mi            
+argocd               argocd-repo-server-8464d9c6cc-lnr7t                    repo-server                      6m           77Mi            
+argocd               argocd-server-5bcf485686-ncq7f                         server                           2m           32Mi            
+infisical            infisical-567944c58f-mmbzw                             infisical-standalone-infisical   8m           669Mi           
+infisical            infisical-postgres-0                                   postgres                         4m           51Mi            
+infisical            infisical-redis-0                                      redis                            5m           12Mi            
+kube-system          coredns-589f44dc88-tttg8                               coredns                          5m           23Mi            
+kube-system          coredns-589f44dc88-wpfgl                               coredns                          4m           24Mi            
+kube-system          etcd-plane-platform-control-plane                      etcd                             22m          128Mi           
+kube-system          kindnet-z8rnv                                          kindnet-cni                      7m           21Mi            
+kube-system          kube-apiserver-plane-platform-control-plane            kube-apiserver                   43m          911Mi           
+kube-system          kube-controller-manager-plane-platform-control-plane   kube-controller-manager          16m          97Mi            
+kube-system          kube-proxy-j8bj7                                       kube-proxy                       1m           26Mi            
+kube-system          kube-scheduler-plane-platform-control-plane            kube-scheduler                   5m           37Mi            
+kube-system          metrics-server-8f755d95b-rf5fx                         metrics-server                   3m           28Mi            
+local-path-storage   local-path-provisioner-56c4685b7c-ppxgj                local-path-provisioner           1m           10Mi            
+monitoring           alert-sink-78dcd6dbb4-5cx8r                            sink                             1m           10Mi            
+monitoring           alertmanager-kps-alertmanager-0                        alertmanager                     1m           16Mi            
+monitoring           alertmanager-kps-alertmanager-0                        config-reloader                  1m           19Mi            
+monitoring           alloy-68d8ccc746-862fj                                 alloy                            5m           74Mi            
+monitoring           blackbox-854dd6b7dc-spr7b                              blackbox                         3m           17Mi            
+monitoring           kps-grafana-5bbdd69c7d-hkw9p                           grafana                          7m           212Mi           
+monitoring           kps-grafana-5bbdd69c7d-hkw9p                           grafana-sc-dashboard             1m           79Mi            
+monitoring           kps-grafana-5bbdd69c7d-hkw9p                           grafana-sc-datasources           1m           77Mi            
+monitoring           kps-kube-state-metrics-58c95899dd-zp6ph                kube-state-metrics               1m           23Mi            
+monitoring           kps-operator-85894ccc7f-vqnvv                          kube-prometheus-stack            4m           22Mi            
+monitoring           loki-0                                                 loki                             6m           115Mi           
+monitoring           prometheus-kps-prometheus-0                            config-reloader                  1m           15Mi            
+monitoring           prometheus-kps-prometheus-0                            prometheus                       16m          357Mi           
+monitoring-agents    kps-node-exporter-4dgdd                                node-exporter                    4m           20Mi            
+plane-dev            iso-dev-controller-manager-85dbfbcb5b-s49h2            manager                          3m           22Mi            
+plane-dev            plane-admin-wl-545f5b8fcd-g8sxn                        plane-admin                      1m           3Mi             
+plane-dev            plane-api-wl-d7d5dcb7f-hddn6                           plane-api                        4m           181Mi           
+plane-dev            plane-beat-worker-wl-645c56988f-ngp4c                  plane-beat-worker                2m           147Mi           
+plane-dev            plane-live-wl-5744d85f8b-swcl4                         plane-live                       2m           141Mi           
+plane-dev            plane-minio-wl-0                                       plane-minio                      1m           82Mi            
+plane-dev            plane-pgdb-wl-0                                        plane-pgdb                       6m           41Mi            
+plane-dev            plane-rabbitmq-wl-0                                    plane-rabbitmq                   34m          132Mi           
+plane-dev            plane-redis-wl-0                                       plane-redis                      3m           10Mi            
+plane-dev            plane-space-wl-847f88bc46-j7xf4                        plane-space                      1m           91Mi            
+plane-dev            plane-web-wl-748764649d-tb84g                          plane-web                        1m           3Mi             
+plane-dev            plane-worker-wl-7f4494fd56-55dw2                       plane-worker                     2m           281Mi           
+plane-dev            postgres-exporter-76cb56b89b-9h6nc                     postgres-exporter                1m           18Mi            
+plane-dev            redis-exporter-5b59d6cb7c-n4hdp                        redis-exporter                   1m           11Mi            
+plane-prod-sim       iso-prod-sim-controller-manager-5cc86cc76-b42gj        manager                          4m           20Mi            
+plane-prod-sim       plane-admin-wl-64b68f786-dfxfc                         plane-admin                      1m           3Mi             
+plane-prod-sim       plane-api-wl-76f9dccd47-h955s                          plane-api                        4m           149Mi           
+plane-prod-sim       plane-beat-worker-wl-7c85f5dd7c-bcvbb                  plane-beat-worker                2m           147Mi           
+plane-prod-sim       plane-live-wl-5d5fd749c6-zzbfw                         plane-live                       1m           142Mi           
+plane-prod-sim       plane-minio-wl-0                                       plane-minio                      2m           90Mi            
+plane-prod-sim       plane-pgdb-wl-0                                        plane-pgdb                       4m           36Mi            
+plane-prod-sim       plane-rabbitmq-wl-0                                    plane-rabbitmq                   6m           124Mi           
+plane-prod-sim       plane-redis-wl-0                                       plane-redis                      2m           9Mi             
+plane-prod-sim       plane-space-wl-6c6c7c76c6-f655t                        plane-space                      2m           92Mi            
+plane-prod-sim       plane-web-wl-545ff57fd4-fz5jv                          plane-web                        1m           3Mi             
+plane-prod-sim       plane-worker-wl-5795f875bd-hzqsr                       plane-worker                     2m           235Mi           
+plane-prod-sim       postgres-exporter-7fd68c6cdf-2dh22                     postgres-exporter                2m           12Mi            
+plane-prod-sim       redis-exporter-5b59d6cb7c-7lc4j                        redis-exporter                   1m           13Mi            
+traefik              traefik-6955f98f54-p8k9g                               traefik                          3m           54Mi            
+
+# 2026-11-05T09:25:47Z command: docker stats --no-stream --format '{{.Name}} cpu={{.CPUPerc}} mem={{.MemUsage}} pct={{.MemPerc}} net={{.NetIO}} block={{.BlockIO}} pids={{.PIDs}}' plane-git plane-mirror-docker plane-mirror-k8s plane-mirror-quay plane-platform-control-plane plane-registry
+plane-git cpu=0.00% mem=912KiB / 64MiB pct=1.39% net=50.3kB / 45.2kB block=106kB / 0B pids=2
+plane-mirror-docker cpu=0.00% mem=27.72MiB / 128MiB pct=21.66% net=41kB / 67.5MB block=72.8MB / 0B pids=12
+plane-mirror-k8s cpu=0.00% mem=29.41MiB / 128MiB pct=22.98% net=18.2kB / 4.86kB block=7.96MB / 0B pids=9
+plane-mirror-quay cpu=0.00% mem=28.48MiB / 128MiB pct=22.25% net=18.8kB / 10.9kB block=6.33MB / 0B pids=12
+plane-platform-control-plane cpu=35.17% mem=6.846GiB / 13.63GiB pct=50.21% net=111MB / 45.3MB block=577MB / 948MB pids=1417
+plane-registry cpu=0.00% mem=30.34MiB / 512MiB pct=5.93% net=23.7kB / 21.4kB block=13.7MB / 0B pids=9
+
+# 2026-11-05T09:25:49Z command: docker info --format 'running_containers_all={{.ContainersRunning}} ncpu={{.NCPU}} mem_total_bytes={{.MemTotal}}'
+running_containers_all=22 ncpu=12 mem_total_bytes=14637830144
+
+# 2026-11-05T09:25:50Z command: docker exec plane-platform-control-plane sh -c 'nproc; cat /proc/meminfo | head -8; cat /proc/pressure/memory; cat /proc/pressure/cpu'
+12
+MemTotal:       14294756 kB
+MemFree:          322436 kB
+MemAvailable:    4921612 kB
+Buffers:          534276 kB
+Cached:          3359952 kB
+SwapCached:       119912 kB
+Active:          8312296 kB
+Inactive:        3971272 kB
+some avg10=0.00 avg60=0.00 avg300=0.00 total=22373321
+full avg10=0.00 avg60=0.00 avg300=0.00 total=21269929
+some avg10=1.34 avg60=3.33 avg300=28.02 total=2911602188
+full avg10=0.00 avg60=0.00 avg300=0.00 total=0
+
+# 2026-11-05T09:25:50Z command: docker exec plane-platform-control-plane sh -c 'df -k / /var /var/lib/containerd /var/local-path-provisioner 2>/dev/null'
+Filesystem     1K-blocks     Used Available Use% Mounted on
+overlay        474095688 38756184 411183296   9% /
+/dev/vda1      474095688 38756184 411183296   9% /var
+/dev/vda1      474095688 38756184 411183296   9% /var
+/dev/vda1      474095688 38756184 411183296   9% /var
+
+# 2026-11-05T09:25:50Z command: docker exec plane-platform-control-plane sh -c 'du -sk /var/local-path-provisioner/* 2>/dev/null'
+328	/var/local-path-provisioner/pvc-2303c939-59ac-46a6-871d-cece886127fd_plane-prod-sim_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+98188	/var/local-path-provisioner/pvc-439940dc-fb6a-430a-be47-5a631b668b39_plane-dev_pvc-plane-minio-vol-plane-minio-wl-0
+6788	/var/local-path-provisioner/pvc-44b5706a-e92a-45bf-8455-b5d36928c741_infisical_data-infisical-redis-0
+48	/var/local-path-provisioner/pvc-74888deb-f121-4ecb-a072-8b47b30a0447_plane-dev_pvc-plane-redis-vol-plane-redis-wl-0
+9468	/var/local-path-provisioner/pvc-8363bd6d-154c-49c6-938a-20c824b9ae32_monitoring_storage-loki-0
+70216	/var/local-path-provisioner/pvc-971c8c73-0885-4b79-abe8-3785ce887fb3_plane-prod-sim_pvc-plane-minio-vol-plane-minio-wl-0
+8	/var/local-path-provisioner/pvc-9ff4facc-1eae-4030-8b16-c6ddb4e015ba_plane-prod-sim_pvc-plane-redis-vol-plane-redis-wl-0
+81304	/var/local-path-provisioner/pvc-b4d103b8-db58-454d-9aeb-c0a0e6e6a818_plane-dev_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+205872	/var/local-path-provisioner/pvc-c54a6a00-1f0d-4abf-a5bb-efdca12206ab_infisical_data-infisical-postgres-0
+77800	/var/local-path-provisioner/pvc-d400ab80-3b91-44ec-9201-382a392e5146_plane-prod-sim_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+63908	/var/local-path-provisioner/pvc-df79ef3e-25a9-4952-aa28-c941bb1cf96c_monitoring_prometheus-kps-prometheus-db-prometheus-kps-prometheus-0
+324	/var/local-path-provisioner/pvc-f040d975-741e-439a-afe7-cc346ee09ed8_plane-dev_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+
+# 2026-11-05T09:25:50Z command: docker exec plane-platform-control-plane sh -c 'du -sk /var/log/pods /var/log/containers /var/lib/containerd /var/lib/kubelet 2>/dev/null'
+25804	/var/log/pods
+572	/var/log/containers
+10969028	/var/lib/containerd
+373296	/var/lib/kubelet
+
+# 2026-11-05T09:25:51Z command: docker exec plane-platform-control-plane crictl imagefsinfo
+{
+  "status": {
+    "containerFilesystems": [],
+    "imageFilesystems": [
+      {
+        "fsId": {
+          "mountpoint": "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs"
+        },
+        "inodesUsed": {
+          "value": "423275"
+        },
+        "timestamp": "1793870742315029676",
+        "usedBytes": {
+          "value": "10817617920"
+        }
+      }
+    ]
+  }
+}
+
+# 2026-11-05T09:25:51Z command: docker exec plane-platform-control-plane crictl images
+IMAGE                                                    TAG                  IMAGE ID            SIZE
+docker.io/kindest/local-path-provisioner                 v20260820-69b56db7   0771a8a05619f       14.2MB
+docker.io/alpine/git                                     <none>               a89ad0ce88be5       35.7MB
+docker.io/curlimages/curl                                <none>               26c487d151246       10.2MB
+docker.io/grafana/alloy                                  <none>               09b0cc677f21a       160MB
+docker.io/grafana/grafana                                <none>               6d42465a7d36d       454MB
+docker.io/grafana/k6                                     <none>               0c6e79b98aff1       34MB
+docker.io/grafana/loki                                   <none>               3f691db8cd2f3       42.8MB
+docker.io/infisical/infisical                            <none>               8c9480140f05a       599MB
+docker.io/infisical/kubernetes-operator                  <none>               09c9238ccd083       31.8MB
+docker.io/library/busybox                                <none>               ad4f11f7c85f8       1.91MB
+registry.k8s.io/kube-apiserver-arm64                     v1.36.4              ccb82cfa6608a       90.1MB
+registry.k8s.io/kube-apiserver                           v1.36.4              ccb82cfa6608a       90.1MB
+registry.k8s.io/kube-controller-manager-arm64            v1.36.4              711e5341fbbc0       80.3MB
+registry.k8s.io/kube-controller-manager                  v1.36.4              711e5341fbbc0       80.3MB
+registry.k8s.io/kube-proxy-arm64                         v1.36.4              34c98de4a5ef4       83.4MB
+registry.k8s.io/kube-proxy                               v1.36.4              34c98de4a5ef4       83.4MB
+registry.k8s.io/kube-scheduler-arm64                     v1.36.4              e83b385367524       57.4MB
+registry.k8s.io/kube-scheduler                           v1.36.4              e83b385367524       57.4MB
+docker.io/library/postgres                               <none>               c54a696c68013       114MB
+docker.io/library/postgres                               <none>               97593450ca452       113MB
+docker.io/library/python                                 <none>               2298bf090077b       17.4MB
+docker.io/library/rabbitmq                               <none>               128fa025f5552       84.3MB
+docker.io/library/redis                                  <none>               4683386011b06       16.4MB
+docker.io/library/redis                                  <none>               bc7388e409635       34.4MB
+docker.io/library/traefik                                <none>               54e1a2de4e1a5       49.9MB
+docker.io/makeplane/plane-live                           <none>               bc81a4da4256c       303MB
+docker.io/oliver006/redis_exporter                       <none>               04ee0acc8f54d       4.08MB
+docker.io/pgsty/silo                                     <none>               57c8c05d8c280       32.7MB
+docker.io/rclone/rclone                                  <none>               6510e072008eb       31.7MB
+docker.io/valkey/valkey                                  <none>               52cd355e2babd       17.1MB
+localhost:5001/wayline/admin                             <none>               5fb3b17194460       31.8MB
+localhost:5001/wayline/backend                           <none>               400a862ed0c46       102MB
+localhost:5001/wayline/space                             <none>               8e9bc70e89a65       277MB
+localhost:5001/wayline/web                               <none>               4cc07456e20c3       42.7MB
+quay.io/argoproj/argocd                                  <none>               160654a6cb0cd       211MB
+docker.io/kindest/kindnetd                               v20260820-69b56db7   8e13ccc0aaa68       35.7MB
+docker.io/kindest/local-path-helper                      v20260131-7181c60a   8f375e9f93513       2.74MB
+registry.k8s.io/pause                                    3.10                 afb61768ce381       268kB
+quay.io/kiwigrid/k8s-sidecar                             <none>               da65a54cac5ee       27.2MB
+quay.io/prometheus-operator/prometheus-operator          <none>               040dd6e915a7b       20.4MB
+registry.k8s.io/etcd                                     3.6.8-0              6da6ea097b384       21.1MB
+quay.io/prometheus-operator/prometheus-config-reloader   <none>               9573fe4de354b       13.3MB
+quay.io/prometheus/alertmanager                          <none>               fe6f88e152437       37.9MB
+quay.io/prometheus/blackbox-exporter                     <none>               608fb26fe6fc7       17.6MB
+quay.io/prometheus/busybox                               <none>               23ef82929bdfb       1.19MB
+quay.io/prometheus/node-exporter                         <none>               8e601292667ca       12.1MB
+quay.io/prometheus/prometheus                            <none>               7fead31c863f3       105MB
+quay.io/prometheuscommunity/postgres-exporter            <none>               d991414f980c0       11MB
+registry.k8s.io/kube-state-metrics/kube-state-metrics    <none>               4958a04e95bf9       17.3MB
+registry.k8s.io/metrics-server/metrics-server            <none>               9edf12f63afce       21.2MB
+registry.k8s.io/coredns/coredns                          v1.14.2              fe81a497e85f1       20.8MB
+
+# 2026-11-05T09:25:52Z command: df -k /Users/bek/dev/pr/plane-platform
+Filesystem   1024-blocks      Used Available Capacity iused     ifree %iused  Mounted on
+/dev/disk3s5   482797652 430067996  18526996    96% 6407906 185269960    3%   /System/Volumes/Data
+
+# 2026-11-05T09:25:52Z command: df -h /Users/bek/dev/pr/plane-platform
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s5   460Gi   410Gi    18Gi    96%    6.4M  185M    3%   /System/Volumes/Data
+
+# 2026-11-05T09:25:52Z command: ls -ls '/Users/bek/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw'
+77688576 -rw-r--r--@ 1 bek  staff  494384709632 Nov  5 12:25 /Users/bek/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+
+# 2026-11-05T09:25:52Z command: du -sk '/Users/bek/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw'
+38844288	/Users/bek/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+
+# 2026-11-05T09:25:52Z command: docker system df
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          31        26        17.91GB   1.987GB (11%)
+Containers      30        23        5.788MB   114.7kB (1%)
+Local Volumes   32        18        18.05GB   1.414GB (7%)
+Build Cache     4         0         25.84MB   12.29kB
+
+# 2026-11-05T09:25:53Z command: docker inspect plane-platform-control-plane --format '{{range .Mounts}}{{.Type}} {{.Name}} {{.Destination}}{{println}}{{end}}'
+bind  /etc/containerd/certs.d
+bind  /backups
+bind  /lib/modules
+volume bc34cba294e42b1d6d776c45d43f34821a0809a44e100b04cc90c2b5a0cdcd7c /var
+
+
+# 2026-11-05T09:25:53Z command: du -sk .tools .local .build .local/backups .local/evidence-raw apps 2>/dev/null
+960144	.tools
+2252472	.local
+235180	.build
+506940	.local/backups
+24172	.local/evidence-raw
+4524	apps
+
+# 2026-11-05T09:25:53Z command: kubectl get pvc -A
+NAMESPACE        NAME                                                       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+infisical        backups                                                    Bound    backups-infisical                          5Gi        RWO                           <unset>                 74m
+infisical        data-infisical-postgres-0                                  Bound    pvc-c54a6a00-1f0d-4abf-a5bb-efdca12206ab   1Gi        RWO            standard       <unset>                 70m
+infisical        data-infisical-redis-0                                     Bound    pvc-44b5706a-e92a-45bf-8455-b5d36928c741   256Mi      RWO            standard       <unset>                 70m
+monitoring       prometheus-kps-prometheus-db-prometheus-kps-prometheus-0   Bound    pvc-df79ef3e-25a9-4952-aa28-c941bb1cf96c   2Gi        RWO            standard       <unset>                 73m
+monitoring       storage-loki-0                                             Bound    pvc-8363bd6d-154c-49c6-938a-20c824b9ae32   2Gi        RWO            standard       <unset>                 72m
+plane-dev        backups                                                    Bound    backups-dev                                5Gi        RWO                           <unset>                 74m
+plane-dev        pvc-plane-minio-vol-plane-minio-wl-0                       Bound    pvc-439940dc-fb6a-430a-be47-5a631b668b39   1Gi        RWO            standard       <unset>                 67m
+plane-dev        pvc-plane-pgdb-vol-plane-pgdb-wl-0                         Bound    pvc-b4d103b8-db58-454d-9aeb-c0a0e6e6a818   1Gi        RWO            standard       <unset>                 67m
+plane-dev        pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0                 Bound    pvc-f040d975-741e-439a-afe7-cc346ee09ed8   100Mi      RWO            standard       <unset>                 67m
+plane-dev        pvc-plane-redis-vol-plane-redis-wl-0                       Bound    pvc-74888deb-f121-4ecb-a072-8b47b30a0447   100Mi      RWO            standard       <unset>                 67m
+plane-prod-sim   backups                                                    Bound    backups-prod-sim                           5Gi        RWO                           <unset>                 74m
+plane-prod-sim   pvc-plane-minio-vol-plane-minio-wl-0                       Bound    pvc-971c8c73-0885-4b79-abe8-3785ce887fb3   1Gi        RWO            standard       <unset>                 64m
+plane-prod-sim   pvc-plane-pgdb-vol-plane-pgdb-wl-0                         Bound    pvc-d400ab80-3b91-44ec-9201-382a392e5146   1Gi        RWO            standard       <unset>                 64m
+plane-prod-sim   pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0                 Bound    pvc-2303c939-59ac-46a6-871d-cece886127fd   100Mi      RWO            standard       <unset>                 64m
+plane-prod-sim   pvc-plane-redis-vol-plane-redis-wl-0                       Bound    pvc-9ff4facc-1eae-4030-8b16-c6ddb4e015ba   100Mi      RWO            standard       <unset>                 64m
+
+# 2026-11-05T09:25:53Z command: kubectl get applications.argoproj.io -n argocd
+NAME                          SYNC STATUS   HEALTH STATUS
+alloy                         Synced        Healthy
+backup-storage                Synced        Healthy
+infisical                     Synced        Healthy
+infisical-operator-dev        Synced        Healthy
+infisical-operator-prod-sim   Synced        Healthy
+kube-prometheus-stack         Synced        Healthy
+loki                          Synced        Healthy
+metrics-server                Synced        Healthy
+monitoring-extras             Synced        Healthy
+network-policies              Synced        Healthy
+plane-dev                     Synced        Healthy
+plane-prod-sim                Synced        Healthy
+root                          Synced        Healthy
+traefik                       Synced        Healthy
+
+# 2026-11-05T09:25:53Z command: kubectl get nodes -o wide
+NAME                           STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION             CONTAINER-RUNTIME
+plane-platform-control-plane   Ready    control-plane   75m   v1.36.4   172.24.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.12.76-linuxkit (arm64)   containerd://2.3.4
+
+# 2026-11-05T09:25:53Z command: kubectl get pods -n plane-dev -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.containers[*]}{.name}={.image}{" "}{end}{"\n"}{end}'
+iso-dev-controller-manager-85dbfbcb5b-s49h2	manager=docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa 
+k6-20261105t090247z-2kn2j	k6=docker.io/grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0fba0b8 
+k6-20261105t091213z-wjlt8	k6=docker.io/grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0fba0b8 
+plane-admin-wl-545f5b8fcd-g8sxn	plane-admin=localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 
+plane-api-migrate-1-ctsqp	plane-api-migrate=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-api-wl-d7d5dcb7f-hddn6	plane-api=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-beat-worker-wl-645c56988f-ngp4c	plane-beat-worker=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-live-wl-5744d85f8b-swcl4	plane-live=docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e 
+plane-minio-wl-0	plane-minio=docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885 
+plane-pgdb-wl-0	plane-pgdb=docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984 
+plane-rabbitmq-wl-0	plane-rabbitmq=docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281 
+plane-redis-wl-0	plane-redis=docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e 
+plane-restore-20261105t082337z-6fwcw	gate=docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5 
+plane-restore-migrate-20261105t082337z-glmtg	plane-api-migrate=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-space-wl-847f88bc46-j7xf4	plane-space=localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039 
+plane-web-wl-748764649d-tb84g	plane-web=localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747 
+plane-worker-wl-7f4494fd56-55dw2	plane-worker=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+postgres-exporter-76cb56b89b-9h6nc	postgres-exporter=quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e 
+redis-exporter-5b59d6cb7c-n4hdp	redis-exporter=docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26 
+
+# 2026-11-05T09:25:54Z command: kubectl get pods -n plane-prod-sim -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.containers[*]}{.name}={.image}{" "}{end}{"\n"}{end}'
+iso-prod-sim-controller-manager-5cc86cc76-b42gj	manager=docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa 
+plane-admin-wl-64b68f786-dfxfc	plane-admin=localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796 
+plane-api-migrate-1-t5wtr	plane-api-migrate=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-api-wl-76f9dccd47-h955s	plane-api=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-beat-worker-wl-7c85f5dd7c-bcvbb	plane-beat-worker=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-live-wl-5d5fd749c6-zzbfw	plane-live=docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e 
+plane-minio-wl-0	plane-minio=docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885 
+plane-pgdb-wl-0	plane-pgdb=docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984 
+plane-rabbitmq-wl-0	plane-rabbitmq=docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281 
+plane-redis-wl-0	plane-redis=docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e 
+plane-restore-20261105t082657z-wbvx2	gate=docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5 
+plane-restore-guard-20261105t082657z-zdnsv	database=docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984 
+plane-restore-guard-objects-20261105t082657z-b95st	bucket=docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5 
+plane-restore-migrate-20261105t082657z-bjfhf	plane-api-migrate=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+plane-space-wl-6c6c7c76c6-f655t	plane-space=localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039 
+plane-web-wl-545ff57fd4-fz5jv	plane-web=localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747 
+plane-worker-wl-5795f875bd-hzqsr	plane-worker=localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe 
+postgres-exporter-7fd68c6cdf-2dh22	postgres-exporter=quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e 
+redis-exporter-5b59d6cb7c-7lc4j	redis-exporter=docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26 
+
+# 2026-11-05T09:25:54Z done

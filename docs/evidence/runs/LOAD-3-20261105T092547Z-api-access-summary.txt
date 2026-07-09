@@ -1,0 +1,60 @@
+# 2026-11-05T09:30:08Z command: kubectl logs -n <plane-dev|plane-prod-sim> deploy/plane-api-wl --since=60m (dev, read at 09:29:25Z) or --since=70m (prod-sim, read at 09:30:08Z) --timestamps, summarized by access-summary.py. Ids masked, user ids dropped.
+
+== plane-dev: request log lines 8461, first 08:34:42 last 09:29:21 UTC
+idle 08:47:35 to 09:02:35: {'probe': 121, 'other': 171}
+realistic 09:02:59 to 09:12:02: {'k6': 2800, 'other': 273, 'probe': 72}
+saturation 09:12:18 to 09:21:21: {'k6': 4511, 'probe': 74, 'other': 27}
+-- everything that is not a probe and not k6, with its user agent and client, first and last time, count
+08:45:32 08:45:46 n=2 GET /auth/get-csrf-token/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=False
+08:45:32 08:45:40 n=2 POST /auth/sign-in/ 302 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:32 08:45:32 n=1 POST /api/workspaces/ 201 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:32 08:45:32 n=1 POST /api/v1/workspaces/sep-dev-7b1f339193/projects/ 201 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:32 08:45:32 n=1 POST /api/v1/workspaces/sep-dev-7b1f339193/projects/<id>/work-items/ 201 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:32 08:45:32 n=1 POST /api/v1/workspaces/sep-dev-7b1f339193/projects/<id>/work-items/<id>/attachments/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:32 08:45:32 n=1 PATCH /api/v1/workspaces/sep-dev-7b1f339193/projects/<id>/work-items/<id>/attachments/<id>/ 204 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:35 08:45:35 n=1 GET /api/v1/workspaces/sep-dev-7b1f339193/projects/<id>/work-items/<id>/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:35 08:45:35 n=1 GET /api/workspaces/sep-dev-7b1f339193/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:38 08:45:38 n=1 GET /api/v1/workspaces/sep-dev-7b1f339193/projects/<id>/work-items/<id>/attachments/<id>/ 302 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:39 08:45:39 n=1 GET /api/v1/workspaces/sep-prod-sim-c2978b35c3/projects/<id>/work-items/<id>/ 403 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:40 08:45:40 n=1 GET /auth/get-csrf-token/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:40 08:45:40 n=1 GET /api/workspaces/sep-prod-sim-c2978b35c3/ 404 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:46 08:45:46 n=1 GET /api/v1/users/me/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:46 08:45:46 n=1 GET /api/users/me/ 200 ua='wayline-smoke/1' client=172.24.0.1 signed_in=True
+08:45:46 08:45:46 n=2 GET /api/v1/users/me/ 403 ua='wayline-smoke/1' client=172.24.0.1 signed_in=False
+08:45:46 08:45:46 n=1 GET /api/users/me/ 401 ua='wayline-smoke/1' client=172.24.0.1 signed_in=False
+08:45:47 08:45:47 n=1 POST /auth/sign-in/ 302 ua='wayline-smoke/1' client=172.24.0.1 signed_in=False
+08:45:48 08:45:48 n=1 GET /api/users/me/ 401 ua='' client=10.244.0.11 signed_in=False
+08:45:48 08:45:48 n=1 GET /api/users/me/ 401 ua='' client=10.244.0.13 signed_in=False
+08:56:59 09:23:30 n=165 GET /api/workspaces/smoke-f10a5851/users/notifications/unread/ 200 ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.16336.0 Chrome/152.0.7977.167 Safari/537.36' client=172.24.0.1 signed_in=True
+08:56:59 09:23:30 n=165 GET /api/workspaces/smoke-f10a5851/projects/<id>/project-members/me/ 200 ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.16336.0 Chrome/152.0.7977.167 Safari/537.36' client=172.24.0.1 signed_in=True
+08:56:59 09:23:30 n=165 GET /api/workspaces/smoke-f10a5851/projects/<id>/ 200 ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.16336.0 Chrome/152.0.7977.167 Safari/537.36' client=172.24.0.1 signed_in=True
+-- browser user agents in this log: 581 requests, first 08:36:36 last 09:23:30; before 08:44:00 86, last of those 08:38:57
+-- not probe, not k6, requests per minute
+08:45=23 08:56=3 08:57=30 08:58=30 08:59=30 09:00=30 09:01=30 09:02=30 09:03=30 09:04=30 09:05=30 09:06=30 09:07=30 09:08=30 09:09=30 09:10=30 09:11=30 09:12=30 09:13=3 09:14=3 09:22=3 09:23=3
+-- k6 user agents seen, count
+{'Grafana k6/2.3.0': 7311}
+-- per load step: k6, other, probe
+realistic/vus_05 09:03:01 to 09:06:01: {'k6': 435, 'other': 90, 'probe': 24}
+realistic/vus_10 09:06:01 to 09:09:01: {'k6': 809, 'other': 90, 'probe': 24}
+realistic/vus_20 09:09:01 to 09:12:01: {'k6': 1547, 'probe': 24, 'other': 90}
+saturation/vus_05 09:12:20 to 09:15:20: {'k6': 1593, 'probe': 24, 'other': 27}
+saturation/vus_10 09:15:20 to 09:18:20: {'k6': 1499, 'probe': 24}
+saturation/vus_20 09:18:20 to 09:21:20: {'k6': 1397, 'probe': 24}
+
+== plane-prod-sim: request log lines 363, first 08:47:04 last 09:30:02 UTC
+idle 08:47:35 to 09:02:35: {'probe': 120}
+realistic 09:02:59 to 09:12:02: {'probe': 74}
+saturation 09:12:18 to 09:21:21: {'probe': 72}
+-- everything that is not a probe and not k6, with its user agent and client, first and last time, count
+-- browser user agents in this log: 0 requests, first - last -; before 08:44:00 0, last of those -
+-- not probe, not k6, requests per minute
+
+-- k6 user agents seen, count
+{}
+-- per load step: k6, other, probe
+realistic/vus_05 09:03:01 to 09:06:01: {'probe': 24}
+realistic/vus_10 09:06:01 to 09:09:01: {'probe': 24}
+realistic/vus_20 09:09:01 to 09:12:01: {'probe': 24}
+saturation/vus_05 09:12:20 to 09:15:20: {'probe': 24}
+saturation/vus_10 09:15:20 to 09:18:20: {'probe': 24}
+saturation/vus_20 09:18:20 to 09:21:20: {'probe': 24}

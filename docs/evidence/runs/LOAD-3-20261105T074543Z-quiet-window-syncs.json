@@ -1,0 +1,1 @@
+{"captured_at":"2026-11-05T07:49:15Z","command":"curl -G http://prometheus.localhost/api/v1/query, sum by (name)(increase(argocd_app_sync_total[20m])) > 0 at 2026-11-05T03:40:00Z","result":[]}

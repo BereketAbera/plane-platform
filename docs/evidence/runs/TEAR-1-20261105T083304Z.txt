@@ -1,0 +1,10 @@
+# 2026-11-05T08:33:04Z commit 00126ea command: env -u CONFIRM make destroy, in a clean environment. It must refuse and change nothing.
+plane-platform
+plane-platform-control-plane   Ready   control-plane   22m  
+This deletes the cluster and all data in it: both Plane environments and Infisical.
+Backups in .local/backups, secret zero in .local/secret-zero and the Infisical Terraform state are kept.
+Re-run with: make destroy CONFIRM=yes
+make: *** [destroy] Error 1
+make destroy exit=2
+plane-platform
+plane-platform-control-plane   Ready   control-plane   22m  

@@ -1,0 +1,22 @@
+07:50:41Z clean install of 7d5ff62 into /Users/bek/dev/pr/plane-platform-clean-install. Host disk: 31 GiB free
+07:50:42Z the clone holds no .local and no .build. .tools was copied, so make setup checks it and does not download it
+07:50:44Z make-setup: exit 0 in 2s: make setup
+08:06:39Z make-up: exit 0 in 955s: make up
+08:06:39Z one make up from nothing took 955s
+08:06:41Z make-status: exit 0 in 2s: make status
+08:06:41Z apps-after-up: exit 0 in 0s: /Users/bek/dev/pr/plane-platform/.tools/bin/kubectl --kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig --context kind-plane-platform -n argocd get applications
+08:08:26Z e2e-dev-first: exit 0 in 105s: make test-e2e ENV=dev
+08:08:46Z e2e-prod-sim-first: exit 0 in 20s: make test-e2e ENV=prod-sim
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+RESULT  PASS
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+RESULT  PASS
+08:08:56Z test-infisical: exit 0 in 10s: make test-infisical
+08:09:12Z make-up-again: exit 0 in 16s: make up
+08:09:12Z second make up took 16s. Pod uid hash before 2b3fe65dcf9715ad, after 2b3fe65dcf9715ad
+08:09:15Z terraform-plan-local: exit 0 in 3s: env KUBECONFIG=/Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig /Users/bek/dev/pr/plane-platform/.tools/bin/terraform -chdir=/Users/bek/dev/pr/plane-platform-clean-install/infrastructure/terraform/environments/local plan -lock=false -detailed-exitcode -input=false
+08:09:20Z restore-foreign-key-refused: exit 0 in 4s: bash -c ! make restore ENV=dev BACKUP=20261105T074932Z CONFIRM=yes
+08:10:15Z destroy-refused: exit 1 in 55s: bash -c ! make destroy
+08:10:16Z destroy: exit 0 in 1s: make destroy CONFIRM=yes SKIP_BACKUP=yes
+08:10:16Z clone evidence copied to /Users/bek/dev/pr/plane-platform/.local/evidence-raw/clean-install-20261105T075041Z/clone-evidence
+08:10:16Z clone removed. Host disk: 19 GiB free. Steps that failed: 1

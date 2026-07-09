@@ -1,0 +1,68 @@
+# LOAD-3 Docker storage, this project's volumes and images only. 2026-11-05T09:25:54Z
+# command: docker inspect <local service and node containers> for volume names
+/plane-git 
+/plane-platform-control-plane bc34cba294e42b1d6d776c45d43f34821a0809a44e100b04cc90c2b5a0cdcd7c=/var 
+/plane-registry plane-platform-local_registry-data=/var/lib/registry 
+/plane-mirror-docker plane-platform-local_mirror-docker-data=/var/lib/registry 
+/plane-mirror-k8s plane-platform-local_mirror-k8s-data=/var/lib/registry 
+/plane-mirror-quay plane-platform-local_mirror-quay-data=/var/lib/registry 
+# 2026-11-05T09:25:54Z command: docker system df -v --format json | jq (keep only the volumes above and only images kindest/node, plane-platform-local-*, distribution, localhost:5001/*)
+{
+  "volumes": [
+    {
+      "Name": "plane-platform-local_mirror-quay-data",
+      "Size": "447.5MB",
+      "Links": "1"
+    },
+    {
+      "Name": "bc34cba294e42b1d6d776c45d43f34821a0809a44e100b04cc90c2b5a0cdcd7c",
+      "Size": "11.11GB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_registry-data",
+      "Size": "1.159GB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_mirror-docker-data",
+      "Size": "2.52GB",
+      "Links": "1"
+    },
+    {
+      "Name": "plane-platform-local_mirror-k8s-data",
+      "Size": "37.64MB",
+      "Links": "1"
+    }
+  ],
+  "images": [
+    {
+      "Repository": "plane-platform-local-git",
+      "Tag": "latest",
+      "ID": "sha256:20841a6fc1af3f05d633520b1c6f3ec1378ad189a4c81930c4a1a52ee9f7da1f",
+      "Size": "35MB",
+      "SharedSize": "0B",
+      "UniqueSize": "34.99MB",
+      "Containers": "1"
+    },
+    {
+      "Repository": "ghcr.io/distribution/distribution",
+      "Tag": "3.1.2",
+      "ID": "sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9",
+      "Size": "82.2MB",
+      "SharedSize": "2B",
+      "UniqueSize": "82.17MB",
+      "Containers": "4"
+    },
+    {
+      "Repository": "kindest/node",
+      "Tag": "v1.36.4",
+      "ID": "sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed",
+      "Size": "1.28GB",
+      "SharedSize": "0B",
+      "UniqueSize": "1.277GB",
+      "Containers": "1"
+    }
+  ]
+}
+# 2026-11-05T09:25:55Z done

@@ -1,0 +1,4610 @@
+{
+  "run": "20261105T090247Z",
+  "namespace": "plane-dev",
+  "k6_thresholds": "PASS",
+  "think_seconds": 1,
+  "started_epoch": 1793869378,
+  "ended_epoch": 1793869927,
+  "k6": {
+    "metrics": {
+      "http_req_blocked": {
+        "values": {
+          "avg": 0.04394113749999995,
+          "med": 0.00575,
+          "p(90)": 0.018592300000000006,
+          "p(95)": 0.03008305,
+          "p(99)": 0.7419999999999984,
+          "max": 4.867083
+        },
+        "type": "trend",
+        "contains": "time"
+      },
+      "http_req_failed": {
+        "thresholds": {
+          "rate<0.05": {
+            "ok": true
+          }
+        },
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "passes": 0,
+          "fails": 2800,
+          "rate": 0
+        }
+      },
+      "http_req_tls_handshaking": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(90)": 0,
+          "p(95)": 0,
+          "p(99)": 0,
+          "max": 0,
+          "avg": 0,
+          "med": 0
+        }
+      },
+      "http_req_failed{scenario:vus_20}": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 1553
+        },
+        "thresholds": {
+          "rate<0.05": {
+            "ok": true
+          }
+        }
+      },
+      "http_req_failed{scenario:vus_10}": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 813
+        },
+        "thresholds": {
+          "rate<0.05": {
+            "ok": true
+          }
+        }
+      },
+      "write_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 832.1091313499999,
+          "p(99)": 1516.19002901,
+          "max": 3873.006169,
+          "avg": 239.21810662416107,
+          "med": 96.5393335,
+          "p(90)": 646.0215920000002
+        }
+      },
+      "http_reqs": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 2800,
+          "rate": 5.155756018818702
+        }
+      },
+      "vus_max": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "value": 30,
+          "min": 30,
+          "max": 30
+        }
+      },
+      "http_req_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 245.89434670428582,
+          "med": 102.196021,
+          "p(90)": 593.7828709000001,
+          "p(95)": 879.7889988999993,
+          "p(99)": 2010.1402659999994,
+          "max": 5552.083711
+        }
+      },
+      "http_req_duration{name:write}": {
+        "thresholds": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        },
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 239.21810662416107,
+          "med": 96.5393335,
+          "p(90)": 646.0215920000002,
+          "p(95)": 832.1091313499999,
+          "p(99)": 1516.19002901,
+          "max": 3873.006169
+        }
+      },
+      "http_req_duration{name:read}": {
+        "thresholds": {
+          "p(95)<3000": {
+            "ok": true
+          }
+        },
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(99)": 2078.49172476,
+          "max": 5552.083711,
+          "avg": 246.94197299399528,
+          "med": 102.68591649999999,
+          "p(90)": 588.4467959000001,
+          "p(95)": 890.4949606499999
+        }
+      },
+      "http_req_duration{scenario:vus_20}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 328.76504937153885,
+          "med": 168.414958,
+          "p(90)": 775.5999422000002,
+          "p(95)": 1005.1774337999998,
+          "p(99)": 3341.277066479997,
+          "max": 5552.083711
+        },
+        "thresholds": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        }
+      },
+      "http_req_waiting": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(99)": 2010.0117688299995,
+          "max": 5551.981627,
+          "avg": 245.75085175142922,
+          "med": 101.86775,
+          "p(90)": 593.7075712000002,
+          "p(95)": 879.6978753499993
+        }
+      },
+      "data_received": {
+        "values": {
+          "count": 22815922,
+          "rate": 42011.902562999305
+        },
+        "type": "counter",
+        "contains": "data"
+      },
+      "vus": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "min": 2,
+          "max": 28,
+          "value": 2
+        }
+      },
+      "http_req_duration{scenario:vus_05}": {
+        "contains": "time",
+        "values": {
+          "avg": 86.50735795348842,
+          "med": 61.3609585,
+          "p(90)": 182.7753958,
+          "p(95)": 267.7124165999999,
+          "p(99)": 580.0257279299999,
+          "max": 705.980709
+        },
+        "thresholds": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        },
+        "type": "trend"
+      },
+      "iterations": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 2796,
+          "rate": 5.1483906530775325
+        }
+      },
+      "http_req_duration{expected_response:true}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 245.89434670428582,
+          "med": 102.196021,
+          "p(90)": 593.7828709000001,
+          "p(95)": 879.7889988999993,
+          "p(99)": 2010.1402659999994,
+          "max": 5552.083711
+        }
+      },
+      "http_req_connecting": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "p(99)": 0.47100916999999964,
+          "max": 1.718958,
+          "avg": 0.011366637499999999
+        }
+      },
+      "http_req_receiving": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 0.10602992285714309,
+          "med": 0.078542,
+          "p(90)": 0.16636220000000002,
+          "p(95)": 0.21158929999999998,
+          "p(99)": 0.4599094999999997,
+          "max": 4.299166
+        }
+      },
+      "throttled": {
+        "thresholds": {
+          "rate<0.01": {
+            "ok": true
+          }
+        },
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 2796
+        }
+      },
+      "http_req_failed{scenario:vus_05}": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 430
+        },
+        "thresholds": {
+          "rate<0.05": {
+            "ok": true
+          }
+        }
+      },
+      "data_sent": {
+        "type": "counter",
+        "contains": "data",
+        "values": {
+          "rate": 1534.435851565034,
+          "count": 833325
+        }
+      },
+      "checks": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 1,
+          "passes": 2796,
+          "fails": 0
+        }
+      },
+      "http_req_duration{scenario:vus_10}": {
+        "values": {
+          "p(95)": 646.9382499999997,
+          "p(99)": 1579.9166529599993,
+          "max": 4418.562627,
+          "avg": 172.666369888069,
+          "med": 72.589084,
+          "p(90)": 319.92679160000006
+        },
+        "thresholds": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        },
+        "type": "trend",
+        "contains": "time"
+      },
+      "iteration_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(90)": 3033.5531885,
+          "p(95)": 3258.8816469999997,
+          "p(99)": 4382.5180963999965,
+          "max": 7114.937253,
+          "avg": 2269.030542182404,
+          "med": 2253.9343135
+        }
+      },
+      "http_req_sending": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "max": 2.530292,
+          "avg": 0.03746502999999993,
+          "med": 0.022166,
+          "p(90)": 0.048587200000000004,
+          "p(95)": 0.07175414999999999,
+          "p(99)": 0.3551754999999995
+        }
+      }
+    }
+  },
+  "prometheus": {
+    "peak_memory_bytes_by_pod": [
+      {
+        "metric": {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2"
+        },
+        "value": [
+          1793869927,
+          "23912448"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn"
+        },
+        "value": [
+          1793869927,
+          "3276800"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c"
+        },
+        "value": [
+          1793869927,
+          "154742784"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-live-wl-5744d85f8b-swcl4"
+        },
+        "value": [
+          1793869927,
+          "160964608"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-minio-wl-0"
+        },
+        "value": [
+          1793869927,
+          "86237184"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-pgdb-wl-0"
+        },
+        "value": [
+          1793869927,
+          "60399616"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-rabbitmq-wl-0"
+        },
+        "value": [
+          1793869927,
+          "142356480"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-redis-wl-0"
+        },
+        "value": [
+          1793869927,
+          "10473472"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-space-wl-847f88bc46-j7xf4"
+        },
+        "value": [
+          1793869927,
+          "95797248"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-web-wl-748764649d-tb84g"
+        },
+        "value": [
+          1793869927,
+          "3588096"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc"
+        },
+        "value": [
+          1793869927,
+          "16441344"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp"
+        },
+        "value": [
+          1793869927,
+          "11554816"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6"
+        },
+        "value": [
+          1793869927,
+          "182919168"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2"
+        },
+        "value": [
+          1793869927,
+          "308322304"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "k6-20261105t090247z-2kn2j"
+        },
+        "value": [
+          1793869927,
+          "20615168"
+        ]
+      }
+    ],
+    "avg_cpu_cores_by_pod": [
+      {
+        "metric": {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2"
+        },
+        "value": [
+          1793869927,
+          "0.002686438500203339"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn"
+        },
+        "value": [
+          1793869927,
+          "0.00010437375995208475"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c"
+        },
+        "value": [
+          1793869927,
+          "0.003680253235620963"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-live-wl-5744d85f8b-swcl4"
+        },
+        "value": [
+          1793869927,
+          "0.0017602785442837074"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-minio-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.0019420009331876822"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-pgdb-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.19204983734424966"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-rabbitmq-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.02061631182890733"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-redis-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.0034002707993956616"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-space-wl-847f88bc46-j7xf4"
+        },
+        "value": [
+          1793869927,
+          "0.0027160157406039315"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-web-wl-748764649d-tb84g"
+        },
+        "value": [
+          1793869927,
+          "0.00010644893503018022"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc"
+        },
+        "value": [
+          1793869927,
+          "0.0014542515424540848"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp"
+        },
+        "value": [
+          1793869927,
+          "0.0006639949884017153"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6"
+        },
+        "value": [
+          1793869927,
+          "0.17836924835853096"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2"
+        },
+        "value": [
+          1793869927,
+          "0.05699425615328041"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "k6-20261105t090247z-2kn2j"
+        },
+        "value": [
+          1793869927,
+          "0.011505465074591046"
+        ]
+      }
+    ],
+    "peak_cpu_cores_by_pod": [
+      {
+        "metric": {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2"
+        },
+        "value": [
+          1793869927,
+          "0.004174062937425493"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn"
+        },
+        "value": [
+          1793869927,
+          "0.00021965857147299405"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c"
+        },
+        "value": [
+          1793869927,
+          "0.005662092481703284"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-live-wl-5744d85f8b-swcl4"
+        },
+        "value": [
+          1793869927,
+          "0.0028814168770560956"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-minio-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.0032798385130192154"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-pgdb-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.3976922169811323"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-rabbitmq-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.03065830417227457"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-redis-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.0041882904842938"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-space-wl-847f88bc46-j7xf4"
+        },
+        "value": [
+          1793869927,
+          "0.00674658497977374"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-web-wl-748764649d-tb84g"
+        },
+        "value": [
+          1793869927,
+          "0.0001700717334059743"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc"
+        },
+        "value": [
+          1793869927,
+          "0.0023342184801381626"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp"
+        },
+        "value": [
+          1793869927,
+          "0.00105956440266642"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6"
+        },
+        "value": [
+          1793869927,
+          "0.3556016968960361"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2"
+        },
+        "value": [
+          1793869927,
+          "0.10772180359252165"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "k6-20261105t090247z-2kn2j"
+        },
+        "value": [
+          1793869927,
+          "0.017082443569628143"
+        ]
+      }
+    ],
+    "throttled_share_by_pod": [
+      {
+        "metric": {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp"
+        },
+        "value": [
+          1793869927,
+          "0.09248752799619657"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-minio-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.0027177129753436233"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-pgdb-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.3586983236945613"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-redis-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.03715104817154289"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-rabbitmq-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0.026149226222717106"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-web-wl-748764649d-tb84g"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-space-wl-847f88bc46-j7xf4"
+        },
+        "value": [
+          1793869927,
+          "0.031792175497109804"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6"
+        },
+        "value": [
+          1793869927,
+          "0.06579693138785016"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c"
+        },
+        "value": [
+          1793869927,
+          "0.024171931414285152"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-live-wl-5744d85f8b-swcl4"
+        },
+        "value": [
+          1793869927,
+          "0.007142782482409025"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2"
+        },
+        "value": [
+          1793869927,
+          "0.03617128396672584"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "k6-20261105t090247z-2kn2j"
+        },
+        "value": [
+          1793869927,
+          "0.00011757892000857078"
+        ]
+      }
+    ],
+    "restarts_by_pod": [
+      {
+        "metric": {
+          "pod": "plane-space-wl-847f88bc46-j7xf4"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-live-wl-5744d85f8b-swcl4"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-web-wl-748764649d-tb84g"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-rabbitmq-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-restore-guard-20261105t082337z-gflls"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-pgdb-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-minio-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-redis-wl-0"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-restore-20261105t082337z-6fwcw"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-api-migrate-1-ctsqp"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-restore-migrate-20261105t082337z-glmtg"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-restore-guard-objects-20261105t082337z-4vqql"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "pod": "k6-20261105t090247z-2kn2j"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      }
+    ],
+    "api_requests_per_second": [
+      {
+        "metric": {},
+        "value": [
+          1793869927,
+          "5.2613019748741685"
+        ]
+      }
+    ],
+    "api_p95_seconds": [
+      {
+        "metric": {},
+        "value": [
+          1793869927,
+          "1.0461266447368414"
+        ]
+      }
+    ],
+    "api_5xx_total": [],
+    "celery_ready_peak": [
+      {
+        "metric": {
+          "endpoint": "prometheus",
+          "instance": "10.244.0.42:15692",
+          "job": "plane-rabbitmq-metrics",
+          "metrics_path": "/metrics/detailed",
+          "namespace": "plane-dev",
+          "pod": "plane-rabbitmq-wl-0",
+          "queue": "celery",
+          "service": "plane-rabbitmq-metrics",
+          "vhost": "/"
+        },
+        "value": [
+          1793869927,
+          "0"
+        ]
+      }
+    ],
+    "database_growth_bytes": [
+      {
+        "metric": {
+          "container": "postgres-exporter",
+          "datname": "plane",
+          "endpoint": "metrics",
+          "instance": "10.244.0.5:9187",
+          "job": "postgres-exporter",
+          "namespace": "plane-dev",
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "service": "postgres-exporter"
+        },
+        "value": [
+          1793869927,
+          "612664.6199189489"
+        ]
+      }
+    ],
+    "vm_memory_peak_bytes": [
+      {
+        "metric": {
+          "container": "node-exporter",
+          "endpoint": "http-metrics",
+          "instance": "172.24.0.2:9100",
+          "job": "node-exporter",
+          "namespace": "monitoring-agents",
+          "pod": "kps-node-exporter-4dgdd",
+          "service": "kps-node-exporter"
+        },
+        "value": [
+          1793869927,
+          "9553223680"
+        ]
+      }
+    ],
+    "monitoring_peak_memory_bytes": [
+      {
+        "metric": {},
+        "value": [
+          1793869927,
+          "1092362240"
+        ]
+      }
+    ]
+  },
+  "disk": {
+    "vm_var_used_kib": {
+      "before": 38645740,
+      "after": 38733852
+    },
+    "host_free_gib": {
+      "before": 19,
+      "after": 18
+    }
+  },
+  "samples": [
+    {
+      "at": "2026-11-05T09:02:58Z",
+      "node_cpu": "46.20%",
+      "node_memory": "6.545GiB / 13.63GiB",
+      "vm_var_used_kib": 38645740,
+      "host_free_gib": 19,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "35m",
+          "memory": "170Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "30m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "52m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "44m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "2m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:03:14Z",
+      "node_cpu": "61.30%",
+      "node_memory": "6.578GiB / 13.63GiB",
+      "vm_var_used_kib": 38716148,
+      "host_free_gib": 19,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "37m",
+          "memory": "170Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "21m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "5m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "7m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:03:30Z",
+      "node_cpu": "85.57%",
+      "node_memory": "6.567GiB / 13.63GiB",
+      "vm_var_used_kib": 38713276,
+      "host_free_gib": 19,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "8m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "132m",
+          "memory": "172Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "2m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "90m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "13m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "29m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:03:46Z",
+      "node_cpu": "68.78%",
+      "node_memory": "6.593GiB / 13.63GiB",
+      "vm_var_used_kib": 38713392,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "9m",
+          "memory": "14Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "99m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "117m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "7m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "29m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "2m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:04:03Z",
+      "node_cpu": "76.51%",
+      "node_memory": "6.759GiB / 13.63GiB",
+      "vm_var_used_kib": 38713632,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "9m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "133m",
+          "memory": "172Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "1m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "133m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "15m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "36m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "2m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:04:19Z",
+      "node_cpu": "57.70%",
+      "node_memory": "6.721GiB / 13.63GiB",
+      "vm_var_used_kib": 38714172,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "11m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "95m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "3m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "148m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "12m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "28m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:04:35Z",
+      "node_cpu": "202.79%",
+      "node_memory": "6.671GiB / 13.63GiB",
+      "vm_var_used_kib": 38716016,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "8m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "92m",
+          "memory": "172Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "3m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "97m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "9m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "90m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:04:52Z",
+      "node_cpu": "104.40%",
+      "node_memory": "6.686GiB / 13.63GiB",
+      "vm_var_used_kib": 38716496,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "12m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "106m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "118m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "49m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "31m",
+          "memory": "279Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:05:08Z",
+      "node_cpu": "67.28%",
+      "node_memory": "6.669GiB / 13.63GiB",
+      "vm_var_used_kib": 38717000,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "8m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "105m",
+          "memory": "172Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "3m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "89m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "10m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "58m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:05:24Z",
+      "node_cpu": "139.67%",
+      "node_memory": "6.688GiB / 13.63GiB",
+      "vm_var_used_kib": 38717600,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "8m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "101m",
+          "memory": "172Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "6m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "2m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "118m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "10m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "11m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "27m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:05:40Z",
+      "node_cpu": "94.28%",
+      "node_memory": "6.682GiB / 13.63GiB",
+      "vm_var_used_kib": 38719408,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "9m",
+          "memory": "16Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "83m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "2m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "110m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "9m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "42m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:05:57Z",
+      "node_cpu": "74.00%",
+      "node_memory": "6.697GiB / 13.63GiB",
+      "vm_var_used_kib": 38719972,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "8m",
+          "memory": "16Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "89m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "4m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "114m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "50m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "29m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:06:13Z",
+      "node_cpu": "57.79%",
+      "node_memory": "6.678GiB / 13.63GiB",
+      "vm_var_used_kib": 38720680,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "8m",
+          "memory": "16Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "112m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "4m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "118m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "10m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "50m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:06:29Z",
+      "node_cpu": "294.16%",
+      "node_memory": "6.663GiB / 13.63GiB",
+      "vm_var_used_kib": 38722484,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "11m",
+          "memory": "16Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "165m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "170m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "12m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "43m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "4m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "11Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:06:45Z",
+      "node_cpu": "83.33%",
+      "node_memory": "6.762GiB / 13.63GiB",
+      "vm_var_used_kib": 38723340,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "12m",
+          "memory": "16Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "161m",
+          "memory": "174Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "219m",
+          "memory": "49Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "12m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "68m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "11Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:07:02Z",
+      "node_cpu": "94.50%",
+      "node_memory": "6.743GiB / 13.63GiB",
+      "vm_var_used_kib": 38724040,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "6m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "16m",
+          "memory": "16Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "228m",
+          "memory": "174Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "195m",
+          "memory": "42Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "56m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "111m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "4m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "11Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:07:18Z",
+      "node_cpu": "194.58%",
+      "node_memory": "6.772GiB / 13.63GiB",
+      "vm_var_used_kib": 38724636,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "12m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "172m",
+          "memory": "173Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "208m",
+          "memory": "42Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "12m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "32m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "2m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:07:34Z",
+      "node_cpu": "84.52%",
+      "node_memory": "6.745GiB / 13.63GiB",
+      "vm_var_used_kib": 38725408,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "10m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "382m",
+          "memory": "154Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "1m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "2m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "163m",
+          "memory": "44Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "10m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "42m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "12Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:07:50Z",
+      "node_cpu": "112.52%",
+      "node_memory": "6.673GiB / 13.63GiB",
+      "vm_var_used_kib": 38722320,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "4m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "12m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "170m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "6m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "193m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "46m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "41m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "12Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:08:06Z",
+      "node_cpu": "111.77%",
+      "node_memory": "6.639GiB / 13.63GiB",
+      "vm_var_used_kib": 38723096,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "23m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "206m",
+          "memory": "155Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "4m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "6m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "245m",
+          "memory": "43Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "14m",
+          "memory": "134Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "68m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:08:23Z",
+      "node_cpu": "147.95%",
+      "node_memory": "6.665GiB / 13.63GiB",
+      "vm_var_used_kib": 38723720,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "23m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "206m",
+          "memory": "155Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "3m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "220m",
+          "memory": "44Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "11m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "4m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "68m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:08:39Z",
+      "node_cpu": "79.85%",
+      "node_memory": "6.667GiB / 13.63GiB",
+      "vm_var_used_kib": 38724124,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "13m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "166m",
+          "memory": "158Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "3m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "226m",
+          "memory": "54Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "12m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "87m",
+          "memory": "294Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "4m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:08:55Z",
+      "node_cpu": "113.98%",
+      "node_memory": "6.664GiB / 13.63GiB",
+      "vm_var_used_kib": 38724900,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "8m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "13m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "216m",
+          "memory": "158Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "5m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "211m",
+          "memory": "43Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "53m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "93m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:09:12Z",
+      "node_cpu": "179.04%",
+      "node_memory": "6.704GiB / 13.63GiB",
+      "vm_var_used_kib": 38725452,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "12m",
+          "memory": "17Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "181m",
+          "memory": "158Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "224m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "8m",
+          "memory": "130Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "53m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:09:28Z",
+      "node_cpu": "91.59%",
+      "node_memory": "6.657GiB / 13.63GiB",
+      "vm_var_used_kib": 38726448,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "15m",
+          "memory": "18Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "320m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "322m",
+          "memory": "40Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "19m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "68m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:09:44Z",
+      "node_cpu": "272.00%",
+      "node_memory": "6.664GiB / 13.63GiB",
+      "vm_var_used_kib": 38727536,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "3m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "15m",
+          "memory": "18Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "330m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "380m",
+          "memory": "49Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "11m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "5m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "105m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:10:00Z",
+      "node_cpu": "264.87%",
+      "node_memory": "6.761GiB / 13.63GiB",
+      "vm_var_used_kib": 38728504,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "7m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "18m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "314m",
+          "memory": "159Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "4m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "383m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "37m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "86m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "4m",
+          "memory": "14Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "2m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:10:16Z",
+      "node_cpu": "154.49%",
+      "node_memory": "6.767GiB / 13.63GiB",
+      "vm_var_used_kib": 38730504,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "15m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "354m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "7m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "3m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "383m",
+          "memory": "39Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "15m",
+          "memory": "131Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "90Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "87m",
+          "memory": "280Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "14Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:10:33Z",
+      "node_cpu": "264.84%",
+      "node_memory": "6.775GiB / 13.63GiB",
+      "vm_var_used_kib": 38731552,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "17m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "330m",
+          "memory": "163Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "2m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "366m",
+          "memory": "57Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "15m",
+          "memory": "135Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "6m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "91m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:10:49Z",
+      "node_cpu": "153.12%",
+      "node_memory": "6.686GiB / 13.63GiB",
+      "vm_var_used_kib": 38733788,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "13m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "330m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "3m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "388m",
+          "memory": "48Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "47m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "137m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:11:05Z",
+      "node_cpu": "294.67%",
+      "node_memory": "6.708GiB / 13.63GiB",
+      "vm_var_used_kib": 38734828,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "16m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "325m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "2m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "1m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "3m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "375m",
+          "memory": "49Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "47m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "4m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "95m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:11:22Z",
+      "node_cpu": "136.56%",
+      "node_memory": "6.715GiB / 13.63GiB",
+      "vm_var_used_kib": 38735804,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "18m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "340m",
+          "memory": "160Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "5m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "4m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "404m",
+          "memory": "54Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "14m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "5m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "89m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "15Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:11:38Z",
+      "node_cpu": "218.39%",
+      "node_memory": "6.757GiB / 13.63GiB",
+      "vm_var_used_kib": 38737992,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "15m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "380m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "2m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "1m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "424m",
+          "memory": "48Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "16m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "3m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "114m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "4m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:11:54Z",
+      "node_cpu": "208.87%",
+      "node_memory": "6.669GiB / 13.63GiB",
+      "vm_var_used_kib": 38738920,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "5m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "k6-20261105t090247z-2kn2j",
+          "container": "k6",
+          "cpu": "14m",
+          "memory": "19Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "328m",
+          "memory": "161Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "1m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "4m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "395m",
+          "memory": "49Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "47m",
+          "memory": "132Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "3m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "100m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "3m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    },
+    {
+      "at": "2026-11-05T09:12:08Z",
+      "node_cpu": "70.16%",
+      "node_memory": "6.669GiB / 13.63GiB",
+      "vm_var_used_kib": 38733852,
+      "host_free_gib": 18,
+      "containers": [
+        {
+          "pod": "iso-dev-controller-manager-85dbfbcb5b-s49h2",
+          "container": "manager",
+          "cpu": "2m",
+          "memory": "22Mi"
+        },
+        {
+          "pod": "plane-admin-wl-545f5b8fcd-g8sxn",
+          "container": "plane-admin",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-api-wl-d7d5dcb7f-hddn6",
+          "container": "plane-api",
+          "cpu": "363m",
+          "memory": "78Mi"
+        },
+        {
+          "pod": "plane-beat-worker-wl-645c56988f-ngp4c",
+          "container": "plane-beat-worker",
+          "cpu": "4m",
+          "memory": "147Mi"
+        },
+        {
+          "pod": "plane-live-wl-5744d85f8b-swcl4",
+          "container": "plane-live",
+          "cpu": "2m",
+          "memory": "153Mi"
+        },
+        {
+          "pod": "plane-minio-wl-0",
+          "container": "plane-minio",
+          "cpu": "7m",
+          "memory": "82Mi"
+        },
+        {
+          "pod": "plane-pgdb-wl-0",
+          "container": "plane-pgdb",
+          "cpu": "260m",
+          "memory": "49Mi"
+        },
+        {
+          "pod": "plane-rabbitmq-wl-0",
+          "container": "plane-rabbitmq",
+          "cpu": "12m",
+          "memory": "135Mi"
+        },
+        {
+          "pod": "plane-redis-wl-0",
+          "container": "plane-redis",
+          "cpu": "4m",
+          "memory": "9Mi"
+        },
+        {
+          "pod": "plane-space-wl-847f88bc46-j7xf4",
+          "container": "plane-space",
+          "cpu": "2m",
+          "memory": "91Mi"
+        },
+        {
+          "pod": "plane-web-wl-748764649d-tb84g",
+          "container": "plane-web",
+          "cpu": "1m",
+          "memory": "3Mi"
+        },
+        {
+          "pod": "plane-worker-wl-7f4494fd56-55dw2",
+          "container": "plane-worker",
+          "cpu": "93m",
+          "memory": "281Mi"
+        },
+        {
+          "pod": "postgres-exporter-76cb56b89b-9h6nc",
+          "container": "postgres-exporter",
+          "cpu": "1m",
+          "memory": "13Mi"
+        },
+        {
+          "pod": "redis-exporter-5b59d6cb7c-n4hdp",
+          "container": "redis-exporter",
+          "cpu": "1m",
+          "memory": "10Mi"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+# LOAD-3: derive the tables in docs/resource-utilization.md from the raw Prometheus captures.
+# Usage: python3 -I derive.py <evidence-dir> <stamp> <load-run-dir>
+import json, sys, re, datetime
+EV, ST, RUN = sys.argv[1:4]
+W = json.load(open(f"{EV}/LOAD-3-{ST}-prometheus-windows.json"))
+SER = json.load(open(f"{EV}/LOAD-3-{ST}-prometheus-series.json"))
+STEPS = json.load(open(f"{EV}/LOAD-3-{ST}-prometheus-steps.json"))
+R = json.load(open(f"{RUN}/results.json"))
+MIB = 1024*1024
+def entries(win, name):
+    for e in W["entries"]:
+        if e.get("window")==win and e.get("name")==name: return e.get("result",[])
+    return []
+def table(win, name, keys=("namespace","container")):
+    out={}
+    for r in entries(win,name):
+        out[tuple(r["metric"].get(k,"") for k in keys)]=float(r["value"][1])
+    return out
+print(f"windows: {W['windows']}")
+print("\n== per container, plane-dev and plane-prod-sim, MiB and millicores")
+for ns in ("plane-dev","plane-prod-sim"):
+    print(f"-- {ns}")
+    print(f"{'container':28} {'q mem avg':>9} {'q mem max':>9} {'q cpu avg':>9} {'q cpu max':>9} | {'l mem avg':>9} {'l mem max':>9} {'l pod max':>9} {'l cpu avg':>9} {'l cpu max':>9} {'l podcpu':>9}")
+    conts=sorted({k[1] for w in ("quiet","load") for k in table(w,"ctr_mem_max") if k[0]==ns})
+    for c in conts:
+        g=lambda w,n: table(w,n).get((ns,c))
+        podmem=max([v for k,v in table("load","pod_ctr_mem_max",("namespace","pod","container")).items() if k[0]==ns and k[2]==c] or [0])
+        podcpu=max([v for k,v in table("load","pod_ctr_cpu_max",("namespace","pod","container")).items() if k[0]==ns and k[2]==c] or [0])
+        f=lambda v,s: f"{v*s:9.1f}" if v is not None else f"{'-':>9}"
+        print(f"{c:28} {f(g('quiet','ctr_mem_avg'),1/MIB)} {f(g('quiet','ctr_mem_max'),1/MIB)} {f(g('quiet','ctr_cpu_avg'),1000)} {f(g('quiet','ctr_cpu_max'),1000)} | {f(g('load','ctr_mem_avg'),1/MIB)} {f(g('load','ctr_mem_max'),1/MIB)} {f(podmem,1/MIB)} {f(g('load','ctr_cpu_avg'),1000)} {f(g('load','ctr_cpu_max'),1000)} {f(podcpu,1000)}")
+print("\n== per namespace")
+print(f"{'namespace':22} {'q mem avg':>9} {'q mem max':>9} {'q cpu avg':>9} {'q cpu max':>9} | {'l mem avg':>9} {'l mem max':>9} {'l cpu avg':>9} {'l cpu max':>9}")
+for ns in sorted({k[0] for k in table("load","ns_mem_max",("namespace",))}|{k[0] for k in table("quiet","ns_mem_max",("namespace",))}):
+    g=lambda w,n: table(w,n,("namespace",)).get((ns,))
+    f=lambda v,s: f"{v*s:9.1f}" if v is not None else f"{'-':>9}"
+    print(f"{ns:22} {f(g('quiet','ns_mem_avg'),1/MIB)} {f(g('quiet','ns_mem_max'),1/MIB)} {f(g('quiet','ns_cpu_avg'),1000)} {f(g('quiet','ns_cpu_max'),1000)} | {f(g('load','ns_mem_avg'),1/MIB)} {f(g('load','ns_mem_max'),1/MIB)} {f(g('load','ns_cpu_avg'),1000)} {f(g('load','ns_cpu_max'),1000)}")
+print("\n== cluster and VM")
+for win in ("quiet","load"):
+    for n,s,u in (("pods_total_mem_avg",1/MIB,"MiB"),("pods_total_mem_max",1/MIB,"MiB"),("pods_total_cpu_avg",1000,"m"),("pods_total_cpu_max",1000,"m"),("vm_used_avg",1/2**30,"GiB"),("vm_used_max",1/2**30,"GiB"),("vm_cpu_busy_avg",1000,"m"),("vm_cpu_busy_max",1000,"m"),("vm_swap_used_max",1/2**30,"GiB")):
+        rs=entries(win,n)
+        print(f"{win:6} {n:22} {float(rs[0]['value'][1])*s:10.2f} {u}" if rs else f"{win:6} {n:22} none")
+for e in W["entries"]:
+    if e.get("name")=="vm_used_max_whole_retention" and e.get("result"): print("vm_used_max_whole_retention", round(float(e["result"][0]["value"][1])/2**30,2),"GiB")
+# one-moment group sums from raw series
+def series(win,name):
+    for e in SER["entries"]:
+        if e.get("window")==win and e.get("name")==name: return e.get("result",[])
+    return []
+PLANE11={"plane-web","plane-admin","plane-space","plane-live","plane-api","plane-worker","plane-beat-worker","plane-pgdb","plane-redis","plane-rabbitmq","plane-silo"}
+def group_of(m):
+    ns,pod,c=m.get("namespace",""),m.get("pod",""),m.get("container","")
+    if ns in ("plane-dev","plane-prod-sim"):
+        if c in ("postgres-exporter","redis-exporter") or pod.startswith(("postgres-exporter","redis-exporter")): return "exporters"
+        if pod.startswith("iso-"): return "infisical"
+        if pod.startswith("k6-"): return "k6"
+        if re.match(r"plane-(backup|restore|api-migrate|rollback)|.*-migrate-|.*-(guard)", pod): return f"jobs-{ns}"
+        if c in PLANE11 or re.match(r"plane-(web|admin|space|live|api|worker|beat-worker|pgdb|redis|rabbitmq|minio|silo)-wl", pod): return f"plane-{ns}"
+        return f"other-{ns}"
+    if ns=="traefik": return "traefik+metrics-server"
+    if ns=="kube-system":
+        return "traefik+metrics-server" if pod.startswith("metrics-server") else "control-plane"
+    if ns=="local-path-storage": return "control-plane"
+    if ns=="argocd": return "argocd"
+    if ns=="infisical": return "infisical"
+    if ns in("monitoring","monitoring-agents"):
+        if pod.startswith(("loki","alloy")) or c in("loki","alloy"): return "loki+alloy"
+        return "monitoring"
+    return "other-"+ns
+def group_table(win):
+    mem,cpu={}, {}
+    pods={}
+    for name,d in(("mem",mem),("cpu",cpu)):
+        for s in series(win,name):
+            g=group_of(s["metric"])
+            pods.setdefault(g,set()).add(s["metric"].get("namespace","")+"/"+s["metric"].get("pod","")+"/"+s["metric"].get("container",""))
+            for t,v in s["values"]:
+                d.setdefault(g,{}).setdefault(t,0.0); d[g][t]+=float(v)
+    ret={}
+    for g in sorted(set(mem)|set(cpu)):
+        mv=list(mem.get(g,{}).values()); cv=list(cpu.get(g,{}).values())
+        pm=max(mem.get(g,{1:0}).items(),key=lambda x:x[1]) if mv else (0,0)
+        pc=max(cpu.get(g,{1:0}).items(),key=lambda x:x[1]) if cv else (0,0)
+        ret[g]=dict(mem_avg=sum(mv)/len(mv)/MIB if mv else 0,mem_max=pm[1]/MIB,mem_at=pm[0],cpu_avg=sum(cv)/len(cv)*1000 if cv else 0,cpu_max=pc[1]*1000,cpu_at=pc[0],n=len(pods[g]))
+    return ret,pods
+print("\n== groups at one moment, from the raw series (quiet step 60 s, load step 15 s)")
+ts=lambda t: datetime.datetime.fromtimestamp(t,datetime.timezone.utc).strftime("%H:%M:%S")
+for win in("quiet","load"):
+    gt,pods=group_table(win)
+    print(f"-- {win}")
+    for g,v in gt.items():
+        print(f"{g:26} ctrs={v['n']:3} mem avg {v['mem_avg']:8.1f} max {v['mem_max']:8.1f} at {ts(v['mem_at'])} | cpu avg {v['cpu_avg']:7.1f} max {v['cpu_max']:7.1f} at {ts(v['cpu_at'])}")
+    if win=="load":
+        for g in ("other-plane-dev","other-plane-prod-sim"):
+            if g in pods: print(g, sorted(pods[g]))
+        for g in ("jobs-plane-prod-sim","jobs-plane-dev"):
+            if g in pods: print(g, sorted(x.split('/')[1] for x in pods[g]))
+    # whole cluster at one moment
+    allm,allc={}, {}
+    for s in series(win,"mem"):
+        for t,v in s["values"]: allm[t]=allm.get(t,0)+float(v)
+    for s in series(win,"cpu"):
+        for t,v in s["values"]: allc[t]=allc.get(t,0)+float(v)
+    pm=max(allm.items(),key=lambda x:x[1]); pc=max(allc.items(),key=lambda x:x[1])
+    print(f"ALL PODS mem avg {sum(allm.values())/len(allm)/MIB:.1f} max {pm[1]/MIB:.1f} at {ts(pm[0])} | cpu avg {sum(allc.values())/len(allc)*1000:.1f} max {pc[1]*1000:.1f} at {ts(pc[0])}")
+    for nm in("vm_used","vm_cpu_busy"):
+        for s in series(win,nm):
+            vals=[(t,float(v)) for t,v in s["values"]]
+            p=max(vals,key=lambda x:x[1]); a=sum(v for _,v in vals)/len(vals)
+            print(nm, "avg",round(a/2**30,2) if nm=="vm_used" else round(a*1000), "max", round(p[1]/2**30,2) if nm=="vm_used" else round(p[1]*1000), "at", ts(p[0]))
+print("\n== node container, docker stats samples in results.json during the k6 window")
+def parse_mem(s):
+    m=re.match(r"([\d.]+)(GiB|MiB)",s or ""); 
+    return float(m.group(1))*(1024 if m.group(2)=="GiB" else 1) if m else None
+kstart,kend="2026-11-05T07:33:48Z","2026-11-05T07:42:51Z"
+ss=[x for x in R["samples"] if kstart<=x["at"]<=kend]
+mems=[(parse_mem(x["node_memory"]),x["at"]) for x in ss if parse_mem(x.get("node_memory"))]
+cpus=[(float(x["node_cpu"].rstrip('%')),x["at"]) for x in ss if x.get("node_cpu")]
+print("samples",len(ss),"of",len(R["samples"]))
+print("node mem avg",round(sum(m for m,_ in mems)/len(mems)),"MiB max",max(mems),"min",min(mems))
+print("node cpu% avg",round(sum(c for c,_ in cpus)/len(cpus),1),"max",max(cpus),"min",min(cpus))
+print("vm_var_used_kib first,last",R["samples"][0]["vm_var_used_kib"],R["samples"][-1]["vm_var_used_kib"], "host_free", R["samples"][0]["host_free_gib"], R["samples"][-1]["host_free_gib"])
+print("\n== k6 per step")
+M=R["k6"]["metrics"]
+for s,stepn in(("vus_05",5),("vus_10",10),("vus_20",20)):
+    f=M[f"http_req_failed{{scenario:{s}}}"]; d=M[f"http_req_duration{{scenario:{s}}}"]
+    f=f.get("values",f); d=d.get("values",d)
+    n=f["passes"]+f["fails"]
+    print(s,"requests",n,"per s (180s)",round(n/180,2),"failed",f["passes"],"rate",f["rate"],"p95",round(d["p(95)"],1),"p99",round(d["p(99)"],1),"med",round(d["med"],1),"max",round(d["max"],1))
+for k in("http_req_duration{name:read}","http_req_duration{name:write}","http_req_duration","http_reqs","iterations","checks","throttled"):
+    v=M[k]; print(k,json.dumps(v.get("values",v))[:200])
+print("\n== steps from Prometheus")
+for e in STEPS["entries"]:
+    n=e.get("name")
+    if n in("api_throttled_share","celery_ready_peak","celery_messages_peak","celery_unacked_peak","vm_cpu_busy_avg","vm_cpu_busy_max","vm_used_max","traefik_cpu_max"):
+        print(e["window"],n,[round(float(r["value"][1]),4) for r in e["result"]])
+    if n in("ctr_cpu_avg","ctr_cpu_max","ctr_mem_max") :
+        print(e["window"],n,{r["metric"].get("container"):round(float(r["value"][1])*(1000 if "cpu" in n else 1/MIB)) for r in e["result"] if r["metric"].get("container") in("plane-api","plane-worker","plane-pgdb","plane-redis","plane-rabbitmq","k6","plane-beat-worker")})
+    if n=="ctr_throttled_share":
+        print(e["window"],n,{r["metric"].get("container"):round(float(r["value"][1]),3) for r in e["result"] if r["value"][1]!="NaN"})
+print("\n== prometheus.json in results")
+P=R["prometheus"]
+print("throttle by pod",{r["metric"]["pod"]:round(float(r["value"][1]),3) for r in P["throttled_share_by_pod"]})
+print("api rps",P["api_requests_per_second"][0]["value"][1],"p95",P["api_p95_seconds"][0]["value"][1],"5xx",P["api_5xx_total"][0]["value"][1])
+print("db growth",[(r["metric"]["datname"],r["value"][1]) for r in P["database_growth_bytes"]])
+print("restarts",[(r["metric"]["pod"],r["value"][1]) for r in P["restarts_by_pod"] if float(r["value"][1])>0])
+print("monitoring_peak",P["monitoring_peak_memory_bytes"][0]["value"][1])
+
+print("\n== both Plane environments at one moment, 11 workloads each (load window, 15 s step)")
+for win in("quiet","load"):
+    mm,cc={}, {}
+    for name,d in(("mem",mm),("cpu",cc)):
+        for s in series(win,name):
+            g=group_of(s["metric"])
+            if g in("plane-plane-dev","plane-plane-prod-sim"):
+                for t,v in s["values"]: d[t]=d.get(t,0)+float(v)
+    pm=max(mm.items(),key=lambda x:x[1]); pc=max(cc.items(),key=lambda x:x[1])
+    print(win,f"mem avg {sum(mm.values())/len(mm)/MIB:.1f} max {pm[1]/MIB:.1f} at {ts(pm[0])} | cpu avg {sum(cc.values())/len(cc)*1000:.1f} max {pc[1]*1000:.1f} at {ts(pc[0])}")
+
+print("\n== per step, Traefik on the API route, from the steps and buckets files")
+B=json.load(open(f"{EV}/LOAD-3-{ST}-traefik-buckets.json"))
+def p95(bs):
+    bs=[(float(b["le"]) if b["le"]!="+Inf" else float("inf"),b["count"]) for b in bs]
+    bs.sort()
+    tot=bs[-1][1]; rank=0.95*tot; prev_le,prev_c=0.0,0.0
+    for le,c in bs:
+        if c>=rank:
+            return tot,rank,prev_le,le,prev_le+(rank-prev_c)/(c-prev_c)*(le-prev_le)
+        prev_le,prev_c=le,c
+for e in B["entries"]:
+    tot,rank,lo,hi,v=p95(e["buckets"])
+    print(e["window"],e["method"],f"count {tot:.0f} p95 rank {rank:.1f} bucket {lo}-{hi} s interpolated {v*1000:.0f} ms")
+per={}
+for e in B["entries"]:
+    per[e["window"]]=per.get(e["window"],0)+e["buckets"][-1]["count"]
+print("API route GET+POST per step",{k:round(v) for k,v in per.items()})
+
+print("\n== quiet window checks, from the timeline file")
+TL=json.load(open(f"{EV}/LOAD-3-{ST}-timeline.json"))
+QS=datetime.datetime(2026,11,5,3,40,tzinfo=datetime.timezone.utc).timestamp(); QE=datetime.datetime(2026,11,5,4,10,tzinfo=datetime.timezone.utc).timestamp()
+for e in TL["entries"]:
+    v=[(float(a),float(b)) for a,b in e["values"]]
+    w=[b for a,b in v if QS<=a<=QE]
+    if w: print(e["name"],"in quiet window: n",len(w),"min",round(min(w),3),"avg",round(sum(w)/len(w),3),"max",round(max(w),3))
+cpu=[e for e in TL["entries"] if e["name"]=="pods_cpu_cores"][0]["values"]
+b={}
+for a,c in cpu:
+    k=int(float(a))//600*600; b.setdefault(k,[]).append(float(c))
+print("pods_cpu_cores, 10-minute buckets, avg m:"," ".join(f"{datetime.datetime.fromtimestamp(k,datetime.timezone.utc).strftime('%H:%M')}={sum(x)/len(x)*1000:.0f}" for k,x in sorted(b.items())))
+vm=[e for e in TL["entries"] if e["name"]=="vm_used_bytes"][0]["values"]
+t,mv=max(((float(a),float(c)) for a,c in vm),key=lambda x:x[1])
+print("vm_used top of the 60 s timeline",ts(t),round(mv/2**30,2),"GiB")
+
+print("\n== disk sums")
+G=2**30
+vols={"node /var":13.76e9,"registry":1.159e9,"mirror-docker":2.52e9,"mirror-quay":447.5e6,"mirror-k8s":37.64e6}
+imgs={"kindest/node":1.28e9,"plane-platform-local-git":35e6,"ghcr.io/distribution/distribution":82.2e6}
+kib={".tools":960144,".local":2145484,".build":235180}
+for k,v in vols.items(): print(k,round(v/G,3),"GiB")
+print("mirrors",round((2.52e9+447.5e6+37.64e6)/G,3))
+for k,v in imgs.items(): print(k,round(v/G,3),"GiB")
+for k,v in kib.items(): print(k,round(v/2**20,3),"GiB")
+print(".tools+.local",round((960144+2145484)/2**20,3))
+tot=sum(vols.values())/G+sum(imgs.values())/G+sum(kib.values())/2**20
+print("sum of the parts",round(tot,2),"GiB")
+print("imagefs",round(11817730048/G,2),"GiB; /var/log/pods",round(55016/2**20,3),"GiB; /var/lib/containerd",round(11944912/2**20,2),"GiB; pv sum",round(2112560/2**20,2),"GiB")
+print("host free",round(18529668/2**20,2),"GiB; Docker.raw allocated",round(41515008/2**20,2),"GiB; logical",round(494384709632/G,1),"GiB; VM fs avail",round(408458512/2**20,1),"GiB; VM fs used",round(41480968/2**20,2))
+print("docker df total",17.91+0.005792+20.69,"GB", round((17.91e9+5.792e6+20.69e9)/G,2),"GiB")
+print("vm /var growth during run MiB",round((41494368-41433180)/1024,1))

@@ -1,0 +1,15 @@
+2026-11-05T08:46:20Z INFO prod-sim: rolling back a stopped rotation
+2026-11-05T08:46:20Z PASS Infisical <redacted> version 4 -> 5
+2026-11-05T08:46:24Z PASS operator synced plane-pgdb and plane-app-env
+2026-11-05T08:46:24Z PASS Postgres accepts the target password over TCP, where passwords are checked
+2026-11-05T08:46:24Z PASS Postgres rejects the replaced password: password authentication failed
+2026-11-05T08:47:03Z PASS deployment/plane-api-wl rolled out with the new Secret version
+2026-11-05T08:47:03Z PASS deployment/plane-beat-worker-wl rolled out with the new Secret version
+2026-11-05T08:47:03Z PASS deployment/plane-worker-wl rolled out with the new Secret version
+2026-11-05T08:47:03Z PASS Plane API answered a database-backed request after the rollout
+2026-11-05T08:47:03Z PASS Postgres pod was not restarted
+2026-11-05T08:47:03Z PASS SECRET_KEY unchanged
+2026-11-05T08:47:23Z PASS workload generations stable for 20s, no sync loop seen
+2026-11-05T08:47:23Z INFO error window: 36s from first to last failed probe, 12 of 61 probes failed
+2026-11-05T08:47:23Z PASS prod-sim: done. Evidence in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/rotate-prod-sim-20261105T084620Z.log
+2026-11-05T08:47:23Z INFO SKIP_BACKUP=yes: no Infisical backup, so older dumps hold the previous <redacted>

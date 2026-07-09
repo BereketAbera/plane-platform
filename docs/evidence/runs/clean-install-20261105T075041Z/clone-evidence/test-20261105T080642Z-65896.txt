@@ -1,0 +1,2 @@
+scripts/test.sh e2e dev, started 20261105T080642Z
+PASS     e2e dev                    evidence: /Users/bek/dev/pr/plane-platform-clean-install/.local/evidence-raw/smoke-dev-20261105T080642Z-65896.json

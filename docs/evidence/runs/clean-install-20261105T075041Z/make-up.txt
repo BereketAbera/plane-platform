@@ -1,0 +1,1078 @@
+[1;34m==>[0m Cluster: kind, local services, kubeconfig
+[1;34m==>[0m Creating kind cluster plane-platform
+Creating cluster "plane-platform" ...
+ • Ensuring node image (kindest/node:v1.36.4) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.36.4) 🖼️
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Waiting ≤ 2m0s for control-plane = Ready ⏳  ...
+ ✓ Waiting ≤ 2m0s for control-plane = Ready ⏳
+ • Ready after 16s 💚
+Set kubectl context to "kind-plane-platform"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-plane-platform --kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig
+
+Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
+[1;32m ok[0m kind network 172.24.0.0/16 is inside 172.16.0.0/12
+[1;34m==>[0m Starting local services (registry, pull-through caches, Git remote)
+ Container plane-registry Running 
+ Container plane-mirror-docker Running 
+ Container plane-mirror-quay Running 
+ Container plane-mirror-k8s Running 
+ Container plane-git Recreate 
+ Container plane-git Recreated 
+ Container plane-git Starting 
+ Container plane-git Started 
+[1;32m ok[0m cluster ready: context kind-plane-platform, kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig
+[1;32m ok[0m cluster step finished in 173s
+[1;34m==>[0m Publish: local image digests, then main to the bare repo Argo CD reads
+[1;32m ok[0m created /Users/bek/dev/pr/plane-platform-clean-install/.local/git/plane-platform.git
+[1;32m ok[0m published main 7d5ff62da551 to /Users/bek/dev/pr/plane-platform-clean-install/.local/git/plane-platform.git
+[1;32m ok[0m publish step finished in 3s
+[1;34m==>[0m Terraform: namespaces, quotas, CoreDNS, Argo CD, projects, root Application
+[0m[1mInitializing the backend...[0m
+[0m[32m
+Successfully configured the backend "local"! Terraform will automatically
+use this backend unless the backend configuration changes.[0m
+
+[0m[1mInitializing modules...[0m
+- argocd in ../../modules/argocd
+- foundation in ../../modules/foundation
+
+[0m[1mInitializing provider plugins...[0m
+- Reusing version 3.3.0 of hashicorp/helm from the dependency lock file
+- Reusing version 3.4.0 of hashicorp/kubernetes from the dependency lock file
+- Installing hashicorp/helm v3.3.0...
+- Installed hashicorp/helm v3.3.0 (signed by HashiCorp)
+- Installing hashicorp/kubernetes v3.4.0...
+- Installed hashicorp/kubernetes v3.4.0 (signed by HashiCorp)
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # module.argocd.helm_release.argocd[0m will be created
+[0m  [32m+[0m[0m resource "helm_release" "argocd" {
+      [32m+[0m[0m atomic                     = false
+      [32m+[0m[0m chart                      = "argo-cd"
+      [32m+[0m[0m cleanup_on_fail            = false
+      [32m+[0m[0m create_namespace           = false
+      [32m+[0m[0m dependency_update          = false
+      [32m+[0m[0m disable_crd_hooks          = false
+      [32m+[0m[0m disable_openapi_validation = false
+      [32m+[0m[0m disable_webhooks           = false
+      [32m+[0m[0m force_update               = false
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m lint                       = false
+      [32m+[0m[0m max_history                = 3
+      [32m+[0m[0m metadata                   = (known after apply)
+      [32m+[0m[0m name                       = "argocd"
+      [32m+[0m[0m namespace                  = "argocd"
+      [32m+[0m[0m pass_credentials           = false
+      [32m+[0m[0m recreate_pods              = false
+      [32m+[0m[0m render_subchart_notes      = true
+      [32m+[0m[0m replace                    = false
+      [32m+[0m[0m repository                 = "https://argoproj.github.io/argo-helm"
+      [32m+[0m[0m reset_values               = false
+      [32m+[0m[0m reuse_values               = false
+      [32m+[0m[0m set_wo                     = (write-only attribute)
+      [32m+[0m[0m skip_crds                  = false
+      [32m+[0m[0m status                     = "deployed"
+      [32m+[0m[0m take_ownership             = false
+      [32m+[0m[0m timeout                    = 600
+      [32m+[0m[0m upgrade_install            = false
+      [32m+[0m[0m values                     = [
+          [32m+[0m[0m <<-EOT
+                # argo-cd chart 10.11.7. Applied only by infrastructure/terraform/modules/argocd.
+                # Lean by design: one replica of each component, no Dex, notifications or ApplicationSet.
+                # The admin password is not here. argocd-server generates argocd-initial-admin-secret at first start.
+                
+                global:
+                  domain: argocd.localhost
+                  image:
+                    repository: quay.io/argoproj/argocd
+                    tag: v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+                  # The chart defaults this on. Every NetworkPolicy belongs to the platform project (contract
+                  # section 7), so the argocd rules live with the rest in gitops/platform/network-policies.
+                  networkPolicy:
+                    create: false
+                
+                configs:
+                  cm:
+                    # The chart would default to https://, and nothing terminates TLS locally (contract section 3).
+                    url: http://argocd.localhost
+                
+                    # Argo CD removed this check in 1.8, so without it a child reports no health and the root's
+                    # waves pass straight through. Base text from docs/operator-manual/health.md at v3.5.7.
+                    # A non-hook task waits on anything except Healthy and Degraded (sync_context.go), so Missing
+                    # and Progressing hold the wave, while Degraded fails the root sync and the root's retry reruns it.
+                    #
+                    # The base text alone does not gate. controller/health.go skips hooks and resources not created
+                    # yet, so a child reads Healthy between its own waves and through its migrator. Healthy also needs:
+                    # - No .operation. It clears only when an operation completes (setOperationState), so this covers
+                    #   requested, running, retrying and terminating. With retry limit -1 a failing child never ends.
+                    # - Synced. status.health is only as new as the last refresh. A one-wave child's sync succeeds on
+                    #   apply, so at that moment it can still show a Healthy computed with objects absent, and that
+                    #   same refresh recorded OutOfSync. The post-sync refresh then corrects both.
+                    # Cost: a child that stays OutOfSync holds every later wave. `make up` needs all 14 Synced anyway.
+                    resource.customizations.health.argoproj.io_Application: |
+                      hs = {}
+                      hs.status = "Progressing"
+                      hs.message = ""
+                      if obj.status ~= nil then
+                        if obj.status.health ~= nil and obj.status.health.status ~= nil then
+                          hs.status = obj.status.health.status
+                          if obj.status.health.message ~= nil then
+                            hs.message = obj.status.health.message
+                          end
+                        end
+                        if hs.status == "Healthy" then
+                          if obj.operation ~= nil then
+                            hs.status = "Progressing"
+                            hs.message = "Holding the wave: child sync has not finished"
+                          elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+                            hs.status = "Progressing"
+                            hs.message = "Holding the wave: child is Healthy but not Synced"
+                          end
+                        end
+                      end
+                      return hs
+                
+                    # Argo CD's built-in check (resource_customizations/monitoring.coreos.com/Prometheus/health.lua at v3.5.7)
+                    # reads NoPodReady as Degraded, and that is every Prometheus start: while its image pulls through the
+                    # mirror and through each restart's WAL replay. On the first boot measured, a Degraded child failed the
+                    # root sync at once, and the root's retry backoff then outlasted the image pull. So not-ready pods read
+                    # as Progressing, and the wave simply waits. Reconciled False stays Degraded: the operator could not
+                    # build the pods, so waiting will not help.
+                    # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Before this, root retried
+                    # and re-read the newest commit each time. Now it waits with no retry, so a fix to
+                    # gitops/applications/kube-prometheus-stack.yaml needs root's operation terminated by hand, as
+                    # infrastructure/terraform/README.md says under "After a stuck first sync". No alert says so either: with
+                    # Prometheus down, nothing evaluates ArgoRootSyncStuck, and the only sign is Watchdog no longer reaching the sink.
+                    resource.customizations.health.monitoring.coreos.com_Prometheus: |
+                      local hs = {status = "Progressing", message = "Waiting for initialization"}
+                      if obj.status == nil or obj.status.conditions == nil then
+                        return hs
+                      end
+                      local available = nil
+                      local reconcile_failure = nil
+                      for _, c in ipairs(obj.status.conditions) do
+                        if c.type == "Available" then
+                          available = c
+                        elseif c.type == "Reconciled" and c.status == "False" then
+                          reconcile_failure = c
+                        end
+                      end
+                      if available == nil then
+                        return hs
+                      end
+                      if available.status == "True" then
+                        hs.status = "Healthy"
+                        hs.message = "All instances are available"
+                      elseif reconcile_failure ~= nil then
+                        hs.status = "Degraded"
+                        hs.message = reconcile_failure.message or reconcile_failure.reason
+                      elseif available.reason == "NoPodReady" or available.reason == "SomePodsNotReady" then
+                        hs.message = available.reason .. ": " .. (available.message or "")
+                      else
+                        hs.status = "Degraded"
+                        hs.message = available.message or available.reason
+                      end
+                      return hs
+                
+                    # Field semantics from infisical-k8-operator/v0.11.16. The operator's own comment says to trust
+                    # status.error only once observedGeneration matches, so a stale false must not read as Healthy.
+                    resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.observedGeneration ~= nil
+                         and obj.status.observedGeneration == obj.metadata.generation then
+                        if obj.status.error == true then
+                          hs.status = "Degraded"
+                          hs.message = "Reconcile failed, see the LastReconcileStatus condition"
+                        else
+                          hs.status = "Healthy"
+                          hs.message = "Secrets synced"
+                        end
+                      end
+                      return hs
+                
+                    # These two carry no status.observedGeneration and no status.error, only this condition.
+                    resource.customizations.health.secrets.infisical.com_InfisicalAuth: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.conditions ~= nil then
+                        for _, c in ipairs(obj.status.conditions) do
+                          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                            hs.message = c.message
+                            if c.status == "True" then
+                              hs.status = "Healthy"
+                            else
+                              hs.status = "Degraded"
+                            end
+                          end
+                        end
+                      end
+                      return hs
+                
+                    resource.customizations.health.secrets.infisical.com_InfisicalConnection: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.conditions ~= nil then
+                        for _, c in ipairs(obj.status.conditions) do
+                          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                            hs.message = c.message
+                            if c.status == "True" then
+                              hs.status = "Healthy"
+                            else
+                              hs.status = "Degraded"
+                            end
+                          end
+                        end
+                      end
+                      return hs
+                
+                  params:
+                    # Traefik reaches the server over plain HTTP. The CLI needs --grpc-web --plaintext.
+                    server.insecure: true
+                    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 512Mi limit.
+                    reposerver.parallelism.limit: 2
+                
+                dex:
+                  enabled: false
+                
+                notifications:
+                  enabled: false
+                
+                # The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing, so this limit costs
+                # nothing. It was never measured: it exists so the Deployment still names one, as policy/charts.rego asks.
+                applicationSet:
+                  replicas: 0
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 32Mi
+                    limits:
+                      memory: 128Mi
+                
+                # Memory below totals 360Mi requests and 1792Mi limits for the four running pods. Peaks measured on the
+                # first real run, with monitoring and Infisical synced and no Plane workloads yet: controller 517Mi,
+                # repo-server 247Mi, server 83Mi, redis 25Mi.
+                # No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
+                controller:
+                  replicas: 1
+                  # A Service only. tests/network-policy-matrix.yaml dials it, and the ServiceMonitor that selects it
+                  # lives in monitoring/manifests/shared, so the chart's own serviceMonitor stays off.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 100m
+                      memory: 192Mi
+                    # 768Mi left 37Mi of room: cgroup memory.peak reached 731Mi with Plane running (2026-11-04), and an OOM kill
+                    # here stalls every sync. 1024Mi is that peak plus 40%. It only moves the ceiling: no GOMEMLIMIT is set, so
+                    # the heap sizes itself the same way, and the namespace has no ResourceQuota to fit.
+                    limits:
+                      memory: 1024Mi
+                  # Upstream ships this off because restarting an overloaded controller makes things worse
+                  # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
+                  # thresholds slack enough (5 min) that first-sync load alone should not trip it.
+                  livenessProbe:
+                    enabled: true
+                    initialDelaySeconds: 60
+                    periodSeconds: 30
+                    timeoutSeconds: 5
+                    failureThreshold: 10
+                
+                repoServer:
+                  replicas: 1
+                  # Upstream's own manifest at v3.5.7 sets false. The chart defaults to true.
+                  automountServiceAccountToken: false
+                  serviceAccount:
+                    automountServiceAccountToken: false
+                  # A Service only, as for the controller.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 50m
+                      memory: 96Mi
+                    # Peak 247Mi (cgroup memory.peak) with all 8 chart Applications hard-refreshed at once and
+                    # reposerver.parallelism.limit at 2, so this has room.
+                    limits:
+                      memory: 512Mi
+                
+                server:
+                  replicas: 1
+                  # A Service only, as for the controller.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 25m
+                      memory: 48Mi
+                    limits:
+                      memory: 192Mi
+                
+                redis:
+                  image:
+                    # The chart defaults to ecr-public.aws.com. Same index digest on docker.io, which the node
+                    # pulls through the pull-through cache (contract section 5).
+                    repository: docker.io/library/redis
+                    tag: 8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+                  automountServiceAccountToken: false
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 24Mi
+                    limits:
+                      memory: 64Mi
+                  # The chart ships both off.
+                  readinessProbe:
+                    enabled: true
+                    initialDelaySeconds: 5
+                    periodSeconds: 10
+                    timeoutSeconds: 5
+                  livenessProbe:
+                    enabled: true
+                    initialDelaySeconds: 30
+                    periodSeconds: 15
+                    timeoutSeconds: 5
+                
+                # Helm hook that generates the Redis password into Secret argocd-redis at install time.
+                redisSecretInit:
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 32Mi
+                    limits:
+                      memory: 192Mi
+            EOT,
+        ]
+      [32m+[0m[0m verify                     = false
+      [32m+[0m[0m version                    = "10.11.7"
+      [32m+[0m[0m wait                       = true
+      [32m+[0m[0m wait_for_jobs              = true
+    }
+
+[1m  # module.argocd.helm_release.bootstrap[0m will be created
+[0m  [32m+[0m[0m resource "helm_release" "bootstrap" {
+      [32m+[0m[0m atomic                     = false
+      [32m+[0m[0m chart                      = "./../../../../gitops/bootstrap/chart"
+      [32m+[0m[0m cleanup_on_fail            = false
+      [32m+[0m[0m create_namespace           = false
+      [32m+[0m[0m dependency_update          = false
+      [32m+[0m[0m disable_crd_hooks          = false
+      [32m+[0m[0m disable_openapi_validation = false
+      [32m+[0m[0m disable_webhooks           = false
+      [32m+[0m[0m force_update               = false
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m lint                       = false
+      [32m+[0m[0m max_history                = 3
+      [32m+[0m[0m metadata                   = (known after apply)
+      [32m+[0m[0m name                       = "argocd-bootstrap"
+      [32m+[0m[0m namespace                  = "argocd"
+      [32m+[0m[0m pass_credentials           = false
+      [32m+[0m[0m recreate_pods              = false
+      [32m+[0m[0m render_subchart_notes      = true
+      [32m+[0m[0m replace                    = false
+      [32m+[0m[0m reset_values               = false
+      [32m+[0m[0m reuse_values               = false
+      [32m+[0m[0m set_wo                     = (write-only attribute)
+      [32m+[0m[0m skip_crds                  = false
+      [32m+[0m[0m status                     = "deployed"
+      [32m+[0m[0m take_ownership             = false
+      [32m+[0m[0m timeout                    = 300
+      [32m+[0m[0m upgrade_install            = false
+      [32m+[0m[0m values                     = [
+          [32m+[0m[0m <<-EOT
+                "chartHash": "e7c24bd0958989925006e9d11ec153fa16fd081087fc114142b1cf30aebc7e74"
+                "gitRepoURL": "git://plane-git/plane-platform.git"
+                "targetRevision": "main"
+            EOT,
+        ]
+      [32m+[0m[0m verify                     = false
+      [32m+[0m[0m version                    = "0.1.0"
+      [32m+[0m[0m wait                       = true
+      [32m+[0m[0m wait_for_jobs              = false
+    }
+
+[1m  # module.foundation.kubernetes_config_map_v1_data.coredns[0][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_config_map_v1_data" "coredns" {
+      [32m+[0m[0m data          = {
+          [32m+[0m[0m "Corefile" = <<-EOT
+                .:53 {
+                    errors
+                    health {
+                       lameduck 5s
+                    }
+                    ready
+                    rewrite name exact plane.dev.localhost traefik.traefik.svc.cluster.local
+                    rewrite name exact plane.prod-sim.localhost traefik.traefik.svc.cluster.local
+                    kubernetes cluster.local in-addr.arpa ip6.arpa {
+                       pods insecure
+                       fallthrough in-addr.arpa ip6.arpa
+                       ttl 30
+                    }
+                    prometheus :9153
+                    forward . /etc/resolv.conf {
+                       max_concurrent 1000
+                    }
+                    cache 30 {
+                       disable success cluster.local
+                       disable denial cluster.local
+                    }
+                    loop
+                    reload
+                    loadbalance
+                }
+            EOT
+        }
+      [32m+[0m[0m field_manager = "terraform-plane-platform"
+      [32m+[0m[0m force         = true
+      [32m+[0m[0m id            = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m name      = "coredns"
+          [32m+[0m[0m namespace = "kube-system"
+        }
+    }
+
+[1m  # module.foundation.kubernetes_limit_range_v1.plane["plane-dev"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_limit_range_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-defaults"
+          [32m+[0m[0m namespace        = "plane-dev"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m limit {
+              [32m+[0m[0m default         = {
+                  [32m+[0m[0m "memory" = "256Mi"
+                }
+              [32m+[0m[0m default_request = {
+                  [32m+[0m[0m "memory" = "64Mi"
+                }
+              [32m+[0m[0m max             = {
+                  [32m+[0m[0m "memory" = "1Gi"
+                }
+              [32m+[0m[0m type            = "Container"
+            }
+        }
+    }
+
+[1m  # module.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_limit_range_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-defaults"
+          [32m+[0m[0m namespace        = "plane-prod-sim"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m limit {
+              [32m+[0m[0m default         = {
+                  [32m+[0m[0m "memory" = "256Mi"
+                }
+              [32m+[0m[0m default_request = {
+                  [32m+[0m[0m "memory" = "64Mi"
+                }
+              [32m+[0m[0m max             = {
+                  [32m+[0m[0m "memory" = "1Gi"
+                }
+              [32m+[0m[0m type            = "Container"
+            }
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["argocd"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "argocd"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["infisical"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "infisical"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["monitoring"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "monitoring"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["monitoring-agents"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "privileged"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "monitoring-agents"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["plane-dev"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/environment"         = "dev"
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "plane-dev"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["plane-prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/environment"         = "prod-sim"
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "plane-prod-sim"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["traefik"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "traefik"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_resource_quota_v1.plane["plane-dev"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_resource_quota_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-budget"
+          [32m+[0m[0m namespace        = "plane-dev"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m hard = {
+              [32m+[0m[0m "limits.memory"          = "7984Mi"
+              [32m+[0m[0m "persistentvolumeclaims" = "6"
+              [32m+[0m[0m "pods"                   = "24"
+              [32m+[0m[0m "requests.memory"        = "2732Mi"
+            }
+        }
+    }
+
+[1m  # module.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_resource_quota_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-budget"
+          [32m+[0m[0m namespace        = "plane-prod-sim"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m hard = {
+              [32m+[0m[0m "limits.memory"          = "7984Mi"
+              [32m+[0m[0m "persistentvolumeclaims" = "6"
+              [32m+[0m[0m "pods"                   = "24"
+              [32m+[0m[0m "requests.memory"        = "2732Mi"
+            }
+        }
+    }
+
+[1mPlan:[0m [0m14 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m argocd_url = "http://argocd.localhost"
+  [32m+[0m[0m namespaces = [
+      [32m+[0m[0m "argocd",
+      [32m+[0m[0m "infisical",
+      [32m+[0m[0m "monitoring",
+      [32m+[0m[0m "monitoring-agents",
+      [32m+[0m[0m "plane-dev",
+      [32m+[0m[0m "plane-prod-sim",
+      [32m+[0m[0m "traefik",
+    ]
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Creation complete after 0s [id=plane-dev][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Creation complete after 0s [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Creation complete after 0s [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Creation complete after 0s [id=plane-prod-sim][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Creation complete after 0s [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Creation complete after 0s [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Creation complete after 0s [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Creation complete after 0s [id=kube-system/coredns][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Creation complete after 0s [id=plane-prod-sim/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Creation complete after 0s [id=plane-dev/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Creation complete after 1s [id=plane-dev/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Creation complete after 1s [id=plane-prod-sim/plane-budget][0m
+[0m[1mmodule.argocd.helm_release.argocd: Creating...[0m[0m
+[0m[1mmodule.argocd.helm_release.argocd: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.argocd.helm_release.argocd: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.argocd.helm_release.argocd: Creation complete after 25s [id=argocd][0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Creating...[0m[0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Creation complete after 0s [id=argocd-bootstrap][0m
+[0m[1m[32m
+Apply complete! Resources: 14 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0margocd_url = "http://argocd.localhost"
+namespaces = tolist([
+  "argocd",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-dev",
+  "plane-prod-sim",
+  "traefik",
+])
+[1;32m ok[0m terraform step finished in 54s
+[1;34m==>[0m Secret zero
+[1;34m==>[0m Generated ENCRYPTION_KEY
+[1;34m==>[0m Generated AUTH_SECRET
+[1;34m==>[0m Generated DB_PASSWORD
+[1;34m==>[0m Generated REDIS_PASSWORD
+[1;32m ok[0m applied Secret infisical/infisical-db
+[1;32m ok[0m applied Secret infisical/infisical-redis
+[1;32m ok[0m applied Secret infisical/infisical-secrets
+[1;32m ok[0m secret zero in place. Back up /Users/bek/dev/pr/plane-platform-clean-install/.local/secret-zero/ENCRYPTION_KEY outside this machine: nothing can recreate it.
+[1;32m ok[0m secret-zero step finished in 2s
+[1;34m==>[0m Traefik: the Application, then a real request through it
+[1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 900s)
+    62s. Applications: 4 of 14 exist, waiting on: root=OutOfSync/Progressing traefik=Synced/Progressing
+    123s. Applications: 4 of 14 exist, waiting on: root=OutOfSync/Progressing traefik=Synced/Progressing
+[1;32m ok[0m Application traefik Synced and Healthy, after 148s
+[1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 300s)
+[1;32m ok[0m Traefik answering at http://argocd.localhost/, after 3s
+[1;32m ok[0m traefik step finished in 151s
+[1;34m==>[0m Infisical: wait for it, then first admin, projects, identities, seeded values
+[1;34m==>[0m Waiting for Infisical answering at http://infisical.localhost/api/status (up to 2400s)
+    60s. Applications: 6 of 14 exist, waiting on: root=OutOfSync/Healthy
+    121s. Applications: 8 of 14 exist, waiting on: alloy=Synced/Progressing loki=Synced/Progressing root=OutOfSync/Progressing
+    182s. Applications: 10 of 14 exist, waiting on: infisical=OutOfSync/Progressing root=OutOfSync/Progressing
+[1;32m ok[0m Infisical answering at http://infisical.localhost/api/status, after 230s
+[1;34m==>[0m Waiting for http://infisical.localhost (first boot runs about 600 migrations)
+[1;34m==>[0m Bootstrapping the first admin and organization
+[1;32m ok[0m bootstrapped organization wayline-1-e-sq, credentials in /Users/bek/dev/pr/plane-platform-clean-install/.local/secret-zero/infisical-admin.json
+[1;34m==>[0m Applying infisical/terraform
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # infisical_identity.reader["dev"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_identity" "reader" {
+      [32m+[0m[0m auth_modes            = (known after apply)
+      [32m+[0m[0m has_delete_protection = (known after apply)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = "plane-dev-reader"
+      [32m+[0m[0m org_id                = "9afbd62a-37d5-4dc2-ba90-2059f74a25f1"
+      [32m+[0m[0m role                  = "no-access"
+    }
+
+[1m  # infisical_identity.reader["prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_identity" "reader" {
+      [32m+[0m[0m auth_modes            = (known after apply)
+      [32m+[0m[0m has_delete_protection = (known after apply)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = "plane-prod-sim-reader"
+      [32m+[0m[0m org_id                = "9afbd62a-37d5-4dc2-ba90-2059f74a25f1"
+      [32m+[0m[0m role                  = "no-access"
+    }
+
+[1m  # infisical_identity_kubernetes_auth.reader["dev"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_identity_kubernetes_auth" "reader" {
+      [32m+[0m[0m access_token_max_ttl                    = 3600
+      [32m+[0m[0m access_token_num_uses_limit             = (known after apply)
+      [32m+[0m[0m access_token_trusted_ips                = (known after apply)
+      [32m+[0m[0m access_token_ttl                        = 3600
+      [32m+[0m[0m allowed_audience                        = (known after apply)
+      [32m+[0m[0m allowed_namespaces                      = [
+          [32m+[0m[0m "plane-dev",
+        ]
+      [32m+[0m[0m allowed_service_account_names           = [
+          [32m+[0m[0m "plane-infisical-auth",
+        ]
+      [32m+[0m[0m has_template_sourced_token_reviewer_jwt = (known after apply)
+      [32m+[0m[0m id                                      = (known after apply)
+      [32m+[0m[0m identity_id                             = (known after apply)
+      [32m+[0m[0m kubernetes_ca_certificate               = <<-EOT
+            -----BEGIN CERTIFICATE-----
+            MIIDBTCCAe2gAwIBAgIIM6JysR2LKc8wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+            AxMKa3ViZXJuZXRlczAeFw0yNjExMDUwNzQ1NTBaFw0zNjExMDIwNzUwNTBaMBUx
+            EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+            AoIBAQDfliVgUR+4HgPgutj2seC9D43CiHyTHhZEmd9rV1CsjoQiyIMw8AyvyOQ0
+            NRCmIEzNyyPeK9HDqmUEf7t1V7fsGXClcJQ+4zN2ZEnerz17qrYETttaOZGWxgyd
+            jpo4nbvjf8xBIO4OHlk0DmyxYVyVu0aVm1Z4V1YpTC7fo5Di2oYMFdvGEYFdW2iZ
+            Qw5MK1/YzkizPS6ZC1APd6Hj+AV9fzOa/O2HzUF/70ZpaSal/AgRDPExBM+DN5A7
+            X8a8GA2J8VZRz9hzQgB5Te1qZOBnEDH/xWRVvFvSsEPeQ6JItXqZjc4T5WOMTXrH
+            F5xQ+rLBnD9+MnrQ8vaYJimabnqpAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+            BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQL2a/GUudgVyOZNzOyGjdC/K790zAV
+            BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQCykkaWTFud
+            Lj/nLh59FoXX7uGo0hEMYb+3hTqdft2AX6ROh0BG9wUK3MoMRHVY++nrm4kANmG8
+            DCFgh99UBXrj3JIkI7BGxFkMdBAnS9rztRnstyK0+rkfK6JO6BtZtce1FnWHHH1u
+            UgxtZF0OU9W2jHHOH9fY+aDIyuSz7kpJsqpvGN5tUyj2jEw7OQzjjNIq0AFF6zvi
+            ZheCwvKz2I4rzzpivKExXHJGS0NEtmo7+hbZTfoJHVpTQHARJnsGm0K+D0Xk0u+T
+            rnCbzKbl+XLkpl2Y0q5LJ/5dRUDdeJzGERx4k7iJt9BSD8StvrmP4aKpRIv3krqr
+            WtupNIdfYQK0
+            -----END CERTIFICATE-----
+        EOT
+      [32m+[0m[0m kubernetes_host                         = "https://kubernetes.default.svc.cluster.local"
+      [32m+[0m[0m token_reviewer_mode                     = "api"
+    }
+
+[1m  # infisical_identity_kubernetes_auth.reader["prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_identity_kubernetes_auth" "reader" {
+      [32m+[0m[0m access_token_max_ttl                    = 3600
+      [32m+[0m[0m access_token_num_uses_limit             = (known after apply)
+      [32m+[0m[0m access_token_trusted_ips                = (known after apply)
+      [32m+[0m[0m access_token_ttl                        = 3600
+      [32m+[0m[0m allowed_audience                        = (known after apply)
+      [32m+[0m[0m allowed_namespaces                      = [
+          [32m+[0m[0m "plane-prod-sim",
+        ]
+      [32m+[0m[0m allowed_service_account_names           = [
+          [32m+[0m[0m "plane-infisical-auth",
+        ]
+      [32m+[0m[0m has_template_sourced_token_reviewer_jwt = (known after apply)
+      [32m+[0m[0m id                                      = (known after apply)
+      [32m+[0m[0m identity_id                             = (known after apply)
+      [32m+[0m[0m kubernetes_ca_certificate               = <<-EOT
+            -----BEGIN CERTIFICATE-----
+            MIIDBTCCAe2gAwIBAgIIM6JysR2LKc8wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+            AxMKa3ViZXJuZXRlczAeFw0yNjExMDUwNzQ1NTBaFw0zNjExMDIwNzUwNTBaMBUx
+            EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+            AoIBAQDfliVgUR+4HgPgutj2seC9D43CiHyTHhZEmd9rV1CsjoQiyIMw8AyvyOQ0
+            NRCmIEzNyyPeK9HDqmUEf7t1V7fsGXClcJQ+4zN2ZEnerz17qrYETttaOZGWxgyd
+            jpo4nbvjf8xBIO4OHlk0DmyxYVyVu0aVm1Z4V1YpTC7fo5Di2oYMFdvGEYFdW2iZ
+            Qw5MK1/YzkizPS6ZC1APd6Hj+AV9fzOa/O2HzUF/70ZpaSal/AgRDPExBM+DN5A7
+            X8a8GA2J8VZRz9hzQgB5Te1qZOBnEDH/xWRVvFvSsEPeQ6JItXqZjc4T5WOMTXrH
+            F5xQ+rLBnD9+MnrQ8vaYJimabnqpAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+            BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQL2a/GUudgVyOZNzOyGjdC/K790zAV
+            BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQCykkaWTFud
+            Lj/nLh59FoXX7uGo0hEMYb+3hTqdft2AX6ROh0BG9wUK3MoMRHVY++nrm4kANmG8
+            DCFgh99UBXrj3JIkI7BGxFkMdBAnS9rztRnstyK0+rkfK6JO6BtZtce1FnWHHH1u
+            UgxtZF0OU9W2jHHOH9fY+aDIyuSz7kpJsqpvGN5tUyj2jEw7OQzjjNIq0AFF6zvi
+            ZheCwvKz2I4rzzpivKExXHJGS0NEtmo7+hbZTfoJHVpTQHARJnsGm0K+D0Xk0u+T
+            rnCbzKbl+XLkpl2Y0q5LJ/5dRUDdeJzGERx4k7iJt9BSD8StvrmP4aKpRIv3krqr
+            WtupNIdfYQK0
+            -----END CERTIFICATE-----
+        EOT
+      [32m+[0m[0m kubernetes_host                         = "https://kubernetes.default.svc.cluster.local"
+      [32m+[0m[0m token_reviewer_mode                     = "api"
+    }
+
+[1m  # infisical_project.plane["dev"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project" "plane" {
+      [32m+[0m[0m audit_log_retention_days   = (known after apply)
+      [32m+[0m[0m has_delete_protection      = (known after apply)
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m kms_secret_manager_key_id  = (known after apply)
+      [32m+[0m[0m last_updated               = (known after apply)
+      [32m+[0m[0m name                       = "plane-dev"
+      [32m+[0m[0m should_create_default_envs = false
+      [32m+[0m[0m slug                       = "plane-dev"
+      [32m+[0m[0m type                       = "secret-manager"
+    }
+
+[1m  # infisical_project.plane["prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project" "plane" {
+      [32m+[0m[0m audit_log_retention_days   = (known after apply)
+      [32m+[0m[0m has_delete_protection      = (known after apply)
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m kms_secret_manager_key_id  = (known after apply)
+      [32m+[0m[0m last_updated               = (known after apply)
+      [32m+[0m[0m name                       = "plane-prod-sim"
+      [32m+[0m[0m should_create_default_envs = false
+      [32m+[0m[0m slug                       = "plane-prod-sim"
+      [32m+[0m[0m type                       = "secret-manager"
+    }
+
+[1m  # infisical_project_environment.prod["dev"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project_environment" "prod" {
+      [32m+[0m[0m id         = (known after apply)
+      [32m+[0m[0m name       = "prod"
+      [32m+[0m[0m position   = 1
+      [32m+[0m[0m project_id = (known after apply)
+      [32m+[0m[0m slug       = "prod"
+    }
+
+[1m  # infisical_project_environment.prod["prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project_environment" "prod" {
+      [32m+[0m[0m id         = (known after apply)
+      [32m+[0m[0m name       = "prod"
+      [32m+[0m[0m position   = 1
+      [32m+[0m[0m project_id = (known after apply)
+      [32m+[0m[0m slug       = "prod"
+    }
+
+[1m  # infisical_project_identity.reader["dev"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project_identity" "reader" {
+      [32m+[0m[0m adopt_existing = false
+      [32m+[0m[0m identity       = (known after apply)
+      [32m+[0m[0m identity_id    = (known after apply)
+      [32m+[0m[0m membership_id  = (known after apply)
+      [32m+[0m[0m project_id     = (known after apply)
+      [32m+[0m[0m roles          = [
+          [32m+[0m[0m {
+              [32m+[0m[0m custom_role_id              = (known after apply)
+              [32m+[0m[0m id                          = (known after apply)
+              [32m+[0m[0m is_temporary                = false
+              [32m+[0m[0m role_slug                   = "viewer"
+              [32m+[0m[0m temporary_access_end_time   = (known after apply)
+              [32m+[0m[0m temporary_access_start_time = (known after apply)
+              [32m+[0m[0m temporary_mode              = (known after apply)
+              [32m+[0m[0m temporary_range             = (known after apply)
+            },
+        ]
+    }
+
+[1m  # infisical_project_identity.reader["prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project_identity" "reader" {
+      [32m+[0m[0m adopt_existing = false
+      [32m+[0m[0m identity       = (known after apply)
+      [32m+[0m[0m identity_id    = (known after apply)
+      [32m+[0m[0m membership_id  = (known after apply)
+      [32m+[0m[0m project_id     = (known after apply)
+      [32m+[0m[0m roles          = [
+          [32m+[0m[0m {
+              [32m+[0m[0m custom_role_id              = (known after apply)
+              [32m+[0m[0m id                          = (known after apply)
+              [32m+[0m[0m is_temporary                = false
+              [32m+[0m[0m role_slug                   = "viewer"
+              [32m+[0m[0m temporary_access_end_time   = (known after apply)
+              [32m+[0m[0m temporary_access_start_time = (known after apply)
+              [32m+[0m[0m temporary_mode              = (known after apply)
+              [32m+[0m[0m temporary_range             = (known after apply)
+            },
+        ]
+    }
+
+[1mPlan:[0m [0m10 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m environment_slug = "prod"
+  [32m+[0m[0m identity_ids     = {
+      [32m+[0m[0m dev      = (known after apply)
+      [32m+[0m[0m prod-sim = (known after apply)
+    }
+  [32m+[0m[0m project_ids      = {
+      [32m+[0m[0m dev      = (known after apply)
+      [32m+[0m[0m prod-sim = (known after apply)
+    }
+  [32m+[0m[0m project_slugs    = {
+      [32m+[0m[0m dev      = "plane-dev"
+      [32m+[0m[0m prod-sim = "plane-prod-sim"
+    }
+[0m[1minfisical_identity.reader["dev"]: Creating...[0m[0m
+[0m[1minfisical_identity.reader["prod-sim"]: Creating...[0m[0m
+[0m[1minfisical_project.plane["dev"]: Creating...[0m[0m
+[0m[1minfisical_project.plane["prod-sim"]: Creating...[0m[0m
+[0m[1minfisical_identity.reader["dev"]: Creation complete after 0s [id=b8fc0d10-574c-47f8-ae79-21b49cb1f752][0m
+[0m[1minfisical_identity.reader["prod-sim"]: Creation complete after 0s [id=49d9b29b-d3b3-4c40-bbd8-547f87745dce][0m
+[0m[1minfisical_project.plane["prod-sim"]: Creation complete after 0s [id=f259c69f-6f6b-4fb2-ae4d-f5ad7f91db5b][0m
+[0m[1minfisical_project.plane["dev"]: Creation complete after 0s [id=a73037dc-b8b1-4219-843d-126c3fb78fb1][0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Creating...[0m[0m
+[0m[1minfisical_project_environment.prod["dev"]: Creating...[0m[0m
+[0m[1minfisical_project_identity.reader["dev"]: Creating...[0m[0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Creating...[0m[0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Creation complete after 0s [id=f4b5b872-34ee-4ce7-91f0-145aa0299f83][0m
+[0m[1minfisical_project_environment.prod["dev"]: Creation complete after 0s [id=d9eed079-66d9-4b09-885d-23f3906aa526][0m
+[0m[1minfisical_project_identity.reader["dev"]: Creation complete after 0s[0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Creation complete after 0s[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Creating...[0m[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Creating...[0m[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Creation complete after 0s [id=bfbbd977-02e9-471e-abdc-e5dc0c1bcf1e][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Creation complete after 0s [id=a8f270f0-9cf6-4c33-be26-ce15d3d8d09a][0m
+[0m[1m[32m
+Apply complete! Resources: 10 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0menvironment_slug = "prod"
+identity_ids = {
+  "dev" = "b8fc0d10-574c-47f8-ae79-21b49cb1f752"
+  "prod-sim" = "49d9b29b-d3b3-4c40-bbd8-547f87745dce"
+}
+project_ids = {
+  "dev" = "a73037dc-b8b1-4219-843d-126c3fb78fb1"
+  "prod-sim" = "f259c69f-6f6b-4fb2-ae4d-f5ad7f91db5b"
+}
+project_slugs = {
+  "dev" = "plane-dev"
+  "prod-sim" = "plane-prod-sim"
+}
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform-clean-install/.local/secret-zero/infisical-machine.json
+[1;32m ok[0m dev: secrets written
+[1;32m ok[0m prod-sim: secrets written
+[1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+[1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+[1;32m ok[0m infisical step finished in 245s
+[1;34m==>[0m Applications: all 14 Synced and Healthy
+[1;34m==>[0m A child in backoff after the Infisical step can take up to 5 minutes to retry. That is normal.
+[1;34m==>[0m Waiting for all 14 Applications Synced and Healthy (up to 3000s)
+    62s. Applications: 13 of 14 exist, waiting on: plane-dev=OutOfSync/Healthy root=OutOfSync/Progressing
+    123s. Applications: 13 of 14 exist, waiting on: plane-dev=OutOfSync/Healthy root=OutOfSync/Progressing
+    185s. Applications: 14 of 14 exist, waiting on: plane-prod-sim=OutOfSync/Progressing root=Synced/Progressing
+    247s. Applications: 14 of 14 exist, waiting on: plane-prod-sim=OutOfSync/Healthy root=Synced/Progressing
+    309s. Applications: 14 of 14 exist, waiting on: plane-prod-sim=OutOfSync/Progressing root=Synced/Progressing
+[1;32m ok[0m all 14 Applications Synced and Healthy, after 324s
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 7d5ff62d)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      7d5ff62d
+    backup-storage                 Synced     Healthy      7d5ff62d
+    infisical                      Synced     Healthy      7d5ff62d
+    infisical-operator-dev         Synced     Healthy      7d5ff62d
+    infisical-operator-prod-sim    Synced     Healthy      7d5ff62d
+    kube-prometheus-stack          Synced     Healthy      7d5ff62d
+    loki                           Synced     Healthy      7d5ff62d
+    metrics-server                 Synced     Healthy      7d5ff62d
+    monitoring-extras              Synced     Healthy      7d5ff62d
+    network-policies               Synced     Healthy      7d5ff62d
+    plane-dev                      Synced     Healthy      7d5ff62d
+    plane-prod-sim                 Synced     Healthy      7d5ff62d
+    root                           Synced     Healthy      7d5ff62d
+    traefik                        Synced     Healthy      7d5ff62d
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         404
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 8.262GiB / 13.63GiB, CPU 30.77%
+    argocd                    581 MiB
+    infisical                 816 MiB
+    kube-system              1347 MiB
+    local-path-storage         15 MiB
+    monitoring                852 MiB
+    monitoring-agents          16 MiB
+    plane-dev                1132 MiB
+    plane-prod-sim            890 MiB
+    traefik                    37 MiB
+    Host disk free: 19 GiB
+[1;32m ok[0m All 14 Applications are Synced and Healthy. That does not prove Plane works: run make test.
