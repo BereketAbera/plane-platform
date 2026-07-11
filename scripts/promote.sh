@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Move image digests into an environment. The only writer of the images: lines in
-# helm/plane/overlays/<env>/kustomization.yaml, per the contract.
+# Move image digests into an environment. This edits the images: lines in
+# helm/plane/overlays/<env>/kustomization.yaml. Per the contract the only other writer of them is
+# scripts/rollback.sh, which takes a promotion back with git revert.
 #
 #   scripts/promote.sh dev IMAGE=web DIGEST=sha256:... [REPO=localhost:5001/wayline/web]
 #   scripts/promote.sh dev                 takes every digest from .build/digests.tsv
