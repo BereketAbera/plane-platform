@@ -1,0 +1,35 @@
+# date (UTC): 2026-11-05T10:03:06Z
+# commit: 4c913e1a6ab9, with the lower-casing of scripts/ci/copy-to-local-registry.sh changed and not yet committed
+# command: scripts/ci/copy-to-local-registry.sh, with a stub docker first on PATH that records each call and refuses an upper-case repository path. No registry, no network, no cluster, so nothing was copied and its 'present' line means nothing here.
+
+$ scripts/ci/copy-to-local-registry.sh ghcr.io/BereketAbera/wayline dev
+ ok 4 image(s) present in the local registry
+[exit 0]
+  source ghcr.io/bereketabera/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+  source ghcr.io/bereketabera/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+  source ghcr.io/bereketabera/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+  source ghcr.io/bereketabera/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+  sha256 of the recorded calls: e0af78c3d94c91b1
+
+$ scripts/ci/copy-to-local-registry.sh ghcr.io/BereketAbera/wayline/ dev
+ ok 4 image(s) present in the local registry
+[exit 0]
+  source ghcr.io/bereketabera/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+  source ghcr.io/bereketabera/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+  source ghcr.io/bereketabera/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+  source ghcr.io/bereketabera/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+  sha256 of the recorded calls: e0af78c3d94c91b1
+
+$ scripts/ci/copy-to-local-registry.sh ghcr.io/bereketabera/wayline dev
+ ok 4 image(s) present in the local registry
+[exit 0]
+  source ghcr.io/bereketabera/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+  source ghcr.io/bereketabera/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+  source ghcr.io/bereketabera/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+  source ghcr.io/bereketabera/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+  sha256 of the recorded calls: e0af78c3d94c91b1
+
+# The same stub and argument under the script as it was before the fix, which has to fail, or this check shows nothing
+$ the earlier copy-to-local-registry.sh ghcr.io/BereketAbera/wayline dev
+ERROR: invalid reference format: repository name (BereketAbera/wayline/admin) must be lowercase
+[exit 1]

@@ -1,1 +1,6 @@
 [1;34m==>[0m Publishing .local/evidence-raw to docs/evidence/runs
+  skipped, image scans go to docs/evidence/security/ by hand: scan-images-20261104T213712Z
+  skipped, image scans go to docs/evidence/security/ by hand: scan-images-20261104T215437Z
+  files: 830 in runs/, 109 new or changed, 718 unchanged, 11 images not scrubbed
+  scrub: 56 files changed, 316 replacements
+[1;32m ok[0m gitleaks: no findings in docs/evidence/runs

@@ -1,0 +1,52 @@
+# Negative control for the SESSION pattern in scripts/publish-evidence.sh, on a scratch copy of the tree
+# date (UTC): 2026-11-05T10:03:07Z
+# command: python3 -I -B control.py <scratch dir>. The script is publish-evidence-session-control-script-1.txt beside this file
+# commit: bfe4f974657e
+# scripts/publish-evidence.sh sha256: 23c391adc911356345627e5e727bbd083a23f9d866a6a6dd0ce2618a2144559c
+# Output below: case names and counts, never a value. Lines starting with | are what the script printed. Nothing real was planted, and no cluster was read.
+
+--- 1. The real script over a planted raw file. No source holds the planted values, so only SESSION can replace them
+raw line 1 is {"setup_data": {"session": "<a random value of 64 characters>"}}
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   note: <scratch>/tree/.local/secret-zero does not exist, so it was not read
+    |   note: the cluster is not reachable, so the scan was limited to local files: test-accounts.env, secret-zero/, and the values earlier runs left in evidence-scrub-values
+    |   files: 1 in runs/, 1 new or changed, 0 unchanged, 0 images not scrubbed
+    |   scrub: 1 files changed, 3 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0
+PASS  "session": "...", with a space, as asked: 0 left in the copy
+PASS  "session":"...", k6-summary.json's own shape: 0 left in the copy
+PASS  "session"  :  "...", more space: 0 left in the copy
+PASS  "session": "...", with a space, as asked: the raw file still holds it, so the plant was there to replace
+PASS  "session":"...", k6-summary.json's own shape: the raw file still holds it, so the plant was there to replace
+PASS  "session"  :  "...", more space: the raw file still holds it, so the plant was there to replace
+the copy's session lines, whole:
+    {"setup_data": {"session": "<redacted>"}}
+    {"setup_data":{"workspace":"b5bcd1ed-431f-4bad-9f99-4b3d45a3322e","session":"<redacted>"},"root_group":{}}
+    {"session"  :  "<redacted>"}
+PASS  those lines hold 3 <redacted>
+PASS  "session_name": "...": still there (1), not over-redacted
+PASS  "user": "...": still there (1), not over-redacted
+PASS  MANIFEST.tsv records 3 replacements for the file
+INFO  outside the pattern, so it does not replace these:
+INFO    session=..., cookie form: 1 left in the copy
+INFO    \"session\":\"...\", JSON inside a JSON string: 1 left in the copy
+
+--- 2. The same plant with SESSION's substitution taken out of a copy of the script: can this control fail?
+    | ==> Publishing .local/evidence-raw to docs/evidence/runs
+    |   note: <scratch>/tree/.local/secret-zero does not exist, so it was not read
+    |   note: the cluster is not reachable, so the scan was limited to local files: test-accounts.env, secret-zero/, and the values earlier runs left in evidence-scrub-values
+    |   files: 1 in runs/, 1 new or changed, 0 unchanged, 0 images not scrubbed
+    |   scrub: 0 files changed, 0 replacements
+    |  ok gitleaks: no findings in docs/evidence/runs
+PASS  exit 0, so gitleaks does not flag this shape, and SESSION is all that stands in its way
+PASS  "session": "...", with a space, as asked: 1 left in the copy, so the first stage's 0 came from SESSION
+PASS  "session":"...", k6-summary.json's own shape: 1 left in the copy, so the first stage's 0 came from SESSION
+PASS  "session"  :  "...", more space: 1 left in the copy, so the first stage's 0 came from SESSION
+
+--- 3. Nothing the script printed, and no cluster
+PASS  0 planted values in 2 runs' output
+kubectl was the stub, and exited 1 on each of its 2 calls: ['--context kind-plane-platform --request-timeout=15s get --raw /readyz']
+
+--- Scratch tree removed: True
+--- Summary: 0 failed

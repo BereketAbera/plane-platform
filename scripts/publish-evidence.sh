@@ -79,7 +79,7 @@ NOT_SECRET = re.compile(
 # uids such as "plane-app-keys uid=<uuid>". Neither is a credential, but allowlisting the shape would
 # also let a real key through in the same position.
 # A session cookie k6 carried in setup_data. It is in no source the scrub reads, because the test signs in for itself.
-SESSION = re.compile(rb'("session"\s*:\s*")[^"]+')
+SESSION = re.compile(rb'((?:\\?"session(?:[-_]?id)?\\?"\s*:\s*\\?")|(?:session(?:[-_]?id)?=))[A-Za-z0-9_\-]{16,}')
 
 IDENTIFIER = re.compile(
     rb"((?:access|auth|api|credential|creds|key|passw(?:or)?d|secret|token)[ \t\w.-]{0,20}=)"

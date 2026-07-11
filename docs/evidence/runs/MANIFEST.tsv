@@ -196,6 +196,7 @@ cluster-readings-1.txt	2026-11-05T02:15:00Z	9524	0
 cluster-readings-2.txt	2026-11-05T02:28:26Z	20079	0
 cluster-up-1.log	2026-11-04T18:45:21Z	2179	0
 collect-other-extensions-1.txt	2026-11-05T05:00:07Z	3022	0
+copy-to-local-registry-lowercase-1.txt	2026-11-05T10:03:06Z	2620	0
 cpu-throttling-1.txt	2026-11-05T00:49:30Z	15529	0
 day1-gates-1.txt	2026-11-04T18:47:33Z	939	0
 day1-gates-2.txt	2026-11-04T18:49:52Z	882	0
@@ -655,7 +656,9 @@ publish-evidence-control-1.txt	2026-11-05T00:44:03Z	11069	0
 publish-evidence-control-script-1.txt	2026-11-05T00:44:03Z	14275	0
 publish-evidence-final-1.txt	2026-11-05T07:40:21Z	449	0
 publish-evidence-final-2.txt	2026-11-05T07:48:35Z	433	0
-publish-evidence-final-3.txt	2026-11-05T09:52:41Z	68	0
+publish-evidence-final-3.txt	2026-11-05T09:52:43Z	434	0
+publish-evidence-session-control-1.txt	2026-11-05T10:03:10Z	3711	0
+publish-evidence-session-control-script-1.txt	2026-11-05T10:03:10Z	8114	0
 quota-budget-1.txt	2026-11-04T20:25:01Z	3116	0
 registry-memory-1.txt	2026-11-04T23:17:45Z	31748	0
 render-m4-m7-1.txt	2026-11-04T20:11:02Z	3332	0
