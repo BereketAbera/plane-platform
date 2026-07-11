@@ -20,8 +20,9 @@ spec:
           resources:
             requests: {cpu: 10m, memory: 128Mi}
             limits: {cpu: 200m, memory: 256Mi}
-          # Beat has no ping, so this proves only that the process exists. The alert on
-          # last_run_at is the real check. exec with no shell, or pgrep -f matches the shell.
+          # Beat has no ping, so this proves only that the process exists. No alert reads whether it
+          # dispatches anything. The only proof that it does is one reading by hand of total_run_count
+          # in Postgres (JOB-3 in docs/validation.md). exec with no shell, or pgrep -f matches the shell.
           startupProbe:
             exec:
               command: [pgrep, -f, celery -A plane beat]
