@@ -125,9 +125,13 @@ spec:
         # already on the node, each pull under 0.4s), 448s for wave 3 alone when a first boot pulled four images
         # through the mirror, 6 to 10m for a chart's first boot. No measured promotion has pulled new layers, so
         # that margin against 15m is still unproven. On a first boot plane-dev's operation stays open while it waits on
-        # scripts/infisical-bootstrap.sh, 34m on the only one so far, so this rule is expected to fire for it. That is
-        # expected and not seen, because this form went live at 23:06Z, after that boot. ArgoAppDegraded did fire for that
-        # wait, from 21:17:30Z to 21:26Z.
+        # scripts/infisical-bootstrap.sh. On the first boot of 2026-11-04, one sample, it stayed open 34m in all, about 14
+        # of them on that wait, so this rule is expected to fire on a boot held that long. That is expected and not seen,
+        # because this form went live at 23:06Z, after that boot. ArgoAppDegraded did fire for that wait, from 21:17:30Z to
+        # 21:26Z. The clean install of 2026-11-05 is a second first boot, with the registry and mirrors already on disk.
+        # Its record times only the whole of make up, 955s, one sample, and reads neither this operation nor any alert
+        # (docs/evidence/runs/clean-install-20261105T075041Z/). The step that installs Argo CD began 176s in, so no
+        # operation had been open for the 15m of for: when that make up ended.
         #
         # A bad image in a Plane Deployment holds the operation open: Deployments are wave 3 and routes wave 4, so
         # the sync waits on the rollout, fails when it misses its 600s deadline, retries, and reaches this rule at
