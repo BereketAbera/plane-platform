@@ -186,9 +186,10 @@ the container's `max` of 0 is from the one after it.
 Real anon peaked at 341 MiB (53%) at 22:26Z on 2026-11-04, minutes after the highest query rate, with ingest at 2.5 KB/s. Inside the
 busiest 5 minutes of ingest (87 KB/s, 23:06Z to 23:11Z) it was 127 to 158 MiB. So real anon does not follow ingest, and the test's
 multiple on ingest, 40 times that busiest rate and about 620 times the mean from 22:10Z to 04:01Z (5.6 KB/s), is not a margin on anon.
-Set against the test's 8 threads, real queries were more frequent and far lighter: at most 1.98 a second at 22:22:30Z against the test's
-0.33, and at most 0.044 in flight averaged over 2m against its 8. They were not the same queries, so that compares how busy Loki was,
-not what each query costs (`alert-text-figures-1.txt` in the evidence).
+Real queries had far less in flight than the test's 8 threads: at most 0.044 averaged over 2m. They were not the same queries, so that
+compares how busy Loki was, not what each query costs. The two query rates are different measures and do not compare. The 1.98 a second
+at 22:22:30Z is Loki's own count of requests at its 2m peak, on every read route: 1.03 on `query_range` and 0.95 on `index_stats`. The test's
+0.33 a second is what its client finished, 40 queries over the 120s phase (`alert-text-figures-1.txt` in the evidence).
 
 Each count went with about 63 pages of direct reclaim in both pods, so it counts reclaim, and an OOM kill is a separate counter,
 which reads 0 for the whole of each pod. cAdvisor's `container_memory_failcnt` reads 0 here, so the count has no history. Usage
