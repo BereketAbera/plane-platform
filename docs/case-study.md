@@ -90,7 +90,7 @@ The real policy set is a matrix in `tests/network-policy-matrix.yaml`. From the 
 
 **How it was found:** reading. [makeplane/helm-charts PR #304](https://github.com/makeplane/helm-charts/pull/304) reports `celery` queue consumers of 1 on 3.13.6, 1 on 4.2.9, and 0 on 4.3.5. The fix is in a private upstream repository, and the relevant setting is absent from CE v1.4.3. One research report had proposed 4.3.7 as the first promotion candidate. If that report holds, the failure would be quiet: broker up, pods running, background work not happening. It has not been reproduced here.
 
-**Response:** the contract pins `rabbitmq:3.13.7-management-alpine` and allows only 3.13 or 4.2. 3.13 is an end-of-life series, which is an accepted risk.
+**Response:** the contract pins `rabbitmq:3.13.7-management-alpine` and allows only 3.13 or 4.2. 3.13 is an end-of-life series, in force for Pass 1 with no owner decision recorded ([ADR 0016](adr/0016-datastore-versions.md)).
 
 A related trap: the default relative memory watermark may not detect a cgroup limit. So `vm_memory_high_watermark.absolute = 256Mi` is mounted through `conf.d`, under a 512 Mi limit.
 

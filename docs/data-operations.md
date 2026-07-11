@@ -21,7 +21,7 @@ The Infisical namespace has its own `infisical-postgres` (16.15) and `infisical-
 
 Why Silo: official MinIO images no longer pull anonymously, and the repository is archived. Silo is the MinIO fork that upstream Plane itself pins. It is MinIO-compatible, with the same S3 API and data format. Object names in this repo still say `minio` because the chart does.
 
-Why RabbitMQ 3.13: on 4.3 Celery attaches 0 consumers (upstream chart PR 304). 3.13 is an end-of-life series, an accepted risk. `vm_memory_high_watermark.absolute = 256Mi` is set through `conf.d`, because the default relative watermark cannot be trusted under a cgroup limit.
+Why RabbitMQ 3.13: on 4.3 Celery attaches 0 consumers (upstream chart PR 304). 3.13 is an end-of-life series, in force for Pass 1 with no owner decision recorded ([ADR 0016](adr/0016-datastore-versions.md)). `vm_memory_high_watermark.absolute = 256Mi` is set through `conf.d`, because the default relative watermark cannot be trusted under a cgroup limit.
 
 ## Storage layout
 
