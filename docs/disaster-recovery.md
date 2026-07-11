@@ -178,7 +178,7 @@ make promote ENV=dev
 make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="restoring into an empty cluster"
 
 # Or copy, which keeps a digest, if GHCR has that digest. Needs docker login ghcr.io with read:packages.
-# <owner> in lower case, because a mixed-case reference is refused.
+# The script lower-cases <owner>, because a mixed-case reference is refused.
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline prod-sim
 
@@ -190,7 +190,7 @@ A rebuild does not reproduce the digest. Prod-sim accepts only a digest recorded
 
 **As things stand, GHCR does not hold what `main` deploys.** `main` names digests built on this Mac. The four private GHCR packages hold the digests built by `images.yml` at `9c8e098`, which are different, and pull request 1, open and unmerged, is the only thing that names those ([ci-4-20261105T055033Z-ghcr-visibility.txt](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt), `helm/plane/overlays/dev/kustomization.yaml`). So today the way back is the rebuild. GitHub's quota for private packages is documented and has not been measured, and the prune in `images.yml` has deleted nothing so far. A digest that exists nowhere means the pinned version is lost.
 
-The copy command keeps the digest: with `--prefer-index=false`, a throwaway registry answered with the source's digest, and without it a new index's ([ci-5-20261105T060108Z-copy-keeps-digest.txt](evidence/ci/ci-5-20261105T060108Z-copy-keeps-digest.txt)). The script has never finished a copy. With the owner as `BereketAbera` it failed on `invalid reference format`. In lower case it stopped at the first image with a 401, for want of a token with `read:packages` ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Pods do pull the digests built here through `localhost:5001`, on the final images, and `make test-e2e` checks they run the digests in the overlay ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt)).
+The copy command keeps the digest: with `--prefer-index=false`, a throwaway registry answered with the source's digest, and without it a new index's ([ci-5-20261105T060108Z-copy-keeps-digest.txt](evidence/ci/ci-5-20261105T060108Z-copy-keeps-digest.txt)). The script has never finished a copy. With the owner as `BereketAbera` it failed on `invalid reference format`, before the script lower-cased the owner. In lower case it stopped at the first image with a 401, for want of a token with `read:packages` ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Pods do pull the digests built here through `localhost:5001`, on the final images, and `make test-e2e` checks they run the digests in the overlay ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt)).
 
 A finished copy from GHCR, and pods pulling what it copied: Not tested in Pass 1. A full pull with empty caches against the Docker Hub quota: Not tested in Pass 1, and the drill of 2026-11-05 kept the caches, so it does not answer this.
 
