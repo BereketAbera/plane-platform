@@ -1,0 +1,59 @@
+# PlaneRabbitmqDown and PlaneMinioDown. tests/drills/alert-rules.sh showed the old rules silent with the pod gone,
+# because up has no series once the endpoint leaves the Service. Each case here is what Prometheus really held then.
+rule_files:
+  - rules-plane.yaml
+evaluation_interval: 15s
+tests:
+  - name: pod gone, up has no series, ready replicas 0, so it fires after 2m
+    interval: 30s
+    input_series:
+      - series: 'kube_statefulset_status_replicas_ready{namespace="plane-dev",statefulset="plane-rabbitmq-wl"}'
+        values: '0x20'
+      - series: 'kube_statefulset_status_replicas_ready{namespace="plane-dev",statefulset="plane-minio-wl"}'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: PlaneRabbitmqDown
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: PlaneRabbitmqDown
+        exp_alerts:
+          - exp_labels: { severity: critical, component: rabbitmq, namespace: plane-dev }
+            exp_annotations:
+              summary: RabbitMQ has no ready pod, or its metrics scrape is failing, in plane-dev
+      - eval_time: 3m
+        alertname: PlaneMinioDown
+        exp_alerts:
+          - exp_labels: { severity: critical, component: silo, namespace: plane-dev }
+            exp_annotations:
+              summary: Silo has no ready pod, or its metrics scrape is failing, in plane-dev
+  - name: pod ready but its scrape failing, up 0, so it fires after 2m
+    interval: 30s
+    input_series:
+      - series: 'up{namespace="plane-prod-sim",service="plane-rabbitmq-metrics",metrics_path="/metrics",pod="plane-rabbitmq-wl-0"}'
+        values: '0x20'
+      - series: 'kube_statefulset_status_replicas_ready{namespace="plane-prod-sim",statefulset="plane-rabbitmq-wl"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: PlaneRabbitmqDown
+        exp_alerts:
+          - exp_labels: { severity: critical, component: rabbitmq, namespace: plane-prod-sim }
+            exp_annotations:
+              summary: RabbitMQ has no ready pod, or its metrics scrape is failing, in plane-prod-sim
+  - name: all well, or only the other environment down, stays quiet here
+    interval: 30s
+    input_series:
+      - series: 'up{namespace="plane-dev",service="plane-minio",metrics_path="/minio/v2/metrics/cluster",pod="plane-minio-wl-0"}'
+        values: '1x20'
+      - series: 'kube_statefulset_status_replicas_ready{namespace="plane-dev",statefulset="plane-minio-wl"}'
+        values: '1x20'
+      - series: 'kube_statefulset_status_replicas_ready{namespace="plane-dev",statefulset="plane-rabbitmq-wl"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: PlaneMinioDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: PlaneRabbitmqDown
+        exp_alerts: []

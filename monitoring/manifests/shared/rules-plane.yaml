@@ -49,18 +49,27 @@ spec:
           labels: { severity: critical, component: valkey }
           annotations:
             summary: Valkey is down in {{ $labels.namespace }}
+        # up alone cannot see a pod that is gone or not ready: its endpoint leaves the Service, so the target and the
+        # series go away and the rule has nothing to read. tests/drills/alert-rules.sh showed both stay silent at 0
+        # replicas for 270s. So kube-state-metrics' count of ready replicas is the other half.
         - alert: PlaneRabbitmqDown
-          expr: up{namespace=~"plane-.*",service="plane-rabbitmq-metrics",metrics_path="/metrics"} == 0
+          expr: |
+            max by (namespace) (up{namespace=~"plane-.*",service="plane-rabbitmq-metrics",metrics_path="/metrics"}) == 0
+            or
+            max by (namespace) (kube_statefulset_status_replicas_ready{namespace=~"plane-.*",statefulset="plane-rabbitmq-wl"}) == 0
           for: 2m
           labels: { severity: critical, component: rabbitmq }
           annotations:
-            summary: RabbitMQ metrics scrape is failing in {{ $labels.namespace }}
+            summary: RabbitMQ has no ready pod, or its metrics scrape is failing, in {{ $labels.namespace }}
         - alert: PlaneMinioDown
-          expr: up{namespace=~"plane-.*",service="plane-minio",metrics_path="/minio/v2/metrics/cluster"} == 0
+          expr: |
+            max by (namespace) (up{namespace=~"plane-.*",service="plane-minio",metrics_path="/minio/v2/metrics/cluster"}) == 0
+            or
+            max by (namespace) (kube_statefulset_status_replicas_ready{namespace=~"plane-.*",statefulset="plane-minio-wl"}) == 0
           for: 2m
           labels: { severity: critical, component: silo }
           annotations:
-            summary: Silo metrics scrape is failing in {{ $labels.namespace }}
+            summary: Silo has no ready pod, or its metrics scrape is failing, in {{ $labels.namespace }}
         # Workers export nothing, so a consumer count on the only queue they read is the best
         # available signal that no worker is alive. It shows a connection, not a working task loop.
         - alert: PlaneWorkerNoConsumer
