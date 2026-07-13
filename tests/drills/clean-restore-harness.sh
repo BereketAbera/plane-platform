@@ -11,7 +11,7 @@
 # number. H66 is that entry of the hardening backlog, the probe loop of scripts/rotate.sh.
 #
 # macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. Run it in the background: one scenario at a time
-# takes about an hour, an estimate, and in six ONLY= groups at once it took 26 minutes.
+# took 65 minutes beside the mutants, and in six ONLY= groups at once it took 21.
 #
 # WHAT IT DOES. Each scenario copies the real scripts into a throwaway tree under $TMPDIR and runs them there:
 # restore.sh, backup.sh, destroy.sh, up.sh, cluster-up.sh, secret-zero.sh, infisical-bootstrap.sh,
@@ -1538,6 +1538,9 @@ S33() {
   run scripts/restore.sh clean latest
   check "run again with the proof working: exit 0 (got $RC)" test "$RC" -eq 0
   check "without restoring anything again" no_log 'kc apply Job plane-restore ns=plane-dev'
+  # A data-back line alone spares the data Job, so these are what says the done line was read.
+  check "without stopping it or running its migrator again" no_log 'kc scale deployment/plane-api-wl --replicas=0 ns=plane-dev|kc apply Job plane-restore-migrate ns=plane-dev'
+  check "and says so" out_has "already restored by an earlier run"
   check "marker removed" test ! -e "$H/.local/restore-clean.state"
 
   reset
