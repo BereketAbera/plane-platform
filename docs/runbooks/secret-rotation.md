@@ -60,7 +60,7 @@ What `scripts/rotate.sh` does, checking real state at each step:
    the rotation stands and the script exits 3: run `make backup ENV=infisical`.
 
 The window where Plane may fail runs from `ALTER ROLE` until the new api pod is ready. In dev it was about 38 s: a signed-in request answered 500 from 07:23:51Z to 07:24:29Z (`.local/evidence-raw/SEC-2-20261105T072331Z-watch.txt`). Prod-sim is not measured yet. The script measures it with a probe once a
-second, in a loop that ends with the script, after a SIGKILL too. [[MEASURE: rotation error window in seconds, per environment, from the rotate evidence log]]
+second. [[MEASURE: rotation error window in seconds, per environment, from the rotate evidence log]]
 
 **Read the script's number with care.** In that run it printed 60 s, 39 of 62 probes (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`). The probe is anonymous, and `db_probe` counts anything but its expected 404 as a failure. Plane throttled the same route after 30 requests: the 31st got 429 with `Retry-After` 54 (`.local/evidence-raw/SEC-2-throttle-precheck-20261105T061924Z.txt`). The script's last three failures came 19 s after the signed-in request had recovered, which fits that, though the probe log keeps no status code. So measure the window from a signed-in request as well, which is outside the anonymous limit, as `.local/evidence-raw/SEC-2-20261105T062211Z-watcher-source.txt` does.
 
