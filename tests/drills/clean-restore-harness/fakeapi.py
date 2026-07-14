@@ -148,6 +148,13 @@ class H(BaseHTTPRequestHandler):
                 out.append(item)
             log(f"api GET secrets project={pid} view={view}")
             return self.out(200, {"secrets": out, "imports": []})
+        if u.path.startswith("/api/v4/secrets/"):
+            if not self.identity_ok(d):
+                return self.refuse()
+            secret = d["projects"].get(q["projectId"][0], {}).get(u.path.split("/")[4])
+            if secret is None:
+                return self.out(404, {"message": "no such secret"})
+            return self.out(200, {"secret": {"secretValue": secret["value"], "version": secret["version"], "id": secret["id"]}})
         self.out(404, {"message": "not stubbed " + u.path})
 
     def do_POST(self):
@@ -213,4 +220,9 @@ class H(BaseHTTPRequestHandler):
         self.out(404, {"message": "not stubbed"})
 
 
-HTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_forever()
+# Listening by the time the port is written, so whoever reads it can connect.
+server = HTTPServer(("127.0.0.1", 0), H)
+with open(sys.argv[1] + ".tmp", "w") as f:
+    f.write(str(server.server_address[1]))
+os.replace(sys.argv[1] + ".tmp", sys.argv[1])
+server.serve_forever()

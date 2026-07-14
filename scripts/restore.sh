@@ -20,13 +20,17 @@
 #                                stops after the restore with sign-in steps.
 # ALLOW_NO_SENTINEL=yes          accept that a sentinel proof could not run, as with a backup taken before a
 #                                sentinel existed. The step still reads NOT RUN, and the result lists it.
-# ALLOW_RESUME_OVERWRITE=yes     on a clean restore that resumes, overwrite an environment that holds something
-#                                other than this backup. The step reads FAIL, with what it held.
+# ALLOW_RESUME_OVERWRITE="dev"   on a clean restore that resumes, overwrite these environments, out of infisical, dev
+#                                and prod-sim, if they hold something other than this backup. It names them, because a
+#                                refusal names one, and a switch for the whole run would reach others no refusal named.
+#                                yes is refused. The step reads FAIL with what it held, and the run does not read PASS.
 #
 # Exit status: 0 everything proven. 1 something failed. 2 nothing failed, but something could not run or a
 # person has to act, so this is not a pass, as in scripts/test.sh. A proof step recorded as NOT RUN is
 # not a pass, except proof-probes, which says something about monitoring and not about the data.
 # restore.sh infisical alone also has 3: Infisical is back, and a person has to sign in to prove it.
+# 4: everything is proven and nothing is left to resume, and the run overwrote what ALLOW_RESUME_OVERWRITE named. It is
+# not a pass either, and its result reads OVERWROTE.
 # These numbers are this script's. Through make, any of them but 0 is make's own exit 2, and make prints this one.
 #
 # If this client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it removes
@@ -58,8 +62,14 @@
 #   5. Restore each Plane environment's database and objects, as above, then check it all again.
 # It can resume: run it again after any failure, including a hard stop that ran no trap. With the marker still
 # there, a new run first puts back any auto-sync left paused and any Deployment left at zero. A resume refuses, and
-# changes nothing, if the marker has been overtaken: BACKUP=latest with a newer complete set than it names, a backup
-# it names that is gone, or an environment not yet done that holds something other than its backup. Options:
+# changes nothing, if the marker has been overtaken: BACKUP=latest with a newer complete set than it names, or a backup
+# it still needs that is gone. The backup of an environment it has finished is not needed any more. It also refuses
+# an environment not yet done that holds something other than its backup, and only a look inside the cluster can tell
+# that, so its repair and make up have run by then, and only that environment is left as it was. An environment whose
+# last data Job finished has a line saying so in the marker, or a Job that says so for a day after, and a resume does
+# not replace it, whatever it holds: it goes on from the migrator, unless ALLOW_RESUME_OVERWRITE names it. The marker's
+# lines belong to the cluster it names. On another one, nothing that run finished counts, and it starts again.
+# Options:
 #   PLAN_ONLY=yes                  do step 1 and print the plan. Changes nothing, and works on a live cluster
 #   ENVS="dev"                     restore only these Plane environments. Default: dev prod-sim
 #   BACKUP_DEV=<id> BACKUP_PROD_SIM=<id>  instead of the Plane backup step 1 would pick
@@ -86,10 +96,16 @@ if [[ ${#positional[@]} -ge 2 && -n "${positional[1]}" ]]; then BACKUP="${positi
 RESTORE_MODE="${RESTORE_MODE:-in-place}"
 # yes: a clean restore that resumed called this with CONFIRM=yes, and no person has looked at this target today.
 RESTORE_RESUME="${RESTORE_RESUME:-no}"
+resume_overwrite_names='^ *((infisical|dev|prod-sim)( +|$))*$'
+if [[ ! "${ALLOW_RESUME_OVERWRITE:-}" =~ $resume_overwrite_names ]]; then
+  die "ALLOW_RESUME_OVERWRITE names the environments to overwrite, as in ALLOW_RESUME_OVERWRITE=dev or ALLOW_RESUME_OVERWRITE=\"dev prod-sim\", and it got '$ALLOW_RESUME_OVERWRITE'. A refusal names one environment, and one switch for the whole run would also overwrite others that no refusal named, with no backup of them. Nothing was changed."
+fi
 
 # What restore.sh infisical exits with when Infisical is back and a person has to sign in. Its parent, a clean
 # restore, marks that step done and stops, and resumes with the replacement token.
 EXIT_NEEDS_SIGN_IN=3
+# What a run exits with when everything is proven and it overwrote what ALLOW_RESUME_OVERWRITE named.
+EXIT_OVERWROTE=4
 # The Deployments a Plane restore stops and starts.
 APP_DEPLOYMENTS="plane-api-wl plane-worker-wl plane-beat-worker-wl plane-live-wl"
 
@@ -103,6 +119,7 @@ CLEAN_IMAGES_NOTE=""
 CLEAN_DISK_REPORT=""
 # Set before an exit 2 that means a person has to act, and not that a proof could not run.
 CLEAN_RESULT_IF_2="NOT RUN"
+CLEAN_OVERWROTE="" # What this restore overwrote on ALLOW_RESUME_OVERWRITE, in this run or an earlier one.
 
 clean_record() { # step status detail. Same shape as a single restore's evidence.
   printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$CLEAN_STEPS"
@@ -116,10 +133,16 @@ clean_record() { # step status detail. Same shape as a single restore's evidence
 clean_on_exit() {
   local rc=$? result
   trap - EXIT
+  # As in on_exit, whose comment says why: this has to get to the end with a client that can no longer print.
+  set +e
+  trap '' HUP INT TERM PIPE
+  { printf '\n'; } 2>/dev/null || exec >>"$CLEAN_EVIDENCE.log" 2>&1
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$CLEAN_EVIDENCE.log"
   if [[ -n "$CLEAN_STEPS" && -f "$CLEAN_STEPS" ]]; then
     case "$rc" in
       0) result=PASS ;;
       2) result="$CLEAN_RESULT_IF_2" ;;
+      "$EXIT_OVERWROTE") result=OVERWROTE ;;
       *) result=FAIL ;;
     esac
     jq -Rn --arg backup "$CLEAN_IID" --arg at "$CLEAN_STAMP" --arg result "$result" '
@@ -131,6 +154,7 @@ clean_on_exit() {
     case "$rc" in
       0) ok "clean restore from Infisical backup $CLEAN_IID complete. Evidence: $CLEAN_EVIDENCE" ;;
       2) warn "clean restore from Infisical backup $CLEAN_IID is not finished: $result, as said above. It stays marked as under way, and running the same command again resumes. Evidence: $CLEAN_EVIDENCE" ;;
+      "$EXIT_OVERWROTE") warn "clean restore from Infisical backup $CLEAN_IID has finished and is proven, and this is not a pass: it overwrote what these held, because ALLOW_RESUME_OVERWRITE named them:$CLEAN_OVERWROTE. What they held is gone, unless a backup has it. Nothing is left to resume. Evidence: $CLEAN_EVIDENCE" ;;
       *) warn "clean restore from Infisical backup $CLEAN_IID stopped. Fix the cause and run the same command: it resumes. Evidence: $CLEAN_EVIDENCE" ;;
     esac
   fi
@@ -141,6 +165,8 @@ clean_on_exit() {
 clean_done() { grep -qx "done $1" "$RESTORE_CLEAN_MARKER"; }
 clean_mark() { printf 'done %s\n' "$1" >> "$RESTORE_CLEAN_MARKER"; }
 clean_marker_value() { sed -n "s/^$1=//p" "$RESTORE_CLEAN_MARKER"; }
+# Before a run clears what no longer counts, a done line has to be asked about like this.
+clean_done_stands() { clean_done "$1" && ! recovery_marker_cluster_gone; }
 
 # Prints why this environment is not clean, and nothing if it is. Real data must never be overwritten
 # by a command meant for a cluster that is gone. So anything but a clear answer is a problem: a volume that is
@@ -244,7 +270,10 @@ clean_refuse_marker_gone() {
   [[ -f "$LOCAL_DIR/backups/infisical/$CLEAN_IID/manifest.json" ]] || gone="$gone infisical/$CLEAN_IID"
   for env in $CLEAN_ENVS; do
     id="$(clean_marker_value "$env")"
-    if [[ -z "$id" || ! -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]]; then gone="$gone $env/${id:-none}"; fi
+    # A backup of a finished environment goes ahead, and its retention can take the one named here. Nothing left to do
+    # reads that one, so what the other environment still needs does not stop on it.
+    if [[ -n "$id" && -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]] || clean_done_stands "$env"; then continue; fi
+    gone="$gone $env/${id:-none}"
   done
   [[ -z "$gone" ]] || die "a clean restore is marked as under way ($RESTORE_CLEAN_MARKER), and these backups it names are no longer here:$gone. Retention does not know about a marker. Nothing was changed. $(clean_start_over_advice)"
 }
@@ -258,9 +287,9 @@ clean_refuse_stale_marker() {
   if [[ -n "$newest" && "$newest" > "$CLEAN_IID" ]]; then
     die "a clean restore of Infisical backup $CLEAN_IID is marked as under way ($RESTORE_CLEAN_MARKER), and a newer complete set exists: $newest. BACKUP=latest cannot mean both, so this stops. Nothing was changed. To resume the one under way: make restore-clean BACKUP=$CLEAN_IID. $(clean_start_over_advice)"
   fi
-  # With no cluster, nothing that run finished still counts, and neither does what it chose. Infisical's set is the
-  # newest, so what is left to ask is whether it would still choose the same Plane backups.
-  if cluster_exists; then return 0; fi
+  # With no cluster, or another one, nothing that run finished still counts, and neither does what it chose. Infisical's
+  # set is the newest, so what is left to ask is whether it would still choose the same Plane backups.
+  if ! recovery_marker_cluster_gone; then return 0; fi
   for env in $CLEAN_ENVS; do
     id="$(clean_marker_value "$env")"
     fresh="$(recovery_pick_plane "$env" "$CLEAN_IID" "" || true)"
@@ -347,6 +376,8 @@ clean_resolve() {
       fi
     fi
     printf -v "$var" '%s' "$id"
+    # Past clean_refuse_marker_gone, a backup that is not here belongs to an environment this restore has finished.
+    if [[ ! -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]]; then continue; fi
     if ! (cd "$LOCAL_DIR/backups/$env/$id" && shasum -a 256 -c SHA256SUMS >/dev/null 2>&1); then
       clean_add_problem "backup $env/$id does not match its SHA256SUMS"
     fi
@@ -455,6 +486,10 @@ clean_print_plan() {
       printf '    %-10s no backup matches\n' "$env"
       continue
     fi
+    if [[ ! -f "$LOCAL_DIR/backups/$env/$id/manifest.json" ]]; then
+      printf '    %-10s %s, which this restore has finished. That backup is no longer here, and nothing left to do reads it\n' "$env" "$id"
+      continue
+    fi
     printf '    %-10s %s, SECRET_KEY %s, %s users, %s workspaces, %s projects, %s work items, %s file rows, %s objects, sentinel %s, uploaded rows with no object: %s\n' "$env" "$id" \
       "$(jq -r .secret_key_fp "$LOCAL_DIR/backups/$env/$id/manifest.json")" \
       "$(clean_count "$LOCAL_DIR/backups/$env/$id" users)" "$(clean_count "$LOCAL_DIR/backups/$env/$id" workspaces)" \
@@ -465,6 +500,9 @@ clean_print_plan() {
       "$(jq -r '.uploaded_objects.missing // "not recorded"' "$LOCAL_DIR/backups/$env/$id/manifest.json")"
     clean_warn_plane_content "$env" "$id"
     clean_warn_newer_plane "$env" "$id" "$set_file"
+    if [[ -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $env" "$RESTORE_CLEAN_MARKER" && ! clean_done "$env" && ! recovery_marker_cluster_gone; then
+      printf '    %-10s its data came back on an earlier run, so a resume keeps what is there and goes on from the migrator, unless ALLOW_RESUME_OVERWRITE=%s\n' "" "$env"
+    fi
   done
   recovery_admin_plan "$set_file"
   if [[ "$RECOVERY_ADMIN_MODE" == token ]]; then
@@ -561,12 +599,47 @@ clean_claim_marker() { # So the next run can tell whether this one is still aliv
   mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
 }
 
+# So the next run can tell whether the cluster here is the one the lines below were written on. Once make up has run,
+# since with no cluster at the start that is what makes it, and before anything writes such a line.
+clean_note_cluster() {
+  local id
+  id="$(recovery_cluster_id)"
+  [[ -n "$id" ]] || return 0
+  sed '/^cluster=/d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+  printf 'cluster=%s\n' "$id" >> "$RESTORE_CLEAN_MARKER.tmp"
+  mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+}
+
+# The state belongs with Infisical's database, so it goes in while that is still to come back. Past that, make up has
+# applied on top of it, and putting it back would only leave the next make up to apply over an older state, whatever
+# else this resume finds. If it is not there at all, nothing is lost by putting it back.
+clean_install_tf_state() { # backup-dir
+  if clean_done infisical || grep -qx 'data-back infisical' "$RESTORE_CLEAN_MARKER"; then
+    [[ ! -f "$RECOVERY_TF_STATE" ]] || return 0
+  fi
+  recovery_install_tf_state "$1"
+}
+
 clean_scale_to_git() { # namespace deployment replicas
   local have
   have="$(kc -n "$1" get deployment "$2" -o jsonpath='{.spec.replicas}' 2>/dev/null || true)"
   [[ -n "$have" && "$have" != "$3" ]] || return 0
   kc -n "$1" scale "deployment/$2" --replicas="$3" >/dev/null
   clean_record "repair-$2" PASS "$1/$2 was at $have replicas after a hard stop, and Git says $3"
+}
+
+# A stop between a data Job's end and the line that says so, which a SIGKILL can do at any moment. Its data is back all
+# the same, and counts cannot tell that from what has been written since. So the marker names the last data Job this
+# restore started, and that Job, once finished, says so for a day, by its ttlSecondsAfterFinished. After that a resume
+# compares counts. Only that Job: an earlier one says nothing about a later one that was stopped and removed.
+clean_note_finished_data_job() { # env jobs-json
+  local env="$1" job
+  job="$(sed -n "s/^data-job $env //p" "$RESTORE_CLEAN_MARKER")"
+  [[ -n "$job" ]] || return 0
+  if clean_done "$env" || grep -qx "data-back $env" "$RESTORE_CLEAN_MARKER"; then return 0; fi
+  jq -e --arg job "$job" 'any(.items[]; .metadata.name == $job and any(.status.conditions[]?; .type == "Complete" and .status == "True"))' <<<"$2" >/dev/null || return 0
+  printf 'data-back %s\n' "$env" >> "$RESTORE_CLEAN_MARKER"
+  clean_record "repair-data-back-$env" PASS "data Job $job finished on an earlier run, which stopped before it could say so"
 }
 
 # What a hard stop can leave, with the marker still there: a restore Job with no client, auto-sync paused, and
@@ -590,6 +663,7 @@ clean_repair_after_hard_stop() {
       kc -n "$ns" delete job "$job" --cascade=foreground --timeout=180s >/dev/null || die "could not remove $ns/$job, left running by an earlier run"
       clean_record "repair-$job" PASS "$ns/$job was left running by an earlier run. Removed, and its step starts over"
     done
+    clean_note_finished_data_job "${ns#plane-}" "$jobs_json"
   done
   for name in $(argo_unpause_all); do
     clean_record "repair-auto-sync-$name" PASS "auto-sync on $name was left paused by an earlier run"
@@ -644,7 +718,7 @@ clean_wait_applications() {
 # Step 5's last part: everything once more from outside the restore that made it. Returns 0, 1 if something failed,
 # 2 if nothing failed and a proof could not run, as the exit status means for the whole script.
 clean_verify() {
-  local set_file="$1" env var problems failed=0 not_run=0 rc paused apps_json sentinel step
+  local set_file="$1" env var problems failed=0 not_run=0 rc paused apps_json sentinel step slug no_sentinel
   ia_init
   ia_load_admin
   if problems="$(recovery_compare_values "$set_file")"; then
@@ -663,8 +737,16 @@ clean_verify() {
     # With the files a later make test-e2e uses, unlike the proof in the restore, which reads the database.
     sentinel="$LOCAL_DIR/test-sentinel-$env.json"
     var="$(clean_plane_var "$env")"
-    if [[ "$(jq -r '.sentinel // empty | .slug' "$LOCAL_DIR/backups/$env/${!var}/manifest.json")" == "" ]]; then
-      clean_record "verify-sentinel-$env" "NOT RUN" "backup ${!var} was taken before tests/e2e/smoke.py created a sentinel"
+    no_sentinel="backup ${!var} was taken before tests/e2e/smoke.py created a sentinel"
+    if [[ -f "$LOCAL_DIR/backups/$env/${!var}/manifest.json" ]]; then
+      slug="$(jq -r '.sentinel // empty | .slug' "$LOCAL_DIR/backups/$env/${!var}/manifest.json")"
+    else
+      # Retention took the backup of an environment this restore had finished, whose restore put this file in place.
+      slug="$(jq -r '.slug // ""' "$sentinel" 2>/dev/null || true)"
+      no_sentinel="backup ${!var} is no longer here, and this machine has no sentinel file for $env"
+    fi
+    if [[ -z "$slug" ]]; then
+      clean_record "verify-sentinel-$env" "NOT RUN" "$no_sentinel"
       not_run=1
     else
       rc=0
@@ -731,6 +813,8 @@ restore_clean() {
     if [[ ! -f "$RESTORE_CLEAN_MARKER" ]]; then
       problem="$(clean_environment_problem)"
       if [[ -n "$problem" ]]; then warn "a real run would refuse right now: $problem. $(clean_replace_advice)"; fi
+    elif recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+      warn "the cluster that restore was working on is gone, so a real run starts again from the beginning"
     fi
     ok "PLAN_ONLY=yes: nothing was changed"
     return 0
@@ -739,10 +823,10 @@ restore_clean() {
   clean_refuse_another_run
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
     under_way=yes
-    # The cluster it was restoring into is gone, so nothing it finished still counts.
-    if ! cluster_exists && grep -q '^done ' "$RESTORE_CLEAN_MARKER"; then
+    # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not.
+    if recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so it starts again from the beginning"
-      sed -e '/^done /d' -e '/^not-run /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' -e '/^data-job /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
       mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
     fi
   else
@@ -772,11 +856,12 @@ restore_clean() {
 
   # Before anything reads them: secret-zero.sh applies these files, and bootstrap reads the state.
   recovery_reinstate_zero "$set_file"
-  recovery_install_tf_state "$dir"
+  clean_install_tf_state "$dir"
   recovery_rebuild_machine_file "$dir"
 
   log "make up as far as Traefik. Plane waits for an identity Secret that does not exist yet."
   UP_STOP_AFTER=traefik "$ROOT/scripts/up.sh"
+  clean_note_cluster
   clean_record up-to-traefik PASS "cluster, Terraform, secret zero, Traefik"
 
   if clean_done infisical; then
@@ -787,7 +872,7 @@ restore_clean() {
     clean_wait_infisical
     "$restore_script" infisical "$CLEAN_IID" CONFIRM=yes RESTORE_MODE=clean "RESTORE_RESUME=$under_way" || rc=$?
     case "$rc" in
-      0)
+      0 | "$EXIT_OVERWROTE")
         clean_mark infisical
         clean_record restore-infisical PASS "$CLEAN_IID, see restore-infisical-*.json"
         ;;
@@ -821,9 +906,9 @@ restore_clean() {
       clean_record "restore-$env" PASS "already restored by an earlier run"
     else
       rc=0
-      "$restore_script" "$env" "${!var}" CONFIRM=yes "RESTORE_RESUME=$under_way" || rc=$?
+      "$restore_script" "$env" "${!var}" CONFIRM=yes RESTORE_MODE=clean "RESTORE_RESUME=$under_way" || rc=$?
       case "$rc" in
-        0) clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json" ;;
+        0 | "$EXIT_OVERWROTE") clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json" ;;
         2) printf 'not-run restore-%s\n' "$env" >> "$RESTORE_CLEAN_MARKER" ;;
         *) exit "$rc" ;;
       esac
@@ -833,8 +918,16 @@ restore_clean() {
 
   rc=0
   clean_verify "$set_file" || rc=$?
+  # From the marker, because an earlier run of this restore may be the one that did it.
+  for env in $(sed -n 's/^overwrote //p' "$RESTORE_CLEAN_MARKER" | LC_ALL=C sort -u); do
+    CLEAN_OVERWROTE="$CLEAN_OVERWROTE $env"
+    clean_record "overwrite-$env" FAIL "what $env held was overwritten, because ALLOW_RESUME_OVERWRITE named it. What it held is in overwrite-guard in restore-$env-*.json"
+  done
   case "$rc" in
-    0) rm -f "$RESTORE_CLEAN_MARKER" ;;
+    0)
+      rm -f "$RESTORE_CLEAN_MARKER"
+      if [[ -n "$CLEAN_OVERWROTE" ]]; then exit "$EXIT_OVERWROTE"; fi
+      ;;
     2)
       warn "the platform is back, and at least one proof could not run, so this is not a pass. If that is expected, as with a backup taken before a sentinel existed, run this again with ALLOW_NO_SENTINEL=yes."
       exit 2
@@ -878,9 +971,11 @@ secret_tmp=""
 sentinel_tmp=""
 INFISICAL_STOPPED=no
 ANYTHING_CHANGED=no # Until a refusal has passed, a failure is a refusal.
-JOBS_STARTED=no     # Set before this run's first Job, so a stop knows there may be one to remove.
+JOB_MAY_RUN=no      # Yes from just before this run's first Job until its last has finished, so a stop knows to look.
 JOB_STOPPED=no
 JOBS_LEFT_RUNNING=""
+OVERWROTE=no             # This run used ALLOW_RESUME_OVERWRITE, so it does not read PASS.
+KEEP_DATA=no             # This resume leaves the data an earlier run brought back, so it runs no data Job.
 INFISICAL_REDIS_STALE=no # Set before the database Job, and cleared by the flush after it.
 
 record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contract requires.
@@ -896,14 +991,19 @@ record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contrac
 # does not end them, and one carrying on would drop or replace a database under whatever comes back up.
 stop_this_runs_jobs() {
   local job state
-  [[ "$JOBS_STARTED" == yes ]] || return 0
+  [[ "$JOB_MAY_RUN" == yes ]] || return 0
   for job in "plane-restore-guard-$JOB_SUFFIX" "plane-restore-guard-objects-$JOB_SUFFIX" "plane-restore-$JOB_SUFFIX" "plane-restore-migrate-$JOB_SUFFIX"; do
     if ! state="$(job_state_if_any "$NS" "$job" 2>/dev/null)"; then
       warn "kubectl cannot say whether restore Job $NS/$job is running"
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
       continue
     fi
-    [[ "$state" == running ]] || continue
+    # Any whole line. If the client's output dies after on_exit's probe, a print that failed since then is still in
+    # stdio's buffer, and a $(...) captures it after the answer. Read as anything but running, the Job would stay.
+    case $'\n'"$state"$'\n' in
+      *$'\n'running$'\n'*) ;;
+      *) continue ;;
+    esac
     log "Removing restore Job $NS/$job, which would otherwise go on without this client (up to 180s)"
     if kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null; then
       JOB_STOPPED=yes
@@ -919,7 +1019,15 @@ on_exit() {
   trap - EXIT
   # Being stopped halfway through this is what would leave the worst state, so only SIGKILL ends it now. It waits for
   # a Job's removal for 180s at most, and a resume repairs what a SIGKILL leaves.
-  trap '' HUP INT TERM
+  # That includes a client that can no longer print: a terminal that closed, or a tee that took the same Ctrl-C. Under
+  # set -e and a default SIGPIPE its first print would end this, with the Job still running and auto-sync still paused.
+  # So no error stops this, and what it has to say goes to a file beside the evidence. The probes are needed: a failed
+  # print stays in stdio's buffer, and the next $(...) would capture it. The second goes through fd 3, because inside
+  # 2>/dev/null a print to fd 2 goes to /dev/null, and could never see that stderr is dead.
+  set +e
+  trap '' HUP INT TERM PIPE
+  { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$evidence.log"
   stop_this_runs_jobs
   if [[ -n "$JOBS_LEFT_RUNNING" ]]; then
     warn "COULD NOT REMOVE these restore Jobs in $NS:$JOBS_LEFT_RUNNING. One may still drop or replace a database, so nothing is being started: auto-sync stays paused, and what was stopped stays stopped. When the cluster answers, run these, in this order:"
@@ -947,10 +1055,12 @@ on_exit() {
   # A proof that could not run is not a pass. proof-probes is about monitoring and not the data, as in the drill.
   not_run="$(awk -F '\t' '$2 == "NOT RUN" && $1 != "proof-probes" { printf "%s ", $1 }' "$steps_file")"
   if [[ "$rc" -eq 0 && -n "$not_run" && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then rc=2; fi
+  if [[ "$rc" -eq 0 && "$OVERWROTE" == yes ]]; then rc="$EXIT_OVERWROTE"; fi
   case "$rc" in
     0) result=PASS ;;
     2) result="NOT RUN" ;;
     "$EXIT_NEEDS_SIGN_IN") result=BLOCKED ;;
+    "$EXIT_OVERWROTE") result=OVERWROTE ;;
     *) result=FAIL ;;
   esac
   jq -Rn --arg env "$ENV_NAME" --arg backup "$BACKUP_ID" --arg at "$STAMP" --arg result "$result" '
@@ -969,8 +1079,12 @@ on_exit() {
       fi
       ;;
     "$EXIT_NEEDS_SIGN_IN") warn "the data of $BACKUP_ID is back in $ENV_NAME, and nothing here can log in to prove it, as the steps above say. Evidence: $evidence" ;;
+    "$EXIT_OVERWROTE") warn "restore of $BACKUP_ID into $ENV_NAME is proven, and this is not a pass: it overwrote what $NS held, because ALLOW_RESUME_OVERWRITE named it. Evidence: $evidence" ;;
     *)
-      if [[ "$ANYTHING_CHANGED" == no ]]; then
+      if [[ "$ANYTHING_CHANGED" == no && "$RESTORE_MODE" == clean ]]; then
+        # Its parent has run make up by now, and on a resume its repair too, so this can speak only for the target.
+        warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. $NS was not changed. Evidence: $evidence"
+      elif [[ "$ANYTHING_CHANGED" == no ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. Nothing was changed. Evidence: $evidence"
       elif [[ -n "$JOBS_LEFT_RUNNING" ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME FAILED, and its Job may still be running, as said above. Auto-sync is still paused. Evidence: $evidence"
@@ -1135,6 +1249,27 @@ spec:
 YAML
 }
 
+resume_overwrite_names_this() { case " ${ALLOW_RESUME_OVERWRITE:-} " in *" $ENV_NAME "*) return 0 ;; *) return 1 ;; esac; }
+
+# Written when the data Job of a clean restore finishes, and only then. From that moment the target is this backup and
+# whatever the platform has written since, and counts cannot tell those apart: a new work item changes neither users
+# nor objects. So a resume does not compare. It keeps what is there, unless the override names it.
+data_back_mark() {
+  if [[ "$RESTORE_MODE" == clean && -f "$RESTORE_CLEAN_MARKER" ]]; then printf 'data-back %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"; fi
+}
+# Written before a data Job starts. Until it has finished the target is neither what it held nor the backup, so a line
+# from an earlier Job no longer holds, as after a stop in what ALLOW_RESUME_OVERWRITE asked for. The Job's name is for
+# the next run's repair: see clean_note_finished_data_job.
+data_job_mark() {
+  [[ "$RESTORE_MODE" == clean && -f "$RESTORE_CLEAN_MARKER" ]] || return 0
+  sed -e "/^data-back $ENV_NAME\$/d" -e "/^data-job $ENV_NAME /d" "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+  printf 'data-job %s plane-restore-%s\n' "$ENV_NAME" "$JOB_SUFFIX" >> "$RESTORE_CLEAN_MARKER.tmp"
+  mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+}
+data_back_on_resume() {
+  [[ "$RESTORE_RESUME" == yes && -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $ENV_NAME" "$RESTORE_CLEAN_MARKER"
+}
+
 # On a resume the CONFIRM=yes is the parent's, and this target may be anything by now, so what it holds decides.
 # The data Job restores Postgres in one transaction and then syncs objects, so this same backup part way through has
 # either no users or all of them, and no more objects than the backup. Anything else has been written since.
@@ -1142,16 +1277,21 @@ refuse_if_not_empty() { # users objects
   local users="$1" objects="$2" want_users want_objects held="" have
   if [[ "$users" -eq 0 && "$objects" -eq 0 ]]; then
     record overwrite-guard PASS "target is empty"
+  elif data_back_on_resume && ! resume_overwrite_names_this; then
+    KEEP_DATA=yes
+    record data-back PASS "the data Job of an earlier run of this restore finished, so this keeps what $NS holds, $users users and $objects objects, and goes on from the migrator. ALLOW_RESUME_OVERWRITE=$ENV_NAME would replace it with backup $BACKUP_ID"
   elif [[ "$RESTORE_RESUME" == yes ]]; then
     want_users="$(clean_count "$backup_dir" users)"
     want_objects="$(jq -r '.objects.count // 0' "$manifest")"
     held="target holds $users users and $objects objects, and backup $BACKUP_ID $want_users and $want_objects"
-    if [[ ("$users" -eq 0 || "$users" == "$want_users") && "$objects" -le "$want_objects" ]]; then
+    if ! data_back_on_resume && [[ ("$users" -eq 0 || "$users" == "$want_users") && "$objects" -le "$want_objects" ]]; then
       record overwrite-guard PASS "a resume: $held, so it is this backup part way through, or nothing"
-    elif [[ "${ALLOW_RESUME_OVERWRITE:-}" == yes ]]; then
-      record overwrite-guard FAIL "a resume: $held, overwriting on ALLOW_RESUME_OVERWRITE=yes"
+    elif resume_overwrite_names_this; then
+      record overwrite-guard FAIL "a resume: $held, overwriting on ALLOW_RESUME_OVERWRITE=\"$ALLOW_RESUME_OVERWRITE\""
+      OVERWROTE=yes
+      if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then printf 'overwrote %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"; fi
     else
-      die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. Nothing was changed. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=yes."
+      die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. $NS was not changed. What this resume did before it could look stands: its repair, and make up as far as this step. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME, which reaches only this environment, and that run does not read PASS."
     fi
   elif [[ "${CONFIRM:-}" == yes ]]; then
     have="$(clean_count "$backup_dir" users)"
@@ -1167,6 +1307,7 @@ refuse_if_not_empty() { # users objects
 warn_empty_backup_over_data() { # target-users
   local other name=""
   [[ "$1" -gt 0 && "$(clean_count "$backup_dir" users)" == 0 ]] || return 0
+  if data_back_on_resume && ! resume_overwrite_names_this; then return 0; fi # Nothing is about to be replaced.
   for other in $(recovery_ids "$ENV_NAME"); do
     if [[ "$other" != "$BACKUP_ID" && "$(clean_count "$backups_dir/$other" users)" != 0 && "$(clean_count "$backups_dir/$other" users)" != "?" ]]; then name="$other"; fi
   done
@@ -1474,7 +1615,7 @@ restore_plane() {
     kc -n "$NS" rollout status "statefulset/$deployment" --timeout=300s >/dev/null || die "$deployment is not ready"
   done
 
-  JOBS_STARTED=yes
+  JOB_MAY_RUN=yes
   inspect="$(inspect_target "$pg_image" plane-pgdb plane-pgdb)" || { printf '%s\n' "$inspect" >&2; die "could not inspect the database"; }
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
   inspect="$(inspect_bucket)" || { printf '%s\n' "$inspect" >&2; die "could not list the bucket"; }
@@ -1493,9 +1634,13 @@ restore_plane() {
   wait_for 180 "app pods to exit" no_app_pods
   record apps-stopped PASS "api, worker, beat and live at zero with auto-sync paused"
 
-  restore_data "$pg_image"
-  record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
-  record objects PASS "synced and checked by download, every uploaded asset has its object"
+  if [[ "$KEEP_DATA" == no ]]; then
+    data_job_mark
+    restore_data "$pg_image"
+    data_back_mark
+    record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
+    record objects PASS "synced and checked by download, every uploaded asset has its object"
+  fi
   recovery_reinstate_test_files "$backup_dir" "$ENV_NAME"
 
   # Old cache entries and queued tasks describe rows from before the restore.
@@ -1511,6 +1656,9 @@ restore_plane() {
 
   run_migrator
   record migrator PASS "completed"
+  # Every Job of this run has finished. So a kubectl error from here on cannot read as one that may still be running,
+  # which leaves auto-sync paused and the apps down with nothing to do it for.
+  JOB_MAY_RUN=no
 
   # API first: its boot clears the cache and re-registers, and worker and live want it up.
   log "Starting the apps"
@@ -1525,6 +1673,9 @@ restore_plane() {
   prove_decrypt || failed=1
   prove_sentinel || failed=1
   prove_probes
+  if [[ $failed -ne 0 && "$KEEP_DATA" == yes ]]; then
+    die "this resume kept what $NS holds, and at least one proof failed on it. If that is not what should be there, the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME replaces it with backup $BACKUP_ID. To keep a copy first: make backup ENV=$ENV_NAME."
+  fi
   [[ $failed -eq 0 ]] || die "the data is back, but at least one proof failed"
 }
 
@@ -1699,7 +1850,7 @@ restore_infisical() {
 
   kc -n "$NS" rollout status statefulset/infisical-postgres --timeout=300s >/dev/null || die "infisical-postgres is not ready"
   kc -n "$NS" rollout status statefulset/infisical-redis --timeout=300s >/dev/null || die "infisical-redis is not ready"
-  JOBS_STARTED=yes
+  JOB_MAY_RUN=yes
   inspect="$(inspect_target "$pg_image" infisical-postgres infisical-db)" || { printf '%s\n' "$inspect" >&2; die "could not inspect the database"; }
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
   [[ -n "$users" ]] || die "could not read the state of $NS"
@@ -1719,13 +1870,18 @@ restore_infisical() {
   record app-stopped PASS "infisical at zero with auto-sync paused"
 
   INFISICAL_REDIS_STALE=yes
-  restore_infisical_db "$pg_image"
-  record postgres PASS "dump restored into a second database, row counts equal the backup, swapped in"
-  # State, machine file and database are a pair, so these change when the database does. Before that, a failed Job
-  # would leave the old database with this backup's state, for the next make up to apply. A clean restore installed
-  # them earlier, for what make up needs, and these then change nothing.
-  recovery_install_tf_state "$backup_dir"
-  if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
+  if [[ "$KEEP_DATA" == no ]]; then
+    data_job_mark
+    restore_infisical_db "$pg_image"
+    data_back_mark
+    record postgres PASS "dump restored into a second database, row counts equal the backup, swapped in"
+    # State, machine file and database are a pair, so these change when the database does. Before that, a failed Job
+    # would leave the old database with this backup's state, for the next make up to apply. A clean restore installed
+    # them earlier, for what make up needs, and these then change nothing.
+    recovery_install_tf_state "$backup_dir"
+    if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
+  fi
+  JOB_MAY_RUN=no # Every Job of this run has finished, as in restore_plane.
 
   # The server caches into Redis what describes the old database: admin config, secrets, permissions,
   # identity revocation versions, KMS material, and queued jobs. From a list of its keys, 2026-11-05.
