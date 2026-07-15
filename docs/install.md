@@ -5,12 +5,10 @@ repository wraps upstream Plane in a local deployment platform on kind. It is lo
 claim of being ready for production. See [known-limitations.md](known-limitations.md).
 
 **Status of this page.** It describes configuration and script behaviour read from the code, with results from real runs
-where they exist, as of 2026-11-05. The platform has run in stages on the laptop it was built on. **As this is written,
-`make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` has deleted the cluster and is rebuilding it, and its first clean install
-from a fresh clone has no recorded result.** The `VERIFY` and `MEASURE` markers left here wait on different runs. The time of one
-`make up` and data across the rebuild wait until [validation.md](validation.md) and [`docs/evidence/`](evidence/README.md) hold the drill's result. `Docker.raw` after a
-delete waits on TEAR-5, and disk growth of a first install on a cold install with the registry and caches gone (TEAR-4), because the
-drill keeps them. Do not read an unmarked command as a tested command. It means only that the claim does not depend on a runtime result.
+where they exist, as of 2026-11-05. One `make up` from a fresh clone has run, keeping the local registry and pull-through caches, and a full restore
+into a new cluster has run ([First run](#first-run), [After a destroy](#after-a-destroy)). **As this is written, `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes COLD_INSTALL=yes`
+is deleting the cluster and the local services and rebuilding them, and its results are in progress.** The `MEASURE` markers left here wait on later runs: disk growth of a first
+install on that cold install (TEAR-4), and `Docker.raw` after a delete on TEAR-5. Do not read an unmarked command as a tested command. It means only that the claim does not depend on a runtime result.
 
 Names and ordering come from the binding [platform contract](platform-contract.md).
 
@@ -44,21 +42,22 @@ On 2026-11-05T06:15Z `scripts/prereqs.sh` failed on the build laptop for disk al
 
 ### Resource use
 
-Measured on the build laptop, with Docker Desktop set to 14 GiB and about 1 GiB of unrelated containers running. The quiet readings are on upstream
-images, and the load row is on the final images. None are from a clean install. [resource-utilization.md](resource-utilization.md) has the
+Measured on the build laptop, with Docker Desktop set to 14 GiB and 12 CPUs and the owner's other containers running. The main readings are three windows on 2026-11-05, on the final images,
+restored into a new cluster, and older rows say so. Each window is one run, and the cluster was young. [resource-utilization.md](resource-utilization.md) has the
 conditions and the rest.
 
 | Item | Value | Source |
 |---|---|---|
-| Docker VM used, quiet | 9.44 GiB median, of 13.63 GiB | 30 samples on 2026-11-05 ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)) |
-| Docker VM used, highest sampled | 10.93 GiB | 2026-11-05T01:50:00Z, in 60-second readings from 00:35Z, with its cause not read ([timeline](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)). The 5-second samples in the file above, which ended at 00:04Z, topped out at 10.49 GiB at 2026-11-04T23:23:42Z, right after a change replaced the Argo CD pods. In them the smoke tests topped at 9.87 GiB and the drills at 9.90 GiB |
-| Docker VM used, load test | 10.33 GiB | `make test-load ENV=dev` on the final images, 2026-11-05T07:33Z to 07:43Z, with prod-sim being rotated and restored ([results.json](evidence/runs/load-20261105T073241Z/results.json)) |
-| Swap used, highest read | 0.78 GiB of 2 GiB | Prometheus, in the quiet window of 2026-11-05T03:40Z to 04:10Z, and 0.76 GiB in the load window ([windows](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). The 5-second samples, which ended at 00:04Z, topped out at 0.60 GiB |
-| Host disk growth | 19.5 to 24.8 GiB, estimate | Image sizes summed from registry layer metadata (8.56 GiB unpacked), plus estimates for volumes, logs, build bases, caches and tools |
-| Disk on the running platform | 17.75 GiB, a sum of sizes | 2026-11-05T02:01Z: the node's `/var`, the local services' volumes and the node image ([dr-disk-1.txt](evidence/runs/dr-disk-1.txt)). Read while other work was building, not a before and after of a clean install |
+| Docker VM used, idle | 8.65 GiB average, 8.79 top, of 13.63 GiB | 08:47:35Z to 08:56:59Z on 2026-11-05 ([windows](evidence/runs/LOAD-3-20261105T092547Z-prometheus-windows.json)) |
+| Docker VM used, load with think time | 8.80 GiB average, 8.90 top | `make test-load ENV=dev` on the final images, 09:03Z to 09:12Z ([results.json](evidence/runs/load-20261105T090247Z/results.json)) |
+| Docker VM used, load with no think time | 8.93 GiB average, 9.05 top, with at most 2.49 of 12 CPUs busy | `THINK=0 make test-load ENV=dev`, 09:12Z to 09:21Z ([results.json](evidence/runs/load-20261105T091213Z/results.json)). No memory limit came close. Postgres's 500 m CPU limit is what bound |
+| Docker VM used, highest sampled | 10.93 GiB | Earlier cluster, 2026-11-05T01:50:00Z, in 60-second readings from 00:35Z, with its cause not read ([timeline](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)) |
+| Swap used, highest read | 0.78 GiB of 2 GiB | Earlier cluster, Prometheus, in the quiet window of 2026-11-05T03:40Z to 04:10Z ([windows](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)) |
+| Host disk growth | 19.5 to 24.8 GiB, estimate | Image sizes summed from registry layer metadata (8.56 GiB unpacked), plus estimates for volumes, logs, build bases, caches and tools. The clean install took host free from 31 GiB to 19 GiB, by `df` in whole GiB, the clone included, with the registry, caches and node image already on disk ([summary](evidence/runs/clean-install-20261105T075041Z/summary.txt), [status](evidence/runs/clean-install-20261105T075041Z/make-status.txt)), so that is not this figure |
+| Disk on the running platform | 18.81 GiB, a sum of sizes | 2026-11-05T09:25:50Z to 09:25:54Z: the node's volume, the local services' volumes and images, the node image, `.tools`, `.local` and `.build` ([derived](evidence/runs/LOAD-3-20261105T092547Z-derived.txt)). Not a before and after of a clean install |
 
 Research recommended 14 GiB of Docker memory with unrelated containers stopped, and 16 GiB if they must keep running. So far, 14 GiB has
-held with them running, including through the load test. That test had think time and found no ceiling, so it does not show a margin.
+held with them running, through both load passes. The ceiling those found was Postgres's CPU limit, not memory, and one run of each does not show a margin.
 
 - [[MEASURE: host disk growth of a first install]]
 
@@ -111,8 +110,8 @@ make status
 run again.
 
 It ran in stages with `UP_STOP_AFTER` on 2026-11-04 ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt)), with some steps by hand, among them prod-sim's ServiceAccounts and Infisical CRs ahead of root's wave 0
-([infisical-prod-sim-crs-1.txt](evidence/runs/infisical-prod-sim-crs-1.txt)). One run from nothing: NOT RUN, because the clean-restore drill's clean install has no evidence published.
-That drill keeps the local registry and pull-through caches and copies `.tools`. A new machine has none of them. There, `make up` creates the registry, builds the images
+([infisical-prod-sim-crs-1.txt](evidence/runs/infisical-prod-sim-crs-1.txt)). One run from nothing: exit 0 in 955 s on 2026-11-05 at `7d5ff62`, on a fresh clone with new secrets, with all 14 Applications Synced and Healthy ([summary](evidence/runs/clean-install-20261105T075041Z/summary.txt), [Applications](evidence/runs/clean-install-20261105T075041Z/apps-after-up.txt)). `make test-e2e` then passed with no SKIP, 46 PASS in dev and 45 in prod-sim ([dev](evidence/runs/clean-install-20261105T075041Z/clone-evidence/smoke-dev-20261105T080642Z-65896.json), [prod-sim](evidence/runs/clean-install-20261105T075041Z/clone-evidence/smoke-prod-sim-20261105T080826Z-22080.json)). A second `make up` took 16 s and left the same pod uids, and Terraform planned no changes ([second](evidence/runs/clean-install-20261105T075041Z/make-up-again.txt), [plan](evidence/runs/clean-install-20261105T075041Z/terraform-plan-local.txt)).
+That run kept the local registry and pull-through caches and copied `.tools`. A new machine has none of them. There, `make up` creates the registry, builds the images
 and stops, because the digests in Git do not exist there and a rebuild gives new ones. Then promote what was built, and run `make up` again:
 
 ```bash
@@ -122,7 +121,7 @@ make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="first 
 make up
 ```
 
-That is the path `COLD_INSTALL=yes` follows in `tests/drills/clean-install.sh`: NOT RUN, with no evidence published. [Registry lost](disaster-recovery.md#scenario-registry-lost) also has the way to keep a digest by copying it. A new machine also downloads the tools, which the drill does not: Not tested in Pass 1.
+That is the path `COLD_INSTALL=yes` follows in `tests/drills/clean-install.sh`: in progress, in the drill running as this is written, with no result recorded. [Registry lost](disaster-recovery.md#scenario-registry-lost) also has the way to keep a digest by copying it. A new machine also downloads the tools, which the drill does not: Not tested in Pass 1.
 The sequence:
 
 | # | Step | Script or owner | What it needs and what it leaves |
@@ -138,8 +137,8 @@ The sequence:
 `UP_WAIT_TRAEFIK_SECONDS`, `UP_WAIT_ROUTE_SECONDS`, `UP_WAIT_INFISICAL_SECONDS` and `UP_WAIT_APPS_SECONDS` override the waits. Staged times are
 in [resource-utilization.md](resource-utilization.md#boot-and-start-times).
 
-- [[MEASURE: wall-clock time of one make up from nothing]]
-- The time of `make up` when resuming after `make down`: NOT RUN, for a later run (PERS-3).
+- One `make up` from nothing: 955 s, with the registry and caches on disk ([summary](evidence/runs/clean-install-20261105T075041Z/summary.txt)). With them gone: in progress.
+- `make up` when resuming after `make down`: 82 s, and `make down` took 15 s ([PERS-3](evidence/runs/PERS-3-20261105T083304Z.txt)).
 
 ### What looks broken but is expected
 
@@ -173,7 +172,7 @@ Everything is on loopback over plain HTTP. kind binds only `127.0.0.1`. TLS is o
 | `http://infisical.localhost` | Infisical | `admin@wayline.localhost` | `.local/secret-zero/infisical-admin-password` |
 
 All seven hosts answered through Traefik in `make status` on 2026-11-04, with 200, or 302 from Grafana and Prometheus
-([plane-prod-sim-status-1.txt](evidence/runs/plane-prod-sim-status-1.txt)).
+([plane-prod-sim-status-1.txt](evidence/runs/plane-prod-sim-status-1.txt)), and the same after a stop and resume on 2026-11-05 ([PERS-3](evidence/runs/PERS-3-20261105T083304Z.txt)).
 
 Prometheus and Alertmanager have no login. All five internal UIs carry a `node-network-only` allow list on `172.16.0.0/12`, because a Plane
 `api` pod can reach Traefik: the host arrives as the kind gateway and gets through, and a pod gets 403
@@ -182,7 +181,7 @@ it does not stop.
 
 Session cookies are host-only, so a dev session gets 401 on the prod-sim host ([plane-dev-cookies-1.txt](evidence/runs/plane-dev-cookies-1.txt)).
 A real browser session has run in Chromium ([record](evidence/branding/live-dev/README.md)). On 2026-11-05 one
-Chromium profile signed in on dev got 401 on the prod-sim host ([AUTH-4-20261105T062750Z.txt](evidence/runs/AUTH-4-20261105T062750Z.txt)).
+Chromium profile signed in on dev got 401 on the prod-sim host ([AUTH-4-20261105T062750Z.txt](evidence/runs/AUTH-4-20261105T062750Z.txt)). After the restore, that browser held a session on both hosts at once, with `GET /api/users/me/` answering 200 in each tab ([record](evidence/branding/live-final/README.md)).
 
 `*.localhost` resolution and cookie separation in Safari and Firefox: Not tested in Pass 1.
 
@@ -267,7 +266,7 @@ to supply those credentials yourself.
 
 | Target | What it does | Parameters |
 |---|---|---|
-| `make test` | Gates, the NetworkPolicy matrix, Infisical isolation, internal routes, smoke tests in both environments, and the separation checks, in that order, carrying on after a failure. Calls `scripts/test.sh`. [validation.md](validation.md) says what has run | |
+| `make test` | Gates, the NetworkPolicy matrix, Infisical isolation, internal routes, smoke tests in both environments, and the separation checks, in that order, carrying on after a failure. Calls `scripts/test.sh`. Read PASS in full on the restored platform on 2026-11-05, ending 08:45Z ([output](evidence/runs/MAKE-TEST-20261105T083455Z.txt)). [validation.md](validation.md) says what has run | |
 | `make gates` | Runs `tests/gates/day1.sh`, the cheap runtime checks for assumptions source reading cannot settle | |
 | `make test-e2e` | End-to-end smoke test through `scripts/test.sh e2e` | `ENV=dev` |
 | `make test-netpol` | Runs the allow and deny matrix in `tests/network-policy-matrix.yaml` | `FROM_NS=plane-dev` limits it to one source namespace |
@@ -275,7 +274,7 @@ to supply those credentials yourself.
 | `make test-routes` | Who can reach the internal UIs through Traefik: the host can, a Plane `api` pod cannot | |
 | `make test-separation` | Real attempts between dev and prod-sim, and what each holds. Needs `make test-e2e` to have run in both | |
 | `make test-alert` | Exercises alert delivery end to end. Pauses auto-sync while it injects a failure. Read PASS in dev and prod-sim on 2026-11-05, each with the other quiet ([dev](evidence/runs/alert-test-dev-20261105T055044Z.json), [prod-sim](evidence/runs/alert-test-prod-sim-20261105T072541Z.json)). The sink prints lines, and nothing pages a person | `ENV=dev` |
-| `make test-load` | Runs the k6 load test and captures resource use. Needs one earlier `make test-e2e`. Read PASS on its thresholds on dev on 2026-11-05, with `THINK=1`, which sleeps 1 to 3 s between requests ([results.json](evidence/runs/load-20261105T073241Z/results.json)). `THINK=0`: NOT RUN | `ENV=dev`, `THINK=0` |
+| `make test-load` | Runs the k6 load test and captures resource use. Needs one earlier `make test-e2e`. On a quiet cluster on 2026-11-05, on dev: with `THINK=1`, which sleeps 1 to 3 s between requests, it read PASS on its thresholds ([results.json](evidence/runs/load-20261105T090247Z/results.json)). `THINK=0` found the ceiling, about 8.9 requests a second, with Postgres at its 500 m CPU limit. It exits 2 when k6 crosses a threshold, and its numbers still stand ([results.json](evidence/runs/load-20261105T091213Z/results.json)) | `ENV=dev`, `THINK=0` |
 | `make scan-images` | Scans every image the platform runs and reports it all. Fails on a fixable CRITICAL in an image built here, or a missed image | `SCAN_MIN_FREE_GIB`, `SCAN_FLOOR_GIB` |
 | `make publish-evidence` | Copies `.local/evidence-raw/` to `docs/evidence/runs/` with secrets scrubbed. Fails on any gitleaks finding. See [the evidence index](evidence/README.md#publishing) | |
 
@@ -285,8 +284,8 @@ to supply those credentials yourself.
 |---|---|---|
 | `make backup` | Backs up to `.local/backups/<env>/<id>/` through a Job | `ENV=dev`, `prod-sim`, `infisical` or `all`, `KEEP=<count>`, `ALLOW_BACKUP_DURING_RESTORE=yes` |
 | `make restore` | Restores a backup into the environment that took it. Refuses to overwrite a non-empty environment without `CONFIRM=yes`. Read PASS in place in dev and prod-sim on 2026-11-05 ([dev](evidence/runs/restore-dev-20261105T074337Z.json), [prod-sim](evidence/runs/restore-prod-sim-20261105T073438Z.json)), and it refused with no `CONFIRM` ([refusal](evidence/runs/restore-prod-sim-20261105T073428Z.json)) | `ENV`, `BACKUP=<backup-id or latest>`, `CONFIRM=yes` |
-| `make restore-clean` | Brings the whole platform back into a clean environment, Infisical first. The script exits 2 if a proof could not run or a person must sign in, 4 if it overwrote what `ALLOW_RESUME_OVERWRITE` named, and `make` exits 2 on any failure. Its first real run: NOT RUN, because the drill has no evidence published | `BACKUP=<infisical-backup-id or latest>`, `PLAN_ONLY=yes`, `ENVS=dev`, `ALLOW_LOW_DISK="<reason>"`, `ALLOW_NO_SENTINEL=yes`, `ALLOW_NEWER_INFISICAL_BACKUP=yes`, `ALLOW_RESUME_OVERWRITE="dev prod-sim"` |
-| `make rotate` | Rotates the Postgres credential through Infisical. Read PASS in dev and prod-sim on 2026-11-05, and `RESUME=yes` finished a run killed with SIGKILL ([dev](evidence/runs/SEC-2-20261105T072331Z.txt), [prod-sim](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), [killed](evidence/runs/SEC-4-20261105T073843Z.txt)). A signed-in request answered 500 for about 38 s in dev ([watch](evidence/runs/SEC-2-20261105T072331Z-watch.txt)). `ROLLBACK=yes`: NOT RUN | `ENV=dev`, `RESUME=yes` or `ROLLBACK=yes`. Prod-sim also needs `CONFIRM=yes` |
+| `make restore-clean` | Brings the whole platform back into a clean environment, Infisical first. The script exits 2 if a proof could not run or a person must sign in, 4 if it overwrote what `ALLOW_RESUME_OVERWRITE` named, and `make` exits 2 on any failure. Its first real run read PASS on every step on 2026-11-05 ([result](evidence/runs/restore-clean-20261105T081017Z.json)). See [After a destroy](#after-a-destroy) | `BACKUP=<infisical-backup-id or latest>`, `PLAN_ONLY=yes`, `ENVS=dev`, `ALLOW_LOW_DISK="<reason>"`, `ALLOW_NO_SENTINEL=yes`, `ALLOW_NEWER_INFISICAL_BACKUP=yes`, `ALLOW_RESUME_OVERWRITE="dev prod-sim"` |
+| `make rotate` | Rotates the Postgres credential through Infisical. Read PASS in dev and prod-sim on 2026-11-05, and `RESUME=yes` finished a run killed with SIGKILL ([dev](evidence/runs/SEC-2-20261105T072331Z.txt), [prod-sim](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), [killed](evidence/runs/SEC-4-20261105T073843Z.txt)). A signed-in request answered 500 for about 38 s in dev ([watch](evidence/runs/SEC-2-20261105T072331Z-watch.txt)). `ROLLBACK=yes` undid a run killed with SIGKILL in prod-sim, with 12 of the script's 61 probes failing, a 36 s window ([SEC-4b](evidence/runs/SEC-4b-20261105T084615Z.txt)) | `ENV=dev`, `RESUME=yes` or `ROLLBACK=yes`. Prod-sim also needs `CONFIRM=yes` |
 
 Details are in [data-operations.md](data-operations.md).
 
@@ -309,7 +308,8 @@ Details are in [data-operations.md](data-operations.md).
 | `make drill-pod-restart ENV=dev` | Restarts each StatefulSet pod and proves the data survives | Read PASS on the final images: dev, 07:04Z ([log](evidence/runs/drill-pod-restart-dev-20261105T070414Z.log)), and prod-sim, 07:23Z ([log](evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log)). During dev's Postgres round, 7 of 180 signed-in samples answered 500, from 07:04:26Z to 07:04:32Z ([timeline](evidence/runs/PERS-1-20261105T070358Z-timeline.txt)). See [validation.md](validation.md) |
 | `make drill-failed-deploy` | A bad image reaches dev through Git, the rollout refuses it, and a revert restores it. Dev only | Read PASS on the final images, 06:23Z ([log](evidence/runs/drill-failed-deploy-20261105T062343Z.log)). The old pod kept serving, and no alert fired: `ArgoSyncFailed` stayed pending for 13m45s against its 15m, because the revert ended it first |
 | `tests/drills/failed-migrator.sh` | A backend image whose migrator exits 1 reaches dev through Git, the sync stops at wave 2, wave 3 does not move, and a revert restores it. Dev only. No make target | Read PASS on the final images, 06:49Z ([log](evidence/runs/drill-failed-migrator-20261105T064940Z.log)) |
-| `make drill-clean-restore CONFIRM=yes` | Takes a backup, **deletes the cluster**, restores everything and proves it. `PLAN_ONLY=yes` stops before the delete. `CLEAN_INSTALL_FIRST=yes` also runs `tests/drills/clean-install.sh` between the delete and the restore: a clean install from a fresh clone, tested and then deleted | With `CLEAN_INSTALL_FIRST=yes`: NOT RUN, because it is rebuilding the cluster as this is written, with no evidence published. `PLAN_ONLY=yes` has run ([dr-drill-planonly-1.txt](evidence/runs/dr-drill-planonly-1.txt)) |
+| `tests/drills/alert-rules.sh ENV=dev` | Scales a data StatefulSet to 0 with auto-sync paused, reads whether its alert fires and reaches the sink, then puts it back. Rows `PlaneRabbitmqDown` and `PlaneMinioDown`. No make target | Read FAIL for both at 10:06Z, a real defect: neither fired in 270 s ([before](evidence/runs/alert-rules-dev-20261105T100605Z.txt)). Read PASS at 10:17Z after the fix: they reached the sink at 157 s and 148 s, and resolved there ([after](evidence/runs/alert-rules-dev-20261105T101707Z.txt)). Dev only. Crashes and hung processes were not tested |
+| `make drill-clean-restore CONFIRM=yes` | Takes a backup, **deletes the cluster**, restores everything and proves it. `PLAN_ONLY=yes` stops before the delete. `CLEAN_INSTALL_FIRST=yes` also runs `tests/drills/clean-install.sh` between the delete and the restore: a clean install from a fresh clone, tested and then deleted. `COLD_INSTALL=yes` makes that a cold install, with the local services and their volumes removed | With `CLEAN_INSTALL_FIRST=yes`, 07:48Z: every restore step read PASS, and the log reads `RESULT FAIL` only for the test's own `destroy-refused` step, which inherited `CONFIRM=yes` ([log](evidence/runs/drill-clean-restore-20261105T074859Z.log)). With `COLD_INSTALL=yes` too: in progress as this is written. `PLAN_ONLY=yes` has run ([dr-drill-planonly-1.txt](evidence/runs/dr-drill-planonly-1.txt)) |
 | `make drill-clean-restore-harness` | The order and refusals of a clean restore, with `kubectl`, `kind`, `docker`, Terraform and the API stubbed. Touches no cluster and proves no platform | Ran on stubs ([dr-harness-stubbed-4.txt](evidence/runs/dr-harness-stubbed-4.txt)) |
 
 ## Teardown
@@ -318,8 +318,8 @@ Choose by what you need to keep.
 
 | Command | Cluster and its volumes | Registry, caches | `.local/git`, `backups`, `secret-zero` | Consequence |
 |---|---|---|---|---|
-| `make down` | Stopped, kept | Stopped, kept | Kept | **No data loss** by design, and `make up` resumes. A stop and resume with the data checked after: NOT RUN, for a later run (PERS-3) |
-| `make destroy CONFIRM=yes` | **Deleted** | Kept | Kept | Takes `backup.sh all` first, for Infisical, dev and prod-sim. If that fails, nothing is deleted. The local Terraform state is removed, and the Infisical one is kept |
+| `make down` | Stopped, kept | Stopped, kept | Kept | **No data loss** by design, and `make up` resumes. Read PASS on 2026-11-05: the sentinel row and attachment read back in both environments after `make down` in 15 s and `make up` in 82 s ([PERS-3](evidence/runs/PERS-3-20261105T083304Z.txt)) |
+| `make destroy CONFIRM=yes` | **Deleted** | Kept | Kept | Takes `backup.sh all` first, for Infisical, dev and prod-sim. If that fails, nothing is deleted. The local Terraform state and any clean-restore marker are removed, and the Infisical state is kept. With no `CONFIRM=yes` it refuses and changes nothing ([TEAR-1](evidence/runs/TEAR-1-20261105T083304Z.txt)) |
 | `make destroy CONFIRM=yes SKIP_BACKUP=yes` | **Deleted** | Kept | Kept | **Data since your last backup is gone** |
 | `make destroy CONFIRM=yes PURGE=yes` | **Deleted** | **Deleted**, with their volumes | Kept | Branded images must be rebuilt, because the local registry holds the only copy of what the Mac built, and a rebuild gives new digests. Caches refill from upstream |
 
@@ -328,15 +328,22 @@ Four details that catch people:
 - **`make destroy` after `make down`.** The pre-delete backup needs a reachable cluster. `backup.sh` exits and nothing is deleted. Run `make up` first, or pass `SKIP_BACKUP=yes` and accept the loss.
 - **`.local/` is never deleted by a make target.** Removing it by hand removes the backups and `ENCRYPTION_KEY`. Do that only if you mean to lose them.
 - **`kind delete cluster` by hand leaves stale Terraform state.** It describes resources that no longer exist. `make destroy` removes `.local/terraform/local` for this reason. It keeps `.local/terraform/infisical`, because that describes what is in the Infisical database, which a backup can bring back. After a manual delete, `make up` finds no cluster and moves the old state aside to `.local/terraform/local.stale-<time>`, so Terraform starts empty.
-- **Disk may not come back.** Docker Desktop's docs say space inside the VM disk is not freed automatically. See the [Docker Desktop FAQ](https://docs.docker.com/desktop/troubleshoot-and-support/faqs/macfaqs/). [[MEASURE: Docker.raw size after the cluster is deleted]]
+- **Disk may not come back.** Docker Desktop's docs say space inside the VM disk is not freed automatically. See the [Docker Desktop FAQ](https://docs.docker.com/desktop/troubleshoot-and-support/faqs/macfaqs/). In the drill of 2026-11-05 host free went from 17.7 to 31.6 GiB on the delete, 14.1 GiB back, with `Docker.raw` not read ([log](evidence/runs/drill-clean-restore-20261105T074859Z.log)). [[MEASURE: Docker.raw size after the cluster is deleted]]
 
 ### After a destroy
 
 `make up` gives an empty platform, and Infisical seeds **new** Plane secrets. A Plane database is bound to the
-`SECRET_KEY` it was written with, and `make restore` compares fingerprints and refuses a mismatch. So Infisical and Plane
-restore as a matched set, Infisical first, which is what `make restore-clean BACKUP=latest` does. Its first real run: NOT RUN, because the drill has no evidence published.
-In-place restores passed in both environments ([dev](evidence/runs/restore-dev-20261105T074337Z.json), [prod-sim](evidence/runs/restore-prod-sim-20261105T073438Z.json)), which does not show this order. See [data-operations.md](data-operations.md) and
-[disaster-recovery.md](disaster-recovery.md). [[VERIFY: data across the rebuild: sentinel rows and attachments read back after a full restore into a new cluster]]
+`SECRET_KEY` it was written with, and `make restore` compares fingerprints and refuses a mismatch ([refusal](evidence/runs/clean-install-20261105T075041Z/restore-foreign-key-refused.txt)). So Infisical and Plane
+restore as a matched set, Infisical first, which is what `make restore-clean BACKUP=latest` does.
+
+That ran for real on 2026-11-05, from backups taken just before the delete, into a new cluster with a new CA. Every restore step read PASS ([result](evidence/runs/restore-clean-20261105T081017Z.json), [Infisical](evidence/runs/restore-infisical-20261105T081608Z.json), [dev](evidence/runs/restore-dev-20261105T082337Z.json), [prod-sim](evidence/runs/restore-prod-sim-20261105T082657Z.json)). The sentinel rows and attachments read back, and the full smoke test passed with the restored accounts ([dev](evidence/runs/smoke-dev-20261105T083032Z-33341.json), [prod-sim](evidence/runs/smoke-prod-sim-20261105T083217Z-34573.json)). It took about 1,226 s: the drill counts 2,402 s from the delete, less the clean install's 1,176 s between them ([log](evidence/runs/drill-clean-restore-20261105T074859Z.log)). That log reads `RESULT FAIL`, 1 failure, only because the clean install's own `destroy-refused` step inherited `CONFIRM=yes`, which `00126ea` fixed in the test. The dumps were 4.4, 1.07 and 0.83 MB of test data on this laptop, and the host's `.local/` stayed, so this is a lost cluster and not a lost machine. See [data-operations.md](data-operations.md) and [disaster-recovery.md](disaster-recovery.md).
+
+A clean restore that stops is run again with the same command. These four cases of losing data off the path that ran are fixed and merged at `18af97a`, as `scripts/restore.sh`, `scripts/destroy.sh` and [infisical/README.md](../infisical/README.md) read now. They have run on stubs only, because no real restore has stopped this way:
+
+- **A client that can no longer print.** With a closed terminal or dead output, the exit trap keeps going and writes what it has to say to a file beside the evidence, so it still removes the Job it started. Before, its first print could end it, with the Job running and auto-sync paused.
+- **`make destroy` with a clean-restore marker kept.** It takes its backup anyway, through `ALLOW_BACKUP_DURING_RESTORE=yes`, where it used to stop on `backup.sh`'s refusal and advise `SKIP_BACKUP=yes`. Then it removes the marker.
+- **`ALLOW_RESUME_OVERWRITE` names environments.** `ALLOW_RESUME_OVERWRITE=dev` or `"dev prod-sim"` reaches only those, and `yes` is refused. The step records a FAIL with what was there, and the run exits 4 and reads `OVERWROTE`, not PASS.
+- **The `data-back <env>` line.** Once an environment's data Job has finished, a resume keeps what is there and goes on from the migrator, because counts cannot tell the backup from the backup plus new work. Only `ALLOW_RESUME_OVERWRITE` naming that environment replaces it. A target found empty is restored again.
 
 ## Common first-run failures
 
