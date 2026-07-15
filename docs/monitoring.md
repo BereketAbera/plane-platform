@@ -4,10 +4,10 @@ Wayline is a customized Plane Community Edition v1.4.3 deployment. This page cov
 deployment and the platform around it are observed: what is scraped, why Plane needs blackbox probes,
 which alerts exist, what each can and cannot see, where they go, and how the path is tested.
 
-**Status.** The stack ran on the one local kind cluster on 2026-11-04 and 2026-11-05. Targets, rules, dashboards, log search and
+**Status.** The stack ran on a local kind cluster on 2026-11-04 and 2026-11-05, and from about 08:12Z on 2026-11-05 on a new one restored from backup. A reading with no later date comes from the first. Targets, rules, dashboards, log search and
 several alerts were proved by queries, not by pod status, and each result links its file under
 [`docs/evidence/runs/`](evidence/README.md).
-`make test-alert` passed once in each environment. What Pass 1 did not test says so where it comes up. This stack is sized for a laptop and has no redundancy: one Prometheus, one Alertmanager, one
+`make test-alert` passed once in each environment, and `tests/drills/alert-rules.sh` found [a real defect](#the-data-service-drill) in two rules, fixed and read again in dev. What Pass 1 did not test says so where it comes up. This stack is sized for a laptop and has no redundancy: one Prometheus, one Alertmanager, one
 Loki, no paging. It is local and production-inspired, and it makes no claim of production readiness.
 
 ## Stack
@@ -81,7 +81,7 @@ Patching them in would widen the fork, so the signal is built from outside:
 | Is the API able to use Postgres? | Blackbox probe on a route that needs the database |
 | Is a worker attached? | RabbitMQ consumer count on queue `celery` |
 | Is work piling up? | RabbitMQ ready messages on queue `celery` |
-| Is a data service up? | postgres-exporter, redis_exporter, RabbitMQ plugin, Silo endpoint |
+| Is a data service up? | postgres-exporter, redis_exporter, RabbitMQ plugin, Silo endpoint, and kube-state-metrics' ready replicas for RabbitMQ and Silo |
 | Is a pod restarting or near its limit? | kube-state-metrics and cAdvisor |
 | What rate and error ratio does the edge see? | Traefik metrics |
 
@@ -225,7 +225,7 @@ which the `plane-(dev|prod-sim)-.*` regex in `platform-overview.json` matches, c
 ## Alert rules
 
 Project rules are in `monitoring/manifests/shared/rules-plane.yaml` and `rules-platform.yaml`: 24 rules under 23 names,
-because `ArgoSyncFailed` has two forms. `tests/rules/*.test.yaml` hold promtool unit tests for 13 of those names, 12 in `rules.test.yaml` and `PodRestarting` in `pod-restarting.test.yaml`. The "Seen" column
+because `ArgoSyncFailed` has two forms. `tests/rules/*.test.yaml` hold promtool unit tests for 15 of those names, 12 in `rules.test.yaml`, `PodRestarting` in `pod-restarting.test.yaml`, and `PlaneRabbitmqDown` and `PlaneMinioDown` in `data-services-down.test.yaml`. The "Seen" column
 says what the evidence records on the cluster. Where it gives no other file, it comes from a read of `ALERTS` over all that Prometheus held on
 2026-11-05, from 2026-11-04T20:30Z to 2026-11-05T02:01Z ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)).
 
@@ -242,11 +242,11 @@ Runbook: [Plane debugging](runbooks/plane-app-debugging.md), and [Backup and res
 | `PlanePodCrashLooping` | A Plane container waiting in `CrashLoopBackOff` | 1m | critical | `ImagePullBackOff`, or a single restart | None in evidence |
 | `PlanePostgresDown` | `pg_up == 0` | 1m | critical | A slow or full database that still answers. A stopped exporter leaves no series | Fired on the first boot, before Postgres was ready. See below. Pending in each Postgres round of the pod restart drill |
 | `PlaneValkeyDown` | `redis_up == 0` | 1m | critical | The same for Valkey | Fired on the first boot, before Valkey was ready. See below |
-| `PlaneRabbitmqDown` | `up` of the RabbitMQ `/metrics` scrape is 0 | 2m | critical | A broker that answers and has blocked publishers | Pending for seconds around broker restarts, and no firing |
-| `PlaneMinioDown` | `up` of the Silo cluster scrape is 0 | 2m | critical | Failing uploads on a Silo that still answers metrics | None in evidence |
+| `PlaneRabbitmqDown` | `up` of the RabbitMQ `/metrics` scrape is 0, or `plane-rabbitmq-wl` has 0 ready replicas | 2m | critical | A broker that answers and has blocked publishers. A crash or a hung process was not tested. With kube-state-metrics gone as well, a missing pod leaves no series again | Fired on this form with the StatefulSet at 0 in dev on 2026-11-05: at the sink 157s after the scale, resolved 40s after it came back ([after](evidence/runs/alert-rules-dev-20261105T101707Z.txt)). The earlier form, on `up` alone, stayed silent for 270s on the same fault ([before](evidence/runs/alert-rules-dev-20261105T100605Z.txt)), and only went pending for seconds around broker restarts. See [the drill](#the-data-service-drill) |
+| `PlaneMinioDown` | `up` of the Silo cluster scrape is 0, or `plane-minio-wl` has 0 ready replicas | 2m | critical | Failing uploads on a Silo that still answers metrics. A crash or a hung process was not tested. With kube-state-metrics gone as well, a missing pod leaves no series again | Fired on this form with the StatefulSet at 0 in dev on 2026-11-05: at the sink 148s after the scale, resolved 26s after it came back ([after](evidence/runs/alert-rules-dev-20261105T101707Z.txt)). The earlier form, on `up` alone, stayed silent for 270s on the same fault ([before](evidence/runs/alert-rules-dev-20261105T100605Z.txt)). See [the drill](#the-data-service-drill) |
 | `PlaneWorkerNoConsumer` | `rabbitmq_detailed_queue_consumers{queue="celery"} == 0` | 2m | critical | A worker attached and not finishing tasks. A broker with no `celery` queue | Fired for real in prod-sim on 2026-11-04: pending 23:36:20, in Alertmanager 23:38:20, cleared after the repair ([plane-prod-sim-worker-no-consumer-alert-1.txt](evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)) |
 | `PlaneCeleryQueueMissing` | RabbitMQ is up and has no `celery` queue | 10m | critical | A queue with no consumer, which is the rule above | Pending only, and no firing: on both first boots, with the broker up before any worker, for 5m45s in plane-dev and 1m15s in plane-prod-sim, and for seconds after a broker restart, one of them also read at 23:54:50Z ([plane-prod-sim-worker-no-consumer-alert-1.txt](evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)) |
-| `PlaneCeleryBacklog` | More than 500 ready messages on `celery` | 5m | warning | A backlog under 500 | None in evidence |
+| `PlaneCeleryBacklog` | More than 500 ready messages on `celery` | 5m | warning | A backlog under 500. One shorter than 5m | No firing. Under `THINK=0` on dev on 2026-11-05 the queue stood above 500 from 09:20:03Z, reached 747 ready, and was empty by 09:22:03Z, about 2 minutes ([queue](evidence/runs/LOAD-3-20261105T092547Z-after-saturation.json), [what fired](evidence/runs/LOAD-3-20261105T092547Z-prometheus-windows.json)) |
 | `PlaneBackupFailed` | `kube_job_status_failed` on a `plane-backup-*` Job, in a Plane namespace or `infisical` | none | warning | A backup that never ran. The "Last backup" stat shows that | Fired for real in `infisical` on 2026-11-04, from 22:57:30Z, on two backups that failed ([dr-backup-1.txt](evidence/runs/dr-backup-1.txt), [dr-backup-2.txt](evidence/runs/dr-backup-2.txt)). It cleared by 22:59Z, when the next backup succeeded and deleted those Jobs ([dr-backup-3.txt](evidence/runs/dr-backup-3.txt)) |
 
 **A first boot fires these.** `monitoring-extras` syncs at wave -5 and Plane at -1 and 0, so the probes and rules are in place before Plane
@@ -262,7 +262,7 @@ answers. The read of `ALERTS` shows them firing on 2026-11-04, in UTC ([monitori
 The API and frontend alerts cleared when each environment came up. The two data alerts cleared earlier, when the data pods came up. `PlanePostgresDown`
 started later because `pg_up` has no series until the exporter runs, and the exporter sat in `CreateContainerConfigError` until 21:29. This shows
 the rules can fire on a missing environment, not that each fires on the fault it names. With the API alone gone, `make test-alert` later made `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` fire. `PlanePostgresDown` and `PlaneValkeyDown` have not fired on a Plane that was up. A first boot
-also fires Argo CD rules: see `ArgoAppDegraded` and `ArgoSyncFailed` below.
+also fires Argo CD rules: see `ArgoAppDegraded` and `ArgoSyncFailed` below. Since `2f42ddb`, `PlaneRabbitmqDown` and `PlaneMinioDown` read ready replicas too, so a StatefulSet that takes over 2m to turn ready on a first boot can fire them now. That is read from the rule. The clean install and the restore ran before it, and the cold install in progress has no result here.
 
 **An in-place restore fires them too,** because it stops api, worker, beat and live on purpose. In prod-sim's restore on 2026-11-05, Alertmanager read `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` active from 07:36:26Z to 07:36:51Z, and `PlaneFrontendDown` on the `live` probe from 07:37:26Z to 07:37:57Z, the only time it has fired with the rest of Plane in place. Those readings come from a side watcher, and nobody read the sink for them ([SEC-2-20261105T072331Z-watch.txt](evidence/runs/SEC-2-20261105T072331Z-watch.txt), [LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). Dev's restore has no such reading.
 
@@ -284,7 +284,7 @@ Runbooks: [Memory pressure](runbooks/memory-pressure.md) for workloads and the V
 |---|---|---|---|---|---|
 | `PodRestarting` | The highest sample of a container's restart count less the lowest is 2 or more in 15m, in a Plane, `monitoring`, `monitoring-agents`, `argocd`, `traefik` or `infisical` namespace | none | warning | One restart, on purpose. `kube-system` | On this form, on 2026-11-05 from 02:28Z: quiet on a scratch pod that restarted once, and firing on one that restarted twice, to the sink and resolved ([podrestarting-live-1.txt](evidence/runs/podrestarting-live-1.txt)). Before it the rule read `increase`. Above 1.5, until `ba72573` at 02:26Z: quiet on one in-place Alloy restart, firing on the second ([kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt)). Above 1, until `01fa6e3` at 00:32Z: firing on Grafana's sidecars from 21:05:00 to 21:41:45 on 2026-11-04, while they were being OOM-killed ([Memory pressure](runbooks/memory-pressure.md)), on Loki from 21:51:00 to 22:12:45, beside two `kill -9` tests ([monitoring-loki-replay-1.txt](evidence/runs/monitoring-loki-replay-1.txt)), and on Alloy from 23:54:00 to 00:08:15, after one restart ([plane-prod-sim-snapshot-final-1.txt](evidence/runs/plane-prod-sim-snapshot-final-1.txt)) |
 | `ContainerMemorySaturation` | Working set above 90% of the limit | 5m | warning | A `memory.peak` at the limit that is page cache. `kube-system` | Pending only, and no firing: Loki between 21:46Z and 21:58Z on 2026-11-04, and Prometheus for seconds on 2026-11-05 |
-| `VmMemoryLow` | `MemAvailable` below 10% of the node's total | 5m | warning | The Mac's memory | None in evidence. VM used has to pass about 12.27 GiB of 13.63 for this. Its top was 10.49 GiB through the first night ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)), and 10.93 GiB in the 60s readings from 00:35Z to 07:47Z on 2026-11-05, at 01:50Z ([LOAD-3-20261105T074543Z-timeline.json](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)) |
+| `VmMemoryLow` | `MemAvailable` below 10% of the node's total | 5m | warning | The Mac's memory | None in evidence. VM used has to pass about 12.27 GiB of 13.63 for this. Its top was 10.49 GiB through the first night ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)), and 10.93 GiB in the 60s readings from 00:35Z to 07:47Z on 2026-11-05, at 01:50Z ([LOAD-3-20261105T074543Z-timeline.json](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)). On the restored cluster it topped 9.05 GiB, under `THINK=0` ([against the VM](resource-utilization.md#against-the-vm)) |
 | `KindnetSkippedNetworkPolicies` | The count of kindnet's `skipping network policies` line, held for 3d | none | critical | Any other way enforcement can fail. A line Alloy forgot more than 3d ago. It also sticks after kindnet's container restarts healthy in the same pod | A synthetic line from a scratch pod, firing to resolved ([h18-synthetic-2.txt](evidence/runs/h18-synthetic-2.txt)). With heartbeats after the line, as real kindnet logs, an in-place Alloy restart took the count out of Alloy at 00:55:04Z, the 3d hold kept it at 1, and the alert held until 5m after the pod's delete ([kindnet-hold-2.txt](evidence/runs/kindnet-hold-2.txt)). In [kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt) the count stayed at 1 through two such restarts only because the pod's sole line was the fail-open line, which was read again, as the note at its top says. No real kindnet failure |
 | `KindnetLogsNotRead` | No kindnet line counted, by `absent()` | 10m | warning | A tail that reads and counts wrongly | Pending after an Alloy restart, and no firing recorded ([kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt)) |
 | `ArgoAppOutOfSync` | `sync_status="OutOfSync"` | 15m | warning | Sync status Unknown, which is the next rule | Fired on a throwaway ([h16-fire-1.txt](evidence/runs/h16-fire-1.txt)) |
@@ -307,7 +307,7 @@ So the rule now also reads the open operation. Its 15m has margin against a firs
 ([plane-prod-sim-firstboot-1.txt](evidence/runs/plane-prod-sim-firstboot-1.txt)). It has none against the whole of `plane-dev`'s first boot: that operation stayed open about 35 minutes, from 21:11:33Z to 21:46:40Z, about 14 of them
 waiting on `scripts/infisical-bootstrap.sh` and the rest waves 1 to 3 and the hook ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt), [infisical-bootstrap-1.txt](evidence/runs/infisical-bootstrap-1.txt)).
 So `rules-platform.yaml` expects this rule to fire on `plane-dev` on a first boot held on bootstrap like that stage-by-stage one. This form was not live on it, so that is expected
-and not measured. The clean install of 2026-11-05 did not wait like that. In its one `make up`, on warm mirrors, `plane-dev`'s operation cannot have opened before 182s into the Infisical wait, in a step of 245s, and had closed by 185s into the last wait, when root had moved on to `plane-prod-sim`. So it lasted at most about 248s, about 4 minutes. That run's evidence is not yet published, and nobody read `ALERTS` in it, so whether this rule stayed quiet is not recorded. The promotions of 2026-11-05 closed in about a minute ([Argo CD](argocd.md#after-a-promotion)), and none was timed through a cold mirror.
+and not measured. The clean install of 2026-11-05 did not wait like that. In its one `make up`, on warm mirrors, `plane-dev`'s operation cannot have opened before 182s into the Infisical wait, in a step of 245s, and had closed by 185s into the last wait, when root had moved on to `plane-prod-sim`. So it lasted at most about 248s, about 4 minutes ([log](evidence/runs/clean-install-20261105T075041Z/make-up.txt)). Nobody read `ALERTS` in it, so whether this rule stayed quiet is not recorded. In the restore into a new cluster, `plane-dev`'s operation ran from 08:16:18Z to 08:20:56Z, and `plane-prod-sim`'s from 08:20:57Z to 08:23:33Z ([window checks](evidence/runs/LOAD-3-20261105T092547Z-window-checks.txt)). The promotions of 2026-11-05 closed in about a minute ([Argo CD](argocd.md#after-a-promotion)), and none was timed through a cold mirror.
 
 **What the failed-deploy drill measured,** on 2026-11-05 in dev. It reverted 8s after the first Degraded, at 10m24s, so `ArgoAppDegraded` stayed pending. The rule above reads a 2m window, so it holds true for 2m after the last open sample, and the operation closed at 11m51s. So `ArgoSyncFailed` stayed pending for 13m45s, against its 15m, and a revert about 75s
 later would have let it fire. `ArgoAppOutOfSync`, `ArgoAppStuckProgressing` and the chart's `KubePodNotReady`, `KubeContainerWaiting` and `KubeDeploymentRolloutStuck` went pending too, and only `Watchdog` reached the sink ([drill-failed-deploy-20261105T062343Z-alerts.tsv](evidence/runs/drill-failed-deploy-20261105T062343Z-alerts.tsv)). The failing-migrator drill held for 6 minutes, too short for a 15m rule, and shows `ArgoAppDegraded` never went pending, because health stayed `Healthy`
@@ -323,7 +323,7 @@ ok, so 128 are the chart's ([monitoring-rules-1.txt](evidence/runs/monitoring-ru
 | `Watchdog` | Always firing, by design. See routing below |
 | `NodeFilesystem*`, `KubePersistentVolumeFillingUp` | **Do not trust these for disk.** They watch the VM disk only, which reports hundreds of free GiB on a sparse disk while the Mac runs out first. `/backups` is excluded from node-exporter, because Docker Desktop's mount of the Mac reported 4397 GiB available with 17 GiB free, and the percentage rules went critical on a healthy cluster. Local-path volumes emit no `kubelet_volume_stats_*`. See [Disk pressure](runbooks/disk-pressure.md) |
 | `KubeNodePressure`, `KubeNodeEviction` | kind sets eviction thresholds to 0%, so these are not expected to warn about disk |
-| `CPUThrottlingHigh` | Fired on node-exporter from 21:19 to 21:38 on 2026-11-04, on a 100m quota. Sidecars, config reloaders, node-exporter and postgres-exporter now have no CPU limit. It still goes pending on pods that just started, which is not a fault ([cpu-throttling-1.txt](evidence/runs/cpu-throttling-1.txt)) |
+| `CPUThrottlingHigh` | Fired on node-exporter from 21:19 to 21:38 on 2026-11-04, on a 100m quota. Sidecars, config reloaders, node-exporter and postgres-exporter now have no CPU limit. It still goes pending on pods that just started, which is not a fault ([cpu-throttling-1.txt](evidence/runs/cpu-throttling-1.txt)). Under `THINK=0` on 2026-11-05 dev's Postgres was throttled in 98% to 100% of CFS periods for 9 minutes, and this did not read firing, so no alert here says the limit that binds under load is binding ([load results](resource-utilization.md#load-results-dev), [what fired](evidence/runs/LOAD-3-20261105T092547Z-prometheus-windows.json)) |
 | `PrometheusMissingRuleEvaluations` | Goes pending on a healthy Prometheus, because the Docker VM steps its wall clock. Left on, because it has not fired and a really slow group would miss far more often ([missing-rule-evaluations-1.txt](evidence/runs/missing-rule-evaluations-1.txt), `monitoring/README.md`) |
 | `KubeMemoryOvercommit`, `KubeCPUOvercommit`, `KubeQuota*`, `NodeMemoryHighUtilization` | Memory limits are overcommitted on purpose. These were quiet in the reading below |
 
@@ -475,11 +475,27 @@ That is one alert on one fault, once in each environment, and the sink is the en
 
 The preflight requires both environments' API probes to be healthy, so this test cannot run with prod-sim down.
 
+### The data service drill
+
+`tests/drills/alert-rules.sh ENV=dev` asks a narrower question of more rules than `make test-alert` asks of one: with the thing a rule names really gone, does the rule fire? It pauses auto-sync on root and the Application, scales a StatefulSet to 0, watches Prometheus and the sink for up to 270s, puts it back, and waits up to 300s for the resolved webhook. One row at a time, and a row that does not fire is a FAIL. It has no `make` target, and defines two rows, `PlaneRabbitmqDown` and `PlaneMinioDown`.
+
+Its first run found a real defect.
+
+| Run | Rule read | RabbitMQ at 0 | Silo at 0 |
+|---|---|---|---|
+| [10:06Z](evidence/runs/alert-rules-dev-20261105T100605Z.txt), at `613c2a0` | `up` alone | No pending and no firing in 270s. FAIL | The same. FAIL |
+| [10:17Z](evidence/runs/alert-rules-dev-20261105T101707Z.txt), at `2f42ddb` | `up`, or ready replicas | Pending at +26s, firing at +147s, at the sink at +157s, resolved 40s after it came back. PASS | Pending at +21s, firing at +138s, at the sink at +148s, resolved 26s after it came back. PASS |
+
+`up` has no series once the endpoint leaves the Service, so `== 0` has nothing to read: at each deadline Prometheus held `up` for the other service and none for this one. `kube_statefulset_status_replicas_ready` still reads 0 with no pod, so the fix adds it beside `up`, which still covers a ready pod whose scrape fails. `tests/rules/data-services-down.test.yaml` holds what Prometheus really held: the pod gone, the pod ready with its scrape failing, and all well or only the other environment down.
+
+That is one run each, in dev, on a scale to 0. Crashes and hung processes were not tested, and can read differently, as the script's header says. `PlanePostgresDown` and `PlaneValkeyDown` read through exporters that stay up, and this drill has no row for them.
+
 ### What this does not test
 
 | Not tested by `make test-alert` | How it could be checked |
 |---|---|
-| Any other project rule firing | Not automated. The "Seen" columns above say which have fired, and how |
+| Any other project rule firing | Only `tests/drills/alert-rules.sh`, for `PlaneRabbitmqDown` and `PlaneMinioDown`, and only on a scale to 0. The rest are not automated. The "Seen" columns above say which have fired, and how |
+| A crash or a hung process behind a data service rule | Not tested. Only a clean scale to 0 has run |
 | The `PlanePostgresDown` and `PlaneApiDatabaseProbeFailing` pair | By hand, with self-heal paused, following the pattern in `scripts/test-alert.sh` |
 | `PlaneWorkerNoConsumer` | Same, scaling `plane-worker-wl` to 0. It has already fired once for a real reason |
 | `PlaneCeleryQueueMissing` | It needs a broker up with no `celery` queue for 10m: a fresh broker whose worker never starts, or a broker the contract forbids, on a throwaway dev run. A restart of a broker whose worker did not reattach keeps the queue, and read `PlaneWorkerNoConsumer` instead ([plane-prod-sim-worker-broker-restart-1.txt](evidence/runs/plane-prod-sim-worker-broker-restart-1.txt)). It has only gone pending so far |
@@ -495,7 +511,7 @@ A bad rule has two gates before it runs. The Prometheus Operator's admission web
 `promtool check rules` over the rule files and `promtool test rules` over `tests/rules/*.test.yaml`. Each published run covers the rules as they stood. At
 2026-11-04T22:19Z both passed on 18 rules, 12 and 6 ([monitoring-rules-1.txt](evidence/runs/monitoring-rules-1.txt)). At 23:04Z both passed on 20, 12 and 8, and the
 rules from before that change failed the new tests, exit 1 ([h16-promtool-1.txt](evidence/runs/h16-promtool-1.txt)). At 2026-11-05T01:11Z both passed on 24, and the rules
-from before that work failed, exit 1, in [rules-unit-1.txt](evidence/runs/rules-unit-1.txt). The 24 as they stand, with `PodRestarting`'s later expression and the later tests, passed at 06:16Z on a clean clone at `0dde813` ([ci-2-20261105T061644Z-make-ci.log](evidence/ci/ci-2-20261105T061644Z-make-ci.log)). `scripts/ci/negative-controls.sh` plants a broken expression and a rule that
+from before that work failed, exit 1, in [rules-unit-1.txt](evidence/runs/rules-unit-1.txt). The 24 as they stood then, with `PodRestarting`'s later expression and the later tests, passed at 06:16Z on a clean clone at `0dde813` ([ci-2-20261105T061644Z-make-ci.log](evidence/ci/ci-2-20261105T061644Z-make-ci.log)). The fix for the two data service rules, with its new test file, passed both at about 10:16Z, in `scripts/ci/validate-manifests.sh` here and not in a clean clone ([alert-rules-validate-1.txt](evidence/runs/alert-rules-validate-1.txt)). `scripts/ci/negative-controls.sh` plants a broken expression and a rule that
 fires late, and requires each to go red. GitHub's runners have run promtool on Linux too, as [evidence/ci/README.md](evidence/ci/README.md) says. A
 broken expression that gets past these shows up only at evaluation, through `PrometheusRuleFailures`.
 
@@ -506,9 +522,9 @@ and sink, and 250 to 500 MiB for Loki and Alloy, before any monitoring pod had r
 environments running and no test in progress: `monitoring` 1,555 MiB and `monitoring-agents` 19 MiB, a little above the top of that range
 ([plane-prod-sim-snapshot-final-1.txt](evidence/runs/plane-prod-sim-snapshot-final-1.txt)). Per-container peaks are in
 [monitoring-memory-1.txt](evidence/runs/monitoring-memory-1.txt), and the platform's figures in
-[resource utilization](resource-utilization.md). A peak at a limit is often page cache: `monitoring/README.md` says how to read one.
+[resource utilization](resource-utilization.md). On the restored cluster, idle from 08:47:35Z to 08:56:59Z, `monitoring` averaged 1,018 MiB and 70 m and `monitoring-agents` 18 MiB and 2.2 m. That cluster was about 37 minutes old when idle began, so Prometheus and Loki held little history, and those are not a steady state ([the load window](resource-utilization.md#the-load-window)). A peak at a limit is often page cache: `monitoring/README.md` says how to read one.
 
-Volume growth per day on an idle platform was not tested in Pass 1, because the platform never sat idle for a day. The one comparable reading: on 2026-11-05 at 07:44Z, about 10 hours after those volumes were made and with drills and a load test behind them, `du` read 654 MiB on Prometheus's volume and 891 MiB on Loki's ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)). That is not a daily rate. Prometheus's 1 GiB cap and Loki's 72 hours are what bound them.
+Volume growth per day on an idle platform was not tested in Pass 1, because the platform never sat idle for a day. The one comparable reading: on 2026-11-05 at 07:44Z, about 10 hours after those volumes were made and with drills and a load test behind them, `du` read 654 MiB on Prometheus's volume and 891 MiB on Loki's ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)). That is not a daily rate. On the restored cluster, with its node 75 minutes old, `du` read 62 MiB and 9 MiB at 09:25:50Z ([LOAD-3-20261105T092547Z-host.txt](evidence/runs/LOAD-3-20261105T092547Z-host.txt)). Prometheus's 1 GiB cap and Loki's 72 hours are what bound them.
 
 ## Related
 
