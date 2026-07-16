@@ -477,7 +477,7 @@ The preflight requires both environments' API probes to be healthy, so this test
 
 ### The data service drill
 
-`tests/drills/alert-rules.sh ENV=dev` asks a narrower question of more rules than `make test-alert` asks of one: with the thing a rule names really gone, does the rule fire? It pauses auto-sync on root and the Application, scales a StatefulSet to 0, watches Prometheus and the sink for up to 270s, puts it back, and waits up to 300s for the resolved webhook. One row at a time, and a row that does not fire is a FAIL. It has no `make` target, and defines two rows, `PlaneRabbitmqDown` and `PlaneMinioDown`.
+`make test-alert` proves the whole path for one alert. `tests/drills/alert-rules.sh ENV=dev` asks a narrower question of others: with the thing a rule names really gone, does the rule fire? It pauses auto-sync on root and the Application, scales a StatefulSet to 0, watches Prometheus and the sink for up to 270s, puts it back, and waits up to 300s for the resolved webhook. One row at a time, and a row that does not fire is a FAIL. It has no `make` target, and defines two rows, `PlaneRabbitmqDown` and `PlaneMinioDown`.
 
 Its first run found a real defect.
 
