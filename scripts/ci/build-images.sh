@@ -136,6 +136,10 @@ while read -r name dockerfile context _; do
   log "Building $repository:$image_tag from $source_ref"
   # SOURCE_DATE_EPOCH fixes the config's created time. A rebuild can still differ, in file times and OS packages,
   # so a digest, not a rebuild, is the identity of a release.
+  # A context holds what a checkout and a build left, with their modes. Under a restrictive umask those are 0600, and
+  # the image's non-root user then cannot read its own files: nginx and Django fail at start, and no build step notices.
+  # The cold install found this, with umask 077.
+  chmod -R a+rX "apps/wayline/$context"
   docker buildx build --platform linux/arm64 --provenance=false --sbom=false \
     --build-arg "SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$source_ref" 2>/dev/null || date +%s)" \
     --metadata-file "$metadata" "${output[@]}" \
