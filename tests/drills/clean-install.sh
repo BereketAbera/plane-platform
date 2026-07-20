@@ -129,8 +129,9 @@ if [[ -n "$foreign" ]]; then
 fi
 
 # TEAR-1: refused with no confirmation, and nothing changes.
-# The drill that calls this runs with CONFIRM=yes in its environment, which make destroy would obey, so clear it here.
-step destroy-refused env -u CONFIRM bash -c '! make destroy' || true
+# The drill that calls this is run by make with CONFIRM=yes on its command line. make passes that down in MAKEFLAGS, past
+# the unset above, and make destroy obeys it. Two drills deleted their install this way before this was understood.
+step destroy-refused env -u CONFIRM -u MAKEFLAGS -u MFLAGS -u MAKELEVEL bash -c '! make destroy' || true
 step destroy make destroy CONFIRM=yes SKIP_BACKUP=yes
 cleanup_clone
 trap - EXIT
