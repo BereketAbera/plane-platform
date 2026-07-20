@@ -1,0 +1,37 @@
+10:55:46Z clean install of 18af97a into /Users/bek/dev/pr/plane-platform-clean-install. Host disk: 31 GiB free
+10:55:48Z the clone holds no .local and no .build. .tools was copied, so make setup checks it and does not download it
+10:55:51Z make-setup: exit 0 in 3s: make setup
+11:12:39Z make-up-stops-on-new-digests: exit 0 in 1008s: bash -c ! make up
+11:12:39Z make up created the cluster and local services, built the images, and stopped in 1008s
+11:12:49Z make-promote-dev: exit 0 in 10s: make promote ENV=dev
+11:12:52Z make-promote-prod-sim: exit 0 in 3s: env OVERRIDE_DEV_CHECK=first install on a new machine: nothing is running yet CONFIRM=yes SKIP_BACKUP=yes make promote ENV=prod-sim
+11:13:10Z removed the build's source tree, package store and Docker's build cache. Host disk: 29 GiB free
+12:40:28Z make-up: exit 0 in 5238s: make up
+12:40:28Z make up took 5238s. From the start of the first make up: 6277s
+12:40:30Z make-status: exit 0 in 2s: make status
+12:40:30Z app-timeline: exit 0 in 0s: bash -c "$0" --kubeconfig "$1" --context "kind-$2" -n argocd get applications -o json | python3 -I -c "
+import json,sys
+rows=[]
+for a in json.load(sys.stdin)[\"items\"]:
+    s=a.get(\"status\",{}); h=s.get(\"history\") or [{}]; op=s.get(\"operationState\") or {}
+    rows.append((h[0].get(\"deployStartedAt\",\"-\"),h[0].get(\"deployedAt\",\"-\"),a[\"metadata\"][\"name\"],a[\"metadata\"].get(\"annotations\",{}).get(\"argocd.argoproj.io/sync-wave\",\"-\"),op.get(\"phase\",\"-\")))
+for r in sorted(rows): print(*r)
+" /Users/bek/dev/pr/plane-platform/.tools/bin/kubectl /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig plane-platform
+12:40:48Z disk-after-install: exit 0 in 18s: bash -c df -h /; du -sk "$HOME/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw"; docker system df; for v in $(docker volume ls -q | grep plane-platform-local); do printf "%s " "$v"; docker system df -v 2>/dev/null | grep -F "$v" | head -1; done
+12:40:48Z apps-after-up: exit 0 in 0s: /Users/bek/dev/pr/plane-platform/.tools/bin/kubectl --kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig --context kind-plane-platform -n argocd get applications
+12:42:37Z e2e-dev-first: exit 0 in 109s: make test-e2e ENV=dev
+12:42:59Z e2e-prod-sim-first: exit 0 in 22s: make test-e2e ENV=prod-sim
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+RESULT  PASS
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+RESULT  PASS
+12:43:14Z test-infisical: exit 0 in 15s: make test-infisical
+12:43:30Z make-up-again: exit 0 in 16s: make up
+12:43:30Z second make up took 16s. Pod uid hash before a3a48562c7b32c98, after a3a48562c7b32c98
+12:43:33Z terraform-plan-local: exit 0 in 3s: env KUBECONFIG=/Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig /Users/bek/dev/pr/plane-platform/.tools/bin/terraform -chdir=/Users/bek/dev/pr/plane-platform-clean-install/infrastructure/terraform/environments/local plan -lock=false -detailed-exitcode -input=false
+12:43:34Z restore-foreign-key-refused: exit 0 in 1s: bash -c ! make restore ENV=dev BACKUP=20261105T105422Z CONFIRM=yes
+12:44:46Z destroy-refused: exit 1 in 72s: env -u CONFIRM bash -c ! make destroy
+12:44:46Z destroy: exit 0 in 0s: make destroy CONFIRM=yes SKIP_BACKUP=yes
+12:44:47Z clone evidence copied to /Users/bek/dev/pr/plane-platform/.local/evidence-raw/clean-install-20261105T105546Z/clone-evidence
+12:45:17Z registry snapshot put back, so this checkout's digests are served again
+12:45:17Z clone removed. Host disk: 26 GiB free. Steps that failed: 1

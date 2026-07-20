@@ -1,0 +1,12 @@
+[1;34m==>[0m Promotion plan for dev
+    plane-frontend -> localhost:5001/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+    plane-admin -> localhost:5001/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+    plane-space -> localhost:5001/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+    plane-backend -> localhost:5001/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 4c7a6b2: promote(dev): plane-frontend 136c8365e763, plane-admin effa1a3867f3, plane-space a3bbb52bb2d1, plane-backend c2f45d9c3efd
+[1;32m ok[0m created /Users/bek/dev/pr/plane-platform-clean-install/.local/git/plane-platform.git
+[1;33mwarn[0m publishing 1 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       4c7a6b2 promote(dev): plane-frontend 136c8365e763, plane-admin effa1a3867f3, plane-space a3bbb52bb2d1, plane-backend c2f45d9c3efd
+[1;32m ok[0m published main 4c7a6b29b34d to /Users/bek/dev/pr/plane-platform-clean-install/.local/git/plane-platform.git

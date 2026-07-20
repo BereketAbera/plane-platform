@@ -1,0 +1,20 @@
+# 2026-11-05T10:17:07Z commit 2f42ddb tests/drills/alert-rules.sh ENV=dev ROWS=PlaneRabbitmqDown PlaneMinioDown
+[1;34m==>[0m Pausing auto-sync: root
+[1;34m==>[0m Pausing auto-sync: plane-dev
+[1;34m==>[0m PlaneRabbitmqDown: scaling plane-dev/statefulset/plane-rabbitmq-wl to 0
+10:17:12Z +0s PlaneRabbitmqDown state none
+10:17:38Z +26s PlaneRabbitmqDown state pending
+10:19:39Z +147s PlaneRabbitmqDown state firing
+10:19:49Z +157s PlaneRabbitmqDown firing webhook at the sink
+[1;34m==>[0m putting statefulset/plane-rabbitmq-wl back
+PASS  PlaneRabbitmqDown fired with statefulset/plane-rabbitmq-wl at 0, and resolved 40s after it came back
+[1;34m==>[0m PlaneMinioDown: scaling plane-dev/statefulset/plane-minio-wl to 0
+10:20:50Z +0s PlaneMinioDown state none
+10:21:11Z +21s PlaneMinioDown state pending
+10:23:08Z +138s PlaneMinioDown state firing
+10:23:18Z +148s PlaneMinioDown firing webhook at the sink
+[1;34m==>[0m putting statefulset/plane-minio-wl back
+PASS  PlaneMinioDown fired with statefulset/plane-minio-wl at 0, and resolved 26s after it came back
+[1;32m ok[0m auto-sync restored on plane-dev
+[1;32m ok[0m auto-sync restored on root
+RESULT failures=0  evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/alert-rules-dev-20261105T101707Z.txt

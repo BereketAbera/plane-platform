@@ -1,0 +1,1212 @@
+[1;34m==>[0m Cluster: kind, local services, kubeconfig
+[1;34m==>[0m Creating kind cluster plane-platform
+Creating cluster "plane-platform" ...
+ • Ensuring node image (kindest/node:v1.36.4) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.36.4) 🖼️
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Waiting ≤ 2m0s for control-plane = Ready ⏳  ...
+ ✓ Waiting ≤ 2m0s for control-plane = Ready ⏳
+ • Ready after 17s 💚
+Set kubectl context to "kind-plane-platform"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-plane-platform --kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig
+
+Thanks for using kind! 😊
+[1;32m ok[0m kind network 172.24.0.0/16 is inside 172.16.0.0/12
+[1;34m==>[0m Starting local services (registry, pull-through caches, Git remote)
+ Container plane-mirror-k8s Starting 
+ Container plane-git Starting 
+ Container plane-registry Starting 
+ Container plane-git Started 
+ Container plane-mirror-quay Started 
+ Container plane-registry Started 
+ Container plane-mirror-k8s Started 
+ Container plane-mirror-docker Started 
+[1;32m ok[0m cluster ready: context kind-plane-platform, kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig
+[1;32m ok[0m cluster step finished in 33s
+[1;34m==>[0m Publish: local image digests, then main to the bare repo Argo CD reads
+[1;33mwarn[0m The local registry cannot serve these images, which the overlays reference:
+    localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+    localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+    localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+    localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+[1;34m==>[0m Rebuilding the images, in case the build reproduces those digests
+[1;34m==>[0m Node v22.22.2
+[1;34m==>[0m Fetching v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe) from https://github.com/makeplane/plane.git
+[1;32m ok[0m /Users/bek/dev/pr/plane-platform-clean-install/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
+[1;34m==>[0m Overlay against the pinned commit
+[1;32m ok[0m overlay.lock matches v1.4.3: 155 replaced, 20 new
+143 images, 7 manifests, 2.82 MiB in the overlay
+against /Users/bek/dev/pr/plane-platform-clean-install/.build/plane-src: 143 outputs compared, 188 images referenced by source, 0 uncovered
+[1;34m==>[0m Overlay
+[1;32m ok[0m 7 patches applied
+[1;34m==>[0m Codemod
+rebrand: 3739 files read, 439 changed, 8 lines dropped
+[1;34m==>[0m Token diff and contrast
+token-diff: 266 names across 6 brand files, 928 upstream tokens, 0 problems
+light: 194 pairs, lowest 4.58
+light [data-shell]: 40 pairs, lowest 5.25
+light page main: 194 pairs, lowest 4.53
+light: disabled text on surface-1 = 3.70 (exempt, informational)
+dark: 194 pairs, lowest 4.52
+dark [data-shell]: 40 pairs, lowest 5.25
+dark: disabled text on surface-1 = 4.52 (exempt, informational)
+light-contrast: 194 pairs, lowest 4.82
+light-contrast [data-shell]: 40 pairs, lowest 5.25
+light-contrast page main: 194 pairs, lowest 4.82
+light-contrast: disabled text on surface-1 = 3.86 (exempt, informational)
+dark-contrast: 194 pairs, lowest 5.22
+dark-contrast [data-shell]: 40 pairs, lowest 5.25
+dark-contrast: disabled text on surface-1 = 4.52 (exempt, informational)
+light shell nav: 304 pairs, lowest 4.99
+light shell top: 324 pairs, lowest 4.99
+light shell: hairline 1.66, disabled text 4.57 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+dark shell nav: 304 pairs, lowest 4.99
+dark shell top: 324 pairs, lowest 4.99
+dark shell: hairline 1.78, disabled text 4.92 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+light-contrast shell nav: 307 pairs, lowest 4.92
+light-contrast shell top: 330 pairs, lowest 4.92
+light-contrast shell: hairline 4.92, disabled text 7.94 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+dark-contrast shell nav: 307 pairs, lowest 5.21
+dark-contrast shell top: 330 pairs, lowest 4.92
+dark-contrast shell: hairline 5.21, disabled text 8.42 (informational, 7:1 and 3:1 rules above apply to high contrast only)
+3854 pairs checked, 0 below AA
+source-links: 1579 files read, 0 problems
+[1;34m==>[0m pnpm 11.10.0
+[1;34m==>[0m pnpm install
+Scope: 16 of 20 workspace projects
+? Verifying lockfile against supply-chain policies (1729 entries)...
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+.                                        |    +1301 ++++++++++++++++++++++++++++
+Progress: resolved 1301, reused 0, downloaded 16, added 0
+Progress: resolved 1301, reused 0, downloaded 36, added 0
+[WARN] Tarball download average speed 18 KiB/s (size 25 KiB) is below 50 KiB/s: https://registry.npmjs.org/linebreak/-/linebreak-1.1.0.tgz (GET)
+[WARN] Tarball download average speed 4 KiB/s (size 6 KiB) is below 50 KiB/s: https://registry.npmjs.org/bind-event-listener/-/bind-event-listener-3.0.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 53, added 53
+[WARN] Tarball download average speed 7 KiB/s (size 15 KiB) is below 50 KiB/s: https://registry.npmjs.org/tiny-inflate/-/tiny-inflate-1.0.3.tgz (GET)
+[WARN] Tarball download average speed 12 KiB/s (size 30 KiB) is below 50 KiB/s: https://registry.npmjs.org/vite-compatible-readable-stream/-/vite-compatible-readable-stream-3.6.1.tgz (GET)
+[WARN] Tarball download average speed 25 KiB/s (size 54 KiB) is below 50 KiB/s: https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.17.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 78, added 77
+[WARN] Tarball download average speed 9 KiB/s (size 15 KiB) is below 50 KiB/s: https://registry.npmjs.org/@react-pdf/image/-/image-3.0.3.tgz (GET)
+[WARN] Tarball download average speed 11 KiB/s (size 25 KiB) is below 50 KiB/s: https://registry.npmjs.org/@react-pdf/layout/-/layout-4.4.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 99, added 99
+Progress: resolved 1301, reused 0, downloaded 118, added 118
+[WARN] Tarball download average speed 7 KiB/s (size 8 KiB) is below 50 KiB/s: https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz (GET)
+[WARN] Tarball download average speed 35 KiB/s (size 190 KiB) is below 50 KiB/s: https://registry.npmjs.org/pako/-/pako-0.2.9.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 130, added 130
+[WARN] Tarball download average speed 47 KiB/s (size 78 KiB) is below 50 KiB/s: https://registry.npmjs.org/@types/react/-/react-18.3.11.tgz (GET)
+[WARN] Tarball download average speed 1 KiB/s (size 3 KiB) is below 50 KiB/s: https://registry.npmjs.org/@radix-ui/react-portal/-/react-portal-1.1.9.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 140, added 140
+Progress: resolved 1301, reused 0, downloaded 145, added 145
+[WARN] Tarball download average speed 29 KiB/s (size 151 KiB) is below 50 KiB/s: https://registry.npmjs.org/@tanstack/react-table/-/react-table-8.21.3.tgz (GET)
+[WARN] Tarball download average speed 28 KiB/s (size 239 KiB) is below 50 KiB/s: https://registry.npmjs.org/@atlaskit/pragmatic-drag-and-drop-auto-scroll/-/pragmatic-drag-and-drop-auto-scroll-1.4.0.tgz (GET)
+[WARN] Tarball download average speed 3 KiB/s (size 27 KiB) is below 50 KiB/s: https://registry.npmjs.org/@react-pdf/renderer/-/renderer-4.3.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 191, added 191
+[WARN] Tarball download average speed 41 KiB/s (size 146 KiB) is below 50 KiB/s: https://registry.npmjs.org/lodash-es/-/lodash-es-4.18.1.tgz (GET)
+[WARN] Tarball download average speed 44 KiB/s (size 166 KiB) is below 50 KiB/s: https://registry.npmjs.org/mobx-react/-/mobx-react-9.1.1.tgz (GET)
+[WARN] Request took 10486ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-flow
+[WARN] Tarball download average speed 9 KiB/s (size 10 KiB) is below 50 KiB/s: https://registry.npmjs.org/micromark-util-types/-/micromark-util-types-1.1.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 232, added 232
+[WARN] Tarball download average speed 21 KiB/s (size 223 KiB) is below 50 KiB/s: https://registry.npmjs.org/@atlaskit/pragmatic-drag-and-drop-hitbox/-/pragmatic-drag-and-drop-hitbox-1.1.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 254, added 254
+[WARN] Tarball download average speed 18 KiB/s (size 34 KiB) is below 50 KiB/s: https://registry.npmjs.org/node-html-parser/-/node-html-parser-6.1.13.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 308, added 308
+[WARN] Request took 13267ms: https://registry.npmjs.org/@babel%2Fparser
+[WARN] Request took 13071ms: https://registry.npmjs.org/@effect%2Fplatform-node
+[WARN] Tarball download average speed 25 KiB/s (size 37 KiB) is below 50 KiB/s: https://registry.npmjs.org/d3-array/-/d3-array-3.2.4.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 365, added 365
+Progress: resolved 1301, reused 0, downloaded 400, added 400
+[WARN] Tarball download average speed 2 KiB/s (size 8 KiB) is below 50 KiB/s: https://registry.npmjs.org/serve/-/serve-14.2.5.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 449, added 447
+[WARN] Request took 16075ms: https://registry.npmjs.org/@babel%2Fhelper-member-expression-to-functions
+[WARN] Request took 16122ms: https://registry.npmjs.org/@babel%2Fregister
+Progress: resolved 1301, reused 0, downloaded 470, added 470
+Progress: resolved 1301, reused 0, downloaded 482, added 482
+[WARN] Tarball download average speed 0 KiB/s (size 9 KiB) is below 50 KiB/s: https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz (GET)
+[WARN] Tarball download average speed 8 KiB/s (size 12 KiB) is below 50 KiB/s: https://registry.npmjs.org/nanoid/-/nanoid-3.3.8.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 506, added 506
+Progress: resolved 1301, reused 0, downloaded 529, added 529
+Progress: resolved 1301, reused 0, downloaded 545, added 545
+Progress: resolved 1301, reused 0, downloaded 563, added 563
+Progress: resolved 1301, reused 0, downloaded 574, added 574
+[WARN] Tarball download average speed 44 KiB/s (size 99 KiB) is below 50 KiB/s: https://registry.npmjs.org/@types/lodash/-/lodash-4.17.20.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 580, added 580
+Progress: resolved 1301, reused 0, downloaded 582, added 582
+[WARN] Tarball download average speed 28 KiB/s (size 110 KiB) is below 50 KiB/s: https://registry.npmjs.org/rolldown/-/rolldown-1.0.0-beta.46.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 584, added 584
+[WARN] Tarball download average speed 2 KiB/s (size 15 KiB) is below 50 KiB/s: https://registry.npmjs.org/mime/-/mime-1.6.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 588, added 588
+Progress: resolved 1301, reused 0, downloaded 589, added 589
+Progress: resolved 1301, reused 0, downloaded 593, added 593
+[WARN] Request took 10448ms: https://registry.npmjs.org/@storybook%2Faddon-onboarding
+Progress: resolved 1301, reused 0, downloaded 597, added 597
+[WARN] Tarball download average speed 2 KiB/s (size 34 KiB) is below 50 KiB/s: https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz (GET)
+[WARN] Tarball download average speed 45 KiB/s (size 51 KiB) is below 50 KiB/s: https://registry.npmjs.org/@hocuspocus/common/-/common-2.15.3.tgz (GET)
+[WARN] Tarball download average speed 19 KiB/s (size 42 KiB) is below 50 KiB/s: https://registry.npmjs.org/@floating-ui/core/-/core-1.7.3.tgz (GET)
+[WARN] Request took 11400ms: https://registry.npmjs.org/@storybook%2Freact-webpack5
+[WARN] Request took 10357ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm64-musl
+Progress: resolved 1301, reused 0, downloaded 607, added 607
+[WARN] Request took 10136ms: https://registry.npmjs.org/@tiptap%2Fextension-code-block
+[WARN] Request took 10242ms: https://registry.npmjs.org/@tiptap%2Fextension-character-count
+[WARN] Request took 10673ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-x64-musl
+[WARN] Request took 11233ms: https://registry.npmjs.org/@swc%2Fcore-win32-x64-msvc
+[WARN] Tarball download average speed 35 KiB/s (size 110 KiB) is below 50 KiB/s: https://registry.npmjs.org/tabbable/-/tabbable-6.2.0.tgz (GET)
+[WARN] Request took 10108ms: https://registry.npmjs.org/@tiptap%2Fextension-emoji
+Progress: resolved 1301, reused 0, downloaded 616, added 616
+[WARN] Request took 10069ms: https://registry.npmjs.org/@tiptap%2Fextension-floating-menu
+[WARN] Tarball download average speed 27 KiB/s (size 412 KiB) is below 50 KiB/s: https://registry.npmjs.org/@types/node/-/node-22.12.0.tgz (GET)
+[WARN] Request took 10062ms: https://registry.npmjs.org/@tiptap%2Fextension-gapcursor
+[WARN] Request took 10087ms: https://registry.npmjs.org/@tiptap%2Fextension-hard-break
+[WARN] Request took 13824ms: https://registry.npmjs.org/@sentry%2Fcore
+[WARN] Request took 12058ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm-gnueabihf
+[WARN] Request took 11872ms: https://registry.npmjs.org/@tiptap%2Fcore
+[WARN] Request took 10192ms: https://registry.npmjs.org/@tiptap%2Fextension-horizontal-rule
+Progress: resolved 1301, reused 0, downloaded 635, added 635
+[WARN] Request took 13841ms: https://registry.npmjs.org/@storybook%2Fpreset-react-webpack
+[WARN] Request took 10956ms: https://registry.npmjs.org/@tiptap%2Fextension-heading
+[WARN] Request took 14114ms: https://registry.npmjs.org/@storybook%2Fbuilder-webpack5
+[WARN] Request took 10077ms: https://registry.npmjs.org/@tiptap%2Fextension-image
+[WARN] Request took 11272ms: https://registry.npmjs.org/@tiptap%2Fextension-history
+Progress: resolved 1301, reused 0, downloaded 643, added 643
+[WARN] Request took 13685ms: https://registry.npmjs.org/@tailwindcss%2Foxide-darwin-arm64
+[WARN] Request took 10546ms: https://registry.npmjs.org/@tiptap%2Fextension-italic
+[WARN] Request took 10147ms: https://registry.npmjs.org/@tiptap%2Fextension-list-item
+[WARN] Request took 10096ms: https://registry.npmjs.org/@tiptap%2Fextension-mention
+[WARN] Request took 14079ms: https://registry.npmjs.org/@tailwindcss%2Foxide-darwin-x64
+Progress: resolved 1301, reused 0, downloaded 673, added 673
+[WARN] Tarball download average speed 37 KiB/s (size 172 KiB) is below 50 KiB/s: https://registry.npmjs.org/@hocuspocus/provider/-/provider-2.15.2.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 683, added 683
+[WARN] Request took 16928ms: https://registry.npmjs.org/@storybook%2Fcore-webpack
+Progress: resolved 1301, reused 0, downloaded 691, added 689
+[WARN] Tarball download average speed 14 KiB/s (size 29 KiB) is below 50 KiB/s: https://registry.npmjs.org/jsx-dom-cjs/-/jsx-dom-cjs-8.1.6.tgz (GET)
+[WARN] Tarball download average speed 39 KiB/s (size 76 KiB) is below 50 KiB/s: https://registry.npmjs.org/linkifyjs/-/linkifyjs-4.3.2.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 697, added 697
+[WARN] Request took 19288ms: https://registry.npmjs.org/@storybook%2Faddon-links
+Progress: resolved 1301, reused 0, downloaded 720, added 720
+[WARN] Request took 18605ms: https://registry.npmjs.org/@tiptap%2Fextension-bold
+[WARN] Tarball download average speed 21 KiB/s (size 48 KiB) is below 50 KiB/s: https://registry.npmjs.org/tiptap-markdown/-/tiptap-markdown-0.8.10.tgz (GET)
+[WARN] Tarball download average speed 5 KiB/s (size 18 KiB) is below 50 KiB/s: https://registry.npmjs.org/@base-ui-components/utils/-/utils-0.1.1.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 729, added 729
+Progress: resolved 1301, reused 0, downloaded 752, added 752
+Progress: resolved 1301, reused 0, downloaded 768, added 769
+[WARN] Tarball download average speed 32 KiB/s (size 52 KiB) is below 50 KiB/s: https://registry.npmjs.org/recast/-/recast-0.23.11.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 785, added 787
+Progress: resolved 1301, reused 0, downloaded 800, added 803
+Progress: resolved 1301, reused 0, downloaded 822, added 825
+Progress: resolved 1301, reused 0, downloaded 841, added 844
+[WARN] Tarball download average speed 48 KiB/s (size 51 KiB) is below 50 KiB/s: https://registry.npmjs.org/react-docgen/-/react-docgen-8.0.1.tgz (GET)
+[WARN] Tarball download average speed 23 KiB/s (size 38 KiB) is below 50 KiB/s: https://registry.npmjs.org/@storybook/builder-vite/-/builder-vite-10.4.6.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 852, added 855
+[WARN] Tarball download average speed 48 KiB/s (size 104 KiB) is below 50 KiB/s: https://registry.npmjs.org/chroma-js/-/chroma-js-3.2.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 878, added 881
+[WARN] Tarball download average speed 40 KiB/s (size 152 KiB) is below 50 KiB/s: https://registry.npmjs.org/jackspeak/-/jackspeak-4.2.3.tgz (GET)
+[WARN] Request took 11429ms: https://registry.npmjs.org/@tiptap%2Fextension-strike
+Progress: resolved 1301, reused 0, downloaded 910, added 911
+Progress: resolved 1301, reused 0, downloaded 934, added 936
+[WARN] Request took 10112ms: https://registry.npmjs.org/@webassemblyjs%2Fleb128
+Progress: resolved 1301, reused 0, downloaded 960, added 963
+Progress: resolved 1301, reused 0, downloaded 979, added 983
+[WARN] Request took 14256ms: https://registry.npmjs.org/@types%2Fnode
+[WARN] Request took 13996ms: https://registry.npmjs.org/@types%2Freact
+Progress: resolved 1301, reused 0, downloaded 1001, added 1005
+[WARN] Tarball download average speed 11 KiB/s (size 18 KiB) is below 50 KiB/s: https://registry.npmjs.org/@swc/types/-/types-0.1.24.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1019, added 1023
+[WARN] Tarball download average speed 16 KiB/s (size 16 KiB) is below 50 KiB/s: https://registry.npmjs.org/fs-extra/-/fs-extra-10.1.0.tgz (GET)
+[WARN] Tarball download average speed 36 KiB/s (size 38 KiB) is below 50 KiB/s: https://registry.npmjs.org/memfs/-/memfs-3.5.3.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1047, added 1050
+[WARN] Tarball download average speed 22 KiB/s (size 481 KiB) is below 50 KiB/s: https://registry.npmjs.org/@tiptap/extension-emoji/-/extension-emoji-2.26.1.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1073, added 1077
+Progress: resolved 1301, reused 0, downloaded 1090, added 1094
+[WARN] Tarball download average speed 3 KiB/s (size 10 KiB) is below 50 KiB/s: https://registry.npmjs.org/domhandler/-/domhandler-4.3.1.tgz (GET)
+[WARN] Tarball download average speed 28 KiB/s (size 586 KiB) is below 50 KiB/s: https://registry.npmjs.org/framer-motion/-/framer-motion-12.23.12.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1126, added 1130
+Progress: resolved 1301, reused 0, downloaded 1134, added 1138
+[WARN] Tarball download average speed 49 KiB/s (size 2131 KiB) is below 50 KiB/s: https://registry.npmjs.org/prettier/-/prettier-3.7.4.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1148, added 1152
+[WARN] Tarball download average speed 9 KiB/s (size 428 KiB) is below 50 KiB/s: https://registry.npmjs.org/@babel/parser/-/parser-7.29.7.tgz (GET)
+[WARN] GET https://registry.npmjs.org/@fontsource/material-symbols-rounded/-/material-symbols-rounded-5.2.30.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1157, added 1161
+[WARN] Tarball download average speed 15 KiB/s (size 17 KiB) is below 50 KiB/s: https://registry.npmjs.org/toml/-/toml-4.3.0.tgz (GET)
+[WARN] GET https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] Tarball download average speed 12 KiB/s (size 18 KiB) is below 50 KiB/s: https://registry.npmjs.org/@opentelemetry/api-logs/-/api-logs-0.214.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1168, added 1172
+[WARN] Tarball download average speed 46 KiB/s (size 113 KiB) is below 50 KiB/s: https://registry.npmjs.org/@opentelemetry/api/-/api-1.9.1.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1180, added 1184
+[WARN] Tarball download average speed 34 KiB/s (size 155 KiB) is below 50 KiB/s: https://registry.npmjs.org/kubernetes-types/-/kubernetes-types-1.30.0.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1194, added 1198
+[WARN] GET https://registry.npmjs.org/lucide-react/-/lucide-react-0.469.0.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1211, added 1215
+[WARN] Tarball download average speed 35 KiB/s (size 36 KiB) is below 50 KiB/s: https://registry.npmjs.org/eslint-scope/-/eslint-scope-9.1.2.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1226, added 1230
+Progress: resolved 1301, reused 0, downloaded 1238, added 1242
+[WARN] Tarball download average speed 0 KiB/s (size 5 KiB) is below 50 KiB/s: https://registry.npmjs.org/@types/ws/-/ws-8.18.1.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1249, added 1253
+[WARN] Tarball download average speed 19 KiB/s (size 41 KiB) is below 50 KiB/s: https://registry.npmjs.org/hermes-estree/-/hermes-estree-0.25.1.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1269, added 1273
+[WARN] Tarball download average speed 39 KiB/s (size 760 KiB) is below 50 KiB/s: https://registry.npmjs.org/@blueprintjs/core/-/core-4.20.2.tgz (GET)
+[WARN] Tarball download average speed 1 KiB/s (size 4 KiB) is below 50 KiB/s: https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1275, added 1279
+[WARN] Tarball download average speed 30 KiB/s (size 51 KiB) is below 50 KiB/s: https://registry.npmjs.org/commander/-/commander-14.0.2.tgz (GET)
+[WARN] Tarball download average speed 43 KiB/s (size 87 KiB) is below 50 KiB/s: https://registry.npmjs.org/magic-string/-/magic-string-0.30.21.tgz (GET)
+Progress: resolved 1301, reused 0, downloaded 1277, added 1281
+[WARN] Request took 40048ms: https://registry.npmjs.org/@swc%2Fcore
+[WARN] Request took 22709ms: https://registry.npmjs.org/electron-to-chromium
+[WARN] Request took 21906ms: https://registry.npmjs.org/eslint-plugin-react-hooks
+Progress: resolved 1301, reused 0, downloaded 1278, added 1281
+[WARN] GET https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.0.3.tgz error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.28.1.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1278, added 1282
+[WARN] GET https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.2.tgz error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.0.0-beta.46.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1279, added 1282
+Progress: resolved 1301, reused 0, downloaded 1279, added 1283
+[WARN] Tarball download average speed 49 KiB/s (size 1593 KiB) is below 50 KiB/s: https://registry.npmjs.org/@blueprintjs/icons/-/icons-4.16.0.tgz (GET)
+[WARN] Request took 10684ms: https://registry.npmjs.org/react-hook-form
+Progress: resolved 1301, reused 0, downloaded 1280, added 1283
+Progress: resolved 1301, reused 0, downloaded 1280, added 1284
+Progress: resolved 1301, reused 0, downloaded 1281, added 1284
+[WARN] Request took 14185ms: https://registry.npmjs.org/react
+Progress: resolved 1301, reused 0, downloaded 1281, added 1285
+[WARN] Request took 47380ms: https://registry.npmjs.org/@typescript-eslint%2Ftypes
+Progress: resolved 1301, reused 0, downloaded 1282, added 1286
+[WARN] Request took 16325ms: https://registry.npmjs.org/react-dom
+[WARN] Request took 18775ms: https://registry.npmjs.org/react-refresh
+Progress: resolved 1301, reused 0, downloaded 1283, added 1286
+[WARN] Request took 15665ms: https://registry.npmjs.org/uvu
+Progress: resolved 1301, reused 0, downloaded 1283, added 1287
+[WARN] Tarball download average speed 28 KiB/s (size 888 KiB) is below 50 KiB/s: https://registry.npmjs.org/@oxc-parser/binding-darwin-arm64/-/binding-darwin-arm64-0.132.0.tgz (GET)
+[WARN] GET https://registry.npmjs.org/storybook/-/storybook-10.4.6.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1284, added 1288
+[WARN] Request took 18808ms: https://registry.npmjs.org/typescript
+Progress: resolved 1301, reused 0, downloaded 1285, added 1288
+Progress: resolved 1301, reused 0, downloaded 1286, added 1290
+Progress: resolved 1301, reused 0, downloaded 1287, added 1290
+Progress: resolved 1301, reused 0, downloaded 1287, added 1291
+Progress: resolved 1301, reused 0, downloaded 1288, added 1291
+Progress: resolved 1301, reused 0, downloaded 1288, added 1292
+Progress: resolved 1301, reused 0, downloaded 1289, added 1293
+✓ Lockfile passes supply-chain policies (1729 entries in 1m 45.9s)
+Progress: resolved 1301, reused 0, downloaded 1290, added 1293
+Progress: resolved 1301, reused 0, downloaded 1291, added 1295
+[WARN] GET https://registry.npmjs.org/@swc/core-darwin-arm64/-/core-darwin-arm64-1.13.5.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1292, added 1295
+Progress: resolved 1301, reused 0, downloaded 1292, added 1296
+Progress: resolved 1301, reused 0, downloaded 1293, added 1297
+Progress: resolved 1301, reused 0, downloaded 1294, added 1297
+Progress: resolved 1301, reused 0, downloaded 1294, added 1298
+[WARN] GET https://registry.npmjs.org/oxfmt/-/oxfmt-0.35.0.tgz error (23). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 1301, reused 0, downloaded 1295, added 1298
+Progress: resolved 1301, reused 0, downloaded 1295, added 1299
+Progress: resolved 1301, reused 0, downloaded 1296, added 1299
+Progress: resolved 1301, reused 0, downloaded 1296, added 1300
+[WARN] GET https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.0.0-beta.46.tgz error (23). Will retry in 1 minute. 1 retries left.
+Progress: resolved 1301, reused 0, downloaded 1297, added 1300
+Progress: resolved 1301, reused 0, downloaded 1297, added 1301, done
+.../node_modules/@swc/core postinstall$ node postinstall.js
+.../node_modules/msgpackr-extract install$ node-gyp-build-optional-packages
+.../esbuild@0.28.1/node_modules/esbuild postinstall$ node install.js
+.../node_modules/@swc/core postinstall: Done
+.../esbuild@0.28.1/node_modules/esbuild postinstall: Done
+.../node_modules/msgpackr-extract install: Done
+. prepare$ husky
+. prepare: HUSKY=0 skip install
+. prepare: Done
+Done in 3m 39.7s using pnpm v11.10.0
+[1;34m==>[0m turbo build web
+
+   • Packages in scope: web
+   • Running build in 1 packages
+   • Remote caching disabled
+
+
+ Tasks:    11 successful, 11 total
+Cached:    0 cached, 11 total
+  Time:    40.397s 
+
+[1;34m==>[0m turbo build admin
+
+   • Packages in scope: admin
+   • Running build in 1 packages
+   • Remote caching disabled
+
+
+ Tasks:    8 successful, 8 total
+Cached:    0 cached, 8 total
+  Time:    20.442s 
+
+[1;34m==>[0m turbo build space
+
+   • Packages in scope: space
+   • Running build in 1 packages
+   • Remote caching disabled
+
+
+ Tasks:    10 successful, 10 total
+Cached:    7 cached, 10 total
+  Time:    19.328s 
+
+leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
+  allowlisted 293x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
+  allowlisted 13x: Built on <<Plane>> Community Edition
+  allowlisted 1x: https://docs\.<<plane\.so>>/core-concepts/projects/run-project#estimate
+  allowlisted 4x: https://docs\.<<plane\.so>>/(?:["'`\\]|\s|$)
+  allowlisted 2x: https://developers\.<<plane\.so>>/self-hosting/telemetry
+  allowlisted 1x: intake@<<plane\.so>>
+  allowlisted 6x: <<Plane>>(Lockup|Logo|Wordmark|NewIcon)\b
+  allowlisted 3x: focal<<Plane>>(X|Y)?Resolution
+  allowlisted 12x: <<Plane>>s Soportados|y <<Plane>>s|Seleccionar <<Plane>>s
+  allowlisted 6x: <<Plane>>n Sie
+  allowlisted 9x: <<Plane>>jado|<<Plane>>je
+[1;32m ok[0m web: 5 font URLs under /assets/, all files present, brand values present
+[1;32m ok[0m web ships none of upstream's empty-state illustrations
+[1;32m ok[0m admin: 5 font URLs under /god-mode/assets/, all files present, brand values present
+[1;32m ok[0m admin ships none of upstream's empty-state illustrations
+[1;32m ok[0m space: 5 font URLs under /spaces/assets/, all files present, brand values present
+[1;32m ok[0m space ships none of upstream's empty-state illustrations
+[1;34m==>[0m web: 1060 files under assets/, 1060 named as the rule says, 0 in a subdirectory, which the rule does not cover
+a suffix of lower-case letters only, so read it: notification-jgmydpsu.js
+[1;34m==>[0m admin: 79 files under assets/, 79 named as the rule says, 0 in a subdirectory, which the rule does not cover
+[1;34m==>[0m Assemble /Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist
+[1;34m==>[0m web built from commit=18af97ac124129f4e372d41b1e4652653b1c3159 dirty=no
+[1;34m==>[0m admin built from commit=18af97ac124129f4e372d41b1e4652653b1c3159 dirty=no
+[1;34m==>[0m space built from commit=18af97ac124129f4e372d41b1e4652653b1c3159 dirty=no
+[1;34m==>[0m backend built from commit=18af97ac124129f4e372d41b1e4652653b1c3159 dirty=no
+4.0K	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/SOURCE.admin
+4.0K	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/SOURCE.backend
+4.0K	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/SOURCE.space
+4.0K	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/SOURCE.web
+5.0M	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/admin
+236K	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/backend
+ 24M	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/space
+ 28M	/Users/bek/dev/pr/plane-platform-clean-install/.build/wayline-dist/web
+[1;32m ok[0m Build complete for: web admin space backend
+[1;34m==>[0m Building localhost:5001/wayline/web:18af97ac1241 from 18af97ac124129f4e372d41b1e4652653b1c3159
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.web
+#1 transferring dockerfile: 2.22kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 3.4s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 0B / 11.24MB 0.2s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 1.05MB / 11.24MB 0.9s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 2.10MB / 11.24MB 1.1s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 3.15MB / 11.24MB 1.2s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 4.19MB / 11.24MB 1.4s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 5.24MB / 11.24MB 1.7s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 7.34MB / 11.24MB 2.6s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 8.39MB / 11.24MB 2.9s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 9.44MB / 11.24MB 3.2s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 10.49MB / 11.24MB 3.6s
+#3 sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 11.24MB / 11.24MB 3.8s done
+#3 extracting sha256:6e230fe0035dc5b9d8d5e65513d1f11ae3b25d14362031fb540a4c23bf862933 0.1s done
+#3 DONE 3.9s
+
+#4 [internal] load metadata for docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#4 DONE 1.3s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [1/8] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#6 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#6 DONE 0.1s
+
+#7 [internal] load build context
+#7 transferring context: 27.17MB 0.3s done
+#7 DONE 0.3s
+
+#8 [2/8] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+#8 0.312 apk-security-patch 2026-11-04
+#8 150.3 Preupgrading:
+#8 150.3 (1/2) Upgrading libapk (3.0.8-r0 -> 3.0.9-r0)
+#8 156.1 (2/2) Upgrading apk-tools (3.0.8-r0 -> 3.0.9-r0)
+#8 159.8 Executing busybox-1.37.0-r31.trigger
+#8 159.8 Continuing with the main upgrade transaction:
+#8 317.2 (1/6) Upgrading alpine-release (3.24.3-r0 -> 3.24.4-r0)
+#8 317.8 (2/6) Upgrading brotli-libs (1.2.0-r1 -> 1.2.1-r0)
+#8 341.5 (3/6) Upgrading libcurl (8.22.0-r0 -> 8.23.0-r0)
+#8 357.2 (4/6) Upgrading curl (8.22.0-r0 -> 8.23.0-r0)
+#8 366.3 (5/6) Upgrading libexpat (2.9.0-r0 -> 2.10.0-r0)
+#8 368.7 (6/6) Upgrading tzdata (2026e-r0 -> 2026f-r0)
+#8 377.9 Executing busybox-1.37.0-r31.trigger
+#8 377.9 OK: 59.4 MiB in 72 packages
+#8 DONE 377.9s
+
+#9 [3/8] COPY nginx.conf /etc/nginx/nginx.conf
+#9 DONE 0.0s
+
+#10 [4/8] COPY client/ /usr/share/nginx/html/
+#10 DONE 0.1s
+
+#11 [5/8] COPY licenses/ /usr/share/licenses/wayline/
+#11 DONE 0.0s
+
+#12 [6/8] COPY licenses/ /usr/share/nginx/html/licenses/
+#12 DONE 0.0s
+
+#13 [7/8] RUN test -n "18af97ac124129f4e372d41b1e4652653b1c3159"   && sed -i "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/18af97ac124129f4e372d41b1e4652653b1c3159|" /etc/nginx/nginx.conf   && ! grep -q __WAYLINE /etc/nginx/nginx.conf
+#13 DONE 0.1s
+
+#14 [8/8] RUN chown -R 101:101 /run /var/cache/nginx
+#14 DONE 0.1s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 0.5s done
+#15 exporting manifest sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7 done
+#15 exporting config sha256:a77c3efc7cc96e547ea8874e678ab0c6d4ae94eed981feb88e5f3de279fdcbde done
+#15 pushing layers
+#15 pushing layers 0.7s done
+#15 pushing manifest for localhost:5059/wayline/web:18af97ac1241@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+#15 pushing manifest for localhost:5059/wayline/web:18af97ac1241@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7 done
+#15 DONE 1.2s
+
+#16 resolving provenance for metadata file
+#16 DONE 0.0s
+time=2026-11-05T14:08:49.985+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5059/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+read from localhost:5059/wayline/web
+config sha256:a77c3efc7cc96e547ea8874e678ab0c6d4ae94eed981feb88e5f3de279fdcbde: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/15 sha256:1bb1c6e81790      1.4 MiB    665 entries, 2 archives opened: clean
+layer 10/15 sha256:5fe9d3e5ea9e      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:ea9f436b0c75     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:ae47106a1daf      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/15 sha256:9358f1a4eca9      0.0 MiB     11 entries, 0 archives opened: clean
+layer 14/15 sha256:add724158cb5      0.0 MiB      3 entries, 0 archives opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5059/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+[1;32m ok[0m web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7 passed, not published yet
+[1;34m==>[0m Building localhost:5001/wayline/admin:18af97ac1241 from 18af97ac124129f4e372d41b1e4652653b1c3159
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.admin
+#1 transferring dockerfile: 1.61kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 1.4s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [1/6] FROM docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+#7 resolve docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606 done
+#7 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 5.04MB 0.0s done
+#6 DONE 0.0s
+
+#8 [2/6] RUN echo "apk-security-patch 2026-11-04" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+#8 CACHED
+
+#9 [3/6] COPY nginx.conf /etc/nginx/nginx.conf
+#9 DONE 0.0s
+
+#10 [4/6] COPY client/ /usr/share/nginx/html/god-mode/
+#10 DONE 0.0s
+
+#11 [5/6] COPY licenses/ /usr/share/licenses/wayline/
+#11 DONE 0.0s
+
+#12 [6/6] RUN chown -R 101:101 /run /var/cache/nginx
+#12 DONE 0.1s
+
+#13 exporting to image
+#13 exporting layers 0.1s done
+#13 exporting manifest sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb done
+#13 exporting config sha256:1ef79aefdc38892ecf6e292545d02ec4a00dc5270bc967d981b5630fca9ff58d done
+#13 pushing layers
+#13 pushing layers 0.6s done
+#13 pushing manifest for localhost:5059/wayline/admin:18af97ac1241@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+#13 pushing manifest for localhost:5059/wayline/admin:18af97ac1241@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb done
+#13 DONE 0.8s
+
+#14 resolving provenance for metadata file
+#14 DONE 0.0s
+time=2026-11-05T14:08:53.553+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5059/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+read from localhost:5059/wayline/admin
+config sha256:1ef79aefdc38892ecf6e292545d02ec4a00dc5270bc967d981b5630fca9ff58d: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/13 sha256:1bb1c6e81790      1.4 MiB    665 entries, 2 archives opened: clean
+layer 10/13 sha256:6ecf457b5a0b      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:87ae6fb60cc3      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:5977059f9441      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5059/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+[1;32m ok[0m admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb passed, not published yet
+[1;34m==>[0m Building localhost:5001/wayline/space:18af97ac1241 from 18af97ac124129f4e372d41b1e4652653b1c3159
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.space
+#1 transferring dockerfile: 1.74kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 0.4s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+#4 DONE 3.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [1/7] FROM docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+#6 resolve docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88 done
+#6 ...
+
+#7 [internal] load build context
+#7 transferring context: 23.33MB 0.3s done
+#7 DONE 0.3s
+
+#6 [1/7] FROM docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+#6 sha256:2d8544241ab12547bb226fafd52d8e15e8844061dc9723d9e051f578b29863bb 0B / 2.51MB 0.3s
+#6 sha256:54085b214fd0a60eb8d3237bc64c6dfda4b9adc1f664316c6a35b3122121efcf 0B / 1.45kB 0.2s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 0B / 191.58MB 0.2s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 0B / 9.92MB 0.2s
+#6 sha256:2d8544241ab12547bb226fafd52d8e15e8844061dc9723d9e051f578b29863bb 2.10MB / 2.51MB 1.1s
+#6 sha256:2d8544241ab12547bb226fafd52d8e15e8844061dc9723d9e051f578b29863bb 2.51MB / 2.51MB 1.1s done
+#6 sha256:54085b214fd0a60eb8d3237bc64c6dfda4b9adc1f664316c6a35b3122121efcf 1.45kB / 1.45kB 1.1s done
+#6 sha256:525d0c743e46619f0dc29fb8ee460d781c1d0b3c8ecee9a97150a7f282486b69 0B / 3.09kB 0.2s
+#6 sha256:7be0340e75cd5c3751a8d5ba25d393d1a5d67da9c266ece3e85d3f27ab857314 0B / 238B 0.2s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 1.05MB / 9.92MB 1.4s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 2.10MB / 9.92MB 1.5s
+#6 sha256:525d0c743e46619f0dc29fb8ee460d781c1d0b3c8ecee9a97150a7f282486b69 3.09kB / 3.09kB 0.6s done
+#6 sha256:c3d9c20b2a9c0315586f5ffa2fd10ef9e1c04513442333256f9a09bb4f3230ea 0B / 11.45kB 0.2s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 3.15MB / 9.92MB 2.4s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 4.19MB / 9.92MB 2.6s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 5.24MB / 9.92MB 2.9s
+#6 sha256:7be0340e75cd5c3751a8d5ba25d393d1a5d67da9c266ece3e85d3f27ab857314 238B / 238B 1.9s done
+#6 sha256:d8d7c57874d2876063c3962478f9b17497a99321e37c131d976858f5700d71c4 0B / 3.05MB 0.2s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 6.29MB / 9.92MB 3.2s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 7.34MB / 9.92MB 3.8s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 8.39MB / 9.92MB 4.4s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 9.44MB / 9.92MB 4.7s
+#6 sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 9.92MB / 9.92MB 4.9s done
+#6 sha256:7e0cb804cc44e7b6694739a433f3d21ea709bf62086efc9e45f462b1c69a1363 0B / 43.32kB 0.2s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 0B / 191.58MB 5.3s
+#6 sha256:7e0cb804cc44e7b6694739a433f3d21ea709bf62086efc9e45f462b1c69a1363 43.32kB / 43.32kB 0.4s done
+#6 sha256:c3d9c20b2a9c0315586f5ffa2fd10ef9e1c04513442333256f9a09bb4f3230ea 11.45kB / 11.45kB 3.7s done
+#6 sha256:5003ba2fd1d48cdbb0178394589e8a431ed691f0afdbd3cfbdb788e0475732e7 0B / 93B 0.2s
+#6 sha256:f04c63730cb349b2c5fcd49010e45ce74ed3caa240639ea8b248f42827a75249 0B / 444B 0.2s
+#6 sha256:d8d7c57874d2876063c3962478f9b17497a99321e37c131d976858f5700d71c4 1.05MB / 3.05MB 2.9s
+#6 sha256:5003ba2fd1d48cdbb0178394589e8a431ed691f0afdbd3cfbdb788e0475732e7 93B / 93B 0.4s done
+#6 sha256:f04c63730cb349b2c5fcd49010e45ce74ed3caa240639ea8b248f42827a75249 444B / 444B 0.4s done
+#6 sha256:e51951d495a7da196c9ad4a10e58817f7e8ae25e5ca4564911ab879377fba153 0B / 1.26MB 0.2s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 0B / 55.69MB 0.2s
+#6 sha256:e51951d495a7da196c9ad4a10e58817f7e8ae25e5ca4564911ab879377fba153 1.05MB / 1.26MB 0.9s
+#6 sha256:d8d7c57874d2876063c3962478f9b17497a99321e37c131d976858f5700d71c4 2.10MB / 3.05MB 4.1s
+#6 sha256:e51951d495a7da196c9ad4a10e58817f7e8ae25e5ca4564911ab879377fba153 1.26MB / 1.26MB 1.9s done
+#6 sha256:d8d7c57874d2876063c3962478f9b17497a99321e37c131d976858f5700d71c4 3.05MB / 3.05MB 5.7s done
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 3.15MB / 55.69MB 2.9s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 6.29MB / 55.69MB 4.4s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 1.05MB / 191.58MB 10.4s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 9.44MB / 55.69MB 6.2s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 12.58MB / 55.69MB 7.8s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 4.19MB / 191.58MB 15.5s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 15.73MB / 55.69MB 9.6s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 18.87MB / 55.69MB 11.3s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 22.02MB / 55.69MB 13.5s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 8.39MB / 191.58MB 20.6s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 25.17MB / 55.69MB 16.1s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 28.31MB / 55.69MB 18.0s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 12.58MB / 191.58MB 25.7s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 31.46MB / 55.69MB 20.1s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 34.60MB / 55.69MB 22.1s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 37.75MB / 55.69MB 24.3s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 16.78MB / 191.58MB 30.8s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 40.89MB / 55.69MB 26.7s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 44.04MB / 55.69MB 28.5s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 19.92MB / 191.58MB 35.9s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 47.19MB / 55.69MB 30.5s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 50.33MB / 55.69MB 32.3s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 53.48MB / 55.69MB 34.2s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 23.07MB / 191.58MB 41.0s
+#6 sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 55.69MB / 55.69MB 35.5s done
+#6 extracting sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce
+#6 extracting sha256:5c8e282ceef79775f7764a7ebcc588c0ae1d03bd53fefafb20015a2902cafcce 0.6s done
+#6 extracting sha256:e51951d495a7da196c9ad4a10e58817f7e8ae25e5ca4564911ab879377fba153 0.0s done
+#6 extracting sha256:f04c63730cb349b2c5fcd49010e45ce74ed3caa240639ea8b248f42827a75249 done
+#6 extracting sha256:5003ba2fd1d48cdbb0178394589e8a431ed691f0afdbd3cfbdb788e0475732e7 done
+#6 extracting sha256:7e0cb804cc44e7b6694739a433f3d21ea709bf62086efc9e45f462b1c69a1363 done
+#6 extracting sha256:d8d7c57874d2876063c3962478f9b17497a99321e37c131d976858f5700d71c4 done
+#6 extracting sha256:c3d9c20b2a9c0315586f5ffa2fd10ef9e1c04513442333256f9a09bb4f3230ea done
+#6 extracting sha256:7be0340e75cd5c3751a8d5ba25d393d1a5d67da9c266ece3e85d3f27ab857314 done
+#6 extracting sha256:29bd0300b37886330cfd30d929f318646faefd66f8a54ccbdf941aa9e428b266 0.1s done
+#6 extracting sha256:525d0c743e46619f0dc29fb8ee460d781c1d0b3c8ecee9a97150a7f282486b69 done
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 27.26MB / 191.58MB 46.1s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 37.75MB / 191.58MB 50.4s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 48.23MB / 191.58MB 54.3s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 58.72MB / 191.58MB 59.3s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 69.21MB / 191.58MB 63.8s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 79.69MB / 191.58MB 68.1s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 90.18MB / 191.58MB 72.5s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 100.66MB / 191.58MB 77.1s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 111.15MB / 191.58MB 81.8s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 121.63MB / 191.58MB 86.1s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 132.12MB / 191.58MB 90.8s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 142.61MB / 191.58MB 95.1s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 153.09MB / 191.58MB 99.5s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 163.58MB / 191.58MB 104.0s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 174.06MB / 191.58MB 108.3s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 184.55MB / 191.58MB 113.0s
+#6 sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 191.58MB / 191.58MB 115.7s done
+#6 extracting sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a
+#6 extracting sha256:e1d6b285f31f18a571457350d003af6bcd80c1f44cd3616c98b9c963d3b7a85a 7.0s done
+#6 DONE 123.0s
+
+#6 [1/7] FROM docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+#6 extracting sha256:54085b214fd0a60eb8d3237bc64c6dfda4b9adc1f664316c6a35b3122121efcf 0.0s done
+#6 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+#6 extracting sha256:2d8544241ab12547bb226fafd52d8e15e8844061dc9723d9e051f578b29863bb 0.0s done
+#6 DONE 123.0s
+
+#8 [2/7] RUN rm -rf /app/apps/space/build
+#8 DONE 1.0s
+
+#9 [3/7] COPY build/ /app/apps/space/build/
+#9 DONE 0.1s
+
+#10 [4/7] COPY licenses/ /usr/share/licenses/wayline/
+#10 DONE 0.0s
+
+#11 [5/7] COPY wayline/ /opt/wayline/
+#11 DONE 0.0s
+
+#12 [6/7] RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "apply"]
+#12 0.249 proxy-addr tarball: 5670 bytes, integrity sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==
+#12 0.715 removed storybook@10.4.6 and tinypool@2.1.0, 21 links to them and 19 .bin shims
+#12 0.833 replaced proxy-addr@2.0.7 with proxy-addr@2.0.8, 2 links repointed
+#12 DONE 0.9s
+
+#13 [7/7] RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "check"]
+#13 0.154 
+#13 0.154 == What the server bundle imports
+#13 0.331 30 static imports and 25 import() or require() of a package, across 533 bundle files
+#13 0.331 131 packages in node_modules reachable from them and from @react-router/serve
+#13 0.331 PASS every import and required dependency resolves
+#13 0.332 PASS storybook and tinypool are not reachable
+#13 0.332 PASS no bundle file mentions storybook or tinypool
+#13 0.332 note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+#13 0.332 
+#13 0.332 == What is gone from the store
+#13 0.333 PASS storybook is gone
+#13 0.334 PASS tinypool is gone
+#13 0.334 PASS proxy-addr@2.0.7 is gone
+#13 0.478 PASS nothing links to them
+#13 0.478 
+#13 0.478 == proxy-addr, as express resolves it
+#13 0.512 PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+#13 0.513 PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+#13 0.513 PASS a plain IPv4 subnet still trusts its own addresses
+#13 0.513 
+#13 0.513 == X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+#13 0.524 PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+#13 0.527 PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+#13 0.528 PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
+#13 0.528 
+#13 0.528 space-deps: 0 failed
+#13 DONE 0.5s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.5s done
+#14 exporting manifest sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a done
+#14 exporting config sha256:227afa458d9d2d54a1c7d4db025966279dbbe63fc5b51813fe3e917e35259195 done
+#14 pushing layers
+#14 pushing layers 1.1s done
+#14 pushing manifest for localhost:5059/wayline/space:18af97ac1241@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+#14 pushing manifest for localhost:5059/wayline/space:18af97ac1241@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a done
+#14 DONE 1.6s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+time=2026-11-05T14:11:05.109+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5059/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+read from localhost:5059/wayline/space
+config sha256:227afa458d9d2d54a1c7d4db025966279dbbe63fc5b51813fe3e917e35259195: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
+layer 16/21 sha256:12d7ba36d99f      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:586a3eca7394      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:7fa755484ff5      0.0 MiB     10 entries, 0 archives opened: clean
+layer 19/21 sha256:f15882cbbd57      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:300c3d6c8822      0.0 MiB    172 entries, 0 archives opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5059/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+[1;32m ok[0m space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a passed, not published yet
+[1;34m==>[0m Building localhost:5001/wayline/backend:18af97ac1241 from 18af97ac124129f4e372d41b1e4652653b1c3159
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.backend
+#1 transferring dockerfile: 4.44kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1.7
+#2 DONE 1.1s
+
+#3 docker-image://docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+#3 resolve docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#4 DONE 3.4s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 182.00kB done
+#6 DONE 0.0s
+
+#7 [derived 1/9] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#7 resolve docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 done
+#7 DONE 0.1s
+
+#7 [derived 1/9] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#7 sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 0B / 656.99kB 0.2s
+#7 sha256:e4e24f985b56c5f405cbf26d0b4e13d3ae39847e4187b1daa920f1e8ff325600 0B / 132B 0.2s
+#7 sha256:a944bb63192a5ed78600672e4cc49b88b060e6883ba9c6117bdfbb72970b9b76 0B / 956B 0.2s
+#7 sha256:2971492cd252a9fd2b8f2d8c5e38540748f71a8c8adfa8df8050556885cb5ac6 0B / 624.21kB 0.2s
+#7 sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 656.99kB / 656.99kB 1.3s done
+#7 sha256:e4e24f985b56c5f405cbf26d0b4e13d3ae39847e4187b1daa920f1e8ff325600 132B / 132B 1.3s done
+#7 sha256:a944bb63192a5ed78600672e4cc49b88b060e6883ba9c6117bdfbb72970b9b76 956B / 956B 1.3s done
+#7 sha256:8b5cf9ef44c804798e6a1ce5ac50024e77009fc6fa942af446925d56eb94b9e3 0B / 251B 0.2s
+#7 sha256:82afb6fae256ede4b46f6e37718b4e7df5d798fb13cb062f88e85fbc0137423d 0B / 31.12kB 0.2s
+#7 sha256:cd1e248a64ddafa48b23d921182772a0521041051434fa0b915f44aed3f19367 0B / 624.10kB 0.2s
+#7 sha256:8b5cf9ef44c804798e6a1ce5ac50024e77009fc6fa942af446925d56eb94b9e3 251B / 251B 0.4s done
+#7 sha256:82afb6fae256ede4b46f6e37718b4e7df5d798fb13cb062f88e85fbc0137423d 31.12kB / 31.12kB 0.4s done
+#7 sha256:f21a91bde4b72fa14799bb962ef7d4c82dbeda4ae31fdd18630fc00f49a0fdb3 0B / 563B 0.2s
+#7 sha256:2971492cd252a9fd2b8f2d8c5e38540748f71a8c8adfa8df8050556885cb5ac6 624.21kB / 624.21kB 1.8s done
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 0B / 79.32MB 0.2s
+#7 sha256:cd1e248a64ddafa48b23d921182772a0521041051434fa0b915f44aed3f19367 624.10kB / 624.10kB 0.7s done
+#7 sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 0B / 1.82MB 0.2s
+#7 sha256:6015bd0ae1a12bd1af37e3698e530b9d51a0a4f08a2bf67ee4edb2f7e9e595e7 0B / 1.18kB 0.2s
+#7 sha256:f21a91bde4b72fa14799bb962ef7d4c82dbeda4ae31fdd18630fc00f49a0fdb3 563B / 563B 1.0s done
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 4.19MB / 79.32MB 1.2s
+#7 sha256:6015bd0ae1a12bd1af37e3698e530b9d51a0a4f08a2bf67ee4edb2f7e9e595e7 1.18kB / 1.18kB 0.7s done
+#7 sha256:4e7b563da78e36465b819285c84040563635cda73884c9766f83effb5bc8f6b1 0B / 241B 0.2s
+#7 sha256:4e7b563da78e36465b819285c84040563635cda73884c9766f83effb5bc8f6b1 241B / 241B 0.4s done
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 0B / 1.55MB 0.2s
+#7 sha256:c02fb40c743e241a861b17630d83ed88b06d8d3fc70934213040d3ca2a2ced22 0B / 94B 0.2s
+#7 sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 1.05MB / 1.82MB 2.0s
+#7 sha256:c02fb40c743e241a861b17630d83ed88b06d8d3fc70934213040d3ca2a2ced22 94B / 94B 1.1s done
+#7 sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 1.82MB / 1.82MB 2.5s done
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 0B / 7.83MB 0.2s
+#7 sha256:be1bf212c5ab8a3ce644f20c0fc7e36996591c0794d78e9e39e5f116d752ef75 0B / 247B 0.2s
+#7 sha256:be1bf212c5ab8a3ce644f20c0fc7e36996591c0794d78e9e39e5f116d752ef75 247B / 247B 0.6s done
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 0B / 13.89MB 0.2s
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 1.05MB / 1.55MB 3.2s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 8.39MB / 79.32MB 4.5s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 1.05MB / 13.89MB 2.0s
+#7 sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 1.55MB / 1.55MB 5.3s done
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 2.10MB / 13.89MB 3.2s
+#7 sha256:c746ec0a997c7069e8a770a91558b284d554ad0bb7f70df91910d5d79979db0b 0B / 463.01kB 0.2s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 1.05MB / 7.83MB 4.5s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 3.15MB / 13.89MB 4.5s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 12.58MB / 79.32MB 8.1s
+#7 sha256:c746ec0a997c7069e8a770a91558b284d554ad0bb7f70df91910d5d79979db0b 463.01kB / 463.01kB 2.5s done
+#7 extracting sha256:c746ec0a997c7069e8a770a91558b284d554ad0bb7f70df91910d5d79979db0b 0.0s done
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 4.19MB / 13.89MB 5.9s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 5.24MB / 13.89MB 7.4s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 16.78MB / 79.32MB 11.4s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 6.29MB / 13.89MB 8.6s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 1.05MB / 7.83MB 9.6s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 2.10MB / 7.83MB 10.1s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 7.34MB / 13.89MB 10.1s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 20.97MB / 79.32MB 14.4s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 8.39MB / 13.89MB 11.4s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 9.44MB / 13.89MB 12.6s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 10.49MB / 13.89MB 13.7s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 2.10MB / 7.83MB 15.2s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 25.17MB / 79.32MB 17.9s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 3.15MB / 7.83MB 15.8s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 11.53MB / 13.89MB 15.0s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 12.58MB / 13.89MB 16.4s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 29.36MB / 79.32MB 20.6s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 13.63MB / 13.89MB 18.6s
+#7 sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 13.89MB / 13.89MB 18.8s done
+#7 extracting sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6
+#7 extracting sha256:c87aa1e804eb5b1fce335af86aa4b4c0324824397996638ae0f349a63111dba6 0.2s done
+#7 extracting sha256:be1bf212c5ab8a3ce644f20c0fc7e36996591c0794d78e9e39e5f116d752ef75 done
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 33.55MB / 79.32MB 23.1s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 4.19MB / 7.83MB 20.7s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 37.75MB / 79.32MB 25.5s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 5.24MB / 7.83MB 24.8s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 41.94MB / 79.32MB 27.8s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 46.14MB / 79.32MB 29.9s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 6.29MB / 7.83MB 29.3s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 50.33MB / 79.32MB 32.0s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 54.53MB / 79.32MB 34.4s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 7.34MB / 7.83MB 33.5s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 58.72MB / 79.32MB 36.3s
+#7 sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 7.83MB / 7.83MB 34.3s done
+#7 extracting sha256:f043ea3ac942bb5e61d1233b71c644252ef784e0fe6d4ae6554ac16b5bbb8fe4 0.1s done
+#7 extracting sha256:c02fb40c743e241a861b17630d83ed88b06d8d3fc70934213040d3ca2a2ced22 done
+#7 extracting sha256:339c97cee78932a5de0dedf00142dfb4cd00b9a72b271f8c0fb2f511360fa0a6 0.0s done
+#7 extracting sha256:4e7b563da78e36465b819285c84040563635cda73884c9766f83effb5bc8f6b1 done
+#7 extracting sha256:6015bd0ae1a12bd1af37e3698e530b9d51a0a4f08a2bf67ee4edb2f7e9e595e7 done
+#7 extracting sha256:cb75f56cc560b6126c8f0c52a5dc4e281d960b0be0e1731b4fff375845be702e 0.1s done
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 62.91MB / 79.32MB 38.6s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 67.11MB / 79.32MB 40.7s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 71.30MB / 79.32MB 42.0s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 75.50MB / 79.32MB 43.7s
+#7 sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 79.32MB / 79.32MB 45.0s done
+#7 extracting sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb
+#7 extracting sha256:0cc0f01ded3864c917cd5493c3c9e1403ab31b454aa5b7b5808a40150c0249fb 1.9s done
+#7 DONE 48.7s
+
+#7 [derived 1/9] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#7 extracting sha256:f21a91bde4b72fa14799bb962ef7d4c82dbeda4ae31fdd18630fc00f49a0fdb3 done
+#7 extracting sha256:cd1e248a64ddafa48b23d921182772a0521041051434fa0b915f44aed3f19367 0.0s done
+#7 extracting sha256:82afb6fae256ede4b46f6e37718b4e7df5d798fb13cb062f88e85fbc0137423d done
+#7 extracting sha256:8b5cf9ef44c804798e6a1ce5ac50024e77009fc6fa942af446925d56eb94b9e3 done
+#7 extracting sha256:2971492cd252a9fd2b8f2d8c5e38540748f71a8c8adfa8df8050556885cb5ac6 0.0s done
+#7 extracting sha256:a944bb63192a5ed78600672e4cc49b88b060e6883ba9c6117bdfbb72970b9b76 done
+#7 extracting sha256:e4e24f985b56c5f405cbf26d0b4e13d3ae39847e4187b1daa920f1e8ff325600 done
+#7 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+#7 extracting sha256:e1b4054f2054b189bdf5753fb7ad3ea6896f3c1534cba3b9b71d9ae465dd75b6 0.0s done
+#7 DONE 48.8s
+
+#8 [derived 2/9] COPY templates/ /code/templates/
+#8 DONE 0.3s
+
+#9 [derived 3/9] COPY wayline/ /opt/wayline/
+#9 DONE 0.0s
+
+#10 [derived 4/9] COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+#10 DONE 0.0s
+
+#11 [derived 5/9] COPY --chmod=0644 wayline/vendor/email.py /code/plane/utils/email.py
+#11 DONE 0.0s
+
+#12 [derived 6/9] COPY licenses/ /usr/share/licenses/wayline/
+#12 DONE 0.0s
+
+#13 [derived 7/9] RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
+#13 0.274 edit_strings: 37 edits applied to 25 files
+#13 DONE 0.3s
+
+#14 [derived 8/9] RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
+#14 3.154 Collecting PyJWT==2.14.0 (from -r /opt/wayline/pyjwt-requirements.txt (line 4))
+#14 4.477   Downloading pyjwt-2.14.0-py3-none-any.whl (32 kB)
+#14 5.991 Installing collected packages: PyJWT
+#14 5.991   Attempting uninstall: PyJWT
+#14 5.993     Found existing installation: PyJWT 2.13.0
+#14 5.994     Uninstalling PyJWT-2.13.0:
+#14 6.002       Successfully uninstalled PyJWT-2.13.0
+#14 6.024 Successfully installed PyJWT-2.14.0
+#14 DONE 6.1s
+
+#15 [derived 9/9] RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
+#15 0.322 
+#15 0.322 == Licence headers under /
+#15 0.917 PASS no file under / contains LicenseRef-Plane-Commercial 20811 files read
+#15 0.917 PASS /code/plane/utils/email.py carries AGPL-3.0-only
+#15 0.917 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+#15 0.917 
+#15 0.917 == PyJWT as installed
+#15 0.920 PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
+#15 0.937 PASS one copy installed: ['2.14.0']
+#15 1.638 PASS pip check No broken requirements found.
+#15 1.638 
+#15 1.638 RESULT PASS: 0 failed
+#15 DONE 1.7s
+
+#16 [stage-1 1/2] COPY --from=derived / /
+#16 DONE 1.3s
+
+#17 [stage-1 2/2] WORKDIR /code
+#17 DONE 0.5s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 5.9s done
+#18 exporting manifest sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e done
+#18 exporting config sha256:77f3581c675efd1bdcdeb9f69d1ce6cea94357623e97047a8ab53078bb942c01 done
+#18 pushing layers
+#18 pushing layers 0.9s done
+#18 pushing manifest for localhost:5059/wayline/backend:18af97ac1241@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+#18 pushing manifest for localhost:5059/wayline/backend:18af97ac1241@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e done
+#18 DONE 6.8s
+
+#19 resolving provenance for metadata file
+#19 DONE 0.0s
+time=2026-11-05T14:12:21.114+03:00 level=WARN msg="yq default output is now 'auto' (based on the filename extension). Normally yq would output 'json', but for backwards compatibility 'yaml' has been set. Please use -oy to specify yaml, or drop the -p flag."
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5059/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+read from localhost:5059/wayline/backend
+config sha256:77f3581c675efd1bdcdeb9f69d1ce6cea94357623e97047a8ab53078bb942c01: clean
+2 layers
+layer  1/2 sha256:e3e65159c803     97.4 MiB  28235 entries, 854 archives opened: clean
+layer  2/2 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5059/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
+base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
+built localhost:5059/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e, config sha256:77f3581c675efd1bdcdeb9f69d1ce6cea94357623e97047a8ab53078bb942c01
+
+== Env
+PASS GPG_KEY is the base's value
+PASS INSTANCE_CHANGELOG_URL is ours, as the Dockerfile means it
+PASS LANG is the base's value
+PASS PATH is the base's value
+PASS PIP_DISABLE_PIP_VERSION_CHECK is the base's value
+PASS PYTHONDONTWRITEBYTECODE is the base's value
+PASS PYTHONUNBUFFERED is the base's value
+PASS PYTHON_SHA256 is the base's value
+PASS PYTHON_VERSION is the base's value
+
+== Labels
+PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
+PASS org.opencontainers.image.licenses is set AGPL-3.0-only
+PASS org.opencontainers.image.revision is set 18af97ac124129f4e372d41b1e4652653b1c3159
+PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
+PASS org.opencontainers.image.title is set wayline-backend
+
+== User
+PASS User is 1000, where the base says None '1000'
+
+== Everything else
+PASS Cmd is the base's ["./bin/docker-entrypoint-api.sh"]
+PASS Entrypoint is the base's null
+PASS WorkingDir is the base's "/code"
+PASS ExposedPorts is the base's {"8000/tcp": {}}
+PASS Volumes is the base's null
+PASS StopSignal is the base's null
+PASS Healthcheck is the base's null
+PASS Shell is the base's null
+PASS OnBuild is the base's null
+PASS ArgsEscaped is the base's true
+PASS every config field has a rule here
+
+== Layers
+PASS the image shares no layer with the base, other than the empty one 2 layers
+PASS architecture is the base's arm64
+PASS os is the base's linux
+
+RESULT PASS: 0 failed
+[1;32m ok[0m backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e passed, not published yet
+#1 [internal] pushing localhost:5001/wayline/web
+#1 0.000 copying sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7 from localhost:5059/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7 to localhost:5001/wayline/web
+#1 0.615 pushing sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7 to localhost:5001/wayline/web:18af97ac1241
+#1 DONE 0.6s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+read from localhost:5001/wayline/web
+config sha256:a77c3efc7cc96e547ea8874e678ab0c6d4ae94eed981feb88e5f3de279fdcbde: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/15 sha256:1bb1c6e81790      1.4 MiB    665 entries, 2 archives opened: clean
+layer 10/15 sha256:5fe9d3e5ea9e      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:ea9f436b0c75     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:ae47106a1daf      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/15 sha256:9358f1a4eca9      0.0 MiB     11 entries, 0 archives opened: clean
+layer 14/15 sha256:add724158cb5      0.0 MiB      3 entries, 0 archives opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+[1;32m ok[0m localhost:5001/wayline/web@sha256:136c8365e763cfd8dd91fbed982ea89082e902722a4c599c1160e45b8a70a0a7
+#1 [internal] pushing localhost:5001/wayline/admin
+#1 0.000 copying sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb from localhost:5059/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb to localhost:5001/wayline/admin
+#1 0.349 pushing sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb to localhost:5001/wayline/admin:18af97ac1241
+#1 DONE 0.4s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+read from localhost:5001/wayline/admin
+config sha256:1ef79aefdc38892ecf6e292545d02ec4a00dc5270bc967d981b5630fca9ff58d: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/13 sha256:1bb1c6e81790      1.4 MiB    665 entries, 2 archives opened: clean
+layer 10/13 sha256:6ecf457b5a0b      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:87ae6fb60cc3      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:5977059f9441      0.0 MiB     10 entries, 0 archives opened: clean
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+[1;32m ok[0m localhost:5001/wayline/admin@sha256:effa1a3867f34c760791dc0fd8643d26489154b3df975423be2192581af8defb
+#1 [internal] pushing localhost:5001/wayline/space
+#1 0.000 copying sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a from localhost:5059/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a to localhost:5001/wayline/space
+#1 4.595 pushing sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a to localhost:5001/wayline/space:18af97ac1241
+#1 DONE 4.6s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+read from localhost:5001/wayline/space
+config sha256:227afa458d9d2d54a1c7d4db025966279dbbe63fc5b51813fe3e917e35259195: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
+layer 16/21 sha256:12d7ba36d99f      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:586a3eca7394      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:7fa755484ff5      0.0 MiB     10 entries, 0 archives opened: clean
+layer 19/21 sha256:f15882cbbd57      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:300c3d6c8822      0.0 MiB    172 entries, 0 archives opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+[1;32m ok[0m localhost:5001/wayline/space@sha256:a3bbb52bb2d186ab911c02fe6456f262d2d506d3804c22f5b58f32c69fb2e86a
+#1 [internal] pushing localhost:5001/wayline/backend
+#1 0.000 copying sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e from localhost:5059/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e to localhost:5001/wayline/backend
+#1 1.010 pushing sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e to localhost:5001/wayline/backend:18af97ac1241
+#1 DONE 1.0s
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+gate: a hit fails
+
+== localhost:5001/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+read from localhost:5001/wayline/backend
+config sha256:77f3581c675efd1bdcdeb9f69d1ce6cea94357623e97047a8ab53078bb942c01: clean
+2 layers
+layer  1/2 sha256:e3e65159c803     97.4 MiB  28235 entries, 854 archives opened: clean
+layer  2/2 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened localhost:5001/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+[1;32m ok[0m localhost:5001/wayline/backend@sha256:c2f45d9c3efd8c5374a1b51000a3957de3d6345cd24efd12f97a5d7099a05b2e
+[1;32m ok[0m digests recorded in .build/digests.tsv
+These digests are still missing, because the rebuild produced different ones:
+    localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+    localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+    localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+    localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+Nothing was published. Either promote what was just built (.build/digests.tsv), which commits the new
+digests to main. The second line is only needed if prod-sim references them:
+    make promote ENV=dev
+    make promote ENV=prod-sim CONFIRM=yes
+    make up
+On an empty cluster, as make up UP_STOP_AFTER=cluster leaves, prod-sim holds no data to back up and plane-dev
+cannot have proven a digest, so the second line is:
+    make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="restoring into an empty cluster"
+Or keep the exact digests, by copying them from the registry that has them:
+    scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
+    scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline prod-sim
+    make up
+If make restore-clean brought you here, run that again instead of the last make up. Neither way touches data.
+make[1]: *** [up] Error 1
