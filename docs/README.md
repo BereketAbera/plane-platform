@@ -21,30 +21,27 @@ The [repository README](../README.md) has the overview, status table, and quick 
 | BLOCKED | The test could not run or finish because something it depends on failed or is missing. This says nothing about the system under test |
 | NOT RUN | The test was not attempted, or it was attempted and no evidence was captured |
 
-**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes COLD_INSTALL=yes` is deleting and rebuilding the cluster, and its results are in progress. The clean install and the full restore before it have results ([summary](evidence/runs/clean-install-20261105T075041Z/summary.txt), [restore](evidence/runs/restore-clean-20261105T081017Z.json)), so markers for the time of one `make up` and for data across the rebuild go as each page is reconciled.
+**Inline markers.** These documents were written alongside the code and reconciled against evidence as runs finished. They used two markers in double square brackets: VERIFY, for a claim depending on a runtime result not yet confirmed, and MEASURE, for a number not yet measured. On 2026-11-05 the cold install and the second full restore answered what they could, and each marker became its answer and citation, or a plain sentence saying no run read it ([summary](evidence/runs/clean-install-20261105T105546Z/summary.txt), [disk](evidence/runs/clean-install-20261105T105546Z/disk-after-install.txt), [restore](evidence/runs/restore-clean-20261105T124518Z.json)). If one is left, do not treat it as true.
 
-| Marker | Meaning |
-|---|---|
-| VERIFY, in double square brackets | A claim that depends on a runtime result not yet confirmed. Do not treat it as true |
-| MEASURE, in double square brackets | A number that has not been measured yet |
+**One run is in progress.** `make drill-clean-restore CONFIRM=yes LOSE_CLUSTER=yes` started at 13:06Z, has deleted the cluster and is rebuilding it. Its result is not recorded yet, and [its output](evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt) is published when it ends.
 
-To list what is still open:
+To list what is still marked:
 
 ```bash
 git grep -n -E '\[\[(VERIFY|MEASURE):' -- '*.md'
 ```
 
-The markers left do not all wait on one run:
+What the last markers asked, and where the answers are:
 
-| Marker | Waits on |
+| Question | Answer |
 |---|---|
-| Disk growth of a first install, and host free disk around it | The cold install in that drill (TEAR-4), in progress. The clean install's readings keep the registry and caches, so they do not give a first install's growth |
-| The CPU count of a first install | That cold install too, as [resource-utilization.md](resource-utilization.md) says |
-| `Docker.raw` before and after a delete | TEAR-5 |
-| Any other marker in a row of [validation.md](validation.md) | The run that row names |
+| Disk growth of a first install, and host free disk around it | Host free went from 31 to 13 GiB on the cold install, in whole GiB by `df`, and [resource-utilization.md](resource-utilization.md#host-and-docker-storage) says what its defect added. The same with no defect: Not measured in Pass 1 |
+| Time of a `make up` from nothing | 955 s with the registry and caches kept. A full cold install with no defect has not been timed end to end, and [install.md](install.md#first-run) says what the one cold run did time, and why its 5,238 s is not a good figure |
+| The CPU count of a first install | 12, the count the cold install ran at ([make-setup.txt](evidence/runs/clean-install-20261105T105546Z/make-setup.txt)). The floor of 4: Not measured in Pass 1 |
+| `Docker.raw` before and after a delete | At the top and bottom of [that run's output](evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt), since the run is in progress. After the cold install it read 40,060,992 KiB ([disk](evidence/runs/clean-install-20261105T105546Z/disk-after-install.txt)) |
 | OPS-2b, OPS-4 and OPS-5 in [validation.md](validation.md) | No run is planned, so they stay open |
 
-Two plain sentences replace markers that Pass 1 will not answer. "Not tested in Pass 1" marks something this pass never ran and no later run in it will read, such as Safari. What a later run may still answer reads NOT RUN, such as how much disk a delete returns (TEAR-5). "Unverified" or "Not measured" marks a question about Hetzner, Cloudflare or what Pass 2 will decide, to check at the start of Pass 2. List them with `git grep -n -E 'Not tested in Pass 1|Unverified|Not measured' -- '*.md'`.
+Plain sentences stand where Pass 1 has no answer. "Not tested in Pass 1" marks something this pass never ran and no later run in it will read, such as Safari. "Not measured in Pass 1" marks a number no run read, such as the disk a cold install with no defect needs. What a later run may still answer reads NOT RUN or in progress. "Unverified" or "Not measured" marks a question about Hetzner, Cloudflare or what Pass 2 will decide, to check at the start of Pass 2. List them with `git grep -n -E 'Not tested in Pass 1|Unverified|Not measured' -- '*.md'`.
 
 A number with no measurement behind it says "estimate" and how it was derived. Present-tense descriptions such as "the policy allows X" describe configuration. They do not say the behaviour has been observed.
 
