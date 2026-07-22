@@ -1,6 +1,6 @@
 # 0001. One owner per resource
 
-**Status:** Accepted, 2026-11-04. The result on a clean host is not yet recorded.
+**Status:** Accepted, 2026-11-04. The cold install ran it on a cleaned host on 2026-11-05, on the Mac it was built on.
 
 ## Context
 
@@ -52,7 +52,7 @@ The reasons behind the less obvious lines:
 - `terraform destroy` deletes the namespaces, with every PVC and all Plane data, and removes the CoreDNS `Corefile` key. Normal teardown is `make destroy`, which deletes the cluster and the foundation root's state together.
 - `scripts/ci/ownership.sh` is static. A name Terraform computes at plan time is covered only by the per-kind rules.
 - **This boundary separates tools, not environments.** `plane-dev` and `plane-prod-sim` share one node, one API server, one etcd, one CNI, one Argo CD, one Traefik, one Infisical server and one monitoring stack. Namespace separation is not equivalent to independent production clusters.
-- This has not been shown on a clean host. The clean install from a fresh clone in `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` has finished, and its evidence is not published yet, so its result is not yet recorded. It keeps the local registry and caches and copies `.tools`, so it is not the clean host INST-1 asks for.
+- This was shown on a cleaned host once. The clean install from a fresh clone keeps the local registry and caches and copies `.tools`, so it is not the clean host INST-1 asks for. The cold install of 2026-11-05 removed the cluster, registry and caches first, with no `.local` and no `.build`, and repository commands reached all 14 Applications Synced and Healthy. A second `make up` replaced no pod and Terraform found no differences, so no two tools fought over an object ([summary](../evidence/runs/clean-install-20261105T105546Z/summary.txt), [Applications](../evidence/runs/clean-install-20261105T105546Z/apps-after-up.txt), [plan](../evidence/runs/clean-install-20261105T105546Z/terraform-plan-local.txt)). It had one step outside those commands, ending a stuck Argo CD operation after [the umask defect](../known-limitations.md#what-real-runs-found), and `.tools` was copied, so it is not a new machine.
 
 ## What we found when we ran it
 
