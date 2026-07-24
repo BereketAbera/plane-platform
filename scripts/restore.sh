@@ -990,31 +990,47 @@ record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contrac
   esac
 }
 
+# Whether this client can still print, and if it cannot, what it has to say goes to a file beside the evidence. A print
+# that failed stays in stdio's buffer, and the next read through a pipe or a $(...) takes it in with the answer: jq then
+# fails on it, which reads as kubectl not being able to say, and auto-sync stays paused with nothing said. The output can
+# die at any moment of the trap, as when a person sees "up to 180s" and closes the window. So this comes before each read
+# in the trap, and after the delete. The second goes through fd 3, because inside 2>/dev/null a print to fd 2 goes to
+# /dev/null, and could never see that stderr is dead. Each one that finds the output alive prints an empty line.
+client_probe() {
+  { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$evidence.log"
+}
+
 # The Jobs of this run, by name, which this run's stamp makes its own. They run in the cluster, so a client that ends
 # does not end them, and one carrying on would drop or replace a database under whatever comes back up.
 stop_this_runs_jobs() {
-  local job state
+  local job state removed
   [[ "$JOB_MAY_RUN" == yes ]] || return 0
   for job in "plane-restore-guard-$JOB_SUFFIX" "plane-restore-guard-objects-$JOB_SUFFIX" "plane-restore-$JOB_SUFFIX" "plane-restore-migrate-$JOB_SUFFIX"; do
+    client_probe
     if ! state="$(job_state_if_any "$NS" "$job" 2>/dev/null)"; then
       warn "kubectl cannot say whether restore Job $NS/$job is running"
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
       continue
     fi
-    # Any whole line. If the client's output dies after on_exit's probe, a print that failed since then is still in
+    # Any whole line. If the client's output dies just after the probe, a print that failed since then is still in
     # stdio's buffer, and a $(...) captures it after the answer. Read as anything but running, the Job would stay.
     case $'\n'"$state"$'\n' in
       *$'\n'running$'\n'*) ;;
       *) continue ;;
     esac
     log "Removing restore Job $NS/$job, which would otherwise go on without this client (up to 180s)"
-    if kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null; then
+    removed=yes
+    kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null || removed=no
+    client_probe
+    if [[ "$removed" == yes ]]; then
       JOB_STOPPED=yes
       record restore-job-stopped PASS "$job was still running when this client ended, and it is gone, with its pod, before anything starts again"
     else
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
     fi
   done
+  client_probe
 }
 
 on_exit() {
@@ -1024,13 +1040,10 @@ on_exit() {
   # a Job's removal for 180s at most, and a resume repairs what a SIGKILL leaves.
   # That includes a client that can no longer print: a terminal that closed, or a tee that took the same Ctrl-C. Under
   # set -e and a default SIGPIPE its first print would end this, with the Job still running and auto-sync still paused.
-  # So no error stops this, and what it has to say goes to a file beside the evidence. The probes are needed: a failed
-  # print stays in stdio's buffer, and the next $(...) would capture it. The second goes through fd 3, because inside
-  # 2>/dev/null a print to fd 2 goes to /dev/null, and could never see that stderr is dead.
+  # So no error stops this, and what it has to say goes to a file beside the evidence: see client_probe.
   set +e
   trap '' HUP INT TERM PIPE
-  { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
-  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$evidence.log"
+  client_probe
   stop_this_runs_jobs
   if [[ -n "$JOBS_LEFT_RUNNING" ]]; then
     warn "COULD NOT REMOVE these restore Jobs in $NS:$JOBS_LEFT_RUNNING. One may still drop or replace a database, so nothing is being started: auto-sync stays paused, and what was stopped stays stopped. When the cluster answers, run these, in this order:"
@@ -1056,6 +1069,7 @@ on_exit() {
   [[ -z "$secret_tmp" ]] || rm -f "$secret_tmp"
   [[ -z "$sentinel_tmp" ]] || rm -f "$sentinel_tmp"
   # A proof that could not run is not a pass. proof-probes is about monitoring and not the data, as in the drill.
+  client_probe
   not_run="$(awk -F '\t' '$2 == "NOT RUN" && $1 != "proof-probes" { printf "%s ", $1 }' "$steps_file")"
   if [[ "$rc" -eq 0 && -n "$not_run" && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then rc=2; fi
   if [[ "$rc" -eq 0 && "$OVERWROTE" == yes ]]; then rc="$EXIT_OVERWROTE"; fi
