@@ -8,7 +8,8 @@
 # S and a number is a scenario of the first review of the clean restore or from before it. R and a number is finding
 # that number of the second review, in clean-restore-harness/scenarios-second-review.sh. V and a number is MAJOR problem
 # that number of the review of those fixes, at the end of the same file, and M and a number its MINOR problem that
-# number. H66 is that entry of the hardening backlog, the probe loop of scripts/rotate.sh.
+# number. D and a number is a fix of the fifth round, from the review of the fourth, at the end of that file too. H66 is
+# that entry of the hardening backlog, the probe loop of scripts/rotate.sh.
 #
 # macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. Run it in the background: one scenario at a time
 # took 65 minutes beside the mutants, and in six ONLY= groups at once it took 21.
@@ -1649,7 +1650,7 @@ S36() {
 # shellcheck source=clean-restore-harness/scenarios-second-review.sh
 source "$STUBS/scenarios-second-review.sh"
 
-SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22 V1 V2 V3 V4 V4b M1 M2 M3 M4 M5 H66"
+SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22 V1 V2 V3 V4 V4b M1 M2 M3 M4 M5 H66 D1 D2 D3 D4 D5 D6 D7"
 
 for s in $SCENARIOS; do
   case " ${ONLY:-$SCENARIOS} " in
