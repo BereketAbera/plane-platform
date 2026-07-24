@@ -110,10 +110,12 @@ argo_pause_app() {
   local app="$1" spec
   spec="$(kc -n argocd get application "$app" -o json | jq -c '.spec.syncPolicy.automated // empty | del(.enabled)')"
   [[ -n "$spec" ]] || die "Application $app has no automated sync policy, so there is nothing to pause"
-  kc -n argocd patch application "$app" --type merge \
-    -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}' >/dev/null
+  # On the lists first. A stop after the patch took effect and before kubectl returned would otherwise leave it paused
+  # and not on them, and the run would say auto-sync is back. argo_resume is harmless on one that was not paused.
   ARGO_PAUSED_APPS+=("$app")
   ARGO_PAUSED_SPECS+=("$spec")
+  kc -n argocd patch application "$app" --type merge \
+    -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}' >/dev/null
 }
 
 # A sync already in flight would finish and undo an injection, whatever the policy says now, so wait
