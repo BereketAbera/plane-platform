@@ -43,7 +43,7 @@ no-prepare-admin	scripts/backup.sh	S25	s/^  recovery_prepare_admin\n//m
 no-version-check	scripts/restore.sh	S35	s/if recovery_version_newer "\$backup_version" "\$live_version"; then/if false; then/
 repair-leaves-the-job	scripts/restore.sh	S31	s/^      kc -n "\$ns" delete job "\$job" --cascade=foreground --timeout=180s >\/dev\/null \|\| die [^\n]*\n//m
 restored-mode-applies-anything	scripts/infisical-bootstrap.sh	S1 S10	s/^  apply_restored$/  tf apply -lock-timeout=10m -input=false -auto-approve/m
-stale-done-lines-kept	scripts/restore.sh	S15	s/^    if recovery_marker_cluster_gone && grep -qE '\^\(done\|data-back\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
+stale-done-lines-kept	scripts/restore.sh	S15	s/^    if recovery_marker_cluster_gone && grep -qE '\^\(done\|data-back\|overwrote\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
 no-overwrite-guard-infisical	scripts/restore.sh	R8	s/^  refuse_if_not_empty "\$users" 0\n//m
 marker-not-compared-with-latest	scripts/restore.sh	R1	s/^    if \[\[ "\$requested" == latest \]\]; then clean_refuse_stale_marker; fi\n//m
 marker-plane-choice-stands	scripts/restore.sh	R1	s/^  if ! recovery_marker_cluster_gone; then return 0; fi\n  for env in \$CLEAN_ENVS; do\n    id="\$\(clean_marker_value "\$env"\)"\n    fresh=/  return 0\n  for env in \$CLEAN_ENVS; do\n    id="\$(clean_marker_value "\$env")"\n    fresh=/m
