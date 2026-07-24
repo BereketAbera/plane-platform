@@ -692,6 +692,24 @@ recovery_rebuild_machine_file() { # backup-dir
 
 # The accounts and the sentinel that belong to a restored Plane dump, because a later smoke test logs in
 # with them. The other environment's lines are left alone.
+# A resume that keeps the data still puts the backup's test accounts and sentinel back, and the data it kept may have
+# moved on from them, as after a password changed since. So what they replace is copied beside them first, as with the
+# other files a resume puts back. Only if it differs, so a second resume leaves no second copy of the same thing.
+recovery_keep_test_files() { # backup-dir env
+  local dir="$1" env="$2" accounts="$LOCAL_DIR/test-accounts.env" sentinel="$LOCAL_DIR/test-sentinel-$2.json" prefix stamp
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  prefix="$(env_prefix "$env")"
+  if [[ -s "$dir/recovery/test-accounts.env" && -f "$accounts" ]] \
+    && ! cmp -s <(grep "^$prefix" "$accounts") "$dir/recovery/test-accounts.env"; then
+    (umask 077 && cp "$accounts" "$accounts.pre-restore-$stamp") || die "could not keep a copy of $accounts, so it was not replaced"
+    warn "this resume keeps the data, and puts back the test accounts of $env that the backup recorded. If a password was changed since, the database holds the new one. The file it replaces is in ${accounts#"$ROOT"/}.pre-restore-$stamp"
+  fi
+  if [[ -s "$dir/recovery/test-sentinel.json" && -f "$sentinel" ]] && ! cmp -s "$sentinel" "$dir/recovery/test-sentinel.json"; then
+    (umask 077 && cp "$sentinel" "$sentinel.pre-restore-$stamp") || die "could not keep a copy of $sentinel, so it was not replaced"
+    warn "this resume keeps the data, and puts back the sentinel of $env that the backup recorded. The file it replaces is in ${sentinel#"$ROOT"/}.pre-restore-$stamp"
+  fi
+}
+
 recovery_reinstate_test_files() { # backup-dir env
   local dir="$1" env="$2" accounts="$LOCAL_DIR/test-accounts.env" prefix tmp
   if [[ -s "$dir/recovery/test-accounts.env" ]]; then

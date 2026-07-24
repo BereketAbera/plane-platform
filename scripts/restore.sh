@@ -1105,6 +1105,8 @@ on_exit() {
         warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. Nothing was changed. Evidence: $evidence"
       elif [[ -n "$JOBS_LEFT_RUNNING" ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME FAILED, and its Job may still be running, as said above. Auto-sync is still paused. Evidence: $evidence"
+      elif [[ "$JOB_STOPPED" == yes && "$KEEP_DATA" == yes ]]; then
+        warn "restore of $BACKUP_ID into $ENV_NAME FAILED: its migrator's Job was stopped before it finished. This resume kept the data an earlier run brought back, so $NS holds that, and the migrator may have done part of its work on it. Auto-sync is back on. Running this again keeps that data and runs the migrator again. Evidence: $evidence"
       elif [[ "$JOB_STOPPED" == yes ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME FAILED: its Job was stopped before it finished, so $NS may hold the old data, the backup's, or a part of it. Auto-sync is back on. The backup is untouched, and running this again restores it. Evidence: $evidence"
       else
@@ -1660,6 +1662,7 @@ restore_plane() {
     record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
     record objects PASS "synced and checked by download, every uploaded asset has its object"
   fi
+  if [[ "$KEEP_DATA" == yes ]]; then recovery_keep_test_files "$backup_dir" "$ENV_NAME"; fi
   recovery_reinstate_test_files "$backup_dir" "$ENV_NAME"
 
   # Old cache entries and queued tasks describe rows from before the restore.
@@ -1954,6 +1957,9 @@ restore_infisical() {
       record proof-values PASS "every Plane secret decrypts to the value, version and id the backup recorded"
     else
       record proof-values FAIL "$(printf '%s' "$problems" | tr '\n' ';')"
+      if [[ "$KEEP_DATA" == yes ]]; then
+        die "this resume kept what $NS holds, and it does not hold what backup $BACKUP_ID recorded, as after a rotation since. If that is not what should be there, the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME replaces it with that backup, what it holds now is then gone, and that run does not read PASS. To keep a copy first: make backup ENV=$ENV_NAME."
+      fi
       die "the restored instance does not hold what the backup recorded"
     fi
   else
