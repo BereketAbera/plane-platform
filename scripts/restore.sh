@@ -457,13 +457,15 @@ clean_warn_plane_content() { # env id
 # Says when a newer Plane backup with the same SECRET_KEY exists than the one chosen, because what it holds is then
 # left out, and a plan is the last place to see that.
 clean_warn_newer_plane() { # env id set-file
-  local env="$1" id="$2" newer dir option
+  local env="$1" id="$2" newer dir option delete='make destroy CONFIRM=yes'
   newer="$(recovery_newer_plane "$env" "$id" "$3")"
   [[ -n "$newer" ]] || return 0
   dir="$LOCAL_DIR/backups/$env/$newer"
   option="$(clean_plane_option "$env")"
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
-    warn "backup $env/$newer was taken after $env/$id, which the restore under way uses, with the same SECRET_KEY, and it holds $(clean_count "$dir" users) users and $(jq -r .objects.count "$dir/manifest.json") objects. A resume keeps what it started with. To use it, start over and pass $option=$newer: make destroy CONFIRM=yes SKIP_BACKUP=yes first."
+    # With its backup: the delete takes every environment, and a refusal that led here named only one of them.
+    if cluster_exists; then delete="$delete, which backs up every environment the cluster holds and then deletes it"; fi
+    warn "backup $env/$newer was taken after $env/$id, which the restore under way uses, with the same SECRET_KEY, and it holds $(clean_count "$dir" users) users and $(jq -r .objects.count "$dir/manifest.json") objects. A resume keeps what it started with. To use it, start over: $delete, then make restore-clean BACKUP=latest $option=$newer."
   else
     warn "backup $env/$newer was taken after $env/$id, which this plan chose, with the same SECRET_KEY, and it holds $(clean_count "$dir" users) users and $(jq -r .objects.count "$dir/manifest.json") objects. What it holds is left out, unless $option=$newer picks it."
   fi
