@@ -35,7 +35,10 @@
 #
 # If this client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it removes
 # that Job first, because the Job would otherwise carry on and drop or replace a database with the apps back up. If it
-# cannot remove it, the server or apps stay down and auto-sync stays paused, and it prints what to run.
+# cannot remove it, the server or apps stay down and auto-sync stays paused, and it prints what to run. A signal has to
+# reach the process group, as Ctrl-C and a closed terminal do, or kill -TERM -- -<pgid>. run_job polls in a pipeline, and
+# the trap runs only when that pipeline has ended, so a signal to this script's pid alone, or to make's, which passes it
+# to that pid alone, removes nothing until the Job has ended, which can be 30 minutes.
 #
 # Every refusal comes before anything is touched. Order for a Plane environment:
 #   verify checksums and fingerprint, refuse, pause auto-sync (root first), stop the apps, restore
