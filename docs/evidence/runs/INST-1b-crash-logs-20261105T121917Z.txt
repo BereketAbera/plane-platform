@@ -1,0 +1,29 @@
+# 2026-11-05T12:19Z. Copied by hand from the coordinating session's own kubectl output, because the pods and the clone are gone. Lines are as printed then, cut at 210 characters by that command. Cluster from the first cold make up, images built under umask 077, clone at 18af97a plus two promote commits.
+# Commands: kubectl -n plane-dev get pods; kubectl -n plane-dev logs deploy/<name> --tail=10; ls -la in the clone
+plane-admin-wl-75d6557f4f-fr5t8               0/1   CrashLoopBackOff   9 (15s ago)     24m
+plane-api-wl-6b6649cd9-jdgdz                  0/1   CrashLoopBackOff   8 (4m18s ago)   24m
+plane-beat-worker-wl-5fd8448c5f-gg8tc         1/1   Running            0               24m
+plane-live-wl-5744d85f8b-qtgwc                1/1   Running            0               24m
+plane-space-wl-6bfb668f57-m6t2j               0/1   CrashLoopBackOff   9 (2m44s ago)   24m
+plane-web-wl-66c4d89b58-vrhkz                 0/1   CrashLoopBackOff   9 (20s ago)     24m
+plane-worker-wl-6f774567f8-9mxrt              1/1   Running            0               24m
+=== plane-web-wl
+2026/11/05 12:18:50 [emerg] 1#1: open() "/etc/nginx/nginx.conf" failed (13: Permission denied)
+nginx: [emerg] open() "/etc/nginx/nginx.conf" failed (13: Permission denied)
+=== plane-admin-wl
+2026/11/05 12:18:55 [emerg] 1#1: open() "/etc/nginx/nginx.conf" failed (13: Permission denied)
+nginx: [emerg] open() "/etc/nginx/nginx.conf" failed (13: Permission denied)
+=== plane-space-wl
+    at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    at moduleResolve (node:internal/modules/esm/resolve:865:10)
+=== plane-api-wl
+  File "/usr/local/lib/python3.12/site-packages/django/core/files/storage/filesystem.py", line 81, in _open
+    return File(open(self.path(name), mode))
+PermissionError: [Errno 13] Permission denied: '/code/plane/static/logos/Logo.png'
+=== files in the clone, all mode 0600 from umask 077 in tests/drills/clean-restore.sh line 50
+-rw-------@  1 bek  staff  3835 Nov  5 14:02 nginx.conf     (.build/wayline-dist/web/)
+-rw-------@ 1 bek  staff  38061 Nov  5 13:55 README.md
+=== 12:31:17Z, ending the operation still retrying the old images, as docs/runbooks/argo-sync-stuck.md says
+kubectl -n argocd patch application plane-dev --type=merge -p '{"status":{"operationState":{"phase":"Terminating"}}}'
+application.argoproj.io/plane-dev patched
+# After that, plane-web-wl and plane-admin-wl on the rebuilt images read 1/1 Running with 0 restarts by 12:31:58Z.
