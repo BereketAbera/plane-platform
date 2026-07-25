@@ -2656,7 +2656,9 @@ D5() {
     check "$app: the pause took effect" log_has "kc patch application $app pause"
     check "$app: not a pass (got $RC)" test "$RC" -ne 0
     check "$app: nothing stays paused" test -z "$(paused_now)"
-    check "$app: and it said so" out_has "auto-sync restored on $app"
+    check "$app: the trap put it back" log_has "kc patch application $app resume"
+    # The trap ran inside kc's >/dev/null, so its ok lines went there, and this line goes to stderr.
+    check "$app: and it says so" out_has "Auto-sync is back on"
   done
   # What it costs: a pause that never took effect is put back too, which changes nothing.
   reset
