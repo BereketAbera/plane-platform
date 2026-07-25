@@ -156,7 +156,7 @@ Three copies exist, and each has a role.
 | Working repo `/Users/bek/dev/pr/plane-platform` | Source of truth | `git clone` from `origin`. Commits never pushed are gone |
 | GitHub `origin` | CI, off-machine copy | `git push` from the working repo |
 
-`gitops-publish` pushes without force. A non-fast-forward means history was rewritten, and it refuses. Reverts are the way back. If `main` was rewritten on purpose, delete the bare repo to republish from scratch. The one rewrite so far moved the bare repo with a force push instead, and is [recorded](evidence/history-rewrite.md).
+`gitops-publish` pushes without force. A non-fast-forward means history was rewritten, and it refuses. Reverts are the way back. If `main` was rewritten on purpose, delete the bare repo to republish from scratch. The one rewrite so far did that, and is [recorded](evidence/history-rewrite.md).
 
 Repo rights do not imply data. A Git restore brings no secret zero and no backups.
 
