@@ -317,15 +317,17 @@ install builds and promotes its images and pulls everything through empty caches
   `UP_STOP_AFTER=<cluster|publish|terraform|secret-zero|traefik|infisical>` stops it after that step.
 - `make test` keeps going after a failure and labels each test PASS, FAIL or BLOCKED. `scripts/test.sh` exits 0,
   1 or 2 for those, as `tests/e2e/smoke.py` does. `make` itself exits 2 on any failure, and prints which.
-- `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`. That backup refuses an
-  environment an unfinished clean restore has not finished, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. It removes
+- `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`. With an unfinished clean
+  restore that backup still goes ahead, because what it deletes may be all there is, where a plain `make backup` refuses an environment that
+  restore has not finished and whose data has not come back, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. `SKIP_BACKUP=yes` then deletes what is there with no backup. It removes
   `.local/terraform/local` and keeps backups, secret zero and `.local/terraform/infisical`, because a clean restore needs them.
   `PURGE=yes` also removes the local services and their volumes.
 - `make restore` refuses to overwrite a non-empty environment without `CONFIRM=yes`. `make restore-clean` brings the whole platform
-  back into a clean environment, Infisical first, and a resume refuses an environment that does not match this backup part way through,
-  unless `ALLOW_RESUME_OVERWRITE=yes`, which is recorded as FAIL. `scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2
+  back into a clean environment, Infisical first, and a resume keeps an environment whose data has come back and refuses one that does not match this backup part way through,
+  unless `ALLOW_RESUME_OVERWRITE` names it, as in `ALLOW_RESUME_OVERWRITE=dev` or `"dev prod-sim"`, out of `infisical`, `dev` and `prod-sim`. `yes` is refused. The overwrite is recorded as FAIL. `scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2
   when nothing failed but something could not run or a person has to act, which is not a pass. `scripts/restore.sh infisical` alone also has 3:
-  Infisical is back, and a person has to sign in to prove it. Through `make`, any of these but 0 is make's own exit 2, and make prints the script's.
+  Infisical is back, and a person has to sign in to prove it. A clean restore also has 4: everything is proven and nothing is left to resume, and the run overwrote what
+  `ALLOW_RESUME_OVERWRITE` named, so its result reads `OVERWROTE`, which is not a pass. Through `make`, any of these but 0 is make's own exit 2, and make prints the script's.
 - Scripts that write to the cluster, a registry or the disk check free host disk through `guard_disk`, because the Docker VM
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
   creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB, and it refuses a reason of fewer than two words. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
