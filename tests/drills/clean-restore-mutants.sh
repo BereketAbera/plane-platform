@@ -134,6 +134,18 @@ plan-rounds-up-to-the-limit	scripts/lib/up-checks.sh	M5	s/^kib_as_gib_down\(\) \
 plan-rounds-to-two-decimals-only	scripts/lib/up-checks.sh	M5	s/int\(k \* 100 \/ 1048576\) \/ 100/k \/ 1048576/
 probe-outlives-the-script	scripts/rotate.sh	H66	s/while kill -0 "\$\$" 2>\/dev\/null; do/while :; do/
 probe-stops-at-once	scripts/rotate.sh	H66	s/while kill -0 "\$\$" 2>\/dev\/null; do/while false; do/
+newer-backup-advice-skips-its-backup	scripts/restore.sh	D1	s/To use it, start over: \$delete, then make restore-clean BACKUP=latest \$option=\$newer\./To use it, start over and pass \$option=\$newer: make destroy CONFIRM=yes SKIP_BACKUP=yes first./
+stop-probes-only-at-its-top	scripts/restore.sh	D2	s/^    client_probe\n//mg
+gone-cluster-read-through-a-pipeline	infisical/lib/recovery.sh	D3	s/^  list="\$\(kind get clusters 2>\/dev\/null\)" \|\| return 1\n  grep -qx "\$CLUSTER_NAME" <<<"\$list" \|\| return 0\n/  cluster_exists || return 0\n/m
+overwrote-line-stays-on-a-new-cluster	scripts/restore.sh	D4	s/ -e '\/\^overwrote \/d'//
+overwrote-line-alone-is-not-looked-at	scripts/restore.sh	D4	s/\(done\|data-back\|overwrote\)/(done|data-back)/g
+listed-only-after-the-pause	monitoring/ops/lib.sh	D5	s/^  ARGO_PAUSED_APPS\+=\("\$app"\)\n  ARGO_PAUSED_SPECS\+=\("\$spec"\)\n(  kc -n argocd patch application "\$app" --type merge \\\n[^\n]*\n)/$1  ARGO_PAUSED_APPS+=("\$app")\n  ARGO_PAUSED_SPECS+=("\$spec")\n/m
+alarm-after-plane-guard-jobs	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=no # The guard Jobs have returned[^\n]*\n//m
+alarm-after-infisical-guard-job	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=no # The guard Job has returned[^\n]*\n//m
+no-look-after-the-guard-jobs	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=yes\n(  run_migrator\n)/$1/m
+no-copy-of-the-test-files	scripts/restore.sh	D7	s/^  if \[\[ "\$KEEP_DATA" == yes \]\]; then recovery_keep_test_files[^\n]*\n//m
+kept-data-reads-as-part-of-the-backup	scripts/restore.sh	D7	s/^      elif \[\[ "\$JOB_STOPPED" == yes && "\$KEEP_DATA" == yes \]\]; then\n[^\n]*\n//m
+kept-infisical-reads-as-a-bad-restore	scripts/restore.sh	D7	s/^      if \[\[ "\$KEEP_DATA" == yes \]\]; then\n        die "this resume kept what[^\n]*\n      fi\n//m
 TABLE
 }
 
