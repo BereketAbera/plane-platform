@@ -142,7 +142,9 @@ overwrote-line-alone-is-not-looked-at	scripts/restore.sh	D4	s/\(done\|data-back\
 listed-only-after-the-pause	monitoring/ops/lib.sh	D5	s/^  ARGO_PAUSED_APPS\+=\("\$app"\)\n  ARGO_PAUSED_SPECS\+=\("\$spec"\)\n(  kc -n argocd patch application "\$app" --type merge \\\n[^\n]*\n)/$1  ARGO_PAUSED_APPS+=("\$app")\n  ARGO_PAUSED_SPECS+=("\$spec")\n/m
 alarm-after-plane-guard-jobs	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=no # The guard Jobs have returned[^\n]*\n//m
 alarm-after-infisical-guard-job	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=no # The guard Job has returned[^\n]*\n//m
-no-look-after-the-guard-jobs	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=yes\n(  run_migrator\n)/$1/m
+no-look-before-a-kept-resume-migrator	scripts/restore.sh	D7	s/^  JOB_MAY_RUN=yes\n(  run_migrator\n)/$1/m
+no-look-before-the-plane-data-job	scripts/restore.sh	D2	s/^    JOB_MAY_RUN=yes\n(    data_job_mark\n    restore_data )/$1/m
+no-look-before-the-infisical-data-job	scripts/restore.sh	D2	s/^    JOB_MAY_RUN=yes\n(    data_job_mark\n    restore_infisical_db )/$1/m
 no-copy-of-the-test-files	scripts/restore.sh	D7	s/^  if \[\[ "\$KEEP_DATA" == yes \]\]; then recovery_keep_test_files[^\n]*\n//m
 kept-data-reads-as-part-of-the-backup	scripts/restore.sh	D7	s/^      elif \[\[ "\$JOB_STOPPED" == yes && "\$KEEP_DATA" == yes \]\]; then\n[^\n]*\n//m
 kept-infisical-reads-as-a-bad-restore	scripts/restore.sh	D7	s/^      if \[\[ "\$KEEP_DATA" == yes \]\]; then\n        die "this resume kept what[^\n]*\n      fi\n//m
