@@ -1,6 +1,6 @@
 # 0016. Datastore versions: Postgres 15, Valkey 7.2, RabbitMQ 3.13
 
-**Status:** Accepted, 2026-11-04. A restore into a new cluster read PASS twice on 2026-11-05, on the same versions.
+**Status:** Accepted, 2026-11-04. A restore into a new cluster read PASS three times on 2026-11-05, on the same versions.
 
 ## Context
 
