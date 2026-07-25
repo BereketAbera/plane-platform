@@ -262,7 +262,7 @@ answers. The read of `ALERTS` shows them firing on 2026-11-04, in UTC ([monitori
 The API and frontend alerts cleared when each environment came up. The two data alerts cleared earlier, when the data pods came up. `PlanePostgresDown`
 started later because `pg_up` has no series until the exporter runs, and the exporter sat in `CreateContainerConfigError` until 21:29. This shows
 the rules can fire on a missing environment, not that each fires on the fault it names. With the API alone gone, `make test-alert` later made `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` fire. `PlanePostgresDown` and `PlaneValkeyDown` have not fired on a Plane that was up. A first boot
-also fires Argo CD rules: see `ArgoAppDegraded` and `ArgoSyncFailed` below. Since `2f42ddb`, `PlaneRabbitmqDown` and `PlaneMinioDown` read ready replicas too, so a StatefulSet that takes over 2m to turn ready on a first boot can fire them now. That is read from the rule. The clean install and the first restore ran before it. The cold install and the two later restores ran after it, and no file here reads whether these rules fired during them.
+also fires Argo CD rules: see `ArgoAppDegraded` and `ArgoSyncFailed` below. Since `63105af`, `PlaneRabbitmqDown` and `PlaneMinioDown` read ready replicas too, so a StatefulSet that takes over 2m to turn ready on a first boot can fire them now. That is read from the rule. The clean install and the first restore ran before it. The cold install and the two later restores ran after it, and no file here reads whether these rules fired during them.
 
 **An in-place restore fires them too,** because it stops api, worker, beat and live on purpose. In prod-sim's restore on 2026-11-05, Alertmanager read `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` active from 07:36:26Z to 07:36:51Z, and `PlaneFrontendDown` on the `live` probe from 07:37:26Z to 07:37:57Z, the only time it has fired with the rest of Plane in place. Those readings come from a side watcher, and nobody read the sink for them ([SEC-2-20261105T072331Z-watch.txt](evidence/runs/SEC-2-20261105T072331Z-watch.txt), [LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). Dev's restore has no such reading.
 
@@ -483,8 +483,8 @@ Its first run found a real defect.
 
 | Run | Rule read | RabbitMQ at 0 | Silo at 0 |
 |---|---|---|---|
-| [10:06Z](evidence/runs/alert-rules-dev-20261105T100605Z.txt), at `613c2a0` | `up` alone | No pending and no firing in 270s. FAIL | The same. FAIL |
-| [10:17Z](evidence/runs/alert-rules-dev-20261105T101707Z.txt), at `2f42ddb` | `up`, or ready replicas | Pending at +26s, firing at +147s, at the sink at +157s, resolved 40s after it came back. PASS | Pending at +21s, firing at +138s, at the sink at +148s, resolved 26s after it came back. PASS |
+| [10:06Z](evidence/runs/alert-rules-dev-20261105T100605Z.txt), at `d5fb771` | `up` alone | No pending and no firing in 270s. FAIL | The same. FAIL |
+| [10:17Z](evidence/runs/alert-rules-dev-20261105T101707Z.txt), at `63105af` | `up`, or ready replicas | Pending at +26s, firing at +147s, at the sink at +157s, resolved 40s after it came back. PASS | Pending at +21s, firing at +138s, at the sink at +148s, resolved 26s after it came back. PASS |
 
 `up` has no series once the endpoint leaves the Service, so `== 0` has nothing to read: at each deadline Prometheus held `up` for the other service and none for this one. `kube_statefulset_status_replicas_ready` still reads 0 with no pod, so the fix adds it beside `up`, which still covers a ready pod whose scrape fails. `tests/rules/data-services-down.test.yaml` holds what Prometheus really held: the pod gone, the pod ready with its scrape failing, and all well or only the other environment down.
 
