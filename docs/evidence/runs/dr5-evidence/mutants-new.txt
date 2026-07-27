@@ -1,0 +1,19 @@
+date: 2026-11-05T13:36:30Z
+commit: 7ebab899aa23f2bac1e68fe24650f57251f3bae4
+command: MUTANTS=<the 12 of this round> JOBS=5 TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp tests/drills/clean-restore-mutants.sh
+CAUGHT       stop-probes-only-at-its-top [D2] 9 failed, first: terminal, dev: auto-sync came back
+CAUGHT       overwrote-line-alone-is-not-looked-at [D4] 2 failed, first: the only line it has: exit 0 (got 4)
+CAUGHT       overwrote-line-stays-on-a-new-cluster [D4] 5 failed, first: on a new cluster: exit 0 (got 4)
+CAUGHT       newer-backup-advice-skips-its-backup [D1] 3 failed, first: the plan names the delete with its backup, and then that backup
+CAUGHT       listed-only-after-the-pause [D5] 6 failed, first: root: nothing stays paused
+CAUGHT       alarm-after-plane-guard-jobs [D6] 2 failed, first: Plane, a refusal: no alarm about a Job
+CAUGHT       alarm-after-infisical-guard-job [D6] 1 failed, first: Infisical, a refusal: no alarm about a Job
+CAUGHT       gone-cluster-read-through-a-pipeline [D3] 4 failed, first: fail: it does not say the cluster is gone
+SURVIVED     no-look-after-the-guard-jobs [D6]
+CAUGHT       no-copy-of-the-test-files [D7] 5 failed, first: the accounts it replaced are kept
+CAUGHT       kept-data-reads-as-part-of-the-backup [D7] 3 failed, first: a stop in the migrator: it says the data was kept
+CAUGHT       kept-infisical-reads-as-a-bad-restore [D7] 3 failed, first: Infisical: it says the data was kept
+tests/drills/clean-restore-mutants.sh: line 197: syntax error near unexpected token `)'
+tests/drills/clean-restore-mutants.sh: line 197: `e | cut -f1 | tr '\n' ' ')}"'
+exit: 2
+ended: 2026-11-05T13:42:08Z

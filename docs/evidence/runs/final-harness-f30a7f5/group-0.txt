@@ -1,0 +1,177 @@
+started: 2026-11-05T14:00:05Z
+commit: f30a7f5cd7ee57b991190c7e79adbfb48f871c8f
+status: 0 paths changed
+command: ONLY="S0 S6 S12 S18 S24 S30 S36 R6 R11 R17 V2 M3 D3" /bin/bash tests/drills/clean-restore-harness.sh, in a fresh clone, with TMPDIR set
+
+=== S0. What the fixture itself can see, so a pass below means something
+PASS  no token: the API refuses a secret read
+PASS  a made-up token: refused
+PASS  the real token: accepted
+PASS  a Plane app's pods are there
+PASS  self-heal reverts a scale while auto-sync is on
+PASS  so the server still answers
+PASS  paused, the scale stands, and nothing answers
+PASS  and the Application is not Synced and Healthy
+PASS  the curl on the path refuses a real host
+PASS  a lost cluster leaves its local state, as a real loss does
+
+=== S6. A key gone: a clear refusal, and only the hint that applies (finding 2)
+PASS  ENCRYPTION_KEY: non-zero exit
+PASS  ENCRYPTION_KEY: no shell error in the output
+PASS  ENCRYPTION_KEY: no shell source in the output
+PASS  ENCRYPTION_KEY: says the dump is unreadable
+PASS  ENCRYPTION_KEY: and not the AUTH_SECRET hint
+PASS  ENCRYPTION_KEY: nothing ran
+PASS  AUTH_SECRET: non-zero exit
+PASS  AUTH_SECRET: no shell error in the output
+PASS  AUTH_SECRET: no shell source in the output
+PASS  AUTH_SECRET: its own hint
+PASS  AUTH_SECRET: and not the ENCRYPTION_KEY hint
+PASS  AUTH_SECRET: nothing ran
+PASS  no script in the source has a case inside a command substitution
+
+=== S12. destroy.sh keeps what a restore needs
+PASS  exit 0 (got 0)
+PASS  cluster deleted
+PASS  local state removed
+PASS  Infisical state kept, byte for byte
+PASS  secret zero kept
+PASS  points at restore-clean
+PASS  with its own backup: warns that latest now names it (finding 10)
+PASS  PURGE=yes: says the registry held images (finding 5)
+
+=== S18. An older Infisical backup pairs with the Plane backups of its own run
+PASS  two distinct sets
+PASS  older Infisical id takes the dev backup of its own run
+PASS  latest takes the newest
+PASS  BACKUP_DEV overrides
+
+=== S24. Finding 1: a warning at backup and plan time when the token ends inside the retention period
+PASS  10 days left: the backup warns
+PASS  10 days left: and says the password is what is left
+PASS  10 days left: the plan warns
+PASS  60 days left: the backup does not
+PASS  10 days left and no password: the warning says what that costs
+
+=== S30. Finding 6: a cluster lost with no make destroy leaves state about it, which must not be applied over
+PASS  exit 0 (got 0)
+PASS  Terraform did not apply over it
+PASS  the old state is kept, moved aside
+PASS  the aside folder is private
+PASS  the run says so
+PASS  the evidence says so
+PASS  and the new state is this cluster's
+PASS  plain make up on a lost cluster too
+PASS  make up with the cluster there keeps its state (got 0)
+PASS  Docker down: refuses, and does not take that for a lost cluster
+PASS  Docker down: state untouched
+
+=== S36. Small ones: the backup folder's mode at creation (finding 14), the lock table (finding 15)
+PASS  cluster-up.sh makes .local/backups at 0700
+PASS  the manifest asks for the larger lock table
+
+=== R6. Retention, on real folders: backups of an empty environment do not push out the last one with users
+PASS  the backup says what it holds
+PASS  three backups of an empty dev, KEEP=3: the one with users is still there
+PASS  and the three
+PASS  and the plan names it
+PASS  a fourth: the one with users stays, and the oldest empty one goes
+PASS  that one is still there
+PASS  KEEP=1: the newest and the one with users
+PASS  KEEP=1: that one is still there
+PASS  a newer one with users: exit 0 (got 0)
+PASS  once a newer one holds users, the old one goes by count like any other, at KEEP=1
+PASS  and it is gone
+PASS  fixture: a later backup with users existed
+PASS  in place, no CONFIRM: refuses
+PASS  in place, no CONFIRM: warns
+PASS  in place, no CONFIRM: names the way to the real one
+PASS  in place, CONFIRM=yes: warns
+PASS  in place, CONFIRM=yes: the evidence says what it overwrote with
+PASS  a 0-user backup into what is already empty: nothing to warn about
+PASS  fixture: a restore half done
+PASS  a backup of what it has not finished: refuses (got 1)
+PASS  and says why, without claiming to have looked
+PASS  and does not call it empty or partly restored as a fact
+PASS  and does not send a person to SKIP_BACKUP without saying what it loses
+PASS  and the way past it
+PASS  and no Job ran
+PASS  a backup of what it has finished: goes ahead (got 0)
+PASS  and says a restore is under way
+PASS  make backup ENV=all: refuses for the part it cannot do (got 1)
+PASS  make backup ENV=all: and prod-sim has no new backup
+PASS  the override goes ahead (got 0)
+PASS  the override: a new backup
+
+=== R11. The printed way out with the registry empty: on the empty cluster it leads to, it has to work
+PASS  the plan prints the override in the promotion to prod-sim
+PASS  the plan says why
+PASS  up.sh prints it too
+PASS  up.sh says when
+PASS  and keeps the backup on a cluster that may hold data
+PASS  fixture: make up UP_STOP_AFTER=cluster leaves an empty cluster in reach (got 0)
+PASS  without the override, that cluster refuses
+PASS  with the override as printed, it goes ahead (got 0)
+
+=== R17. An option a resume cannot honour is refused, and not ignored
+PASS  BACKUP_DEV differs from the marker's, in a plan: refuses (got 1)
+PASS  says which it asked for
+PASS  and which it uses
+PASS  and how to use it
+PASS  BACKUP_DEV differs, a real run: refuses (got 1)
+PASS  BACKUP_DEV differs, a real run: nothing ran
+PASS  BACKUP_PROD_SIM differs: refuses (got 1)
+PASS  BACKUP_PROD_SIM differs: says so
+PASS  ENVS differs: refuses (got 1)
+PASS  ENVS differs: says so
+PASS  BACKUP_DEV the same as the marker's: goes through (got 0)
+
+=== V2. make destroy under a kept marker backs up first, and a person is not sent past that backup
+PASS  fixture: prod-sim is not finished
+PASS  make destroy, with prod-sim holding 500 users: exit 0 (got 0)
+PASS  it says it goes past the refusal
+PASS  a backup of prod-sim comes first
+PASS  and there is one more backup of it
+PASS  and of everything else
+PASS  a backup that fails: refuses (got 1)
+PASS  a backup that fails: deletes nothing
+PASS  a backup that fails: says what SKIP_BACKUP=yes loses
+PASS  a plain backup under a marker: refuses (got 1)
+PASS  a plain backup under a marker: no Job
+PASS  with its data back: goes ahead (got 0)
+PASS  with its data back: says so
+
+=== M3. One kubectl error after a run's last Job has finished does not read as a Job that may still run
+PASS  a passed restore: exit 0 (got 0)
+PASS  a passed restore: it does not say a Job may still run
+PASS  a passed restore: nothing stays paused
+PASS  a passed restore: reads PASS
+PASS  a passed restore: says complete
+PASS  Infisical: exit 0 (got 0)
+PASS  Infisical: it does not say a Job may still run
+PASS  Infisical: nothing stays paused
+PASS  Infisical: the server is back
+PASS  a proof fails: not a pass (got 1)
+PASS  a proof fails: it does not say a Job may still run
+PASS  a proof fails: nothing stays paused
+PASS  a stop in the migrator's Job: not a pass (got 143)
+PASS  a stop in the migrator's Job: it cannot tell, and says so
+PASS  a stop in the migrator's Job: auto-sync stays paused
+PASS  a stop in the migrator's Job: nothing started over it
+PASS  a clean restore: exit 0 (got 0)
+PASS  a clean restore: nothing stays paused
+
+=== D3. One read of kind that goes wrong does not read as a lost cluster, and a real loss still does
+PASS  fail: fixture: the marker has lines
+PASS  fail: it does not say the cluster is gone
+PASS  fail: nothing that came back is replaced
+PASS  fail: it finishes (got 0)
+PASS  gap: fixture: the marker has lines
+PASS  gap: it does not say the cluster is gone
+PASS  gap: nothing that came back is replaced
+PASS  gap: it finishes (got 0)
+PASS  a real loss: it says so
+PASS  a real loss: it finishes (got 0)
+
+RESULT 144 passed, 0 failed
+exit: 0 ended: 2026-11-05T14:08:55Z

@@ -1,0 +1,8 @@
+# 2026-11-05T13:52:34Z the refusal line of clean-install.sh under an outer make, against a stub target with the same test as make destroy. make outer CONFIRM=yes
+--- the line as it was, which inherits through MAKEFLAGS
+inner make: CONFIRM=yes reached it, a real destroy would run
+exit 1 (0 would mean refused)
+--- the line as it is now in tests/drills/clean-install.sh
+inner make: no CONFIRM, a real destroy would refuse
+make: *** [destroy] Error 1
+exit 0 (0 means refused)

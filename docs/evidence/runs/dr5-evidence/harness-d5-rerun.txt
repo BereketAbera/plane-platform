@@ -1,0 +1,31 @@
+date: 2026-11-05T13:35:59Z
+commit: 500d071ffe74a0941b2c8e9d57c4da5e555bf2eb plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D5" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D5. A stop just after a pause took effect, before kubectl returned: auto-sync comes back, as it says
+PASS  root: fixture: the stop came there
+PASS  root: the pause took effect
+PASS  root: not a pass (got 143)
+PASS  root: nothing stays paused
+PASS  root: the trap put it back
+PASS  root: and it says so
+PASS  plane-dev: fixture: the stop came there
+PASS  plane-dev: the pause took effect
+PASS  plane-dev: not a pass (got 143)
+PASS  plane-dev: nothing stays paused
+PASS  plane-dev: the trap put it back
+PASS  plane-dev: and it says so
+PASS  infisical: fixture: the stop came there
+PASS  infisical: the pause took effect
+PASS  infisical: not a pass (got 143)
+PASS  infisical: nothing stays paused
+PASS  infisical: the trap put it back
+PASS  infisical: and it says so
+PASS  a pause that fails: not a pass (got 1)
+PASS  a pause that fails: nothing stays paused
+PASS  a pause that fails: it is not left to a person
+
+RESULT 21 passed, 0 failed
+exit: 0
+ended: 2026-11-05T13:36:40Z

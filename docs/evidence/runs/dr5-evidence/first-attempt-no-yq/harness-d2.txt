@@ -1,0 +1,48 @@
+date: 2026-11-05T13:30:19Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D2" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D2. The output dies after the trap's first probe: the Job goes, auto-sync comes back, and what it says lands beside the evidence
+PASS  terminal, dev: not a pass (got 130)
+PASS  terminal, dev: the Job is gone
+PASS  terminal, dev: auto-sync came back
+PASS  terminal, dev: nothing started over the Job
+PASS  terminal, dev: the evidence reads FAIL, and holds only steps
+PASS  terminal, dev: what it has to say lands beside the evidence
+PASS  terminal, dev: and that auto-sync is back
+PASS  pipe, dev: not a pass (got 130)
+PASS  pipe, dev: the Job is gone
+PASS  pipe, dev: auto-sync came back
+PASS  pipe, dev: nothing started over the Job
+PASS  pipe, dev: the evidence reads FAIL, and holds only steps
+PASS  pipe, dev: what it has to say lands beside the evidence
+PASS  pipe, dev: and that auto-sync is back
+PASS  terminal, infisical: not a pass (got 130)
+PASS  terminal, infisical: the Job is gone
+PASS  terminal, infisical: auto-sync came back
+PASS  terminal, infisical: nothing started over the Job
+PASS  terminal, infisical: the evidence reads FAIL, and holds only steps
+PASS  terminal, infisical: what it has to say lands beside the evidence
+PASS  terminal, infisical: and that auto-sync is back
+PASS  terminal, infisical: the server came back
+PASS  terminal, infisical: and its cache was flushed
+tests/drills/clean-restore-harness.sh: line 201: 82253 Terminated: 15          python3 -I "$STUBS/fakeapi.py" "$H/state/api-port"
+cat: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/state/backup.out: No such file or directory
+FAIL  fixture: backup.sh all failed
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    s = os.environ["S"]; c = json.load(open(f"{s}/cluster.json"))
+                                       ~~~~^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/state/cluster.json'
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5/tests/drills/clean-restore-harness/scenarios-second-review.sh: line 2536: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/state/hang-jobs.json: No such file or directory
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5/tests/drills/clean-restore-harness/scenarios-second-review.sh: line 2537: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/state/calls.log: No such file or directory
+tests/drills/clean-restore-harness.sh: line 293: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/state/detached.txt: No such file or directory
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/state/detached.txt: No such file or directory
+FAIL  an output that stays alive: it prints to it
+ls: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.WO24UE/.local/evidence-raw/restore-dev-*.json: No such file or directory
+PASS  an output that stays alive: nothing beside the evidence
+
+RESULT 24 passed, 2 failed
+exit: 1
+ended: 2026-11-05T13:34:34Z

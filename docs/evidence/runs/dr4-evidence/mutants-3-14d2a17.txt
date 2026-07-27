@@ -1,0 +1,125 @@
+date: 2026-11-05T10:46:55Z
+commit: 14d2a176855d1bbbd2c8fe30ab93dd4696caf7ef
+status: 0 paths changed
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr4 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr4-tmp JOBS=4 /bin/bash tests/drills/clean-restore-mutants.sh
+
+CAUGHT       no-migrator [S1] 4 failed, first: exit 0 (got 1)
+CAUGHT       no-valkey-flush [S1] 1 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       no-rabbitmq-purge [S1] 1 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       no-wait-for-fresh-server [S1] 1 failed, first: no database or cache was replaced under a running server
+CAUGHT       no-compare-rendered-in-verify [R8] 5 failed, first: a rendered Secret differs at verify: exit 1 (got 0)
+CAUGHT       drill-identifiers-not-compared [R8d] 2 failed, first: the drill, ids in the machine file changed: the drill fails (got 0)
+CAUGHT       no-compare-values-in-verify [R8] 3 failed, first: a value rewritten after the restore: exit 1 (got 0)
+CAUGHT       no-decrypt-proof [S1 R8] 5 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       no-overwrite-guard-plane [R8] 10 failed, first: the guard: refuses with no CONFIRM (got 0)
+CAUGHT       drill-rendered-not-compared [R8d] 2 failed, first: the drill, a rendered Secret differs: the drill fails (got 0)
+CAUGHT       drill-evidence-not-checked [R8d] 2 failed, first: the drill, a restore's evidence is not all PASS: the drill fails (got 0)
+CAUGHT       test-files-not-put-back [S19] 2 failed, first: dev token is the dump's
+CAUGHT       secret-zero-not-reinstated [S7] 3 failed, first: the key this dump needs is in an archive: found by checksum, exit 0 (got 1)
+CAUGHT       no-in-place-compare [S14] 4 failed, first: refuses
+CAUGHT       no-prepare-admin [S25] 6 failed, first: the backup succeeds, exit 0 (got 1)
+CAUGHT       prune-before-the-set-is-complete [S32] 1 failed, first: a backup with no complete set, KEEP=1: both complete ones stay
+CAUGHT       environment-not-marked-done [S33] 1 failed, first: without stopping it or running its migrator again
+CAUGHT       no-version-check [S35] 4 failed, first: in place: refuses
+CAUGHT       no-sentinel-proof [S1 R8] 6 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       stale-done-lines-kept [S15] 2 failed, first: run again with the cluster gone: exit 0 (got 2)
+CAUGHT       restored-mode-applies-anything [S1 S10] 10 failed, first: order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, th
+CAUGHT       repair-leaves-the-job [S31] 2 failed, first: the Job with no client was removed first
+CAUGHT       no-overwrite-guard-infisical [R8] 3 failed, first: the guard, Infisical: refuses with no CONFIRM (got 0)
+CAUGHT       marker-not-compared-with-latest [R1] 18 failed, first: the cluster gone, BACKUP=latest: refuses (got 0)
+CAUGHT       marker-plane-choice-stands [R1] 4 failed, first: the set the same, a newer Plane backup, the cluster gone: refuses (got 0)
+CAUGHT       next-from-every-infisical-id [R3] 3 failed, first: and the failed set does not end its window: dev is the newer one
+CAUGHT       no-warning-of-newer-plane [R3] 5 failed, first: and warns about the newer dev backup, by name
+CAUGHT       resume-not-told-to-child [R2] 18 failed, first: 500 users and 777 objects where the backup has 23 and 1: refuses (got 0)
+CAUGHT       resume-refuses-a-partial-restore [R2] 6 failed, first: 23 users and 0 objects, this backup part way through: resumes, exit 0 (got 1)
+CAUGHT       exit-leaves-the-job-running [R4] 45 failed, first: Infisical, SIGTERM: no Job is left running
+CAUGHT       exit-starts-with-job-left [R4] 14 failed, first: kubectl fails on 'delete job': the server stays down
+CAUGHT       exit-does-not-flush-redis [R4] 3 failed, first: Infisical, SIGTERM: the Job goes first, then the flush, then the server, then auto-sync
+CAUGHT       pvc-error-reads-as-none [R5] 1 failed, first: prod-sim's listing alone fails: names it
+CAUGHT       infisical-pvc-error-reads-as-none [R5] 1 failed, first: Infisical's listing fails: says so
+CAUGHT       repair-only-by-label [R4] 2 failed, first: SIGKILL in the migrator's Job: the resume removes it first
+CAUGHT       retention-counts-empty-backups [R6] 7 failed, first: three backups of an empty dev, KEEP=3: the one with users is still there
+CAUGHT       repair-reads-an-error-as-no-jobs [R4] 4 failed, first: a resume that cannot list the Jobs: stops (got 0)
+CAUGHT       backup-ignores-the-marker [R6] 8 failed, first: a backup of what it has not finished: refuses (got 0)
+CAUGHT       drill-ignores-the-marker [R7] 6 failed, first: a marker: backs up nothing first
+CAUGHT       no-empty-backup-warning-in-place [R6] 3 failed, first: in place, no CONFIRM: warns
+CAUGHT       registry-down-is-a-note [R7] 6 failed, first: the registry stopped: deletes nothing
+CAUGHT       drill-ca-not-compared [R8d] 2 failed, first: the drill, the cluster CA the same: fails (got 0)
+CAUGHT       drill-zero-not-compared [R8d] 2 failed, first: the drill, a secret-zero file changed: the drill fails (got 0)
+CAUGHT       drill-admin-file-not-compared [R8d] 1 failed, first: the drill, the admin file changed with no record: on that comparison
+CAUGHT       drill-archives-not-compared [R8d] 2 failed, first: the drill, a new secret-zero archive: the drill fails (got 0)
+CAUGHT       drill-marker-not-checked [R8d] 2 failed, first: the drill, the marker still there: the drill fails (got 0)
+CAUGHT       drill-apps-not-checked [R8d] 2 failed, first: the drill, an Application not Healthy: the drill fails (got 0)
+CAUGHT       drill-stale-state-not-checked [R8d] 2 failed, first: the drill, the state of a lost cluster not moved aside: the drill fails (got 0)
+CAUGHT       drill-delete-not-checked [R8d] 1 failed, first: the drill, the delete leaves the cluster: on that comparison
+CAUGHT       drill-restored-plan-not-checked [R8d] 2 failed, first: the drill, restored mode still has changes: the drill fails (got 0)
+CAUGHT       drill-plain-bootstrap-not-checked [R8d] 1 failed, first: the drill, a plain bootstrap writes a secret: on that comparison
+CAUGHT       floor-lowered-with-no-log [R10] 2 failed, first: and says so
+CAUGHT       way-out-has-no-override [R11] 1 failed, first: the plan prints the override in the promotion to prod-sim
+CAUGHT       first-install-not-counted [R9] 5 failed, first: no registry or mirror volumes, 25 GiB: the plan refuses (got 0)
+CAUGHT       machine-file-kept-if-not-empty [R12] 8 failed, first: a clean restore goes through, exit 0 (got 1)
+CAUGHT       state-installed-before-the-job [R13] 3 failed, first: the Job fails: the state is still what it was
+CAUGHT       blank-reason-passes [R10] 11 failed, first: ALLOW_LOW_DISK=' ': the drill refuses (got 0)
+CAUGHT       empty-cluster-creates-nothing [S28] 2 failed, first: an empty cluster that stays, 12 GiB: refused, it still has 12.94 GiB to pull (got 0)
+CAUGHT       another-run-by-any-mention [R16] 1 failed, first: another checkout's restore and a command that names one: the resume goes on, exit 0 (got 1)
+CAUGHT       drill-says-gone-after-stage-5 [R14] 2 failed, first: stage 6 fails: no talk of a cluster that is gone
+CAUGHT       marker-ids-not-checked [R15] 8 failed, first: a Plane backup gone: says how to start over
+CAUGHT       options-ignored-under-a-marker [R17] 10 failed, first: BACKUP_DEV differs from the marker's, in a plan: refuses (got 0)
+CAUGHT       any-password-counts [R18] 7 failed, first: in place: nothing stopped
+CAUGHT       newline-makes-another-password [R18] 1 failed, first: a trailing newline is the same password: goes through, exit 0 (got 1)
+CAUGHT       kind-error-discarded [R19] 2 failed, first: with kind's own error
+CAUGHT       plan-advice-without-skip-backup [S34] 3 failed, first: and the advice skips a backup, which would take over BACKUP=latest
+CAUGHT       no-set-not-checked [R18] 3 failed, first: no complete set, nothing can log in: nothing stopped
+CAUGHT       plan-ignores-a-dangling-row [R22] 6 failed, first: a plan refuses (got 0)
+CAUGHT       in-place-ignores-a-dangling-row [R22] 5 failed, first: in place: refuses (got 0)
+CAUGHT       comparison-failure-costs-the-backup [R22] 5 failed, first: the comparison cannot run: the backup still succeeds
+CAUGHT       manifest-does-not-record-it [R22] 15 failed, first: and says so
+CAUGHT       comparison-the-wrong-way-round [R22] 14 failed, first: and says so
+CAUGHT       another-run-by-absolute-path-only [R16] 3 failed, first: ./scripts/restore.sh running in place: says so
+CAUGHT       stop-dies-on-a-dead-client [V1] 16 failed, first: a tee and Ctrl-C in dev's Job: no Job is left running
+CAUGHT       stop-says-nothing-on-a-dead-client [V1] 7 failed, first: a terminal that closes in dev's Job: the Job goes first, then auto-sync, root last
+CAUGHT       clean-stop-dies-on-a-dead-client [V1] 3 failed, first: a clean restore through a tee, Ctrl-C: its evidence is written, and says FAIL
+CAUGHT       destroy-stopped-by-the-marker [V2] 5 failed, first: make destroy, with prod-sim holding 500 users: exit 0 (got 1)
+CAUGHT       drill-stop-dies-on-a-dead-client [V1] 1 failed, first: the drill through a tee, Ctrl-C: its evidence has the RESULT line
+CAUGHT       bare-yes-accepted [V3] 6 failed, first: ALLOW_RESUME_OVERWRITE='yes': says what it takes
+CAUGHT       override-reaches-every-environment [V3] 11 failed, first: naming dev: stops at prod-sim (got 4)
+CAUGHT       override-reads-as-a-pass [V3] 10 failed, first: naming dev: its own evidence does not read PASS
+CAUGHT       data-back-not-written [V4] 4 failed, first: the marker says its data is back
+CAUGHT       data-back-not-read [V4] 14 failed, first: the same counts: the resume finishes, exit 0 (got 1)
+CAUGHT       data-back-beats-the-override [V4] 3 failed, first: the override, and the same counts: exit 4 (got 0)
+CAUGHT       finished-job-not-read [V4b] 8 failed, first: SIGTERM: dev's data is not replaced
+CAUGHT       finished-job-by-any-name [V4b] 4 failed, first: a finished Job the marker does not name: it does not count, and the data Job runs
+CAUGHT       failed-job-reads-as-finished [V4b] 3 failed, first: a finished Job the marker does not name: it does not count, and the data Job runs
+CAUGHT       data-job-not-named [V4b] 11 failed, first: SIGTERM: fixture: and the data Job finished
+CAUGHT       earlier-line-outlives-a-new-data-job [V4b] 5 failed, first: the override in its Job: the line has gone
+CAUGHT       refusal-says-nothing-changed [M1] 3 failed, first: says what had run by then
+CAUGHT       child-speaks-for-the-whole-run [M1] 4 failed, first: and does not say nothing was changed
+CAUGHT       state-walked-back-on-a-resume [M1] 3 failed, first: the state stays where make up left it, serial 99
+CAUGHT       state-never-installed-on-a-resume [M1] 2 failed, first: Infisical done, the state gone: the resume finishes, exit 0 (got 1)
+CAUGHT       child-walks-the-state-back [M1] 1 failed, first: its data back, no done line: the state stays
+CAUGHT       new-cluster-keeps-the-lines [M2] 28 failed, first: up.sh refuses at bootstrap: a plan says it will start again
+CAUGHT       cluster-not-noted [M2] 31 failed, first: up.sh refuses at bootstrap: fixture: the marker names the cluster
+CAUGHT       docker-silence-reads-as-new [M2] 1 failed, first: Docker will not say which cluster: dev is left alone
+CAUGHT       job-check-after-the-last-plane-job [M3] 6 failed, first: a passed restore: it does not say a Job may still run
+CAUGHT       stale-choice-on-a-new-cluster [M2] 3 failed, first: a new cluster, and a newer Plane backup: BACKUP=latest refuses (got 0)
+CAUGHT       job-check-after-the-last-infisical-job [M3] 2 failed, first: Infisical: it does not say a Job may still run
+CAUGHT       job-check-ends-before-the-migrator [M3] 3 failed, first: a stop in the migrator's Job: it cannot tell, and says so
+CAUGHT       backup-trusts-lines-of-another-cluster [M2] 1 failed, first: a data-back line from the old cluster: says so
+CAUGHT       plan-promises-on-a-new-cluster [M2] 1 failed, first: a data-back line from the old cluster: a plan makes no promise about what came back
+CAUGHT       finished-backup-still-fatal [M4] 10 failed, first: a plan goes on (got 1)
+CAUGHT       finished-backup-still-read [M4] 12 failed, first: a plan goes on (got 2)
+CAUGHT       plan-rounds-up-to-the-limit [M5] 6 failed, first: and says 24.99, not 25.0
+CAUGHT       plan-reads-a-finished-backup [M4] 12 failed, first: a plan goes on (got 2)
+CAUGHT       plan-rounds-to-two-decimals-only [M5] 1 failed, first: an empty cluster, 1 MB short of 22.94: says 22.93
+CAUGHT       probe-outlives-the-script [H66] 2 failed, first: a SIGKILL of the script: the loop has gone by itself
+CAUGHT       verify-reads-a-finished-backup [M4] 5 failed, first: the resume finishes, exit 0 (got 2)
+CAUGHT       probe-stops-at-once [H66] 1 failed, first: with the script alive, the loop goes on probing
+CAUGHT       line-of-a-lost-cluster-spares-a-backup [M4] 1 failed, first: dev's backup gone, and the cluster lost: nothing ran
+
+RESULT 112 caught, 0 survived, 0 did not apply
+
+exit: 0
+ended: 2026-11-05T11:30:45Z
+commit at the end: 14d2a176855d1bbbd2c8fe30ab93dd4696caf7ef
+status at the end: 0 paths changed

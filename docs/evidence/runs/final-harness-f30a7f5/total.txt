@@ -1,0 +1,3 @@
+harness total: 1340 passed, 0 failed
+   6 0
+mutants listed: 126
