@@ -1,0 +1,28 @@
+# 2026-11-05T14:40:17Z read from this Mac, not from a runner. Each row asks for the first 1024 bytes and throws them away. Read only
+# command: curl -sS -o /dev/null -r 0-1023 -m 30 -w '<code> <seconds> redirect=<url>' <url>, with no -L, so a 302 shows as itself. A redirect's signed query string is cut to the host by sed, before anything is written
+helm         try 1 linux_amd64 206 0.668594s redirect= https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
+helm         try 2 linux_amd64 206 0.669131s redirect= https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
+helm         try 3 linux_amd64 206 0.699502s redirect= https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz
+kustomize    try 1 linux_amd64 504 11.314182s redirect= https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.8.3/kustomize_v5.8.3_linux_amd64.tar.gz
+kustomize    try 2 linux_amd64 504 0.308640s redirect= https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.8.3/kustomize_v5.8.3_linux_amd64.tar.gz
+kustomize    try 3 linux_amd64 504 0.333363s redirect= https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.8.3/kustomize_v5.8.3_linux_amd64.tar.gz
+kubeconform  try 1 linux_amd64 302 0.314313s redirect=https://release-assets.githubusercontent.com/... https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz
+kubeconform  try 2 linux_amd64 302 0.311556s redirect=https://release-assets.githubusercontent.com/... https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz
+kubeconform  try 3 linux_amd64 302 0.308559s redirect=https://release-assets.githubusercontent.com/... https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz
+conftest     try 1 linux_amd64 302 0.330306s redirect=https://release-assets.githubusercontent.com/... https://github.com/open-policy-agent/conftest/releases/download/v0.71.1/conftest_0.71.1_Linux_x86_64.tar.gz
+conftest     try 2 linux_amd64 302 0.310528s redirect=https://release-assets.githubusercontent.com/... https://github.com/open-policy-agent/conftest/releases/download/v0.71.1/conftest_0.71.1_Linux_x86_64.tar.gz
+conftest     try 3 linux_amd64 302 0.311593s redirect=https://release-assets.githubusercontent.com/... https://github.com/open-policy-agent/conftest/releases/download/v0.71.1/conftest_0.71.1_Linux_x86_64.tar.gz
+yq           try 1 linux_amd64 302 0.308609s redirect=https://release-assets.githubusercontent.com/... https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64
+yq           try 2 linux_amd64 302 0.310157s redirect=https://release-assets.githubusercontent.com/... https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64
+yq           try 3 linux_amd64 302 0.334318s redirect=https://release-assets.githubusercontent.com/... https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64
+promtool     try 1 linux_amd64 302 0.312758s redirect=https://release-assets.githubusercontent.com/... https://github.com/prometheus/prometheus/releases/download/v3.15.1/prometheus-3.15.1.linux-amd64.tar.gz
+promtool     try 2 linux_amd64 302 0.309027s redirect=https://release-assets.githubusercontent.com/... https://github.com/prometheus/prometheus/releases/download/v3.15.1/prometheus-3.15.1.linux-amd64.tar.gz
+promtool     try 3 linux_amd64 302 0.311302s redirect=https://release-assets.githubusercontent.com/... https://github.com/prometheus/prometheus/releases/download/v3.15.1/prometheus-3.15.1.linux-amd64.tar.gz
+kustomize    try 1 darwin_arm64 302 0.314635s redirect=https://release-assets.githubusercontent.com/... https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.8.3/kustomize_v5.8.3_darwin_arm64.tar.gz
+
+# the pinned checksum in tools.lock, and what GitHub's API states for the same asset, by metadata alone
+tools.lock: cb9e31198d3f63b44848bd0afc4c8efc56e6cfef9c93a4a39a211940e6decd61
+api: id=621661332 name=kustomize_v5.8.3_linux_amd64.tar.gz size=5059714 digest=sha256:cb9e31198d3f63b44848bd0afc4c8efc56e6cfef9c93a4a39a211940e6decd61 state=uploaded updated_at=2026-10-08T11:40:42Z
+
+# GitHub's status page
+{"page":{"id":"kctbh9vrtdwd","name":"GitHub","url":"https://www.githubstatus.com","time_zone":"Etc/UTC","updated_at":"2026-11-05T14:29:41.758Z"},"status":{"indicator":"none","description":"All Systems Operational"}}

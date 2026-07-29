@@ -1,0 +1,37 @@
+UTC date: 2026-11-05T15:00:17Z
+commit: f05930d
+command: each command shown below after its $ line. Read only
+
+$ gh api repos/BereketAbera/plane-platform/activity --jq .[0:5][] | {ref,timestamp,activity_type,before,after,actor:.actor.login}
+{"activity_type":"push","actor":"BereketAbera","after":"6edde64e261a58b53177b59b345b9626511b43f7","before":"7cde05aba87b2e8480f9964b8835c86699cdabfc","ref":"refs/heads/main","timestamp":"2026-11-05T14:48:53Z"}
+{"activity_type":"push","actor":"BereketAbera","after":"7cde05aba87b2e8480f9964b8835c86699cdabfc","before":"76e98ee725a80626a69d1d9e16de2fc7c9feaadc","ref":"refs/heads/main","timestamp":"2026-11-05T14:36:42Z"}
+{"activity_type":"force_push","actor":"github-actions[bot]","after":"de9525e93f0e0b6357fda49afac63a62f6030cb9","before":"33b9109e495cf45e743d691f6a92739cf8d23eee","ref":"refs/heads/bump/dev-images","timestamp":"2026-11-05T14:29:31Z"}
+{"activity_type":"push","actor":"BereketAbera","after":"76e98ee725a80626a69d1d9e16de2fc7c9feaadc","before":"0dde813a5b0d74c63236e97d3c87ebff61459f04","ref":"refs/heads/main","timestamp":"2026-11-05T14:21:38Z"}
+{"activity_type":"push","actor":"BereketAbera","after":"0dde813a5b0d74c63236e97d3c87ebff61459f04","before":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","ref":"refs/heads/main","timestamp":"2026-11-05T06:10:56Z"}
+[exit 0]
+
+$ git ls-remote origin refs/heads/main refs/heads/bump/dev-images refs/heads/promote/prod-sim
+de9525e93f0e0b6357fda49afac63a62f6030cb9	refs/heads/bump/dev-images
+6edde64e261a58b53177b59b345b9626511b43f7	refs/heads/main
+4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a	refs/heads/promote/prod-sim
+[exit 0]
+
+$ git rev-list --count 0dde813..76e98ee
+347
+[exit 0]
+
+$ gh run list --repo BereketAbera/plane-platform --limit 8 --json databaseId,workflowName,headSha,event,status,conclusion,createdAt,updatedAt,attempt
+[{"attempt":1,"conclusion":"success","createdAt":"2026-11-05T14:48:55Z","databaseId":42048656380,"event":"push","headSha":"6edde64e261a58b53177b59b345b9626511b43f7","status":"completed","updatedAt":"2026-11-05T14:58:25Z","workflowName":"ci"},{"attempt":1,"conclusion":"failure","createdAt":"2026-11-05T14:36:44Z","databaseId":42046683167,"event":"push","headSha":"7cde05aba87b2e8480f9964b8835c86699cdabfc","status":"completed","updatedAt":"2026-11-05T14:46:53Z","workflowName":"ci"},{"attempt":1,"conclusion":"action_required","createdAt":"2026-11-05T14:29:36Z","databaseId":42045522553,"event":"pull_request","headSha":"de9525e93f0e0b6357fda49afac63a62f6030cb9","status":"completed","updatedAt":"2026-11-05T14:29:36Z","workflowName":"ci"},{"attempt":3,"conclusion":"failure","createdAt":"2026-11-05T14:21:48Z","databaseId":42044273346,"event":"push","headSha":"76e98ee725a80626a69d1d9e16de2fc7c9feaadc","status":"completed","updatedAt":"2026-11-05T14:35:56Z","workflowName":"ci"},{"attempt":1,"conclusion":"success","createdAt":"2026-11-05T14:21:48Z","databaseId":42044273310,"event":"push","headSha":"76e98ee725a80626a69d1d9e16de2fc7c9feaadc","status":"completed","updatedAt":"2026-11-05T14:29:36Z","workflowName":"images"},{"attempt":1,"conclusion":"success","createdAt":"2026-11-05T06:10:58Z","databaseId":41978707479,"event":"push","headSha":"0dde813a5b0d74c63236e97d3c87ebff61459f04","status":"completed","updatedAt":"2026-11-05T06:15:56Z","workflowName":"ci"},{"attempt":1,"conclusion":"success","createdAt":"2026-11-05T05:57:58Z","databaseId":41977288287,"event":"workflow_dispatch","headSha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","status":"completed","updatedAt":"2026-11-05T05:58:45Z","workflowName":"promote-prod-sim"},{"attempt":1,"conclusion":"failure","createdAt":"2026-11-05T05:57:04Z","databaseId":41977201138,"event":"pull_request","headSha":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a","status":"completed","updatedAt":"2026-11-05T05:59:37Z","workflowName":"ci"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/41976206674 --jq {id,name,event,status,conclusion,created_at,updated_at,head_sha}
+{"conclusion":"action_required","created_at":"2026-11-05T05:47:21Z","event":"pull_request","head_sha":"33b9109e495cf45e743d691f6a92739cf8d23eee","id":41976206674,"name":"ci","status":"completed","updated_at":"2026-11-05T05:47:21Z"}
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/actions/runs/42045522553 --jq {id,name,event,status,conclusion,created_at,updated_at,run_started_at,head_branch,head_sha,actor:.actor.login,triggering_actor:.triggering_actor.login}
+{"actor":"github-actions[bot]","conclusion":"action_required","created_at":"2026-11-05T14:29:36Z","event":"pull_request","head_branch":"bump/dev-images","head_sha":"de9525e93f0e0b6357fda49afac63a62f6030cb9","id":42045522553,"name":"ci","run_started_at":"2026-11-05T14:29:36Z","status":"completed","triggering_actor":"github-actions[bot]","updated_at":"2026-11-05T14:29:36Z"}
+[exit 0]
+
+$ gh run view 42045522553 --repo BereketAbera/plane-platform --log
+failed to get run log: log not found
+[exit 1]

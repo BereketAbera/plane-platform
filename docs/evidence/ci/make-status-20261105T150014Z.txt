@@ -1,0 +1,45 @@
+UTC date: 2026-11-05T15:00:24Z
+commit: f05930d
+command: make status, which only reads
+
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 76e98ee7)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      76e98ee7
+    backup-storage                 Synced     Healthy      76e98ee7
+    infisical                      Synced     Healthy      76e98ee7
+    infisical-operator-dev         Synced     Healthy      76e98ee7
+    infisical-operator-prod-sim    Synced     Healthy      76e98ee7
+    kube-prometheus-stack          Synced     Healthy      76e98ee7
+    loki                           Synced     Healthy      76e98ee7
+    metrics-server                 Synced     Healthy      76e98ee7
+    monitoring-extras              Synced     Healthy      76e98ee7
+    network-policies               Synced     Healthy      76e98ee7
+    plane-dev                      Synced     Healthy      76e98ee7
+    plane-prod-sim                 Synced     Healthy      76e98ee7
+    root                           Synced     Healthy      76e98ee7
+    traefik                        Synced     Healthy      76e98ee7
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         200
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 7.592GiB / 13.63GiB, CPU 81.01%
+    argocd                    675 MiB
+    infisical                 733 MiB
+    kube-system              1432 MiB
+    local-path-storage         16 MiB
+    monitoring                938 MiB
+    monitoring-agents          18 MiB
+    plane-dev                1228 MiB
+    plane-prod-sim           1213 MiB
+    traefik                    46 MiB
+    Host disk free: 15 GiB
+[exit 0]
