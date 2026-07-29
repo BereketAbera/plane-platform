@@ -502,8 +502,8 @@ make promote ENV=dev IMAGE=web DIGEST=sha256:<64-hex>
 `web` maps to the chart's `plane-frontend`. Add `REPO=` when the digest comes from another repository. A digest under
 `localhost:5001/` must already be in the local registry, or the script stops before Argo CD can sit in `ImagePullBackOff`.
 
-**Through GitHub.** The first step has run, on 2026-11-05 at `9c8e098`. Run 41975430939 built four images, published four private GHCR packages and opened
-[pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), which stays open and unmerged (rows CI-4 and CI-5 in [evidence/ci/README.md](evidence/ci/README.md)). Nothing has copied those digests to the local
+**Through GitHub.** The first step has run twice, on 2026-11-05, at `9c8e098` and `76e98ee`. Run 41975430939 built four images, published four private GHCR packages and opened
+[pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), and run 42044273310 did the same and force-updated it. It stays open and unmerged (rows CI-4 and CI-5 in [evidence/ci/README.md](evidence/ci/README.md)). Nothing has copied those digests to the local
 registry, so steps 2 and 3 have not run, and what runs in the cluster came from `make images`.
 
 1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It needs the repository setting that lets workflows open pull requests, on since 2026-11-05 by the owner's decision.
