@@ -1446,8 +1446,6 @@ V1() {
   run_on_terminal "$H/state/jobs.json" '"state": "Running"' scripts/restore.sh dev latest CONFIRM=yes
   dead_output_in_a_job "a terminal that closes in dev's Job"
   check "a terminal that closes in dev's Job: what it had to say is in a file beside the evidence" grep -F "its Job was stopped before it finished" "$(newest_evidence restore-dev).log"
-  # warn goes to stderr, so that line says nothing about stdout. This one is log's, which only the first line of client_probe saves.
-  check "a terminal that closes in dev's Job: what it printed to stdout is in that file too" grep -F "Removing restore Job" "$(newest_evidence restore-dev).log"
 
   reset
   take_backups
@@ -1468,6 +1466,18 @@ V1() {
   stop_detached INT
   dead_output_in_a_job "stderr alone through a tee, Ctrl-C"
   check "stderr alone through a tee, Ctrl-C: what it warned is beside the evidence" grep -F "its Job was stopped before it finished" "$(newest_evidence restore-dev).log"
+
+  # Only stdout is dead, with stderr in a file. With both dead, bash 3.2 keeps a failed print in stdio's buffer and writes it
+  # out with the next warn, so only this shows the probe's stdout line at work: what it printed has to land beside the evidence.
+  reset
+  take_backups
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached bash -c 'scripts/restore.sh dev latest CONFIRM=yes 2>"$H_STATE/stderr.txt" | tee "$H_STATE/tee.txt"'
+  wait_for_running_job
+  stop_detached INT
+  dead_output_in_a_job "stdout alone through a tee, Ctrl-C"
+  check "stdout alone through a tee, Ctrl-C: what it printed is beside the evidence" grep -F "Removing restore Job" "$(newest_evidence restore-dev).log"
 
   # So a person who saw the warning about a 0-user backup and pressed Ctrl-C, through a pipe, keeps the data.
   reset
