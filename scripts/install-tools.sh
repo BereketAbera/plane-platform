@@ -29,8 +29,9 @@ while IFS=$'\t' read -r name version platform url want member; do
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
   file="$tmp/download"
   echo "fetching $name $version"
-  # A gateway error can outlast a few seconds: run 42044273346 lost a job to four 504s in 6 s, before any check ran.
-  curl -fsSL --retry 5 --retry-delay 5 --retry-connrefused -o "$file" "$url" || { echo "could not download $name $version from $url" >&2; exit 1; }
+  # A gateway error can outlast minutes: on 2026-11-05 GitHub answered 504 for one release asset, then another, on and off
+  # for over 15 minutes. With no --retry-delay curl doubles its wait each time, so 8 retries span about 4 minutes.
+  curl -fsSL --retry 8 --retry-connrefused -o "$file" "$url" || { echo "could not download $name $version from $url" >&2; exit 1; }
   got="$(sha256 "$file")"
   if [[ "$got" != "$want" ]]; then
     echo "CHECKSUM MISMATCH for $name $version: want $want got $got" >&2; exit 1
