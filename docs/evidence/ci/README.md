@@ -1,7 +1,7 @@
 # CI evidence
 
 Raw output from GitHub Actions for `BereketAbera/plane-platform` and from the same scripts run locally, captured on
-2026-11-04 and 2026-11-05. Nothing is edited or trimmed by hand, apart from the signed query strings cut from one read of the tool URLs, as its row below says. GitHub masks tokens as `***`, and a gitleaks scan of this directory, last at 2026-11-05T15:01Z, exit 0, found
+2026-11-04 and 2026-11-05. Nothing is edited or trimmed by hand, apart from the signed query strings cut from one read of the tool URLs, as its row below says. GitHub masks tokens as `***`, and a gitleaks scan of this directory, last at 2026-11-05T15:11Z, exit 0, found
 nothing. Row IDs are from [validation.md](../../validation.md), and results use the labels in contract section 12.
 
 ## Results
@@ -22,7 +22,7 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 
 76e98ee reached GitHub at 2026-11-05T14:21:38Z, the first push since 0dde813 at 06:10:56Z, with 347 commits, the drills and fixes among them ([state](ci-1-20261105T150014Z-github-state.txt)). gitleaks over the history exited 0 and the search for session values found 0 before that push, and [history-rewrite.md](../history-rewrite.md) has both checks. 7cde05a followed at 14:36:42Z, and 6edde64 at 14:48:53Z, each changing how CI fetches its tools.
 
-So the drills and fixes are on GitHub, and a commit after 6edde64 is covered by no run here, as read at 15:00Z. Run 42048656380 at 6edde64 covers Lint, Manifests and Security, so the policy rules, promtool on Linux, the digest binding and the 149 stubbed promotion scenarios have run on a real runner on the code the drills ran. `images.yml` ran at 76e98ee, run 42044273310, and not on the two later pushes, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner since run 41907873100. The jobs that went red on 2026-11-05 went red fetching a tool, before any check in them ran, so nothing new shows a check going red there.
+So the drills and fixes are on GitHub, and a commit after 6edde64 is covered by no run here, as read at 15:00Z. Run 42048656380 at 6edde64 covers Lint, Manifests and Security, so the policy rules, promtool on Linux, the digest binding and the 149 stubbed promotion scenarios have run on a real runner at a commit that holds the drills' fixes. `images.yml` ran at 76e98ee, run 42044273310, and not on the two later pushes, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner since run 41907873100. The jobs that went red on 2026-11-05 went red fetching a tool, before any check in them ran, so nothing new shows a check going red there.
 
 ### The 504 on a pinned tool
 
@@ -133,7 +133,8 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 | `ci-5-20261105T150014Z-pr-1.txt` | Pull request 1 after run 42044273310 force-updated it, as `gh pr view` and `gh pr diff` give it, with the branches |
 | `ci-1-20261105T150014Z-github-state.txt` | What GitHub says of the pushes, in its activity feed, the remote refs, the commits from 0dde813 to 76e98ee, the newest runs, and the two runs held for pull request 1 |
 | `ci-1-20261105T143916Z-tool-urls.txt`, `ci-1-20261105T144017Z-tool-urls.txt` | What GitHub answered this Mac, not a runner, for the six tools `validate-manifests.sh` fetches, three tries each, asking for the first 1024 bytes and keeping nothing. Then the digest GitHub's API states for the kustomize asset, beside `tools.lock`, and its status page. Each redirect's signed query string is cut to the host: by hand after the read in the first, by the command in the second |
-| `make-status-20261105T150014Z.txt` | `make status`, which only reads, on the cluster the checks at f30a7f5 ran on. Not a CI result. It sits here because `.local/evidence-raw/` was closed to this write-up |
+| `make-status-20261105T150014Z.txt` | `make status`, which only reads, on the cluster the checks at f30a7f5 ran on. Not a CI result. It is here because this write-up did not write to `.local/evidence-raw/` |
+| `publish-evidence-20261105T145421Z.txt`, `publish-evidence-20261105T150341Z.txt` | What `make publish-evidence` printed, with its exit code, for the two publishes after `76e98ee`. Not CI results either, and here for the same reason |
 
 ## GitHub Free, private repository: what is measured and what is only documented
 
