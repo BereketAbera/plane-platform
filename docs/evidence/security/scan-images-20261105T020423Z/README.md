@@ -1,4 +1,4 @@
-# Scan of the final Wayline images, from commit ec45e21
+# Scan of the Wayline images from commit ec45e21
 
 Command: `SCAN_ONLY=built SCAN_MIN_FREE_GIB=11 SCAN_FLOOR_GIB=10 SCAN_OUTPUT_DIR=<a scratch directory> scripts/ci/scan-images.sh`, on 2026-11-05, with trivy 0.76.1 and the
 vulnerability database in `trivy-version.txt`. The limits are below the script's default of 15 because the host had 12 GiB free. Exit 0: every target was scanned, and no image built here has a CRITICAL finding with a fix.
