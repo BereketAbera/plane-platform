@@ -65,8 +65,8 @@ So production approval here is a process, not a control:
   or 2,400 arm64 minutes. Without a payment method, GitHub blocks usage once it is spent. A build that reaches the
   90-minute timeout in `images.yml` costs $0.45.
 - **`GITHUB_TOKEN` pushes to GHCR.** Runs 41975430939 and 42044273310 each pushed all four images to `ghcr.io/bereketabera/wayline/` and walked every
-  layer again as GHCR served it. **The packages are private:** with no credentials, GHCR's token endpoint answers 401 for those
-  names, 200 for a public image, and 403 for a name with no package. Do not push these names by hand: GitHub's documentation says
+  layer again as GHCR served it. **The packages are private:** with no credentials, GHCR's token endpoint answered 401 for those
+  names after the first build, 200 for a public image, and 403 for a name with no package. Do not push these names by hand: GitHub's documentation says
   `GITHUB_TOKEN` cannot push to a package that was pushed earlier without being connected to the repository. The prune job lists
   versions with that token and has deleted nothing in either run, so a delete with it is still untested.
 - **The GHCR quota is documented, and the images have not met it.** GitHub's Packages billing page gives Free 500 MB of storage,

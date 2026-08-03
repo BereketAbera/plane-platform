@@ -5,8 +5,8 @@ does not create the cluster. The application it helps deploy, Wayline, is a cust
 deployment, not an original product.
 
 **Status of this page.** It describes configuration read from the code. Both roots have applied on the real cluster since
-2026-11-04, and the text links those runs. `terraform destroy` was not tested in Pass 1. An apply on a clean host is part of the clean install
-that `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` was running when this was written, and its result is not recorded here.
+2026-11-04, and the text links those runs. `terraform destroy` was not tested in Pass 1. An apply on a fresh clone ran in the clean install on 2026-11-05, and on the cold install,
+and each later plan read no changes ([clean](evidence/runs/clean-install-20261105T075041Z/terraform-plan-local.txt), [cold](evidence/runs/clean-install-20261105T105546Z/terraform-plan-local.txt)). Neither is a new machine.
 Evidence is in [`docs/evidence/`](evidence/README.md).
 
 ## What Terraform owns
