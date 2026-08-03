@@ -86,7 +86,9 @@ uncommitted source, or one whose source has changed since, and warns when the co
 routes `/` to web, so the path works from `/god-mode/` and `/spaces/` too. The target can be overridden at image build time
 with `WAYLINE_SOURCE_REPO`.
 
-**The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. The owner must do both before anyone else uses an instance.**
+**The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public. The commit it names, `84b63d9`, is on GitHub. The owner must make the repository public before anyone else uses an instance.**
+
+`NOTICE.md` and `MODIFICATIONS.md` still say that commit must also be pushed, and `MODIFICATIONS.md` still puts the first push ahead. They are held as they are. Both ship in every image and `images.yml` watches them, so an edit rebuilds the images on the next push and force-updates pull request 1. Neither has changed since `84b63d9`, so they read as the running images carry them, until the owner decides or the next change to those files.
 
 The licence texts are in every image at `/usr/share/licenses/wayline/`, and at `/licenses/` on the web image.
 
@@ -140,20 +142,20 @@ Upstream's backend image stays on any machine that builds this one, because it i
 
 **Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the repository's owner, Bereket Abera, has not reviewed that. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
 
-What the owner should confirm, before the first push of this directory to main, because that push publishes:
+What the owner still has to confirm. The first push of this directory went ahead on 2026-11-05 at 05:39Z and published, with this review open, and `76e98ee` published again:
 
 - [ ] D12 in `MODIFICATIONS.md`, all of it: `email.py` replaced with upstream's later AGPL-3.0-only version, the backend flattened, and publishing with no requirement that the repository be private. Agents did all three, the owner has not reviewed any of them, and no lawyer or other legal reviewer has looked at them.
 
 Before the repository is made public, in this order:
 
-1. Publish once, then read each package's visibility on its GitHub page: `web`, `admin`, `space`, `backend`. **This has not been observed, because nothing has been pushed.**
+1. Read each package's visibility on its GitHub page: `web`, `admin`, `space`, `backend`. Images have been published twice. With no credentials the first four answered 401 ([record](../../docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)), and no file records anyone reading the package pages. The API needs `read:packages`, which the local token lacks.
 2. Do this before making the repository public, because GitHub's documentation conflicts. One page says a package a workflow creates takes the repository's visibility. Another says a linked package takes the repository's access permissions and not its visibility. So do not assume either way what a package becomes.
 3. Read them again after making the repository public. The same documentation says a package made public cannot be made private again.
 
 Pruning is a precaution, not a response to a known limit. GitHub's Packages billing page lists 500 MB of storage for private
 packages on Free, and also says "Container image storage and bandwidth for the Container registry is currently free", with at
-least a month's notice before that changes. So the 500 MB should not apply to `ghcr.io` today, but nothing has been stored there
-to confirm it. After the first publish, read the package page. GHCR stores upstream's layers for space too, because nothing is
+least a month's notice before that changes. So the 500 MB should not apply to `ghcr.io` today. Two builds are stored there, the first holding 401.8 MiB, and November's usage summary showed no packages row after it ([compare](../../docs/evidence/ci/ci-4-20261105T060219Z-published-compare.txt), [billing](../../docs/evidence/ci/plan-facts-20261105T062632Z.txt)).
+No file records anyone reading the package page. GHCR stores upstream's layers for space too, because nothing is
 mounted across registries. Compressed arm64 sizes with `docker buildx imagetools inspect --raw`: flattened backend 97.4 MiB
 on 2026-11-05, nginx base 25.0 MiB on 2026-11-04. The space base is 255.8 MiB from the research's registry measurement. With about
 25 MiB of app layers, that is about 405 MiB for one set (nginx counted once), and each further backend version adds about 97 MiB, as below.
