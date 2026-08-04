@@ -4,7 +4,7 @@ Wayline is a customized Plane Community Edition v1.4.3 deployment. This page cov
 deployment and the platform around it are observed: what is scraped, why Plane needs blackbox probes,
 which alerts exist, what each can and cannot see, where they go, and how the path is tested.
 
-**Status.** The stack ran on a local kind cluster on 2026-11-04 and 2026-11-05, and from about 08:12Z on 2026-11-05 on a new one restored from backup. A reading with no later date comes from the first. Targets, rules, dashboards, log search and
+**Status.** The stack ran on a local kind cluster on 2026-11-04 and 2026-11-05, and from about 08:12Z on 2026-11-05 on three clusters in turn, each restored from backup, with the cold install's own cluster between the first two. A reading with no later date comes from the first cluster, and a later one from the first restored cluster, unless it says otherwise. Targets, rules, dashboards, log search and
 several alerts were proved by queries, not by pod status, and each result links its file under
 [`docs/evidence/runs/`](evidence/README.md).
 `make test-alert` passed once in each environment, and `tests/drills/alert-rules.sh` found [a real defect](#the-data-service-drill) in two rules, fixed and read again in dev. What Pass 1 did not test says so where it comes up. This stack is sized for a laptop and has no redundancy: one Prometheus, one Alertmanager, one
