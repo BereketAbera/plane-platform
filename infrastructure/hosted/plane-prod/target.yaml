@@ -1,0 +1,14 @@
+# What hosted production is, so scripts can refuse anything else. Not a secret: Git is its home.
+# scripts/hosted/lib.sh reads this, and fails closed unless the live cluster matches.
+name: plane-prod
+host: 5.253.234.127
+domain: wayline.bereket.dev
+ssh_user: wayline-admin
+ssh_key: ~/.ssh/wayline_contabo_ed25519
+contabo_instance_id: 203733427
+node_name: vmi3733427
+# The kube-system namespace's UID. `pending` until K3s first runs, and then only provisioning is allowed.
+kube_system_uid: pending
+kubeconfig: .local/hosted/plane-prod/kubeconfig
+tunnel_port: 16443
+k3s_version: v1.36.6+k3s1

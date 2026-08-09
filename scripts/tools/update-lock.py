@@ -31,6 +31,8 @@ GH = {
     "shellcheck": ("koalaman/shellcheck", "v0.11.0", {"darwin_arm64": "shellcheck-v0.11.0.darwin.aarch64.tar.xz", "linux_amd64": "shellcheck-v0.11.0.linux.x86_64.tar.xz", "linux_arm64": "shellcheck-v0.11.0.linux.aarch64.tar.xz"}, "shellcheck-v0.11.0/shellcheck"),
     "gitleaks": ("gitleaks/gitleaks", "v8.30.1", {"darwin_arm64": "gitleaks_8.30.1_darwin_arm64.tar.gz", "linux_amd64": "gitleaks_8.30.1_linux_x64.tar.gz", "linux_arm64": "gitleaks_8.30.1_linux_arm64.tar.gz"}, "gitleaks"),
     "tflint": ("terraform-linters/tflint", "v0.65.0", {"darwin_arm64": "tflint_darwin_arm64.zip", "linux_amd64": "tflint_linux_amd64.zip", "linux_arm64": "tflint_linux_arm64.zip"}, "tflint"),
+    # Hosted production only: reads the purchased VPS from Contabo's API. Never needed for the local platform.
+    "cntb": ("contabo/cntb", "v1.7", {"darwin_arm64": "cntb_v1.7_darwin_arm64.tar.gz", "linux_amd64": "cntb_v1.7_linux_amd64.tar.gz", "linux_arm64": "cntb_v1.7_linux_arm64.tar.gz"}, "cntb"),
     "k6": ("grafana/k6", "v2.3.0", {"darwin_arm64": "k6-v2.3.0-macos-arm64.zip", "linux_amd64": "k6-v2.3.0-linux-amd64.tar.gz", "linux_arm64": "k6-v2.3.0-linux-arm64.tar.gz"}, "k6"),
     # Ships only inside the Prometheus tarball, about 110 MB. Keep the version the same as the
     # Prometheus image in helm/values/kube-prometheus-stack.yaml, so it reads rules as that does.
