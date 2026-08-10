@@ -1,0 +1,11 @@
+# /var/lib/rancher/k3s/server/audit.yaml. Metadata only, so no Secret's content reaches this log.
+apiVersion: audit.k8s.io/v1
+kind: Policy
+omitStages: [RequestReceived]
+rules:
+  - level: None
+    users: ["system:kube-proxy", "system:node:vmi3733427"]
+    verbs: [watch, get, list]
+  - level: None
+    nonResourceURLs: ["/healthz*", "/readyz*", "/livez*", "/metrics"]
+  - level: Metadata

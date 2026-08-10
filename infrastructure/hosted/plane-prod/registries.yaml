@@ -1,0 +1,7 @@
+# /etc/rancher/k3s/registries.yaml. Docker Hub rate-limits anonymous pulls by IP. Every image here is pinned by digest, so a
+# mirror cannot change what runs. No credentials: GHCR's pull Secret is per namespace, from Infisical.
+mirrors:
+  docker.io:
+    endpoint:
+      - https://mirror.gcr.io
+      - https://registry-1.docker.io

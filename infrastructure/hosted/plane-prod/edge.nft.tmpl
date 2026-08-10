@@ -1,0 +1,18 @@
+# Written to /etc/wayline/edge.nft by scripts/hosted/edge.sh. Do not edit it on the server.
+#
+# Priority mangle runs after conntrack and before DNAT, so this sees traffic before kube-proxy or a hostPort can redirect
+# it past the INPUT chain. That is why it is not UFW. Own table, so it never touches the rules K3s owns.
+# The first two lines make loading atomic, and safe whether or not the table exists.
+table inet wayline_edge {}
+delete table inet wayline_edge
+table inet wayline_edge {
+  chain prerouting {
+    type filter hook prerouting priority mangle; policy accept;
+    iifname != "eth0" accept
+    ct state established,related accept
+    meta l4proto { icmp, ipv6-icmp } accept
+    tcp dport 22 accept
+@@PUBLIC_RULES@@
+    drop
+  }
+}

@@ -1,0 +1,16 @@
+# /etc/systemd/system/wayline-edge.service. Not Debian's nftables.service, whose stop flushes every rule, K3s's included.
+[Unit]
+Description=Wayline public firewall
+Before=network-pre.target k3s.service
+Wants=network-pre.target
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/wayline/edge.nft
+ExecStop=/usr/sbin/nft delete table inet wayline_edge
+
+[Install]
+WantedBy=multi-user.target
