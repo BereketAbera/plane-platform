@@ -3,18 +3,31 @@
 # Argo CD syncs. Argo never runs Kustomize or Helm: an open regression (argo-cd #30215) makes
 # --enable-helm unreliable at sync time.
 #
-#   scripts/render.sh           write the rendered files
-#   scripts/render.sh --check   write nothing, exit non-zero if a rendered file is out of date
+#   scripts/render.sh                    write dev's and prod-sim's rendered files
+#   scripts/render.sh --check            write nothing, exit non-zero if one of them is out of date
+#   scripts/render.sh --env prod         the same for hosted production's, and only that
+#   scripts/render.sh --env prod --check
+#
+# Production is not a default, because promote.sh and rollback.sh render and commit what this writes, and neither has
+# any business moving production. make render and scripts/ci/validate-manifests.sh ask for it by name.
 # shellcheck source-path=SCRIPTDIR source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 
 ENVIRONMENTS=(dev prod-sim)
+CHECK=false
 
-case "${1:-}" in
-  "") CHECK=false ;;
-  --check) CHECK=true ;;
-  *) die "usage: $0 [--check]" ;;
-esac
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --check) CHECK=true ;;
+    --env)
+      [[ "${2:-}" == prod ]] || die "usage: $0 [--env prod] [--check]"
+      ENVIRONMENTS=(prod)
+      shift
+      ;;
+    *) die "usage: $0 [--env prod] [--check]" ;;
+  esac
+  shift
+done
 
 # Rendering writes a few hundred KiB, so this only catches a host that is already full.
 guard_disk 1
@@ -44,6 +57,28 @@ assert_rules() {
   fi
 }
 
+# policy/hosted.rego reads one document at a time and only what is there, so it cannot see a chart change that stops
+# rendering one of these, or the order of two Jobs.
+assert_hosted_rules() {
+  local file="$1" kind name dump migrator
+  for kind in ConfigMap/plane-app-vars IngressRoute/plane-ingress ServiceAccount/plane; do
+    name="${kind#*/}"
+    [[ -n "$(KIND="${kind%/*}" NAME="$name" yq -N 'select(.kind == strenv(KIND) and .metadata.name == strenv(NAME)) | .kind' "$file")" ]] ||
+      die "prod: $kind did not render, and the hosted rules on it would pass with nothing to read"
+  done
+  sync_hook_wave() { # sync_hook_wave <job name>: its wave, if it is a Sync hook
+    NAME="$1" yq -N -r 'select(.kind == "Job" and .metadata.name == strenv(NAME))
+      | select(.metadata.annotations["argocd.argoproj.io/hook"] == "Sync")
+      | .metadata.annotations["argocd.argoproj.io/sync-wave"]' "$file"
+  }
+  dump="$(sync_hook_wave plane-prod-predeploy-dump)"
+  migrator="$(sync_hook_wave plane-api-migrate-1)"
+  [[ "$dump" =~ ^-?[0-9]+$ && "$migrator" =~ ^-?[0-9]+$ ]] ||
+    die "prod: plane-prod-predeploy-dump and plane-api-migrate-1 must both render as Sync hooks with a wave, and read '$dump' and '$migrator'"
+  [[ "$dump" -lt "$migrator" ]] ||
+    die "prod: plane-prod-predeploy-dump is at wave $dump and must run before the migrator at wave $migrator, or a migration has no dump behind it"
+}
+
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -53,6 +88,7 @@ for env in "${ENVIRONMENTS[@]}"; do
   rendered="$WORK/$env.yaml"
   render "$env" "$rendered"
   assert_rules "$env" "$rendered"
+  if [[ "$env" == prod ]]; then assert_hosted_rules "$rendered"; fi
 
   if [[ "$CHECK" == true ]]; then
     if diff -u "$target" "$rendered" >"$WORK/$env.diff" 2>&1; then

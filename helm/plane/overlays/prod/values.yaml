@@ -1,0 +1,57 @@
+# Hosted production. Only what differs from the chart's defaults. Workload hardening is in components/hardening.
+ingress:
+  enabled: true
+  appHost: wayline.bereket.dev
+  ingressClass: traefik
+  traefik:
+    # Explicit. Traefik's web entrypoint only redirects to this one, so a route on it would never be reached.
+    entryPoints: [websecure]
+
+# Gives WEB_URL its https scheme and the route its tls block. The certificates Application owns the Certificate behind
+# this Secret, so createIssuer and generateCerts stay off: they would make the chart a second owner, and createIssuer
+# renders a Secret.
+ssl:
+  tls_secret_name: wayline-tls
+
+serviceAccount:
+  create: false
+  name: plane
+
+# With all six set the chart renders no Secret. The Infisical operator creates them (infisical.yaml).
+external_secrets:
+  app_env_existingSecret: plane-app-env
+  app_keys_existingSecret: plane-app-keys
+  live_env_existingSecret: plane-live-env
+  doc_store_existingSecret: plane-doc-store
+  pgdb_existingSecret: plane-pgdb
+  rabbitmq_existingSecret: plane-rabbitmq
+
+env:
+  # The chart ships public defaults for both keys. Empty plus this flag fails the render if the
+  # chart ever falls back to rendering its own app or live Secret, instead of using a published key.
+  requireExplicitSecrets: true
+  secret_key: ""
+  live_server_secret_key: ""
+  # Must stay `uploads` in every environment: export_task.py hardcodes that path.
+  docstore_bucket: uploads
+  # No debug surface here: the schema endpoint stays off, and the chart hard-codes DEBUG=0.
+  enable_drf_spectacular: false
+
+# Named, so a volume never lands on the node's default class, which deletes it with its claim. Terraform creates
+# this one with reclaim Retain. Sizes come from the disk ledger's 100 GiB for these volumes. local-path enforces
+# none of them, so only the disk alerts bound what they hold, and a volumeClaimTemplate cannot change later.
+postgres:
+  storageClass: local-path-retain
+  volumeSize: 30Gi
+redis:
+  storageClass: local-path-retain
+  volumeSize: 2Gi
+rabbitmq:
+  storageClass: local-path-retain
+  volumeSize: 4Gi
+minio:
+  storageClass: local-path-retain
+  volumeSize: 64Gi
+  env:
+    # Presigned URLs name the public host, so a browser must be told https whatever Silo itself speaks.
+    minio_endpoint_ssl: true

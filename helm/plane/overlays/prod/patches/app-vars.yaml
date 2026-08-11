@@ -1,0 +1,5 @@
+# The chart always adds an http:// origin, and settings/common.py takes Secure off the session and CSRF cookies when any
+# origin holds "http:". Values cannot remove it, because the chart adds it whenever appHost is set.
+- {op: replace, path: /data/CORS_ALLOWED_ORIGINS, value: "https://wayline.bereket.dev"}
+# Upstream's default is open sign-up, and it is seeded once, at first boot, so it has to be right before then.
+- {op: add, path: /data/ENABLE_SIGNUP, value: "0"}

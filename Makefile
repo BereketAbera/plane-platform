@@ -101,6 +101,7 @@ rotate: ## Rotate a database credential through Infisical: make rotate ENV=dev [
 .PHONY: render images promote rollback gitops-publish ci
 render: ## Re-render Plane manifests from helm/plane into gitops/environments
 	@./scripts/render.sh
+	@./scripts/render.sh --env prod
 
 images: ## Build the Wayline images and push them to the local registry
 	@./scripts/ci/build-images.sh localhost:5001/wayline

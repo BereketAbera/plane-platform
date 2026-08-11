@@ -1,0 +1,140 @@
+# Rendered by `scripts/render.sh --env prod` into gitops/environments/prod/manifests.yaml. Argo CD syncs that
+# file and never runs Kustomize or Helm.
+#
+# Copies prod-sim's shape on purpose, so a change for this cluster cannot re-render dev or prod-sim. The namespace,
+# host, registry, volumes and sizes are this cluster's. components/hardening is shared.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: plane-prod
+
+helmGlobals:
+  chartHome: ../../vendor/plane-ce-1.8.6
+
+helmCharts:
+- name: plane-ce
+  namespace: plane-prod
+  releaseName: plane
+  valuesFile: values.yaml
+
+resources:
+- infisical.yaml
+- predeploy-dump.yaml
+
+components:
+- ../../components/hardening
+
+# scripts/ci/promote-prod.sh changes these lines, moving Wayline's four together from one signed evidence file. Until
+# the first promotion they hold the null digest, and no Application reads this render. The other five are the same index
+# digests as the local overlays.
+images:
+- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  name: artifacts.plane.so/makeplane/plane-admin
+  newName: ghcr.io/bereketabera/wayline/admin
+- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  name: artifacts.plane.so/makeplane/plane-backend
+  newName: ghcr.io/bereketabera/wayline/backend
+- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  name: artifacts.plane.so/makeplane/plane-frontend
+  newName: ghcr.io/bereketabera/wayline/web
+- digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+  name: artifacts.plane.so/makeplane/plane-live
+  newName: docker.io/makeplane/plane-live
+  newTag: v1.4.3
+- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  name: artifacts.plane.so/makeplane/plane-space
+  newName: ghcr.io/bereketabera/wayline/space
+- digest: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+  name: docker.io/pgsty/silo
+  newName: docker.io/pgsty/silo
+  newTag: RELEASE.2026-10-26T00-00-00Z-distroless
+- digest: sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+  name: postgres
+  newName: docker.io/library/postgres
+  newTag: 15.19-alpine
+- digest: sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+  name: rabbitmq
+  newName: docker.io/library/rabbitmq
+  newTag: 3.13.7-management-alpine
+- digest: sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+  name: valkey/valkey
+  newName: docker.io/valkey/valkey
+  newTag: 7.2.15-alpine
+
+# This overlay's sizes, not contract section 10's. Starting values from the sizing table in the hosted design, to be
+# measured again on this cluster. No CPU patches like prod-sim's: nothing here competes with dev. Each patch file is one
+# workload, and these run after components/hardening, so its numbers are the ones they replace.
+patches:
+- path: patches/app-vars.yaml
+  target:
+    kind: ConfigMap
+    name: plane-app-vars
+- path: patches/service-account.yaml
+  target:
+    kind: ServiceAccount
+    name: plane
+- path: patches/rabbitmq-conf.yaml
+  target:
+    kind: ConfigMap
+    name: plane-rabbitmq-conf
+- path: patches/web.yaml
+  target:
+    kind: Deployment
+    name: plane-web-wl
+- path: patches/admin.yaml
+  target:
+    kind: Deployment
+    name: plane-admin-wl
+- path: patches/space.yaml
+  target:
+    kind: Deployment
+    name: plane-space-wl
+- path: patches/live.yaml
+  target:
+    kind: Deployment
+    name: plane-live-wl
+- path: patches/api.yaml
+  target:
+    kind: Deployment
+    name: plane-api-wl
+- path: patches/worker.yaml
+  target:
+    kind: Deployment
+    name: plane-worker-wl
+- path: patches/beat.yaml
+  target:
+    kind: Deployment
+    name: plane-beat-worker-wl
+- path: patches/postgres.yaml
+  target:
+    kind: StatefulSet
+    name: plane-pgdb-wl
+- path: patches/valkey.yaml
+  target:
+    kind: StatefulSet
+    name: plane-redis-wl
+- path: patches/rabbitmq.yaml
+  target:
+    kind: StatefulSet
+    name: plane-rabbitmq-wl
+- path: patches/silo.yaml
+  target:
+    kind: StatefulSet
+    name: plane-minio-wl
+- path: patches/predeploy-dump.yaml
+  target:
+    kind: Job
+    name: plane-prod-predeploy-dump
+
+# After the image lines above: the dump keys on what the migrator really runs, whichever digest a promotion sets.
+replacements:
+- source:
+    fieldPath: spec.template.spec.containers.0.image
+    kind: Job
+    name: plane-api-migrate-1
+  targets:
+  - fieldPaths:
+    - spec.template.spec.containers.0.env.[name=BACKEND_IMAGE].value
+    select:
+      kind: Job
+      name: plane-prod-predeploy-dump

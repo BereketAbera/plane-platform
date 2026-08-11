@@ -1,0 +1,5 @@
+# Runs after components/hardening, whose Job-wide patches replace both security contexts: the server's UID, and the one
+# setting of the hardening's that this Job can go further on.
+- {op: add, path: /spec/template/spec/securityContext/runAsUser, value: 70}
+- {op: add, path: /spec/template/spec/securityContext/runAsGroup, value: 70}
+- {op: add, path: /spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem, value: true}
