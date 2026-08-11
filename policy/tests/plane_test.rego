@@ -78,6 +78,24 @@ test_host_alone_accepted if {
 	count(plane.deny) == 0 with input as route_in("plane-prod-sim", "Host(`plane.prod-sim.localhost`)", "plane-web")
 }
 
+test_hosted_route_on_its_host_accepted if {
+	count(plane.deny) == 0 with input as route_in("plane-prod", "Host(`wayline.bereket.dev`) && PathPrefix(`/`)", "plane-web")
+}
+
+# Before plane-prod was in the host table, a route in that namespace with no Host at all passed.
+test_hosted_route_with_no_host_rejected if {
+	count(plane.deny) == 1 with input as route_in("plane-prod", "PathPrefix(`/`)", "plane-web")
+}
+
+test_hosted_route_on_another_host_rejected if {
+	count(plane.deny) == 1 with input as route_in("plane-prod", "Host(`other.bereket.dev`)", "plane-web")
+}
+
+test_another_namespace_naming_the_hosted_host_rejected if {
+	denied := plane.deny with input as route("Host(`wayline.bereket.dev`)", "plane-web")
+	count(denied) == 2 # not its own host, and not the namespace that host belongs to
+}
+
 test_dev_route_on_the_prod_sim_host_rejected if {
 	denied := plane.deny with input as route("Host(`plane.prod-sim.localhost`) && PathPrefix(`/`)", "plane-web")
 	count(denied) == 2 # not its own host, and not the namespace that host belongs to

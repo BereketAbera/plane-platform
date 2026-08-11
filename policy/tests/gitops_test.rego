@@ -54,6 +54,14 @@ rendered(env) := {"path": sprintf("gitops/environments/%s", [env])}
 test_plane_application_in_its_own_project_accepted if {
 	count(gitops.deny) == 0 with input as application("plane-dev", "plane-dev", "plane-dev", rendered("dev"))
 	count(gitops.deny) == 0 with input as application("plane-prod-sim", "plane-prod-sim", "plane-prod-sim", rendered("prod-sim"))
+	count(gitops.deny) == 0 with input as application("plane-prod", "plane-prod", "plane-prod", rendered("prod"))
+}
+
+test_hosted_render_only_under_its_own_project_rejected if {
+	count(gitops.deny) > 0 with input as application("plane-prod", "platform", "plane-prod", rendered("prod"))
+	count(gitops.deny) > 0 with input as application("plane-prod", "plane-prod", "plane-prod", rendered("prod-sim"))
+	count(gitops.deny) > 0 with input as application("plane-prod", "plane-prod", "plane-dev", rendered("prod"))
+	count(gitops.deny) == 1 with input as application("extras", "platform", "plane-prod", rendered("prod"))
 }
 
 test_platform_application_accepted if {

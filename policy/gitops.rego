@@ -18,6 +18,7 @@ deny contains kube.wrapper_denied(input) if kube.wraps_other_objects(input)
 plane_projects := {
 	"plane-dev": "gitops/environments/dev",
 	"plane-prod-sim": "gitops/environments/prod-sim",
+	"plane-prod": "gitops/environments/prod",
 }
 
 # Project default allows everything. An Application with no project is the same mistake.
