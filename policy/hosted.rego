@@ -73,7 +73,7 @@ deny contains msg if {
 
 route_kinds := {"IngressRoute", "IngressRouteTCP", "IngressRouteUDP"}
 
-# Traefik reads routes from plane-prod alone. Anything elsewhere would be a console's route, or inert.
+# Plane's is the one route this cluster has. Anywhere else it could only be a console's.
 deny contains msg if {
 	route_kinds[input.kind]
 	object.get(input.metadata, "namespace", "") != plane_namespace
@@ -183,6 +183,16 @@ deny contains msg if {
 	msg := sprintf("%s: container %q has %s, and cert-manager is the only certificate owner", [identity, c.name, arg])
 }
 
+# cert-manager's own default for a solver is a NodePort Service, made at run time, which no rule above would ever read.
+deny contains msg if {
+	input.kind in {"ClusterIssuer", "Issuer"}
+	some solver in object.get(input, ["spec", "acme", "solvers"], [])
+	http01 := solver.http01
+	service_type := object.get(http01, ["ingress", "serviceType"], "NodePort")
+	service_type != "ClusterIP"
+	msg := sprintf("%s: an HTTP-01 solver's serviceType is %v, and it must be ClusterIP, or each challenge opens a NodePort", [identity, service_type])
+}
+
 # ---- Where this cluster reads from
 
 git_repo := "ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git"
@@ -195,11 +205,7 @@ under_hosted_tree(path) if {
 	startswith(path, "gitops/clusters/plane-prod/")
 }
 
-under_hosted_tree(path) if {
-	not contains(path, "..")
-	some root in ["gitops/environments/prod", "gitops/environments/prod/"]
-	path == root
-}
+under_hosted_tree("gitops/environments/prod")
 
 clean_path(path) := trim_suffix(trim_prefix(path, "./"), "/")
 
