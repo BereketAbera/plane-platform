@@ -34,6 +34,8 @@ DEV_RENDERED=gitops/environments/dev/manifests.yaml
 PROD_SIM_RENDERED=gitops/environments/prod-sim/manifests.yaml
 PROD_SIM_OVERLAY=helm/plane/overlays/prod-sim/kustomization.yaml
 TERRAFORM_ROOT=infrastructure/terraform/environments/local
+PROD_RENDERED=gitops/environments/prod/manifests.yaml
+HOSTED_PLANTED=gitops/clusters/plane-prod/platform/planted
 total=0
 missed=0
 
@@ -179,6 +181,130 @@ plant_vulnerable_lockfile() {
   printf '{"name":"planted","version":"1.0.0","lockfileVersion":1,"requires":true,"dependencies":{"lodash":{"version":"4.17.4","resolved":"https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz"}}}\n' >apps/planted/package-lock.json
 }
 
+# Hosted production. What policy/hosted.rego exists to refuse, on the render, on the hosted tree and on what its charts render.
+plant_hosted_http_web_url() { replace_first "$PROD_RENDERED" 'WEB_URL: https://wayline\.bereket\.dev' 'WEB_URL: http://wayline.bereket.dev'; }
+plant_hosted_http_origin() { replace_first "$PROD_RENDERED" 'CORS_ALLOWED_ORIGINS: https://wayline\.bereket\.dev' 'CORS_ALLOWED_ORIGINS: http://wayline.bereket.dev,https://wayline.bereket.dev'; }
+plant_hosted_localhost_image() { replace_first "$PROD_RENDERED" 'image: ghcr\.io/bereketabera/wayline/web@' 'image: localhost:5001/wayline/web@'; }
+plant_hosted_web_entry_point() { replace_first "$PROD_RENDERED" '(entryPoints:\n\s+- )websecure' '\1web'; }
+plant_hosted_route_without_tls() { replace_first "$PROD_RENDERED" '\n  tls:\n    secretName: wayline-tls' ''; }
+plant_hosted_silo_console_route() { replace_first "$PROD_RENDERED" '(- name: plane-minio\n\s+port: )9000' '\g<1>9090'; }
+plant_hosted_render_drift() { printf '# planted\n' >>"$PROD_RENDERED"; }
+plant_hosted_dump_after_the_migrator() { replace_first helm/plane/overlays/prod/predeploy-dump.yaml 'sync-wave: "1"' 'sync-wave: "3"'; }
+plant_in_hosted_tree() { # plant_in_hosted_tree <file>, with the content on stdin
+  mkdir -p "$HOSTED_PLANTED"
+  cat >"$HOSTED_PLANTED/$1"
+}
+plant_hosted_console_route() {
+  plant_in_hosted_tree route.yaml <<'YAML'
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+  namespace: plane-prod
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`wayline.bereket.dev`) && PathPrefix(`/grafana`)
+      kind: Rule
+      services:
+        - { name: kps-grafana, port: 80 }
+  tls:
+    secretName: wayline-tls
+YAML
+}
+plant_hosted_node_port() {
+  plant_in_hosted_tree service.yaml <<'YAML'
+apiVersion: v1
+kind: Service
+metadata:
+  name: planted
+  namespace: traefik
+spec:
+  type: NodePort
+  selector: { app: planted }
+  ports:
+    - { port: 80, nodePort: 30080 }
+YAML
+}
+plant_hosted_load_balancer_in_the_render() {
+  printf -- '---\napiVersion: v1\nkind: Service\nmetadata:\n  name: planted\n  namespace: plane-prod\nspec:\n  type: LoadBalancer\n  selector:\n    app: planted\n  ports:\n    - port: 80\n' >>"$PROD_RENDERED"
+}
+plant_hosted_ingress() {
+  plant_in_hosted_tree ingress.yaml <<'YAML'
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: planted
+  namespace: plane-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: wayline.bereket.dev
+YAML
+}
+plant_hosted_application() { # plant_hosted_application <repository> <revision> <path>
+  mkdir -p gitops/clusters/plane-prod/applications
+  cat >gitops/clusters/plane-prod/applications/planted.yaml <<YAML
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: planted
+  namespace: argocd
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  source:
+    repoURL: $1
+    targetRevision: $2
+    path: $3
+YAML
+}
+HOSTED_REPO=ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+plant_hosted_git_source_elsewhere() { plant_hosted_application git://plane-git/plane-platform.git deploy/plane-prod gitops/environments/prod; }
+plant_hosted_source_on_main() { plant_hosted_application "$HOSTED_REPO" main gitops/environments/prod; }
+plant_hosted_path_outside_the_trees() { plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/applications; }
+plant_hosted_values_outside_the_trees() {
+  plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/environments/prod
+  yq -i 'del(.spec.source) | .spec.sources = [{"repoURL": "https://traefik.github.io/charts", "chart": "traefik", "targetRevision": "42.3.0", "helm": {"valueFiles": ["$values/helm/values/traefik.yaml"]}}, {"repoURL": strenv(HOSTED_REPO), "targetRevision": "deploy/plane-prod", "ref": "values"}]' gitops/clusters/plane-prod/applications/planted.yaml
+}
+# Every file here exists in a full checkout, so only a read of the two trees alone can catch this one.
+plant_hosted_base_outside_the_trees() {
+  plant_in_hosted_tree kustomization.yaml <<'YAML'
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../../gitops/platform/backup-storage
+YAML
+}
+plant_hosted_chart_as_a_node_port() { yq -i '.service.spec.type = "NodePort"' gitops/clusters/plane-prod/values/traefik.yaml; }
+plant_hosted_chart_image_without_digest() { yq -i 'del(.image.digest)' gitops/clusters/plane-prod/values/traefik.yaml; }
+plant_hosted_local_marker() { printf '#!/usr/bin/env bash\n# reads git://plane-git/plane-platform.git\n' >scripts/hosted/planted.sh; }
+plant_hosted_marker_in_the_tree() {
+  plant_in_hosted_tree config.yaml <<'YAML'
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: planted
+  namespace: monitoring
+data:
+  url: http://grafana.localhost
+YAML
+}
+plant_hosted_bare_kubectl() { printf '#!/usr/bin/env bash\nkubectl get pods\n' >scripts/hosted/planted.sh; }
+plant_hosted_name_in_a_local_tree() {
+  printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: plane-prod\n' >gitops/platform/network-policies/planted.yaml
+}
+plant_hosted_path_in_a_local_tree() { printf '# see gitops/clusters/plane-prod/values\n' >>helm/values/traefik.yaml; }
+plant_hosted_object_declared_twice() {
+  printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n' | plant_in_hosted_tree one.yaml
+  printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n' | plant_in_hosted_tree two.yaml
+}
+plant_hosted_namespace_in_the_tree() {
+  printf 'apiVersion: v1\nkind: Namespace\nmetadata:\n  name: planted\n' | plant_in_hosted_tree namespace.yaml
+}
+
 reset_clone() {
   git -C "$CLONE" reset --quiet --hard "$BASE"
   git -C "$CLONE" clean --quiet -fd
@@ -277,6 +403,34 @@ control token-in-working-tree security.sh "gitleaks working tree FAILED" plant_t
 control token-only-in-history security.sh "gitleaks history FAILED" plant_token_in_history
 control privileged-pod-trivy-config security.sh "trivy config FAILED" plant_privileged_pod
 control vulnerable-lockfile-trivy-fs security.sh "trivy fs FAILED" plant_vulnerable_lockfile
+export HOSTED_REPO
+control hosted-http-web-url validate-manifests.sh 'WEB_URL is "http://wayline.bereket.dev"' plant_hosted_http_web_url
+control hosted-http-origin validate-manifests.sh 'CORS_ALLOWED_ORIGINS is "http://wayline.bereket.dev,https://wayline.bereket.dev"' plant_hosted_http_origin
+control hosted-localhost-image validate-manifests.sh "is on a local registry" plant_hosted_localhost_image
+control hosted-web-entry-point validate-manifests.sh 'entryPoints is ["web"]' plant_hosted_web_entry_point
+control hosted-route-without-tls validate-manifests.sh "tls is {} and must name only secretName wayline-tls" plant_hosted_route_without_tls
+control hosted-console-route-in-the-tree validate-manifests.sh "Hosted production gives no console a public route" plant_hosted_console_route
+control hosted-silo-console-in-the-render validate-manifests.sh "reaches plane-minio:9090" plant_hosted_silo_console_route
+control hosted-node-port-in-the-tree validate-manifests.sh "no NodePort Service" plant_hosted_node_port
+control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalancer Service" plant_hosted_load_balancer_in_the_render
+control hosted-ingress-in-the-tree validate-manifests.sh "no Ingress in Git" plant_hosted_ingress
+control hosted-git-source-elsewhere validate-manifests.sh "is not the one this cluster reads" plant_hosted_git_source_elsewhere
+control hosted-source-on-main validate-manifests.sh "this cluster reads only deploy/plane-prod" plant_hosted_source_on_main
+control hosted-path-outside-the-trees validate-manifests.sh "is outside gitops/clusters/plane-prod and gitops/environments/prod" plant_hosted_path_outside_the_trees
+control hosted-values-outside-the-trees validate-manifests.sh 'they must come from $values/gitops/clusters/plane-prod' plant_hosted_values_outside_the_trees
+control hosted-base-outside-the-trees validate-manifests.sh "does not build from the two hosted trees alone" plant_hosted_base_outside_the_trees
+control hosted-render-drift validate-manifests.sh "render is up to date: hosted FAILED" plant_hosted_render_drift
+control hosted-dump-after-the-migrator validate-manifests.sh "must run before the migrator" plant_hosted_dump_after_the_migrator
+CONTROL_SKIP_CHARTS=no control hosted-chart-as-a-node-port validate-manifests.sh "no NodePort Service" plant_hosted_chart_as_a_node_port
+CONTROL_SKIP_CHARTS=no control hosted-chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_hosted_chart_image_without_digest
+control hosted-local-marker check-cluster-separation.sh "a local marker in the hosted trees" plant_hosted_local_marker
+control hosted-marker-in-the-tree check-cluster-separation.sh "a local marker in the hosted trees" plant_hosted_marker_in_the_tree
+control hosted-bare-kubectl check-cluster-separation.sh "kubectl with no --kubeconfig and --context" plant_hosted_bare_kubectl
+control hosted-name-in-a-local-tree check-cluster-separation.sh "the hosted cluster's name in a local tree" plant_hosted_name_in_a_local_tree
+control hosted-path-in-a-local-tree check-cluster-separation.sh "a hosted path in a local tree" plant_hosted_path_in_a_local_tree
+control hosted-separation-through-lint lint.sh "cluster separation FAILED" plant_hosted_local_marker
+control hosted-object-declared-twice ownership.sh "is declared by more than one Argo CD source" plant_hosted_object_declared_twice
+control hosted-namespace-in-the-tree ownership.sh "is owned by Terraform, not Argo CD" plant_hosted_namespace_in_the_tree
 
 [[ "$total" -gt 0 ]] || die "no control matches '$FILTER'"
 [[ "$missed" -eq 0 ]] || die "$missed of $total planted defects were not caught"
