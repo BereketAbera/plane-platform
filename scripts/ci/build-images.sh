@@ -7,6 +7,10 @@
 #
 #   scripts/ci/build-images.sh localhost:5001/wayline
 #   PUSH=no scripts/ci/build-images.sh ghcr.io/owner/wayline     build only, for pull requests
+#   PLATFORM=linux/amd64 scripts/ci/build-images.sh ...          what images.yml sets
+#
+# PLATFORM is the one architecture to build and to walk. The default, linux/arm64, is the laptop's kind node, so `make images`
+# stays what it was. images.yml sets linux/amd64 on an x86-64 runner, because the VPS is x86-64.
 #
 # Builds the frontends natively first with apps/wayline/scripts/build.sh, because every Docker context
 # is assembled by that script. SKIP_NATIVE_BUILD=yes reuses the contexts already in .build/wayline-dist.
@@ -31,7 +35,7 @@
 #
 # Writes .build/digests.tsv as: <name> TAB <repository> TAB <sha256 digest>, only once every image has
 # been published and checked, and never with PUSH=no, so a failed run leaves the last good file. scripts/promote.sh
-# reads it. Environment: PUSH (yes), TAG (short git commit), DIGESTS_FILE, SKIP_NATIVE_BUILD (no),
+# reads it. Environment: PLATFORM (linux/arm64), PUSH (yes), TAG (short git commit), DIGESTS_FILE, SKIP_NATIVE_BUILD (no),
 # WAYLINE_SOURCE_REPO (where /source points, default the BereketAbera/plane-platform repository),
 # WAYLINE_STAGING_PORT (the throwaway registry's port on loopback, 5059).
 # shellcheck source=../lib/common.sh
@@ -42,6 +46,8 @@ source "$ROOT/apps/wayline/scripts/lib.sh"
 [[ $# -eq 1 ]] || die "usage: $0 <registry-prefix>, for example localhost:5001/wayline"
 PREFIX="${1%/}"
 PUSH="${PUSH:-yes}"
+PLATFORM="${PLATFORM:-linux/arm64}"
+[[ "$PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "PLATFORM must be linux/amd64 or linux/arm64, got '$PLATFORM'"
 DIGESTS_FILE="${DIGESTS_FILE:-$ROOT/.build/digests.tsv}"
 LIST="$ROOT/apps/wayline/images.txt"
 
@@ -124,7 +130,8 @@ while read -r name dockerfile context _; do
   fi
 
   # No provenance or SBOM manifests, so the digest names one plain manifest and survives a copy
-  # between registries. Native arm64 only, no emulation. store=false, so the throwaway name stays out of Docker's image list.
+  # between registries. PLATFORM is the builder's own architecture in both places, so nothing runs under emulation.
+  # store=false, so the throwaway name stays out of Docker's image list.
   output=(--output type=cacheonly)
   build_ref="$repository:$image_tag"
   if [[ "$PUSH" == yes ]]; then
@@ -133,14 +140,14 @@ while read -r name dockerfile context _; do
     build_ref="$STAGING/$name:$image_tag"
   fi
 
-  log "Building $repository:$image_tag from $source_ref"
+  log "Building $repository:$image_tag for $PLATFORM from $source_ref"
   # SOURCE_DATE_EPOCH fixes the config's created time. A rebuild can still differ, in file times and OS packages,
   # so a digest, not a rebuild, is the identity of a release.
   # A context holds what a checkout and a build left, with their modes. Under a restrictive umask those are 0600, and
   # the image's non-root user then cannot read its own files: nginx and Django fail at start, and no build step notices.
   # The cold install found this, with umask 077.
   chmod -R a+rX "apps/wayline/$context"
-  docker buildx build --platform linux/arm64 --provenance=false --sbom=false \
+  docker buildx build --platform "$PLATFORM" --provenance=false --sbom=false \
     --build-arg "SOURCE_DATE_EPOCH=$(git show -s --format=%ct "$source_ref" 2>/dev/null || date +%s)" \
     --metadata-file "$metadata" "${output[@]}" \
     --build-arg "WAYLINE_SOURCE_REPO=$SOURCE_REPO" --build-arg "WAYLINE_SOURCE_REF=$source_ref" \
@@ -151,10 +158,10 @@ while read -r name dockerfile context _; do
     [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "no digest recorded for $name"
     # Prove the registry serves that digest, independently of what the builder reported.
     docker buildx imagetools inspect "$STAGING/$name@$digest" >/dev/null
-    python3 -B apps/wayline/checks/layer-check.py "$STAGING/$name@$digest" \
+    python3 -B apps/wayline/checks/layer-check.py --platform "$PLATFORM" "$STAGING/$name@$digest" \
       || die "$name@$digest failed the layer check, so nothing is published and no digest is recorded"
     if [[ "$name" == backend ]]; then
-      python3 -B apps/wayline/checks/flatten-config.py "$STAGING/$name@$digest" \
+      python3 -B apps/wayline/checks/flatten-config.py --platform "$PLATFORM" "$STAGING/$name@$digest" \
         || die "$name@$digest dropped config from its base, so nothing is published and no digest is recorded. Restate it in runtime/Dockerfile.backend"
     fi
     printf '%s\t%s\t%s\t%s\n' "$name" "$repository" "$image_tag" "$digest" >>"$WORK/passed.tsv"
@@ -168,7 +175,7 @@ if [[ "$PUSH" == yes ]]; then
     # --prefer-index=false is what keeps the digest: the default wraps a single image in a new index.
     docker buildx imagetools create --prefer-index=false -t "$repository:$image_tag" "$STAGING/$name@$digest"
     docker buildx imagetools inspect "$repository@$digest" >/dev/null || die "$repository did not end up with $digest"
-    python3 -B apps/wayline/checks/layer-check.py "$repository@$digest" \
+    python3 -B apps/wayline/checks/layer-check.py --platform "$PLATFORM" "$repository@$digest" \
       || die "$repository@$digest failed the layer check where it was published, so no digest is recorded. It is still in that registry"
     printf '%s\t%s\t%s\n' "$name" "$repository" "$digest" >>"$WORK/digests.tsv"
     ok "$repository@$digest"

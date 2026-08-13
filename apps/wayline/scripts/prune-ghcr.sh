@@ -2,6 +2,10 @@
 # Copyright (c) 2026 Bereket Abera
 # SPDX-License-Identifier: AGPL-3.0-only
 #
+# MUST NOT RUN until it exempts every digest in docs/evidence/promotions and the prod overlay. It keeps the newest <keep>
+# versions and knows nothing of what production runs or what evidence names, so it could delete either, and a rollback would
+# then have nothing to pull. images.yml no longer runs it, and until that exemption exists this only lists: DRY_RUN=yes.
+#
 # Deletes all but the newest <keep> versions of each Wayline image in GHCR. This is a precaution: GitHub's billing
 # page says Container registry storage and bandwidth are currently free, with a month's notice before that changes,
 # and nothing has been stored there yet to confirm how it is counted. It lists what it deletes, and DRY_RUN=yes only
@@ -18,6 +22,7 @@ source "$(dirname "$0")/lib.sh"
 owner="${1:?usage: prune-ghcr.sh <owner> [keep]}"
 keep="${2:-2}"
 [[ "$keep" -ge 2 ]] || die "keep must be at least 2, a promoted digest may still be in use"
+[[ "${DRY_RUN:-no}" == yes ]] || die "this must not delete anything until it exempts every digest in docs/evidence/promotions and the prod overlay. DRY_RUN=yes only lists"
 
 while read -r name _; do
   [[ -z "$name" || "$name" == \#* ]] && continue
