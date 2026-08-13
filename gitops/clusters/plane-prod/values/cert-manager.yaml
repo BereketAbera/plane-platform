@@ -1,0 +1,61 @@
+# cert-manager v1.21.3 from oci://quay.io/jetstack/charts, tgz sha256 e482675aec32862d323a9218293ff7de81192337998615e4378c56498473f240
+# Release cert-manager, namespace cert-manager. Index digests, read from quay.io's registry API on 2026-11-07. Each index holds
+# a linux/amd64 and a linux/arm64 child.
+crds:
+  enabled: true
+  keep: true
+
+global:
+  # The default is kube-system, which this platform does not own. Its leases stay beside the pods that hold them.
+  leaderElection:
+    namespace: cert-manager
+
+image:
+  repository: quay.io/jetstack/cert-manager-controller
+  digest: sha256:9f4f96a33c7774cef24466fcd85031997531a03a8d117f151126baa8d1290dcc
+
+webhook:
+  image:
+    repository: quay.io/jetstack/cert-manager-webhook
+    digest: sha256:055ac8e9de6a0ba6763794838fe38944acc650f68ebe1b01dd8be079e580f458
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 64Mi }
+
+cainjector:
+  image:
+    repository: quay.io/jetstack/cert-manager-cainjector
+    digest: sha256:083d0e906f8eb44e255fe4ff817ae54e49f9ed82e22f1011bb4e9e4f4b8a641f
+  resources:
+    requests: { cpu: 10m, memory: 48Mi }
+    limits: { memory: 128Mi }
+
+# The only pin on the solver pods, which the controller starts at run time. Those pods run in plane-prod, with cert-manager's
+# default requests and limits of 64Mi, and their one policy is the acme-http01-solver file beside Plane's.
+acmesolver:
+  image:
+    repository: quay.io/jetstack/cert-manager-acmesolver
+    digest: sha256:c8c1225bb2fe8ab37a330b77f0d8c2ee6a41210fcb54fc07ca606ab9a022b8b7
+
+startupapicheck:
+  image:
+    repository: quay.io/jetstack/cert-manager-startupapicheck
+    digest: sha256:1c519d4afca1413d1e4ccd78bdc756184418ab55a34569a3b3de39d32f9974e1
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 64Mi }
+
+# A Service only, port 9402. The ServiceMonitor that selects it lives in monitoring-extras, because the chart's own would arrive at
+# wave -8, before the CRD at -7, and fail the sync that brings the CRD.
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false
+
+# These and the others above are estimates until measured on the node.
+resources:
+  requests:
+    cpu: 10m
+    memory: 48Mi
+  limits:
+    memory: 128Mi

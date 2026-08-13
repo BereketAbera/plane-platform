@@ -1,0 +1,267 @@
+# kube-prometheus-stack 92.18.0. Release name kube-prometheus-stack, namespace monitoring.
+# Argo CD must sync this chart with ServerSideApply=true: crd-prometheuses.yaml is about 840 KiB,
+# over the 262144-byte annotation limit of client-side apply.
+fullnameOverride: kps
+
+# K3s runs the control plane in one process and exposes none of these as scrape targets, so leaving them on would fire permanent
+# *Down alerts. The apiserver would scrape fine; it is off purely for series count.
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+kubeApiServer: { enabled: false }
+windowsMonitoring: { enabled: false }
+
+defaultRules:
+  rules:
+    etcd: false
+    windows: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeProxy: false
+  disabled:
+    # kubernetes-system-apiserver.yaml is not guarded by kubeApiServer.enabled and carries
+    # absent(up{job="apiserver"}), which would fire forever with the scrape off.
+    KubeAPIDown: true
+    # capacity.yaml sizes the quotas to what runs here, so some sit near or at full by design, and every alert in this
+    # receiver goes to a person. KubeQuotaExceeded stays, and a rollout stopped by a quota fires KubeDeploymentRolloutStuck.
+    KubeQuotaAlmostFull: true
+    KubeQuotaFullyUsed: true
+
+kubelet:
+  serviceMonitor:
+    probes: false # prober_* series are not worth their cost here
+    cAdvisor: true
+
+nodeExporter:
+  operatingSystems:
+    aix: { enabled: false }
+    darwin: { enabled: false }
+
+prometheus-node-exporter:
+  fullnameOverride: kps-node-exporter # subchart names otherwise follow the release name
+  # hostNetwork and hostPID need PSA privileged, so they stay out of the baseline monitoring namespace.
+  namespaceOverride: monitoring-agents
+  image:
+    registry: quay.io
+    repository: prometheus/node-exporter
+    tag: v1.12.1
+    distroless: true # default false, and the tag and digest below only match with it on
+    digest: sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+  # The chart defaults, with K3s's own runtime mounts in place of Docker's. The textfile directory is written on the host, and the
+  # reboot-required rule in monitoring-extras reads what it holds.
+  extraArgs:
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/k3s/.+|run/containerd/.+|var/lib/rancher/k3s/agent/containerd/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
+    - --collector.textfile.directory=/host/textfile
+  extraHostVolumeMounts:
+    - name: textfile
+      hostPath: /var/lib/node_exporter/textfile
+      # So the pod starts even if provisioning has not made it, and then the absent rule says so.
+      type: DirectoryOrCreate
+      mountPath: /host/textfile
+      readOnly: true
+  # No CPU limit: a scrape is a 280ms burst every 30s, about 1m on average, and a 100m quota still
+  # throttled 32% of its periods, which fires CPUThrottlingHigh for nothing.
+  resources:
+    requests: { cpu: 10m, memory: 24Mi }
+    limits: { memory: 64Mi }
+
+kube-state-metrics:
+  fullnameOverride: kps-kube-state-metrics
+  image:
+    registry: registry.k8s.io
+    repository: kube-state-metrics/kube-state-metrics
+    tag: v2.20.0
+    # Unlike the parent chart, this subchart appends sha verbatim after "@", so it needs the prefix.
+    sha: sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b
+  # The default list adds cluster-wide list and watch on Secrets for metrics nothing here reads.
+  # Everything the default rules and dashboards use is below.
+  collectors:
+    - cronjobs
+    - daemonsets
+    - deployments
+    - jobs
+    - namespaces
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - pods
+    - replicasets
+    - resourcequotas
+    - statefulsets
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { cpu: 100m, memory: 96Mi }
+
+prometheusOperator:
+  admissionWebhooks: { enabled: false } # no cert Job and no certgen image; CI runs promtool instead
+  tls: { enabled: false }
+  image:
+    registry: quay.io
+    repository: prometheus-operator/prometheus-operator
+    tag: v0.94.2
+    sha: c7edf0379b7271ef1705dce258d2bb73820e299cc95559369e9f6fc3321639ec
+  resources:
+    requests: { cpu: 10m, memory: 48Mi }
+    limits: { cpu: 200m, memory: 128Mi }
+  prometheusConfigReloader:
+    image:
+      registry: quay.io
+      repository: prometheus-operator/prometheus-config-reloader
+      tag: v0.94.2
+      sha: a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+    # No CPU limit, for the reason given at node-exporter: it idles under 1m and only bursts.
+    resources:
+      requests: { cpu: 5m, memory: 16Mi }
+      limits: { memory: 48Mi }
+  # Nothing here runs Thanos. The chart passes this to the operator as a default whether it is used or not, and the
+  # tag is the chart's own. The digest is the index digest, from docker buildx imagetools inspect.
+  thanosImage:
+    registry: quay.io
+    repository: thanos/thanos
+    tag: v0.42.5
+    sha: 0a546b98a8dd47735456ab389983675ee363d68127e334937a9fceeea10da5e7
+
+prometheus:
+  # No route: reached through the SSH tunnel with kubectl port-forward.
+  ingress: { enabled: false }
+  prometheusSpec:
+    image:
+      registry: quay.io
+      repository: prometheus/prometheus
+      tag: v3.15.1-distroless
+      sha: 451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934
+    replicas: 1
+    externalUrl: http://localhost:19090 # scripts/hosted/ui.sh uses this port first
+    scrapeInterval: 30s
+    scrapeTimeout: 10s
+    evaluationInterval: 30s
+    # local-path ignores PVC capacity, so retentionSize is the only real cap on the volume. It stays under the volume's 16Gi, so
+    # room is left for the WAL. Bytes per day are not yet measured on this node.
+    retention: 15d
+    retentionSize: 12GiB
+    walCompression: true
+    # Select every object in every namespace. The default selects only objects labelled with
+    # the Helm release, which the Probes and ServiceMonitors in monitoring-extras are not.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    scrapeConfigSelectorNilUsesHelmValues: false
+    # Locally anonymous memory reached 652 MiB on a 1024Mi limit, with two environments' series. Retention grows the disk, not the
+    # head. Prometheus sets GOMEMLIMIT to 90% of this by itself. Starting values, not yet measured on this node.
+    resources:
+      requests: { cpu: 100m, memory: 768Mi }
+      limits: { cpu: "1", memory: 2Gi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path-retain
+          accessModes: [ReadWriteOnce]
+          resources: { requests: { storage: 16Gi } }
+
+alertmanager:
+  ingress: { enabled: false }
+  serviceAccount:
+    automountServiceAccountToken: false # it calls a webhook; it never talks to the API
+  alertmanagerSpec:
+    automountServiceAccountToken: false
+    image:
+      registry: quay.io
+      repository: prometheus/alertmanager
+      tag: v0.34.2
+      sha: 39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b
+    replicas: 1
+    externalUrl: http://localhost:19093 # scripts/hosted/ui.sh uses this port first
+    retention: 120h
+    # The receivers hold credentials, so their config is never in Git. scripts/hosted/alerts.sh renders this Secret. useExistingSecret
+    # stops the chart rendering a second one, and until the Secret exists the operator runs Alertmanager on its empty default.
+    useExistingSecret: true
+    configSecret: alertmanager-wayline
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path-retain
+          accessModes: [ReadWriteOnce]
+          resources: { requests: { storage: 1Gi } }
+    resources:
+      requests: { cpu: 5m, memory: 48Mi }
+      limits: { cpu: 100m, memory: 96Mi }
+
+grafana:
+  fullnameOverride: kps-grafana
+  ingress: { enabled: false }
+  image:
+    registry: docker.io
+    repository: grafana/grafana
+    tag: 13.3.0-distroless
+    sha: 540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
+  # The chart generates Secret kps-grafana with a random admin password. Argo CD renders with
+  # no lookup, so every manifest regeneration draws a new one. The Application must ignore that diff.
+  adminUser: admin
+  persistence: { enabled: false } # state comes from Git
+  # One replica with no state of its own, so a surge would need room in the namespace's quota for nothing.
+  deploymentStrategy:
+    type: Recreate
+  initChownData: { enabled: false } # nothing to chown without persistence, and no busybox image
+  testFramework: { enabled: false }
+  defaultDashboardsTimezone: utc
+  # No Role beyond the ConfigMaps in its own namespace. The chart default is cluster-wide.
+  rbac:
+    namespaced: true
+  resources:
+    requests: { cpu: 25m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 384Mi }
+  grafana.ini:
+    server:
+      # No route: reached through the SSH tunnel with kubectl port-forward.
+      root_url: http://localhost:18090 # scripts/hosted/ui.sh uses this port first
+    # No pod here has internet egress, so each of these can only time out and log an error.
+    analytics:
+      check_for_updates: false
+      check_for_plugin_updates: false
+      reporting_enabled: false
+    news:
+      news_feed_enabled: false
+    plugins:
+      preinstall_disabled: true
+      plugin_admin_enabled: false
+      public_key_retrieval_disabled: true
+      # Each bundled datasource with a backend is its own process in this container, about 22 to
+      # 35 MiB RSS apiece. Only Prometheus, Loki and Alertmanager are provisioned.
+      disable_plugins: cloudwatch,elasticsearch,grafana-azure-monitor-datasource,grafana-postgresql-datasource,grafana-pyroscope-datasource,grafana-testdata-datasource,graphite,influxdb,jaeger,mssql,mysql,opentsdb,stackdriver,tempo,zipkin
+  sidecar:
+    image:
+      registry: quay.io
+      repository: kiwigrid/k8s-sidecar
+      tag: 2.14.3
+      sha: 52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
+    # A Python process that imports the whole Kubernetes client. At 96Mi it was OOM-killed about 35s
+    # after every start, before it logged a line, so Grafana never got a dashboard or a Ready pod.
+    # Measured peak 105Mi at start, 78Mi after. No CPU limit: it idles at 8m and only bursts on each
+    # 60s watch reconnect, which a 200m quota still throttled in over half of its periods.
+    resources:
+      requests: { cpu: 5m, memory: 96Mi }
+      limits: { memory: 160Mi }
+    dashboards:
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: null # own namespace only; matches rbac.namespaced above
+      folderAnnotation: grafana_folder
+      resource: configmap # every dashboard here is a ConfigMap; the default also watches Secrets
+      provider:
+        foldersFromFilesStructure: true
+        allowUiUpdates: false
+    datasources:
+      defaultDatasourceEnabled: true
+      uid: prometheus # dashboards in monitoring-extras pin this uid
+      resource: configmap # as above
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+      jsonData: { maxLines: 1000 }
