@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 """Tests checks/layer-check.py on layers made here, in memory, so no copy of the original file is needed.
 
-    layer-check-cases.py                       each case through the Walk, in this process. Needs nothing but Python
+    layer-check-cases.py                       each case through the Walk, in this process, and what oci_read.py and the
+                                               commands do with an image of another architecture, on a read-only registry
+                                               this serves itself on loopback. Needs nothing but Python
     layer-check-cases.py --registry <host:port>  also pushes each case as a real image and runs the command on it
 
 The second needs an empty registry on loopback that nobody else uses, with plain HTTP. Exits 1 if any case is wrong.
@@ -12,6 +14,7 @@ import argparse
 import bz2
 import gzip
 import hashlib
+import http.server
 import importlib.util
 import io
 import json
@@ -21,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import threading
 import urllib.request
 import zipfile
 
@@ -170,8 +174,32 @@ def in_process():
     return wrong
 
 
+def sha256_of(data):
+    return f"sha256:{hashlib.sha256(data).hexdigest()}"
+
+
+def image_parts(layer, architecture="arm64", os_name="linux"):
+    """One layer and a config, by hand, so this leaves nothing in Docker or its build cache: (config, layer, manifest)."""
+    compressed = gzip.compress(layer)
+    fields = {"rootfs": {"type": "layers", "diff_ids": [sha256_of(layer)]}}
+    if architecture:
+        fields["architecture"] = architecture
+    if os_name:
+        fields["os"] = os_name
+    config = json.dumps(fields).encode()
+    manifest = json.dumps(
+        {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "config": {"mediaType": "application/vnd.oci.image.config.v1+json", "digest": sha256_of(config), "size": len(config)},
+            "layers": [{"mediaType": "application/vnd.oci.image.layer.v1.tar+gzip", "digest": sha256_of(compressed), "size": len(compressed)}],
+        }
+    ).encode()
+    return config, compressed, manifest
+
+
 def push_blob(registry, repository, data):
-    digest = f"sha256:{hashlib.sha256(data).hexdigest()}"
+    digest = sha256_of(data)
     start = urllib.request.Request(f"http://{registry}/v2/{repository}/blobs/uploads/", method="POST")
     with urllib.request.urlopen(start, timeout=60) as reply:
         location = reply.headers["Location"]
@@ -180,27 +208,25 @@ def push_blob(registry, repository, data):
     joined = "&" if "?" in location else "?"
     put = urllib.request.Request(f"{location}{joined}digest={digest}", data=data, method="PUT", headers={"Content-Type": "application/octet-stream"})
     urllib.request.urlopen(put, timeout=60).close()
-    return digest, len(data)
 
 
-def push_image(registry, repository, layer):
-    """One layer and a config, by hand, so this leaves nothing in Docker or its build cache."""
-    compressed = gzip.compress(layer)
-    config = json.dumps({"architecture": "arm64", "os": "linux", "rootfs": {"type": "layers", "diff_ids": [f"sha256:{hashlib.sha256(layer).hexdigest()}"]}}).encode()
-    config_digest, config_size = push_blob(registry, repository, config)
-    layer_digest, layer_size = push_blob(registry, repository, compressed)
-    manifest = json.dumps(
-        {
-            "schemaVersion": 2,
-            "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "config": {"mediaType": "application/vnd.oci.image.config.v1+json", "digest": config_digest, "size": config_size},
-            "layers": [{"mediaType": "application/vnd.oci.image.layer.v1.tar+gzip", "digest": layer_digest, "size": layer_size}],
-        }
-    ).encode()
-    digest = f"sha256:{hashlib.sha256(manifest).hexdigest()}"
+def push_image(registry, repository, layer, architecture="arm64"):
+    config, compressed, manifest = image_parts(layer, architecture)
+    push_blob(registry, repository, config)
+    push_blob(registry, repository, compressed)
+    digest = sha256_of(manifest)
     put = urllib.request.Request(f"http://{registry}/v2/{repository}/manifests/{digest}", data=manifest, method="PUT", headers={"Content-Type": "application/vnd.oci.image.manifest.v1+json"})
     urllib.request.urlopen(put, timeout=60).close()
     return f"{registry}/{repository}@{digest}"
+
+
+def command(script, *args, platform=None):
+    """Runs one of the checks with PLATFORM as given and nothing else deciding it: (exit code, what it printed)."""
+    env = {key: value for key, value in os.environ.items() if key != "PLATFORM"}
+    if platform:
+        env["PLATFORM"] = platform
+    done = subprocess.run([sys.executable, "-B", os.path.join(HERE, script), *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False, env=env)
+    return done.returncode, done.stdout
 
 
 def through_registry(registry):
@@ -209,13 +235,153 @@ def through_registry(registry):
     expected_exit = {"clean": 0, "hit": 1, "incomplete": 2}
     for index, (name, layer, expect) in enumerate(cases()):
         reference = push_image(registry, f"layer-check-cases/{index}", layer)
-        done = subprocess.run([sys.executable, "-B", os.path.join(HERE, "layer-check.py"), reference], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
-        marks = [line.strip() for line in done.stdout.splitlines() if line.startswith("  ")]
-        good = done.returncode == expected_exit[expect]
+        code, printed = command("layer-check.py", "--platform", "linux/arm64", reference)
+        marks = [line.strip() for line in printed.splitlines() if line.startswith("  ")]
+        good = code == expected_exit[expect]
         wrong += not good
-        print(f"{'PASS' if good else 'FAIL'} {name}: exit {done.returncode}, expected {expected_exit[expect]} {reference}")
+        print(f"{'PASS' if good else 'FAIL'} {name}: exit {code}, expected {expected_exit[expect]} {reference}")
         for mark in marks:
             print(f"     {mark}")
+    reference = push_image(registry, "layer-check-cases/amd64", tar_of({"x/hello.txt": b"nothing here\n"}), "amd64")
+    for platform, expect in (("linux/amd64", 0), ("linux/arm64", 2)):
+        code, _ = command("layer-check.py", "--platform", platform, reference)
+        wrong += code != expect
+        print(f"{'PASS' if code == expect else 'FAIL'} a plain amd64 image read for {platform}: exit {code}, expected {expect} {reference}")
+    return wrong
+
+
+class ReadOnlyRegistry:
+    """Serves whatever was put in it, by digest, over plain HTTP on loopback. Nothing is pushed, and nothing is stored."""
+
+    def __init__(self):
+        store = self.store = {}
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                data = store.get(self.path.rsplit("/", 1)[-1])
+                if data is None:
+                    self.send_error(404)
+                    return
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, *args):
+                pass
+
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.host = f"127.0.0.1:{self.server.server_address[1]}"
+
+    def put(self, data):
+        digest = sha256_of(data)
+        self.store[digest] = data
+        return digest
+
+    def plain(self, layer, architecture, os_name="linux"):
+        config, compressed, manifest = image_parts(layer, architecture, os_name)
+        self.put(config)
+        self.put(compressed)
+        return self.put(manifest)
+
+    def index(self, **children):
+        """children: architecture=digest of its manifest, which is what the index says, whatever the config says."""
+        entries = [
+            {"mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": digest, "size": len(self.store[digest]), "platform": {"os": "linux", "architecture": architecture}}
+            for architecture, digest in children.items()
+        ]
+        return self.put(json.dumps({"schemaVersion": 2, "mediaType": "application/vnd.oci.image.index.v1+json", "manifests": entries}).encode())
+
+    def reference(self, digest):
+        return f"{self.host}/cases/image@{digest}"
+
+
+def another_architecture():
+    """What oci_read.py and each command do when the image is not the platform asked for. Returns how many are wrong."""
+    registry = ReadOnlyRegistry()
+    wrong = 0
+
+    def expect(ok, label, detail=""):
+        nonlocal wrong
+        wrong += not ok
+        print(f"{'PASS' if ok else 'FAIL'} {label}{'. ' + detail if detail else ''}")
+
+    clean = tar_of({"x/hello.txt": b"nothing here\n"})
+    dirty = tar_of({"x/y.py": TEXT.encode()})
+    amd64 = registry.plain(clean, "amd64")
+    arm64 = registry.plain(clean, "arm64")
+    no_architecture = registry.plain(clean, None)
+    no_os = registry.plain(clean, "amd64", None)
+    windows = registry.plain(clean, "amd64", "windows")
+    both = registry.index(amd64=amd64, arm64=arm64)
+    arm64_only = registry.index(arm64=arm64)
+    # An index can say anything. The child's own config is what the image is.
+    says_amd64_is_arm64 = registry.index(amd64=arm64)
+    amd64_hit = registry.plain(dirty, "amd64")
+    arm64_hit = registry.plain(dirty, "arm64")
+    only_amd64_holds_it = registry.index(amd64=amd64_hit, arm64=arm64)
+    only_arm64_holds_it = registry.index(amd64=amd64, arm64=arm64_hit)
+
+    print("\n-- oci_read.Image, given the platform")
+    for label, digest, platform, child in (
+        ("a plain amd64 image read for linux/amd64", amd64, "linux/amd64", None),
+        ("a plain arm64 image read for linux/arm64", arm64, "linux/arm64", None),
+        ("an index read for linux/amd64", both, "linux/amd64", amd64),
+        ("an index read for linux/arm64", both, "linux/arm64", arm64),
+    ):
+        image = layer_check.Image(registry.reference(digest), platform)
+        expect(image.platform_manifest == child and image.config["architecture"] == platform.split("/")[1], f"{label}: reads its own config and layers")
+    for label, digest, platform in (
+        ("a plain amd64 image read for linux/arm64", amd64, "linux/arm64"),
+        ("a plain arm64 image read for linux/amd64", arm64, "linux/amd64"),
+        ("a config that names no architecture", no_architecture, "linux/amd64"),
+        ("a config that names no OS", no_os, "linux/amd64"),
+        ("a plain amd64 image for another OS", windows, "linux/amd64"),
+        ("an index with no child for linux/amd64", arm64_only, "linux/amd64"),
+        ("an index whose linux/amd64 child is arm64", says_amd64_is_arm64, "linux/amd64"),
+        ("a platform with no OS", amd64, "amd64"),
+        ("a platform with a variant, which nothing here reads", amd64, "linux/amd64/v3"),
+    ):
+        try:
+            layer_check.Image(registry.reference(digest), platform)
+            expect(False, f"{label}: was read")
+        except layer_check.Unreadable as err:
+            expect(True, f"{label}: refused", str(err).replace(registry.host, "<registry>"))
+
+    print("\n-- layer-check.py, as a command")
+    ref = registry.reference
+    for label, args, platform, want in (
+        ("--platform linux/amd64 on plain amd64", ["--platform", "linux/amd64", ref(amd64)], None, 0),
+        ("--platform linux/arm64 on plain amd64", ["--platform", "linux/arm64", ref(amd64)], None, 2),
+        ("--report-only is no way round it", ["--report-only", "--platform", "linux/arm64", ref(amd64)], None, 2),
+        ("no --platform and no PLATFORM reads linux/arm64: plain arm64", [ref(arm64)], None, 0),
+        ("no --platform and no PLATFORM reads linux/arm64: plain amd64", [ref(amd64)], None, 2),
+        ("PLATFORM=linux/amd64 is followed: plain amd64", [ref(amd64)], "linux/amd64", 0),
+        ("PLATFORM=linux/amd64 is followed: plain arm64", [ref(arm64)], "linux/amd64", 2),
+        ("--platform beats PLATFORM", ["--platform", "linux/arm64", ref(amd64)], "linux/amd64", 2),
+        ("walks production's child: the hit is in the amd64 child, read for amd64", ["--platform", "linux/amd64", ref(only_amd64_holds_it)], None, 1),
+        ("the same index read for arm64 does not read that child", ["--platform", "linux/arm64", ref(only_amd64_holds_it)], None, 0),
+        ("the hit is in the arm64 child, read for amd64", ["--platform", "linux/amd64", ref(only_arm64_holds_it)], None, 0),
+    ):
+        code, _ = command("layer-check.py", *args, platform=platform)
+        expect(code == want, f"{label}: exit {code}, expected {want}")
+
+    print("\n-- flatten-config.py and flatten-compare.py, as commands")
+    # Each reads the built image first, so these need no network to reach the base.
+    code, printed = command("flatten-config.py", "--platform", "linux/arm64", ref(amd64))
+    expect(code == 2 and "COULD NOT READ" in printed, f"flatten-config.py --platform linux/arm64 on plain amd64: exit {code}, expected 2")
+    code, printed = command("flatten-config.py", ref(amd64))
+    expect(code == 2 and "COULD NOT READ" in printed, f"flatten-config.py with no PLATFORM on plain amd64: exit {code}, expected 2")
+    code, printed = command("flatten-config.py", ref(arm64), platform="linux/amd64")
+    expect(code == 2 and "COULD NOT READ" in printed, f"flatten-config.py with PLATFORM=linux/amd64 on plain arm64: exit {code}, expected 2")
+    code, _ = command("flatten-compare.py", "--platform", "linux/arm64", ref(amd64), ref(amd64))
+    expect(code == 2, f"flatten-compare.py --platform linux/arm64 on plain amd64: exit {code}, expected 2")
+    code, _ = command("flatten-compare.py", "--platform", "linux/amd64", ref(amd64), ref(amd64))
+    expect(code == 0, f"flatten-compare.py --platform linux/amd64 on plain amd64: exit {code}, expected 0")
+    code, _ = command("flatten-compare.py", ref(amd64), ref(amd64), platform="linux/amd64")
+    expect(code == 0, f"flatten-compare.py with PLATFORM=linux/amd64 on plain amd64: exit {code}, expected 0")
+    registry.server.shutdown()
     return wrong
 
 
@@ -226,6 +392,8 @@ def main():
     print(f"python {sys.version.split()[0]}, zstd read by {'compression.zstd' if layer_check.zstd else 'the zstd binary, if there is one'}")
     print("\n== Each case through the Walk, in this process")
     wrong = in_process()
+    print("\n== An image of another architecture, on a registry served here")
+    wrong += another_architecture()
     if args.registry:
         print(f"\n== Each case as a real image in {args.registry}, through the command")
         wrong += through_registry(args.registry)

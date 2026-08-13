@@ -5,7 +5,11 @@
 #                                              charts including Argo CD, and Wayline builds if any exist
 #   SCAN_ONLY=built scripts/ci/scan-images.sh  only what .build/digests.tsv names, for CI after a push
 #
-# Trivy reads each image directly from its registry for linux/arm64, so nothing is loaded into Docker.
+# Trivy reads each image directly from its registry for PLATFORM, so nothing is loaded into Docker. The default is
+# linux/arm64, what the laptop's kind node runs. images.yml sets linux/amd64, what the VPS runs. --platform only chooses a child
+# of an index, and on a plain manifest trivy exits 0 and reads whatever it is, so the report holds each result to PLATFORM.
+# After a digest bump dev runs linux/amd64 digests under Rosetta beside prod-sim's arm64 ones, so a full scan on the laptop then
+# needs SCAN_ALSO_PLATFORM=linux/amd64, to say those plain manifests are meant. SCAN_ONLY=built takes no such thing.
 # Docker Hub images come through mirror.gcr.io where it has them, so a full scan spends no Hub quota
 # while the cluster may need it. Digests make any mirror safe. Expect a few GiB of transfer.
 #
@@ -15,7 +19,8 @@
 #
 # Failure policy, in scan-images-report.py: exit 1 if
 # - an image we build, under .../wayline/, has a CRITICAL finding with a fix available, or
-# - an image could not be scanned, because a missing result must not read as a clean one.
+# - an image could not be scanned, because a missing result must not read as a clean one, or
+# - a result is of another platform, because it says nothing about the image that runs.
 # Everything else is reported and does not fail. An upstream image can only be fixed upstream, so its
 # findings would hold CI red over something no commit here can change, and a check that stays red gets
 # ignored. They are not hidden: .trivyignore is not read here, and the raw JSON keeps every finding.
@@ -34,8 +39,14 @@ MIN_FREE="${SCAN_MIN_FREE_GIB:-15}"
 FLOOR="${SCAN_FLOOR_GIB:-$MIN_FREE}"
 SCAN_ONLY="${SCAN_ONLY:-}"
 [[ -z "$SCAN_ONLY" || "$SCAN_ONLY" == built ]] || die "SCAN_ONLY may only be built, got '$SCAN_ONLY'"
+PLATFORM="${PLATFORM:-linux/arm64}"
+[[ "$PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "PLATFORM must be linux/amd64 or linux/arm64, got '$PLATFORM'"
+SCAN_ALSO_PLATFORM="${SCAN_ALSO_PLATFORM:-}"
+[[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ALSO_PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "SCAN_ALSO_PLATFORM must be linux/amd64 or linux/arm64, got '$SCAN_ALSO_PLATFORM'"
+[[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ONLY" != built ]] || die "SCAN_ONLY=built reads what was just built, which must be $PLATFORM, so SCAN_ALSO_PLATFORM does not apply"
 guard_disk "$MIN_FREE"
 log "Disk limits for this run: ${MIN_FREE} GiB free to start, ${FLOOR} GiB free to keep going. $(free_disk_gib) GiB free now."
+log "Reading each image for $PLATFORM${SCAN_ALSO_PLATFORM:+, and allowing a plain manifest of $SCAN_ALSO_PLATFORM}"
 cd "$ROOT"
 
 if [[ "$SCAN_ONLY" == built ]]; then
@@ -48,6 +59,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 OUT="${SCAN_OUTPUT_DIR:-$LOCAL_DIR/evidence-raw/scan-images-$(date -u +%Y%m%dT%H%M%SZ)}"
 mkdir -p "$OUT/images"
+printf '%s\n' "$PLATFORM" ${SCAN_ALSO_PLATFORM:+"$SCAN_ALSO_PLATFORM"} >"$OUT/platform.txt"
 RAW_LIST="$WORK/images"
 : >"$RAW_LIST"
 
@@ -149,7 +161,7 @@ scan_one() { # scan_one <image> <json>
   [[ "$1" != localhost:5001/* ]] || insecure=(--insecure)
   # shellcheck disable=SC2054  # the commas belong to the values
   trivy image --config "$WORK/trivy.yaml" --cache-dir "$LOCAL_DIR/trivy-cache" --skip-db-update \
-    --ignorefile "" --image-src remote --platform linux/arm64 --scanners vuln --parallel 2 \
+    --ignorefile "" --image-src remote --platform "$PLATFORM" --scanners vuln --parallel 2 \
     --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --list-all-pkgs=false --exit-code 0 \
     --format json --output "$2" --timeout "${SCAN_TIMEOUT:-30m}" --no-progress \
     ${insecure[@]+"${insecure[@]}"} "$1"

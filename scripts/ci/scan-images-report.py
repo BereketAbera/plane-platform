@@ -4,9 +4,10 @@
     scan-images-report.py <results directory>
     scan-images-report.py --selftest
 
-Reads inventory.tsv, not-scanned.txt and images/*.json from the directory, and writes summary.tsv and
-critical.tsv beside them. Exits 1 if an image we build has a CRITICAL finding with a fix available, or
-if any image was not scanned. See scan-images.sh for why the policy is that and no wider.
+Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and writes summary.tsv and
+critical.tsv beside them. Exits 1 if an image we build has a CRITICAL finding with a fix available, if any image
+was not scanned, or if any result is of a platform this scan was not for. See scan-images.sh for why the policy is
+that and no wider.
 """
 import csv
 import json
@@ -17,7 +18,8 @@ import tempfile
 
 OURS = re.compile(r"^(localhost:5001|ghcr\.io/[^/]+)/wayline/")
 SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
-SUMMARY_FIELDS = ["image", "sources", "ours", "scanned", "os", "os_end_of_life", "architecture"] + [
+NO_PLATFORM = "none"
+SUMMARY_FIELDS = ["image", "sources", "ours", "scanned", "os", "os_end_of_life", "architecture", "platform"] + [
     f"{severity.lower()}{suffix}" for severity in SEVERITIES for suffix in ("", "_fixable")
 ] + ["why_not_scanned"]
 
@@ -32,15 +34,18 @@ def summarize(image, sources, report, why_not_scanned):
     row = {field: 0 for field in SUMMARY_FIELDS}
     row.update(image=image, sources=sources, ours="yes" if OURS.match(image) else "no")
     if report is None:
-        row.update(scanned="no", os="", os_end_of_life="", architecture="", why_not_scanned=why_not_scanned or "no result")
+        row.update(scanned="no", os="", os_end_of_life="", architecture="", platform="", why_not_scanned=why_not_scanned or "no result")
         return row, []
     metadata = report.get("Metadata") or {}
     system = metadata.get("OS") or {}
+    config = metadata.get("ImageConfig") or {}
     row.update(
         scanned="yes",
         os=f"{system.get('Family', '')} {system.get('Name', '')}".strip() or "none",
         os_end_of_life="yes" if system.get("EOSL") else "no",
-        architecture=(metadata.get("ImageConfig") or {}).get("architecture", ""),
+        architecture=config.get("architecture", ""),
+        # The lockfiles row is a directory, which has no platform. An image always has one.
+        platform=NO_PLATFORM if report.get("ArtifactType") == "filesystem" else f"{config.get('os', '')}/{config.get('architecture', '')}",
         why_not_scanned="",
     )
     critical = []
@@ -86,6 +91,15 @@ def read_not_scanned(directory):
     return reasons
 
 
+def read_platforms(directory):
+    """What scan-images.sh asked trivy for, then any other platform it lets a plain manifest be."""
+    try:
+        with open(os.path.join(directory, "platform.txt"), encoding="utf-8") as handle:
+            return [line.strip() for line in handle if line.strip()]
+    except OSError:
+        return []
+
+
 def analyze(directory):
     reasons = read_not_scanned(directory)
     rows, critical = [], []
@@ -99,8 +113,17 @@ def analyze(directory):
     return rows, critical
 
 
-def policy_failures(rows, critical):
+def policy_failures(rows, critical, platforms):
     failures = [f"{row['image']} was not scanned: {row['why_not_scanned']}" for row in rows if row["scanned"] == "no"]
+    if not platforms:
+        failures.append("platform.txt names no platform, so nothing says what this scan was meant to read")
+    # trivy's --platform chooses a child of an index. On a plain manifest it does nothing: it exits 0 and scans whatever the
+    # manifest is, so without this a scan for the wrong architecture would read as a clean one.
+    failures += [
+        f"{row['image']} is {row['platform']}, and this scan is for {' or '.join(platforms)}. A digest dev runs under emulation on purpose can be allowed on a full scan with SCAN_ALSO_PLATFORM"
+        for row in rows
+        if platforms and row["scanned"] == "yes" and row["platform"] not in (NO_PLATFORM, *platforms)
+    ]
     failures += [
         f"{item['image']} is ours and has {item['id']} in {item['package']} {item['installed']}, fixed in {item['fixed_in']}"
         for item in critical
@@ -132,13 +155,16 @@ def table(rows):
     return lines
 
 
-def report_lines(rows, critical, failures):
+def report_lines(rows, critical, failures, platforms):
     scanned = [row for row in rows if row["scanned"] == "yes"]
     total = {severity: sum(row[severity.lower()] for row in scanned) for severity in SEVERITIES}
     ours = [row for row in scanned if row["ours"] == "yes"]
     lines = table(rows)
     lines.append("")
     lines.append(f"{len(scanned)} of {len(rows)} targets scanned, {len(ours)} of the scanned ones built here.")
+    if platforms:
+        also = f", and {' and '.join(platforms[1:])} allowed for a plain manifest" if platforms[1:] else ""
+        lines.append(f"Scanned for {platforms[0]}{also}.")
     lines.append("Findings across all images: " + ", ".join(f"{total[s]} {s}" for s in SEVERITIES) + ".")
     fixable_upstream = sorted({short(item["image"]) for item in critical if item["ours"] == "no" and item["fixed_in"]})
     if fixable_upstream:
@@ -162,8 +188,9 @@ def main(directory):
     rows, critical = analyze(directory)
     write_tsv(os.path.join(directory, "summary.tsv"), SUMMARY_FIELDS, rows)
     write_tsv(os.path.join(directory, "critical.tsv"), ["image", "ours", "id", "package", "installed", "fixed_in", "target"], critical)
-    failures = policy_failures(rows, critical)
-    lines = report_lines(rows, critical, failures)
+    platforms = read_platforms(directory)
+    failures = policy_failures(rows, critical, platforms)
+    lines = report_lines(rows, critical, failures, platforms)
     print("\n".join(lines))
     summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_file:
@@ -180,10 +207,13 @@ def selftest():
     ours_ghcr = "ghcr.io/owner/wayline/web@sha256:" + "b" * 64
     upstream = "docker.io/makeplane/plane-frontend:v1@sha256:" + "c" * 64
 
-    def run(images, not_scanned=()):
-        """images: {image: [vulnerabilities]}. Returns (exit code, summary rows)."""
+    def run(images, not_scanned=(), asked=("linux/arm64",), read_as=("linux", "arm64"), artifact_type="container_image"):
+        """images: {image: [vulnerabilities]}. asked goes in platform.txt, and read_as is what each result says it read. Returns (exit code, summary rows)."""
         with tempfile.TemporaryDirectory() as directory:
             os.mkdir(os.path.join(directory, "images"))
+            if asked is not None:
+                with open(os.path.join(directory, "platform.txt"), "w", encoding="utf-8") as handle:
+                    handle.write("".join(f"{platform}\n" for platform in asked))
             with open(os.path.join(directory, "inventory.tsv"), "w", encoding="utf-8") as inventory:
                 for number, (image, vulnerabilities) in enumerate(images.items()):
                     filename = f"{number}.json"
@@ -193,7 +223,8 @@ def selftest():
                             json.dump(
                                 {
                                     "ArtifactName": image,
-                                    "Metadata": {"OS": {"Family": "alpine", "Name": "3", "EOSL": True}, "ImageConfig": {"architecture": "arm64"}},
+                                    "ArtifactType": artifact_type,
+                                    "Metadata": {"OS": {"Family": "alpine", "Name": "3", "EOSL": True}, "ImageConfig": dict(zip(("os", "architecture"), read_as))},
                                     "Results": [{"Target": "t", "Vulnerabilities": vulnerabilities}],
                                 },
                                 handle,
@@ -222,6 +253,21 @@ def selftest():
     assert run({upstream: None})[0] == 1, "a missing result must fail"
     assert run({upstream: []}, not_scanned=[upstream])[0] == 1, "a stopped scan must fail"
     assert run({upstream: [], ours: [critical_fixed]})[0] == 1, "one bad image among good ones must fail"
+    # trivy exits 0 and reads what a plain manifest is, whatever --platform said. Measured on trivy 0.76.1.
+    amd64 = ("linux", "amd64")
+    assert run({ours: []}, read_as=amd64)[0] == 1, "a plain amd64 manifest in an arm64 scan must fail"
+    assert run({ours_ghcr: []}, asked=("linux/amd64",))[0] == 1, "a plain arm64 manifest in an amd64 scan must fail"
+    assert run({upstream: []}, read_as=amd64)[0] == 1, "another architecture must fail upstream too: the child read was not the one asked for"
+    code, rows = run({ours_ghcr: []}, asked=("linux/amd64",), read_as=amd64)
+    assert code == 0 and rows[0]["platform"] == "linux/amd64" and rows[0]["architecture"] == "amd64", "the architecture asked for passes"
+    assert run({ours: []}, asked=("linux/arm64", "linux/amd64"), read_as=amd64)[0] == 0, "a platform allowed on a full scan passes"
+    assert run({ours: []}, asked=("linux/arm64", "linux/amd64"), read_as=("linux", "riscv64"))[0] == 1, "a platform nobody allowed still fails"
+    assert run({ours: []}, read_as=("linux", ""))[0] == 1, "a result that names no architecture must fail"
+    assert run({ours: []}, read_as=("windows", "arm64"))[0] == 1, "another OS must fail"
+    assert run({ours: []}, asked=None)[0] == 1, "with nothing saying what was asked for, it must fail"
+    assert run({ours: []}, asked=())[0] == 1, "an empty platform.txt must fail"
+    assert run({"wayline-source-lockfiles": []}, read_as=("", ""), artifact_type="filesystem")[0] == 0, "a directory has no platform"
+    assert run({ours: []}, read_as=("", ""), artifact_type="container_image")[0] == 1, "an image with no platform is not a directory"
     print("selftest ok")
     return 0
 

@@ -12,6 +12,8 @@ else is allowed. It also fails if the image shares a layer with the base, other 
     flatten-config.py <built image>                     must name a digest
     flatten-config.py --base-config <file> <built image>    the base's config from a file, for a negative control
 
+Both images are read for --platform, or else PLATFORM, or else linux/arm64, and an image of another platform cannot be read.
+
 scripts/ci/build-images.sh runs this on the backend in its throwaway registry, before it publishes anything, and so does
 checks/smoke-images.sh on what was published. Exits 0 if nothing is dropped, 1 if something is, and 2 if an image cannot be read.
 """
@@ -24,7 +26,7 @@ import sys
 # A __pycache__ beside this file would make the source read as changed, and scripts/ci/build-images.sh would refuse it.
 sys.dont_write_bytecode = True
 
-from oci_read import EMPTY_LAYER, Image, Unreadable
+from oci_read import EMPTY_LAYER, Image, Unreadable, default_platform
 
 DOCKERFILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runtime", "Dockerfile.backend")
 
@@ -104,7 +106,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("image")
     parser.add_argument("--base-config", help="read the base's config from this JSON file, as a negative control")
-    parser.add_argument("--platform", default="linux/arm64")
+    parser.add_argument("--platform", default=default_platform(), help="default: PLATFORM, or else linux/arm64")
     args = parser.parse_args()
 
     base_ref = pinned_base()
@@ -114,6 +116,7 @@ def main():
     except (Unreadable, OSError) as err:
         print(f"COULD NOT READ: {err}")
         sys.exit(2)
+    print(f"read for {args.platform}")
     print(f"base  {base_ref}, config {base.config_digest}, read from {base.source}")
     print(f"built {args.image}, config {built.config_digest}")
 

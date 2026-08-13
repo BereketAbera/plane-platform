@@ -6,6 +6,11 @@ flatten-compare.py and flatten-config.py.
 
 A reference must name a digest. Docker Hub images are read through mirror.gcr.io first, as scripts/ci/scan-images.sh
 does, then Docker Hub. The digest makes any mirror safe.
+
+An image is read for one platform: each command's --platform, or else PLATFORM, with the default scripts/ci/build-images.sh
+has. An index gives its child for that platform. A plain manifest is one architecture, which only its config says, and a
+registry serves any digest it holds. So an image whose config says another platform is refused. Read anyway, it would pass
+every check and say nothing about the image that runs.
 """
 import gzip
 import hashlib
@@ -28,9 +33,15 @@ MANIFEST_TYPES = ", ".join(
         "application/vnd.docker.distribution.manifest.v2+json",
     ]
 )
+# The laptop's kind node. images.yml sets PLATFORM=linux/amd64, for the VPS.
+DEFAULT_PLATFORM = "linux/arm64"
 CHUNK = 1024 * 1024
 # The gzip of an empty tar. BuildKit adds it for an instruction that changes nothing, and it holds no entries.
 EMPTY_LAYER = "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1"
+
+
+def default_platform():
+    return os.environ.get("PLATFORM") or DEFAULT_PLATFORM
 
 
 class Unreadable(Exception):
@@ -193,10 +204,13 @@ def tar_stream(media_type, blob):
 
 
 class Image:
-    """One platform's manifest and config, from the first place that serves the digest."""
+    """One platform's manifest and config, from the first place that serves the digest. Fails if that is not what it is."""
 
-    def __init__(self, reference, platform="linux/arm64"):
+    def __init__(self, reference, platform=None):
         self.reference = reference
+        self.platform = platform or default_platform()
+        if not re.fullmatch(r"[a-z0-9]+/[a-z0-9]+", self.platform):
+            raise Unreadable(f"{self.platform} is not <os>/<architecture>, such as linux/amd64")
         hosts, digest = candidates(reference)
         data = None
         errors = []
@@ -214,10 +228,10 @@ class Image:
         manifest = json.loads(data)
         self.platform_manifest = None
         if "manifests" in manifest:
-            os_name, arch = platform.split("/")
+            os_name, arch = self.platform.split("/")
             matches = [m for m in manifest["manifests"] if m.get("platform", {}).get("os") == os_name and m.get("platform", {}).get("architecture") == arch]
             if len(matches) != 1:
-                raise Unreadable(f"{reference} has {len(matches)} manifests for {platform}")
+                raise Unreadable(f"{reference} has {len(matches)} manifests for {self.platform}")
             self.platform_manifest = matches[0]["digest"]
             manifest = json.loads(self.registry.verified_bytes(f"manifests/{self.platform_manifest}", self.platform_manifest, MANIFEST_TYPES))
         self.manifest = manifest
@@ -225,6 +239,9 @@ class Image:
         self.config_digest = manifest["config"]["digest"]
         self.config_bytes = self.registry.verified_bytes(f"blobs/{self.config_digest}", self.config_digest)
         self.config = json.loads(self.config_bytes)
+        found = f"{self.config.get('os')}/{self.config.get('architecture')}"
+        if found != self.platform:
+            raise Unreadable(f"{reference} is {found}, and this read is for {self.platform}. --platform or PLATFORM says which it should be")
 
     def read_layer(self, index, handler):
         """Calls handler(tar stream) on layer <index>, counted from 0, and returns the compressed size. Everything the

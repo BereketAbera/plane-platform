@@ -13,6 +13,9 @@ and every tar entry in every layer, in order, including files a later layer hide
     layer-check.py --report-only <image>...        information about images we do not publish: a hit does not fail
     layer-check.py --digests <file>                the gate on another digests file
 
+Each image is read for --platform, or else PLATFORM, or else linux/arm64. An index gives its child for that platform, and
+any image whose config says another platform cannot be read, which is exit 2. So production's child is the one walked.
+
 scripts/ci/build-images.sh runs it on each image in a throwaway registry before publishing anything, then again on what
 it published, before it records any digest. An image we deploy unmodified can only be changed upstream, so it is
 reported with --report-only and never gates a build. checks/layer-check-cases.py tests this file.
@@ -54,7 +57,7 @@ import zlib
 # A __pycache__ beside this file would make the source read as changed, and scripts/ci/build-images.sh would refuse it.
 sys.dont_write_bytecode = True
 
-from oci_read import CHUNK, Image, Unreadable, ZstdStream
+from oci_read import CHUNK, Image, Unreadable, ZstdStream, default_platform
 
 try:
     from compression import zstd  # Python 3.14
@@ -223,6 +226,8 @@ def check_image(reference, platform, needle):
     print(f"\n== {reference}\nread from {image.source}", flush=True)
     if image.platform_manifest:
         print(f"index, {platform} manifest {image.platform_manifest}", flush=True)
+    else:
+        print(f"plain manifest, {platform}", flush=True)
     found = 0
     incomplete = 0
     config = Search(needle)
@@ -267,7 +272,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("images", nargs="*")
     parser.add_argument("--digests", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".build", "digests.tsv"))
-    parser.add_argument("--platform", default="linux/arm64")
+    parser.add_argument("--platform", default=default_platform(), help="default: PLATFORM, or else linux/arm64")
     parser.add_argument("--needle", default=NEEDLE)
     parser.add_argument("--report-only", action="store_true", help="a hit is reported and does not fail: for images we do not publish")
     args = parser.parse_args()
