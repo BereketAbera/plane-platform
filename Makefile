@@ -98,7 +98,7 @@ rotate: ## Rotate a database credential through Infisical: make rotate ENV=dev [
 	@./scripts/rotate.sh "$(ENV)"
 
 # ---- delivery -------------------------------------------------------------------------------
-.PHONY: render images promote rollback gitops-publish ci
+.PHONY: render images promote rollback gitops-publish ci record-dev-evidence promote-prod
 render: ## Re-render Plane manifests from helm/plane into gitops/environments
 	@./scripts/render.sh
 	@./scripts/render.sh --env prod
@@ -119,12 +119,18 @@ promote: ## Promote images: make promote ENV=dev [IMAGE=web DIGEST=sha256:... [R
 rollback: ## Revert the last promotion for an environment: make rollback ENV=dev [CONFIRM=yes] [SKIP_BACKUP=yes] [ROLLBACK_DUMP_TIMEOUT=<seconds>]
 	@./scripts/rollback.sh "$(ENV)"
 
+record-dev-evidence: ## Sign that plane-dev ran this exact digest set and its smoke passed, after make test-e2e ENV=dev and make publish-evidence. Needs the laptop's key, the cluster, Docker able to read GHCR, and gh
+	@./scripts/record-dev-evidence.sh
+
+promote-prod: ## What promote-plane-prod.yml does, in this checkout and with no commit: make promote-prod SET_HASH=<hash>. Reaches no cluster
+	@./scripts/ci/promote-prod.sh "$(SET_HASH)"
+
 gitops-publish: ## Push the current main branch to the local Git remote that Argo CD reads. A prod-sim digest needs dev Synced and Healthy on it: [OVERRIDE_DEV_CHECK="<reason>"] goes ahead anyway and logs why
 	@./scripts/gitops-publish.sh
 
 ci: ## Run every CI check locally, the same scripts as GitHub Actions. Runs them all, then fails if any did
 	@status=0; \
-	for check in lint validate-manifests ownership security; do \
+	for check in lint validate-manifests ownership security test-prod-gate check-capacity; do \
 	  ./scripts/ci/$$check.sh || status=1; \
 	done; \
 	exit $$status
