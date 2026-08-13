@@ -1,0 +1,42 @@
+# Ships the IngressRoute CRDs that the Plane route needs, and the only hostPort on the node. Finalizer kept: nothing here is
+# irreplaceable, so removing this file from Git cleanly removes the app.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-9"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  sources:
+    - repoURL: https://traefik.github.io/charts
+      chart: traefik
+      targetRevision: 42.3.0
+      helm:
+        valueFiles:
+          - $values/gitops/clusters/plane-prod/values/traefik.yaml
+    - repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+      targetRevision: deploy/plane-prod
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

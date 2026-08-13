@@ -1,0 +1,5 @@
+apiVersion: v2
+name: plane-prod-bootstrap
+description: AppProjects and the root Application for hosted production. Installed only by Terraform.
+type: application
+version: 0.1.0

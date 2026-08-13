@@ -1,0 +1,34 @@
+# The static PV on /srv/wayline/backups, its PVCs and the nightly CronJobs. No finalizer: the backups outlive any Application,
+# and these objects are the only path to them. Every object names its own namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backup
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  source:
+    repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+    targetRevision: deploy/plane-prod
+    path: gitops/clusters/plane-prod/platform/backup
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
