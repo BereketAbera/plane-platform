@@ -1,0 +1,127 @@
+# Who may use this VPS, in one place. Terraform reads quotas and limit_ranges from here and applies them, and scripts/ci/check-capacity.sh
+# fails CI unless every quota's sum, with the system's share and Frameflow's, still fits the node.
+#
+# Quotas cap rather than reserve, so Frameflow's reservation exists only as what the caps on everything else leave free. It is not
+# deployed. Its namespace has a quota of no pods, so deploying it takes a pull request, and that pull request has to find the room here.
+#
+# Sizes are starting values, from what the local cluster measured and estimates for what it does not run. Measure on the node and
+# change them here.
+node:
+  # 12 vCPU, as Contabo sells it. Memory is what the OS reports (MemTotal), not the plan's 48 GB. Disk is 409600 MB in Contabo's record.
+  cpu: "12"
+  memory: 47Gi
+  disk: 400Gi
+system:
+  # kubeReserved + systemReserved in kubelet.conf, which check-capacity.sh compares. It covers K3s itself and the few pods K3s and metrics-server
+  # keep in kube-system, which has no quota because this platform does not own it.
+  cpu: 1500m
+  # The same two, plus the memory the kubelet's eviction threshold keeps free.
+  memory: 5Gi
+  # The OS, K3s's data and every image.
+  disk: 40Gi
+frameflow:
+  memory: 18Gi
+  cpu_requests: "6"
+  cpu_limits: "8"
+  temp_disk: 100Gi
+# Per namespace: Terraform makes a ResourceQuota of each. limits.memory counts what every pod here may reach at once, plus the room
+# one rollout needs: a Deployment surges a new pod before removing the old, so a quota with no room for the largest would stop that
+# rollout for good. Several surging together go one after another, and that is the price of Frameflow's share.
+#
+# requests.cpu and requests.memory are also what the scheduler holds back, so they must fit. requests.storage caps claims,
+# which local-path does not enforce. Only the disk alerts bound what a volume really holds, and no ephemeral-storage quota is set: a
+# LimitRange default would evict the nightly backup, whose scratch space runs to 30Gi by design.
+quotas:
+  # 12624Mi steady, per the sizing table, and 2064Mi of room: the api's surge, or a backup or migrator with a smaller one.
+  plane-prod:
+    requests.cpu: 3300m
+    requests.memory: 7Gi
+    limits.memory: 14688Mi
+    pods: "32"
+    persistentvolumeclaims: "6"
+    # Postgres 30, Valkey 2, RabbitMQ 4, Silo 64, and the backups PVC's 40.
+    requests.storage: 140Gi
+  # 1792Mi steady, and the server's surge or the Redis secret hook.
+  argocd:
+    requests.cpu: 250m
+    requests.memory: 512Mi
+    limits.memory: 1984Mi
+    pods: "8"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
+  # One pod. It cannot surge, because of its hostPorts, but the new pod is created while the old one is still terminating.
+  traefik:
+    requests.cpu: 100m
+    requests.memory: 192Mi
+    limits.memory: 512Mi
+    pods: "3"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
+  # 320Mi steady, and the controller's surge, or the startup check.
+  cert-manager:
+    requests.cpu: 50m
+    requests.memory: 192Mi
+    limits.memory: 448Mi
+    pods: "6"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
+  # 4288Mi steady, with Grafana and Alloy on Recreate, and the operator's surge.
+  monitoring:
+    requests.cpu: 300m
+    requests.memory: 1792Mi
+    limits.memory: 4416Mi
+    pods: "14"
+    persistentvolumeclaims: "3"
+    # Prometheus 16, Loki 10, Alertmanager 1.
+    requests.storage: 27Gi
+  monitoring-agents:
+    requests.cpu: 20m
+    requests.memory: 48Mi
+    limits.memory: 128Mi
+    pods: "2"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
+  # 1376Mi steady, and either the server's surge or the nightly backup.
+  infisical:
+    requests.cpu: 300m
+    requests.memory: 1664Mi
+    limits.memory: 2400Mi
+    pods: "6"
+    persistentvolumeclaims: "3"
+    # Postgres 2, Redis 1, and the backups PVC's 10.
+    requests.storage: 13Gi
+  frameflow:
+    pods: "0"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
+# A quota on limits.memory or requests.cpu rejects a pod with no such value. These defaults make such a pod admissible and visibly small,
+# instead of failing a sync with a quota error. max is the largest container the sizing table allows here.
+limit_ranges:
+  plane-prod:
+    default: { memory: 256Mi }
+    default_request: { cpu: 10m, memory: 64Mi }
+    max: { memory: 4Gi }
+  argocd:
+    default: { memory: 256Mi }
+    default_request: { cpu: 10m, memory: 64Mi }
+    max: { memory: 1Gi }
+  traefik:
+    default: { memory: 256Mi }
+    default_request: { cpu: 10m, memory: 64Mi }
+    max: { memory: 1Gi }
+  cert-manager:
+    default: { memory: 128Mi }
+    default_request: { cpu: 10m, memory: 32Mi }
+    max: { memory: 1Gi }
+  monitoring:
+    default: { memory: 256Mi }
+    default_request: { cpu: 10m, memory: 64Mi }
+    max: { memory: 2Gi }
+  monitoring-agents:
+    default: { memory: 64Mi }
+    default_request: { cpu: 10m, memory: 24Mi }
+    max: { memory: 1Gi }
+  infisical:
+    default: { memory: 256Mi }
+    default_request: { cpu: 10m, memory: 64Mi }
+    max: { memory: 1Gi }
