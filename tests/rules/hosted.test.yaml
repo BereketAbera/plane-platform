@@ -1,0 +1,279 @@
+# The rules only hosted production has, in gitops/clusters/plane-prod/platform/monitoring-extras/shared. Run by promtool from
+# scripts/ci/validate-manifests.sh, which writes each PrometheusRule's spec beside a copy of this file as rules-<name>.yaml.
+#
+# Each number here is DESIGN's: disk 20% and 10%, certificate 21 days, served certificate 14 days, backup 26 hours.
+rule_files:
+  - rules-hosted.yaml
+  - rules-hosted-plane.yaml
+evaluation_interval: 30s
+tests:
+  - name: disk warns under 20 percent and is critical under 10, each only after holding
+    interval: 1m
+    input_series:
+      - series: 'node_filesystem_size_bytes{mountpoint="/",instance="n",job="node-exporter",fstype="ext4",device="/dev/sda1"}'
+        values: '100x40'
+      # 25 percent free for 5m, then 15 for 15m, then 8.
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",instance="n",job="node-exporter",fstype="ext4",device="/dev/sda1"}'
+        values: '25x4 15x14 8x20'
+    alert_rule_test:
+      - { eval_time: 4m, alertname: NodeDiskLow, exp_alerts: [] }
+      - { eval_time: 10m, alertname: NodeDiskLow, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: NodeDiskLow
+        exp_alerts:
+          - exp_labels: { mountpoint: /, instance: n, job: node-exporter, fstype: ext4, device: /dev/sda1, severity: warning, component: node }
+            exp_annotations: { summary: "The node's disk has 15% free" }
+      - { eval_time: 16m, alertname: NodeDiskCritical, exp_alerts: [] }
+      - { eval_time: 21m, alertname: NodeDiskCritical, exp_alerts: [] }
+      - eval_time: 26m
+        alertname: NodeDiskCritical
+        exp_alerts:
+          - exp_labels: { mountpoint: /, instance: n, job: node-exporter, fstype: ext4, device: /dev/sda1, severity: critical, component: node }
+            exp_annotations: { summary: "The node's disk has 8% free, and at 10% the kubelet evicts pods" }
+      - { eval_time: 26m, alertname: NodeDiskNotRead, exp_alerts: [] }
+  - name: another filesystem running out says nothing, because only the root filesystem is watched
+    interval: 1m
+    input_series:
+      - series: 'node_filesystem_size_bytes{mountpoint="/boot",instance="n"}'
+        values: '100x40'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/boot",instance="n"}'
+        values: '1x40'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",instance="n"}'
+        values: '100x40'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",instance="n"}'
+        values: '50x40'
+    alert_rule_test:
+      - { eval_time: 30m, alertname: NodeDiskLow, exp_alerts: [] }
+      - { eval_time: 30m, alertname: NodeDiskCritical, exp_alerts: [] }
+  - name: with no reading of the disk at all, the rule that says so fires
+    interval: 1m
+    input_series:
+      - series: 'up{job="node-exporter"}'
+        values: '1x40'
+    alert_rule_test:
+      - { eval_time: 10m, alertname: NodeDiskNotRead, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: NodeDiskNotRead
+        exp_alerts:
+          - exp_labels: { mountpoint: /, severity: warning, component: node }
+            exp_annotations: { summary: "Nothing reports the root filesystem, so the disk alerts cannot fire" }
+  - name: a certificate with 30 days left is quiet, and one with under 21 is not
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_expiration_timestamp_seconds{namespace="plane-prod",name="healthy"}'
+        values: '2592000x10'
+      - series: 'certmanager_certificate_expiration_timestamp_seconds{namespace="plane-prod",name="renewal-failing"}'
+        values: '1814400x10'
+    alert_rule_test:
+      # renewal-failing has exactly 21 days at the start, so it fires only once the time passes it.
+      - { eval_time: 0m, alertname: CertificateExpiringSoon, exp_alerts: [] }
+      - eval_time: 1m
+        alertname: CertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, name: renewal-failing, severity: warning, component: certificate }
+            exp_annotations: { summary: "Certificate plane-prod/renewal-failing expires in 20d 23h 59m 0s, so renewal is failing" }
+  - name: a certificate that stays not Ready fires, while one being issued has 30 minutes
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="wayline-tls",condition="False"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="wayline-tls",condition="True"}'
+        values: '0x40'
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="other",condition="False"}'
+        values: '0x40'
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="other",condition="True"}'
+        values: '1x40'
+    alert_rule_test:
+      - { eval_time: 29m, alertname: CertificateNotReady, exp_alerts: [] }
+      - eval_time: 31m
+        alertname: CertificateNotReady
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, name: wayline-tls, condition: "False", severity: critical, component: certificate }
+            exp_annotations: { summary: "Certificate plane-prod/wayline-tls has not been Ready for 30m" }
+      - { eval_time: 31m, alertname: CertificateNotWatched, exp_alerts: [] }
+  - name: cert-manager reporting nothing for the certificate fires, because the rules above would stay silent
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="another",condition="True"}'
+        values: '1x40'
+    alert_rule_test:
+      - { eval_time: 29m, alertname: CertificateNotWatched, exp_alerts: [] }
+      - eval_time: 31m
+        alertname: CertificateNotWatched
+        exp_alerts:
+          - exp_labels: { name: wayline-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for wayline-tls, so the certificate alerts cannot fire" }
+  - name: the served certificate fires under 14 days, on the soonest of the probes in a namespace
+    interval: 1m
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="plane-prod",instance="https://wayline.bereket.dev/",probe="frontend"}'
+        values: '1209660x10'
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="plane-prod",instance="https://wayline.bereket.dev/live/health",probe="live"}'
+        values: '2592000x10'
+    alert_rule_test:
+      - { eval_time: 0m, alertname: ServedCertificateExpiringSoon, exp_alerts: [] }
+      - eval_time: 2m
+        alertname: ServedCertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, severity: critical, component: certificate }
+            exp_annotations: { summary: "The certificate served for plane-prod expires in 13d 23h 59m 0s" }
+  - name: a backup older than 26 hours fires, in either namespace, and other CronJobs do not count
+    interval: 1h
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
+        values: '0x30'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="infisical",cronjob="plane-backup"}'
+        values: '0x30'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="something-else"}'
+        values: '0x30'
+    alert_rule_test:
+      - { eval_time: 26h, alertname: BackupTooOld, exp_alerts: [] }
+      - eval_time: 27h
+        alertname: BackupTooOld
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "plane-prod/plane-backup last succeeded 1d 3h 0m 0s ago" }
+          - exp_labels: { namespace: infisical, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "infisical/plane-backup last succeeded 1d 3h 0m 0s ago" }
+      - { eval_time: 27h, alertname: BackupNeverSucceeded, exp_alerts: [] }
+  - name: a backup that has never succeeded fires after 26 hours, once for each namespace
+    interval: 5m
+    input_series:
+      - series: 'up{job="kube-state-metrics"}'
+        values: '1x400'
+      # This namespace's has worked, so only the other fires.
+      - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
+        values: '0x400'
+    alert_rule_test:
+      - { eval_time: 25h, alertname: BackupNeverSucceeded, exp_alerts: [] }
+      - eval_time: 27h
+        alertname: BackupNeverSucceeded
+        exp_alerts:
+          - exp_labels: { namespace: infisical, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "No backup in infisical has succeeded, or its CronJob is gone" }
+  - name: with no CronJob reporting at all, both namespaces fire
+    interval: 5m
+    input_series:
+      - series: 'up{job="kube-state-metrics"}'
+        values: '1x400'
+    alert_rule_test:
+      - eval_time: 27h
+        alertname: BackupNeverSucceeded
+        exp_alerts:
+          - exp_labels: { namespace: infisical, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "No backup in infisical has succeeded, or its CronJob is gone" }
+          - exp_labels: { namespace: plane-prod, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "No backup in plane-prod has succeeded, or its CronJob is gone" }
+  - name: a connection that policy should refuse succeeding fires at once, and refused is quiet
+    interval: 30s
+    input_series:
+      - series: 'probe_success{namespace="monitoring",probe="denied-prometheus",instance="kps-prometheus.monitoring.svc.cluster.local:9090",job="denied-connection"}'
+        values: '0x10 1x10'
+    alert_rule_test:
+      - { eval_time: 5m, alertname: NetworkPolicyNotEnforced, exp_alerts: [] }
+      - eval_time: 5m30s
+        alertname: NetworkPolicyNotEnforced
+        exp_alerts:
+          - exp_labels: { namespace: monitoring, probe: denied-prometheus, instance: "kps-prometheus.monitoring.svc.cluster.local:9090", job: denied-connection, severity: critical, component: network }
+            exp_annotations: { summary: "A connection every NetworkPolicy forbids just succeeded, so NetworkPolicies are not being enforced" }
+      - { eval_time: 5m30s, alertname: NetworkPolicyNotTested, exp_alerts: [] }
+  - name: with no denied-connection probe running, the rule that says so fires
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="plane-prod",probe="live"}'
+        values: '1x30'
+    alert_rule_test:
+      - { eval_time: 14m, alertname: NetworkPolicyNotTested, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: NetworkPolicyNotTested
+        exp_alerts:
+          - exp_labels: { probe: denied-prometheus, severity: warning, component: network }
+            exp_annotations: { summary: "The denied-connection probe is not running, so NetworkPolicyNotEnforced cannot fire" }
+  - name: a reboot required fires after an hour, and no reading of it fires too
+    interval: 1m
+    input_series:
+      - series: 'node_reboot_required{instance="n"}'
+        values: '0x60 1x90'
+    alert_rule_test:
+      - { eval_time: 50m, alertname: NodeRebootRequired, exp_alerts: [] }
+      - { eval_time: 1h50m, alertname: NodeRebootRequired, exp_alerts: [] }
+      - eval_time: 2h10m
+        alertname: NodeRebootRequired
+        exp_alerts:
+          - exp_labels: { instance: n, severity: warning, component: node }
+            exp_annotations: { summary: "An upgrade on the node needs a reboot, and nothing here will do it unasked" }
+      - { eval_time: 2h10m, alertname: NodeRebootNotWatched, exp_alerts: [] }
+  - name: nothing reporting whether a reboot is required fires after an hour
+    interval: 10m
+    input_series:
+      - series: 'up{job="node-exporter"}'
+        values: '1x10'
+    alert_rule_test:
+      - { eval_time: 50m, alertname: NodeRebootNotWatched, exp_alerts: [] }
+      - eval_time: 1h10m
+        alertname: NodeRebootNotWatched
+        exp_alerts:
+          - exp_labels: { severity: warning, component: node }
+            exp_annotations: { summary: "Nothing reports whether the node needs a reboot, so NodeRebootRequired cannot fire" }
+  - name: before the first promotion the probes and Valkey fail and say nothing, because Plane is not there yet
+    interval: 30s
+    input_series:
+      - series: 'probe_success{namespace="plane-prod",probe="api-instance",instance="i"}'
+        values: '0x20'
+      - series: 'probe_success{namespace="plane-prod",probe="api-db",instance="i"}'
+        values: '0x20'
+      - series: 'probe_success{namespace="plane-prod",probe="live",instance="i"}'
+        values: '0x20'
+      - series: 'redis_up{namespace="plane-prod"}'
+        values: '0x20'
+    alert_rule_test:
+      - { eval_time: 9m, alertname: PlaneApiDown, exp_alerts: [] }
+      - { eval_time: 9m, alertname: PlaneApiDatabaseProbeFailing, exp_alerts: [] }
+      - { eval_time: 9m, alertname: PlaneFrontendDown, exp_alerts: [] }
+      - { eval_time: 9m, alertname: PlaneValkeyDown, exp_alerts: [] }
+  - name: once the Application exists the same failures fire, and a short gap in Argo CD's metrics does not resolve them
+    interval: 30s
+    input_series:
+      - series: 'probe_success{namespace="plane-prod",probe="api-instance",instance="i"}'
+        values: '0x60'
+      - series: 'probe_success{namespace="plane-prod",probe="live",instance="i"}'
+        values: '0x60'
+      - series: 'redis_up{namespace="plane-prod"}'
+        values: '0x60'
+      # Argo CD's controller restarts for 5 minutes at 10m. Past the 5 minute staleness, only the rule's own window holds it.
+      - series: 'argocd_app_info{name="plane-prod",namespace="argocd",sync_status="Synced"}'
+        values: '1x20 _x10 1x30'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: PlaneApiDown
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, probe: api-instance, instance: i, severity: critical, component: api }
+            exp_annotations:
+              summary: Plane API unreachable in plane-prod
+              description: Blackbox probe of /api/instances/ fails. That route is cached in Valkey, so it says nothing about Postgres; see PlaneApiDatabaseProbeFailing.
+      - eval_time: 3m
+        alertname: PlaneFrontendDown
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, probe: live, instance: i, severity: warning, component: frontend }
+            exp_annotations: { summary: "i is failing in plane-prod" }
+      - eval_time: 2m
+        alertname: PlaneValkeyDown
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, severity: critical, component: valkey }
+            exp_annotations: { summary: "Valkey is down in plane-prod" }
+      - eval_time: 14m
+        alertname: PlaneApiDown
+        exp_alerts:
+          - exp_labels: { namespace: plane-prod, probe: api-instance, instance: i, severity: critical, component: api }
+            exp_annotations:
+              summary: Plane API unreachable in plane-prod
+              description: Blackbox probe of /api/instances/ fails. That route is cached in Valkey, so it says nothing about Postgres; see PlaneApiDatabaseProbeFailing.
+  - name: the recording rule reads 1 only for this Application
+    interval: 1m
+    input_series:
+      - series: 'argocd_app_info{name="traefik",namespace="argocd"}'
+        values: '1x20'
+    promql_expr_test:
+      - expr: wayline:plane_application:present
+        eval_time: 10m
+        exp_samples: []

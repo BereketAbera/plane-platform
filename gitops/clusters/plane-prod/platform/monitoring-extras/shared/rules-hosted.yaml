@@ -1,0 +1,127 @@
+# What this cluster needs and the local one cannot have: a real disk, a public certificate, nightly backups, a reboot to take, and a
+# policy engine to doubt. tests/rules/hosted.test.yaml holds each rule to its numbers.
+#
+# A rule that reads a metric nobody produces is silent for good, so each group that depends on one also alerts on its absence.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hosted
+spec:
+  groups:
+    - name: hosted.state
+      interval: 30s
+      rules:
+        # 1 once the first promotion has added the Application, and nothing before. It holds through a controller restart, because an
+        # alert gated on this must not resolve just because Argo CD's metrics stopped for a moment.
+        - record: wayline:plane_application:present
+          expr: max(max_over_time(argocd_app_info{name="plane-prod"}[15m]))
+    # One filesystem holds the system, K3s's images, every volume and the backups, and local-path enforces no PVC size, so this is
+    # the only thing that bounds them. The kubelet starts evicting at 10% free (infrastructure/hosted/plane-prod/kubelet.conf).
+    - name: hosted.disk
+      interval: 30s
+      rules:
+        - alert: NodeDiskLow
+          expr: |
+            node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.20
+          for: 10m
+          labels: { severity: warning, component: node }
+          annotations:
+            summary: The node's disk has {{ $value | humanizePercentage }} free
+        - alert: NodeDiskCritical
+          expr: |
+            node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.10
+          for: 5m
+          labels: { severity: critical, component: node }
+          annotations:
+            summary: The node's disk has {{ $value | humanizePercentage }} free, and at 10% the kubelet evicts pods
+        - alert: NodeDiskNotRead
+          expr: absent(node_filesystem_avail_bytes{mountpoint="/"})
+          for: 15m
+          labels: { severity: warning, component: node }
+          annotations:
+            summary: Nothing reports the root filesystem, so the disk alerts cannot fire
+    # cert-manager renews at two thirds of the lifetime, so a 90 day certificate has 30 days left at renewal and this means renewal has
+    # been failing for over a week. Let's Encrypt moves to 64 days in February 2027, when renewal comes at 21 days and this
+    # leaves no margin, and to 45 days in February 2028, when it would always fire. Lower it before each.
+    - name: hosted.certificates
+      interval: 30s
+      rules:
+        - alert: CertificateExpiringSoon
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 21 * 86400
+          labels: { severity: warning, component: certificate }
+          annotations:
+            summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}, so renewal is failing
+        # An issue in progress reads False, and the first one can wait on the firewall, hence for:.
+        - alert: CertificateNotReady
+          expr: certmanager_certificate_ready_status{condition="False"} == 1
+          for: 30m
+          labels: { severity: critical, component: certificate }
+          annotations:
+            summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} has not been Ready for 30m
+        # What a browser gets, not what cert-manager thinks it issued. A Secret Traefik failed to reload shows only here.
+        - alert: ServedCertificateExpiringSoon
+          expr: min by (namespace) (probe_ssl_earliest_cert_expiry) - time() < 14 * 86400
+          labels: { severity: critical, component: certificate }
+          annotations:
+            summary: The certificate served for {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}
+        - alert: CertificateNotWatched
+          expr: absent(certmanager_certificate_ready_status{name="wayline-tls"})
+          for: 30m
+          labels: { severity: warning, component: certificate }
+          annotations:
+            summary: cert-manager reports nothing for wayline-tls, so the certificate alerts cannot fire
+    # The metric appears only after a first success, so absent also covers a CronJob that has never worked, and for: gives the first
+    # nightly run time to happen. PlaneBackupFailed sees only a Job that ran and failed, and misses one that never runs.
+    - name: hosted.backups
+      interval: 30s
+      rules:
+        - alert: BackupTooOld
+          expr: time() - kube_cronjob_status_last_successful_time{namespace=~"plane-prod|infisical",cronjob="plane-backup"} > 26 * 3600
+          labels: { severity: critical, component: backup }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.cronjob }} last succeeded {{ $value | humanizeDuration }} ago"
+        # Before the first promotion Plane's CronJob succeeds with nothing to dump, so this clock needs no gate.
+        - alert: BackupNeverSucceeded
+          expr: absent(kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"})
+          for: 26h
+          labels: { severity: critical, component: backup, namespace: plane-prod }
+          annotations:
+            summary: No backup in plane-prod has succeeded, or its CronJob is gone
+        - alert: BackupNeverSucceeded
+          expr: absent(kube_cronjob_status_last_successful_time{namespace="infisical",cronjob="plane-backup"})
+          for: 26h
+          labels: { severity: critical, component: backup, namespace: infisical }
+          annotations:
+            summary: No backup in infisical has succeeded, or its CronJob is gone
+    - name: hosted.network
+      interval: 30s
+      rules:
+        # blackbox-exporter connected to a port its policy refuses. See shared/probes.yaml. Everything else about this cluster's
+        # isolation rests on what this checks, so it is critical at once: a success is never a flake.
+        - alert: NetworkPolicyNotEnforced
+          expr: probe_success{probe="denied-prometheus"} == 1
+          labels: { severity: critical, component: network }
+          annotations:
+            summary: A connection every NetworkPolicy forbids just succeeded, so NetworkPolicies are not being enforced
+        - alert: NetworkPolicyNotTested
+          expr: absent(probe_success{probe="denied-prometheus"})
+          for: 15m
+          labels: { severity: warning, component: network }
+          annotations:
+            summary: The denied-connection probe is not running, so NetworkPolicyNotEnforced cannot fire
+    # Unattended upgrades install but do not reboot, by choice. A timer on the node writes this into node-exporter's textfile directory.
+    - name: hosted.node
+      interval: 30s
+      rules:
+        - alert: NodeRebootRequired
+          expr: node_reboot_required == 1
+          for: 1h
+          labels: { severity: warning, component: node }
+          annotations:
+            summary: An upgrade on the node needs a reboot, and nothing here will do it unasked
+        - alert: NodeRebootNotWatched
+          expr: absent(node_reboot_required)
+          for: 1h
+          labels: { severity: warning, component: node }
+          annotations:
+            summary: Nothing reports whether the node needs a reboot, so NodeRebootRequired cannot fire

@@ -1,0 +1,21 @@
+# Nothing about a pod's policy shows in its own status, and kube-router can stop enforcing with only a warning in its log. So this
+# tries a connection the policies forbid, all the time. blackbox-exporter has no egress to Prometheus, and Prometheus admits only
+# Grafana on 9090, so probe_success stays 0. If it reads 1, NetworkPolicy is not being enforced, and NetworkPolicyNotEnforced fires.
+# The target is the Prometheus that evaluates that rule, so it is always up when the rule runs.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: denied-prometheus
+spec:
+  jobName: denied-connection
+  interval: 30s
+  scrapeTimeout: 10s
+  module: tcp_denied
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - kps-prometheus.monitoring.svc.cluster.local:9090
+      labels: { probe: denied-prometheus }

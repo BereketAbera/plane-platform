@@ -1,0 +1,591 @@
+{
+ "uid": "wayline-deployments",
+ "title": "Deployments and rollbacks",
+ "tags": [
+  "wayline",
+  "plane"
+ ],
+ "schemaVersion": 41,
+ "version": 1,
+ "editable": false,
+ "graphTooltip": 1,
+ "timezone": "utc",
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "namespace",
+    "label": "Environment",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "prometheus"
+    },
+    "refresh": 1,
+    "query": {
+     "query": "label_values(kube_pod_info{namespace=~\"plane-.*\"}, namespace)",
+     "refId": "ns"
+    },
+    "definition": "label_values(kube_pod_info{namespace=~\"plane-.*\"}, namespace)",
+    "current": {
+     "text": "plane-prod",
+     "value": "plane-prod"
+    },
+    "includeAll": false,
+    "multi": false,
+    "sort": 1
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "row",
+   "title": "Argo CD",
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "table",
+   "title": "Application state",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 1,
+    "w": 12,
+    "h": 9
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "filterable": true,
+      "align": "auto"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "targets": [
+    {
+     "expr": "argocd_app_info",
+     "legendFormat": "__auto",
+     "range": false,
+     "instant": true,
+     "format": "table",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "All Applications. Argo CD exposes no metric with the Git revision, so read the revision history with 'argocd app history'.",
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "Value": true,
+       "__name__": true,
+       "container": true,
+       "endpoint": true,
+       "instance": true,
+       "job": true,
+       "namespace": true,
+       "pod": true,
+       "service": true,
+       "repo": true,
+       "dest_server": true,
+       "project": true,
+       "exported_namespace": true,
+       "hydrator_status": true
+      },
+      "indexByName": {
+       "name": 0,
+       "sync_status": 1,
+       "health_status": 2,
+       "operation": 3,
+       "autosync_enabled": 4,
+       "dest_namespace": 5
+      },
+      "renameByName": {
+       "name": "Application",
+       "sync_status": "Sync",
+       "health_status": "Health",
+       "operation": "Operation",
+       "autosync_enabled": "Auto-sync",
+       "dest_namespace": "Destination"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "type": "table",
+   "title": "Sync history in range",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 1,
+    "w": 12,
+    "h": 9
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "filterable": true,
+      "align": "auto"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "sortBy": [
+     {
+      "displayName": "Syncs in range",
+      "desc": true
+     }
+    ]
+   },
+   "targets": [
+    {
+     "expr": "sum by (name, phase) (argocd_app_sync_total - (argocd_app_sync_total offset $__range or argocd_app_sync_total * 0)) > 0",
+     "legendFormat": "__auto",
+     "range": false,
+     "instant": true,
+     "format": "table",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "Completed sync operations by outcome over the selected time range, counted since the application controller last started. A subtraction, because increase() reads a counter's first value as zero and would hide each Application's first sync. A failing sync retries without limit and never completes, so it is not counted here: see Syncs still open.",
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "renameByName": {
+       "name": "Application",
+       "phase": "Outcome",
+       "Value": "Syncs in range"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "type": "timeseries",
+   "title": "Syncs for this environment",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 10,
+    "w": 12,
+    "h": 7
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "drawStyle": "bars",
+      "lineWidth": 2,
+      "fillOpacity": 60,
+      "showPoints": "never",
+      "spanNulls": false,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    },
+    "legend": {
+     "showLegend": true,
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    }
+   },
+   "targets": [
+    {
+     "expr": "sum by (phase) (increase(argocd_app_sync_total{name=\"$namespace\"}[5m]))",
+     "legendFormat": "{{phase}}",
+     "range": true,
+     "instant": false,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "Completed operations only. argocd_app_sync_total has no dest_namespace label, so this matches on Application name, which equals the namespace."
+  },
+  {
+   "id": 11,
+   "type": "state-timeline",
+   "title": "Syncs still open",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 10,
+    "w": 12,
+    "h": 7
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "orange"
+     },
+     "custom": {
+      "lineWidth": 0,
+      "fillOpacity": 80
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showValue": "never",
+    "mergeValues": true,
+    "rowHeight": 0.7,
+    "legend": {
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "targets": [
+    {
+     "expr": "max by (name) (argocd_app_info{operation=\"sync\"})",
+     "legendFormat": "{{name}}",
+     "range": true,
+     "instant": false,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "One row per Application while it has a sync operation open. Every Application retries without limit, so a failing sync goes back to Running instead of Failed and its row stays on. A few minutes is a normal sync, and 15 minutes fires ArgoSyncFailed."
+  },
+  {
+   "id": 5,
+   "type": "row",
+   "title": "Image digests",
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 17,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "id": 6,
+   "type": "state-timeline",
+   "title": "Which digest ran when",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 18,
+    "w": 24,
+    "h": 10
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "blue"
+     },
+     "custom": {
+      "lineWidth": 0,
+      "fillOpacity": 80
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showValue": "never",
+    "mergeValues": true,
+    "rowHeight": 0.7,
+    "legend": {
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "targets": [
+    {
+     "expr": "count by (container, digest) (label_replace(kube_pod_container_info{namespace=\"$namespace\",container=~\"plane-.*\",image_id!=\"\"}, \"digest\", \"$1\", \"image_id\", \".*sha256:([a-f0-9]{12}).*\"))",
+     "legendFormat": "{{container}} {{digest}}",
+     "range": true,
+     "instant": false,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "One row per container and digest. A new row starting while an old one stops is a rollout; an earlier digest coming back is a rollback. A rollback with no image change shows only as a generation bump below."
+  },
+  {
+   "id": 7,
+   "type": "table",
+   "title": "Running images",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 28,
+    "w": 24,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "filterable": true,
+      "align": "auto"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "targets": [
+    {
+     "expr": "count by (container, image_spec, image_id) (kube_pod_container_info{namespace=\"$namespace\"})",
+     "legendFormat": "__auto",
+     "range": false,
+     "instant": true,
+     "format": "table",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "image_spec is what the manifest asked for, image_id is what containerd resolved. They should carry the same digest.",
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "renameByName": {
+       "container": "Container",
+       "image_spec": "Spec",
+       "image_id": "Resolved",
+       "Value": "Pods"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "type": "row",
+   "title": "Rollouts",
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 36,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "id": 9,
+   "type": "timeseries",
+   "title": "Unavailable replicas",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 37,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 8,
+      "showPoints": "never",
+      "spanNulls": false,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    },
+    "legend": {
+     "showLegend": true,
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    }
+   },
+   "targets": [
+    {
+     "expr": "kube_deployment_status_replicas_unavailable{namespace=\"$namespace\"}",
+     "legendFormat": "{{deployment}}",
+     "range": true,
+     "instant": false,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Spec changes",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 37,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "drawStyle": "bars",
+      "lineWidth": 2,
+      "fillOpacity": 60,
+      "showPoints": "never",
+      "spanNulls": false,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    },
+    "legend": {
+     "showLegend": true,
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    }
+   },
+   "targets": [
+    {
+     "expr": "changes(kube_deployment_status_observed_generation{namespace=\"$namespace\"}[5m]) > 0",
+     "legendFormat": "{{deployment}}",
+     "range": true,
+     "instant": false,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "description": "A generation bump means the spec changed, which includes a scale. Use the digest panels to tell a new version from a scale."
+  }
+ ]
+}
