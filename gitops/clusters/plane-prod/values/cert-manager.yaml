@@ -31,7 +31,7 @@ cainjector:
     limits: { memory: 128Mi }
 
 # The only pin on the solver pods, which the controller starts at run time. Those pods run in plane-prod, with cert-manager's
-# default requests and limits of 64Mi, and their one policy is the acme-http01-solver file beside Plane's.
+# default requests and limits of 64Mi, under NetworkPolicy acme-http01-solver.
 acmesolver:
   image:
     repository: quay.io/jetstack/cert-manager-acmesolver
