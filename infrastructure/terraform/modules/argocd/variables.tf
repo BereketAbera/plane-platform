@@ -14,7 +14,7 @@ variable "bootstrap_chart_path" {
 }
 
 variable "git_repo_url" {
-  description = "Git URL Argo CD reads. Pass 2 changes this one value to GitHub."
+  description = "Git URL for the AppProjects and the root Application. Every child Application names its own repoURL in Git, so this alone does not repoint a cluster."
   type        = string
 }
 
