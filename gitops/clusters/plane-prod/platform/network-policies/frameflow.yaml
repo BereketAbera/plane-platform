@@ -1,0 +1,10 @@
+# Frameflow is not deployed. Its namespace exists so its reservation has a name (infrastructure/hosted/plane-prod/capacity.yaml), with
+# a quota of no pods, so deploying it takes a pull request. Whatever lands here first has nothing allowed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: frameflow
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]

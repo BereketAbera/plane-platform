@@ -1,0 +1,100 @@
+# infisical. The secret store: only the operator may reach the server, and nothing here may reach Plane. It has no route: people and
+# scripts come through the SSH tunnel and kubectl port-forward, which needs no rule.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: infisical
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: infisical
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# The API server egress is Kubernetes Auth token review, seen as the node's address on 6443. No internet: telemetry and update
+# checks are off in the values, and a denied attempt would only log.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: infisical-server
+  namespace: infisical
+spec:
+  podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: plane-prod } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: secrets-operator } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: infisical-postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: infisical-redis } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: infisical-postgres
+  namespace: infisical
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: infisical-postgres } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+        - podSelector: { matchLabels: { app.kubernetes.io/component: backup } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: infisical-redis
+  namespace: infisical
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: infisical-redis } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+---
+# Backup Jobs must carry this label. They write to a volume, so no internet: the off-VPS copies are pulled and pushed from the laptop.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup
+  namespace: infisical
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: backup } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: infisical-postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }

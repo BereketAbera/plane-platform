@@ -1,0 +1,318 @@
+# plane-prod. The local production simulation's policies renamed, with what a public TLS host changes: the api's self-dial uses 8443,
+# and cert-manager's solver pods appear beside the workloads.
+#
+# Selectors use app.kubernetes.io/component, added by helm/plane/components/hardening, not the chart's
+# app.name: that label embeds the namespace, and it is the Services' selector, so a test pod carrying
+# it would join the Service.
+#
+# Policies see pod IPs and target ports: kube-router evaluates after DNAT.
+# Only rules for what really flows. No rule here reaches Infisical (except the operator) or the internet, so Plane's phone-home to
+# telemetry.plane.so has no route, and neither has anything that holds a dump. Off-VPS copies are pulled and pushed from the laptop.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: plane-prod
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: plane-prod
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# Browser traffic only. web and admin are static nginx. space renders server-side, but its build has
+# an empty API base URL, so its one server-side fetch fails with ERR_INVALID_URL before any connection.
+# Run on v1.4.3: a public board loads and shows its work items, because the browser makes those calls,
+# and only the page's metadata is lost. A branded build that sets that URL would need space added to
+# the api policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-admin-space
+  namespace: plane-prod
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/component, operator: In, values: [web, admin, space] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: live
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: live } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: valkey } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+---
+# The egress to Traefik is the copy_object and OAuth-avatar self-call: the api dials its own public
+# host, over TLS, which CoreDNS rewrites to the Traefik Service. Port 8443 is Traefik's pod port, not
+# the Service's 443.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+        - podSelector: { matchLabels: { app.kubernetes.io/component: live } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+---
+# rabbitmq's management port 15672 and Silo's console 9090 stay closed. The migrator gets the same
+# reach as the app: it runs the same image and settings.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: app-tier-to-data
+  namespace: plane-prod
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/component, operator: In, values: [api, worker, beat, migrator] }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: valkey } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: rabbitmq } }
+      ports:
+        - { protocol: TCP, port: 5672 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: minio } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [api, worker, beat, migrator, backup] }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: postgres-exporter } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+# Valkey has no password (chart issue 113), so this policy is its only access control.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: valkey
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: valkey } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [api, worker, beat, migrator, live] }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: redis-exporter } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rabbitmq
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: rabbitmq } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [api, worker, beat, migrator] }
+      ports:
+        - { protocol: TCP, port: 5672 }
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 15692 }
+---
+# Traefik reaches Silo for the /uploads route. Prometheus scrapes it on the S3 port, and the /minio/
+# metrics paths are not routed publicly.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: minio } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [api, worker, beat, migrator, backup] }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+# The operator must precede the Plane app, or no Secret exists and nothing starts. The node's
+# address on 6443 is what kube-router sees for the API server. See traefik.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: infisical-operator
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: secrets-operator } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: infisical } }
+          podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+# Exporters run here, not in monitoring, because each holds this environment's credentials.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-exporter
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: postgres-exporter } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9187 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-exporter
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: redis-exporter } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9121 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: valkey } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+---
+# Backup and restore Jobs, and the pre-migration dump, must carry this label. They write to a volume, so
+# no other egress is needed, and they hold database credentials, so none of them reaches the internet.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: backup } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: minio } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+# cert-manager starts one of these for each HTTP-01 challenge, with this label, in the Certificate's namespace. Each answers Let's
+# Encrypt on 8089 through Traefik, and has nothing to call.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: acme-http01-solver
+  namespace: plane-prod
+spec:
+  podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8089 }
