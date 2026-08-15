@@ -1458,7 +1458,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/component: backup
-        app.kubernetes.io/name: plane-predeploy-dump
+        app.kubernetes.io/name: plane-prod-predeploy-dump
     spec:
       automountServiceAccountToken: false
       containers:

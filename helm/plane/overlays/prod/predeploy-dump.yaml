@@ -32,7 +32,7 @@ spec:
       annotations:
         timestamp: removed-by-hardening
       labels:
-        app.kubernetes.io/name: plane-predeploy-dump
+        app.kubernetes.io/name: plane-prod-predeploy-dump
         # The label backup Jobs carry, which is what the network policies let reach Postgres.
         app.kubernetes.io/component: backup
     spec:
