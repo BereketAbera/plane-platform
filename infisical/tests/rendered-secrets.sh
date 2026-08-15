@@ -9,12 +9,15 @@
 # memory only, in this shell.
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"
+# Hosted production opts in here. Without the variable this does nothing. See scripts/hosted/target.sh.
+# shellcheck source=../../scripts/hosted/target.sh
+if [[ -n "${WAYLINE_TARGET:-}" ]]; then source "$ROOT/scripts/hosted/target.sh"; fi
 # shellcheck source=../lib/api.sh
 source "$ROOT/infisical/lib/api.sh"
 
 need_commands jq kubectl
 
-ENVIRONMENTS="${*:-dev prod-sim}"
+ENVIRONMENTS="${*:-${WAYLINE_ENVIRONMENTS:-dev prod-sim}}"
 FAILED=0
 BLOCKED=0
 

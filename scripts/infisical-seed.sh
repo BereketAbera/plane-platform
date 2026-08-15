@@ -9,6 +9,9 @@
 # value there would not match the Plane data about to be restored.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# Hosted production opts in here. Without the variable this does nothing. See scripts/hosted/target.sh.
+# shellcheck source=hosted/target.sh
+if [[ -n "${WAYLINE_TARGET:-}" ]]; then source "$ROOT/scripts/hosted/target.sh"; fi
 # shellcheck source=../infisical/lib/api.sh
 source "$ROOT/infisical/lib/api.sh"
 
@@ -19,7 +22,7 @@ trap ia_cleanup EXIT
 ia_load_admin
 [[ -s "$MACHINE_FILE" ]] || die "$MACHINE_FILE is missing. Run scripts/infisical-bootstrap.sh."
 
-REQUIRED_SECRETS="PG_USER PG_PASSWORD PG_DB RABBITMQ_USER RABBITMQ_PASSWORD SILO_ACCESS_KEY SILO_SECRET_KEY SECRET_KEY LIVE_SERVER_SECRET_KEY"
+REQUIRED_SECRETS="PG_USER PG_PASSWORD PG_DB RABBITMQ_USER RABBITMQ_PASSWORD SILO_ACCESS_KEY SILO_SECRET_KEY SECRET_KEY LIVE_SERVER_SECRET_KEY${HOSTED_SEED_FROM_FILES:+ $HOSTED_SEED_FROM_FILES}"
 ENV_SLUG="$(jq -er '.environment_slug' "$MACHINE_FILE")"
 
 # Hex throughout, because the chart and the operator templates do not URL-encode. User and database
@@ -32,6 +35,11 @@ generate_value() {
     SILO_ACCESS_KEY) openssl rand -hex 10 ;;
     SILO_SECRET_KEY) openssl rand -hex 20 ;;
     SECRET_KEY | LIVE_SERVER_SECRET_KEY) openssl rand -hex 32 ;;
+    # Hosted production's only: not generated, because GitHub issues it. Read from the file by name, so never in an argv.
+    GHCR_PULL_TOKEN)
+      [[ -s "$LOCAL_DIR/ghcr-pull-token" ]] || die "$LOCAL_DIR/ghcr-pull-token is missing. Run: scripts/hosted/owner-inputs.sh ghcr"
+      cat "$LOCAL_DIR/ghcr-pull-token"
+      ;;
     *) die "no generator for $1" ;;
   esac
 }
@@ -83,5 +91,6 @@ seed_environment() {
   ok "$env: secrets written"
 }
 
-seed_environment dev
-seed_environment prod-sim
+for env_name in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
+  seed_environment "$env_name"
+done

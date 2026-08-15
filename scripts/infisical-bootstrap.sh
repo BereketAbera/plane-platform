@@ -17,6 +17,9 @@
 # ahead of time, before a token ends. See infisical/README.md, section Recovery.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# Hosted production opts in here. Without the variable this does nothing. See scripts/hosted/target.sh.
+# shellcheck source=hosted/target.sh
+if [[ -n "${WAYLINE_TARGET:-}" ]]; then source "$ROOT/scripts/hosted/target.sh"; fi
 # shellcheck source=../infisical/lib/api.sh
 source "$ROOT/infisical/lib/api.sh"
 
@@ -40,7 +43,7 @@ AUTH_SERVICE_ACCOUNT=plane-infisical-auth
 # after this script finished, so a rename in the overlay stops here instead.
 check_overlay() {
   local env file actual
-  for env in dev prod-sim; do
+  for env in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
     file="$ROOT/gitops/environments/$env/manifests.yaml"
     [[ -f "$file" ]] || die "$file is missing. Run: make render"
     actual="$(yq -N 'select(.kind == "InfisicalAuth") | [.spec.kubernetes.identityIdRef.name, .spec.kubernetes.identityIdRef.key, .spec.kubernetes.serviceAccountRef.name] | join(" ")' "$file" \
@@ -193,7 +196,7 @@ KUBE_CA="$(kc -n infisical get configmap kube-root-ca.crt -o jsonpath='{.data.ca
 mkdir -p "$TF_STATE_DIR"
 chmod 700 "$TF_STATE_DIR"
 log "Applying infisical/terraform"
-tf init -input=false -lockfile=readonly >/dev/null
+tf init -input=false -lockfile=readonly ${HOSTED_INFISICAL_TF_BACKEND:+-backend-config="$HOSTED_INFISICAL_TF_BACKEND"} >/dev/null
 if [[ "$RESTORED" == yes ]]; then
   apply_restored
 else
@@ -217,6 +220,7 @@ else
   "$(dirname "$0")/infisical-seed.sh"
 fi
 
-publish_identity dev
-publish_identity prod-sim
+for env_name in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
+  publish_identity "$env_name"
+done
 ok "Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later."

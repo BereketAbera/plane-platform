@@ -8,6 +8,9 @@
 # Losing ENCRYPTION_KEY makes every secret in the Infisical database unrecoverable, hence the care.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# Hosted production opts in here. Without the variable this does nothing, and below it reuses and never generates, unless FIRST_BOOT=yes.
+# shellcheck source=hosted/target.sh
+if [[ -n "${WAYLINE_TARGET:-}" ]]; then source "$ROOT/scripts/hosted/target.sh"; fi
 # shellcheck source=../infisical/lib/api.sh
 source "$ROOT/infisical/lib/api.sh"
 
@@ -56,6 +59,9 @@ ensure_file() { # name secret key. A file lost while the cluster lives is recove
   if [[ -n "$value" ]]; then
     warn "$name was missing locally: restored it from Secret $2"
   else
+    if [[ -n "${WAYLINE_TARGET:-}" && "${FIRST_BOOT:-}" != yes ]]; then
+      die "$name is in neither $SECRET_ZERO_DIR nor Secret $2, and a new one could not read a database that already exists. Bring it back from the recovery bundle. On a first boot, scripts/hosted/bootstrap.sh passes FIRST_BOOT=yes."
+    fi
     value="$(generate_value "$name")"
     log "Generated $name"
   fi

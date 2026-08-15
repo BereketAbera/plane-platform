@@ -6,7 +6,7 @@
 set +x
 
 INFISICAL_URL="${INFISICAL_URL:-http://infisical.localhost}"
-INFISICAL_ADMIN_EMAIL="admin@wayline.localhost"
+INFISICAL_ADMIN_EMAIL="${HOSTED_INFISICAL_ADMIN_EMAIL:-admin@wayline.localhost}"
 SECRET_ZERO_DIR="$LOCAL_DIR/secret-zero"
 ADMIN_FILE="$SECRET_ZERO_DIR/infisical-admin.json"
 ADMIN_PASSWORD_FILE="$SECRET_ZERO_DIR/infisical-admin-password"
@@ -51,7 +51,11 @@ need_commands() {
 env_namespace() {
   case "$1" in
     dev | prod-sim) printf 'plane-%s' "$1" ;;
-    *) die "unknown environment '$1': expected dev or prod-sim" ;;
+    *)
+      # Only what scripts/hosted/target.sh opted in. Nothing local sets this.
+      [[ "${WAYLINE_ENVIRONMENTS:-}" == "$1" ]] || die "unknown environment '$1': expected dev or prod-sim"
+      printf 'plane-%s' "$1"
+      ;;
   esac
 }
 

@@ -7,16 +7,7 @@ provider "infisical" {
 locals {
   # One project per environment is the free-tier isolation boundary. Custom roles and folder RBAC are
   # paid, and additional privileges return 400 on projects created today. See ../README.md.
-  environments = {
-    dev = {
-      project   = "plane-dev"
-      namespace = "plane-dev"
-    }
-    prod-sim = {
-      project   = "plane-prod-sim"
-      namespace = "plane-prod-sim"
-    }
-  }
+  environments = var.environments
 
   # The slug is the same in both projects so one InfisicalStaticSecret shape fits both.
   environment_slug = "prod"
