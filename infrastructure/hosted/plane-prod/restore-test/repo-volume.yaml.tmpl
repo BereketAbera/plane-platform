@@ -1,0 +1,27 @@
+# The node's restic repository for one source, read-only, through a PV of its own, because the nightly's PV is bound to its PVC and a
+# PV binds one. Retain, so deleting this PV leaves the folder alone. VPS only: in kind the data arrives by stream from this machine.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: __PV__
+  labels:
+    plane-platform/purpose: restore-test
+spec:
+  capacity: {storage: 1Gi}
+  accessModes: [ReadOnlyMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: {apiVersion: v1, kind: PersistentVolumeClaim, namespace: __NS__, name: repo}
+  hostPath: {path: __REPO_PATH__, type: Directory}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: repo
+  namespace: __NS__
+spec:
+  accessModes: [ReadOnlyMany]
+  storageClassName: ""
+  volumeName: __PV__
+  resources:
+    requests: {storage: 1Gi}

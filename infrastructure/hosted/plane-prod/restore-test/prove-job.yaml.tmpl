@@ -1,0 +1,103 @@
+# Puts one backup into an empty Postgres in this pod, on a unix socket, and compares it with what was recorded when it was sealed.
+# The same image as the server that was dumped. scripts/hosted/restore-test.sh keeps either `fetch` (VPS: restic reads the node's
+# repository, read-only) or `receive` (kind: this machine streams a restored copy in), and removes the other.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prove-__SOURCE__
+  namespace: __NS__
+  labels:
+    app.kubernetes.io/name: restore-test
+    plane-platform/purpose: restore-test
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 7200
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-test
+        plane-platform/purpose: restore-test
+        plane-platform/source: __SOURCE__
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile: {type: RuntimeDefault}
+      volumes:
+        - name: scratch
+          emptyDir: {sizeLimit: __SCRATCH__}
+        - name: tmp
+          emptyDir: {sizeLimit: 256Mi}
+        - name: prove
+          configMap: {name: prove, defaultMode: 0555}
+        - name: repo
+          persistentVolumeClaim: {claimName: repo, readOnly: true}
+        - name: restic-password
+          secret: {secretName: restic-password, defaultMode: 0440}
+      initContainers:
+        - name: fetch
+          image: __RESTIC_IMAGE__
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          env:
+            - {name: RESTIC_REPOSITORY, value: /repo}
+            - {name: RESTIC_PASSWORD_FILE, value: /run/restic/password}
+            - {name: RESTIC_CACHE_DIR, value: /scratch/cache}
+            - {name: TMPDIR, value: /tmp}
+            - {name: HOME, value: /tmp}
+            - {name: SOURCE, value: __SOURCE__}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          volumeMounts:
+            - {name: repo, mountPath: /repo, readOnly: true}
+            - {name: restic-password, mountPath: /run/restic, readOnly: true}
+            - {name: scratch, mountPath: /scratch}
+            - {name: tmp, mountPath: /tmp}
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              # --no-lock, because this mount is read-only, on purpose.
+              if ! restic --no-lock snapshots --host "$SOURCE" --tag wayline --latest 1 --json | grep -q '"id"'; then
+                echo "BLOCKED no snapshot of $SOURCE in the repository"
+                exit 3
+              fi
+              restic --no-lock restore latest --host "$SOURCE" --tag wayline --target /scratch/restored --verify
+        - name: receive
+          image: __PG_IMAGE__
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: "1", memory: 256Mi}
+          volumeMounts:
+            - {name: scratch, mountPath: /scratch}
+            - {name: tmp, mountPath: /tmp}
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              mkdir -p /scratch/restored
+              echo "waiting for the stream"
+              until [ -f /scratch/.received ]; do sleep 1; done
+      containers:
+        - name: prove
+          image: __PG_IMAGE__
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          env:
+            - {name: SOURCE, value: __SOURCE__}
+          resources:
+            requests: {cpu: 200m, memory: 512Mi}
+            limits: {cpu: "2", memory: 2Gi}
+          volumeMounts:
+            - {name: scratch, mountPath: /scratch}
+            - {name: tmp, mountPath: /tmp}
+            - {name: prove, mountPath: /prove, readOnly: true}
+          command: [/bin/sh, /prove/prove.sh]
