@@ -134,3 +134,55 @@ ci: ## Run every CI check locally, the same scripts as GitHub Actions. Runs them
 	  ./scripts/ci/$$check.sh || status=1; \
 	done; \
 	exit $$status
+
+# ---- hosted production ----------------------------------------------------------------------
+# Nothing above reaches it, and these reach nothing else. Each needs TARGET=plane-prod, and what changes something needs
+# CONFIRM=plane-prod as well, not yes. Reads and writes .local/hosted/plane-prod. See scripts/hosted/.
+.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle
+remote-guard:
+	@[[ "$(TARGET)" == plane-prod ]] || { echo "this reaches hosted production, so it needs TARGET=plane-prod" >&2; exit 2; }
+
+remote-tunnel: remote-guard ## Hosted: the SSH tunnel to K3s's API: make remote-tunnel TARGET=plane-prod [VERB=start|stop|status]
+	@./scripts/hosted/tunnel.sh "$(or $(VERB),start)"
+
+remote-kubeconfig: remote-guard ## Hosted: fetch K3s's kubeconfig for the tunnel, and print the kube-system UID: make remote-kubeconfig TARGET=plane-prod
+	@./scripts/hosted/kubeconfig.sh
+
+remote-status: remote-guard ## Hosted: node, Argo CD, pods, certificate, backups, firewall, alert delivery, read-only: make remote-status TARGET=plane-prod
+	@./scripts/hosted/status.sh
+
+remote-bootstrap: remote-guard ## Hosted: deploy key, Terraform, restic password, secret zero, Infisical, alerts: make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
+	@./scripts/hosted/bootstrap.sh
+
+remote-ui: remote-guard ## Hosted: port-forward an admin UI, which has no public route: make remote-ui TARGET=plane-prod UI=argocd|grafana|prometheus|alertmanager|infisical [PORT=<local port>]
+	@./scripts/hosted/ui.sh "$(UI)" $(PORT)
+
+remote-smoke: remote-guard ## Hosted: smoke over https on an existing account, asked at a hidden prompt, removing what it makes: make remote-smoke TARGET=plane-prod [SMOKE_WORKSPACE=<slug>] [SMOKE_ALLOW_STAGING=yes]
+	@./scripts/hosted/smoke.sh
+
+remote-test: remote-guard ## Hosted: outside scan, matrix, routes, PSA, Secrets, smoke, alerts, backups. Exits 0, 1 or 2: make remote-test TARGET=plane-prod CONFIRM=plane-prod [ONLY="outside backups"]
+	@./scripts/hosted/test-hosted.sh
+
+remote-netpol: remote-guard ## Hosted: the NetworkPolicy sentinel and matrix alone: make remote-netpol TARGET=plane-prod [FROM_NS=plane-prod]
+	@WAYLINE_TARGET=plane-prod ./scripts/test-netpol.sh
+
+remote-backup: remote-guard ## Hosted: run tonight's backups now: make remote-backup TARGET=plane-prod CONFIRM=plane-prod [ONLY=plane-prod|infisical]
+	@./scripts/hosted/backup.sh
+
+remote-pull-setup: remote-guard ## Hosted: make the read-only SFTP user on the node and its key here: make remote-pull-setup TARGET=plane-prod CONFIRM=plane-prod
+	@./scripts/hosted/pull-backups.sh setup
+
+remote-pull-backups: remote-guard ## Hosted: pull the encrypted backups to this machine, over read-only SFTP: make remote-pull-backups TARGET=plane-prod
+	@./scripts/hosted/pull-backups.sh
+
+remote-backup-dest: remote-guard ## Hosted: copies off the VPS: make remote-backup-dest TARGET=plane-prod VERB=verify|push|status
+	@./scripts/hosted/backup-dest.sh "$(VERB)"
+
+remote-restore-test: remote-guard ## Hosted: restore the newest backup into an isolated namespace, prove it, remove it: make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod, or RESTORE_ON=kind for this machine's copy in the local cluster. [ONLY=plane-prod|infisical] [KEEP=yes]
+	@./scripts/hosted/restore-test.sh
+
+remote-alerts: remote-guard ## Hosted: render alert delivery from the owner's files: make remote-alerts TARGET=plane-prod CONFIRM=plane-prod [VERB=state]
+	@./scripts/hosted/alerts.sh $(VERB)
+
+remote-bundle: remote-guard ## Hosted: write the recovery bundle, encrypted with age, and prove it decrypts: make remote-bundle TARGET=plane-prod [VERB=init|verify]
+	@./scripts/hosted/bundle.sh $(VERB)
