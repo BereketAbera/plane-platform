@@ -5,7 +5,8 @@
 # only runs kustomize, because the fixture's overlay has no chart. It runs what is on disk, as the scripts' own commit in the
 # fixture. Nothing here can reach a cluster, a registry, GitHub or the real signing key: HOME belongs to the run.
 #
-#   scripts/ci/test-prod-gate.sh               every scenario, about three minutes on a busy laptop
+#   scripts/ci/test-prod-gate.sh               every scenario: 12 seconds in an ubuntu:24.04 container, about three minutes
+#                                              on macOS, where each of its thousands of processes costs more
 #   scripts/ci/test-prod-gate.sh rollback      only the scenarios whose name contains "rollback"
 #   scripts/ci/test-prod-gate.sh --mutations   take each check away in turn, and require its scenario to go red. About ten
 #                                              minutes, so make ci does not run it
