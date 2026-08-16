@@ -71,6 +71,8 @@ SERVER_IMAGE="docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930
 
 CONNECT_TIMEOUT=4
 WITNESS_TIMEOUT=3
+# Hosted namespaces have room in their quotas for two probes at a time and no more: capacity.yaml leaves cert-manager and monitoring 128Mi.
+PARALLEL_PODS="${PARALLEL_PODS:-${WAYLINE_TARGET:+2}}"
 PARALLEL_PODS="${PARALLEL_PODS:-4}"
 # How long a new pod waits before its first packet, and how long a new policy gets before the sentinel's next probe. The controller
 # has to learn each. Measured on kindnet only. kube-router's are unmeasured on this VPS, so hosted production starts cautious.
