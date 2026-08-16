@@ -172,7 +172,7 @@ write_bundle() {
 
 verify_bundle() {
   local bundle rc=0
-  bundle="$(find "$OUT_DIR" -maxdepth 1 -type f -name 'wayline-recovery-*.tar.age' 2>/dev/null | sort -r | head -1)"
+  bundle="$(find "$OUT_DIR" -maxdepth 1 -type f -name 'wayline-recovery-*.tar.age' 2>/dev/null | sort -r | head -1 || true)"
   [[ -n "$bundle" ]] || die "no bundle in ${OUT_DIR#"$ROOT"/}. Run: scripts/hosted/bundle.sh"
   [[ "$(hosted_sha256 "$bundle")" == "$(cat "$bundle.sha256")" ]] || die "$bundle does not match the sha256 beside it"
   WORK="$(mktemp -d "$LOCAL_DIR/.bundle.XXXXXX")"

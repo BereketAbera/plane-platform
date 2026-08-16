@@ -42,7 +42,9 @@ install -d -m 700 -o $PULL_USER -g $PULL_USER /home/$PULL_USER/.ssh
 printf '%s\n' 'restrict,command="internal-sftp -R" $public' >/home/$PULL_USER/.ssh/authorized_keys
 chown $PULL_USER:$PULL_USER /home/$PULL_USER/.ssh/authorized_keys
 chmod 600 /home/$PULL_USER/.ssh/authorized_keys
-sshd -T | grep -iq '^allowusers.*$PULL_USER' || { echo "sshd's AllowUsers does not name $PULL_USER. Run provision-node.sh access" >&2; exit 1; }
+mkdir -p /run/sshd
+# grep reads to the end, not -q: with -q it can stop early, and under pipefail the writer's SIGPIPE reads as no match.
+sshd -T | grep -i '^allowusers.*$PULL_USER' >/dev/null || { echo "sshd's AllowUsers does not name $PULL_USER. Run provision-node.sh access" >&2; exit 1; }
 EOF
   ok "user $PULL_USER is on the node: read-only SFTP, no shell, no sudo"
 }

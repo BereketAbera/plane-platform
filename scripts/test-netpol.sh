@@ -531,6 +531,11 @@ reference_of() {
 # Prints verdict|counts or free|what the row shows. free means an INCONCLUSIVE that does not count against the run.
 decide() {
   local expect="$1" class="$2" protocol="$3" scope="$4" ready="$5" witness="$6" reference="$7"
+  # Before the DNS branch, which reads anything but a failed lookup as an answer, and a probe that never ran gave none.
+  if [[ "$class" == NOT_RUN ]]; then
+    echo "INCONCLUSIVE|counts|the probe gave no result"
+    return
+  fi
   if [[ "$protocol" == udp ]]; then
     # For a DNS row, reaching any answer at all from the resolver is the point: the name resolved,
     # and only the lookup needs to pass. Connecting to port 53 afterwards is not under test.

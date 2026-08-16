@@ -37,7 +37,8 @@ export PGDATA=/scratch/pg PGHOST=/scratch/sock PGUSER=postgres
 mkdir -p "$PGHOST"
 initdb -D "$PGDATA" -U postgres --auth=trust --no-sync >/dev/null
 # 785 partitions and more on Infisical, so its restore needs the locks its own server was given and more.
-pg_ctl -D "$PGDATA" -w -l /scratch/postgres.log -o "-c listen_addresses='' -c unix_socket_directories=$PGHOST -c fsync=off -c shared_buffers=128MB -c max_connections=20 -c max_locks_per_transaction=256" start >/dev/null ||
+# No parallel workers, because their shared memory sits in the container's small /dev/shm.
+pg_ctl -D "$PGDATA" -w -l /scratch/postgres.log -o "-c listen_addresses='' -c unix_socket_directories=$PGHOST -c fsync=off -c shared_buffers=128MB -c max_connections=20 -c max_locks_per_transaction=256 -c max_parallel_workers_per_gather=0 -c max_parallel_maintenance_workers=0" start >/dev/null ||
   {
     tail -5 /scratch/postgres.log
     fail "the scratch Postgres did not start"

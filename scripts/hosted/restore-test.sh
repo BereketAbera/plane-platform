@@ -69,7 +69,7 @@ NS="${RESTORE_NAMESPACE:-restore-test-$STAMP}"
 [[ "$NS" =~ ^restore-test-[0-9]{14}$ ]] || die "refusing namespace '$NS': only restore-test-<14 digits> may hold a restore"
 
 if [[ "$RESTORE_ON" == kind ]]; then
-  kc() { command "$ROOT/.tools/bin/kubectl" --kubeconfig "$LOCAL_CLUSTER_KUBECONFIG" --context "$LOCAL_CLUSTER_CONTEXT" "$@"; }
+  kc() { "$ROOT/.tools/bin/kubectl" --kubeconfig "$LOCAL_CLUSTER_KUBECONFIG" --context "$LOCAL_CLUSTER_CONTEXT" "$@"; }
   LIVE_NAMESPACES="plane-dev plane-prod-sim infisical"
   kc get --raw /readyz >/dev/null 2>&1 || die "the local cluster is not reachable. Run: make up"
   restic_need_local

@@ -64,7 +64,7 @@ section "Backups off the VPS"
 "$ROOT/scripts/hosted/backup-dest.sh" status || true
 
 section "Recovery bundle"
-newest="$(find "$LOCAL_DIR/recovery-bundle" -maxdepth 1 -type f -name 'wayline-recovery-*.tar.age' 2>/dev/null | sort -r | head -1)"
+newest="$(find "$LOCAL_DIR/recovery-bundle" -maxdepth 1 -type f -name 'wayline-recovery-*.tar.age' 2>/dev/null | sort -r | head -1 || true)"
 if [[ -n "$newest" ]]; then printf '%s\n' "newest here: ${newest##*/}. A newer secret or Terraform state makes it stale: scripts/hosted/bundle.sh verify says so"; else printf 'INCOMPLETE: no bundle here. Run: scripts/hosted/bundle.sh\n'; fi
 
 [[ "$reachable" == yes ]]

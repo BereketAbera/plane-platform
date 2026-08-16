@@ -366,11 +366,14 @@ alerts() {
   synthetic_alert "$am"
 }
 
-# One alert through Alertmanager, ending by itself in 5 minutes. Its own counters say whether a notification left, and whether it failed.
+# One alert through Alertmanager, ending by itself in 5 minutes. Watchdog keeps pinging meanwhile, so what shows this one left has to
+# be told apart from those: the Telegram counter, which Watchdog never moves, or the sink's own log, which names each alert.
 synthetic_alert() { # port
-  local port="$1" sent_before failed_before sent failed now ends deadline=$((SECONDS + 150)) answer
-  counter() { # metric
-    curl -fsS --max-time 15 "http://127.0.0.1:$port/metrics" 2>/dev/null | awk -v m="$1" 'index($0, m "{") == 1 || index($0, m " ") == 1 { total += $NF } END { print total + 0 }'
+  local port="$1" integration="" sent_before failed_before sent failed now ends deadline=$((SECONDS + 150)) answer
+  if [[ -s "$LOCAL_DIR/alert-telegram-bot-token" && -s "$LOCAL_DIR/alert-telegram-chat-id" ]]; then integration=telegram; fi
+  counter() { # metric: this integration's series, or all of them if there is none to single out
+    curl -fsS --max-time 15 "http://127.0.0.1:$port/metrics" 2>/dev/null |
+      awk -v m="$1" -v want="$integration" 'index($0, m "{") == 1 && (want == "" || index($0, "integration=\"" want "\"") > 0) { total += $NF } END { print total + 0 }'
   }
   sent_before="$(counter alertmanager_notifications_total)"
   failed_before="$(counter alertmanager_notifications_failed_total)"
@@ -392,13 +395,17 @@ synthetic_alert() { # port
       row FAIL "a notification leaves Alertmanager" "alertmanager_notifications_failed_total rose from $failed_before to $failed. Read its log, and the policy on 443"
       return 0
     fi
-    if [[ "$sent" -gt "$sent_before" ]]; then
-      row PASS "a notification leaves Alertmanager" "the sent counter rose, and the failed one did not. On Telegram, this run's message says WaylineSyntheticTest"
+    if [[ "$integration" == telegram && "$sent" -gt "$sent_before" ]]; then
+      row PASS "a notification leaves Alertmanager" "the Telegram counter rose, and the failed one did not. Your phone should show WaylineSyntheticTest"
+      return 0
+    fi
+    if [[ -z "$integration" ]] && kc -n monitoring logs deploy/alert-sink --tail=-1 2>/dev/null | grep "$STAMP" >/dev/null; then
+      row PASS "a notification reaches the sink" "the sink logged this run's alert"
       return 0
     fi
     sleep 5
   done
-  row FAIL "a notification leaves Alertmanager" "no counter moved in 150 s"
+  row FAIL "a notification leaves Alertmanager" "nothing to show it left in 150 s"
 }
 
 # ------ Backups --------------------------------------------------------------------------------------------------------
