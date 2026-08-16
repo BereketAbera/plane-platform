@@ -11,13 +11,13 @@ spec:
   accessModes: [ReadOnlyMany]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  claimRef: {apiVersion: v1, kind: PersistentVolumeClaim, namespace: __NS__, name: repo}
+  claimRef: {apiVersion: v1, kind: PersistentVolumeClaim, namespace: __NS__, name: repo-__SOURCE__}
   hostPath: {path: __REPO_PATH__, type: Directory}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: repo
+  name: repo-__SOURCE__
   namespace: __NS__
 spec:
   accessModes: [ReadOnlyMany]

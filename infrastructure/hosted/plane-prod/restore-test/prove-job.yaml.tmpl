@@ -36,7 +36,7 @@ spec:
         - name: prove
           configMap: {name: prove, defaultMode: 0555}
         - name: repo
-          persistentVolumeClaim: {claimName: repo, readOnly: true}
+          persistentVolumeClaim: {claimName: repo-__SOURCE__, readOnly: true}
         - name: restic-password
           secret: {secretName: restic-password, defaultMode: 0440}
       initContainers:

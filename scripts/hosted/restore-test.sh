@@ -312,13 +312,17 @@ restore_one() { # source
     fi
     pv="$NS-$source"
     PV_NAMES="$PV_NAMES $pv"
-    fill "PV=$pv" "NS=$NS" "REPO_PATH=$HOSTED_BACKUP_ROOT/$source/restic" <"$TEMPLATES/repo-volume.yaml.tmpl" | kc apply -f - >/dev/null
+    fill "PV=$pv" "NS=$NS" "SOURCE=$source" "REPO_PATH=$HOSTED_BACKUP_ROOT/$source/restic" <"$TEMPLATES/repo-volume.yaml.tmpl" | kc apply -f - >/dev/null
     fill "NS=$NS" "SOURCE=$source" "SCRATCH=$SCRATCH" "RESTIC_IMAGE=$RESTIC_IMAGE" "PG_IMAGE=$pg_image" <"$TEMPLATES/prove-job.yaml.tmpl" |
       yq 'del(.spec.template.spec.initContainers[] | select(.name == "receive"))' |
       kc apply -f - >/dev/null
   else
     if [[ ! -d "$OFFSITE_DIR/$source" ]]; then
       row BLOCKED "$source: restore" "no off-VPS copy on this machine. Run: make remote-pull-backups TARGET=plane-prod"
+      return 0
+    fi
+    if [[ -z "$(restic -r "$OFFSITE_DIR/$source" --password-file "$RESTIC_PASSWORD_LOCAL" snapshots --host "$source" --tag wayline --latest 1 --json | jq -r '.[0].short_id // ""')" ]]; then
+      row BLOCKED "$source: restore" "the copy on this machine holds no snapshot of it. Run: make remote-pull-backups TARGET=plane-prod"
       return 0
     fi
     fill "NS=$NS" "SOURCE=$source" "SCRATCH=$SCRATCH" "RESTIC_IMAGE=$RESTIC_IMAGE" "PG_IMAGE=$pg_image" <"$TEMPLATES/prove-job.yaml.tmpl" |
