@@ -25,4 +25,4 @@ else
 fi
 
 log "$1 at http://localhost:$PORT ($NOTE). Ctrl-C ends it."
-exec "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" -n "$NS" port-forward "$SVC" "127.0.0.1:$PORT:$REMOTE"
+exec "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" -n "$NS" port-forward "$SVC" "$PORT:$REMOTE" --address 127.0.0.1

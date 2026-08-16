@@ -213,7 +213,7 @@ HOSTED_FORWARD_PIDS=""
 hosted_forward_start() { # namespace target local-port remote-port
   local deadline=$((SECONDS + 30)) pid
   # The binary and not kc, so $! is the process that holds the port: killing a function's subshell would leave it behind.
-  "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" -n "$1" port-forward "$2" "127.0.0.1:$3:$4" >/dev/null 2>&1 &
+  "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" -n "$1" port-forward "$2" "$3:$4" --address 127.0.0.1 >/dev/null 2>&1 &
   pid=$!
   HOSTED_FORWARD_PIDS="$HOSTED_FORWARD_PIDS $pid"
   until nc -z 127.0.0.1 "$3" >/dev/null 2>&1; do
