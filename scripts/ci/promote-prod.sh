@@ -67,7 +67,8 @@ yq -r '.images[] | [.name, (.newName // .name), (.newTag // "-"), .digest] | @ts
 
 applied=yes
 trailers="Promote-Env: plane-prod"$'\n'"Promote-Set: $SET_HASH"$'\n'"Promote-Evidence: $EVIDENCE"
-while IFS=$'\t' read -r name repository tag digest; do
+# On its own descriptor, so nothing in the loop can read the list from stdin.
+while IFS=$'\t' read -r name repository tag digest <&3; do
   [[ "$name" =~ ^[a-z0-9][a-z0-9._/-]*$ && "$repository" =~ ^[a-z0-9][a-z0-9._/-]*$ ]] || die "$EVIDENCE names an image this cannot use: '$name' from '$repository'"
   [[ "$tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ || "$tag" == - ]] || die "$EVIDENCE gives $name the tag '$tag', which no reference can hold"
   [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "$EVIDENCE gives $name the digest '$digest'"
@@ -78,7 +79,7 @@ while IFS=$'\t' read -r name repository tag digest; do
     (cd "$OVERLAY" && kustomize edit set image "$name=$reference") || die "kustomize could not set $name in $KUSTOMIZATION"
   fi
   trailers+=$'\n'"Promote-Image: ${repository##*/}=$reference"
-done <"$WORK/images.tsv"
+done 3<"$WORK/images.tsv"
 
 first_promotion=no
 if [[ ! -e "$APPLICATION" ]]; then
