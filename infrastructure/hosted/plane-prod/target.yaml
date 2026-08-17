@@ -2,6 +2,7 @@
 # scripts/hosted/lib.sh reads this, and fails closed unless the live cluster matches.
 name: plane-prod
 host: 5.253.234.127
+host6: 2a02:c207:2373:3427::1
 domain: wayline.bereket.dev
 ssh_user: wayline-admin
 ssh_key: ~/.ssh/wayline_contabo_ed25519
