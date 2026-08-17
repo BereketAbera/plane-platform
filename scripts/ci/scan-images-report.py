@@ -19,6 +19,7 @@ import tempfile
 OURS = re.compile(r"^(localhost:5001|ghcr\.io/[^/]+)/wayline/")
 SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
 NO_PLATFORM = "none"
+LOCKFILES_ROW = "wayline-source-lockfiles"
 SUMMARY_FIELDS = ["image", "sources", "ours", "scanned", "os", "os_end_of_life", "architecture", "platform"] + [
     f"{severity.lower()}{suffix}" for severity in SEVERITIES for suffix in ("", "_fixable")
 ] + ["why_not_scanned"]
@@ -44,8 +45,9 @@ def summarize(image, sources, report, why_not_scanned):
         os=f"{system.get('Family', '')} {system.get('Name', '')}".strip() or "none",
         os_end_of_life="yes" if system.get("EOSL") else "no",
         architecture=config.get("architecture", ""),
-        # The lockfiles row is a directory, which has no platform. An image always has one.
-        platform=NO_PLATFORM if report.get("ArtifactType") == "filesystem" else f"{config.get('os', '')}/{config.get('architecture', '')}",
+        # The lockfiles row is a directory, which has no platform, and an image always has one. Keyed on the row and not on
+        # trivy's ArtifactType, which reads "repository" when the directory is a Git checkout, as it is in CI.
+        platform=NO_PLATFORM if image == LOCKFILES_ROW else f"{config.get('os', '')}/{config.get('architecture', '')}",
         why_not_scanned="",
     )
     critical = []
@@ -267,6 +269,7 @@ def selftest():
     assert run({ours: []}, asked=None)[0] == 1, "with nothing saying what was asked for, it must fail"
     assert run({ours: []}, asked=())[0] == 1, "an empty platform.txt must fail"
     assert run({"wayline-source-lockfiles": []}, read_as=("", ""), artifact_type="filesystem")[0] == 0, "a directory has no platform"
+    assert run({"wayline-source-lockfiles": []}, read_as=("", ""), artifact_type="repository")[0] == 0, "a Git checkout has no platform either"
     assert run({ours: []}, read_as=("", ""), artifact_type="container_image")[0] == 1, "an image with no platform is not a directory"
     print("selftest ok")
     return 0
