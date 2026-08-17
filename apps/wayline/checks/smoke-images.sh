@@ -153,7 +153,7 @@ check_redirect() { # check_redirect <path> <Location>
 # for about a tenth of the file's age, so a promotion or a rollback goes unseen. Everything without a hash of its content
 # in its name must be asked about every time. Only what the bundler named may be kept, and never HTML under such a name.
 check_caching() { # check_caching <URL prefix of the app> <page> <SPA route> <its directory in the image>
-  local prefix="$1" page="$2" route="$3" dir="$4" assets file sample index_sum missing etag path name mode range
+  local prefix="$1" page="$2" route="$3" dir="$4" assets file sample index_sum etag path name mode range
   assets="$(docker exec "$container" find "$dir/assets" -maxdepth 1 -type f)"
   printf '%s files under %sassets/\n' "$(printf '%s\n' "$assets" | wc -l | tr -d ' ')" "$prefix"
 
