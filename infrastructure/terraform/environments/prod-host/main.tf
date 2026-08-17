@@ -12,15 +12,16 @@ data "contabo_instance" "vps" {
 # Vercel treats the record by its id, with no listing of the zone, so nothing else in it can change.
 import {
   to = vercel_dns_record.wayline
-  id = "rec_7bb71d1e8b1ea3f06e3bb895"
+  id = "${local.target.vercel_team_id}/${local.target.vercel_record_id}"
 }
 
 resource "vercel_dns_record" "wayline" {
-  domain = "bereket.dev"
-  name   = "wayline"
-  type   = "A"
-  ttl    = 60
-  value  = local.target.host
+  team_id = local.target.vercel_team_id
+  domain  = "bereket.dev"
+  name    = "wayline"
+  type    = "A"
+  ttl     = 60
+  value   = local.target.host
 
   lifecycle {
     prevent_destroy = true

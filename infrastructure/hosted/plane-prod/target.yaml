@@ -4,6 +4,8 @@ name: plane-prod
 host: 5.253.234.127
 host6: 2a02:c207:2373:3427::1
 domain: wayline.bereket.dev
+vercel_team_id: team_1eGtu9WXhYyDSABiAGY9XMff
+vercel_record_id: rec_7bb71d1e8b1ea3f06e3bb895
 ssh_user: wayline-admin
 ssh_key: ~/.ssh/wayline_contabo_ed25519
 contabo_instance_id: 203733427
