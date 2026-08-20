@@ -13,16 +13,87 @@
 #   the dump restores into an empty Postgres, on a socket in that pod and with no TCP at all,
 #   row counts equal what the backup recorded, Plane's content hashes too, and every row marked uploaded has its object.
 # And from here:
-#   the namespace is default deny, and a pod in it times out on live data, on the API and on DNS, while the node reaches each,
+#   the namespace is default deny, and a pod in it cannot reach live data, the API or DNS, while the node reaches each,
 #   the keys' fingerprints match the live ones, so this backup and its keys are a pair,
 #   live workloads, volumes, Secrets and the list of live databases are the same after as before.
 #
 # Exit 0 proved, 1 not, 2 could not run: no backup yet, or no copy to read. A proof that did not run is never reported as passed.
+# --selftest reads the probe's verdict table, with no cluster, so CI can run it.
 #
 # It refuses any namespace but restore-test-<14 digits>, because a restore's statements drop what they reach.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# What one line of the probe shows, as verdict|what|detail. A connection is a route on any cluster. The rest depends on the cluster:
+# kindnet drops what a policy denies, so a refusal in kind means the packet arrived. K3s's kube-router ends each pod's chain in
+# -j REJECT, so on the VPS a denied connection is refused at once, as a closed port refuses, and that reads as no route only if the
+# node connected to that port. A timeout is not how kube-router denies, and it is still no route, which is all this row asks.
+probe_verdict() { # <vps|kind> <address:port> <curl's exit> <time_connect> <the node's readings, sorted, unique, each followed by a space>
+  local on="$1" target="$2" code="$3" connect="$4" reference="$5"
+  if awk -v t="${connect:-0}" 'BEGIN { exit !(t + 0 > 0) }'; then
+    printf 'FAIL|%s|CONNECTED from the isolated namespace, so it has a route to live data\n' "$target"
+  elif [[ "$code" == 7 && "$on" == kind ]]; then
+    printf 'FAIL|%s|refused, so the packet arrived: the isolated namespace has a route to it\n' "$target"
+  elif [[ "$code" == 7 ]]; then
+    if [[ "$reference" == "CONNECTED " ]]; then
+      printf 'PASS|no route to %s|refused from here, which is how kube-router denies, while the node connected to that port\n' "$target"
+    else
+      printf "BLOCKED|no route to %s|refused from here, and the node read '%s', so this cannot tell a policy from a closed port\n" "$target" "$reference"
+    fi
+  elif [[ "$code" != 28 ]]; then
+    printf 'BLOCKED|%s|curl exited %s, which says nothing about the path\n' "$target" "$code"
+  else
+    case "$reference" in
+      "CONNECTED " | "REFUSED " | "CONNECTED REFUSED ") printf 'PASS|no route to %s|timed out from here, while the node reached it\n' "$target" ;;
+      *) printf "BLOCKED|no route to %s|timed out from here, and the node read '%s', so it may just be down\n" "$target" "$reference" ;;
+    esac
+  fi
+}
+
+if [[ "${1:-}" == --selftest ]]; then
+  failures=0
+  # where curl's-exit time_connect the-node's-readings wanted. A dash is no reading, and + joins two.
+  while read -r on code connect readings want; do
+    readings="${readings//+/ } "
+    [[ "$readings" != "- " ]] || readings=""
+    got="$(probe_verdict "$on" 10.0.0.1:5432 "$code" "$connect" "$readings")"
+    if [[ "${got%%|*}" != "$want" ]]; then
+      printf 'FAIL probe_verdict %s exit %s connect %s node "%s": got %s, want %s\n' "$on" "$code" "$connect" "$readings" "${got%%|*}" "$want"
+      failures=$((failures + 1))
+    fi
+  done <<'TABLE'
+vps 7 0.000000 CONNECTED PASS
+vps 7 0.000000 REFUSED BLOCKED
+vps 7 0.000000 CONNECTED+REFUSED BLOCKED
+vps 7 0.000000 SILENT BLOCKED
+vps 7 0.000000 - BLOCKED
+vps 7 0.002000 CONNECTED FAIL
+vps 0 0.002000 CONNECTED FAIL
+vps 28 0.002000 CONNECTED FAIL
+vps 28 0.000000 CONNECTED PASS
+vps 28 0.000000 REFUSED PASS
+vps 28 0.000000 CONNECTED+REFUSED PASS
+vps 28 0.000000 CONNECTED+SILENT BLOCKED
+vps 28 0.000000 SILENT BLOCKED
+vps 28 0.000000 - BLOCKED
+vps 6 0.000000 CONNECTED BLOCKED
+kind 7 0.000000 CONNECTED FAIL
+kind 7 0.000000 REFUSED FAIL
+kind 0 0.002000 CONNECTED FAIL
+kind 28 0.000000 CONNECTED PASS
+kind 28 0.000000 REFUSED PASS
+kind 28 0.000000 SILENT BLOCKED
+kind 6 0.000000 CONNECTED BLOCKED
+TABLE
+  if [[ "$failures" -ne 0 ]]; then
+    printf 'fail selftest: %s failed\n' "$failures" >&2
+    exit 1
+  fi
+  printf ' ok selftest passed\n'
+  exit 0
+fi
+
 RESTORE_ON="${RESTORE_ON:-vps}"
 case "$RESTORE_ON" in
   vps | kind) ;;
@@ -175,13 +246,14 @@ EOF
   printf '%s:53\n' "$(kc -n kube-system get service kube-dns -o jsonpath='{.spec.clusterIP}')"
 }
 
-# The node dials each address. No policy governs its own traffic, so an answer shows the target was up when the pod timed out on it.
-node_dials() { # addresses as address:port, on stdin. Prints address:port ANSWERED or SILENT.
+# The node dials each address. No policy governs its own traffic, so CONNECTED shows that port was open when the pod failed on it,
+# and REFUSED only that the target was up.
+node_dials() { # addresses as address:port, on stdin. Prints address:port CONNECTED, REFUSED or SILENT.
   local dial='
 while IFS=: read -r address port; do
   [ -n "$address" ] || continue
-  if out=$(timeout 3 bash -c "exec 3<>/dev/tcp/$address/$port" 2>&1); then echo "$address:$port ANSWERED"
-  else case "$out" in *refused*) echo "$address:$port ANSWERED" ;; *) echo "$address:$port SILENT" ;; esac; fi
+  if out=$(timeout 3 bash -c "exec 3<>/dev/tcp/$address/$port" 2>&1); then echo "$address:$port CONNECTED"
+  else case "$out" in *refused*) echo "$address:$port REFUSED" ;; *) echo "$address:$port SILENT" ;; esac; fi
 done'
   if [[ "$RESTORE_ON" == kind ]]; then
     docker exec -i "$LOCAL_CLUSTER_NODE" bash -c "$dial"
@@ -203,13 +275,13 @@ make_namespace() {
   row PASS "namespace $NS is default deny, with a quota" "PSA restricted, no route, no Application"
 }
 
-# Every line must time out from inside, while the node reaches it.
+# No line may connect from inside, while the node reaches it. probe_verdict says what each failure shows.
 probe_no_route() {
   local targets
   targets="$(live_targets | tr '\n' ' ')"
   log "Can this namespace reach live data? Trying: $targets"
   printf '%s' "$targets" | tr ' ' '\n' >"$WORK/targets"
-  node_dials <"$WORK/targets" >"$WORK/node-before" || warn "the node's dial failed, so a timeout below has no reference"
+  node_dials <"$WORK/targets" >"$WORK/node-before" || warn "the node's dial failed, so what the probe reads below has no reference"
   fill "NS=$NS" "CURL_IMAGE=$CURL_IMAGE" "TARGETS=$targets" "SETTLE=$SETTLE" <"$TEMPLATES/probe-pod.yaml.tmpl" | kc apply -f - >/dev/null
   if ! kc -n "$NS" wait --for=jsonpath='{.status.phase}'=Succeeded pod/probe --timeout=200s >/dev/null 2>&1; then
     row BLOCKED "a pod here cannot reach live data" "the probe did not finish: $(kc -n "$NS" get pod probe -o jsonpath='{.status.phase} {.status.containerStatuses[0].state.waiting.reason}' 2>/dev/null || true)"
@@ -221,20 +293,13 @@ probe_no_route() {
     row BLOCKED "a pod here cannot reach live data" "the probe gave no result"
     return 0
   }
-  local address port code connect reference
+  local address port code connect reference decided verdict what detail
   while read -r _ address port code connect; do
     reference="$(awk -v t="$address:$port" '$1 == t { print $2 }' "$WORK/node-before" "$WORK/node-after" | sort -u | tr '\n' ' ')"
-    if awk -v t="${connect:-0}" 'BEGIN { exit !(t + 0 > 0) }'; then
-      row FAIL "$address:$port" "CONNECTED from the isolated namespace, so it has a route to live data"
-    elif [[ "$code" == 7 ]]; then
-      row FAIL "$address:$port" "refused, so the packet arrived: the isolated namespace has a route to it"
-    elif [[ "$code" != 28 ]]; then
-      row BLOCKED "$address:$port" "curl exited $code, which says nothing about the path"
-    elif [[ "$reference" == "ANSWERED " ]]; then
-      row PASS "no route to $address:$port" "timed out from here, while the node reached it"
-    else
-      row BLOCKED "no route to $address:$port" "timed out from here, and the node read '$reference', so it may just be down"
-    fi
+    # Not inside the here-string: bash 3.2 expands that with IFS already set.
+    decided="$(probe_verdict "$RESTORE_ON" "$address:$port" "$code" "$connect" "$reference")"
+    IFS='|' read -r verdict what detail <<<"$decided"
+    row "$verdict" "$what" "$detail"
   done < <(grep '^RESULT ' "$WORK/probe")
 }
 
