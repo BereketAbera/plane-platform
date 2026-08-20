@@ -8,7 +8,8 @@
 #   1. A read-only deploy key on GitHub, generated here and held here.
 #   2. Namespaces, then Secret argocd-repo-plane-platform in argocd, so Argo CD's first look at the repository works. It cannot
 #      come from Infisical, because Argo CD deploys Infisical.
-#   3. The rest of Terraform: Argo CD, its projects, and the root Application. Argo CD starts deploying the platform here.
+#   3. Port 80 in the firewall, then the rest of Terraform: Argo CD, its projects, and the root Application. Argo CD starts
+#      deploying the platform here, and with it asks for the first certificate.
 #   4. The backup folders on the node, the read-only pull user, and a restic password generated once.
 #   5. Secret zero, which scripts/secret-zero.sh generates only with FIRST_BOOT=yes.
 #   6. Infisical: first admin, project plane-prod, identity bound to namespace plane-prod, seeded values with ghcr-pull's token.
@@ -94,8 +95,24 @@ repo_secret() {
 
 # ------ 3. The rest of Terraform ---------------------------------------------------------------------------------------
 
+# cert-manager's self-check goes through the CoreDNS rewrite and never leaves the node, so it passes behind a closed firewall.
+# cert-manager then asks Let's Encrypt, whose connection to port 80 is dropped, and the order fails, with its next try an hour or
+# more away. So port 80 opens before Argo CD can ask. A stage that allows it already stays, or running this again would take 443
+# from an open site. Port 80 alone only redirects, and answers the challenge.
+open_port_80() {
+  local stage
+  stage="$("$ROOT/scripts/hosted/edge.sh" status)" || die "could not read the firewall's stage over SSH"
+  [[ "$stage" == *"table loaded"* ]] || die "the firewall's table is not loaded, so this node has no public firewall. Load a stage: scripts/hosted/edge.sh http"
+  if [[ "$stage" == *"dport 80 accept"* ]]; then
+    ok "the firewall allows port 80 already, so it stays at its stage"
+    return 0
+  fi
+  "$ROOT/scripts/hosted/edge.sh" http
+}
+
 terraform_all() {
-  step "3 of 8: Terraform: Argo CD, projects and the root Application"
+  step "3 of 8: port 80, then Terraform: Argo CD, projects and the root Application"
+  open_port_80
   tf apply -input=false -auto-approve -lock-timeout=10m
   ok "Argo CD is reading branch deploy/plane-prod"
 }

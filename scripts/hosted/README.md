@@ -26,3 +26,18 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `target.sh` | The opt-in shared scripts source when `WAYLINE_TARGET` is set: `scripts/secret-zero.sh`, `infisical-bootstrap.sh`, `infisical-seed.sh`, `test-netpol.sh`, `infisical/tests/rendered-secrets.sh` | |
 
 Local state lives in `.local/hosted/plane-prod/`, mode 0700, and never in Git. Bash 3.2, because macOS ships it.
+
+## The first certificate
+
+cert-manager's self-check goes through the CoreDNS rewrite and never leaves the node, so it passes behind a closed firewall. cert-manager
+then asks Let's Encrypt, whose connection to port 80 is dropped, and the order fails. The next try is an hour away, doubling up to 32, and
+opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before Argo CD starts. If an order failed anyway, then with port
+80 open, this removes the backoff, and cert-manager tries again at once:
+
+```
+.tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n plane-prod patch certificate wayline-tls \
+  --subresource=status --type=json -p '[{"op":"remove","path":"/status/lastFailureTime"}]'
+```
+
+That is read from cert-manager v1.21.3's `shouldBackoffReissuingOnFailure` and has not run on this cluster. Moving `issuerRef` from
+staging to production also tries at once, because the next request no longer matches the Certificate.
