@@ -190,6 +190,29 @@ hosted_images_listed() {
   return "$status"
 }
 
+# No Alloy here to run it, so this takes the stage's own expression and does as stage.replace does, on the line Alertmanager logs when
+# a send to Telegram fails: each capture group becomes the replacement.
+alloy_scrubs_the_telegram_token() { # alloy_scrubs_the_telegram_token <values file>
+  yq -r '.alloy.configMap.content' "$1" | python3 -I -c '
+import re, sys
+config = sys.stdin.read()
+stage = re.search(r"stage\.replace\s*\{\s*expression\s*=\s*\"([^\"]+)\"\s*replace\s*=\s*\"([^\"]*)\"", config)
+if not stage or config.index("stage.replace") > config.index("forward_to = [loki.write"):
+    sys.exit("no stage.replace ahead of what goes to Loki, so a bot token in a log line would reach it")
+token = "123456789:" + "AbC-d_E" * 5
+line = "msg=\"Notify for alerts failed\" err=\"primary/telegram[0]: notify retry canceled: Post \\\"https://api.telegram.org/bot" + token + "/sendMessage\\\": dial tcp: lookup api.telegram.org: no such host\""
+pattern = re.compile(stage.group(1))
+found = pattern.search(line)
+if not found or not found.groups():
+    sys.exit("stage.replace does not capture the token in a line Alertmanager logs")
+scrubbed = line
+for group in range(found.re.groups, 0, -1):
+    scrubbed = scrubbed[:found.start(group)] + stage.group(2) + scrubbed[found.end(group):]
+if token in scrubbed or "api.telegram.org" not in scrubbed:
+    sys.exit("stage.replace leaves the token in the line, or takes more than the token: " + scrubbed.replace(token, "<the token>"))
+'
+}
+
 render_chart() { # render_chart <output directory> <release> <namespace> <repository> <chart> <version> <values file...>
   local out="$1" release="$2" namespace="$3" repo="$4" chart="$5" version="$6" value
   shift 6

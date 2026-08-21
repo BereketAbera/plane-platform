@@ -83,8 +83,14 @@ jobs:
             moves `deploy/plane-prod`, the one branch hosted Argo CD reads. If that job goes red, the branch stays where it is
             and production keeps running what it ran.
 
-            A rollback changes the images and not the database. A migration this set ran stays applied: `docs/runbooks` gives
-            the restore path.
+            A rollback changes the images and not the database. A migration this set ran stays applied: `scripts/hosted/README.md`,
+            under After a rollback, gives the restore path.
+
+            **If the title says first promotion:** the firewall must be at `owner` or lower before this merges, because a new
+            instance's first-admin sign-up is public, and whoever posts first owns it. `ENABLE_SIGNUP` does not govern that.
+            `scripts/hosted/edge.sh status` shows the stage. Create the admin from your own address, and only then run
+            `scripts/hosted/edge.sh open`. `make remote-test` fails on an instance with no admin and 443 open. A revert does not
+            undo this one: `publish-release.sh` refuses it.
       # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
       # promotion. The run stays red, because the pull request this workflow promises does not exist.
       - name: Explain a refused pull request
