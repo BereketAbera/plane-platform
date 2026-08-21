@@ -19,6 +19,10 @@
 # them are not treated as secrets. It prints counts and never a value, and it never passes a value on a
 # command line.
 #
+# Hosted production's evidence lands in the same folder, so its values count too, when this machine has any: its secret zero, the
+# owner's files, and what scripts/hosted/scrub-values.sh read from its Secrets. This reaches that cluster no more than any other local
+# target does, so make remote-publish-evidence is what refreshes those.
+#
 # Values stay in .local/evidence-scrub-values (mode 0600). Without that, a stopped cluster, a rotated
 # password or a new install would put a value back into the copy the next time its raw file was published.
 #
@@ -54,6 +58,10 @@ from datetime import datetime, timezone
 LOCAL, RAW, RUNS = sys.argv[1:4]
 NAMESPACES = ("plane-dev", "plane-prod-sim", "infisical", "monitoring", "argocd")
 REMEMBERED = os.path.join(LOCAL, "evidence-scrub-values")
+HOSTED = os.path.join(LOCAL, "hosted", "plane-prod")
+HOSTED_REMEMBERED = os.path.join(HOSTED, "evidence-scrub-values")
+HOSTED_FILES = ("restic-password", "ghcr-pull-token")
+HOSTED_FILE_PREFIXES = ("alert-", "offsite-s3-")
 MANIFEST = "MANIFEST.tsv"
 REDACTED = b"<redacted>"
 MAX_FILE = 2 * 1024 * 1024
@@ -136,6 +144,28 @@ def local_values(notes):
             yield from values_in_file(os.path.join(directory, name))
 
 
+def hosted_values(notes):
+    """Hosted production's, from files. None on a machine with no hosted state, so the local platform's runs do not change."""
+    if not os.path.isdir(HOSTED):
+        return
+    for directory, _, names in os.walk(os.path.join(HOSTED, "secret-zero")):
+        for name in names:
+            yield from values_in_file(os.path.join(directory, name))
+    for name in sorted(os.listdir(HOSTED)):
+        path = os.path.join(HOSTED, name)
+        if os.path.isfile(path) and (name in HOSTED_FILES or name.startswith(HOSTED_FILE_PREFIXES)):
+            for value in values_in_file(path):
+                yield value
+                # A Healthchecks URL holds no password, and whoever has it can silence the alarm: the secret is its last part.
+                if value.strip().startswith(b"https://"):
+                    yield value.strip().rsplit(b"/", 1)[-1]
+    try:
+        with open(HOSTED_REMEMBERED, "rb") as handle:
+            yield from (base64.b64decode(line) for line in handle.read().split())
+    except FileNotFoundError:
+        notes.append("hosted production's Secrets are not in the scrub yet. Run: make remote-publish-evidence TARGET=plane-prod")
+
+
 def kubectl(*args):
     command = ["kubectl", "--context", os.environ["KUBE_CONTEXT"], "--request-timeout=15s", *args]
     return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True, timeout=30).stdout
@@ -204,10 +234,16 @@ def collect(notes):
         for form in (value, url_password(value)):
             if form is not None and is_secret(form.strip()):
                 values.add(form)
-    if not values:
+    # Apart from the local platform's remembered file, because these stay under .local/hosted/plane-prod.
+    hosted = set()
+    for value in hosted_values(notes):
+        for form in (value, url_password(value)):
+            if form is not None and is_secret(form.strip()):
+                hosted.add(form)
+    if not values and not hosted:
         sys.exit("found no values to scrub with, so a scrub would change nothing. Nothing was published.")
     remember(values)
-    return values
+    return values | hosted
 
 
 def needles(values):

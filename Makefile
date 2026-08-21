@@ -138,7 +138,7 @@ ci: ## Run every CI check locally, the same scripts as GitHub Actions. Runs them
 # ---- hosted production ----------------------------------------------------------------------
 # Nothing above reaches it, and these reach nothing else. Each needs TARGET=plane-prod, and what changes something needs
 # CONFIRM=plane-prod as well, not yes. Reads and writes .local/hosted/plane-prod. See scripts/hosted/.
-.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle
+.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle remote-publish-evidence
 remote-guard:
 	@[[ "$(TARGET)" == plane-prod ]] || { echo "this reaches hosted production, so it needs TARGET=plane-prod" >&2; exit 2; }
 
@@ -186,3 +186,7 @@ remote-alerts: remote-guard ## Hosted: render alert delivery from the owner's fi
 
 remote-bundle: remote-guard ## Hosted: write the recovery bundle, encrypted with age, and prove it decrypts: make remote-bundle TARGET=plane-prod [VERB=init|verify]
 	@./scripts/hosted/bundle.sh $(VERB)
+
+remote-publish-evidence: remote-guard ## Hosted: read its Secrets' values for the scrub, if the cluster answers, then make publish-evidence: make remote-publish-evidence TARGET=plane-prod
+	@./scripts/hosted/scrub-values.sh
+	@./scripts/publish-evidence.sh
