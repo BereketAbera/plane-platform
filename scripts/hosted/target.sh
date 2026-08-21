@@ -4,6 +4,10 @@
 # and without the variable they do exactly what they always did. With it, this re-roots LOCAL_DIR, KUBECONFIG and KUBE_CONTEXT
 # through scripts/hosted/lib.sh, and verifies the target, before they read any of those.
 #
+# The variable alone aims nothing. It could leak into a shell, and make up and scripts/test.sh call these same scripts, so it needs
+# CONFIRM=plane-prod too, and the CONFIRM=yes those scripts take from a person does not count. That goes for the one that only reads:
+# a leak must not read production's Secrets through a local test either. Before lib.sh, so a leak does not even open the tunnel.
+#
 # What the shared scripts read from here, each with a default of their own that keeps the local behaviour:
 #   WAYLINE_ENVIRONMENTS                 the environments to act on, in place of "dev prod-sim"
 #   TF_VAR_environments                  the projects and namespaces infisical/terraform makes, in place of its default
@@ -14,6 +18,10 @@
 #   HOSTED_EVIDENCE_DIR                  where evidence goes, from lib.sh
 if [[ "${WAYLINE_TARGET:-}" != plane-prod ]]; then
   printf 'fail WAYLINE_TARGET is "%s", and the only target there is is plane-prod\n' "${WAYLINE_TARGET:-}" >&2
+  exit 1
+fi
+if [[ "${CONFIRM:-}" != plane-prod ]]; then
+  printf 'fail WAYLINE_TARGET=plane-prod aims this script at hosted production, so it needs CONFIRM=plane-prod. CONFIRM=yes does not count. If you did not mean hosted production: unset WAYLINE_TARGET\n' >&2
   exit 1
 fi
 export TARGET=plane-prod

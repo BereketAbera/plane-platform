@@ -23,7 +23,7 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `restore-test.sh` | Restore into an isolated namespace, prove it, and remove it, on the VPS or in kind | `remote-restore-test` |
 | `smoke.sh` | `tests/e2e/smoke.py --env hosted --mode verify` on an existing account, asked at a hidden prompt | `remote-smoke` |
 | `test-hosted.sh` | The hosted test suite. Exits 0, 1 or 2, and says BLOCKED or INCOMPLETE plainly | `remote-test` |
-| `target.sh` | The opt-in shared scripts source when `WAYLINE_TARGET` is set: `scripts/secret-zero.sh`, `infisical-bootstrap.sh`, `infisical-seed.sh`, `test-netpol.sh`, `infisical/tests/rendered-secrets.sh` | |
+| `target.sh` | The opt-in shared scripts source when `WAYLINE_TARGET` is set: `scripts/secret-zero.sh`, `infisical-bootstrap.sh`, `infisical-seed.sh`, `test-netpol.sh`, `infisical/tests/rendered-secrets.sh`. It needs `CONFIRM=plane-prod` too, so a leaked variable aims nothing | `remote-netpol`, and through `remote-bootstrap` and `remote-test` |
 
 Local state lives in `.local/hosted/plane-prod/`, mode 0700, and never in Git. Bash 3.2, because macOS ships it.
 
