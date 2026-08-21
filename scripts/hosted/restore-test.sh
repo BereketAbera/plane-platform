@@ -155,6 +155,8 @@ FAILED=0
 BLOCKED=0
 EVIDENCE="$HOSTED_EVIDENCE_DIR/restore-test-plane-prod-$STAMP.json"
 RESULTS='[]'
+# The trap below removes this run's, and a kill leaves restored dumps and objects behind. Old enough to be from no run still going.
+find "$LOCAL_DIR" -maxdepth 1 -type d -name '.restore-test.*' -mmin +720 -exec rm -rf {} +
 WORK="$(mktemp -d "$LOCAL_DIR/.restore-test.XXXXXX")"
 PV_NAMES=""
 
@@ -212,6 +214,19 @@ live_databases() { # namespace
   # shellcheck disable=SC2016  # expanded in the pod
   printf '%s databases: %s\n' "$1" "$(kc -n "$1" exec "$pod" -c "$container" -- sh -c 'psql -XAt -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT datname FROM pg_database ORDER BY 1"' 2>/dev/null |
     { grep -v '^scratch_' || true; } | tr '\n' ' ')"
+}
+
+# A scratch database outlives a nightly only if it was killed, and the next one drops it. Until then it is a full plaintext copy in the
+# live server, and live_databases leaves it out, so this says so.
+scratch_databases_left() {
+  local namespace pod container found
+  for namespace in $LIVE_NAMESPACES; do
+    read -r pod container <<<"$(live_postgres_pod "$namespace")"
+    kc -n "$namespace" get pod "$pod" >/dev/null 2>&1 || continue
+    # shellcheck disable=SC2016  # expanded in the pod
+    found="$(kc -n "$namespace" exec "$pod" -c "$container" -- sh -c 'psql -XAt -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT datname FROM pg_database ORDER BY 1"' 2>/dev/null | { grep '^scratch_' || true; } | tr '\n' ' ')"
+    if [[ -n "$found" ]]; then row NOTE "$namespace: a scratch database in the live server" "$found. A nightly running now makes one. Otherwise a killed one left it, and the next drops it"; fi
+  done
 }
 
 # Rows a person could change while this runs, so a difference warns and does not fail. Recorded either way.
@@ -435,6 +450,7 @@ live_fingerprint | sort >"$WORK/live-before"
 live_counts | sort >"$WORK/counts-before"
 
 make_namespace
+scratch_databases_left
 probe_no_route
 for source in $SOURCES; do
   restore_one "$source"

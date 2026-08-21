@@ -103,6 +103,8 @@ verify() {
   restic_need_local
   trap verify_cleanup EXIT
   guard_disk
+  # A kill leaves a restored copy behind, plaintext. Old enough to be from no run still going.
+  find "$LOCAL_DIR" -maxdepth 1 -type d -name '.verify.*' -mmin +720 -exec rm -rf {} +
   local namespace worst=0 rc any=no
   for namespace in $BACKUP_NAMESPACES; do
     if [[ -d "$OFFSITE_DIR/$namespace" ]]; then

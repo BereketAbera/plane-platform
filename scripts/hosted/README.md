@@ -42,3 +42,109 @@ opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before 
 
 That is read from cert-manager v1.21.3's `shouldBackoffReissuingOnFailure` and has not run on this cluster. Moving `issuerRef` from
 staging to production also tries at once, because the next request no longer matches the Certificate.
+
+## After a rollback: the database does not go back
+
+A revert on main, or promoting an older set, moves the images and not the database. A migration the newer image ran stays applied. If the
+older image runs on that schema, stop there. If it does not, or if the migration itself did the damage, restore the dump from before it.
+Everything written since that dump is lost, so a person decides that. A revert of the first promotion is refused instead:
+[`docs/evidence/promotions/README.md`](../../docs/evidence/promotions/README.md) says why. None of this has run on a real cluster yet, so
+read each step before running it.
+
+**Which dump.** Each backend image gets one, taken by Job `plane-prod-predeploy-dump` just before that image's migrator ran. It is named
+`<UTC time>-<first 16 hex of the backend digest>`, and its `manifest.json` names the whole image. So to undo backend X's migrations, take the
+dump named for X, and not the one for the image you are going back to. The names of the last five are the folders under
+`/srv/wayline/backups/plane-prod/predeploy` on the node. Until that night's backup such a folder holds the dump, in plain. After that it
+is empty, and the dump is a restic snapshot, tag `predeploy`, of that path, kept for 90 days. Off the VPS there is no copy of these: a pull
+takes tag `wayline`, so past that the nearest thing is the nightly from before the promotion.
+
+**In this order:**
+
+1. `make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=plane-prod`, so what is there now is kept too.
+2. Roll back first: the revert on main, and wait for `release-plane-prod` and for Argo CD to take it. With the newer image still deployed, its
+   migrator would run the same migrations again on what you are about to restore.
+3. Pause auto-sync, root first or it puts the other back, and wait until neither has a sync Running. A failing one never ends by itself, because
+   it retries for ever: `monitoring/ops/lib.sh`'s `argo_wait_idle` shows how to terminate it.
+   ```
+   kc() { .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod "$@"; }
+   kc -n argocd patch application root --type merge -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}'
+   kc -n argocd patch application plane-prod --type merge -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}'
+   ```
+4. Stop what writes: `for d in plane-api-wl plane-worker-wl plane-beat-worker-wl plane-live-wl; do kc -n plane-prod scale deployment/$d --replicas=0; done`
+5. Restore, through a Job in plane-prod. It carries the label that lets a backup Job reach Postgres, and it uses the images in Git. `dropdb` and
+   not `pg_restore --clean`, so tables newer than the dump cannot survive. The dump holds no objects, and Silo stays as it is: restored rows
+   still find theirs, and what was uploaded since is left over and harmless.
+
+```
+NAME=<the folder's name>
+POSTGRES_IMAGE="$(.tools/bin/yq -r '.images[] | select(.name == "postgres") | .newName + ":" + .newTag + "@" + .digest' helm/plane/overlays/prod/kustomization.yaml)"
+RESTIC_IMAGE="$(.tools/bin/yq -r 'select(.kind == "CronJob") | .spec.jobTemplate.spec.template.spec.containers[] | select(.name == "seal") | .image' gitops/clusters/plane-prod/platform/backup/plane-prod.yaml)"
+kc apply -f - <<YAML
+apiVersion: batch/v1
+kind: Job
+metadata: {name: restore-predeploy, namespace: plane-prod}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: restore-predeploy, app.kubernetes.io/component: backup}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 70, runAsGroup: 70, fsGroup: 70, seccompProfile: {type: RuntimeDefault}}
+      volumes:
+        - {name: backups, persistentVolumeClaim: {claimName: backups, readOnly: true}}
+        - {name: restic-password, secret: {secretName: restic-password, defaultMode: 0440}}
+        - {name: work, emptyDir: {sizeLimit: 30Gi}}
+      initContainers:
+        - name: unseal
+          image: $RESTIC_IMAGE
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: "1", memory: 1Gi}}
+          env:
+            - {name: RESTIC_REPOSITORY, value: /backups/restic}
+            - {name: RESTIC_PASSWORD_FILE, value: /run/restic/password}
+            - {name: RESTIC_CACHE_DIR, value: /work/cache}
+            - {name: TMPDIR, value: /work}
+            - {name: HOME, value: /work}
+          volumeMounts:
+            - {name: backups, mountPath: /backups, readOnly: true}
+            - {name: restic-password, mountPath: /run/restic, readOnly: true}
+            - {name: work, mountPath: /work}
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              if [ -f /backups/predeploy/$NAME/plane.dump ]; then cp /backups/predeploy/$NAME/plane.dump /work/plane.dump; exit 0; fi
+              restic --no-lock restore latest --tag predeploy --path /backups/predeploy/$NAME --target /work/restored --verify
+              cp /work/restored/backups/predeploy/$NAME/plane.dump /work/plane.dump
+      containers:
+        - name: restore
+          image: $POSTGRES_IMAGE
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: "1", memory: 512Mi}}
+          env:
+            - {name: PGHOST, value: plane-pgdb}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: plane-pgdb, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: plane-pgdb, key: POSTGRES_PASSWORD}}}
+            - {name: POSTGRES_DB, valueFrom: {secretKeyRef: {name: plane-pgdb, key: POSTGRES_DB}}}
+          volumeMounts:
+            - {name: work, mountPath: /work}
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              dropdb --maintenance-db=postgres --force --if-exists "\$POSTGRES_DB"
+              createdb --maintenance-db=postgres "\$POSTGRES_DB"
+              pg_restore --no-owner --no-privileges --exit-on-error --single-transaction -d "\$POSTGRES_DB" /work/plane.dump
+              vacuumdb --analyze-only "\$POSTGRES_DB"
+YAML
+kc -n plane-prod wait --for=condition=Complete job/restore-predeploy --timeout=1h
+```
+6. Old cache entries and queued tasks describe rows from before the restore:
+   `kc -n plane-prod exec plane-redis-wl-0 -c plane-redis -- valkey-cli FLUSHALL`, and
+   `kc -n plane-prod exec plane-rabbitmq-wl-0 -c plane-rabbitmq -- rabbitmqctl -q purge_queue celery`.
+7. Delete the Job, and put auto-sync back, plane-prod first and root last:
+   `kc -n argocd patch application <name> --type json -p '[{"op":"remove","path":"/spec/syncPolicy/automated/enabled"}]'`. Argo CD puts the
+   replicas back, unless you terminated a sync in step 3: it does not retry that revision by itself, and the next commit starts a new one.
+   Then `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=argo`, and `make remote-smoke TARGET=plane-prod`.

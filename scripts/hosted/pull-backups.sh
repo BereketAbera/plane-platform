@@ -14,8 +14,8 @@ source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/lib-restic.sh"
 
 # The account can do one thing. A key option forces internal-sftp in read-only mode, in sshd itself, so its login shell is never
-# run and can be nologin. It reads through group 70, the backup Jobs' GID, which restic's files carry. Plain dumps under predeploy
-# stay owner-only, so this account cannot read them, and it holds no sudo.
+# run and can be nologin. It reads through group 70, the backup Jobs' GID, which restic's files carry. A plain dump under predeploy,
+# until the night seals it, stays owner-only, so this account cannot read it, and it holds no sudo.
 setup() {
   hosted_require_confirm "this makes a user on the node"
   hosted_require_ssh
