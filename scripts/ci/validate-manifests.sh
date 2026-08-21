@@ -97,6 +97,7 @@ if has_yaml "$WORK/hosted"; then
   check "kubeconform: hosted tree" "${HOSTED_KUBECONFORM[@]}" "$WORK/hosted"
   check "conftest: hosted tree" conftest_run gitops,workloads,plane,hosted "$WORK"/hosted/*.yaml
   check "hosted tree stands alone" hosted_tree_stands_alone "$WORK/hosted-alone"
+  check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
 fi
 
 # Prometheus refuses a bad rule file at reload, and the operator's admission webhook is off to save its
@@ -170,6 +171,7 @@ else
     fetch_schemas "$HOSTED_K8S_VERSION" "$WORK"/hosted-charts/*.yaml
     check "kubeconform: hosted charts" "${HOSTED_KUBECONFORM[@]}" -ignore-missing-schemas "$WORK/hosted-charts"
     check "conftest: hosted charts" conftest_run charts,plane,hosted "$WORK"/hosted-charts/*.yaml
+    check "hosted tree and charts: the images are what the list says" hosted_images_listed all "$WORK"/hosted/*.yaml "$WORK"/hosted-charts/*.yaml
     rule_files "$WORK/hosted-chart-rules" "$WORK"/hosted-charts/*.yaml
     if has_yaml "$WORK/hosted-chart-rules"; then
       check "promtool: hosted chart rules" promtool_check "$WORK/hosted-chart-rules"

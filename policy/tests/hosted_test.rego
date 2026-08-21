@@ -277,8 +277,10 @@ application(source) := {
 
 plain_source(path) := {"repoURL": git_url, "targetRevision": "deploy/plane-prod", "path": path}
 
+root_application := json.patch(application(plain_source("gitops/clusters/plane-prod/applications")), [{"op": "replace", "path": "/metadata/name", "value": "root"}])
+
 test_git_sources_in_the_two_trees_accepted if {
-	count(hosted.deny) == 0 with input as application(plain_source("gitops/clusters/plane-prod/applications"))
+	count(hosted.deny) == 0 with input as root_application
 	count(hosted.deny) == 0 with input as application(plain_source("gitops/clusters/plane-prod/platform/backup"))
 	count(hosted.deny) == 0 with input as application(plain_source("./gitops/clusters/plane-prod/platform/backup/"))
 	count(hosted.deny) == 0 with input as application(plain_source("gitops/environments/prod"))
@@ -307,6 +309,44 @@ test_paths_outside_the_two_trees_rejected if {
 	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod"))
 	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/../../applications"))
 	count(hosted.deny) == 1 with input as application(plain_source("."))
+}
+
+# Inside the tree, and nothing checks what they hold.
+test_paths_no_check_reads_rejected if {
+	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/values"))
+	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/extras"))
+	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/platform"))
+	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/platform/backup/../.."))
+	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/bootstrap-chart"))
+	count(hosted.deny) == 1 with input as application(plain_source("gitops/clusters/plane-prod/applications"))
+}
+
+test_overrides_on_a_source_rejected if {
+	count(hosted.deny) == 1 with input as application(object.union(plain_source("gitops/clusters/plane-prod/platform/backup"), {"kustomize": {"images": ["docker.io/restic/restic=ghcr.io/attacker/evil:latest"]}}))
+	count(hosted.deny) == 1 with input as application(object.union(plain_source("gitops/clusters/plane-prod/platform/backup"), {"directory": {"recurse": true}}))
+	count(hosted.deny) == 1 with input as application(object.union(plain_source("gitops/clusters/plane-prod/platform/backup"), {"plugin": {"name": "anything"}}))
+}
+
+chart_with_helm(helm) := json.patch(chart_application(hosted_values, "42.3.0", values_ref), [{"op": "add", "path": "/spec/sources/0/helm", "value": helm}])
+
+test_helm_overrides_rejected if {
+	count(hosted.deny) == 1 with input as chart_with_helm({"valueFiles": [hosted_values], "parameters": [{"name": "image.registry", "value": "ghcr.io"}]})
+	count(hosted.deny) == 1 with input as chart_with_helm({"valueFiles": [hosted_values], "fileParameters": [{"name": "x", "path": "y"}]})
+	count(hosted.deny) == 1 with input as chart_with_helm({"valueFiles": [hosted_values], "values": "image: {registry: ghcr.io}"})
+	count(hosted.deny) == 1 with input as chart_with_helm({"valueFiles": [hosted_values], "valuesObject": {"extraObjects": []}})
+	count(hosted.deny) == 1 with input as chart_with_helm({"valueFiles": [hosted_values], "releaseName": "other"})
+}
+
+test_helm_with_only_value_files_accepted if {
+	count(hosted.deny) == 0 with input as chart_with_helm({"valueFiles": [hosted_values]})
+}
+
+test_application_with_no_source_rejected if {
+	count(hosted.deny) == 1 with input as json.remove(application(plain_source("gitops/environments/prod")), ["spec/source"])
+}
+
+test_source_hydrator_rejected if {
+	count(hosted.deny) == 2 with input as json.patch(json.remove(application(plain_source("gitops/environments/prod")), ["spec/source"]), [{"op": "add", "path": "/spec/sourceHydrator", "value": {"drySource": {"repoURL": git_url, "targetRevision": "main", "path": "anything"}}}])
 }
 
 test_git_source_with_no_path_and_no_ref_rejected if {

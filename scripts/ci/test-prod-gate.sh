@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real runs of the exact-digest gate: scripts/ci/check-prod-evidence.sh, promote-prod.sh, publish-release.sh and
+# Real runs of the exact-digest gate: scripts/ci/check-prod-evidence.sh, promote-prod.sh, publish-release.sh, check-deploy-branch.sh and
 # scripts/record-dev-evidence.sh, in a throwaway Git repository with its own origin and a throwaway signing key. The signatures,
 # Git history, pushes and kustomize are real. kubectl, docker, gh and curl are stubs, and so is scripts/render.sh, which here
 # only runs kustomize, because the fixture's overlay has no chart. It runs what is on disk, as the scripts' own commit in the
@@ -42,6 +42,7 @@ CHECK=scripts/ci/check-prod-evidence.sh
 PROMOTE=scripts/ci/promote-prod.sh
 PUBLISH=scripts/ci/publish-release.sh
 RECORD=scripts/record-dev-evidence.sh
+DEPLOY_BRANCH_CHECK=scripts/ci/check-deploy-branch.sh
 list_mutations() {
   mutation check-refuses-tampered-json "$CHECK" 'refuse "the signature on' 'true "the signature on'
   mutation check-refuses-wrong-signer "$CHECK" 'refuse "the signature on' 'true "the signature on'
@@ -52,7 +53,7 @@ list_mutations() {
   mutation check-reads-the-render-from-the-commit "$CHECK" 'at_commit "$MANIFESTS" >"$WORK/manifests.yaml"' 'cat "$MANIFESTS" >"$WORK/manifests.yaml"'
   mutation check-refuses-an-edited-check "$CHECK" 'refuse "$SCRIPT is not what commit' 'true "$SCRIPT is not what commit'
   mutation check-refuses-an-argument "$CHECK" 'refuse "this takes no arguments' 'true "this takes no arguments'
-  mutation check-ignores-gits-environment "$CHECK" 'unset $(git rev-parse --local-env-vars)' ':'
+  mutation check-ignores-gits-environment "$CHECK" 'unset $(command -p git rev-parse --local-env-vars)' ':'
   mutation check-refuses-shallow-history "$CHECK" 'refuse "shallow clone' 'true "shallow clone'
   mutation check-refuses-failed-smoke "$CHECK" '(if $e.smoke.result != "PASS" then' '(if false then'
   mutation check-refuses-branding-not-pass "$CHECK" '(if $e.smoke.branding_overlay != "PASS" then' '(if false then'
@@ -123,6 +124,21 @@ list_mutations() {
   mutation check-refuses-no-signers-file "$CHECK" 'refuse "$SIGNERS is not in this commit' 'true "$SIGNERS is not in this commit'
   mutation check-refuses-null-digest-in-one-image "$CHECK" 'refuse "$PLANE_APPLICATION exists and $MANIFESTS still names' 'true "$PLANE_APPLICATION exists and $MANIFESTS still names'
   mutation check-refuses-real-digests-with-no-evidence-and-no-application "$CHECK" 'if [[ -n "$null_references" ]]; then' 'if [[ "$HAS_PLANE_APPLICATION" == no ]]; then not_yet_promoted "no Application"; fi; if [[ -n "$null_references" ]]; then'
+  mutation check-refuses-a-symlink-in-applications "$CHECK" 'refuse "$file is a symlink or a submodule' 'true "$file is a symlink or a submodule'
+  mutation check-refuses-applications-as-a-symlink "$CHECK" 'refuse "$file is a symlink or a submodule' 'true "$file is a symlink or a submodule'
+  mutation check-refuses-a-symlink-before-it-is-promoted "$CHECK" 'refuse "$file is a symlink or a submodule' 'true "$file is a symlink or a submodule'
+  mutation check-refuses-a-submodule "$CHECK" 'refuse "$file is a symlink or a submodule' 'true "$file is a symlink or a submodule'
+  mutation check-refuses-an-argocd-source-file "$CHECK" 'refuse "$file would be merged' 'true "$file would be merged'
+  mutation check-refuses-a-kustomization-by-another-name "$CHECK" 'refuse "$file makes Argo CD build' 'true "$file makes Argo CD build'
+  mutation check-refuses-jsonnet-outside-applications "$CHECK" 'refuse "$file would be evaluated by Argo CD' 'true "$file would be evaluated by Argo CD'
+  mutation check-refuses-a-file-it-cannot-parse "$CHECK" 'refuse "$file cannot be parsed' 'true "$file cannot be parsed'
+  mutation check-refuses-an-application-in-a-new-folder "$CHECK" 'refuse "$file holds an Application, and only' 'true "$file holds an Application, and only'
+  mutation check-refuses-an-application-in-values "$CHECK" 'refuse "$file holds an Application, and only' 'true "$file holds an Application, and only'
+  mutation check-refuses-something-else-in-applications "$CHECK" 'refuse "$file holds something other than an Application' 'true "$file holds something other than an Application'
+  mutation check-refuses-a-list-in-applications "$CHECK" 'refuse "$file holds something other than an Application' 'true "$file holds something other than an Application'
+  mutation check-refuses-overrides-on-the-application "$CHECK" '(if (($application.spec.source // {}) | keys) != ["path", "repoURL", "targetRevision"] then' '(if false then'
+  mutation check-finds-a-quoted-name-reading-the-render "$CHECK" 'done 3< <(git ls-tree -r -z --name-only "$COMMIT" -- "$APPLICATIONS/")' 'done 3< <(git ls-tree -r --name-only "$COMMIT" -- "$APPLICATIONS/" | tr "\n" "\0")'
+  mutation check-refuses-tracked-tools "$CHECK" 'refuse "commit $COMMIT tracks files under .tools' 'true "commit $COMMIT tracks files under .tools'
   mutation promote-refuses-what-the-check-refuses "$PROMOTE" 'die "check-prod-evidence.sh answered' 'true "check-prod-evidence.sh answered'
   mutation promote-refuses-a-bad-hash "$PROMOTE" 'die "a set hash is 64' 'true "a set hash is 64'
   mutation promote-refuses-a-dirty-overlay "$PROMOTE" 'die "uncommitted changes under' 'true "uncommitted changes under'
@@ -159,6 +175,14 @@ list_mutations() {
   mutation publish-refuses-a-branch-that-moved "$PUBLISH" '"$RELEASE:refs/heads/$BRANCH"' '"+$RELEASE:refs/heads/$BRANCH"'
   mutation publish-platform-only "$PUBLISH" "export GIT_AUTHOR_NAME='github-actions[bot]' GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'" ':'
   mutation promote-first-promotion "$PROMOTE" 'export GIT_AUTHOR_NAME=promote-prod GIT_AUTHOR_EMAIL=promote-prod@invalid GIT_COMMITTER_NAME=promote-prod GIT_COMMITTER_EMAIL=promote-prod@invalid' ':'
+  mutation publish-refuses-tracked-tools "$PUBLISH" 'if [[ -n "$tracked_tools" ]]; then' 'if false; then'
+  mutation publish-refuses-a-branch-pushed-by-hand "$PUBLISH" 'die "$BRANCH at $TIP says it came from' 'true "$BRANCH at $TIP says it came from'
+  mutation publish-refuses-going-back-to-no-set "$PUBLISH" 'if [[ "$check_status" -eq 3 && -n "$released_set" ]]; then' 'if false; then'
+  mutation deploy-branch-check-finds-a-hand-push "$DEPLOY_BRANCH_CHECK" 'die "$BRANCH at $TIP says it came from' 'true "$BRANCH at $TIP says it came from'
+  mutation deploy-branch-check-finds-foreign-files "$DEPLOY_BRANCH_CHECK" 'die "$BRANCH at $TIP holds more than' 'true "$BRANCH at $TIP holds more than'
+  mutation deploy-branch-check-finds-no-release-file "$DEPLOY_BRANCH_CHECK" 'die "$BRANCH at $TIP has no RELEASE.json' 'true "$BRANCH at $TIP has no RELEASE.json'
+  mutation deploy-branch-check-finds-a-commit-off-main "$DEPLOY_BRANCH_CHECK" 'die "$BRANCH at $TIP says it came from $recorded, which' 'true "$BRANCH at $TIP says it came from $recorded, which'
+  mutation deploy-branch-check-says-nothing-when-it-cannot-read "$DEPLOY_BRANCH_CHECK" 'unreadable "could not read origin"' 'true "could not read origin"'
   mutation record-newest-smoke-failed "$RECORD" '(if .result != "PASS" then' '(if false then'
   mutation record-passes-and-the-check-accepts-it "$RECORD" 'executed_under: "rosetta-on-arm64", ' ''
   mutation record-no-key "$RECORD" 'die "$KEY does not exist' 'true "$KEY does not exist'
@@ -508,7 +532,8 @@ build_template() {
   mkdir -p "$REPO/scripts/ci" "$REPO/scripts/lib" "$REPO/.github/workflows" "$REPO/helm/plane/overlays/dev" "$REPO/helm/plane/overlays/prod" \
     "$REPO/gitops/clusters/plane-prod/applications" "$REPO/gitops/clusters/plane-prod/values" "$REPO/gitops/environments/prod" "$REPO/docs/evidence/promotions" "$REPO/docs/evidence/runs" "$REPO/.local/evidence-raw"
   cp "$SCRIPTS_FROM/record-dev-evidence.sh" "$REPO/scripts/"
-  cp "$SCRIPTS_FROM/ci/check-prod-evidence.sh" "$SCRIPTS_FROM/ci/promote-prod.sh" "$SCRIPTS_FROM/ci/publish-release.sh" "$REPO/scripts/ci/"
+  cp "$SCRIPTS_FROM/ci/check-prod-evidence.sh" "$SCRIPTS_FROM/ci/promote-prod.sh" "$SCRIPTS_FROM/ci/publish-release.sh" \
+    "$SCRIPTS_FROM/ci/lib-release-branch.sh" "$SCRIPTS_FROM/ci/check-deploy-branch.sh" "$REPO/scripts/ci/"
   cp "$SCRIPTS_FROM/lib/common.sh" "$SCRIPTS_FROM/lib/commit-lock.sh" "$REPO/scripts/lib/"
   cat >"$REPO/scripts/render.sh" <<'STUB_RENDER'
 #!/usr/bin/env bash
@@ -1007,6 +1032,106 @@ check_refuses_a_wayline_image_elsewhere() {
   refused 'may name a Wayline image'
 }
 
+# ---- Check: what Argo CD would act on and this would not read -------------------------------------------------------------
+HOSTED=gitops/clusters/plane-prod
+plant_an_application() { # plant_an_application <file>: an Application on a branch nothing reviewed
+  mkdir -p "$(dirname "$REPO/$1")"
+  sed -e 's|name: plane-prod$|name: planted|' -e 's|targetRevision: deploy/plane-prod|targetRevision: unreviewed-branch|' -e 's|path: gitops/environments/prod|path: anything|' \
+    "$REPO/$HOSTED/plane-prod-application.yaml.tmpl" >"$REPO/$1"
+}
+check_refuses_a_symlink_in_applications() {
+  # Root would read through the link, and git and every reader that wants a regular file would pass over it.
+  plant_an_application "$HOSTED/values/notes.yaml"
+  ln -s ../values/notes.yaml "$REPO/$HOSTED/applications/notes.yaml"
+  commit_all 'a link in applications/'
+  refused 'is a symlink or a submodule'
+}
+check_refuses_applications_as_a_symlink() {
+  git -C "$REPO" mv "$HOSTED/applications" "$HOSTED/values/elsewhere"
+  ln -s values/elsewhere "$REPO/$HOSTED/applications"
+  commit_all 'applications/ is a link to another folder'
+  refused 'is a symlink or a submodule'
+}
+check_refuses_a_symlink_before_it_is_promoted() {
+  # Not promoted must not read as nothing to look at. The platform is released either way.
+  plant_an_application "$HOSTED/values/notes.yaml"
+  ln -s ../values/notes.yaml "$REPO/$HOSTED/applications/notes.yaml"
+  commit_all 'a link in applications/'
+  refused 'is a symlink or a submodule'
+}
+check_refuses_a_submodule() {
+  git -C "$REPO" update-index --add --cacheinfo "160000,$(head_commit),$HOSTED/platform/vendored"
+  as_someone git -C "$REPO" commit -q -m 'a submodule'
+  refused 'is a symlink or a submodule'
+}
+check_refuses_an_argocd_source_file() {
+  # Argo CD merges this into the source of the Application reading the folder, so it could swap the backup's image.
+  mkdir -p "$REPO/$HOSTED/platform/backup"
+  printf 'kustomize:\n  images:\n    - docker.io/restic/restic=ghcr.io/attacker/evil:latest\n' >"$REPO/$HOSTED/platform/backup/.argocd-source-backup.yaml"
+  commit_all 'an override beside the manifests'
+  refused 'would be merged into'
+}
+check_refuses_a_kustomization_by_another_name() {
+  # Argo CD builds a directory that holds one, and the checks read that directory as plain files.
+  mkdir -p "$REPO/$HOSTED/platform/backup"
+  printf 'resources: [plane-prod.yaml]\nimages:\n  - {name: docker.io/restic/restic, newName: ghcr.io/attacker/evil}\n' >"$REPO/$HOSTED/platform/backup/Kustomization"
+  commit_all 'a kustomization under a name collect does not look for'
+  refused 'makes Argo CD build this directory'
+}
+check_refuses_jsonnet_outside_applications() {
+  mkdir -p "$REPO/$HOSTED/platform/planted"
+  printf '{}\n' >"$REPO/$HOSTED/platform/planted/app.jsonnet"
+  commit_all 'a file only Argo CD can read'
+  refused 'would be evaluated by Argo CD'
+}
+check_refuses_a_file_it_cannot_parse() {
+  printf 'a: [\n' >"$REPO/$HOSTED/values/broken.yaml"
+  commit_all 'a broken file'
+  refused 'cannot be parsed'
+}
+check_refuses_an_application_in_a_new_folder() {
+  plant_an_application "$HOSTED/extras/notes.yaml"
+  commit_all 'an Application nothing else reads'
+  refused 'holds an Application, and only'
+}
+check_refuses_an_application_in_values() {
+  plant_an_application "$HOSTED/values/notes.yaml"
+  commit_all 'an Application among the values'
+  refused 'holds an Application, and only'
+}
+check_refuses_something_else_in_applications() {
+  # Root applies whatever is here, under project platform, which allows every kind and namespace.
+  printf 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  selector: {matchLabels: {app: planted}}\n  template:\n    metadata: {labels: {app: planted}}\n    spec:\n      containers:\n        - {name: main, image: "ghcr.io/bereketabera/wl/backend@sha256:%064d"}\n' 9 >"$REPO/$HOSTED/applications/extra.yaml"
+  commit_all 'a Deployment root would apply'
+  refused 'holds something other than an Application'
+}
+check_refuses_a_list_in_applications() {
+  printf 'apiVersion: v1\nkind: List\nitems:\n  - {apiVersion: argoproj.io/v1alpha1, kind: Application, metadata: {name: planted}}\n' >"$REPO/$HOSTED/applications/extra.yaml"
+  commit_all 'an Application inside a List'
+  refused 'holds something other than an Application'
+}
+check_refuses_overrides_on_the_application() {
+  yq -i '.spec.source.helm.parameters = [{"name": "image.tag", "value": "latest"}]' "$REPO/$HOSTED/applications/plane-prod.yaml"
+  commit_all 'an override on what reads the render'
+  refused 'sets more on its source than where to read'
+}
+check_finds_a_quoted_name_reading_the_render() {
+  # Git quotes this name in its plain listing, and a quoted name would end in neither .yaml nor anything else this looks for.
+  replace_text "$REPO/$HOSTED/plane-prod-application.yaml.tmpl" 'name: plane-prod' 'name: plane-too'
+  cp "$REPO/$HOSTED/plane-prod-application.yaml.tmpl" "$REPO/$HOSTED/applications/caf$(printf '\303\251').yaml"
+  commit_all 'an Application under a name Git quotes'
+  refused 'also reads the Plane render'
+}
+check_refuses_tracked_tools() {
+  # This would pass any signature, and neither the check nor the signers change.
+  printf '#!/bin/sh\nexit 0\n' >"$REPO/.tools/bin/ssh-keygen"
+  chmod +x "$REPO/.tools/bin/ssh-keygen"
+  jq_edit "$(evidence_file)" '.recorded_at = "2030-01-01T00:00:00Z"'
+  git -C "$REPO" add -f .tools/bin/ssh-keygen
+  commit_all 'edited after signing, and a tool that agrees'
+  refused 'tracks files under .tools'
+}
+
 # ---- Check: who reads the render ---------------------------------------------------------------------------------------
 check_refuses_another_application_reading_the_render() {
   # Exit 3 says nothing reads this render, and this file does.
@@ -1479,10 +1604,142 @@ publish_refuses_a_tip_with_no_release() {
   git --git-dir="$ORIGIN" update-ref refs/heads/deploy/plane-prod "$commit"
   stays_put "$commit" 'no RELEASE.json naming a main commit'
 }
+push_by_hand() { # A push to the branch that moves the web digest and keeps RELEASE.json. Prints the commit it made.
+  local index="$WORK/hand-index" blob tree commit
+  blob="$(git --git-dir="$ORIGIN" show refs/heads/deploy/plane-prod:gitops/environments/prod/manifests.yaml | sed "s/$(digest_of A web)/$(digest_of B web)/" | git --git-dir="$ORIGIN" hash-object -w --stdin)"
+  GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" read-tree refs/heads/deploy/plane-prod
+  GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" update-index --add --cacheinfo "100644,$blob,gitops/environments/prod/manifests.yaml"
+  tree="$(GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" write-tree)"
+  rm -f "$index"
+  commit="$(as_someone git --git-dir="$ORIGIN" commit-tree "$tree" -p refs/heads/deploy/plane-prod -m 'pushed by hand')"
+  git --git-dir="$ORIGIN" update-ref refs/heads/deploy/plane-prod "$commit"
+  printf '%s' "$commit"
+}
+publish_refuses_a_branch_pushed_by_hand() {
+  # Rerunning the same commit used to overwrite it and say nothing, and so did the next real release.
+  local pushed
+  publish_ok
+  pushed="$(push_by_hand)"
+  stays_put "$pushed" 'so someone pushed it by hand'
+  expect "it names the commit" said "$pushed"
+  at_commit "$PROMOTED_B"
+  stays_put "$pushed" 'so someone pushed it by hand'
+}
+publish_refuses_going_back_to_no_set() {
+  # A revert of the first promotion leaves exit 3, and root would prune Application plane-prod with Plane still running.
+  local released
+  publish_ok
+  released="$(tip)"
+  as_someone git -C "$REPO" revert --no-edit "$PROMOTED_A" >/dev/null
+  at_commit "$(head_commit)"
+  stays_put "$released" 'a revert of the first promotion'
+  expect "the Application is still on the branch" on_branch 'gitops/clusters/plane-prod/applications/plane-prod.yaml'
+  expect "RELEASE.json still names the set" equal "$(tip_release .set_hash)" "$HASH_A"
+}
+publish_platform_only_twice() {
+  # A branch that has never run a set is free to stay that way.
+  local first
+  publish_ok
+  first="$(tip)"
+  printf 'deployment: {replicas: 1}\n' >"$REPO/gitops/clusters/plane-prod/values/traefik.yaml"
+  commit_all 'a change to the platform, and still no promotion'
+  at_commit "$(head_commit)"
+  publish_ok 78
+  expect "the branch moved" [ "$(tip)" != "$first" ]
+  expect "RELEASE.json has no set" equal "$(tip_release .set_hash)" null
+}
+publish_refuses_tracked_tools() {
+  # common.sh puts this first on PATH with the token in the environment, so it must not get that far.
+  printf '#!/bin/sh\nprintf "%%s" "$GITHUB_TOKEN" >"$STUB/stolen"\nexit 0\n' >"$REPO/.tools/bin/jq"
+  chmod +x "$REPO/.tools/bin/jq"
+  git -C "$REPO" add -f .tools/bin/jq
+  commit_all 'a tool in the commit'
+  at_commit "$(head_commit)"
+  stays_put '' 'would run as tools with the token in reach'
+  expect "it never ran" absent "$STUB/stolen"
+}
 publish_writes_the_job_summary() {
   run_status env GITHUB_STEP_SUMMARY="$STUB/summary" GITHUB_RUN_ID=77 GITHUB_TOKEN=stub-token ./scripts/ci/publish-release.sh
   expect "it exits 0, and it exited $STATUS" equal "$STATUS" 0
   expect "the summary says where the branch went" grep -q 'deploy/plane-prod is now' "$STUB/summary"
+}
+
+# ---- The daily look at the branch ---------------------------------------------------------------------------------------
+deploy_branch_check() { run_status ./scripts/ci/check-deploy-branch.sh; }
+deploy_branch_check_no_branch() {
+  deploy_branch_check
+  expect "exit 0, and it exited $STATUS" equal "$STATUS" 0
+  expect "it says so" said 'no deploy/plane-prod yet'
+}
+deploy_branch_check_holds_what_was_released() {
+  publish_ok
+  deploy_branch_check
+  expect "exit 0, and it exited $STATUS" equal "$STATUS" 0
+  expect "it says so" said 'holds what main'
+}
+deploy_branch_check_after_a_release_that_changed_nothing() {
+  # RELEASE.json keeps naming the older commit, and that is what a release leaves, so it must not read as a push.
+  publish_ok
+  printf 'unrelated\n' >"$REPO/source.txt"
+  commit_all 'a change the hosted trees do not hold'
+  at_commit "$(head_commit)"
+  publish_ok 78
+  deploy_branch_check
+  expect "exit 0, and it exited $STATUS" equal "$STATUS" 0
+}
+deploy_branch_check_finds_a_hand_push() {
+  local pushed
+  publish_ok
+  pushed="$(push_by_hand)"
+  deploy_branch_check
+  expect "exit 1, and it exited $STATUS" equal "$STATUS" 1
+  expect "it says so" said 'so someone pushed it by hand'
+  expect "it names the commit" said "$pushed"
+  expect "it changed nothing" equal "$(tip)" "$pushed"
+}
+deploy_branch_check_finds_foreign_files() {
+  local index="$WORK/foreign-index" blob tree commit
+  publish_ok
+  blob="$(printf 'name: planted\n' | git --git-dir="$ORIGIN" hash-object -w --stdin)"
+  GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" read-tree refs/heads/deploy/plane-prod
+  GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" update-index --add --cacheinfo "100644,$blob,.github/workflows/planted.yml"
+  tree="$(GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" write-tree)"
+  commit="$(as_someone git --git-dir="$ORIGIN" commit-tree "$tree" -p refs/heads/deploy/plane-prod -m 'pushed by hand')"
+  git --git-dir="$ORIGIN" update-ref refs/heads/deploy/plane-prod "$commit"
+  deploy_branch_check
+  expect "exit 1, and it exited $STATUS" equal "$STATUS" 1
+  expect "it says so" said 'holds more than a release does'
+}
+deploy_branch_check_finds_no_release_file() {
+  local tree commit
+  tree="$(printf '' | git --git-dir="$ORIGIN" mktree)"
+  commit="$(as_someone git --git-dir="$ORIGIN" commit-tree "$tree" -m 'pushed by hand')"
+  git --git-dir="$ORIGIN" update-ref refs/heads/deploy/plane-prod "$commit"
+  deploy_branch_check
+  expect "exit 1, and it exited $STATUS" equal "$STATUS" 1
+  expect "it says so" said 'has no RELEASE.json naming a main commit'
+}
+deploy_branch_check_finds_a_commit_off_main() {
+  # A forged RELEASE.json, naming a commit whose trees match what was pushed.
+  local index="$WORK/forged-index" blob tree commit forged
+  publish_ok
+  forged="$(as_someone git -C "$REPO" commit-tree "$(git -C "$REPO" rev-parse 'HEAD^{tree}')" -m 'on no branch')"
+  git -C "$REPO" push -q origin "$forged:refs/heads/elsewhere"
+  blob="$(git --git-dir="$ORIGIN" show refs/heads/deploy/plane-prod:RELEASE.json | jq --arg forged "$forged" '.main_commit = $forged' | git --git-dir="$ORIGIN" hash-object -w --stdin)"
+  GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" read-tree refs/heads/deploy/plane-prod
+  GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" update-index --add --cacheinfo "100644,$blob,RELEASE.json"
+  tree="$(GIT_INDEX_FILE="$index" git --git-dir="$ORIGIN" write-tree)"
+  commit="$(as_someone git --git-dir="$ORIGIN" commit-tree "$tree" -p refs/heads/deploy/plane-prod -m 'pushed by hand')"
+  git --git-dir="$ORIGIN" update-ref refs/heads/deploy/plane-prod "$commit"
+  deploy_branch_check
+  expect "exit 1, and it exited $STATUS" equal "$STATUS" 1
+  expect "it says so" said "which is not on origin's main"
+}
+deploy_branch_check_says_nothing_when_it_cannot_read() {
+  git -C "$REPO" remote set-url origin "$WORK/no-such-origin"
+  deploy_branch_check
+  expect "exit 2, and it exited $STATUS" equal "$STATUS" 2
+  expect "it says so" said 'says nothing about deploy/plane-prod'
 }
 
 # ---- Record -------------------------------------------------------------------------------------------------------------
@@ -1831,6 +2088,15 @@ workflow_promote_job() {
   expect "the input reaches no shell by expansion" equal "$(workflow_says '[.jobs[].steps[] | select(.run // "" | test("inputs\\."))] | length')" 0
   expect "the pull request holds the Application" grep -qF 'gitops/clusters/plane-prod/applications/plane-prod.yaml' "$ROOT/.github/workflows/promote-plane-prod.yml"
 }
+workflow_deploy_branch_check() {
+  local job='.jobs.compare' checkout='[.steps[] | select(.uses // "" | test("actions/checkout"))][0]'
+  as_json "$ROOT/.github/workflows/check-deploy-branch.yml"
+  expect "each day, and by hand" equal "$(workflow_says '.on | keys | sort | join(" ")')" 'schedule workflow_dispatch'
+  expect "the workflow itself grants nothing" equal "$(workflow_says '.permissions | length')" 0
+  expect "it can read and no more" equal "$(workflow_says "$job.permissions | to_entries | map(.key + \"=\" + .value) | join(\" \")")" 'contents=read'
+  expect "no credentials left in the checkout" equal "$(workflow_says "$job | $checkout | .with[\"persist-credentials\"]")" false
+  expect "it runs the comparison" equal "$(workflow_says "[$job.steps[] | select(.run // \"\" | test(\"scripts/ci/check-deploy-branch.sh\"))] | length")" 1
+}
 workflow_gate_runs_in_make_ci() {
   as_json "$ROOT/.github/workflows/ci.yml"
   expect "make ci runs this" grep -qE '^[[:space:]]*for check in .*test-prod-gate' "$ROOT/Makefile"
@@ -1845,6 +2111,14 @@ real_application_is_what_the_check_wants() {
   cp "$ROOT/gitops/clusters/plane-prod/plane-prod-application.yaml.tmpl" "$(application_file)"
   commit_all 'the real Application'
   passes
+}
+real_tree_passes_the_refusals() {
+  # Not promoted, so exit 3 says everything above the render let the real tree through.
+  rm -rf "$REPO/gitops/clusters/plane-prod"
+  cp -R "$ROOT/gitops/clusters/plane-prod" "$REPO/gitops/clusters/plane-prod"
+  rm -f "$REPO/gitops/clusters/plane-prod/applications/plane-prod.yaml"
+  commit_all 'the real hosted tree'
+  not_yet
 }
 real_render_runs_only_what_the_overlay_names() {
   # Evidence is one set per overlay, so an image the overlay cannot move could never have evidence.
@@ -2062,13 +2336,43 @@ scenario record-upstream-is-not-an-index record_upstream_is_not_an_index "$DEV_A
 scenario record-no-key record_no_key "$DEV_A"
 scenario record-key-the-signers-do-not-accept record_key_the_signers_do_not_accept "$DEV_A"
 
+scenario check-refuses-a-symlink-in-applications check_refuses_a_symlink_in_applications "$PROMOTED_A"
+scenario check-refuses-applications-as-a-symlink check_refuses_applications_as_a_symlink "$PROMOTED_A"
+scenario check-refuses-a-symlink-before-it-is-promoted check_refuses_a_symlink_before_it_is_promoted "$EVIDENCE_A"
+scenario check-refuses-a-submodule check_refuses_a_submodule "$PROMOTED_A"
+scenario check-refuses-an-argocd-source-file check_refuses_an_argocd_source_file "$PROMOTED_A"
+scenario check-refuses-a-kustomization-by-another-name check_refuses_a_kustomization_by_another_name "$PROMOTED_A"
+scenario check-refuses-jsonnet-outside-applications check_refuses_jsonnet_outside_applications "$PROMOTED_A"
+scenario check-refuses-a-file-it-cannot-parse check_refuses_a_file_it_cannot_parse "$PROMOTED_A"
+scenario check-refuses-an-application-in-a-new-folder check_refuses_an_application_in_a_new_folder "$PROMOTED_A"
+scenario check-refuses-an-application-in-values check_refuses_an_application_in_values "$PROMOTED_A"
+scenario check-refuses-something-else-in-applications check_refuses_something_else_in_applications "$PROMOTED_A"
+scenario check-refuses-a-list-in-applications check_refuses_a_list_in_applications "$PROMOTED_A"
+scenario check-refuses-overrides-on-the-application check_refuses_overrides_on_the_application "$PROMOTED_A"
+scenario check-finds-a-quoted-name-reading-the-render check_finds_a_quoted_name_reading_the_render "$EVIDENCE_A"
+scenario check-refuses-tracked-tools check_refuses_tracked_tools "$PROMOTED_A"
+scenario publish-refuses-a-branch-pushed-by-hand publish_refuses_a_branch_pushed_by_hand "$PROMOTED_A"
+scenario publish-refuses-going-back-to-no-set publish_refuses_going_back_to_no_set "$PROMOTED_A"
+scenario publish-platform-only-twice publish_platform_only_twice "$EVIDENCE_A"
+scenario publish-refuses-tracked-tools publish_refuses_tracked_tools "$PROMOTED_A"
+scenario deploy-branch-check-no-branch deploy_branch_check_no_branch "$PROMOTED_A"
+scenario deploy-branch-check-holds-what-was-released deploy_branch_check_holds_what_was_released "$PROMOTED_A"
+scenario deploy-branch-check-after-a-release-that-changed-nothing deploy_branch_check_after_a_release_that_changed_nothing "$PROMOTED_A"
+scenario deploy-branch-check-finds-a-hand-push deploy_branch_check_finds_a_hand_push "$PROMOTED_A"
+scenario deploy-branch-check-finds-foreign-files deploy_branch_check_finds_foreign_files "$PROMOTED_A"
+scenario deploy-branch-check-finds-no-release-file deploy_branch_check_finds_no_release_file "$PROMOTED_A"
+scenario deploy-branch-check-finds-a-commit-off-main deploy_branch_check_finds_a_commit_off_main "$PROMOTED_A"
+scenario deploy-branch-check-says-nothing-when-it-cannot-read deploy_branch_check_says_nothing_when_it_cannot_read "$PROMOTED_A"
+
 scenario real-application-is-what-the-check-wants real_application_is_what_the_check_wants "$PROMOTED_A"
+scenario real-tree-passes-the-refusals real_tree_passes_the_refusals "$EVIDENCE_A"
 scenario real-render-runs-only-what-the-overlay-names real_render_runs_only_what_the_overlay_names "$SOURCE_COMMIT"
 scenario real-overlays-name-the-same-images real_overlays_name_the_same_images "$SOURCE_COMMIT"
 scenario real-signers-accept-a-signature-from-that-key real_signers_accept_a_signature_from_that_key "$SOURCE_COMMIT"
 scenario workflow-release-job workflow_release_job "$SOURCE_COMMIT"
 scenario workflow-promote-job workflow_promote_job "$SOURCE_COMMIT"
 scenario workflow-gate-runs-in-make-ci workflow_gate_runs_in_make_ci "$SOURCE_COMMIT"
+scenario workflow-deploy-branch-check workflow_deploy_branch_check "$SOURCE_COMMIT"
 
 ran=$((passed + failed))
 [[ "$ran" -gt 0 ]] || die "no scenario's name contains '$FILTER${GATE_EXACT:-}'"

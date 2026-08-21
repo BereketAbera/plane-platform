@@ -1,7 +1,9 @@
 # Runs the same scripts as `make ci`. No secrets and no cluster, so a compromised tool has little
 # to steal: every job holds a read-only token and persists no credentials. The one exception is
-# release-plane-prod, last below, which runs only on main, after the others, and can move only the
-# branch hosted production reads.
+# release-plane-prod, last below, which runs only on main, after the others. Its token can write any
+# branch, and its script moves only deploy/plane-prod, the branch hosted production reads. Nothing on
+# this plan holds it to that, or stops another job with contents: write or a person pushing that
+# branch. publish-release.sh and check-deploy-branch.yml go red on such a push, and do not prevent it.
 name: ci
 
 on:
@@ -88,7 +90,7 @@ jobs:
       - name: Gitleaks, trivy config, trivy fs
         run: ./scripts/ci/security.sh
 
-  # What hosted Argo CD reads comes only from here, so CI holds no Kubernetes access and a merge that fails this reaches
+  # This is what moves what hosted Argo CD reads, so CI holds no Kubernetes access and a merge that fails this reaches
   # nothing: the branch stays where it is, and production keeps running. Serial, because a newer commit replacing one still
   # waiting loses nothing, and an older one landing after it would be refused as a move backwards. No cache of tools, unlike
   # the jobs above, because this one can write, and what it fetches is checked against tools.lock.

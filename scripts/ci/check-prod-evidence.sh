@@ -7,7 +7,7 @@
 #         that set and says dev ran it. Stdout is one line, set_hash=<hash>. Everything else goes to stderr.
 # Exit 1  Refused, and it says why. Anything this script did not expect ends here too.
 # Exit 3  Not promoted yet: no Application reads the render, and Wayline's digests are still the null digest.
-#         scripts/ci/publish-release.sh then releases the platform alone.
+#         scripts/ci/publish-release.sh then releases the platform alone, unless the branch already runs a set.
 #
 # It reads the commit at HEAD and not the working tree, so a file edited after the commit changes nothing. That goes for
 # the allowed signers, the evidence and the render, and this script refuses to run if it is not itself what HEAD holds.
@@ -15,6 +15,10 @@
 #
 # Nothing asks it to be lenient: no argument, no setting and no cluster, and git is its only way to history, with no
 # fetch. It holds no clock either, so an older set keeps its evidence and a rollback to it passes.
+#
+# Evidence covers the render and nothing else. Outside it this refuses what would reach the cluster unread: a symlink, an override, an
+# Application anywhere but applications/, anything else in applications/. An image outside the render needs no evidence, and
+# scripts/ci/validate-manifests.sh holds those to policy/hosted-images.txt, so at least a person reads the diff.
 #
 # docs/evidence/promotions/README.md describes the evidence file, and what a signature does and does not prove.
 set -euo pipefail
@@ -60,17 +64,22 @@ not_yet_promoted() {
 
 [[ $# -eq 0 ]] || refuse "this takes no arguments and has no overrides, and got: $*"
 
+# Until .tools is known to hold nothing of this commit's, git is the system's: command -p looks only in the standard path.
 # GIT_DIR and its relatives could point every read below at another repository, and a replace ref could swap a blob.
 # shellcheck disable=SC2046  # one variable name per word is what this prints
-unset $(git rev-parse --local-env-vars)
+unset $(command -p git rev-parse --local-env-vars)
 export GIT_NO_REPLACE_OBJECTS=1
 
 SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/$(basename "${BASH_SOURCE[0]}")"
 ROOT="$(cd "$(dirname "$SCRIPT")/../.." && pwd -P)"
 cd "$ROOT"
+[[ "$(command -p git rev-parse --show-toplevel 2>/dev/null)" == "$ROOT" ]] || refuse "$ROOT is not the top of a Git repository, so there is no commit to test"
+COMMIT="$(command -p git rev-parse --verify --quiet 'HEAD^{commit}')" || refuse "this repository has no commits"
+# Whatever is there would run as ssh-keygen, jq or git below, and pass any signature with no change to this file or the signers.
+# .tools is gitignored, so a tracked file there was forced in.
+tracked_tools="$(command -p git ls-tree -r --name-only "$COMMIT" -- .tools)" || refuse "could not list .tools in commit $COMMIT"
+[[ -z "$tracked_tools" ]] || refuse "commit $COMMIT tracks files under .tools, and they would run as the tools this check trusts: ${tracked_tools//$'\n'/, }"
 export PATH="$ROOT/.tools/bin:$PATH"
-[[ "$(git rev-parse --show-toplevel 2>/dev/null)" == "$ROOT" ]] || refuse "$ROOT is not the top of a Git repository, so there is no commit to test"
-COMMIT="$(git rev-parse --verify --quiet 'HEAD^{commit}')" || refuse "this repository has no commits"
 # Ancestry below would read a truncated history as a missing one.
 [[ "$(git rev-parse --is-shallow-repository)" == false ]] || refuse "shallow clone: this check reads history, so check out with fetch-depth: 0"
 
@@ -100,12 +109,37 @@ refuse_all() { # refuse_all <file of problems, one a line>
   fi
 }
 
+# ---- What Argo CD would act on that this does not read ---------------------------------------------------------------
+# validate-manifests.sh says the same to a pull request, through collect_hosted. This holds it on the release path.
+while IFS= read -r -d '' entry <&3; do
+  mode="${entry%% *}"
+  file="${entry#*$'\t'}"
+  [[ "$mode" == 100644 || "$mode" == 100755 ]] ||
+    refuse "$file is a symlink or a submodule, mode $mode. Argo CD reads through a link that stays in the repository, and nothing here does"
+  case "${file##*/}" in
+    .argocd-source*) refuse "$file would be merged into an Application's source, and change what runs with nothing here reading it" ;;
+    kustomization.yml | Kustomization) refuse "$file makes Argo CD build this directory, and the checks read it as plain files. Name it kustomization.yaml" ;;
+  esac
+  # Only root reads Applications, and only from applications/. A child reading one from anywhere else would be reading past every check.
+  # The chart's templates are not YAML until rendered, and Terraform installs them.
+  case "$file" in
+    "$APPLICATIONS"/* | "$CLUSTER_DIR"/bootstrap-chart/templates/*) continue ;;
+    *.jsonnet) refuse "$file would be evaluated by Argo CD in a directory it reads, and this cannot read it" ;;
+    *.yaml | *.yml | *.json) ;;
+    *) continue ;;
+  esac
+  at_commit "$file" | yq -o=json -I=0 '.' >"$WORK/document.json" || refuse "$file cannot be parsed, so nothing can say what it holds"
+  if is_true -s 'any(.. | objects; .kind == "Application" or .kind == "ApplicationSet")' "$WORK/document.json"; then
+    refuse "$file holds an Application, and only $APPLICATIONS may, because only that is what root reads and these checks follow"
+  fi
+done 3< <(git ls-tree -r -z "$COMMIT" -- "$CLUSTER_DIR/" "$ENVIRONMENT_DIR/")
+
 # ---- Who reads the render -------------------------------------------------------------------------------------------
 # Root reads everything under applications/, so an Application under another file name deploys this render too, and exit 3
 # would not be true of it.
 HAS_PLANE_APPLICATION=no
-while read -r file <&3; do
-  [[ -n "$file" ]] || continue
+# -z, because Git quotes a name it would have to escape, and a quoted name would end in neither .yaml nor anything else below.
+while IFS= read -r -d '' file <&3; do
   case "$file" in
     *.yaml | *.yml | *.json) ;;
     *.jsonnet) refuse "$file: Argo CD would read it and this cannot, so it could deploy anything" ;;
@@ -113,6 +147,9 @@ while read -r file <&3; do
   esac
   at_commit "$file" >"$WORK/application.yaml"
   yq -o=json -I=0 '.' "$WORK/application.yaml" >"$WORK/application.json" || refuse "$file is not YAML, so nothing can say what it deploys"
+  # Root applies any kind of object it finds here, under project platform, which allows every kind and namespace.
+  is_true -s 'all(.[]; . == null or (type == "object" and .kind == "Application"))' "$WORK/application.json" ||
+    refuse "$file holds something other than an Application, and root would apply it under a project that allows every kind"
   if [[ "$file" == "$PLANE_APPLICATION" ]]; then
     HAS_PLANE_APPLICATION=yes
     jq -s -r --arg repository "$HOSTED_REPOSITORY" --arg branch "$DEPLOY_BRANCH" --arg path "$ENVIRONMENT_DIR" '
@@ -122,6 +159,7 @@ while read -r file <&3; do
         (if $application.kind != "Application" then "is not an Application" else empty end),
         (if $application.metadata.name != "plane-prod" then "is not named plane-prod" else empty end),
         (if $application.spec.sources != null then "has several sources, and a second one would deploy what this check does not read" else empty end),
+        (if (($application.spec.source // {}) | keys) != ["path", "repoURL", "targetRevision"] then "sets more on its source than where to read, and that would change what runs from this render" else empty end),
         (if $application.spec.source.repoURL != $repository then "reads \($application.spec.source.repoURL), not \($repository)" else empty end),
         (if $application.spec.source.targetRevision != $branch then "reads revision \($application.spec.source.targetRevision), not \($branch)" else empty end),
         (if $application.spec.source.path != $path then "reads path \($application.spec.source.path), not \($path), which is the render this check reads" else empty end),
@@ -132,13 +170,14 @@ while read -r file <&3; do
       | any(.metadata.name == "plane-prod" or (((.spec.sources // []) + [.spec.source // {}]) | any((.path // "") | test("(^|/)environments(/|$)"))))' "$WORK/application.json"; then
     refuse "$file also reads the Plane render. Only $PLANE_APPLICATION may, or this check would be gating an Application it does not know"
   fi
-done 3< <(git ls-tree -r --name-only "$COMMIT" -- "$APPLICATIONS/")
+done 3< <(git ls-tree -r -z --name-only "$COMMIT" -- "$APPLICATIONS/")
 
 # Argo CD reads this whole directory, so a second file would reach the cluster with no evidence.
 stray="$(git ls-tree -r --name-only "$COMMIT" -- "$ENVIRONMENT_DIR/" | grep -vxF "$MANIFESTS" || true)"
 [[ -z "$stray" ]] || refuse "Argo CD reads all of $ENVIRONMENT_DIR and this reads only $MANIFESTS, so these would reach the cluster with no evidence: ${stray//$'\n'/, }"
 
-# A Wayline image anywhere else in the hosted tree would be deployed with no evidence at all.
+# A Wayline image anywhere else in the hosted tree would be deployed with no evidence at all. This goes by the name, and
+# policy/hosted-images.txt is what catches another name.
 grep_status=0
 elsewhere="$(git grep -n -F "$GHCR_PREFIX" "$COMMIT" -- "$CLUSTER_DIR/" 2>&1)" || grep_status=$?
 [[ "$grep_status" -ne 0 ]] || refuse "only $MANIFESTS may name a Wayline image, and this evidence does not cover these: ${elsewhere//$'\n'/, }"

@@ -1,0 +1,28 @@
+# Nothing can stop a push to deploy/plane-prod on this plan, and hosted Argo CD syncs whatever that branch holds. Between two pushes to
+# main nothing else looks at it, so this does, each day. It goes red on a branch that differs from what its RELEASE.json says, and it
+# changes nothing. GitHub stops a schedule after 60 days with no activity in the repository, so make remote-status runs the same check.
+name: check-deploy-branch
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  compare:
+    name: Compare deploy/plane-prod with what main released
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/ci/check-deploy-branch.sh
