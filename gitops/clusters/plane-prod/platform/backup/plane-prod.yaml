@@ -7,7 +7,8 @@
 #   retention by restic.
 # - /backups/predeploy is where the Sync hook writes a dump, plain, because restic's image cannot be in Plane's render: every image
 #   there must be one dev ran. So this seals what it finds there, under tag predeploy, and empties the folder. A plain dump lasts one
-#   night, or until make remote-backup runs, and past a failed night the alerts below say so. Sealed ones go after 90 days.
+#   night, or until make remote-backup runs, and a night that fails to seal it fails as a whole, so PlaneBackupFailed says so. Sealed
+#   ones go after 90 days.
 # - pg_dump -Z 0, because restic compresses, and an already compressed dump would defeat its deduplication. Unmeasured.
 #
 # Until the first promotion Plane is not here, so its Secrets are optional and the run says so and succeeds. Once a repository

@@ -63,5 +63,5 @@ the branch differs from what its `RELEASE.json` says, and by then Argo CD may ha
 
 So all of this deserves the same reading as a change to production, and none of it is more than a process on this plan. The check and
 the signers are not all of it: whatever runs in the release job could mint the same result. That is `.github/workflows/ci.yml`,
-`scripts/ci/publish-release.sh`, `scripts/lib/common.sh`, `scripts/install-tools.sh`, `tools.lock` and `.tools`, which the check and
-`publish-release.sh` refuse to find tracked. See `.github/workflows/README.md`.
+`scripts/ci/publish-release.sh`, `scripts/ci/lib-release-branch.sh`, `scripts/lib/common.sh`, `scripts/install-tools.sh`, `tools.lock` and
+`.tools`, which the check and `publish-release.sh` refuse to find tracked. See `.github/workflows/README.md`.
