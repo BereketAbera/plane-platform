@@ -204,6 +204,18 @@ tests:
           - exp_labels: { instance: n, severity: warning, component: node }
             exp_annotations: { summary: "An upgrade on the node needs a reboot, and nothing here will do it unasked" }
       - { eval_time: 2h10m, alertname: NodeRebootNotWatched, exp_alerts: [] }
+  - name: the public firewall's table missing fires as critical
+    interval: 1m
+    input_series:
+      - series: 'wayline_edge_table_loaded{instance="n"}'
+        values: '1x5 0x20'
+    alert_rule_test:
+      - { eval_time: 5m, alertname: PublicFirewallNotLoaded, exp_alerts: [] }
+      - eval_time: 18m
+        alertname: PublicFirewallNotLoaded
+        exp_alerts:
+          - exp_labels: { instance: n, severity: critical, component: node }
+            exp_annotations: { summary: "The public firewall's table is not loaded, so the API and kubelet ports answer on the public address" }
   - name: nothing reporting whether a reboot is required fires after an hour
     interval: 10m
     input_series:
