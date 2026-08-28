@@ -1,0 +1,28 @@
+== space: mirror.gcr.io/makeplane/plane-space@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+space steps exit 0
+
+== proxy-addr, as express resolves it
+PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+PASS a plain IPv4 subnet still trusts its own addresses
+
+== X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
+
+space-deps: 0 failed
+== backend: mirror.gcr.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+backend steps exit 0
+
+== PyJWT as installed
+PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
+PASS one copy installed: ['2.14.0']
+PASS pip check No broken requirements found.
+
+RESULT PASS: 0 failed
+System check identified no issues (0 silenced).
+/usr/local/lib/python3.12/site-packages/django/core/management/commands/makemigrations.py:161: RuntimeWarning: Got an error checking a consistent migration history perfor
+	Is the server running on that host and accepting TCP/IP connections?
+  warnings.warn(
+No changes detected

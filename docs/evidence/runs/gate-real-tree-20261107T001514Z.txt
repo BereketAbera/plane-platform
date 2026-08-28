@@ -1,0 +1,125 @@
+date_utc: 2026-11-07T00:17:16Z
+commit: 5dccc91
+command: a throwaway clone of HEAD, the real overlay, chart, render and Application template, with a throwaway key and origin. Stubs: kubectl, gh, curl, and docker for the branded images, whose digests were made for this. Docker Hub's indexes were read for real.
+---
+=== 1. platform-only release from the real tree, at DEV (expect not promoted)
+not promoted yet: no Application reads gitops/environments/prod/manifests.yaml, and it holds the null digest
+[1;34m==>[0m plane-prod is not promoted yet, so this release holds the platform alone.
+[1;34m==>[0m Assembling the release
+[1;34m==>[0m deploy/plane-prod is now a0e6b7f604a5, from main a117b0a0e868.
+   1 RELEASE.json//
+  65 gitops/clusters/plane-prod
+   1 gitops/environments/prod
+=== 2. record, with real index reads from Docker Hub
+[1;34m==>[0m Newest dev smoke: .local/evidence-raw/smoke-dev-rehearsal.json, started 2026-11-07T10:00:00Z
+[1;34m==>[0m admin: plain linux/amd64 on GHCR, built from 86dcd3c3b40c by run 1
+[1;34m==>[0m backend: plain linux/amd64 on GHCR, built from 86dcd3c3b40c by run 1
+[1;34m==>[0m web: plain linux/amd64 on GHCR, built from 86dcd3c3b40c by run 1
+[1;34m==>[0m plane-live: index, dev ran its linux/arm64 child, production runs its linux/amd64 child
+[1;34m==>[0m space: plain linux/amd64 on GHCR, built from 86dcd3c3b40c by run 1
+[1;34m==>[0m silo: index, dev ran its linux/arm64 child, production runs its linux/amd64 child
+[1;34m==>[0m postgres: index, dev ran its linux/arm64 child, production runs its linux/amd64 child
+[1;34m==>[0m rabbitmq: index, dev ran its linux/arm64 child, production runs its linux/amd64 child
+[1;34m==>[0m valkey: index, dev ran its linux/arm64 child, production runs its linux/amd64 child
+[1;34m==>[0m Signing with /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/gate-exp/rehearsal-run/home/.ssh/wayline_evidence_ed
+Signing file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.jvPQexHBfP/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json
+Write signature to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.jvPQexHBfP/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json.sig
+[1;32m ok[0m wrote docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json and its signature
+Next:
+  git add docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a
+  git commit -m 'evidence: plane-dev ran set 75aeb6c601eb'
+  git push
+  gh workflow run promote-plane-prod.yml --repo BereketAbera/plane-platform -f set_hash=75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17
+{"component":"plane-live","tag":"v1.4.3","dev_ran":"linux/arm64","dev_child":"93c8e9528194","prod":"linux/amd64","prod_child":"a0c5e26c407c"}
+{"component":"postgres","tag":"15.19-alpine","dev_ran":"linux/arm64","dev_child":"188e422ad801","prod":"linux/amd64","prod_child":"1d4031d6ed0a"}
+{"component":"rabbitmq","tag":"3.13.7-management-alpine","dev_ran":"linux/arm64","dev_child":"b4b0031e94ad","prod":"linux/amd64","prod_child":"3c498e636fd6"}
+{"component":"silo","tag":"RELEASE.2026-10-26T00-00-00Z-distroless","dev_ran":"linux/arm64","dev_child":"3d923a0d52eb","prod":"linux/amd64","prod_child":"9d5416756143"}
+{"component":"valkey","tag":"7.2.15-alpine","dev_ran":"linux/arm64","dev_child":"68debcd66a88","prod":"linux/amd64","prod_child":"a4d999bf67c5"}
+=== 3. promote with the real chart and render
+[1;32m ok[0m rendered gitops/environments/prod/manifests.yaml
+[1;34m==>[0m Checking what this would merge
+ok: every image in gitops/environments/prod/manifests.yaml is in docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json, signed by
+[1;32m ok[0m plane-prod overlay and render hold set 75aeb6c601eb, not committed. Commit message in .build/promote-prod-message.txt
+ M gitops/environments/prod/manifests.yaml
+ M helm/plane/overlays/prod/kustomization.yaml
+?? gitops/clusters/plane-prod/applications/plane-prod.yaml
+ gitops/environments/prod/manifests.yaml     | 16 ++++++++--------
+ helm/plane/overlays/prod/kustomization.yaml |  8 ++++----
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+promote(plane-prod): first promotion, set 75aeb6c601eb
+
+Promote-Env: plane-prod
+Promote-Set: 75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17
+Promote-Evidence: docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json
+Promote-Image: admin=ghcr.io/bereketabera/wayline/admin@sha256:d4a1393e37de5e6bb69c25233514dec21b9e9ee1e0af1cbe257a2dadea9c247f
+Promote-Image: backend=ghcr.io/bereketabera/wayline/backend@sha256:a005646bb460d0ff758d74067f1f0e7d5c0fea02c0e7a6a970d4237cdf7dc8f3
+Promote-Image: plane-live=docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+Promote-Image: postgres=docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+Promote-Image: rabbitmq=docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626
+Promote-Image: silo=docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e98
+Promote-Image: space=ghcr.io/bereketabera/wayline/space@sha256:89c032d48697e1a596fbc67d204e2663dd36b8c1fd48ad93129fd045e9453774
+Promote-Image: valkey=docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+Promote-Image: web=ghcr.io/bereketabera/wayline/web@sha256:3287169990387b40ccdc8090cfadc23e16e928e439caf1128031a6a5867d9ed8
+=== 4. the real render check, and the check at the merged commit
+[1;32m ok[0m prod is up to date
+ok: every image in gitops/environments/prod/manifests.yaml is in docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json, signed by wayline-evidence
+set_hash=75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17
+check exit 0
+=== 5. release
+ok: every image in gitops/environments/prod/manifests.yaml is in docs/evidence/promotions/75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.json, signed by
+[1;34m==>[0m Confirming each Wayline digest on GHCR
+[1;32m ok[0m ghcr.io/bereketabera/wayline/admin@sha256:d4a1393e37de5e6bb69c25233514dec21b9e9ee1e0af1cbe257a2dadea9c247f is a plain linux/amd64 manifest on GHCR, built f
+[1;32m ok[0m ghcr.io/bereketabera/wayline/backend@sha256:a005646bb460d0ff758d74067f1f0e7d5c0fea02c0e7a6a970d4237cdf7dc8f3 is a plain linux/amd64 manifest on GHCR, built
+[1;32m ok[0m ghcr.io/bereketabera/wayline/space@sha256:89c032d48697e1a596fbc67d204e2663dd36b8c1fd48ad93129fd045e9453774 is a plain linux/amd64 manifest on GHCR, built f
+[1;32m ok[0m ghcr.io/bereketabera/wayline/web@sha256:3287169990387b40ccdc8090cfadc23e16e928e439caf1128031a6a5867d9ed8 is a plain linux/amd64 manifest on GHCR, built fro
+[1;34m==>[0m Assembling the release
+[1;34m==>[0m deploy/plane-prod is now f8a095659a3c, from main 4033f0957406, set 75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17.
+f8a0956 github-actions[bot] release: main 4033f0957406, set 75aeb6c601eb
+a0e6b7f github-actions[bot] release: main a117b0a0e868
+{"main_commit":"4033f0957406f4e17a122475bf7167ba8dfccc04","repository":"BereketAbera/plane-platform","run":{"id":"2","attempt":"","url":"https://github.com/BereketAbera/plane-platform/actions/runs/2"},"set_hash":"75aeb6c601ebc5da936eb7ae9ea0148c8247cc4a02897976e12c237fc332ea17"}
+paths on the branch outside the two trees and RELEASE.json:        0
+=== 6. what the branch runs, and every path its Applications name
+   2 image: docker.io/library/postgres:15.19-alpine@54e0dd8e…
+   1 image: docker.io/library/rabbitmq:3.13.7-management-alpine@606d8c0d…
+   1 image: docker.io/makeplane/plane-live:v1.4.3@30741b6d…
+   1 image: docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@e6544a90…
+   1 image: docker.io/valkey/valkey:7.2.15-alpine@f8c1a646…
+   1 image: ghcr.io/bereketabera/wayline/admin@d4a1393e…
+   4 image: ghcr.io/bereketabera/wayline/backend@a005646b…
+   1 image: ghcr.io/bereketabera/wayline/space@89c032d4…
+   1 image: ghcr.io/bereketabera/wayline/web@32871699…
+1524:        - name: BACKEND_IMAGE
+1525-          value: ghcr.io/bereketabera/wayline/backend@a005646b…
+=== paths the hosted Applications name
+ok gitops/clusters/plane-prod/platform/backup
+ok gitops/clusters/plane-prod/platform/certificates
+ok gitops/clusters/plane-prod/platform/infisical
+ok gitops/clusters/plane-prod/platform/monitoring-extras
+ok gitops/clusters/plane-prod/platform/network-policies
+ok gitops/clusters/plane-prod/values/alloy.yaml
+ok gitops/clusters/plane-prod/values/cert-manager.yaml
+ok gitops/clusters/plane-prod/values/infisical-operator-prod.yaml
+ok gitops/clusters/plane-prod/values/infisical.yaml
+ok gitops/clusters/plane-prod/values/kube-prometheus-stack.yaml
+ok gitops/clusters/plane-prod/values/loki.yaml
+ok gitops/clusters/plane-prod/values/metrics-server.yaml
+ok gitops/clusters/plane-prod/values/traefik.yaml
+ok gitops/environments/prod
+=== 7. the repository's manifest checks on the promoted commit, without charts
+[1;34m==>[0m render is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m render is up to date: hosted
+[1;32m ok[0m render is up to date: hosted
+[1;34m==>[0m kubeconform: hosted render
+[1;32m ok[0m kubeconform: hosted render
+[1;34m==>[0m conftest: hosted render
+[1;32m ok[0m conftest: hosted render
+[1;34m==>[0m kubeconform: hosted tree
+[1;32m ok[0m kubeconform: hosted tree
+[1;34m==>[0m conftest: hosted tree
+[1;32m ok[0m conftest: hosted tree
+[1;34m==>[0m hosted tree stands alone
+[1;32m ok[0m hosted tree stands alone
+[1;32m ok[0m manifests valid
+validate-manifests exit 0
+exit 0

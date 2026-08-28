@@ -1,0 +1,44 @@
+#!/bin/bash
+# Scratch harness only. Stands in for the two frontend images: the real nginx base with the real contexts copied in, as the
+# Dockerfiles copy them, in a container the script then treats as its own. No image is built.
+REAL=/usr/bin/docker.real
+CTX=/ctx
+NGINX='docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606'
+if [[ "$*" == *wayline-test/* ]]; then
+  case "$1" in
+    pull) exit 0 ;;
+    image) echo "${PLATFORM:-linux/arm64}"; exit 0 ;;
+    run)
+      shift; [[ "$1" == -d ]] && shift
+      all=("$@"); ref="${all[-1]}"; unset 'all[-1]'
+      args=(); skip=no
+      for a in "${all[@]}"; do
+        if [[ "$skip" == yes ]]; then skip=no; continue; fi
+        if [[ "$a" == --publish ]]; then skip=yes; continue; fi
+        args+=("$a")
+      done
+      args+=(--network container:wayline-images-work-linux)
+      app="${ref#*wayline-test/}"; app="${app%%@*}"
+      tmpfs=()
+      [[ " ${args[*]} " == *" --tmpfs "* ]] || tmpfs=(--tmpfs /var/cache/nginx:size=32m,mode=1777 --tmpfs /run:size=1m,mode=1777 --tmpfs /tmp:size=8m,mode=1777)
+      id="$("$REAL" create "${args[@]}" ${tmpfs[@]+"${tmpfs[@]}"} "$NGINX" nginx -g 'daemon off;')" || exit 1
+      work="$(mktemp -d)"; chmod 755 "$work"
+      sed "s|__WAYLINE_SOURCE_URL__|https://github.com/BereketAbera/plane-platform/tree/${WAYLINE_EXPECT_REF:-0000000}|" "$CTX/$app/nginx.conf" >"$work/nginx.conf"; chmod 644 "$work/nginx.conf"
+      mkdir -p "$work/l/usr/share/licenses/wayline"; cp -R "$CTX/$app/licenses/." "$work/l/usr/share/licenses/wayline/"
+      "$REAL" cp -q "$work/nginx.conf" "$id:/etc/nginx/nginx.conf" || exit 1
+      "$REAL" cp -q "$work/l/." "$id:/" || exit 1
+      case "$app" in
+        web)
+          "$REAL" cp -q "$CTX/web/client/." "$id:/usr/share/nginx/html/" || exit 1
+          "$REAL" cp -q "$CTX/web/licenses" "$id:/usr/share/nginx/html/licenses" || exit 1 ;;
+        admin)
+          "$REAL" cp -q "$CTX/admin/client" "$id:/usr/share/nginx/html/god-mode" || exit 1 ;;
+      esac
+      "$REAL" start "$id" >/dev/null
+      exit $?
+      ;;
+  esac
+fi
+# In the harness's own network namespace, because on Docker Desktop a published port is not on any container's loopback.
+[[ "$1" == port ]] && { echo 127.0.0.1:3000; exit 0; }
+exec "$REAL" "$@"

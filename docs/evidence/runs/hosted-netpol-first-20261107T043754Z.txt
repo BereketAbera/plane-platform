@@ -1,0 +1,6 @@
+started: 20261107T043754Z
+commit: 201c85bdff8fec341e4c28b558ae2dc0cafa1d3f
+command: make remote-netpol TARGET=plane-prod, before any Plane workload runs
+fail WAYLINE_TARGET=plane-prod aims this script at hosted production, so it needs CONFIRM=plane-prod. CONFIRM=yes does not count. If you did not mean hosted production: unset WAYLINE_TARGET
+make: *** [remote-netpol] Error 1
+exit: 2, in 0 s

@@ -1,0 +1,175 @@
+started: 20261107T003953Z
+commit: 6843e2b6a6ed5fd92db69e38229efc69b7072a47
+command: make up, the local platform, after make down and two Docker restarts
+[1;34m==>[0m Cluster: kind, local services, kubeconfig
+[1;34m==>[0m Starting the stopped cluster node (data is preserved)
+[1;32m ok[0m kind network 172.24.0.0/16 is inside 172.16.0.0/12
+[1;34m==>[0m Starting local services (registry, pull-through caches, Git remote)
+ Container plane-mirror-quay Starting 
+ Container plane-mirror-docker Starting 
+ Container plane-git Starting 
+ Container plane-mirror-quay Started 
+ Container plane-mirror-k8s Started 
+ Container plane-registry Started 
+ Container plane-git Started 
+ Container plane-mirror-docker Started 
+[1;32m ok[0m cluster ready: context kind-plane-platform, kubeconfig /Users/bek/dev/pr/plane-platform/.local/kubeconfig
+[1;32m ok[0m cluster step finished in 11s
+[1;34m==>[0m Publish: local image digests, then main to the bare repo Argo CD reads
+[1;33mwarn[0m publishing 2 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       6843e2b feat(hosted): manage the one DNS record through Terraform, reading the VPS only
+       3978165 feat(hosted): tell node-exporter when the node waits for a reboot, and record the IPv6 address for scans
+[1;32m ok[0m published main 6843e2b6a6ed to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+[1;32m ok[0m publish step finished in 2s
+[1;34m==>[0m Terraform: namespaces, quotas, CoreDNS, Argo CD, projects, root Application
+[0m[1mInitializing the backend...[0m
+
+[0m[1mInitializing modules...[0m
+
+[0m[1mInitializing provider plugins...[0m
+- Reusing version 3.3.0 of hashicorp/helm from the dependency lock file
+- Reusing version 3.4.0 of hashicorp/kubernetes from the dependency lock file
+- Using previously-installed hashicorp/helm v3.3.0
+- Using previously-installed hashicorp/kubernetes v3.4.0
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Refreshing state... [id=kube-system/coredns][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Refreshing state... [id=plane-dev][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-defaults][0m
+[0m[1mmodule.argocd.helm_release.argocd: Refreshing state... [id=argocd][0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Refreshing state... [id=argocd-bootstrap][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0margocd_url = "http://argocd.localhost"
+namespaces = tolist([
+  "argocd",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-dev",
+  "plane-prod-sim",
+  "traefik",
+])
+[1;32m ok[0m terraform step finished in 5s
+[1;34m==>[0m Secret zero
+[1;32m ok[0m applied Secret infisical/infisical-db
+[1;32m ok[0m applied Secret infisical/infisical-redis
+[1;32m ok[0m applied Secret infisical/infisical-secrets
+[1;32m ok[0m secret zero in place. Back up /Users/bek/dev/pr/plane-platform/.local/secret-zero/ENCRYPTION_KEY outside this machine: nothing can recreate it.
+[1;32m ok[0m secret-zero step finished in 1s
+[1;34m==>[0m Traefik: the Application, then a real request through it
+[1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 900s)
+[1;32m ok[0m Application traefik Synced and Healthy, after 0s
+[1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 300s)
+[1;32m ok[0m Traefik answering at http://argocd.localhost/, after 0s
+[1;32m ok[0m traefik step finished in 0s
+[1;34m==>[0m Infisical: wait for it, then first admin, projects, identities, seeded values
+[1;34m==>[0m Waiting for Infisical answering at http://infisical.localhost/api/status (up to 2400s)
+[1;32m ok[0m Infisical answering at http://infisical.localhost/api/status, after 60s
+[1;34m==>[0m Waiting for http://infisical.localhost (first boot runs about 600 migrations)
+[1;32m ok[0m Infisical already bootstrapped
+[1;34m==>[0m Applying infisical/terraform
+[0m[1minfisical_project.plane["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Refreshing state... [id=2505453a-9dc6-447a-9668-9684689aa795][0m
+[0m[1minfisical_project_environment.prod["dev"]: Refreshing state... [id=73729bc5-949d-4bda-83d8-35c1ec3db976][0m
+[0m[1minfisical_project_identity.reader["dev"]: Refreshing state...[0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Refreshing state...[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Refreshing state... [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Refreshing state... [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0menvironment_slug = "prod"
+identity_ids = {
+  "dev" = "<redacted>"
+  "prod-sim" = "<redacted>"
+}
+project_ids = {
+  "dev" = "<redacted>"
+  "prod-sim" = "<redacted>"
+}
+project_slugs = {
+  "dev" = "plane-dev"
+  "prod-sim" = "plane-prod-sim"
+}
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform/.local/secret-zero/infisical-machine.json
+[1;32m ok[0m dev: all secrets already exist, nothing written
+[1;32m ok[0m prod-sim: all secrets already exist, nothing written
+[1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+[1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+[1;32m ok[0m infisical step finished in 63s
+[1;34m==>[0m Applications: all 14 Synced and Healthy
+[1;34m==>[0m A child in backoff after the Infisical step can take up to 5 minutes to retry. That is normal.
+[1;34m==>[0m Waiting for all 14 Applications Synced and Healthy (up to 3000s)
+[1;32m ok[0m all 14 Applications Synced and Healthy, after 46s
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 6843e2b6)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      6843e2b6
+    backup-storage                 Synced     Healthy      6843e2b6
+    infisical                      Synced     Healthy      6843e2b6
+    infisical-operator-dev         Synced     Healthy      6843e2b6
+    infisical-operator-prod-sim    Synced     Healthy      6843e2b6
+    kube-prometheus-stack          Synced     Healthy      6843e2b6
+    loki                           Synced     Healthy      6843e2b6
+    metrics-server                 Synced     Healthy      6843e2b6
+    monitoring-extras              Synced     Healthy      6843e2b6
+    network-policies               Synced     Healthy      6843e2b6
+    plane-dev                      Synced     Healthy      6843e2b6
+    plane-prod-sim                 Synced     Healthy      6843e2b6
+    root                           Synced     Healthy      6843e2b6
+    traefik                        Synced     Healthy      6843e2b6
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         200
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 8.022GiB / 13.63GiB, CPU 63.68%
+    argocd                    785 MiB
+    infisical                 797 MiB
+    kube-system              1469 MiB
+    local-path-storage         18 MiB
+    monitoring               1437 MiB
+    monitoring-agents          29 MiB
+    plane-dev                 826 MiB
+    plane-prod-sim           1268 MiB
+    traefik                   131 MiB
+    Host disk free: 22 GiB
+[1;32m ok[0m All 14 Applications are Synced and Healthy. That does not prove Plane works: run make test.
+make up exit: 0, in 130 s
+ended: 2026-11-07T00:42:04Z

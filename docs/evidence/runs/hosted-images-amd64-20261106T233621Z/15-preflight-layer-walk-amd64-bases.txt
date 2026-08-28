@@ -1,0 +1,44 @@
+searching 2 image(s) on linux/amd64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+report only: a hit is information, and does not fail
+
+== docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+read from mirror.gcr.io/library/nginx
+index, linux/amd64 manifest sha256:2db7d28517d1fba17c2da3210395f7be11a11b419246ad0da2edf782af72f367
+config sha256:3d6cab9c2941df2441024a2f02a65ebe1b8916c3cbe7b9527f62627accea8004: clean
+8 layers
+layer  1/8 sha256:7b229517ed22      3.7 MiB    515 entries, 2 archives opened: clean
+layer  2/8 sha256:12b85cff06fd      1.8 MiB    694 entries, 3 archives opened: clean
+layer  3/8 sha256:657023555a2a      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/8 sha256:7cc330898115      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/8 sha256:26185d08a3ec      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/8 sha256:2ec5fb117ffa      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/8 sha256:9b0f7dfe35b2      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/8 sha256:b9b388a21ecf     19.6 MiB    961 entries, 2 archives opened: clean
+
+== makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+read from mirror.gcr.io/makeplane/plane-space
+index, linux/amd64 manifest sha256:094a199c975aa1379fbc42a9c63c9b2986f0da645a52c22b124373708c51d791
+config sha256:77965acd295319f4d8959a88850ce915dee0f9f5b5868d0baf8c58e17e0c88bf: clean
+15 layers
+layer  1/15 sha256:7b229517ed22      3.7 MiB    515 entries, 2 archives opened: clean
+layer  2/15 sha256:8776aa3d2ba7     53.6 MiB   3073 entries, 6 archives opened: clean
+layer  3/15 sha256:7246d4c6a55d      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/15 sha256:304511616d6a      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/15 sha256:2cbdad4d0a63      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/15 sha256:7c09d1d1707e      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/15 sha256:c6acffc38b0d      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/15 sha256:b75ee12dd71a      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/15 sha256:1dd60302fe74      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/15 sha256:bedacec8a2ee      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/15 sha256:e1cc2a4940ce      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/15 sha256:3c9b483752d6    188.9 MiB  88936 entries, 0 archives opened: clean
+layer 13/15 sha256:d37cdf13287a      0.0 MiB     64 entries, 0 archives opened: clean
+layer 14/15 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/15 sha256:1b31ac1da879      2.4 MiB     37 entries, 2 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+clean        0 hit(s)   0 not opened makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64     8.66s user 2.34s system 6% cpu 2:38.95 total
+exit 0

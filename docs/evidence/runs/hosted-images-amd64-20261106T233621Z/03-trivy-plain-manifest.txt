@@ -1,0 +1,11 @@
+$ bash /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work/trivy-plain.sh /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work localhost:5073/wayline/web@sha256:54e7d01ee299825c81a8a71afc64f85485cd08719f3eed3874b99a8f563317fe localhost:5073/wayline/web@sha256:6506bc117f67b9083d89108ca818348b054133aa276e4d0e8fea1779a122cc41
+2026-11-06T23:36:28Z
+trivy exit 0, image 54e7d01ee299825c81a8a71afc64f85485cd08719f3eed3874b99a8f563317fe asked linux/arm64
+  ArtifactType container_image config linux amd64
+trivy exit 0, image 54e7d01ee299825c81a8a71afc64f85485cd08719f3eed3874b99a8f563317fe asked linux/amd64
+  ArtifactType container_image config linux amd64
+trivy exit 0, image 6506bc117f67b9083d89108ca818348b054133aa276e4d0e8fea1779a122cc41 asked linux/amd64
+  ArtifactType container_image config linux arm64
+trivy exit 0, image 6506bc117f67b9083d89108ca818348b054133aa276e4d0e8fea1779a122cc41 asked linux/arm64
+  ArtifactType container_image config linux arm64
+[exit 0]

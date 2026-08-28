@@ -1,0 +1,79 @@
+$ bash /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work/build-args.sh /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work
+2026-11-06T23:39:00Z
+old script, default: exit 0
+new script, default: exit 0
+--- calls, old against new, with the default platform (a difference here is what make images would do differently)
+2c2
+< docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/web.json --output type=image,push=true,store=false --build-arg WAYLIN
+---
+> docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/web.json --output type=image,push=true,store=false --build-arg WAYLIN
+4,5c4,5
+< python3 -B apps/wayline/checks/layer-check.py localhost:5059/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/admin.json --output type=image,push=true,store=false --build-arg WAYL
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5059/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/admin.json --output type=image,push=true,store=false --build-arg WAYL
+7,8c7,8
+< python3 -B apps/wayline/checks/layer-check.py localhost:5059/wayline/admin@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/space.json --output type=image,push=true,store=false --build-arg WAYL
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5059/wayline/admin@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/space.json --output type=image,push=true,store=false --build-arg WAYL
+10,11c10,11
+< python3 -B apps/wayline/checks/layer-check.py localhost:5059/wayline/space@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/backend.json --output type=image,push=true,store=false --build-arg WA
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5059/wayline/space@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx build --platform linux/arm64 --provenance=false --sbom=false --build-arg SOURCE_DATE_EPOCH=N --metadata-file <tmp>/backend.json --output type=image,push=true,store=false --build-arg WA
+13,15c13,15
+< python3 -B apps/wayline/checks/layer-check.py localhost:5059/wayline/backend@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< python3 -B apps/wayline/checks/flatten-config.py localhost:5059/wayline/backend@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/web:89ef90433597 localhost:5059/wayline/web@sha256:<commit>000000000000000000000001
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5059/wayline/backend@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> python3 -B apps/wayline/checks/flatten-config.py --platform linux/arm64 localhost:5059/wayline/backend@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/web:daf695e75298 localhost:5059/wayline/web@sha256:<commit>000000000000000000000001
+17,18c17,18
+< python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/admin:89ef90433597 localhost:5059/wayline/admin@sha256:<commit>000000000000000000000001
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/admin:daf695e75298 localhost:5059/wayline/admin@sha256:<commit>000000000000000000000001
+20,21c20,21
+< python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/admin@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/space:89ef90433597 localhost:5059/wayline/space@sha256:<commit>000000000000000000000001
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5001/wayline/admin@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/space:daf695e75298 localhost:5059/wayline/space@sha256:<commit>000000000000000000000001
+23,24c23,24
+< python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/space@sha256:0000000000000000000000000000000000000000000000000000000000000001
+< docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/backend:89ef90433597 localhost:5059/wayline/backend@sha256:<commit>000000000000000000000001
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5001/wayline/space@sha256:0000000000000000000000000000000000000000000000000000000000000001
+> docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/backend:daf695e75298 localhost:5059/wayline/backend@sha256:<commit>000000000000000000000001
+26c26
+< python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/backend@sha256:0000000000000000000000000000000000000000000000000000000000000001
+---
+> python3 -B apps/wayline/checks/layer-check.py --platform linux/arm64 localhost:5001/wayline/backend@sha256:0000000000000000000000000000000000000000000000000000000000000001
+--- new script with PLATFORM=linux/amd64: exit 0
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --metadata-file <tmp>/web.json --output type=image,push=true,store=false -f apps/wayline/runtim
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5059/wayline/web@sha256:00000000...
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --metadata-file <tmp>/admin.json --output type=image,push=true,store=false -f apps/wayline/runt
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5059/wayline/admin@sha256:00000000...
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --metadata-file <tmp>/space.json --output type=image,push=true,store=false -f apps/wayline/runt
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5059/wayline/space@sha256:00000000...
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --metadata-file <tmp>/backend.json --output type=image,push=true,store=false -f apps/wayline/ru
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5059/wayline/backend@sha256:00000000...
+python3 -B apps/wayline/checks/flatten-config.py --platform linux/amd64 localhost:5059/wayline/backend@sha256:00000000...
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5001/wayline/web@sha256:00000000...
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5001/wayline/admin@sha256:00000000...
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5001/wayline/space@sha256:00000000...
+python3 -B apps/wayline/checks/layer-check.py --platform linux/amd64 localhost:5001/wayline/backend@sha256:00000000...
+--- new script with a wrong PLATFORM: exit 1
+fail PLATFORM must be linux/amd64 or linux/arm64, got 'linux/x86_64'
+       0
+--- PUSH=no: exit 0
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --metadata-file <tmp>/web.json --output type=cacheonly -f apps/wayline/runtime/Dockerfile.web -
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false --metadata-file <tmp>/admin.json --output type=cacheonly -f apps/wayline/runtime/Dockerfile.adm
+walks with PUSH=no: 0
+[exit 0]

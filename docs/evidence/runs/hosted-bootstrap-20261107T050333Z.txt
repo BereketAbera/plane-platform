@@ -1,0 +1,293 @@
+started: 20261107T050333Z
+commit: 201c85bdff8fec341e4c28b558ae2dc0cafa1d3f
+command: make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod, second run, with the GHCR token present
+[1;34m==>[0m Step 1 of 8: a read-only deploy key for Argo CD
+[1;32m ok[0m deploy key is on GitHub, read-only. The repository has 1 deploy key(s).
+[1;34m==>[0m Step 2 of 8: namespaces, and Secret argocd-repo-plane-platform
+[0m[1mdata.kubernetes_namespace_v1.kube_system: Reading...[0m[0m
+[0m[1mdata.kubernetes_namespace_v1.kube_system: Read complete after 1s [id=kube-system][0m
+[0m[1mterraform_data.right_cluster: Refreshing state... [id=c2d74afd-871e-42c0-1cc9-0917655dc479][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1.k3s_coredns_custom[0]: Refreshing state... [id=kube-system/coredns-custom][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["cert-manager"]: Refreshing state... [id=cert-manager][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod"]: Refreshing state... [id=plane-prod][0m
+[0m[1mmodule.foundation.kubernetes_storage_class_v1.this["local-path-retain"]: Refreshing state... [id=local-path-retain][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["frameflow"]: Refreshing state... [id=frameflow][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["argocd"]: Refreshing state... [id=argocd/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["monitoring"]: Refreshing state... [id=monitoring/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["cert-manager"]: Refreshing state... [id=cert-manager/defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["monitoring"]: Refreshing state... [id=monitoring/budget][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod"]: Refreshing state... [id=plane-prod/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["infisical"]: Refreshing state... [id=infisical/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["monitoring-agents"]: Refreshing state... [id=monitoring-agents/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["traefik"]: Refreshing state... [id=traefik/defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["infisical"]: Refreshing state... [id=infisical/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["argocd"]: Refreshing state... [id=argocd/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["traefik"]: Refreshing state... [id=traefik/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["cert-manager"]: Refreshing state... [id=cert-manager/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["frameflow"]: Refreshing state... [id=frameflow/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod"]: Refreshing state... [id=plane-prod/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["monitoring-agents"]: Refreshing state... [id=monitoring-agents/budget][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[33m╷[0m[0m
+[33m│[0m [0m[1m[33mWarning: [0m[0m[1mResource targeting is in effect[0m
+[33m│[0m [0m
+[33m│[0m [0m[0mYou are creating a plan with the -target option, which means that the
+[33m│[0m [0mresult of this plan may not represent all of the changes requested by the
+[33m│[0m [0mcurrent configuration.
+[33m│[0m [0m
+[33m│[0m [0mThe -target option is not for routine use, and is provided only for
+[33m│[0m [0mexceptional situations such as recovering from errors or mistakes, or when
+[33m│[0m [0mTerraform specifically suggests to use it as part of an error message.
+[33m╵[0m[0m
+[33m╷[0m[0m
+[33m│[0m [0m[1m[33mWarning: [0m[0m[1mApplied changes may be incomplete[0m
+[33m│[0m [0m
+[33m│[0m [0m[0mThe plan was created with the -target option in effect, so some changes
+[33m│[0m [0mrequested in the configuration may have been ignored and the output values
+[33m│[0m [0mmay not be fully updated. Run the following command to verify that no other
+[33m│[0m [0mchanges are pending:
+[33m│[0m [0m    terraform plan
+[33m│[0m [0m
+[33m│[0m [0mNote that the -target option is not suitable for routine use, and is
+[33m│[0m [0mprovided only for exceptional situations such as recovering from errors or
+[33m│[0m [0mmistakes, or when Terraform specifically suggests to use it as part of an
+[33m│[0m [0merror message.
+[33m╵[0m[0m
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0margocd_url = "http://localhost:18080"
+namespaces = tolist([
+  "argocd",
+  "cert-manager",
+  "frameflow",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-prod",
+  "traefik",
+])
+[1;32m ok[0m Secret argocd/argocd-repo-plane-platform in place, for <redacted>
+[1;34m==>[0m Step 3 of 8: port 80, then Terraform: Argo CD, projects and the root Application
+[1;32m ok[0m the firewall allows port 80 already, so it stays at its stage
+[0m[1mdata.kubernetes_namespace_v1.kube_system: Reading...[0m[0m
+[0m[1mdata.kubernetes_namespace_v1.kube_system: Read complete after 0s [id=kube-system][0m
+[0m[1mterraform_data.right_cluster: Refreshing state... [id=c2d74afd-871e-42c0-1cc9-0917655dc479][0m
+[0m[1mmodule.foundation.kubernetes_storage_class_v1.this["local-path-retain"]: Refreshing state... [id=local-path-retain][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1.k3s_coredns_custom[0]: Refreshing state... [id=kube-system/coredns-custom][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["cert-manager"]: Refreshing state... [id=cert-manager][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod"]: Refreshing state... [id=plane-prod][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["frameflow"]: Refreshing state... [id=frameflow][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["argocd"]: Refreshing state... [id=argocd/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["monitoring"]: Refreshing state... [id=monitoring/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod"]: Refreshing state... [id=plane-prod/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["traefik"]: Refreshing state... [id=traefik/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["cert-manager"]: Refreshing state... [id=cert-manager/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["infisical"]: Refreshing state... [id=infisical/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["monitoring-agents"]: Refreshing state... [id=monitoring-agents/budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["frameflow"]: Refreshing state... [id=frameflow/budget][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["monitoring-agents"]: Refreshing state... [id=monitoring-agents/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["infisical"]: Refreshing state... [id=infisical/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["traefik"]: Refreshing state... [id=traefik/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["argocd"]: Refreshing state... [id=argocd/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod"]: Refreshing state... [id=plane-prod/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["cert-manager"]: Refreshing state... [id=cert-manager/defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["monitoring"]: Refreshing state... [id=monitoring/defaults][0m
+[0m[1mmodule.argocd.helm_release.argocd: Refreshing state... [id=argocd][0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Refreshing state... [id=argocd-bootstrap][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0margocd_url = "http://localhost:18080"
+namespaces = tolist([
+  "argocd",
+  "cert-manager",
+  "frameflow",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-prod",
+  "traefik",
+])
+[1;32m ok[0m Argo CD is reading branch deploy/plane-prod
+[1;34m==>[0m Step 4 of 8: backup folders, the read-only pull user, and the restic password
+[1;32m ok[0m folders under /srv/wayline/backups are ready
+[1;32m ok[0m user wayline-pull is on the node: read-only SFTP, no shell, no sudo
+[1;32m ok[0m Secret restic-password in plane-prod and infisical
+[1;34m==>[0m Step 5 of 8: secret zero
+[1;32m ok[0m applied Secret infisical/infisical-db
+[1;32m ok[0m applied Secret infisical/infisical-redis
+[1;32m ok[0m applied Secret infisical/infisical-secrets
+[1;32m ok[0m secret zero in place. Back up /Users/bek/dev/pr/plane-platform/.local/hosted/plane-prod/secret-zero/ENCRYPTION_KEY outside this machine: nothing can recreate it.
+[1;34m==>[0m Step 6 of 8: Infisical: first admin, project, identity and seeded values, through a port-forward
+[1;34m==>[0m Waiting for Infisical. Progress: make remote-status TARGET=plane-prod
+[1;34m==>[0m Waiting for http://127.0.0.1:18100 (first boot runs about 600 migrations)
+[1;34m==>[0m Bootstrapping the first admin and organization
+[1;32m ok[0m bootstrapped organization <redacted>, credentials in /Users/bek/dev/pr/plane-platform/.local/hosted/plane-prod/secret-zero/infisical-admin.json
+[1;34m==>[0m Applying infisical/terraform
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # infisical_identity.reader["prod"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_identity" "reader" {
+      [32m+[0m[0m auth_modes            = (known after apply)
+      [32m+[0m[0m has_delete_protection = (known after apply)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = "plane-prod-reader"
+      [32m+[0m[0m org_id                = "<redacted>"
+      [32m+[0m[0m role                  = "no-access"
+    }
+
+[1m  # infisical_identity_kubernetes_auth.reader["prod"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_identity_kubernetes_auth" "reader" {
+      [32m+[0m[0m access_token_max_ttl                    = 3600
+      [32m+[0m[0m access_token_num_uses_limit             = (known after apply)
+      [32m+[0m[0m access_token_trusted_ips                = (known after apply)
+      [32m+[0m[0m access_token_ttl                        = 3600
+      [32m+[0m[0m allowed_audience                        = (known after apply)
+      [32m+[0m[0m allowed_namespaces                      = [
+          [32m+[0m[0m "plane-prod",
+        ]
+      [32m+[0m[0m allowed_service_account_names           = [
+          [32m+[0m[0m "plane-infisical-auth",
+        ]
+      [32m+[0m[0m has_template_sourced_token_reviewer_jwt = (known after apply)
+      [32m+[0m[0m id                                      = (known after apply)
+      [32m+[0m[0m identity_id                             = (known after apply)
+      [32m+[0m[0m kubernetes_ca_certificate               = <<-EOT
+            -----BEGIN CERTIFICATE-----
+            MIIBdzCCAR2gAwIBAgIBADAKBggqhkjOPQQDAjAjMSEwHwYDVQQDDBhrM3Mtc2Vy
+            dmVyLWNhQDE3OTQwMDU5MDUwHhcNMjYxMTA2MjE1ODI1WhcNMzYxMTAzMjE1ODI1
+            WjAjMSEwHwYDVQQDDBhrM3Mtc2VydmVyLWNhQDE3OTQwMDU5MDUwWTATBgcqhkjO
+            PQIBBggqhkjOPQMBBwNCAATVEQYgHkR7gR+6TUaeeCoObpzGNnih9MVz+b8tRe9g
+            Qmgy5wqvyvCw/lrhep1zmHVgQaeuwdw/X5jGCKQh3w3ro0IwQDAOBgNVHQ8BAf8E
+            BAMCAqQwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUQE35UGnGjPGGTtTg1Yvh
+            c3VghRowCgYIKoZIzj0EAwIDSAAwRQIgONCDxxSQxDQSISQKOkuHpSEE+/H7L0/W
+            wMvTdFQkcXoCIQDB5+LQYVITLAeyHopdzC38U2kTWoh9f/NP0DliECjFmA==
+            -----END CERTIFICATE-----
+        EOT
+      [32m+[0m[0m kubernetes_host                         = "https://kubernetes.default.svc.cluster.local"
+      [32m+[0m[0m token_reviewer_mode                     = "api"
+    }
+
+[1m  # infisical_project.plane["prod"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project" "plane" {
+      [32m+[0m[0m audit_log_retention_days   = (known after apply)
+      [32m+[0m[0m has_delete_protection      = (known after apply)
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m kms_secret_manager_key_id  = (known after apply)
+      [32m+[0m[0m last_updated               = (known after apply)
+      [32m+[0m[0m name                       = "plane-prod"
+      [32m+[0m[0m should_create_default_envs = false
+      [32m+[0m[0m slug                       = "plane-prod"
+      [32m+[0m[0m type                       = "secret-manager"
+    }
+
+[1m  # infisical_project_environment.prod["prod"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project_environment" "prod" {
+      [32m+[0m[0m id         = (known after apply)
+      [32m+[0m[0m name       = "prod"
+      [32m+[0m[0m position   = 1
+      [32m+[0m[0m project_id = (known after apply)
+      [32m+[0m[0m slug       = "prod"
+    }
+
+[1m  # infisical_project_identity.reader["prod"][0m will be created
+[0m  [32m+[0m[0m resource "infisical_project_identity" "reader" {
+      [32m+[0m[0m adopt_existing = false
+      [32m+[0m[0m identity       = (known after apply)
+      [32m+[0m[0m identity_id    = (known after apply)
+      [32m+[0m[0m membership_id  = (known after apply)
+      [32m+[0m[0m project_id     = (known after apply)
+      [32m+[0m[0m roles          = [
+          [32m+[0m[0m {
+              [32m+[0m[0m custom_role_id              = (known after apply)
+              [32m+[0m[0m id                          = (known after apply)
+              [32m+[0m[0m is_temporary                = false
+              [32m+[0m[0m role_slug                   = "viewer"
+              [32m+[0m[0m temporary_access_end_time   = (known after apply)
+              [32m+[0m[0m temporary_access_start_time = (known after apply)
+              [32m+[0m[0m temporary_mode              = (known after apply)
+              [32m+[0m[0m temporary_range             = (known after apply)
+            },
+        ]
+    }
+
+[1mPlan:[0m [0m5 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m environment_slug = "prod"
+  [32m+[0m[0m identity_ids     = {
+      [32m+[0m[0m prod = (known after apply)
+    }
+  [32m+[0m[0m project_ids      = {
+      [32m+[0m[0m prod = (known after apply)
+    }
+  [32m+[0m[0m project_slugs    = {
+      [32m+[0m[0m prod = "plane-prod"
+    }
+[0m[1minfisical_project.plane["prod"]: Creating...[0m[0m
+[0m[1minfisical_identity.reader["prod"]: Creating...[0m[0m
+[0m[1minfisical_identity.reader["prod"]: Creation complete after 1s [id=<redacted>][0m
+[0m[1minfisical_project.plane["prod"]: Creation complete after 1s [id=<redacted>][0m
+[0m[1minfisical_project_environment.prod["prod"]: Creating...[0m[0m
+[0m[1minfisical_project_identity.reader["prod"]: Creating...[0m[0m
+[0m[1minfisical_project_environment.prod["prod"]: Creation complete after 0s [id=808315a4-046a-4018-9bd4-0aceacd16a6d][0m
+[0m[1minfisical_project_identity.reader["prod"]: Creation complete after 0s[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod"]: Creating...[0m[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod"]: Creation complete after 1s [id=f2252615-4019-4eb1-b507-9635c45f3fcf][0m
+[0m[1m[32m
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0menvironment_slug = "prod"
+identity_ids = {
+  "prod" = "<redacted>"
+}
+project_ids = {
+  "prod" = "<redacted>"
+}
+project_slugs = {
+  "prod" = "plane-prod"
+}
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform/.local/hosted/plane-prod/secret-zero/infisical-machine.json
+[1;32m ok[0m prod: secrets written
+[1;32m ok[0m published identity id to Secret plane-prod/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+[1;34m==>[0m Step 7 of 8: alert delivery
+[1;32m ok[0m Secret monitoring/alertmanager-wayline applied: primary is sink, Watchdog goes to sink
+alert delivery INCOMPLETE: alerts reach only the sink, so nobody is paged (scripts/hosted/owner-inputs.sh telegram). Watchdog reaches only the sink, so nobody is told if the server dies (scripts/hosted/owner-inputs.sh healthchecks).
+./scripts/hosted/bootstrap.sh: line 197: 95614 Terminated: 15          "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" -n "$1" port-forward "$2" "$3:$4" --address 127.0.0.1 > /dev/null 2>&1
+[1;34m==>[0m Step 8 of 8: the recovery bundle
+[1;33mwarn[0m recovery bundle INCOMPLETE: no recipient yet. Run scripts/hosted/bundle.sh init, then scripts/hosted/bundle.sh. Until then, this machine holds the only copy of secret zero.
+[1;32m ok[0m bootstrap finished. Read: make remote-status TARGET=plane-prod. Next: the first promotion, then make remote-test TARGET=plane-prod CONFIRM=plane-prod
+exit: 0, in 94 s
+ended: 2026-11-07T05:05:07Z

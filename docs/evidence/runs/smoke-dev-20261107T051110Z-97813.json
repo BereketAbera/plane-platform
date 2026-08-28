@@ -1,0 +1,463 @@
+{
+  "counts": {
+    "BLOCKED": 1,
+    "FAIL": 0,
+    "PASS": 39,
+    "SKIP": 0
+  },
+  "environment": "dev",
+  "finished_at": "2026-11-07T05:12:55Z",
+  "host": "plane.dev.localhost",
+  "mode": "full",
+  "result": "BLOCKED",
+  "run_id": "3327988e",
+  "started_at": "2026-11-07T05:11:11Z",
+  "steps": [
+    {
+      "data": {
+        "instances_status": 200,
+        "web_status": 200
+      },
+      "detail": "web 200, /api/instances/ 200 via plane.dev.localhost",
+      "duration_ms": 14,
+      "name": "reachable",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "admin": 15,
+        "space": 16,
+        "web": 35
+      },
+      "detail": "web, admin and space pages and the assets they name are served",
+      "duration_ms": 260,
+      "name": "frontends",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "live_health": {
+          "status": "OK",
+          "timestamp": "2026-11-07T05:11:11.413Z",
+          "version": "1.0.0"
+        }
+      },
+      "detail": "bare paths redirect, deep links reach admin, /live/health answers",
+      "duration_ms": 9,
+      "name": "routes",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "application": "Synced/Healthy",
+        "restarts": {
+          "iso-dev-controller-manager-85dbfbcb5b-jqc4w": 4,
+          "plane-beat-worker-wl-645c56988f-qtl4k": 3,
+          "plane-live-wl-5744d85f8b-6wgcw": 3,
+          "plane-minio-wl-0": 2,
+          "plane-pgdb-wl-0": 2,
+          "plane-rabbitmq-wl-0": 2,
+          "plane-redis-wl-0": 2,
+          "postgres-exporter-76cb56b89b-cgx5n": 2,
+          "redis-exporter-5b59d6cb7c-dvj2w": 2
+        }
+      },
+      "detail": "11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 9",
+      "duration_ms": 181,
+      "name": "workloads-ready",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "was_setup_done": true
+      },
+      "detail": "already set up, reusing stored admin",
+      "duration_ms": 27,
+      "name": "instance-setup",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "status": 200
+      },
+      "detail": "sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)",
+      "duration_ms": 17,
+      "name": "csrf-enforced",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_me_status": 401,
+        "user_id": "81be2f90-8340-4a10-9842-d6ae937f71ae"
+      },
+      "detail": "session established, anonymous request refused",
+      "duration_ms": 619,
+      "name": "sign-in",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "slug": "smoke-3327988e"
+      },
+      "detail": "smoke-3327988e",
+      "duration_ms": 83,
+      "name": "workspace",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_status": 401
+      },
+      "detail": "token works on /api/v1, refused without it",
+      "duration_ms": 80,
+      "name": "api-token",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "project_id": "469e53ae-a39b-44a3-8aa5-15c2d7b2234d"
+      },
+      "detail": "469e53ae-a39b-44a3-8aa5-15c2d7b2234d",
+      "duration_ms": 84,
+      "name": "project",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "work_item_id": "3196c047-698b-4f98-8010-c33556c0d5af"
+      },
+      "detail": "3196c047-698b-4f98-8010-c33556c0d5af",
+      "duration_ms": 73,
+      "name": "work-item",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_activity": 3.1
+      },
+      "detail": "issue_activity task ran in 3.1s",
+      "duration_ms": 3112,
+      "name": "background-job",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "listed": 1
+      },
+      "detail": "new work item is among 1 listed",
+      "duration_ms": 67,
+      "name": "work-item-list",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "sequence_id": 1,
+        "state": "6c162aac-4e8b-4845-8190-8159d616bc5b"
+      },
+      "detail": "workspace, project and work item P91C895-1 all match, by key and by session",
+      "duration_ms": 169,
+      "name": "read-back",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_seeded": 0.0
+      },
+      "detail": "seed project present after 0.0s",
+      "duration_ms": 33,
+      "name": "workspace-seed",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "branded": {
+          "admin": "sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177",
+          "backend": "sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2",
+          "space": "sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa",
+          "web": "sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab"
+        },
+        "plane-admin-wl": [
+          "localhost:5001/wayline/admin@sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177"
+        ],
+        "plane-api-wl": [
+          "localhost:5001/wayline/backend@sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2"
+        ],
+        "plane-beat-worker-wl": [
+          "localhost:5001/wayline/backend@sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2"
+        ],
+        "plane-space-wl": [
+          "localhost:5001/wayline/space@sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa"
+        ],
+        "plane-web-wl": [
+          "localhost:5001/wayline/web@sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab"
+        ],
+        "plane-worker-wl": [
+          "localhost:5001/wayline/backend@sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2"
+        ]
+      },
+      "detail": "what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-beat-worker-wl is set to the overlay's image, and 1 replicas are still terminating",
+      "duration_ms": 54,
+      "name": "branding-overlay",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {
+        "checked": 15
+      },
+      "detail": "all 15 requests answered 200",
+      "duration_ms": 651,
+      "name": "app-shell",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_status": 401,
+        "encrypted_rows": 8,
+        "rows": 37
+      },
+      "detail": "37 config rows read, 8 of them encrypted, refused with no session (401)",
+      "duration_ms": 646,
+      "name": "admin-sign-in",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "statuses": {
+          "work_item": 403,
+          "workspace": 404
+        }
+      },
+      "detail": "sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}",
+      "duration_ms": 691,
+      "name": "second-user",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "celery_consumers": 1,
+        "celery_messages": 0,
+        "queues": [
+          "celery",
+          "celery@plane-worker-wl-76b8d6fcdb-9zjkb.celery.pidbox",
+          "celeryev.a0cf6da2-87a9-48c6-895e-c4d97502982c"
+        ]
+      },
+      "detail": "queue celery has 1 consumer, 0 waiting",
+      "duration_ms": 1151,
+      "name": "celery-consumers",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "alarms": "Node rabbit@plane-rabbitmq-wl-0 reported no alarms, local or clusterwide",
+        "limit_bytes": 268435456,
+        "watermark": "{absolute,\"256Mi\"}"
+      },
+      "detail": "watermark {absolute,\"256Mi\"} = 268435456 bytes, no alarms",
+      "duration_ms": 3273,
+      "name": "broker-memory",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "activity_with_no_consumer": 0,
+        "consumers_after": 1,
+        "consumers_with_no_consumer": 0,
+        "messages_with_no_consumer": 4,
+        "seconds_after_asking_consumer_back": 17.2,
+        "worker_replaced": true
+      },
+      "detail": "With 0 consumers: 4 messages parked, no activity after 15s. Asked the consumer back: activity within 17.2s. Worker pod replaced, so no emptied queue selection is left behind",
+      "duration_ms": 85004,
+      "name": "worker-negative-control",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "canceling_queue_lines": 0
+      },
+      "detail": "no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect",
+      "duration_ms": 42,
+      "name": "worker-clean",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "75005557-9f1a-41e7-b525-3fca288df076",
+        "sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc",
+        "size": 1047
+      },
+      "detail": "1047 bytes stored",
+      "duration_ms": 237,
+      "name": "attachment-upload",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc",
+        "expected_sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc"
+      },
+      "detail": "sha256 5fedd67260c53fb0... matches",
+      "duration_ms": 46,
+      "name": "attachment-download",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "all_buckets": [
+          "uploads"
+        ],
+        "bucket": "uploads",
+        "expected_sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc",
+        "key": "6e259def-61cb-49f5-8a7a-3b2e8220ff7c/20c4fe94ad904403964cda0ff10b79a0-smoke.txt",
+        "sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc",
+        "size": 1047
+      },
+      "detail": "1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']",
+      "duration_ms": 1348,
+      "name": "object-in-silo",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "statuses": {
+          "list": 403,
+          "object": 403,
+          "tampered_signature": 403
+        }
+      },
+      "detail": "refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}",
+      "duration_ms": 57,
+      "name": "uploads-private",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "matches": true,
+        "size": 4718592
+      },
+      "detail": "4718592 bytes up and back through Traefik, sha256 matches",
+      "duration_ms": 306,
+      "name": "large-upload",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "storage_status": 400
+      },
+      "detail": "5 MiB + 1 byte refused by the storage policy with 400",
+      "duration_ms": 115,
+      "name": "oversize-refused",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc",
+        "asset_id": "035cbd4a-23bf-43a1-9811-053ebde9e7ec",
+        "expected_sha256": "5fedd67260c53fb0798523ea8c7a99786592f878d523378d5b64b52a7eb278cc"
+      },
+      "detail": "copy_object through the public host worked: 035cbd4a-23bf-43a1-9811-053ebde9e7ec holds the same bytes",
+      "duration_ms": 94,
+      "name": "asset-duplicate",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "5c85406b-3f28-44c6-8d99-f959dc4ec510"
+      },
+      "detail": "avatar stored and read back anonymously through its signed redirect",
+      "duration_ms": 89,
+      "name": "avatar",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "files": 1,
+        "status": "completed",
+        "zip_bytes": 533
+      },
+      "detail": "export completed, its link downloads, and the 533 byte zip holds the work item",
+      "duration_ms": 3120,
+      "name": "export",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "after_unpublish": 404,
+        "page_bytes": 8123,
+        "settings_project": "469e53ae-a39b-44a3-8aa5-15c2d7b2234d"
+      },
+      "detail": "published: api and space serve it anonymously. Unpublished: 404",
+      "duration_ms": 362,
+      "name": "public-board",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "page_id": "cd10bfad-a117-4ed8-aed0-ae9fc559b72a"
+      },
+      "detail": "cd10bfad-a117-4ed8-aed0-ae9fc559b72a",
+      "duration_ms": 60,
+      "name": "realtime-page",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "reason": "read-write",
+        "verdict": "Authenticated"
+      },
+      "detail": "Authenticated (read-write): traefik upgrade, live -> api session check",
+      "duration_ms": 98,
+      "name": "realtime-auth",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "verdict": "PermissionDenied"
+      },
+      "detail": "mismatched user refused: PermissionDenied",
+      "duration_ms": 38,
+      "name": "realtime-denied",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "delivery_ms": 1,
+        "first_sync_bytes": 108
+      },
+      "detail": "both clients synced, and an update reached the other client in 1 ms",
+      "duration_ms": 188,
+      "name": "realtime-sync",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "binary_bytes": 184,
+        "seconds_until_stored": 2.2
+      },
+      "detail": "stored as HTML and binary in 2.2s, and a new connection gets it back from the database",
+      "duration_ms": 2237,
+      "name": "realtime-persist",
+      "status": "PASS"
+    },
+    {
+      "data": {},
+      "detail": "reusing existing sentinel test-sentinel-dev.json",
+      "duration_ms": 0,
+      "name": "sentinel-create",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "expected_sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "work_item_id": "9732dde3-786e-4fa1-b6af-0b5e791f2314"
+      },
+      "detail": "sentinel row and attachment intact",
+      "duration_ms": 82,
+      "name": "sentinel-reread",
+      "status": "PASS"
+    }
+  ],
+  "tool": "tests/e2e/smoke.py"
+}

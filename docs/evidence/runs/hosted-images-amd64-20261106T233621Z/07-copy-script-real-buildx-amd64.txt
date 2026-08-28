@@ -1,0 +1,29 @@
+$ bash /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work/copy-real.sh /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work
+2026-11-06T23:37:56Z
+#1 [internal] pushing localhost:5074/wayline/web
+#1 0.000 copying sha256:9b132b80a53fd8ae272094e1829adea2d7e73404c6f0f1e0192d6c1c19a1bc8c from localhost:5073/wayline/web@sha256:9b132b80a53fd8ae272094e1829adea2d7e73404c6f0f1e0192d6c1c19a1bc8c to localhost:5074/wayline/web
+#1 0.069 pushing sha256:9b132b80a53fd8ae272094e1829adea2d7e73404c6f0f1e0192d6c1c19a1bc8c to localhost:5074/wayline/web:9b132b80a53f
+#1 DONE 0.1s
+[1;32m ok[0m localhost:5074/wayline/web@sha256:9b132b80a53fd8ae272094e1829adea2d7e73404c6f0f1e0192d6c1c19a1bc8c
+#1 [internal] pushing localhost:5074/wayline/admin
+#1 0.000 copying sha256:e2a2f74e4c2deee0538cd240a5b4fc68b62bfebfbe2cf922901511a875a90164 from localhost:5073/wayline/admin@sha256:e2a2f74e4c2deee0538cd240a5b4fc68b62bfebfbe2cf922901511a875a90164 to localhost:5074/wayline/admin
+#1 0.066 pushing sha256:e2a2f74e4c2deee0538cd240a5b4fc68b62bfebfbe2cf922901511a875a90164 to localhost:5074/wayline/admin:e2a2f74e4c2d
+#1 DONE 0.1s
+[1;32m ok[0m localhost:5074/wayline/admin@sha256:e2a2f74e4c2deee0538cd240a5b4fc68b62bfebfbe2cf922901511a875a90164
+#1 [internal] pushing localhost:5074/wayline/space
+#1 0.000 copying sha256:633ed6df813636f102359c2c620b0c8fbe32b8a47f7606b21be3f63d44bcf31c from localhost:5073/wayline/space@sha256:633ed6df813636f102359c2c620b0c8fbe32b8a47f7606b21be3f63d44bcf31c to localhost:5074/wayline/space
+#1 0.068 pushing sha256:633ed6df813636f102359c2c620b0c8fbe32b8a47f7606b21be3f63d44bcf31c to localhost:5074/wayline/space:633ed6df8136
+#1 DONE 0.1s
+[1;32m ok[0m localhost:5074/wayline/space@sha256:633ed6df813636f102359c2c620b0c8fbe32b8a47f7606b21be3f63d44bcf31c
+#1 [internal] pushing localhost:5074/wayline/backend
+#1 0.000 copying sha256:0de682cd7e2f4f247c3b8c03f0b4d9ddcc869357e86f8b9bc0c4be729e203933 from localhost:5073/wayline/backend@sha256:0de682cd7e2f4f247c3b8c03f0b4d9ddcc869357e86f8b9bc0c4be729e203933 to localhost:5074/wayline/backend
+#1 0.067 pushing sha256:0de682cd7e2f4f247c3b8c03f0b4d9ddcc869357e86f8b9bc0c4be729e203933 to localhost:5074/wayline/backend:0de682cd7e2f
+#1 DONE 0.1s
+[1;32m ok[0m localhost:5074/wayline/backend@sha256:0de682cd7e2f4f247c3b8c03f0b4d9ddcc869357e86f8b9bc0c4be729e203933
+[1;32m ok[0m 4 image(s) present in the local registry
+script exit 0
+PASS web: wanted sha256:9b132b80a53fd8ae272094e1829adea2d7e73404c6f0f1e0192d6c1c19a1bc8c; by digest sha256:9b132b80a53f, body sha256:9b132b80a53f, tag 9b132b80a53f answers sha256:9b132b80a53f; application/vnd.oci.image.manifest.v1+json; linux/amd64
+PASS admin: wanted sha256:e2a2f74e4c2deee0538cd240a5b4fc68b62bfebfbe2cf922901511a875a90164; by digest sha256:e2a2f74e4c2d, body sha256:e2a2f74e4c2d, tag e2a2f74e4c2d answers sha256:e2a2f74e4c2d; application/vnd.oci.image.manifest.v1+json; linux/amd64
+PASS space: wanted sha256:633ed6df813636f102359c2c620b0c8fbe32b8a47f7606b21be3f63d44bcf31c; by digest sha256:633ed6df8136, body sha256:633ed6df8136, tag 633ed6df8136 answers sha256:633ed6df8136; application/vnd.oci.image.manifest.v1+json; linux/amd64
+PASS backend: wanted sha256:0de682cd7e2f4f247c3b8c03f0b4d9ddcc869357e86f8b9bc0c4be729e203933; by digest sha256:0de682cd7e2f, body sha256:0de682cd7e2f, tag 0de682cd7e2f answers sha256:0de682cd7e2f; application/vnd.oci.image.manifest.v1+json; linux/amd64
+[exit 0]

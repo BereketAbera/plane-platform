@@ -1,0 +1,30 @@
+$ bash /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work/copy-cases.sh /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work
+2026-11-06T23:37:53Z
+PASS already readable: no login, three copied: exit 0, 0 login(s), 3 copies
+PASS not readable, then readable after gh's login: exit 0, 1 login(s), 3 copies
+PASS still not readable after login: stops, nothing copied: exit 1, 1 login(s), 0 copies
+PASS the registry's own answer is shown: exit 1, 1 login(s), 0 copies
+PASS gh has no token: stops: exit 1, 1 login(s), 0 copies
+PASS another registry: no gh, no login: exit 1, 0 login(s), 0 copies
+PASS the copy cannot be read back by digest: stops at the first: exit 1, 0 login(s), 1 copies
+PASS no gh: says what to do: exit 1, 0 login(s), 0 copies
+--- what the login path printed, as a person sees it
+==> Docker cannot read ghcr.io/bereketabera/wayline/admin@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, so logging in to ghcr.io as BereketAber
+ ok localhost:5001/wayline/admin@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ ok localhost:5001/wayline/backend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+ ok localhost:5001/wayline/web@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ ok 3 image(s) present in the local registry
+--- argv log
+docker buildx imagetools inspect ghcr.io/bereketabera/wayline/admin@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+gh api user --jq .login
+gh auth token
+docker login ghcr.io --username BereketAbera --password-stdin
+docker buildx imagetools inspect ghcr.io/bereketabera/wayline/admin@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/admin:aaaaaaaaaaaa ghcr.io/bereketabera/wayline/admin@sha256:aaaaaaaaaa
+docker buildx imagetools inspect localhost:5001/wayline/admin@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/backend:bbbbbbbbbbbb ghcr.io/bereketabera/wayline/backend@sha256:bbbbbb
+docker buildx imagetools inspect localhost:5001/wayline/backend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+docker buildx imagetools create --prefer-index=false -t localhost:5001/wayline/web:dddddddddddd ghcr.io/bereketabera/wayline/web@sha256:dddddddddddddd
+docker buildx imagetools inspect localhost:5001/wayline/web@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+copy-cases: 0 wrong
+[exit 0]
