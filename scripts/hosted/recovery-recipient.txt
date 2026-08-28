@@ -1,0 +1,2 @@
+# The public half of the recovery identity. Not a secret: scripts/hosted/bundle.sh encrypts to this.
+age1uwan8vwzpykh7zr383say0ayy0hjqjmgjm0rnjl0py5zdelc7ehspnjh3l
