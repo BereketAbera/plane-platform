@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Terraform for what sits outside the cluster: reads the VPS from Contabo and owns the one DNS record.
+# Terraform for what sits outside the cluster: reads the VPS from Contabo and owns the two DNS records.
 #
 #   TARGET=plane-prod scripts/hosted/host-terraform.sh plan
 #   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/host-terraform.sh apply

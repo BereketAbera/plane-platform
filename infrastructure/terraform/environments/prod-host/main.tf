@@ -33,3 +33,23 @@ resource "vercel_dns_record" "wayline" {
     }
   }
 }
+
+# Made here and not imported: the zone's wildcard answered for this name until now, and that points at Vercel, not at this VPS.
+resource "vercel_dns_record" "grafana" {
+  team_id = local.target.vercel_team_id
+  domain  = "bereket.dev"
+  name    = trimsuffix(local.target.grafana_domain, ".bereket.dev")
+  type    = "A"
+  ttl     = 60
+  value   = local.target.host
+
+  lifecycle {
+    prevent_destroy = true
+
+    # The same public mistake as above, and the same file to fix.
+    precondition {
+      condition     = data.contabo_instance.vps.ip_config[0].v4[0].ip == local.target.host
+      error_message = "Contabo says this instance's address is ${data.contabo_instance.vps.ip_config[0].v4[0].ip}, and infrastructure/hosted/plane-prod/target.yaml says ${local.target.host}. Fix target.yaml first, because the firewall, policies and scripts all read it."
+    }
+  }
+}
