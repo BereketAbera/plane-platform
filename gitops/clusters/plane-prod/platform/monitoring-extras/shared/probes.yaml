@@ -19,3 +19,24 @@ spec:
       static:
         - kps-prometheus.monitoring.svc.cluster.local:9090
       labels: { probe: denied-prometheus }
+---
+# What a browser gets at Grafana's public route: the same TLS, certificate and route, without leaving the node, because CoreDNS rewrites this
+# name to Traefik's Service too. It lives here and not in plane-prod, so its namespace label tells its certificate from Plane's in
+# ServedCertificateExpiringSoon. /login is a plain page, and only a POST there meets the login's limit.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: grafana
+spec:
+  jobName: grafana-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_grafana_login
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://grafana.bereket.dev/login
+      labels: { probe: grafana }

@@ -4,6 +4,8 @@ metadata:
   name: hosted-platform
 spec:
   groups:
+    # Every namespace but K3s's own and the restore tests, which is what Alloy keeps logs for too, so a new app is covered by being there.
+    # docs/monitoring-new-app.md says what else is. A namespace named here is one that must not page anyone.
     - name: platform.workloads
       interval: 30s
       rules:
@@ -11,15 +13,15 @@ spec:
         # evaluation falls between two scrapes. increase() extrapolates, so one restart can read nearly 2.
         - alert: PodRestarting
           expr: |
-            max_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|cert-manager|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m])
-              - min_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|cert-manager|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m])
+            max_over_time(kube_pod_container_status_restarts_total{namespace!~"kube-system|kube-public|kube-node-lease|restore-test-.*"}[15m])
+              - min_over_time(kube_pod_container_status_restarts_total{namespace!~"kube-system|kube-public|kube-node-lease|restore-test-.*"}[15m])
               >= 2
           labels: { severity: warning, component: pod }
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} restarted more than once in 15m"
         - alert: ContainerMemorySaturation
           expr: |
-            sum by (namespace, pod, container) (container_memory_working_set_bytes{namespace=~"plane-.*|cert-manager|monitoring|monitoring-agents|argocd|traefik|infisical",container!="",container!="POD"})
+            sum by (namespace, pod, container) (container_memory_working_set_bytes{namespace!~"kube-system|kube-public|kube-node-lease|restore-test-.*",container!="",container!="POD"})
               / on (namespace, pod, container)
             sum by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory"})
               > 0.9
