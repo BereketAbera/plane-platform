@@ -1,0 +1,42 @@
+# The one console with a public route, https://grafana.bereket.dev, behind Grafana's own login. policy/hosted.rego allows this route in
+# these words and no other, so Prometheus, Alertmanager, Argo CD, Infisical and the storage consoles stay behind the SSH tunnel.
+#
+# The login's route comes first by the length of its rule, which is how Traefik orders routes with no priority. /metrics is left out, and
+# Traefik answers it with a 404: Prometheus reads it straight from the pod, on the path the ServiceMonitor names.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: Host(`grafana.bereket.dev`) && Method(`POST`) && (PathPrefix(`/login`) || PathPrefix(`/api/login`))
+      middlewares:
+        - name: grafana-login-limit
+      services:
+        - name: kps-grafana
+          port: 80
+    - kind: Rule
+      match: Host(`grafana.bereket.dev`) && !PathPrefix(`/metrics`)
+      services:
+        - name: kps-grafana
+          port: 80
+  tls:
+    secretName: grafana-tls
+---
+# Five tries a minute from one client, which a person mistyping never reaches. Anything over that gets a 429 and never reaches Grafana,
+# whose own limit counts failures per user: this one counts per client, so one address cannot try every name. The connection's address
+# and no header, because this entry point trusts no forwarded header and a client could otherwise send a new one with each try.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: grafana-login-limit
+spec:
+  rateLimit:
+    average: 5
+    period: 1m
+    burst: 5
+    sourceCriterion:
+      ipStrategy:
+        depth: 0
