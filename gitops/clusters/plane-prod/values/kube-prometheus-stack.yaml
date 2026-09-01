@@ -125,7 +125,7 @@ prometheusOperator:
     sha: 0a546b98a8dd47735456ab389983675ee363d68127e334937a9fceeea10da5e7
 
 prometheus:
-  # No route: reached through the SSH tunnel with kubectl port-forward.
+  # No route, and policy/hosted.rego refuses one: reached through the SSH tunnel with kubectl port-forward.
   ingress: { enabled: false }
   prometheusSpec:
     image:
@@ -163,6 +163,7 @@ prometheus:
           resources: { requests: { storage: 16Gi } }
 
 alertmanager:
+  # No route either, for the same reason.
   ingress: { enabled: false }
   serviceAccount:
     automountServiceAccountToken: false # it calls a webhook; it never talks to the API
@@ -192,16 +193,24 @@ alertmanager:
 
 grafana:
   fullnameOverride: kps-grafana
+  # The one console with a public route, https://grafana.bereket.dev, which is the IngressRoute in monitoring-extras and not the
+  # chart's Ingress, because policy/hosted.rego refuses every Ingress in Git.
   ingress: { enabled: false }
   image:
     registry: docker.io
     repository: grafana/grafana
     tag: 13.3.0-distroless
     sha: 540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
-  # The chart generates Secret kps-grafana with a random admin password. Argo CD renders with
-  # no lookup, so every manifest regeneration draws a new one. The Application must ignore that diff.
-  adminUser: admin
-  persistence: { enabled: false } # state comes from Git
+  # scripts/hosted/grafana-admin.sh makes this Secret, from files here, before Argo CD starts, so the chart generates no password
+  # and renders no Secret of its own. The sidecars read it too, for their reload calls.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  # State comes from Git. So the database is an emptyDir that dies with the pod, and each new pod makes its admin from that Secret,
+  # whatever anyone changed in the UI. A container restart keeps the emptyDir, and the admin it holds, which is why grafana-admin.sh
+  # replaces the pod when the Secret changes.
+  persistence: { enabled: false }
   # One replica with no state of its own, so a surge would need room in the namespace's quota for nothing.
   deploymentStrategy:
     type: Recreate
@@ -216,8 +225,21 @@ grafana:
     limits: { cpu: 500m, memory: 384Mi }
   grafana.ini:
     server:
-      # No route: reached through the SSH tunnel with kubectl port-forward.
-      root_url: http://localhost:18090 # scripts/hosted/ui.sh uses this port first
+      domain: grafana.bereket.dev
+      root_url: https://grafana.bereket.dev
+    # Its login is all that stands between this page and the internet. auth.basic stays on: the sidecars' reload calls use it, and a
+    # guess that way counts toward the same limit on failed logins as one at the form.
+    security:
+      cookie_secure: true
+      cookie_samesite: lax
+      strict_transport_security: true
+      disable_gravatar: true
+      disable_brute_force_login_protection: false
+    users:
+      allow_sign_up: false
+      allow_org_create: false
+    auth.anonymous:
+      enabled: false
     # No pod here has internet egress, so each of these can only time out and log an error.
     analytics:
       check_for_updates: false

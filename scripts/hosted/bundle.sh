@@ -10,8 +10,8 @@
 # at hand to prove it decrypts.
 #
 # Holds: secret zero, every Terraform state under .local/hosted/plane-prod/terraform, the deploy key, the restic password, the
-# read-only pull key, the alert credentials, the GHCR token, the off-site credentials and the SSH known hosts. It does not hold
-# the kubeconfig, which SSH brings back, or any backup, which restic seals by itself.
+# read-only pull key, the alert credentials, the GHCR token, Grafana's admin login, the off-site credentials and the SSH known hosts.
+# It does not hold the kubeconfig, which SSH brings back, or any backup, which restic seals by itself.
 #
 # Written to .local/hosted/plane-prod/recovery-bundle. Copy it off this machine, into storage that is not the VPS: this script
 # never sends it anywhere, and it must never go there. Run it again after every bootstrap, token mint or Terraform apply.
@@ -77,7 +77,7 @@ collect() {
   mkdir -p "$WORK/stage"
   stage secret-zero
   find "$WORK/stage" -name '.tmp.*' -prune -exec rm -rf {} + 2>/dev/null || true
-  for file in argocd-deploy-key argocd-deploy-key.pub wayline-pull_ed25519 wayline-pull_ed25519.pub restic-password ghcr-pull-token; do
+  for file in argocd-deploy-key argocd-deploy-key.pub wayline-pull_ed25519 wayline-pull_ed25519.pub restic-password ghcr-pull-token grafana-admin-user grafana-admin-password; do
     stage "$file"
   done
   for file in "$LOCAL_DIR"/alert-* "$LOCAL_DIR"/offsite-s3-*; do

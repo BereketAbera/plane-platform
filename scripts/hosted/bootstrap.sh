@@ -7,7 +7,7 @@
 # In this order, because each needs the one before:
 #   1. A read-only deploy key on GitHub, generated here and held here.
 #   2. Namespaces, then Secret argocd-repo-plane-platform in argocd, so Argo CD's first look at the repository works. It cannot
-#      come from Infisical, because Argo CD deploys Infisical.
+#      come from Infisical, because Argo CD deploys Infisical. Secret grafana-admin in monitoring too, before Grafana first starts.
 #   3. Port 80 in the firewall, then the rest of Terraform: Argo CD, its projects, and the root Application. Argo CD starts
 #      deploying the platform here, and with it asks for the first certificate.
 #   4. The backup folders on the node, the read-only pull user, and a restic password generated once.
@@ -82,7 +82,7 @@ deploy_key() {
 # ------ 2. Namespaces and the repository Secret ------------------------------------------------------------------------
 
 repo_secret() {
-  step "2 of 8: namespaces, and Secret argocd-repo-plane-platform"
+  step "2 of 8: namespaces, Secret argocd-repo-plane-platform and Secret grafana-admin"
   tf init -input=false -lockfile=readonly >/dev/null
   # Terraform creates the namespace, and owns it, so nothing may make it first. A targeted apply gets the Secret in ahead of
   # Argo CD, so its first read of the repository works, and the full apply follows at once.
@@ -91,6 +91,8 @@ repo_secret() {
     --from-literal=type=git --from-literal=url="$HOSTED_REPO_URL" --from-file=sshPrivateKey="$DEPLOY_KEY"
   kc -n argocd label secret argocd-repo-plane-platform argocd.argoproj.io/secret-type=repository --overwrite >/dev/null
   ok "Secret argocd/argocd-repo-plane-platform in place, for $HOSTED_REPO_URL"
+  # Grafana's containers cannot start without it, and the wave that holds them would stop root's sync there.
+  "$ROOT/scripts/hosted/grafana-admin.sh" apply
 }
 
 # ------ 3. The rest of Terraform ---------------------------------------------------------------------------------------
