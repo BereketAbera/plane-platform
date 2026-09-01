@@ -42,7 +42,7 @@ if [[ "$reachable" == yes ]]; then
     sed 's/^/  /' || true
 
   section "Certificates"
-  kc -n plane-prod get certificate 2>/dev/null || printf '  none yet\n'
+  kc get certificate --all-namespaces 2>/dev/null || printf '  none yet\n'
   kc get clusterissuer 2>/dev/null || true
 
   section "Backups"

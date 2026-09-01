@@ -5,7 +5,8 @@
 #   ONLY="outside backups"   sections to run, of: outside argo netpol routes psa secrets smoke alerts backups
 #
 # CONFIRM, because it starts short-lived probe pods, mints 10-minute tokens, signs in, and sends one synthetic alert, which reaches
-# the owner's phone if Telegram is set.
+# the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's public route, so a login from here within
+# a minute of it may read 429.
 #
 # Exit, as scripts/test.sh: 0 every row passed, 1 something failed, 2 nothing failed and something could not say yes:
 #   BLOCKED     it could not run, and that says nothing about the platform.
@@ -61,6 +62,11 @@ cluster_or_blocked() { # section name
 
 STAGING=no
 
+# Every console's name under the two zones, except Grafana's one public host. grafana under Wayline's domain stays in the list, because
+# that route is one host and this is any other.
+PARENT_DOMAIN="${HOSTED_GRAFANA_DOMAIN#*.}"
+ADMIN_HOSTS="argocd.$HOSTED_DOMAIN grafana.$HOSTED_DOMAIN prometheus.$HOSTED_DOMAIN alertmanager.$HOSTED_DOMAIN infisical.$HOSTED_DOMAIN argocd.$PARENT_DOMAIN prometheus.$PARENT_DOMAIN alertmanager.$PARENT_DOMAIN infisical.$PARENT_DOMAIN"
+
 # Every privileged port, the NodePort range and what K3s and this platform listen on. Threads, because a drop only times out.
 scan_ports() { # host
   python3 -I -c '
@@ -81,6 +87,114 @@ with concurrent.futures.ThreadPoolExecutor(200) as pool:
 ' "$1"
 }
 
+# Each of these asks the node itself, by --resolve, so a resolver that has not caught up cannot answer for it. This row says what DNS says.
+resolves_to_the_node() { # host
+  local addresses
+  addresses="$(python3 -I -c 'import socket, sys; print(" ".join(sorted(set(socket.gethostbyname_ex(sys.argv[1])[2]))))' "$1" 2>/dev/null || true)"
+  if [[ "$addresses" == "$HOSTED_HOST" ]]; then
+    row PASS "$1 resolves to the node, and only there"
+  else
+    row FAIL "$1 resolves to the node, and only there" "it answers: ${addresses:-nothing}. Terraform owns its record: scripts/hosted/host-terraform.sh"
+  fi
+}
+
+redirects_to_https() { # host
+  local answer code where
+  answer="$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 --resolve "$1:80:$HOSTED_HOST" "http://$1/" 2>&1 || true)"
+  code="${answer%% *}"
+  where="${answer#* }"
+  if [[ "$code" =~ ^(301|308)$ && "$where" == "https://$1/" ]]; then row PASS "http://$1 redirects to https" "$code"; else row FAIL "http://$1 redirects to https" "$answer"; fi
+}
+
+served_certificate() { # host, and the Certificate that serves it
+  local chain issuer end_date days
+  chain="$(openssl s_client -connect "$HOSTED_HOST:443" -servername "$1" </dev/null 2>/dev/null | openssl x509 -noout -issuer -enddate 2>/dev/null || true)"
+  issuer="$(sed -n 's/^issuer=//p' <<<"$chain")"
+  end_date="$(sed -n 's/^notAfter=//p' <<<"$chain")"
+  if [[ -z "$end_date" ]]; then
+    row FAIL "a certificate is served for $1" "no certificate came back. Read: make remote-status TARGET=plane-prod"
+    return 0
+  fi
+  days="$(python3 -I -c 'import ssl, sys, time; print(int((ssl.cert_time_to_seconds(sys.argv[1]) - time.time()) // 86400))' "$end_date")"
+  if [[ "$issuer" == *STAGING* || "$issuer" == *"(STAGING)"* ]]; then
+    # Only Plane's matters to the smoke, and the smoke is what reads this.
+    if [[ "$1" == "$HOSTED_DOMAIN" ]]; then STAGING=yes; fi
+    row INCOMPLETE "a publicly trusted certificate for $1" "Let's Encrypt staging, $days days left. Move $2's issuerRef to letsencrypt-production"
+  elif curl -sS -o /dev/null --max-time 15 --resolve "$1:443:$HOSTED_HOST" "https://$1/" 2>/dev/null; then
+    if [[ "$days" -lt 14 ]]; then row FAIL "a publicly trusted certificate for $1" "$days days left, and it renews well before 14"; else row PASS "a publicly trusted certificate for $1" "$days days left, $issuer"; fi
+  else
+    row FAIL "a publicly trusted certificate for $1" "curl refused it: $issuer"
+  fi
+}
+
+# The one console on the internet: its login page answers, its login is all that opens it, and the rest of it stays shut. -k, because the
+# certificate has its own row above and a staging one is enough to ask these.
+grafana_public() {
+  local host="$HOSTED_GRAFANA_DOMAIN" url code page attempt path
+  url="https://$host"
+  local -a ask=(curl -k -sS --max-time 15 --resolve "$host:443:$HOSTED_HOST")
+
+  page="$("${ask[@]}" -w '\n%{http_code}' "$url/login" 2>/dev/null || true)"
+  code="${page##*$'\n'}"
+  if [[ "$code" == 000 || -z "$code" ]]; then
+    row BLOCKED "Grafana's login page answers" "no answer"
+  elif [[ "$code" == 200 && "$page" == *"<title>Grafana</title>"* ]]; then
+    row PASS "Grafana's login page answers" "$code"
+    if [[ "$page" == *'"disableUserSignUp":true'* ]]; then
+      row PASS "Grafana's login page offers no sign-up"
+    else
+      row FAIL "Grafana's login page offers no sign-up" "disableUserSignUp is not true in what it served"
+    fi
+  else
+    row FAIL "Grafana's login page answers" "$code, and not Grafana's page"
+  fi
+
+  for path in /api/org /api/datasources; do
+    code="$("${ask[@]}" -o /dev/null -w '%{http_code}' "$url$path" 2>/dev/null || true)"
+    case "$code" in
+      401) row PASS "an anonymous read of Grafana's $path is refused" "$code" ;;
+      000 | "") row BLOCKED "an anonymous read of Grafana's $path is refused" "no answer" ;;
+      *) row FAIL "an anonymous read of Grafana's $path is refused" "$code" ;;
+    esac
+  done
+
+  # Traefik's own 404, from no route. Grafana answers any path it does not know by sending it to the login page.
+  code="$("${ask[@]}" -o /dev/null -w '%{http_code}' "$url/metrics" 2>/dev/null || true)"
+  case "$code" in
+    404) row PASS "Grafana's /metrics is not public" "$code" ;;
+    000 | "") row BLOCKED "Grafana's /metrics is not public" "no answer" ;;
+    *) row FAIL "Grafana's /metrics is not public" "$code" ;;
+  esac
+
+  # A made-up user, so Grafana's own count of failures for the admin stays where it is, and a new X-Forwarded-For with each try, which the
+  # limit must not read.
+  local answers=""
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    code="$("${ask[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -H "X-Forwarded-For: 203.0.113.$attempt" \
+      --data-binary '{"user":"test-hosted-rate-limit","password":"not-a-password"}' "$url/login" 2>/dev/null || true)"
+    answers="$answers $code"
+    [[ "$code" != 429 ]] || break
+  done
+  case "$code" in
+    429) row PASS "guessing at Grafana's login hits a limit per client" "answers:$answers" ;;
+    000 | "") row BLOCKED "guessing at Grafana's login hits a limit per client" "no answer" ;;
+    *) row FAIL "guessing at Grafana's login hits a limit per client" "answers:$answers" ;;
+  esac
+
+  # Through curl's config on stdin, so neither value reaches a process list, and only the status reaches this run's evidence.
+  if [[ -s "$LOCAL_DIR/grafana-admin-user" && -s "$LOCAL_DIR/grafana-admin-password" ]]; then
+    code="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
+      "${ask[@]}" -K - -o /dev/null -w '%{http_code}' "$url/api/org" 2>/dev/null || true)"
+    case "$code" in
+      200) row PASS "the login held here opens Grafana" "$code" ;;
+      000 | "") row BLOCKED "the login held here opens Grafana" "no answer" ;;
+      *) row FAIL "the login held here opens Grafana" "$code. A running pod keeps the admin it started with: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply, and read scripts/hosted/grafana-admin.sh" ;;
+    esac
+  else
+    row BLOCKED "the login held here opens Grafana" "no login in .local/hosted/plane-prod. Run: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply"
+  fi
+}
+
 outside() {
   section "From outside: this machine is not on the VPS"
   local open extra
@@ -99,47 +213,32 @@ outside() {
     if [[ -n "${extra// /}" ]]; then row FAIL "only 22, 80 and 443 answer on IPv6" "also open: $extra"; else row PASS "nothing extra answers on IPv6" "open: ${open6:-none, or this machine has no IPv6}"; fi
   fi
 
+  local host
+  for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN"; do resolves_to_the_node "$host"; done
+
   if [[ " $open " != *" 80 "* ]]; then
     row BLOCKED "http redirects to https" "port 80 is closed. Move the firewall on: scripts/hosted/edge.sh"
   else
-    local answer code where
-    answer="$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 "http://$HOSTED_DOMAIN/" 2>&1 || true)"
-    code="${answer%% *}"
-    where="${answer#* }"
-    if [[ "$code" =~ ^(301|308)$ && "$where" == "https://$HOSTED_DOMAIN/" ]]; then row PASS "http redirects to https" "$code"; else row FAIL "http redirects to https" "$answer"; fi
+    for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN"; do redirects_to_https "$host"; done
   fi
 
   if [[ " $open " != *" 443 "* ]]; then
-    row BLOCKED "the certificate and the routes" "port 443 is closed from here. Move the firewall on: scripts/hosted/edge.sh"
+    row BLOCKED "the certificates and the routes" "port 443 is closed from here. Move the firewall on: scripts/hosted/edge.sh"
     return 0
   fi
 
-  local chain issuer end_date days
-  chain="$(openssl s_client -connect "$HOSTED_HOST:443" -servername "$HOSTED_DOMAIN" </dev/null 2>/dev/null | openssl x509 -noout -issuer -enddate 2>/dev/null || true)"
-  issuer="$(sed -n 's/^issuer=//p' <<<"$chain")"
-  end_date="$(sed -n 's/^notAfter=//p' <<<"$chain")"
-  if [[ -z "$end_date" ]]; then
-    row FAIL "a certificate is served for $HOSTED_DOMAIN" "no certificate came back. Read: make remote-status TARGET=plane-prod"
-  else
-    days="$(python3 -I -c 'import ssl, sys, time; print(int((ssl.cert_time_to_seconds(sys.argv[1]) - time.time()) // 86400))' "$end_date")"
-    if [[ "$issuer" == *STAGING* || "$issuer" == *"(STAGING)"* ]]; then
-      STAGING=yes
-      row INCOMPLETE "a publicly trusted certificate" "Let's Encrypt staging, $days days left. Move wayline-tls's issuerRef to letsencrypt-production"
-    elif curl -sS -o /dev/null --max-time 15 "https://$HOSTED_DOMAIN/" 2>/dev/null; then
-      if [[ "$days" -lt 14 ]]; then row FAIL "a publicly trusted certificate" "$days days left, and it renews well before 14"; else row PASS "a publicly trusted certificate" "$days days left, $issuer"; fi
-    else
-      row FAIL "a publicly trusted certificate" "curl refused it: $issuer"
-    fi
-  fi
+  served_certificate "$HOSTED_DOMAIN" wayline-tls
+  served_certificate "$HOSTED_GRAFANA_DOMAIN" grafana-tls
+  grafana_public
 
   # Asked by the public name's handshake, so sniStrict lets it through and only the Host decides. A route would answer anything else.
-  local ui code
-  for ui in argocd grafana prometheus alertmanager infisical; do
-    code="$(curl -k -sS -o /dev/null -w '%{http_code}' --max-time 15 -H "Host: $ui.$HOSTED_DOMAIN" "https://$HOSTED_DOMAIN/" 2>/dev/null || true)"
+  local code
+  for host in $ADMIN_HOSTS; do
+    code="$(curl -k -sS -o /dev/null -w '%{http_code}' --max-time 15 -H "Host: $host" "https://$HOSTED_DOMAIN/" 2>/dev/null || true)"
     case "$code" in
-      404 | 421) row PASS "no public route for $ui" "Host $ui.$HOSTED_DOMAIN answers $code" ;;
-      000 | "") row BLOCKED "no public route for $ui" "no answer" ;;
-      *) row FAIL "no public route for $ui" "Host $ui.$HOSTED_DOMAIN answers $code" ;;
+      404 | 421) row PASS "no public route for $host" "$code" ;;
+      000 | "") row BLOCKED "no public route for $host" "no answer" ;;
+      *) row FAIL "no public route for $host" "$code" ;;
     esac
   done
 
@@ -213,7 +312,7 @@ import http.client, ssl
 context = ssl.create_default_context()
 context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
-for host in ['$HOSTED_DOMAIN', 'argocd.$HOSTED_DOMAIN', 'grafana.$HOSTED_DOMAIN', 'prometheus.$HOSTED_DOMAIN', 'alertmanager.$HOSTED_DOMAIN', 'infisical.$HOSTED_DOMAIN']:
+for host in '$HOSTED_DOMAIN $ADMIN_HOSTS'.split():
     connection = http.client.HTTPSConnection('$HOSTED_DOMAIN', 443, context=context, timeout=10)
     connection.request('GET', '/api/instances/', headers={'Host': host})
     print('ANSWER', host, connection.getresponse().status)
