@@ -350,3 +350,31 @@ test_an_opened_allow_list_rejected if {
 test_an_allow_list_reading_a_header_rejected if {
 	count(plane.deny) == 1 with input as allow_list({"ipAllowList": {"sourceRange": ["172.16.0.0/12"], "ipStrategy": {"depth": 1}}})
 }
+
+hosted_grafana_page := {
+	"kind": "Rule",
+	"match": "Host(`grafana.bereket.dev`) && !PathPrefix(`/metrics`)",
+	"services": [{"name": "kps-grafana", "port": 80}],
+}
+
+hosted_grafana_login := {
+	"kind": "Rule",
+	"match": "Host(`grafana.bereket.dev`) && Method(`POST`) && (PathPrefix(`/login`) || PathPrefix(`/api/login`))",
+	"middlewares": [{"name": "grafana-login-limit"}],
+	"services": [{"name": "kps-grafana", "port": 80}],
+}
+
+hosted_grafana(namespace, routes) := {"kind": "IngressRoute", "metadata": {"name": "grafana", "namespace": namespace}, "spec": {"routes": routes}}
+
+test_hosted_grafana_route_needs_no_allow_list if {
+	count(plane.deny) == 0 with input as hosted_grafana("monitoring", [hosted_grafana_login, hosted_grafana_page])
+}
+
+# The exception is that route, in that namespace, in those words.
+test_only_that_grafana_route_goes_without_the_allow_list if {
+	count(plane.deny) == 1 with input as hosted_grafana("argocd", [hosted_grafana_page])
+	count(plane.deny) == 1 with input as hosted_grafana("monitoring", [object.union(hosted_grafana_page, {"match": "Host(`grafana.bereket.dev`)"})])
+	count(plane.deny) == 1 with input as hosted_grafana("monitoring", [object.union(hosted_grafana_page, {"match": "Host(`grafana.localhost`)"})])
+	count(plane.deny) == 1 with input as hosted_grafana("monitoring", [object.union(hosted_grafana_page, {"services": [{"name": "kps-prometheus", "port": 9090}]})])
+	count(plane.deny) == 1 with input as hosted_grafana("monitoring", [json.remove(hosted_grafana_login, ["middlewares"])])
+}

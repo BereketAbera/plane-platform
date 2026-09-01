@@ -73,11 +73,51 @@ deny contains msg if {
 
 route_kinds := {"IngressRoute", "IngressRouteTCP", "IngressRouteUDP"}
 
-# Plane's is the one route this cluster has. Anywhere else it could only be a console's.
+# Grafana is the one console with a public route, and this is all of that route. Whole objects and not a pattern, so another host, path,
+# backend or middleware is a change here that a person reads. The first route carries the login's limit, and has the longer rule, which
+# is what puts it ahead of the second. The second leaves out /metrics, which Prometheus reads from the pod and the internet has no use for.
+grafana_namespace := "monitoring"
+
+grafana_host := "grafana.bereket.dev"
+
+grafana_tls_secret := "grafana-tls"
+
+grafana_login_limit := "grafana-login-limit"
+
+grafana_service := {"name": "kps-grafana", "port": 80}
+
+grafana_routes := {
+	{
+		"kind": "Rule",
+		"match": sprintf("Host(`%s`) && Method(`POST`) && (PathPrefix(`/login`) || PathPrefix(`/api/login`))", [grafana_host]),
+		"middlewares": [{"name": grafana_login_limit}],
+		"services": [grafana_service],
+	},
+	{
+		"kind": "Rule",
+		"match": sprintf("Host(`%s`) && !PathPrefix(`/metrics`)", [grafana_host]),
+		"services": [grafana_service],
+	},
+}
+
+# A person's guesses, measured per client. ipStrategy with no depth is the connection's own address, and Traefik trusts no forwarded
+# header on these entry points, so the other criteria would all count something the client chooses.
+grafana_login_limit_spec := {"rateLimit": {
+	"average": 5,
+	"period": "1m",
+	"burst": 5,
+	"sourceCriterion": {"ipStrategy": {"depth": 0}},
+}}
+
+route_namespaces := {plane_namespace, grafana_namespace}
+
+in_grafana_namespace if object.get(input.metadata, "namespace", "") == grafana_namespace
+
+# Plane's route and Grafana's. Anywhere else it could only be another console's.
 deny contains msg if {
 	route_kinds[input.kind]
-	object.get(input.metadata, "namespace", "") != plane_namespace
-	msg := sprintf("%s: a route may sit only in namespace %s, and the consoles get none: reach them through an SSH tunnel and a port-forward", [identity, plane_namespace])
+	not route_namespaces[object.get(input.metadata, "namespace", "")]
+	msg := sprintf("%s: a route may sit only in namespace %s, or in %s for Grafana's, and the other consoles get none: reach them through an SSH tunnel and a port-forward", [identity, plane_namespace, grafana_namespace])
 }
 
 deny contains msg if {
@@ -94,11 +134,14 @@ deny contains msg if {
 }
 
 # cert-manager is the only certificate owner, so no certResolver either.
+route_tls_secrets := {plane_namespace: tls_secret, grafana_namespace: grafana_tls_secret}
+
 deny contains msg if {
 	input.kind == "IngressRoute"
+	want := object.get(route_tls_secrets, object.get(input.metadata, "namespace", ""), tls_secret)
 	tls := object.get(input.spec, "tls", {})
-	tls != {"secretName": tls_secret}
-	msg := sprintf("%s: tls is %v and must name only secretName %s", [identity, tls, tls_secret])
+	tls != {"secretName": want}
+	msg := sprintf("%s: tls is %v and must name only secretName %s", [identity, tls, want])
 }
 
 # An allow list and not a list of consoles, so a new console needs a change here. The ports matter: Silo's console and
@@ -114,10 +157,51 @@ public_backends := {
 
 deny contains msg if {
 	input.kind == "IngressRoute"
+	not in_grafana_namespace
 	some route in input.spec.routes
 	some service in route.services
 	not public_backend(service)
-	msg := sprintf("%s: route %q reaches %v:%v. Hosted production gives no console a public route, and only Plane's own Services get one", [identity, route.match, service.name, object.get(service, "port", "no port")])
+	msg := sprintf("%s: route %q reaches %v:%v. Hosted production gives no console a public route but Grafana's, at %s, and only Plane's own Services get one here", [identity, route.match, service.name, object.get(service, "port", "no port"), grafana_host])
+}
+
+# In Grafana's namespace a route is one of those two, and nothing else: not Grafana on another host or with /metrics, and not Prometheus
+# or Alertmanager, which sit in the same namespace.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	in_grafana_namespace
+	some route in input.spec.routes
+	not grafana_routes[route]
+	msg := sprintf("%s: route %q to %v is not one of Grafana's two. Hosted production gives no console a public route but Grafana's, at %s, as policy/hosted.rego writes it", [identity, object.get(route, "match", ""), object.get(route, "services", []), grafana_host])
+}
+
+# And both of them: with the first gone, its limit is gone and the second still takes the login.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	in_grafana_namespace
+	some wanted in grafana_routes
+	not route_present(wanted)
+	msg := sprintf("%s: has no route %q, and Grafana's route needs both of its two", [identity, wanted.match])
+}
+
+route_present(wanted) if {
+	some route in input.spec.routes
+	route == wanted
+}
+
+# A Middleware can rewrite a path after the rule has read it, so the only one here is the login's limit, as written above.
+deny contains msg if {
+	input.kind == "Middleware"
+	in_grafana_namespace
+	input.metadata.name != grafana_login_limit
+	msg := sprintf("%s: the only Middleware in namespace %s is %s", [identity, grafana_namespace, grafana_login_limit])
+}
+
+deny contains msg if {
+	input.kind == "Middleware"
+	in_grafana_namespace
+	input.metadata.name == grafana_login_limit
+	input.spec != grafana_login_limit_spec
+	msg := sprintf("%s: must be exactly %v, and any other source criterion counts something the client chooses", [identity, grafana_login_limit_spec])
 }
 
 public_backend(service) if {
