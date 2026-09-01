@@ -26,7 +26,8 @@ frameflow:
   temp_disk: 100Gi
 # Per namespace: Terraform makes a ResourceQuota of each. limits.memory counts what every pod here may reach at once, plus the room
 # one rollout needs: a Deployment surges a new pod before removing the old, so a quota with no room for the largest would stop that
-# rollout for good. Several surging together go one after another, and that is the price of Frameflow's share.
+# rollout for good. Several surging together go one after another, and that is the price of Frameflow's share. cert-manager's solver
+# pod, beside each Certificate, counts as one more of these, and a renewal that meets a rollout waits for it in the same way.
 #
 # requests.cpu and requests.memory are also what the scheduler holds back, so they must fit. requests.storage caps claims,
 # which local-path does not enforce. Only the disk alerts bound what a volume really holds, and no ephemeral-storage quota is set: a
@@ -65,7 +66,7 @@ quotas:
     pods: "6"
     persistentvolumeclaims: "0"
     requests.storage: "0"
-  # 4288Mi steady, with Grafana and Alloy on Recreate, and the operator's surge.
+  # 4288Mi steady, with Grafana and Alloy on Recreate, and the operator's surge, or grafana-tls's solver, which is smaller.
   monitoring:
     requests.cpu: 300m
     requests.memory: 1792Mi
