@@ -217,7 +217,8 @@ grafana:
   initChownData: { enabled: false } # nothing to chown without persistence, and no busybox image
   testFramework: { enabled: false }
   defaultDashboardsTimezone: utc
-  # No Role beyond the ConfigMaps in its own namespace. The chart default is cluster-wide.
+  # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and the
+  # sidecars below use only the first, so this pod's token can read every Secret in monitoring.
   rbac:
     namespaced: true
   resources:

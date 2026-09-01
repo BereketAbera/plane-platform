@@ -83,8 +83,8 @@ apply() {
   for tool in jq openssl; do
     command -v "$tool" >/dev/null 2>&1 || die "$tool not found. Run: make setup"
   done
-  hosted_verify
   hosted_require_confirm "this writes Secret monitoring/$SECRET"
+  hosted_verify
   kc get namespace monitoring >/dev/null 2>&1 || die "namespace monitoring does not exist yet. Terraform creates it."
   make_or_restore
   require_one_line "$USER_FILE"
