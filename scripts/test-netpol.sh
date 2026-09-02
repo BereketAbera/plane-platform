@@ -81,6 +81,12 @@ WITNESS_TIMEOUT=3
 # Hosted namespaces have room in their quotas for two probes at a time and no more: capacity.yaml leaves cert-manager and monitoring 128Mi.
 PARALLEL_PODS="${PARALLEL_PODS:-${WAYLINE_TARGET:+2}}"
 PARALLEL_PODS="${PARALLEL_PODS:-4}"
+# How many of one pod's probes run at once. kube-router's REJECT answers with an ICMP error, and the kernel allows those one a second per
+# destination, with a burst of 6 (net.ipv4.icmp_ratelimit). Six denied dials together can each miss a token until curl gives up, which reads
+# TIMEOUT and INCONCLUSIVE although nothing connected: IcmpOutRateLimitHost read 66 on the VPS after a run with two such rows. One at a time,
+# a dial that misses a token gets one on its next SYN. kindnet drops without answering, so the local rate stays.
+PROBES_AT_ONCE="${PROBES_AT_ONCE:-${WAYLINE_TARGET:+1}}"
+PROBES_AT_ONCE="${PROBES_AT_ONCE:-6}"
 # How long a new pod waits before its first packet, and how long a new policy gets before the sentinel's next probe. The controller
 # has to learn each. Measured on kindnet only. kube-router's are unmeasured on this VPS, so hosted production starts cautious.
 PROBE_SETTLE_SECONDS="${PROBE_SETTLE_SECONDS:-${WAYLINE_TARGET:+10}}"
@@ -126,7 +132,7 @@ n=0
       echo "RESULT $id $code $out"
     ) &
     n=$((n + 1))
-    if [ $((n % 6)) -eq 0 ]; then wait; fi
+    if [ $((n % '"$PROBES_AT_ONCE"')) -eq 0 ]; then wait; fi
   done
   wait
 } <<EOF
