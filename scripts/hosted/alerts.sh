@@ -71,8 +71,13 @@ if token and chat:
         refuse("alert-telegram-bot-token does not look like a bot token")
     if not re.fullmatch(r"-?[0-9]+", chat):
         refuse("alert-telegram-chat-id is not a whole number")
+    # Plain text, because Telegram refuses a whole message over one stray < or & in HTML mode, the default, and that would lose the alert.
+    # No Source line: it links to a port-forward on localhost and runs to half a screen of PromQL.
+    message = ("""{{ if eq .Status "firing" }}ALERT: {{ .CommonLabels.alertname }}{{ else }}Cleared: {{ .CommonLabels.alertname }}{{ end }}"""
+               """{{ range .Alerts }}\n\n{{ .Labels.severity }}{{ with .Labels.namespace }} in {{ . }}{{ end }}{{ with .Labels.pod }}, pod {{ . }}{{ end }}"""
+               """{{ with .Annotations.summary }}\n{{ . }}{{ end }}{{ with .Annotations.description }}\n{{ . }}{{ end }}{{ end }}""")
     primary = "\n".join(["    telegram_configs:", "      - bot_token: " + json.dumps(token), "        chat_id: " + chat,
-                         "        send_resolved: true"])
+                         "        parse_mode: \"\"", "        message: " + json.dumps(message), "        send_resolved: true"])
 else:
     primary = webhook(os.environ["SINK_URL"], "true")
 

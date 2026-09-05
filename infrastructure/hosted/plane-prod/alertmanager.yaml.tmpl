@@ -20,6 +20,11 @@ route:
       repeat_interval: 5m
     - matchers: ['alertname="InfoInhibitor"']
       receiver: "null"
+    # An info alert says something may be worth a look in Grafana, and no more. CPUThrottlingHigh alone fired in three namespaces on
+    # the first day. A phone that buzzes for that gets muted, and then the backup failure is missed. They still show in Grafana and
+    # in Alertmanager. The synthetic one is the exception, because make remote-test proves delivery with it.
+    - matchers: ['severity="info"', 'alertname!="WaylineSyntheticTest"']
+      receiver: "null"
 inhibit_rules:
   - source_matchers: ['severity="critical"']
     target_matchers: ['severity=~"warning|info"']
