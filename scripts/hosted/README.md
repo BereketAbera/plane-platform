@@ -22,6 +22,7 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `pull-backups.sh` | Copy the encrypted repositories here, over a read-only SFTP user | `remote-pull-setup`, `remote-pull-backups` |
 | `backup-dest.sh` | `verify`, `push` and `status` of the copies off the VPS | `remote-backup-dest` |
 | `restore-test.sh` | Restore into an isolated namespace, prove it, and remove it, on the VPS or in kind | `remote-restore-test` |
+| `restart-check.sh` | Restart Plane's pods one at a time, compare what Postgres holds before and after, and say how long the site was down | `remote-restart-check` |
 | `smoke.sh` | `tests/e2e/smoke.py --env hosted --mode verify` on an existing account, asked at a hidden prompt | `remote-smoke` |
 | `test-hosted.sh` | The hosted test suite. Exits 0, 1 or 2, and says BLOCKED or INCOMPLETE plainly | `remote-test` |
 | `scrub-values.sh` | Keep the values of its Secrets, and Grafana's admin password from its file, in a file for `scripts/publish-evidence.sh` to scrub, which reaches no cluster here | `remote-publish-evidence` |

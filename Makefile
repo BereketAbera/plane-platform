@@ -172,6 +172,10 @@ remote-netpol: remote-guard ## Hosted: the NetworkPolicy sentinel and matrix alo
 remote-backup: remote-guard ## Hosted: run tonight's backups now: make remote-backup TARGET=plane-prod CONFIRM=plane-prod [ONLY=plane-prod|infisical]
 	@./scripts/hosted/backup.sh
 
+.PHONY: remote-restart-check
+remote-restart-check: remote-guard ## Hosted: restart Plane's pods one at a time, and compare what Postgres holds before and after. The site is down briefly: make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod
+	@./scripts/hosted/restart-check.sh
+
 remote-pull-setup: remote-guard ## Hosted: make the read-only SFTP user on the node and its key here: make remote-pull-setup TARGET=plane-prod CONFIRM=plane-prod
 	@./scripts/hosted/pull-backups.sh setup
 
