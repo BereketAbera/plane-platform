@@ -64,7 +64,7 @@ restart_statefulset() { # name
   uid="$(kc -n "$NS" get pod "$pod" -o jsonpath='{.metadata.uid}')"
   [[ -n "$uid" ]] || die "$pod does not exist"
   kc -n "$NS" delete pod "$pod" --timeout=180s >/dev/null
-  wait_for 300 "$pod Ready again. Read: kubectl -n $NS describe pod $pod" new_pod_ready "$pod" "$uid"
+  wait_for 300 "$pod Ready again. Read: make remote-status TARGET=plane-prod" new_pod_ready "$pod" "$uid"
   ok "$pod is back"
 }
 
@@ -83,7 +83,7 @@ restart_deployment() { # name
   [[ -n "$selector" ]] || die "deployment $1 has no selector"
   old="$(kc -n "$NS" get pods -l "$selector" -o jsonpath='{.items[*].metadata.name}')"
   kc -n "$NS" delete pod -l "$selector" --timeout=180s >/dev/null
-  wait_for 300 "$1 replaced and Ready. Read: kubectl -n $NS describe deployment $1" deployment_replaced "$selector" "$old"
+  wait_for 300 "$1 replaced and Ready. Read: make remote-status TARGET=plane-prod" deployment_replaced "$selector" "$old"
   ok "$1 is back"
 }
 
