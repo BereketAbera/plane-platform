@@ -20,7 +20,6 @@ configMapGenerator:
   - name: dashboards-platform
     files:
       - dashboards/platform-overview.json
-      - dashboards/vps-and-pods.json
     options:
       disableNameSuffixHash: true
       labels: { grafana_dashboard: "1" }

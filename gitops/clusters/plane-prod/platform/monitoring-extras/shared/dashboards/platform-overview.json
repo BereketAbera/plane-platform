@@ -5,7 +5,6 @@
   "wayline",
   "platform"
  ],
- "links": [{"title": "VPS and pods", "type": "link", "url": "/d/wayline-vps-pods", "icon": "dashboard", "keepTime": true}],
  "schemaVersion": 41,
  "version": 1,
  "editable": false,
@@ -499,7 +498,7 @@
    },
    "targets": [
     {
-     "expr": "count(ALERTS{alertstate=\"firing\",alertname!~\"Watchdog|InfoInhibitor\"}) or vector(0)",
+     "expr": "count(ALERTS{alertstate=\"firing\",severity=~\"warning|critical\"}) or vector(0)",
      "legendFormat": "__auto",
      "range": false,
      "instant": true,
@@ -510,7 +509,7 @@
      }
     }
    ],
-   "description": "Everything firing except Watchdog, which is always on by design."
+   "description": "Warning and critical alerts firing, which are the ones that reach Telegram. Info alerts show only in Alertmanager."
   },
   {
    "id": 12,
