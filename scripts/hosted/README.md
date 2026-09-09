@@ -15,7 +15,7 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `status.sh` | Read-only summary | `remote-status` |
 | `bootstrap.sh` | Deploy key, Grafana's login, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
 | `ui.sh` | Port-forward an admin UI. None has a public route but Grafana, which this also reaches when that route is down | `remote-ui` |
-| `grafana-admin.sh` | Make Grafana's admin login once and write its Secret (`apply`), or print the URL and username and copy the password (`login`) | `remote-grafana-admin` |
+| `grafana-admin.sh` | Make Grafana's admin login once and write its Secret (`apply`), replace its password (`rotate`), or print the URL and username and copy the password (`login`) | `remote-grafana-admin` |
 | `alerts.sh` | Render `alertmanager.yaml` from the owner's files into a Secret, and say COMPLETE or INCOMPLETE | `remote-alerts` |
 | `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again | `remote-bundle` |
 | `backup.sh` | Run tonight's backups now, from the CronJobs | `remote-backup` |

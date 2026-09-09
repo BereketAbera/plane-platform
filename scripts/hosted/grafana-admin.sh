@@ -2,8 +2,9 @@
 # Grafana's one admin login, for its public route. Made once, kept in .local/hosted/plane-prod at mode 0600, and given to the cluster as
 # Secret monitoring/grafana-admin.
 #
-#   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/grafana-admin.sh apply   make the login if there is none, and write the Secret
-#   TARGET=plane-prod scripts/hosted/grafana-admin.sh login                      print the URL and username, and copy the password to the clipboard
+#   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/grafana-admin.sh apply    make the login if there is none, and write the Secret
+#   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/grafana-admin.sh rotate   make a new password, write the Secret, and replace the pod
+#   TARGET=plane-prod scripts/hosted/grafana-admin.sh login                       print the URL and username, and copy the password to the clipboard
 #
 # Grafana's containers read this Secret at every start, so with it missing they stay in CreateContainerConfigError, and root's sync waits
 # on them. That is why scripts/hosted/bootstrap.sh runs apply before Argo CD starts.
@@ -11,8 +12,9 @@
 # Grafana's database is an emptyDir, so each new pod makes its admin from the Secret, whatever was changed in the UI since. A container
 # restart keeps the emptyDir, and with it the old admin. So when apply changes the Secret, it replaces the pod.
 #
-# To change the password, delete .local/hosted/plane-prod/grafana-admin-password, and run apply. Then run scripts/hosted/bundle.sh, which
-# holds a copy of both files.
+# To change the password, run rotate. Deleting its file does not do it, because apply brings back what the Secret holds. To change the username,
+# write the new one into .local/hosted/plane-prod/grafana-admin-user with no newline, and run apply. After either, run scripts/hosted/bundle.sh,
+# which holds a copy of both files.
 #
 # No value reaches an argv or stdout: the Secret comes from files, through --from-file, and the clipboard from a file, through stdin.
 HOSTED_NO_CLUSTER=yes
@@ -112,6 +114,18 @@ apply() {
   fi
 }
 
+# The checks come first, so a refused run leaves the password as it was. If the write to the cluster then fails, apply finishes it, because the
+# file wins over the Secret.
+rotate() {
+  command -v openssl >/dev/null 2>&1 || die "openssl not found. Run: make setup"
+  hosted_require_confirm "this replaces Grafana's admin password"
+  hosted_verify
+  openssl rand -hex 32 | tr -d '\n' | write_file "$PASSWORD_FILE"
+  ok "generated a new ${PASSWORD_FILE#"$ROOT"/}"
+  apply
+  warn "the recovery bundle still holds the old password. Run: make remote-bundle TARGET=plane-prod"
+}
+
 login() {
   [[ -s "$USER_FILE" && -s "$PASSWORD_FILE" ]] ||
     die "no login here yet. Make it: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply"
@@ -124,6 +138,7 @@ login() {
 
 case "${1:-}" in
   apply) apply ;;
+  rotate) rotate ;;
   login) login ;;
-  *) die "usage: $0 apply|login" ;;
+  *) die "usage: $0 apply|rotate|login" ;;
 esac
