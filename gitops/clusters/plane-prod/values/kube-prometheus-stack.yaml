@@ -217,10 +217,23 @@ grafana:
   initChownData: { enabled: false } # nothing to chown without persistence, and no busybox image
   testFramework: { enabled: false }
   defaultDashboardsTimezone: utc
-  # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and the
-  # sidecars below use only the first, so this pod's token can read every Secret in monitoring.
+  # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and this is
+  # the one pod on the internet, so its token would read every Secret in monitoring. The sidecars below read ConfigMaps alone. So
+  # useExistingRole stops the chart's Role, and extraObjects writes it with configmaps only. By the same name, because a new one would
+  # change the RoleBinding's roleRef, which the API server refuses on a running cluster.
   rbac:
     namespaced: true
+    useExistingRole: kps-grafana
+  extraObjects:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: kps-grafana
+        namespace: monitoring
+      rules:
+        - apiGroups: [""]
+          resources: [configmaps]
+          verbs: [get, list, watch]
   resources:
     requests: { cpu: 25m, memory: 128Mi }
     limits: { cpu: 500m, memory: 384Mi }
