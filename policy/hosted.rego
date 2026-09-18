@@ -217,6 +217,156 @@ deny contains msg if {
 	msg := sprintf("%s: no %s in Git. Routes are IngressRoutes, and cert-manager makes the Ingress a challenge needs", [identity, input.kind])
 }
 
+# ---- Grafana's login and its token
+
+# Its password is all that keeps a stranger from every dashboard and log, so what guards that login is written out here, and a revert of
+# any of it fails CI before it reaches the cluster. Each must be set, because for four of them Grafana 13.3.0's own default is the wrong one:
+# basic auth on, failures counted per username and not per address, and the version shown. policy/hosted_combined.rego says the ConfigMap
+# and the Role below are there at all.
+grafana_name := "kps-grafana"
+
+grafana_ini_wanted := {
+	{"section": "auth.basic", "key": "enabled", "value": "false", "why": "basic auth answers on every path, past the login's limit, and writes each failed name to the database"},
+	{"section": "security", "key": "disable_username_login_protection", "value": "true", "why": "a count per username lets any stranger keep the one admin locked out"},
+	{"section": "security", "key": "disable_ip_address_login_protection", "value": "false", "why": "the count per address is what holds a stranger's guesses"},
+	{"section": "security", "key": "disable_brute_force_login_protection", "value": "false", "why": "it switches off both counts"},
+	{"section": "auth.anonymous", "key": "enabled", "value": "false", "why": "a stranger would read every dashboard with no login"},
+	{"section": "auth.anonymous", "key": "hide_version", "value": "true", "why": "it keeps the version and commit out of /api/health and most of /login"},
+}
+
+is_grafana(kind) if {
+	input.kind == kind
+	input.metadata.name == grafana_name
+	object.get(input.metadata, "namespace", "") == grafana_namespace
+}
+
+# grafana.ini as Grafana reads it: a [section] line, then key = value lines under it. Every line that sets a key, so a second line for the
+# same key is read too.
+grafana_ini_lines contains {"section": section, "key": parts[1], "value": parts[2]} if {
+	is_grafana("ConfigMap")
+	lines := split(object.get(input, ["data", "grafana.ini"], ""), "\n")
+	some i, line in lines
+	parts := regex.find_all_string_submatch_n(`^\s*([^\s=;#\[]+)\s*=\s*(.*?)\s*$`, line, 1)[0]
+	section := grafana_ini_section(lines, i)
+}
+
+grafana_ini_section(lines, i) := trim_space(trim(trim_space(lines[max(headers)]), "[]")) if {
+	headers := [j | some j, line in lines; j < i; regex.match(`^\s*\[[^\]]*\]\s*$`, line)]
+	count(headers) > 0
+} else := ""
+
+grafana_ini_sets(wanted) if {
+	some line in grafana_ini_lines
+	line.section == wanted.section
+	line.key == wanted.key
+}
+
+deny contains msg if {
+	is_grafana("ConfigMap")
+	some wanted in grafana_ini_wanted
+	not grafana_ini_sets(wanted)
+	msg := sprintf("%s: grafana.ini must set [%s] %s = %s, and does not, because %s", [identity, wanted.section, wanted.key, wanted.value, wanted.why])
+}
+
+deny contains msg if {
+	some line in grafana_ini_lines
+	some wanted in grafana_ini_wanted
+	line.section == wanted.section
+	line.key == wanted.key
+	line.value != wanted.value
+	msg := sprintf("%s: grafana.ini sets [%s] %s = %s, and it must be %s, because %s", [identity, line.section, line.key, line.value, wanted.value, wanted.why])
+}
+
+# Grafana takes GF_<SECTION>_<KEY> from its environment over grafana.ini, so none of those may be set there, whatever the value: one from a
+# reference cannot be read here. envFrom could hold any of them unnamed.
+grafana_env_name(wanted) := upper(sprintf("GF_%s_%s", [replace(replace(wanted.section, ".", "_"), "-", "_"), wanted.key]))
+
+deny contains msg if {
+	is_grafana("Deployment")
+	some c in kube.containers(input)
+	some e in object.get(c, "env", [])
+	some wanted in grafana_ini_wanted
+	e.name == grafana_env_name(wanted)
+	msg := sprintf("%s: container %q sets %s, which Grafana takes over [%s] %s in grafana.ini. Set it there, where this reads it", [identity, c.name, e.name, wanted.section, wanted.key])
+}
+
+deny contains msg if {
+	is_grafana("Deployment")
+	some c in kube.containers(input)
+	count(object.get(c, "envFrom", [])) > 0
+	msg := sprintf("%s: container %q takes envFrom, which could set any of Grafana's settings where nothing here reads them. Name each variable in env", [identity, c.name])
+}
+
+# A sidecar's reload call needs basic auth, which is off, so a REQ_URL is a reload that fails with 401, or basic auth back on for it.
+deny contains msg if {
+	is_grafana("Deployment")
+	some c in kube.containers(input)
+	some e in object.get(c, "env", [])
+	e.name == "REQ_URL"
+	msg := sprintf("%s: container %q calls %v, and that reload needs basic auth, which grafana.ini keeps off. Set the sidecar's skipReload", [identity, c.name, object.get(e, "value", "a reference")])
+}
+
+# Grafana reads datasources only when it starts, or on that reload call. One written while it runs would sit unread until something replaced
+# the pod, with Argo CD saying Synced. They are in the chart's datasources value instead, which ConfigMap kps-grafana holds, and its checksum
+# rolls the pod.
+deny contains msg if {
+	is_grafana("Deployment")
+	some c in kube.containers(input)
+	some e in object.get(c, "env", [])
+	e.name == "FOLDER"
+	startswith(object.get(e, "value", ""), "/etc/grafana/provisioning/datasources")
+	msg := sprintf("%s: container %q writes Grafana's datasources, and Grafana reads them only when it starts, so a change would sit unread. Put them in the chart's datasources value, which rolls the pod", [identity, c.name])
+}
+
+deny contains msg if {
+	"grafana_datasource" in object.keys(object.get(input, ["metadata", "labels"], {}))
+	msg := sprintf("%s: is labelled grafana_datasource, and nothing reads that label. Grafana's datasources are the chart's datasources value, which rolls the pod when one changes", [identity])
+}
+
+# Its token is what a bug in the one pod on the internet would hold. The dashboard sidecar reads ConfigMaps, and nothing in that pod needs more.
+grafana_role_rules := [{"apiGroups": [""], "resources": ["configmaps"], "verbs": ["get", "list", "watch"]}]
+
+grafana_role_ref := {"apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": grafana_name}
+
+deny contains msg if {
+	is_grafana("Role")
+	not grafana_role_reads_configmaps_alone
+	msg := sprintf("%s: rules are %v, and must be exactly %v, so Grafana's token reads no Secret", [identity, object.get(input, "rules", []), grafana_role_rules])
+}
+
+grafana_role_reads_configmaps_alone if {
+	count(input.rules) == 1
+	rule := input.rules[0]
+	object.keys(rule) == {"apiGroups", "resources", "verbs"}
+	{group | some group in rule.apiGroups} == {""}
+	{resource | some resource in rule.resources} == {"configmaps"}
+	{verb | some verb in rule.verbs} == {"get", "list", "watch"}
+}
+
+deny contains msg if {
+	is_grafana("RoleBinding")
+	input.roleRef != grafana_role_ref
+	msg := sprintf("%s: roleRef is %v, and must be %v, the Role these rules read", [identity, input.roleRef, grafana_role_ref])
+}
+
+# Any other binding would give that token more than the Role above, from anywhere in the cluster.
+deny contains msg if {
+	input.kind in {"RoleBinding", "ClusterRoleBinding"}
+	some subject in object.get(input, "subjects", [])
+	subject.kind == "ServiceAccount"
+	subject.name == grafana_name
+	object.get(subject, "namespace", grafana_namespace) == grafana_namespace
+	not is_grafana("RoleBinding")
+	msg := sprintf("%s: binds Grafana's ServiceAccount, whose one binding is RoleBinding %s/%s, to the Role these rules read", [identity, grafana_namespace, grafana_name])
+}
+
+deny contains msg if {
+	is_grafana("Deployment")
+	account := object.get(kube.pod_spec(input), "serviceAccountName", "default")
+	account != grafana_name
+	msg := sprintf("%s: runs as ServiceAccount %q, and the rules here read what %s may do", [identity, account, grafana_name])
+}
+
 # ---- What binds to the node
 
 # The firewall drops these ports today, and it is one layer. Traefik's hostPort is the only way in.

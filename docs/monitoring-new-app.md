@@ -101,7 +101,7 @@ spec:
 that `kustomization.yaml`, with the label `grafana_dashboard: "1"`. It has to be in namespace `monitoring`, because that is all Grafana's sidecar watches. It
 loads within about 30 seconds, with no restart. A datasource of its own is different: it goes in `grafana.datasources` in
 `values/kube-prometheus-stack.yaml`, and the change replaces Grafana's pod, which signs everyone out. Nothing reads a ConfigMap labelled
-`grafana_datasource`.
+`grafana_datasource`, and `policy/hosted.rego` refuses one.
 
 **5. Alerts of its own.** A PrometheusRule anywhere is read. Test it in `tests/rules/`.
 
