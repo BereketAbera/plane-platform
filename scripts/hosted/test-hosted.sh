@@ -3,6 +3,7 @@
 #
 #   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/test-hosted.sh
 #   ONLY="outside backups"   sections to run, of: outside argo netpol routes psa secrets smoke alerts backups
+#   scripts/hosted/test-hosted.sh --selftest   the verdicts on Grafana's rows, from a table, with no cluster, so CI can run it
 #
 # CONFIRM, because it starts short-lived probe pods, mints 10-minute tokens, signs in, and sends one synthetic alert, which reaches
 # the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's public route, so a login from here within
@@ -12,6 +13,172 @@
 #   BLOCKED     it could not run, and that says nothing about the platform.
 #   INCOMPLETE  it ran, and the thing is not there yet: a staging certificate, nobody paged, no off-VPS restore, no nightly so far.
 # Neither is a pass, and neither is ever reported as one. The restore test is separate: scripts/hosted/restore-test.sh.
+set -euo pipefail
+
+# ------ Verdicts on Grafana's rows, as verdict|detail, from what came back. Ahead of lib.sh, so --selftest needs no cluster -------------
+
+# The held login, posted to the form.
+grafana_form_verdict() { # <status>
+  case "$1" in
+    200) printf 'PASS|%s' "$1" ;;
+    429) printf 'BLOCKED|429, because this machine spent its tries in the last minute. Run this again' ;;
+    000 | "") printf 'BLOCKED|no answer' ;;
+    *) printf 'FAIL|%s. Five failed logins from this address lock it for five minutes, and a running pod keeps the admin it started with: scripts/hosted/README.md, and scripts/hosted/grafana-admin.sh' "$1" ;;
+  esac
+}
+
+# The same login by basic auth, asked only after the form took it in this run. A 401 then can only mean basic auth is off, and not a stale
+# password or this address's five failures, which the form would have shown.
+grafana_basic_auth_verdict() { # <the form's status> <basic auth's status, or nothing if it was not asked>
+  if [[ "$1" != 200 ]]; then
+    printf 'BLOCKED|not asked, because the held login did not open Grafana at the form, so a 401 would prove nothing'
+    return 0
+  fi
+  case "$2" in
+    401) printf 'PASS|%s' "$2" ;;
+    000 | "") printf 'BLOCKED|no answer' ;;
+    *) printf "FAIL|%s, and each failed try there writes to its database, past the login's limit" "$2" ;;
+  esac
+}
+
+# What kubectl auth can-i said for Grafana's ServiceAccount: yes, or no with or without a reason, and nothing when the API server did not
+# answer. Each question on Secrets is scope:verb=answer, and every one must be a no, because one that did not come back proves nothing.
+grafana_token_verdict() { # <the answer for list configmaps> <scope:verb=answer>...
+  local configmaps="$1" pair allowed="" unanswered=0
+  shift
+  case "$configmaps" in
+    yes) ;;
+    no*)
+      printf 'FAIL|it cannot read ConfigMaps, so its sidecar has nothing to write, and a no to Secrets would prove nothing'
+      return 0
+      ;;
+    *)
+      printf 'BLOCKED|the API server did not answer'
+      return 0
+      ;;
+  esac
+  [[ "$#" -gt 0 ]] || { printf 'BLOCKED|nothing was asked about Secrets'; return 0; }
+  for pair in "$@"; do
+    case "${pair#*=}" in
+      yes) allowed="$allowed ${pair%%=*}" ;;
+      no*) ;;
+      *) unanswered=$((unanswered + 1)) ;;
+    esac
+  done
+  if [[ -n "$allowed" ]]; then
+    printf 'FAIL|on Secrets it may:%s' "$allowed"
+  elif [[ "$unanswered" -gt 0 ]]; then
+    printf 'BLOCKED|the API server did not answer %s of the %s questions on Secrets' "$unanswered" "$#"
+  else
+    printf 'PASS|Secrets: no get, list or watch, in monitoring or in every namespace'
+  fi
+}
+
+# hide_version takes the version and the commit out of /api/health. One field of /login keeps the version: the values file says so.
+grafana_health_verdict() { # <status> <body>
+  case "$1" in
+    000 | "") printf 'BLOCKED|no answer' ;;
+    200)
+      if [[ "$2" == *'"version"'* || "$2" == *'"commit"'* ]]; then
+        printf 'FAIL|%s, so [auth.anonymous] hide_version is not on' "$(printf '%s' "$2" | tr -d ' \n' | cut -c1-120)"
+      else
+        printf 'PASS|%s' "$(printf '%s' "$2" | tr -d ' \n' | cut -c1-120)"
+      fi
+      ;;
+    *) printf 'FAIL|%s' "$1" ;;
+  esac
+}
+
+if [[ "${1:-}" == --selftest ]]; then
+  failures=0
+  check_verdict() { # check_verdict <want> <function> <argument>...
+    local want="$1" got
+    shift
+    got="$("$@")"
+    if [[ "${got%%|*}" != "$want" ]]; then
+      printf 'FAIL %s: got %s, want %s\n' "$*" "${got%%|*}" "$want"
+      failures=$((failures + 1))
+    fi
+  }
+  # The form's status, then basic auth's, if it was asked. A dash is nothing.
+  while read -r want form basic; do
+    [[ "$form" != - ]] || form=""
+    [[ "$basic" != - ]] || basic=""
+    check_verdict "$want" grafana_basic_auth_verdict "$form" "$basic"
+  done <<'TABLE'
+PASS 200 401
+FAIL 200 200
+FAIL 200 302
+BLOCKED 200 000
+BLOCKED 200 -
+BLOCKED 401 -
+BLOCKED 401 401
+BLOCKED 429 -
+BLOCKED 000 -
+BLOCKED - -
+TABLE
+  while read -r want form; do
+    [[ "$form" != - ]] || form=""
+    check_verdict "$want" grafana_form_verdict "$form"
+  done <<'TABLE'
+PASS 200
+FAIL 401
+FAIL 302
+BLOCKED 429
+BLOCKED 000
+BLOCKED -
+TABLE
+  # The answer for list configmaps, then those for get, list and watch on Secrets in monitoring and in every namespace, joined by commas,
+  # or none if they were not asked. A dash is nothing, and an underscore a space.
+  questions=(monitoring:get monitoring:list monitoring:watch all:get all:list all:watch)
+  while read -r want configmaps secrets; do
+    [[ "$configmaps" != - ]] || configmaps=""
+    configmaps="${configmaps//_/ }"
+    pairs=()
+    if [[ "$secrets" != none ]]; then
+      i=0
+      for answer in ${secrets//,/ }; do
+        [[ "$answer" != - ]] || answer=""
+        pairs+=("${questions[$i]}=${answer//_/ }")
+        i=$((i + 1))
+      done
+    fi
+    check_verdict "$want" grafana_token_verdict "$configmaps" ${pairs[@]+"${pairs[@]}"}
+  done <<'TABLE'
+PASS yes no,no,no,no,no,no
+PASS yes no_-_RBAC:_denied,no,no,no,no,no
+FAIL yes yes,no,no,no,no,no
+FAIL yes no,no,no,no,no,yes
+FAIL yes yes,-,-,-,-,-
+BLOCKED yes no,no,-,no,no,no
+BLOCKED yes -,-,-,-,-,-
+BLOCKED yes Unable_to_connect,no,no,no,no,no
+BLOCKED yes none
+FAIL no none
+FAIL no_-_RBAC none
+BLOCKED - none
+TABLE
+  while read -r want code body; do
+    [[ "$code" != - ]] || code=""
+    [[ "$body" != - ]] || body=""
+    check_verdict "$want" grafana_health_verdict "$code" "${body//_/ }"
+  done <<'TABLE'
+PASS 200 {"database":"ok"}
+PASS 200 {_"database":_"ok"_}
+FAIL 200 {"commit":"6f8ce3c","database":"ok","version":"13.3.0"}
+FAIL 200 {"database":"ok","version":"13.3.0"}
+FAIL 503 {"database":"failing"}
+BLOCKED 000 -
+BLOCKED - -
+TABLE
+  if [[ "$failures" -ne 0 ]]; then
+    printf 'fail selftest: %s failed\n' "$failures" >&2
+    exit 1
+  fi
+  printf ' ok selftest passed\n'
+  exit 0
+fi
+
 HOSTED_NO_CLUSTER=yes
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -34,6 +201,8 @@ row() { # verdict what [detail]
   esac
   printf '%-11s %-58s %s\n' "$1" "$2" "${3:-}"
 }
+
+verdict_row() { row "${2%%|*}" "$1" "${2#*|}"; } # what verdict|detail
 
 wanted() { [[ -z "${ONLY:-}" || " $ONLY " == *" $1 "* ]]; }
 section() { printf '\n\033[1m%s\033[0m\n' "$*"; }
@@ -158,6 +327,9 @@ grafana_public() {
     esac
   done
 
+  page="$("${ask[@]}" -w '\n%{http_code}' "$url/api/health" 2>/dev/null || true)"
+  verdict_row "Grafana's /api/health names no version" "$(grafana_health_verdict "${page##*$'\n'}" "${page%$'\n'*}")"
+
   # Traefik's own 404, from no route. Grafana answers any path it does not know by sending it to the login page.
   code="$("${ask[@]}" -o /dev/null -w '%{http_code}' "$url/metrics" 2>/dev/null || true)"
   case "$code" in
@@ -169,22 +341,17 @@ grafana_public() {
   # By the form, and ahead of the limit below, which spends this machine's tries. Both values reach curl on stdin, so neither reaches a process
   # list, and only the status reaches this run's evidence.
   if [[ -s "$LOCAL_DIR/grafana-admin-user" && -s "$LOCAL_DIR/grafana-admin-password" ]]; then
-    code="$(jq -n --rawfile user "$LOCAL_DIR/grafana-admin-user" --rawfile password "$LOCAL_DIR/grafana-admin-password" '{$user, $password}' |
+    local form basic=""
+    form="$(jq -n --rawfile user "$LOCAL_DIR/grafana-admin-user" --rawfile password "$LOCAL_DIR/grafana-admin-password" '{$user, $password}' |
       "${ask[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' --data-binary @- "$url/login" 2>/dev/null || true)"
-    case "$code" in
-      200) row PASS "the login held here opens Grafana" "$code" ;;
-      429) row BLOCKED "the login held here opens Grafana" "429, because this machine spent its tries in the last minute. Run this again" ;;
-      000 | "") row BLOCKED "the login held here opens Grafana" "no answer" ;;
-      *) row FAIL "the login held here opens Grafana" "$code. Five failed logins from this address lock it for five minutes, and a running pod keeps the admin it started with: scripts/hosted/README.md, and scripts/hosted/grafana-admin.sh" ;;
-    esac
-    # The right login, so a 401 can only mean basic auth is off.
-    code="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
-      "${ask[@]}" -K - -o /dev/null -w '%{http_code}' "$url/api/org" 2>/dev/null || true)"
-    case "$code" in
-      401) row PASS "Grafana refuses basic auth, even with the right login" "$code" ;;
-      000 | "") row BLOCKED "Grafana refuses basic auth, even with the right login" "no answer" ;;
-      *) row FAIL "Grafana refuses basic auth, even with the right login" "$code, and each failed try there writes to its database, past the login's limit" ;;
-    esac
+    verdict_row "the login held here opens Grafana" "$(grafana_form_verdict "$form")"
+    # Only once the form has taken the same login, in this run. After anything else a 401 here would prove nothing, and with basic auth on
+    # a wrong password here would be one more failure for this address.
+    if [[ "$form" == 200 ]]; then
+      basic="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
+        "${ask[@]}" -K - -o /dev/null -w '%{http_code}' "$url/api/org" 2>/dev/null || true)"
+    fi
+    verdict_row "Grafana refuses basic auth, even with the right login" "$(grafana_basic_auth_verdict "$form" "$basic")"
   else
     row BLOCKED "the login held here opens Grafana" "no login in .local/hosted/plane-prod. Run: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply"
   fi
@@ -416,27 +583,24 @@ secrets() {
   identity_refusal
 }
 
-# Grafana's is the one pod on the internet, and its token is what a bug in it would hold. That token reads the ConfigMaps its sidecars need, which
-# shows the question was answered, and no Secret. The API server's RBAC, asked as that ServiceAccount.
+# Grafana's is the one pod on the internet, and its token is what a bug in it would hold. That token reads the ConfigMaps its dashboard sidecar
+# needs, and no Secret, in monitoring or through a binding for every namespace. The API server's RBAC, asked as that ServiceAccount. Each
+# question is its own call, and the tunnel can drop between them, so grafana_token_verdict counts only a no as a no.
 grafana_token() {
-  local who=system:serviceaccount:monitoring:kps-grafana what="Grafana's token reads ConfigMaps and no Secret" verb answer allowed=""
-  answer="$(kc -n monitoring auth can-i list configmaps --as="$who" 2>/dev/null || true)"
-  case "$answer" in
-    yes) ;;
-    no*)
-      row FAIL "$what" "it cannot read ConfigMaps, so its sidecars have nothing to write, and a no to Secrets would prove nothing"
-      return 0
-      ;;
-    *)
-      row BLOCKED "$what" "the API server did not answer"
-      return 0
-      ;;
-  esac
-  for verb in get list watch; do
-    answer="$(kc -n monitoring auth can-i "$verb" secrets --as="$who" 2>/dev/null || true)"
-    [[ "$answer" != yes ]] || allowed="$allowed $verb"
-  done
-  if [[ -n "$allowed" ]]; then row FAIL "$what" "on Secrets it may:$allowed"; else row PASS "$what" "Secrets: no get, list or watch"; fi
+  local who=system:serviceaccount:monitoring:kps-grafana configmaps scope verb answer
+  local -a answers=() where
+  configmaps="$(kc -n monitoring auth can-i list configmaps --as="$who" 2>/dev/null || true)"
+  if [[ "$configmaps" == yes ]]; then
+    for scope in monitoring all; do
+      where=(-n monitoring)
+      [[ "$scope" == monitoring ]] || where=(--all-namespaces)
+      for verb in get list watch; do
+        answer="$(kc "${where[@]}" auth can-i "$verb" secrets --as="$who" 2>/dev/null || true)"
+        answers+=("$scope:$verb=$answer")
+      done
+    done
+  fi
+  verdict_row "Grafana's token reads ConfigMaps and no Secret" "$(grafana_token_verdict "$configmaps" ${answers[@]+"${answers[@]}"})"
 }
 
 # Only plane-prod's ServiceAccount may log in as plane-prod's identity. The right one first, so a dead route cannot pass as a refusal.
