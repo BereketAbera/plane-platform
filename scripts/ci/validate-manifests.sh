@@ -108,6 +108,11 @@ if has_yaml "$WORK/hosted"; then
   check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
   check "hosted Alloy scrubs a Telegram bot token" alloy_scrubs_the_telegram_token "$HOSTED_TREE/values/alloy.yaml"
 fi
+# A few seconds, and offline. negative-controls.sh sets SKIP_FLOWS, as for the promotion flows below, because none of its defects are in
+# that script's path.
+if [[ "${SKIP_FLOWS:-}" != yes ]]; then
+  check "grafana-admin.sh with a stub cluster" "$ROOT/scripts/ci/test-grafana-admin.sh"
+fi
 
 # Prometheus refuses a bad rule file at reload, and the operator's admission webhook is off to save its
 # certificate Job (helm/values/kube-prometheus-stack.yaml), so nothing else checks rules before that.
