@@ -266,8 +266,9 @@ grafana:
       enabled: false
       hide_version: true
     # The page after login. Grafana's own home offers to create a first dashboard, which read as if none had loaded. The sidecar writes this
-    # file, by the folder annotation in monitoring-extras. Until it has, or while the sidecar or that ConfigMap is broken,
-    # /api/dashboards/home answers 500 "Failed to load home dashboard". The rest of Grafana does not depend on it.
+    # file, by the folder annotation in monitoring-extras. Until a valid one has been there, as in a new pod whose sidecar or ConfigMap is
+    # broken, /api/dashboards/home answers 500 "Failed to load home dashboard". After that Grafana keeps its own editable copy, uid
+    # default-home-dashboard, and refreshes it from the file while the file is valid. The rest of Grafana does not depend on it.
     dashboards:
       default_home_dashboard_path: /tmp/dashboards/Platform/platform-overview.json
     # No pod here has internet egress, so each of these can only time out and log an error.
