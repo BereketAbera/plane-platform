@@ -595,7 +595,8 @@ grafana_token() {
       where=(-n monitoring)
       [[ "$scope" == monitoring ]] || where=(--all-namespaces)
       for verb in get list watch; do
-        answer="$(kc "${where[@]}" auth can-i "$verb" secrets --as="$who" 2>/dev/null || true)"
+        # After the subcommand: kubectl 1.36 refuses a flag before "auth", so with --all-namespaces first this asked nothing at all.
+        answer="$(kc auth can-i "$verb" secrets "${where[@]}" --as="$who" 2>/dev/null || true)"
         answers+=("$scope:$verb=$answer")
       done
     done
