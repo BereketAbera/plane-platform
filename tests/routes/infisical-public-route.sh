@@ -22,8 +22,9 @@ docker info >/dev/null 2>&1 || { warn "Docker does not answer"; exit 2; }
 VALUES=gitops/clusters/plane-prod/values/traefik.yaml
 ROUTE=gitops/clusters/plane-prod/platform/infisical/route.yaml
 APPLICATION=gitops/clusters/plane-prod/applications/traefik.yaml
-# A name of its own and a port no other test here uses, because other wayline-test-* containers may be running on this machine.
-NAME=wayline-test-inf-route-traefik
+# A name of this run's own and a port no other test here uses, because other wayline-test-* containers may be running on this machine, a
+# second run of this test among them. Only this name is ever removed, so one run never takes another's Traefik.
+NAME="wayline-test-inf-route-traefik-$$"
 TLS_PORT="${INFISICAL_ROUTE_TEST_PORT:-18543}"
 ECHO_PORT="${INFISICAL_ROUTE_TEST_ECHO_PORT:-18111}"
 BACKEND="${INFISICAL_BACKEND:-}"
@@ -104,7 +105,6 @@ PY
 # Traefik's file provider reads YAML, and JSON is YAML, under a name it accepts.
 mv "$WORK/dynamic.json" "$WORK/dynamic.yaml"
 
-docker rm -f "$NAME" >/dev/null 2>&1 || true
 flags=()
 while IFS= read -r flag; do flags+=("$flag"); done <"$WORK/flags"
 # Loopback only, so this test never answers anyone else, and the configuration is copied in, because Docker Desktop will not mount a temporary folder by default.
@@ -112,7 +112,8 @@ network=()
 [[ -z "${INFISICAL_ROUTE_TEST_NETWORK:-}" ]] || network=(--network "$INFISICAL_ROUTE_TEST_NETWORK")
 docker create --name "$NAME" ${network[@]+"${network[@]}"} -p "127.0.0.1:$TLS_PORT:8443" "$image" "${flags[@]}" --providers.file.filename=/conf/dynamic.yaml >/dev/null
 docker cp "$WORK/." "$NAME:/conf" >/dev/null 2>&1
-docker start "$NAME" >/dev/null
+# A port another run holds fails here, and says so, rather than asking that run's Traefik.
+docker start "$NAME" >/dev/null || { warn "Traefik could not start on 127.0.0.1:$TLS_PORT. Another run may hold it: set INFISICAL_ROUTE_TEST_PORT"; exit 2; }
 
 deadline=$((SECONDS + 30))
 until curl -k -s -o /dev/null --max-time 2 --resolve "$HOST:$TLS_PORT:127.0.0.1" "https://$HOST:$TLS_PORT/login"; do
