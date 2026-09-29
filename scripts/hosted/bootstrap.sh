@@ -9,10 +9,12 @@
 #   2. Namespaces, then Secret argocd-repo-plane-platform in argocd, so Argo CD's first look at the repository works. It cannot
 #      come from Infisical, because Argo CD deploys Infisical. Secret grafana-admin in monitoring too, before Grafana first starts.
 #   3. Port 80 in the firewall, then the rest of Terraform: Argo CD, its projects, and the root Application. Argo CD starts
-#      deploying the platform here, and with it asks for the first certificate.
+#      deploying the platform here, and with it asks for the first certificate, and deploys Infisical's public route. So this stops
+#      first if 443 is already open to everyone and Infisical is not claimed and closed to sign-up: its admin is not made until step 6.
 #   4. The backup folders on the node, the read-only pull user, and a restic password generated once.
 #   5. Secret zero, which scripts/secret-zero.sh generates only with FIRST_BOOT=yes.
-#   6. Infisical: first admin, project plane-prod, identity bound to namespace plane-prod, seeded values with ghcr-pull's token.
+#   6. Infisical: first admin, project plane-prod, identity bound to namespace plane-prod, seeded values with ghcr-pull's token. Then
+#      it must read claimed and closed to sign-up, which scripts/hosted/edge.sh open asks again before 443 opens to everyone.
 #   7. Alert delivery.
 #   8. The recovery bundle, if the owner has made the identity.
 #
@@ -20,6 +22,8 @@
 # so nothing here is circular. No value reaches an argv: Secrets come from files, through --from-file.
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
+# shellcheck source=lib-infisical-claim.sh
+source "$(dirname "$0")/lib-infisical-claim.sh"
 hosted_require_confirm "this bootstraps the platform"
 
 "$ROOT/scripts/install-tools.sh" terraform >/dev/null
@@ -112,8 +116,28 @@ open_port_80() {
   "$ROOT/scripts/hosted/edge.sh" http
 }
 
+# What Infisical answers anyone about itself, read through the API server's proxy to its Service, so no route has to be up.
+infisical_claim() {
+  kc --request-timeout=20s get --raw /api/v1/namespaces/infisical/services/infisical:8080/proxy/api/v1/admin/config 2>/dev/null |
+    infisical_claim_verdict
+}
+
+# With 443 open to everyone, the next apply lets Argo CD deploy Infisical's route at once. Its route refuses the bootstrap and sign-up calls,
+# and this does not lean on that: an Infisical with no admin, or one open to sign-up, is not put on the internet by this script. A new
+# VPS is at stage closed or http here, and passes. A rerun on a running platform finds its Infisical claimed, and passes.
+refuse_public_unclaimed_infisical() { # the stage edge.sh status printed
+  grep -qE '^[[:space:]]*tcp dport 443 accept' <<<"$1" || return 0
+  local verdict
+  verdict="$(infisical_claim)"
+  [[ "$verdict" == claimed ]] && return 0
+  die "443 is open to everyone, and Infisical reads $verdict, so the apply that follows would publish it before step 6 makes its admin. Move the firewall back first: CONFIRM=plane-prod scripts/hosted/edge.sh http, and open it again after this run with edge.sh open, which asks the same"
+}
+
 terraform_all() {
   step "3 of 8: port 80, then Terraform: Argo CD, projects and the root Application"
+  local stage
+  stage="$("$ROOT/scripts/hosted/edge.sh" status)" || die "could not read the firewall's stage over SSH"
+  refuse_public_unclaimed_infisical "$stage"
   open_port_80
   tf apply -input=false -auto-approve -lock-timeout=10m
   ok "Argo CD is reading branch deploy/plane-prod"
@@ -192,6 +216,11 @@ infisical() {
   hosted_forward_start infisical svc/infisical "$port" 8080 || die "could not port-forward to Infisical"
   WAYLINE_TARGET=plane-prod INFISICAL_URL="http://127.0.0.1:$port" "$ROOT/scripts/infisical-bootstrap.sh"
   hosted_forward_stop
+  # The bootstrap call closes sign-up as it makes the admin. Its public route makes that the line between this platform's secrets and anyone.
+  local verdict
+  verdict="$(infisical_claim)"
+  [[ "$verdict" == claimed ]] || die "Infisical reads $verdict after its bootstrap. Do not open 443 until it reads claimed: scripts/hosted/README.md, section Infisical reads open"
+  ok "Infisical has its admin and is closed to sign-up"
 }
 
 # ------ 7, 8 -----------------------------------------------------------------------------------------------------------

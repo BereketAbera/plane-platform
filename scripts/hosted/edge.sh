@@ -8,6 +8,7 @@
 #   scripts/hosted/edge.sh open          22, 80, 443: the site is public
 #   scripts/hosted/edge.sh status        the stage in force
 #   scripts/hosted/edge.sh scan          ports reachable from this machine, which is the check that counts
+#   scripts/hosted/edge.sh --selftest    the verdict on Infisical's config that open reads, with no server, so CI can run it
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -18,6 +19,15 @@ KNOWN_HOSTS="$ROOT/.local/hosted/known_hosts"
 
 die() { printf 'fail %s\n' "$*" >&2; exit 1; }
 ok() { printf ' ok %s\n' "$*"; }
+
+# shellcheck source=lib-infisical-claim.sh
+source "$ROOT/scripts/hosted/lib-infisical-claim.sh"
+if [[ "${1:-}" == --selftest ]]; then
+  command -v jq >/dev/null 2>&1 || die "jq not found"
+  infisical_claim_selftest || die "selftest: the verdict on Infisical's config changed"
+  ok "selftest passed"
+  exit 0
+fi
 
 HOST="$("$YQ" -r .host "$TARGET_FILE")"
 KEY="$("$YQ" -r .ssh_key "$TARGET_FILE")"
@@ -88,6 +98,22 @@ EOF
   case "$claimed" in
     no-plane | claimed) ;;
     *) die "Plane's instance reads '$claimed', and its first admin sign-up is open to whoever posts first. Create the admin at stage owner, then open." ;;
+  esac
+
+  # Infisical has a public route too, so the same goes for it, and for its sign-up. Read through the API server's proxy to its Service, as
+  # Plane's is read on the node, so no route has to answer. With no Infisical at all there is no claim to read either, and that refuses
+  # too: Argo CD would deploy its route with 443 open before scripts/hosted/bootstrap.sh had made its admin.
+  command -v jq >/dev/null 2>&1 || die "jq not found. Run: make setup"
+  config="$(server <<'EOF' || true
+k3s kubectl get --raw /api/v1/namespaces/infisical/services/infisical:8080/proxy/api/v1/admin/config 2>/dev/null || true
+EOF
+)"
+  verdict="$(printf '%s' "$config" | infisical_claim_verdict)"
+  case "$verdict" in
+    claimed) ;;
+    unclaimed) die "Infisical has no admin yet, and its bootstrap call makes one for whoever posts first. Run scripts/hosted/bootstrap.sh at stage http, which makes it through a port-forward, then open." ;;
+    open-to-sign-up) die "Infisical reads open to sign-up, so anyone could make an account on the secret store. Close it first: scripts/hosted/README.md, section Infisical reads open." ;;
+    *) die "Infisical's config did not answer, so nothing says it has its admin and is closed to sign-up. Read: make remote-status TARGET=plane-prod" ;;
   esac
 fi
 
