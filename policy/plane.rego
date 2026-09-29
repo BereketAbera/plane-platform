@@ -118,6 +118,7 @@ deny contains msg if {
 	needs_allow_list(route)
 	not names_allow_list(route)
 	not hosted_public_grafana(route)
+	not hosted_public_infisical(route)
 	msg := sprintf("%s: route %q sits in a namespace that holds an internal UI or states none, or names a UI by Service or host, so it must name the %s middleware", [identity, route.match, allow_list])
 }
 
@@ -126,6 +127,14 @@ deny contains msg if {
 hosted_public_grafana(route) if {
 	input.metadata.namespace == data.hosted.grafana_namespace
 	data.hosted.grafana_routes[route]
+}
+
+# Hosted production's Infisical too, by the owner's choice, for the same reason: its own login, with two-factor, is what stands there. Only its
+# four routes, in their namespace and in policy/hosted.rego's words, and scripts/ci/check-cluster-separation.sh keeps that host out of the
+# local trees as well.
+hosted_public_infisical(route) if {
+	input.metadata.namespace == data.hosted.infisical_namespace
+	data.hosted.infisical_routes[route]
 }
 
 needs_allow_list(_) if beside_internal_ui

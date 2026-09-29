@@ -73,7 +73,7 @@ deny contains msg if {
 
 route_kinds := {"IngressRoute", "IngressRouteTCP", "IngressRouteUDP"}
 
-# Grafana is the one console with a public route, and this is all of that route. Whole objects and not a pattern, so another host, path,
+# Grafana is one of the two consoles with a public route, and this is all of its route. Whole objects and not a pattern, so another host, path,
 # backend or middleware is a change here that a person reads. The first route carries the login's limit, and has the longer rule, which
 # is what puts it ahead of the second. The second leaves out /metrics, which Prometheus reads from the pod and the internet has no use for.
 grafana_namespace := "monitoring"
@@ -109,15 +109,135 @@ grafana_login_limit_spec := {"rateLimit": {
 	"sourceCriterion": {"ipStrategy": {"depth": 0}},
 }}
 
-route_namespaces := {plane_namespace, grafana_namespace}
+# Infisical is the other, for its one admin's browser, by the owner's choice: docs/adr/0017-infisical-public-route.md. All four of its routes,
+# in the words gitops/clusters/plane-prod/platform/infisical/route.yaml gives them, and tests/routes/infisical-public-route.sh proves each of
+# those words against the pinned Traefik. The first two carry a limit each, and the other two do not reach their paths, so with either gone
+# what it held is refused and not unlimited.
+infisical_namespace := "infisical"
+
+infisical_host := "infisical.bereket.dev"
+
+infisical_tls_secret := "infisical-tls"
+
+infisical_guess_limit := "infisical-guess-limit"
+
+infisical_session_limit := "infisical-session-limit"
+
+infisical_service := {"name": "infisical", "port": 8080}
+
+infisical_host_rule := concat("", ["Host(`", infisical_host, "`)"])
+
+# What a guess is made against: a password or a code.
+infisical_guess_match := concat("", [
+	infisical_host_rule,
+	" && Method(`POST`) && (",
+	concat(" || ", [
+		"Path(`/api/v3/auth/login`)",
+		"Path(`/api/v2/auth/mfa/send`)",
+		"Path(`/api/v2/auth/mfa/verify`)",
+		"Path(`/api/v2/auth/mfa/verify/recovery-code`)",
+		"PathRegexp(`^/api/v2/mfa-sessions/[^/]+/verify$`)",
+		"Path(`/api/v2/password/user/password-reset`)",
+		"Path(`/api/v1/password/password-setup`)",
+		"Path(`/api/v1/password/email/password-setup`)",
+	]),
+	")",
+])
+
+# What carries a session, and takes a token this server signed.
+infisical_session_match := concat("", [
+	infisical_host_rule,
+	" && ((Method(`POST`) && (",
+	concat(" || ", ["Path(`/api/v3/auth/select-organization`)", "Path(`/api/v1/auth/token`)", "Path(`/api/v1/auth/logout`)"]),
+	")) || (Method(`GET`) && (",
+	concat(" || ", ["Path(`/api/v2/auth/mfa/check/totp`)", "Path(`/api/v2/auth/mfa/check/webauthn`)"]),
+	")))",
+])
+
+# The API families the web client calls at v0.167.6, and nothing else under /api. A family a later version adds is refused until it is here.
+infisical_api_allowed := `^/api/(status$|v1/auth/([a-z-]+-auth/identities|token-auth/tokens)/|v1/(access-approvals|admin|agent-vault|alerts|announcement|app-connections|approval-policies|audit-log-streams|cert-manager|dashboard|delegated-approvals|dynamic-secrets|email-domains|external-kms|gateway-pools|github-apps|github-org-sync-config|groups|honey-tokens|identities|identity-templates|insights|integration|integration-auth|kmip|kms|ldap|notifications|oauth|organization|organization-admin|organizations|pam|pit|pki|project-folder-grants|project-templates|projects|proxied-services|relays|reminders|secret-approval-requests|secret-syncs|secret-validation-rules|secrets|sso|sub-organizations|user|user-activation|user-engagement|user-project-additional-privilege|webhooks|workflow-integrations)(/|$)|v2/(folders|gateways|identities|identity-project-additional-privilege|mfa-sessions|organizations|pki|relays|secret-approvals|secret-imports|secret-rotations|secret-scanning|secret-versions|service-token|users)(/|$)|v3/(external-migration|gateways)(/|$)|v4/secrets(/|$))`
+
+# Within those families, what takes a credential and no browser needs: machine and agent logins and calls, protocol endpoints, callbacks
+# and the SSO logins. tests/routes/infisical-machine-routes.tsv lists every call that takes only a machine's credential.
+infisical_api_refused := `(?i)^/api/(v1/(admin/(bootstrap|signup)|agent-vault/(proxy|session)/|announcement/assets/|cert-manager/(acme|crl|ocsp)/|delegated-approvals/callback|github-apps/manifest/callback|honey-tokens/aws/trigger|identities/details|kmip/(server-registration|servers/(connect|login)|spec/)|ldap/login|oauth/(authorize|token|validate)|organization/agent-proxy-ca|pam/accounts/[^/]+/web-access($|/)|pam/sessions/[^/]+/(chunks(/presigned-put)?|credentials|end)($|/)|pki/ca/[^/]+/certificates/[^/]+/der|proxied-services/[^/]+/report-usage|relays/(heartbeat|register)|sso/(github|gitlab|google|oidc/(callback|login)|redirect|saml2|token-exchange)|user/[^/]+/unlock|workflow-integrations/(microsoft-teams/message-endpoint|slack/oauth_redirect))|v2/(gateways/(heartbeat|metrics|pam-session-key)|mfa-sessions/[^/]+/verify|relays/(connect|heartbeat|login))|v3/gateways/(connect|login|token-auth/enroll))`
+
+# A machine's credential on any of those: an identity's access token, whose payload begins {"identityId":, a service token, or an API key.
+# A person's session begins {"authMethod":. Any byte outside printable ASCII is refused too, so Infisical's 7 bytes and the 7 characters
+# here agree.
+infisical_machine_credential := "!HeaderRegexp(`Authorization`, `[^ -~]|^.{7}st\\.|\\.eyJpZGVudGl0eUlkIjo`) && !HeaderRegexp(`X-Api-Key`, `.*`)"
+
+infisical_api_match := concat(" && ", [
+	infisical_host_rule,
+	concat("", ["PathRegexp(`", infisical_api_allowed, "`)"]),
+	concat("", ["!PathRegexp(`", infisical_api_refused, "`)"]),
+	"!(Method(`POST`) && PathRegexp(`(?i)^/api/v2/gateways/?$`))",
+	"!((Method(`GET`) || Method(`HEAD`)) && PathRegexp(`(?i)^/api/v2/service-token/?$`))",
+	infisical_machine_credential,
+])
+
+# Pages: a clean path, and none of those for signing up, recovering an account, sharing a secret or a login this platform has no use for.
+infisical_page_shape := `^/([A-Za-z0-9._~@:$/-]|%20)*$`
+
+infisical_page_refused := `(?i)^/(api|\.well-known|scep|secret-scanning|signup|admin/signup|requestnewinvite|account-recovery|email-not-verified|login/(ldap|oidc|saml|provider)|cli-redirect|share-secret|shared|secret-request)`
+
+infisical_page_match := concat(" && ", [
+	infisical_host_rule,
+	concat("", ["PathRegexp(`", infisical_page_shape, "`)"]),
+	concat("", ["!PathRegexp(`", infisical_page_refused, "`)"]),
+])
+
+infisical_routes := {
+	{
+		"kind": "Rule",
+		"match": infisical_guess_match,
+		"middlewares": [{"name": infisical_guess_limit}],
+		"services": [infisical_service],
+	},
+	{
+		"kind": "Rule",
+		"match": infisical_session_match,
+		"middlewares": [{"name": infisical_session_limit}],
+		"services": [infisical_service],
+	},
+	{
+		"kind": "Rule",
+		"match": infisical_api_match,
+		"services": [infisical_service],
+	},
+	{
+		"kind": "Rule",
+		"match": infisical_page_match,
+		"services": [infisical_service],
+	},
+}
+
+# Measured, as the route file says: one correct sign-in spends 2 of the first and 4 of the second. Per client, as Grafana's.
+infisical_limit_specs := {
+	infisical_guess_limit: {"rateLimit": {
+		"average": 10,
+		"period": "1m",
+		"burst": 10,
+		"sourceCriterion": {"ipStrategy": {"depth": 0}},
+	}},
+	infisical_session_limit: {"rateLimit": {
+		"average": 30,
+		"period": "1m",
+		"burst": 30,
+		"sourceCriterion": {"ipStrategy": {"depth": 0}},
+	}},
+}
+
+route_namespaces := {plane_namespace, grafana_namespace, infisical_namespace}
 
 in_grafana_namespace if object.get(input.metadata, "namespace", "") == grafana_namespace
 
-# Plane's route and Grafana's. Anywhere else it could only be another console's.
+in_infisical_namespace if object.get(input.metadata, "namespace", "") == infisical_namespace
+
+# Plane's route, Grafana's and Infisical's. Anywhere else it could only be another console's.
 deny contains msg if {
 	route_kinds[input.kind]
 	not route_namespaces[object.get(input.metadata, "namespace", "")]
-	msg := sprintf("%s: a route may sit only in namespace %s, or in %s for Grafana's, and the other consoles get none: reach them through an SSH tunnel and a port-forward", [identity, plane_namespace, grafana_namespace])
+	msg := sprintf("%s: a route may sit only in namespace %s, in %s for Grafana's or in %s for Infisical's, and the other consoles get none: reach them through an SSH tunnel and a port-forward", [identity, plane_namespace, grafana_namespace, infisical_namespace])
 }
 
 deny contains msg if {
@@ -134,7 +254,7 @@ deny contains msg if {
 }
 
 # cert-manager is the only certificate owner, so no certResolver either.
-route_tls_secrets := {plane_namespace: tls_secret, grafana_namespace: grafana_tls_secret}
+route_tls_secrets := {plane_namespace: tls_secret, grafana_namespace: grafana_tls_secret, infisical_namespace: infisical_tls_secret}
 
 deny contains msg if {
 	input.kind == "IngressRoute"
@@ -158,10 +278,11 @@ public_backends := {
 deny contains msg if {
 	input.kind == "IngressRoute"
 	not in_grafana_namespace
+	not in_infisical_namespace
 	some route in input.spec.routes
 	some service in route.services
 	not public_backend(service)
-	msg := sprintf("%s: route %q reaches %v:%v. Hosted production gives no console a public route but Grafana's, at %s, and only Plane's own Services get one here", [identity, route.match, service.name, object.get(service, "port", "no port"), grafana_host])
+	msg := sprintf("%s: route %q reaches %v:%v. Hosted production gives no console a public route but Grafana's, at %s, and Infisical's, at %s, and only Plane's own Services get one here", [identity, route.match, service.name, object.get(service, "port", "no port"), grafana_host, infisical_host])
 }
 
 # In Grafana's namespace a route is one of those two, and nothing else: not Grafana on another host or with /metrics, and not Prometheus
@@ -171,7 +292,7 @@ deny contains msg if {
 	in_grafana_namespace
 	some route in input.spec.routes
 	not grafana_routes[route]
-	msg := sprintf("%s: route %q to %v is not one of Grafana's two. Hosted production gives no console a public route but Grafana's, at %s, as policy/hosted.rego writes it", [identity, object.get(route, "match", ""), object.get(route, "services", []), grafana_host])
+	msg := sprintf("%s: route %q to %v is not one of Grafana's two. Hosted production gives Grafana only the route policy/hosted.rego writes, at %s", [identity, object.get(route, "match", ""), object.get(route, "services", []), grafana_host])
 }
 
 # And both of them: with the first gone, its limit is gone and the second still takes the login.
@@ -202,6 +323,54 @@ deny contains msg if {
 	input.metadata.name == grafana_login_limit
 	input.spec != grafana_login_limit_spec
 	msg := sprintf("%s: must be exactly %v, and any other source criterion counts something the client chooses", [identity, grafana_login_limit_spec])
+}
+
+# In Infisical's namespace a route is one of its four, and nothing else: not on another host, not to its Postgres or Redis, not with a
+# family more or a refusal less, and not with a limit moved or gone.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	in_infisical_namespace
+	some route in input.spec.routes
+	not infisical_routes[route]
+	msg := sprintf("%s: route %q to %v is not one of Infisical's four. Hosted production gives Infisical only the route policy/hosted.rego writes, at %s", [identity, object.get(route, "match", ""), object.get(route, "services", []), infisical_host])
+}
+
+deny contains msg if {
+	input.kind == "IngressRoute"
+	in_infisical_namespace
+	some wanted in infisical_routes
+	not route_present(wanted)
+	msg := sprintf("%s: has no route %q, and Infisical's route needs all four of its routes", [identity, wanted.match])
+}
+
+# The same as Grafana's: a Middleware could rewrite a path after the rule read it, so the only ones here are the two limits, as written.
+deny contains msg if {
+	input.kind == "Middleware"
+	in_infisical_namespace
+	not infisical_limit_specs[input.metadata.name]
+	msg := sprintf("%s: the only Middlewares in namespace %s are %s and %s", [identity, infisical_namespace, infisical_guess_limit, infisical_session_limit])
+}
+
+deny contains msg if {
+	input.kind == "Middleware"
+	in_infisical_namespace
+	want := infisical_limit_specs[input.metadata.name]
+	input.spec != want
+	msg := sprintf("%s: must be exactly %v, and any other source criterion counts something the client chooses", [identity, want])
+}
+
+# The route's lists were read from this version's running server and its web client, so another version may hold a login or a sign-up they
+# do not name. Moving Infisical on means reading those again, with tests/routes/infisical-public-route.sh, and then moving this.
+infisical_route_version := "v0.167.6"
+
+infisical_image := "docker.io/infisical/infisical:"
+
+deny contains msg if {
+	kube.is_workload(input)
+	some c in kube.containers(input)
+	startswith(c.image, infisical_image)
+	not startswith(c.image, concat("", [infisical_image, infisical_route_version, "@"]))
+	msg := sprintf("%s: container %q runs %s, and Infisical's public route was read from %s. Read the new version's routes and web client, run tests/routes/infisical-public-route.sh, then change infisical_route_version in policy/hosted.rego", [identity, c.name, c.image, infisical_route_version])
 }
 
 public_backend(service) if {
