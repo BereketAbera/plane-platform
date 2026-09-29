@@ -49,9 +49,20 @@ staging to production also tries at once, because the next request no longer mat
 `grafana-tls` and `infisical-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no record of its own, and that
 points at Vercel, so each A record has to be live before Argo CD first sees that Certificate. For Infisical's the namespace is `infisical`.
 
-`infisical-tls` has one more condition, once. Its solver pod needs 64Mi of the namespace's quota, and a rollout of Infisical's server fills that
-quota to the last MiB. The values that come with the route roll the server, so they go out in a push of their own, and the Certificate in a later
-one, once that rollout has finished. On a new VPS there is nothing to roll, and both fit.
+`infisical-tls` has one more condition, at its first order and at every renewal, about every 60 days. Its solver pod takes 64Mi of the
+namespace's `limits.memory` quota, 1376Mi of 2400Mi is used steady, and the server's rollout and the nightly backup each take 1024Mi more, so
+the quota fits one of the three at a time, and the node has no memory to raise it. A solver that meets a rollout or a backup waits for it to
+finish. A solver whose self-check keeps failing holds its 64Mi until its challenge passes or is deleted, and meanwhile the next rollout's new
+pod and the backup's pod are refused. That shows as `PlaneBackupFailed` for namespace infisical once the backup Job reaches its 2-hour
+deadline, `BackupTooOld` 26 hours after the last good one, `ArgoAppDegraded` for infisical once a rollout's 10 minutes are up, and
+`CertificateExpiringSoon` at 21 days. `CertificateNotReady` stays quiet, because the old certificate is still Ready. `kc -n infisical get
+challenges,pods` shows the solver, and `kc -n infisical describe challenge` why it waits. The values that come with the route roll the server,
+so they go out in a push of their own, and the Certificate in a later one, once that rollout has finished. On a new VPS there is nothing to
+roll, and both fit.
+
+Port 80 alone is enough for a retry. If 443 was closed as well, `edge.sh open` refuses while Infisical's config does not answer, so with
+Infisical down Plane stays off the internet too: `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh owner <your ipv4>` reaches the
+site from one address meanwhile.
 
 ## Infisical's public route
 
@@ -71,8 +82,10 @@ Token Auth tab works only inside the cluster, because the route refuses a machin
 
 ## Two-factor for Infisical's admin
 
-Email codes are not an option: with no SMTP this version shows them as Unavailable, and its API refuses them. Use an authenticator app. These are
-this version's steps and labels, as they were run in Chrome against its image in Docker, through the pinned Traefik and through a tunnel's
+Email codes are not an option: with no SMTP this version shows them as Unavailable, and its API refuses them. Use an authenticator app. Set it
+up through the tunnel before 443 is open to everyone, which on a new VPS means after `bootstrap.sh` and before `edge.sh open`, so the account
+is never on the internet with a password alone. Nothing here can read whether it is on, so `edge.sh open` only says so. These are this
+version's steps and labels, as they were run in Chrome against its image in Docker, through the pinned Traefik and through a tunnel's
 `http://localhost`, which works the same:
 
 1. Sign in. Until someone has finished it, a sign-in opens **Control who can join** first: keep **Invite-only**, then **Continue**, then **Finish
@@ -146,14 +159,16 @@ next person to sign up or to claim it may own every production secret. The route
 layer is the one left, and it is not to be left alone.
 
 1. Close 443 first, so nothing else reaches it: `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http`. Plane goes off the internet
-   with it.
+   with it, and stays off until step 4. `edge.sh owner <your ipv4>` reaches the site from one address meanwhile.
 2. Through the tunnel, read `/api/v1/admin/config`. With `initialized` false, the database is not the one the platform had: stop, and read
    [`docs/disaster-recovery.md`](../../docs/disaster-recovery.md#scenario-infisical-lost), because the bootstrap would make new secrets. With
-   `allowSignUp` true, sign in as the admin through the tunnel, set **Server Console**, **General**, **Signup mode** to Disabled, and save. Or run
-   `UPDATE super_admin SET "allowSignUp" = false;` through `psql` as above. Infisical keeps the setting cached, and answered the change within
-   30 seconds.
+   `allowSignUp` true, sign in as the admin through the tunnel, set **Server Console**, **General**, **Signup mode** to Disabled, and save, which
+   the config shows at once. Or run `UPDATE super_admin SET "allowSignUp" = false;` through `psql` as above: Infisical keeps the config in Redis
+   for 60 seconds, and only a change through its API clears that, so this one shows within a minute.
 3. In Server Console, **Resource Overview**, **User Identities**, look for anyone who is not the admin, and remove them, before 443 opens again.
-4. `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open`, which refuses until Infisical reads claimed and closed.
+4. `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open`, which refuses until Infisical reads claimed and closed, so for up to a
+   minute after a `psql` change. It refuses as well while Infisical's config does not answer at all, and then Plane stays off the internet with
+   it: `edge.sh owner <your ipv4>` until Infisical answers.
 
 ## Locked out of Grafana
 
