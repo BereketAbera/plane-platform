@@ -14,8 +14,9 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `kubeconfig.sh` | Fetch K3s's kubeconfig, rewrite it for the tunnel, and print the UID for `target.yaml` | `remote-kubeconfig` |
 | `status.sh` | Read-only summary | `remote-status` |
 | `bootstrap.sh` | Deploy key, Grafana's login, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
-| `ui.sh` | Port-forward an admin UI. None has a public route but Grafana, which this also reaches when that route is down | `remote-ui` |
+| `ui.sh` | Port-forward an admin UI. None has a public route but Grafana and Infisical, which this also reaches when a route is down | `remote-ui` |
 | `grafana-admin.sh` | Make Grafana's admin login once and write its Secret (`apply`), replace its password (`rotate`), or print the URL and username and copy the password (`login`) | `remote-grafana-admin` |
+| `infisical-admin.sh` | Print Infisical's URL and admin email, and copy its password to the clipboard (`login`). Bootstrap makes that login, and this only reads it | `remote-infisical-admin` |
 | `alerts.sh` | Render `alertmanager.yaml` from the owner's files into a Secret, and say COMPLETE or INCOMPLETE | `remote-alerts` |
 | `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again | `remote-bundle` |
 | `backup.sh` | Run tonight's backups now, from the CronJobs | `remote-backup` |
@@ -45,8 +46,103 @@ opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before 
 That is read from cert-manager v1.21.3's `shouldBackoffReissuingOnFailure` and has not run on this cluster. Moving `issuerRef` from
 staging to production also tries at once, because the next request no longer matches the Certificate.
 
-`grafana-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no record of its own, and that points at Vercel, so its
-A record has to be live before Argo CD first sees that Certificate.
+`grafana-tls` and `infisical-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no record of its own, and that
+points at Vercel, so each A record has to be live before Argo CD first sees that Certificate. For Infisical's the namespace is `infisical`.
+
+`infisical-tls` has one more condition, once. Its solver pod needs 64Mi of the namespace's quota, and a rollout of Infisical's server fills that
+quota to the last MiB. The values that come with the route roll the server, so they go out in a push of their own, and the Certificate in a later
+one, once that rollout has finished. On a new VPS there is nothing to roll, and both fit.
+
+## Infisical's public route
+
+`https://infisical.bereket.dev` is for one person's browser: Infisical's admin, with an authenticator app. Its route,
+[`route.yaml`](../../gitops/clusters/plane-prod/platform/infisical/route.yaml), passes the sign-in, two-factor and session endpoints under a limit
+per address, the API families its web client calls, and its pages. Traefik answers 404 to the rest: every machine login, the OpenAPI document,
+SCIM, sign-up, invitations, account recovery, shared secrets, the SSO logins, and any call carrying a machine's credential. The operator does not
+use it, and reads Infisical through its Service. [`docs/infisical.md`](../../docs/infisical.md#the-public-route) says what stays reachable, and
+[ADR 0017](../../docs/adr/0017-infisical-public-route.md) why it exists at all.
+
+`make remote-infisical-admin TARGET=plane-prod VERB=login` prints the URL and email, and puts the password on the clipboard. The tunnel still
+works when the route does not: `make remote-ui TARGET=plane-prod UI=infisical`, in Chrome or Firefox. Safari drops Infisical's cookies on
+`http://localhost`, because they are Secure, so a sign-in there lasts until the page reloads.
+
+The Secret Sharing pages, member invitations and the SSO logins do not work through the route, on purpose. A token made on a machine identity's
+Token Auth tab works only inside the cluster, because the route refuses a machine's credential.
+
+## Two-factor for Infisical's admin
+
+Email codes are not an option: with no SMTP this version shows them as Unavailable, and its API refuses them. Use an authenticator app. These are
+this version's steps and labels, as they were run in Chrome against its image in Docker, through the pinned Traefik and through a tunnel's
+`http://localhost`, which works the same:
+
+1. Sign in. Until someone has finished it, a sign-in opens **Control who can join** first: keep **Invite-only**, then **Continue**, then **Finish
+   setup**, then **Go to dashboard**. Anyone would open sign-up to the internet, and `InfisicalOpenToClaim` would page.
+2. **Server Console**, at the top, then **Authentication**: turn off Google SSO, GitHub SSO, GitLab SSO, SAML SSO, OIDC SSO and LDAP, keep Email,
+   and **Save**. The sign-in page then shows email and password alone. The route refuses those logins anyway.
+3. The person icon at the top right, then **Personal Settings**, then the tab **Authentication**.
+4. At **Authenticator app**, choose **Set up**. Scan the QR code, or type the key under it, click the first of the six boxes and type the code.
+   It saves by itself, and says Authenticator app configured.
+5. **Preferred 2FA method** now reads Authenticator app. Choose **Enable two-factor authentication**, then **Enable**.
+6. Unless a code was typed in the last 10 minutes, a window asks for one from the app, and closes by itself. Allow pop-ups for this site if the
+   browser blocks it.
+7. **Save your recovery codes**: ten codes, each good once. **Download** or **Copy** them into the password manager, apart from the phone, tick
+   that you saved them, and **Done**.
+
+From then on a sign-in asks for the app's code after the password, with **Use a recovery code** under it. Recovery codes can be read again,
+or replaced, in the same tab: **View**, **Regenerate**. A passkey is not an option: it is bound to the host it was made on, so one made on the
+public host would not work through the tunnel.
+
+## Locked out of Infisical
+
+Five wrong codes in a row lock the account for 5 minutes, ten for 30, fifteen for an hour, and twenty until someone unlocks it. A lock refuses even
+the right password, with Account is locked, and a sign-in that gets through clears the count. A stranger cannot cause any of this without the
+password: wrong passwords lock nothing in this version, because their count only asks for a captcha, which needs a key this platform does not set,
+and the route's limit is 10 a minute per address. That limit answers 429 and lets one more try through every 6 seconds: wait, or use the tunnel.
+
+Locked, with the phone at hand: wait, or clear the lock in the database through the tunnel, and sign in with the password and a code. After twenty,
+Infisical writes an unlock link to its log, because there is no SMTP to mail it. The link names the public host, which refuses it, and the same
+path through the tunnel unlocks the account.
+
+```
+EMAIL="$(jq -r .email .local/hosted/plane-prod/secret-zero/infisical-admin.json)"
+printf "UPDATE users SET \"consecutiveFailedMfaAttempts\" = 0, \"isLocked\" = false, \"temporaryLockDateEnd\" = NULL WHERE email = '%s';\n" "$EMAIL" \
+  | .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n infisical exec -i infisical-postgres-0 -c postgres -- \
+    sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Lost the phone, with the recovery codes kept: sign in, choose **Use a recovery code**, type one and **Continue**. In Personal Settings,
+Authentication, choose **Disable 2FA**, then **Disable**. Then at Authenticator app **Remove**, then **Remove**, and set up the new phone from step 4
+above. While two-factor is on, removing its only method is refused, which is why it goes off first.
+
+The phone and the codes both gone: turn two-factor off in the database, and remove the old app and codes, then sign in with the password alone and
+set two-factor up again at once, from step 4. It takes effect with no restart, and leaves the password as it is:
+
+```
+EMAIL="$(jq -r .email .local/hosted/plane-prod/secret-zero/infisical-admin.json)"
+printf "UPDATE users SET \"isMfaEnabled\" = false, \"selectedMfaMethod\" = NULL, \"consecutiveFailedMfaAttempts\" = 0, \"isLocked\" = false, \"temporaryLockDateEnd\" = NULL WHERE email = '%s';\nDELETE FROM totp_configs WHERE \"userId\" = (SELECT id FROM users WHERE email = '%s');\nDELETE FROM user_mfa_recovery_codes WHERE \"userId\" = (SELECT id FROM users WHERE email = '%s');\n" "$EMAIL" "$EMAIL" "$EMAIL" \
+  | .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n infisical exec -i infisical-postgres-0 -c postgres -- \
+    sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Each of those, the locks, the unlock link, the recovery code, Disable 2FA and both statements, was run against this image in Docker, and not on
+this cluster. A lost password is in [`infisical/README.md`](../../infisical/README.md#admin-token-and-password-both-gone): the same database, a new
+hash.
+
+## Infisical reads open
+
+`InfisicalOpenToClaim` is critical: through its public route, Infisical did not say that it has its admin and is closed to sign-up. Either way the
+next person to sign up or to claim it may own every production secret. The route refuses the sign-up and bootstrap calls, so the alert means that
+layer is the one left, and it is not to be left alone.
+
+1. Close 443 first, so nothing else reaches it: `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http`. Plane goes off the internet
+   with it.
+2. Through the tunnel, read `/api/v1/admin/config`. With `initialized` false, the database is not the one the platform had: stop, and read
+   [`docs/disaster-recovery.md`](../../docs/disaster-recovery.md#scenario-infisical-lost), because the bootstrap would make new secrets. With
+   `allowSignUp` true, sign in as the admin through the tunnel, set **Server Console**, **General**, **Signup mode** to Disabled, and save. Or run
+   `UPDATE super_admin SET "allowSignUp" = false;` through `psql` as above. Infisical keeps the setting cached, and answered the change within
+   30 seconds.
+3. In Server Console, **Resource Overview**, **User Identities**, look for anyone who is not the admin, and remove them, before 443 opens again.
+4. `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open`, which refuses until Infisical reads claimed and closed.
 
 ## Locked out of Grafana
 

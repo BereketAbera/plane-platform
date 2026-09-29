@@ -342,10 +342,94 @@ kubectl --context kind-plane-platform auth can-i get secrets -n plane-prod-sim -
 kubectl --context kind-plane-platform auth can-i create serviceaccounts --subresource=token -n plane-prod-sim --as="$SA"  # L8
 ```
 
+## The public route
+
+Hosted production's Infisical, and only that one, has a public route at `https://infisical.bereket.dev`, for its one admin's browser. The owner
+chose it knowing that this instance holds every production secret: [ADR 0017](adr/0017-infisical-public-route.md) records the decision and what
+risk is left. Everything below was read from v0.167.6's running server and its web client, and run against that image in Docker, with its own
+Postgres and Redis, behind the Traefik image and flags hosted production pins and [`route.yaml`](../gitops/clusters/plane-prod/platform/infisical/route.yaml)
+as it stands. None of it has run on hosted production yet.
+
+**What it passes.** Four routes, which share no path:
+
+| Route | What | Limit, per client address |
+|---|---|---|
+| Guesses | `POST` sign-in, the two-factor code and recovery code, a step-up code, password change and setup | 10 a minute. One correct sign-in with an authenticator app makes 2, and each mistake one more |
+| Sessions | `POST` select-organization, token refresh and logout, `GET` the two-factor checks | 30 a minute. One correct sign-in makes 4, and each page load 1 |
+| API | The 71 families the web client calls, and its calls that set up a machine identity's logins, less what in them takes a credential and no browser needs, and less any request that carries a machine's credential | None |
+| Pages | Every page and file of the web client, with a clean path, less sign-up, account recovery, shared secrets and the SSO, LDAP and CLI logins | None |
+
+Both limits count the connection's address and trust no header, as Grafana's login does, and they are the only limits: this version registers its
+own rate limiter only for Infisical Cloud (`server/app.ts`). Infisical reads the same address as Traefik since `TRUSTED_PROXY_CIDRS` is the pods'
+range. Without it, a sign-in through the route recorded whatever `CF-Connecting-IP` the client sent.
+
+**Why an allow list.** The server registers 3746 API routes in 98 families. Its OpenAPI document leaves out 1186 of them, the sign-in, two-factor,
+sign-up and SCIM among them, so it could not be the list to work from: the routes were read from the running server as it registered them. Asked
+with no credential, 139 answer before any session is read, and 4 more check one in their handler: those are
+[`infisical-anonymous-routes.tsv`](../tests/routes/infisical-anonymous-routes.tsv). Asked with the admin's own session, 40 refuse it by its kind,
+because they take only a machine's credential: those are [`infisical-machine-routes.tsv`](../tests/routes/infisical-machine-routes.tsv). The web
+client names 879 API paths in 81 families. A list of refusals would have to name every one of the 183 and every one a release adds, and fail open
+when it missed one. The list of families the client calls fails closed: a family a later version adds is refused until someone reads it. Pages
+are one `index.html` whatever the path, and hold no credential, so for them a list of refusals is enough.
+
+**What it refuses.** Traefik answers 404, or 400 to a malformed escape, before Infisical sees any of these: every machine identity login under
+`/api/v1/auth/*-auth/login`, universal, Kubernetes, AWS, GCP, Azure, OIDC, JWT, LDAP, TLS certificate, SPIFFE, OCI and Alibaba Cloud; token
+renew and revoke; the old SRP logins; the bootstrap call and the admin sign-up; user sign-up and invitations; account recovery and password reset by
+email; the OpenAPI document at `/api/docs`; SCIM; public secret sharing; the SSO, LDAP and OAuth flows; ACME, EST, SCEP, OCSP and CRLs; gateway,
+relay, KMIP, PAM and agent calls; webhooks and callbacks; the 40 calls that take only a machine's credential, as an identity reading its own
+details; and every family the web client does not call, `/api/v3/secrets` and `/api/v1/workspace` among them. Token Auth has no login to refuse:
+an admin's session mints its token, and the token is the access token.
+
+On the API route Traefik also refuses any request that carries a machine's credential, whatever its path: a machine identity's access token,
+whose payload always begins `{"identityId":`, a service token, or an API key. A person's session begins `{"authMethod":`. Tried with real ones:
+the instance admin identity's token from the bootstrap, a Kubernetes Auth token, and a token just minted on a Token Auth tab each got Traefik's 404
+through the route, and the Service accepted each of them. So a machine's credential is good inside the cluster only, and the 90-day token in
+`.local/hosted/plane-prod/secret-zero/infisical-admin.json` works only through the tunnel, as before.
+
+**How a path is read.** Traefik v3.7.17 with the chart's defaults reads a rule against the path after it has merged doubled slashes, removed dot
+segments, also encoded ones, and decoded what is not reserved, keeping an encoded slash, backslash or question mark encoded, in upper-case hex,
+and a doubly encoded one as it is. That is also the path it sends on: asked through the route, Infisical named `/api/v1/user/x` for
+`//api//v1/user/./y/../x` and `/%61pi/v1/user/x`, and `/api/v1/user/a%2Fb` for `a%2fb`. Fastify's router, find-my-way with
+`ignoreTrailingSlash`, decodes the same characters and keeps an encoded slash inside one segment, is case-sensitive, and ignores one trailing slash.
+So neither reads a separator the other does not. The rules allow for a trailing slash, the refusals ignore case, and another case of an allowed
+family finds no route in Fastify. [`tests/routes/infisical-public-route.sh`](../tests/routes/infisical-public-route.sh) asks the pinned Traefik
+every anonymous and machine route, 59 refused paths in 49 spellings each over HTTP/1.1 and four of them over HTTP/2, 43 walks from an allowed
+path to a refused one, 12 kinds of machine credential on six of a browser's calls, and 49 calls a browser makes. Behind an echo server, which
+shows what arrives, 4083 rows passed and none failed. Behind this Infisical, which shows what its router makes of it, 3480 passed and none failed.
+
+**What stays reachable with no session.** 24 of the 143: `GET /api/status` and `GET /api/v1/admin/config`, which a sign-in page reads; the
+sign-in itself, token refresh and logout, which read the session cookie; the five two-factor endpoints, which need the token a correct password
+issues; the four certificate downloads of the certificate manager's internal CAs, which hold only public certificates and which its pages call,
+and no CA exists here; and the ten under `/api/v2/users/me`, which check a session in their router's own hook. The pages and the web client's
+files are public, as every website's are, and say that this is v0.167.6.
+
+**What the values change.** `SITE_URL` is `https://infisical.bereket.dev`, `HTTPS_ENABLED` is true and `TRUSTED_PROXY_CIDRS` is
+`10.244.0.0/16`. `INVITE_ONLY_SIGNUP` is not set, because this version reads no such variable: with it set and sign-up opened in the database, a
+stranger was sent a sign-up code all the same. Sign-up is closed in the database by the bootstrap call, and the probe `infisical-claimed` alerts the
+moment it reads otherwise.
+
+| Who | What changes |
+|---|---|
+| The operator | Nothing. It logs in with Kubernetes Auth at the Service, `http://infisical.infisical.svc.cluster.local:8080`, and that login sets no cookie and reads none of the three. Under these values it logged in against a stand-in for the API server's TokenReview, with no cookie, and its token worked at the Service. `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=secrets` proves it on the cluster, in the row `only namespace plane-prod logs in as its identity` |
+| The bootstrap and seed scripts | Nothing. They send a token in a header through a port-forward, which reaches the pod from its own loopback, outside the trusted range, so Infisical takes no forwarded header from them |
+| A browser on the public route | Every cookie is Secure, as it should be over HTTPS. Chrome signed in with an authenticator code and opened 35 pages with no call refused, and the calls those pages make to create a project, a secret, a machine identity with Token Auth and a token for it reached Infisical through the route |
+| A browser through `make remote-ui TARGET=plane-prod UI=infisical` | Chrome and Firefox keep a Secure cookie from `http://localhost`, and sign in and stay signed in. WebKit, which Safari is built on, drops it: the sign-in works and lasts until the page reloads. Links and CORS name the public host, and the page asks its own origin, which CORS does not cover, so any local port works. A passkey would be bound to the public host, so two-factor is an authenticator app |
+| Running sessions | Kept. Sessions are tokens signed with `AUTH_SECRET`, which does not change, and rows in Postgres. A Chrome session made before the change refreshed after it, and its cookie came back Secure |
+| Infisical's pod | The values change its environment, so the Deployment rolls: the chart sets no strategy, so one new pod starts beside the old, which goes once `/api/status` answers. In Docker the server answered 10 to 20 s after it started. The surge fills the namespace's quota, so the certificate's first order waits for it to finish, or comes in another push |
+
+**Two-factor.** Email codes cannot be chosen with no SMTP: the page says Unavailable and the API refuses. Left as the method all the same, as an
+older version or a restored database could leave it, the code goes to the pod's log, and that code signed in. The steps for an authenticator app,
+and the way back in when locked out or when the phone is lost, are in [`scripts/hosted/README.md`](../scripts/hosted/README.md#two-factor-for-infisicals-admin).
+
+**What it does not pass.** The Secret Sharing pages, member invitations, SSO, account recovery by email, the CLI's browser login, and the pictures of
+in-app announcements. Use the tunnel for any of them. A stolen person's session works at the routes a browser uses, and the route cannot tell a
+browser from a script that holds one.
+
 ## Related documents
 
 - [security.md](security.md): threat model and what is not protected.
 - [data-operations.md](data-operations.md): backup contents and restore.
 - [disaster-recovery.md](disaster-recovery.md): failure scenarios and full restoration.
 - [platform-contract.md](platform-contract.md): the binding names.
+- [ADR 0017](adr/0017-infisical-public-route.md): why hosted production's Infisical has a public route, and what risk is left.
 - [`infisical/README.md`](../infisical/README.md): the layer's own notes, including the names other layers rely on.

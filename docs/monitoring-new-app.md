@@ -114,7 +114,7 @@ loads within about 30 seconds, with no restart. A datasource of its own is diffe
     summary: Frameflow has failed its probe for 2m
 ```
 
-A public route is a separate change. `policy/hosted.rego` allows Plane's and Grafana's and no other, and a new one starts there.
+A public route is a separate change. `policy/hosted.rego` allows Plane's, Grafana's and Infisical's and no other, and a new one starts there.
 
 ## What is not covered
 
