@@ -4,8 +4,10 @@
 Run by tests/routes/infisical-public-route.sh, which starts that Traefik. Standard library only. Requests go out as raw bytes, because any
 HTTP client tidies a path before it sends it, and that tidying is what this exists to try without.
 
-Each row says who answered. A refused path passes when Traefik answers it, and fails when it reaches the backend: with the echo server
-behind Traefik, that means the request got through in any shape, and with a real Infisical behind it, that Fastify's router found a route.
+Each row says who answered. A refused path passes when Traefik answers it, and fails when it reaches the backend. With the echo server
+behind Traefik, that means the request got through in any shape, which is the proof that nothing refused arrives. With a real Infisical
+behind it, that one of its handlers ran: any answer but its router's own "Route <method>:<url> not found", a handler's 404 included. That
+run shows what Fastify makes of what does arrive, and it cannot see what Traefik forwarded, so it does not stand in for the echo run.
 """
 from __future__ import annotations
 
@@ -368,11 +370,15 @@ class Report:
     def __init__(self) -> None:
         self.failed = 0
         self.passed = 0
+        self.info = 0
         self.lines: list[str] = []
 
     def row(self, verdict: str, name: str, detail: str = "") -> None:
+        # INFO says what was seen where this test has nothing to hold it to, and counts neither way.
         if verdict == "FAIL":
             self.failed += 1
+        elif verdict == "INFO":
+            self.info += 1
         else:
             self.passed += 1
         self.lines.append(f"{verdict:5} {name} {detail}".rstrip())
@@ -380,7 +386,22 @@ class Report:
             print(self.lines[-1])
 
 
-def who_answered(status: int, headers: dict[str, str], body: bytes, real: bool) -> str:
+def infisical_found_no_route(status: int, body: bytes, method: str) -> bool:
+    """Fastify's own not-found handler, and nothing else. server/plugins/error-handler.ts at this version writes exactly this message and error,
+    with the method and the URL as the server received them. Any other 404 came from a handler that ran, as an unknown CA certificate's does."""
+    if status != 404:
+        return False
+    try:
+        answer = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return False
+    if not isinstance(answer, dict) or answer.get("error") != "Not Found" or answer.get("statusCode") != 404:
+        return False
+    found = re.fullmatch(r"Route ([A-Z]+):(/\S*) not found", str(answer.get("message", "")))
+    return bool(found) and found.group(1) == method
+
+
+def who_answered(status: int, headers: dict[str, str], body: bytes, real: bool, method: str) -> str:
     """traefik, limit, backend, or with a real Infisical behind it, infisical-no-route, which is its router finding nothing."""
     text = body.decode("latin-1", "replace")
     if ECHO_MARK in text or headers.get("x-echo-reached") == "1":
@@ -392,7 +413,7 @@ def who_answered(status: int, headers: dict[str, str], body: bytes, real: bool) 
     # helmet puts this on everything Infisical sends, and Traefik's own refusals are plain text without it.
     if "x-download-options" not in headers:
         return "traefik"
-    if status == 404 and "text/html" not in headers.get("content-type", ""):
+    if infisical_found_no_route(status, body, method):
         return "infisical-no-route"
     return "backend"
 
@@ -418,7 +439,11 @@ def fastify_reads(forwarded: str) -> str:
 
 def refused(report: Report, client: Client, method: str, target: str, label: str, real: bool, route: str) -> None:
     status, headers, body = client.ask(method, target)
-    who = who_answered(status, headers, body, real)
+    who = who_answered(status, headers, body, real, method)
+    if real and who == "backend" and method == "HEAD" and status == 404 and not body.strip():
+        # A HEAD's answer has no body to say whether a route ran, and Fastify routes HEAD as it routes GET, so the same path as a GET says.
+        status, headers, body = client.ask("GET", target)
+        who = who_answered(status, headers, body, real, "GET")
     if who != "backend":
         report.row("PASS", f"{method} {target} is refused [{label}]", f"{status} from {who}")
     elif real and status in (401, 403) and fastify_reads(target) != route:
@@ -446,26 +471,29 @@ def run(arguments: argparse.Namespace) -> int:
         echo.start()
     report = Report()
 
-    # The limits come first, while the buckets are full, and the rows below run against them with the buckets empty.
+    # The limits come first, while the buckets are full, and the rows below run against them with the buckets empty. With either backend:
+    # a try reaches it, as the echo or as an answer of Infisical's own, until the limit answers 429.
     print("== the limits")
-    if not real:
-        answers = []
-        for attempt in range(1, 15):
-            status, _, _ = client.ask("POST", "/api/v3/auth/login", headers={"X-Forwarded-For": f"203.0.113.{attempt}", "X-Real-IP": f"203.0.113.{attempt}", "CF-Connecting-IP": f"203.0.113.{attempt}"})
-            answers.append(status)
-        reached = answers.count(200)
-        report.row("PASS" if answers[:10] == [200] * 10 and 429 in answers and reached <= 11 else "FAIL", "guessing at the login meets its limit, whatever forwarded header each try sends", f"answers {answers}")
-        answers = []
-        for attempt in range(1, 45):
-            status, _, _ = client.ask("POST", "/api/v1/auth/token", headers={"X-Forwarded-For": f"203.0.113.{attempt}"})
-            answers.append(status)
-        report.row("PASS" if answers[:30] == [200] * 30 and 429 in answers else "FAIL", "the session routes meet their wider limit", f"{answers.count(200)} reached it, then {answers.count(429)} answered 429")
-        # A person's page load is not one of these.
-        status, _, _ = client.ask("GET", "/login")
-        report.row("PASS" if status == 200 else "FAIL", "with both limits spent, the login page still answers", str(status))
-        status, _, _ = client.ask("GET", "/api/v1/admin/config")
-        report.row("PASS" if status == 200 else "FAIL", "with both limits spent, the config a sign-in page reads still answers", str(status))
+    answers, reached = [], []
+    for attempt in range(1, 15):
+        status, headers, body = client.ask("POST", "/api/v3/auth/login", headers={"X-Forwarded-For": f"203.0.113.{attempt}", "X-Real-IP": f"203.0.113.{attempt}", "CF-Connecting-IP": f"203.0.113.{attempt}"})
+        answers.append(status)
+        reached.append(who_answered(status, headers, body, real, "POST") == "backend")
+    report.row("PASS" if all(reached[:10]) and 429 in answers and reached.count(True) <= 11 else "FAIL", "guessing at the login meets its limit, whatever forwarded header each try sends", f"answers {answers}")
+    answers, reached = [], []
+    for attempt in range(1, 45):
+        status, headers, body = client.ask("POST", "/api/v1/auth/token", headers={"X-Forwarded-For": f"203.0.113.{attempt}"})
+        answers.append(status)
+        reached.append(who_answered(status, headers, body, real, "POST") == "backend")
+    report.row("PASS" if all(reached[:30]) and 429 in answers else "FAIL", "the session routes meet their wider limit", f"{reached.count(True)} reached it, then {answers.count(429)} answered 429")
+    # A person's page load is not one of these.
+    status, _, _ = client.ask("GET", "/login")
+    report.row("PASS" if status == 200 else "FAIL", "with both limits spent, the login page still answers", str(status))
+    status, _, _ = client.ask("GET", "/api/v1/admin/config")
+    report.row("PASS" if status == 200 else "FAIL", "with both limits spent, the config a sign-in page reads still answers", str(status))
 
+    # What arrived is read from the echo, so this part runs with it alone.
+    if not real:
         print("== no spelling of a limited path goes round its limit")
         for method, path in GUESS_LIMITED + SESSION_LIMITED:
             for label, target in spellings(path).items():
@@ -473,20 +501,21 @@ def run(arguments: argparse.Namespace) -> int:
                 if label in ("query", "query with a slash", "empty query", "as written"):
                     continue
                 status, headers, body = client.ask(method, target)
-                who = who_answered(status, headers, body, real)
+                who = who_answered(status, headers, body, real, method)
                 seen = json.loads(body.decode("latin-1")).get(ECHO_MARK, "").split(" ")[1] if who == "backend" else ""
                 verdict = "FAIL" if who == "backend" and fastify_reads(seen) == path else "PASS"
                 report.row(verdict, f"{method} {target} does not go round the limit [{label}]", f"{status} from {who} {seen}")
-        status, _, _ = client.ask("POST", "/api/v3/auth/login?x=1")
-        report.row("PASS" if status == 429 else "FAIL", "a query on the login is still under its limit", str(status))
-        for method, path in GUESS_LIMITED + SESSION_LIMITED:
-            status, _, _ = client.ask("DELETE" if method == "POST" else "POST", path)
-            report.row("PASS" if status == 404 else "FAIL", f"another method on {path} is refused", str(status))
+    status, _, _ = client.ask("POST", "/api/v3/auth/login?x=1")
+    report.row("PASS" if status == 429 else "FAIL", "a query on the login is still under its limit", str(status))
+    for method, path in GUESS_LIMITED + SESSION_LIMITED:
+        status, headers, body = client.ask("DELETE" if method == "POST" else "POST", path)
+        who = who_answered(status, headers, body, real, "DELETE" if method == "POST" else "POST")
+        report.row("PASS" if status == 404 and who == "traefik" else "FAIL", f"another method on {path} is refused", f"{status} from {who}")
 
     print("== what a browser needs still reaches the backend")
     for method, path in MUST_REACH:
         status, headers, body = client.ask(method, path)
-        who = who_answered(status, headers, body, real)
+        who = who_answered(status, headers, body, real, method)
         if real:
             # Asked with no session, so a page answers 200 and an API route 401 or 400: only Traefik's refusal or a missing route is wrong here.
             good = who == "backend"
@@ -514,7 +543,7 @@ def run(arguments: argparse.Namespace) -> int:
             refused(report, client, method, target, "anonymous route", real, route=target)
         else:
             status, headers, body = client.ask(method, target)
-            who = who_answered(status, headers, body, real)
+            who = who_answered(status, headers, body, real, method)
             stays += 1
             good = who != "traefik"
             report.row("PASS" if good else "FAIL", f"{method} {target} stays, as docs/infisical.md says", f"{status} from {who}")
@@ -552,18 +581,19 @@ def run(arguments: argparse.Namespace) -> int:
     for label, headers in machine_headers:
         for method, path in browser_calls:
             status, answered, body = client.ask(method, path, headers=headers)
-            who = who_answered(status, answered, body, real)
+            who = who_answered(status, answered, body, real, method)
             report.row("PASS" if who != "backend" else "FAIL", f"{method} {path} with {label} is refused", f"{status} from {who}")
-    # Two values of the header: Node keeps the first, so whichever Traefik reads, the second never decides who the caller is.
+    # Two values of the header. Traefik's HeaderRegexp reads every value, so a machine's token in either place is refused, and Node, which keeps
+    # only the first, never sees one.
     status, answered, body = client.ask("GET", "/api/v1/organization", headers={"Authorization": "Bearer " + identity}, extra=[("Authorization", "Bearer " + person)])
-    who = who_answered(status, answered, body, real)
+    who = who_answered(status, answered, body, real, "GET")
     report.row("PASS" if who != "backend" else "FAIL", "a machine identity's token first and a person's second is refused", f"{status} from {who}")
     status, answered, body = client.ask("GET", "/api/v1/organization", headers={"Authorization": "Bearer " + person}, extra=[("Authorization", "Bearer " + identity)])
-    who = who_answered(status, answered, body, real)
-    report.row("PASS", "a person's session first and a machine identity's token second: Node keeps the first, so this is the person's either way", f"{status} from {who}")
+    who = who_answered(status, answered, body, real, "GET")
+    report.row("PASS" if who != "backend" else "FAIL", "a person's session first and a machine identity's token second is refused too, because Traefik reads every value", f"{status} from {who}")
     for method, path in [("GET", "/api/v1/organization"), ("GET", "/api/v4/secrets?projectId=x&environment=prod"), ("GET", "/api/v1/user")]:
         status, answered, body = client.ask(method, path, headers={"Authorization": "Bearer " + person})
-        who = who_answered(status, answered, body, real)
+        who = who_answered(status, answered, body, real, method)
         report.row("PASS" if who == "backend" else "FAIL", f"{method} {path} with a person's session reaches the backend", f"{status} from {who}")
 
     print("== other ways to ask")
@@ -576,15 +606,24 @@ def run(arguments: argparse.Namespace) -> int:
     ]
     for label, method, target, headers in tricks:
         status, answered, body = client.ask(method, target, headers=headers)
-        who = who_answered(status, answered, body, real)
+        who = who_answered(status, answered, body, real, method)
         seen = ""
         if who == "backend" and not real:
             seen = json.loads(body.decode("latin-1")).get(ECHO_MARK, "")
-        # A POST to /login with a header naming a refused path reaches Fastify as a POST to /login, which has no such route. The echo row says what arrived.
-        bad = ("universal-auth" in seen and label.startswith("absolute")) or (real and who == "backend" and label.startswith("absolute"))
-        report.row("FAIL" if bad else "PASS", f"{label}", f"{status} from {who} {seen}")
+        if label.startswith("absolute"):
+            bad = "universal-auth" in seen or (real and who == "backend")
+            report.row("FAIL" if bad else "PASS", f"{label}", f"{status} from {who} {seen}")
+        elif not real:
+            # Traefik passes these headers on and acts on none of them, so the backend gets the request line as it was sent: the method and
+            # path the route read, and not the ones a header names.
+            sent = f"{method} {target} HTTP/1.1"
+            report.row("PASS" if seen == sent else "FAIL", f"{label} changes nothing Traefik forwards", f"{status} from {who}: {seen or 'nothing arrived'}")
+        else:
+            # Infisical's own answer, with no session to show a difference. This version's server reads none of these headers, which is read
+            # from its code, and so this row holds nothing to a verdict.
+            report.row("INFO", f"{label} with Infisical behind the route", f"{status} from {who}")
     status, answered, body = client.ask("POST", "/api/v1/auth/universal-auth/login", version="HTTP/1.0")
-    who = who_answered(status, answered, body, real)
+    who = who_answered(status, answered, body, real, "POST")
     report.row("FAIL" if who == "backend" else "PASS", "HTTP/1.0 on a refused path", f"{status} from {who}")
 
     print("== the same spellings over HTTP/2, where the path travels as a header of its own")
@@ -599,11 +638,13 @@ def run(arguments: argparse.Namespace) -> int:
                 f"https://{HOST}:{arguments.port}{target}",
             ]
             answer = subprocess.run(command, capture_output=True, text=True, errors="replace", check=False)
-            tail = answer.stdout.rsplit("\n", 1)[-1]
+            output, _, tail = answer.stdout.rpartition("\n")
             code = tail.split(" ")[0] if tail else "000"
-            lower = answer.stdout.lower()
-            seen = re.search(ECHO_MARK + r'": "POST ([^ ]+) ', answer.stdout)
-            if (seen and fastify_reads(seen.group(1)) == path) or (real and "x-download-options" in lower and '"statuscode":404' not in lower):
+            # -D - and -o - print the headers, a blank line and the body, and -w adds its line after them. Text mode has made each CRLF a LF.
+            head, _, payload = output.partition("\n\n")
+            seen = re.search(ECHO_MARK + r'": "POST ([^ ]+) ', payload)
+            infisical_ran = "x-download-options" in head.lower() and not infisical_found_no_route(int(code) if code.isdigit() else 0, payload.encode(), "POST")
+            if (seen and fastify_reads(seen.group(1)) == path) or (real and infisical_ran):
                 report.row("FAIL", f"h2 POST {target} is refused [{label}]", f"{code} reached the backend {seen.group(1) if seen else ''}")
             else:
                 report.row("PASS", f"h2 POST {target} is refused [{label}]", f"{code} {tail} {seen.group(1) if seen else ''}")
@@ -611,7 +652,7 @@ def run(arguments: argparse.Namespace) -> int:
     if echo is not None:
         print(f"the echo server received {len(echo.lines)} requests in all")
     pathlib.Path(arguments.log).write_text("\n".join(report.lines) + "\n")
-    print(f"SUMMARY passed={report.passed} failed={report.failed}, each row in {arguments.log}")
+    print(f"SUMMARY passed={report.passed} failed={report.failed} info={report.info}, each row in {arguments.log}")
     return 1 if report.failed else 0
 
 
