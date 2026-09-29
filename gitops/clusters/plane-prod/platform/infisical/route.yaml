@@ -1,0 +1,127 @@
+# Infisical's public route, https://infisical.bereket.dev, for its one admin's browser. It holds every production secret, and the owner has
+# chosen to put it on the internet: docs/adr/0017-infisical-public-route.md says why, and what risk is left. policy/hosted.rego allows these
+# four routes in these words and no others, and tests/routes/infisical-public-route.sh proves each against the pinned Traefik.
+#
+# An allow list for the API and a list of refusals for pages, from what this version's running server and its web client showed. The server
+# registers 3746 API routes in 98 families, and its OpenAPI document leaves out 1186 of them, the sign-in, MFA, sign-up and SCIM among them.
+# The web client names 879 API paths in 81 of those families. So a family is let through when the client calls it, and one that a later
+# version adds is refused until a person reads it, which is the right way for a secret store to fail. Pages are one index.html whatever the
+# path, and hold no credential, so for them a list of what to refuse is enough.
+#
+# The four routes share no path, so their order means nothing, and with the first two gone their paths are refused and not unlimited. Where a
+# path's spelling differs, Traefik answers 404 or 400 before Infisical sees it: the rules read the path decoded and cleaned of dot segments,
+# with an encoded slash kept encoded, as Fastify's router reads it too.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: infisical
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    # After the server, so its first answer is not Traefik's 503.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  entryPoints: [websecure]
+  routes:
+    # What a guess is made against: a password or a code. One correct sign-in with an authenticator app makes 2 of these, measured through this
+    # route in Chrome, and each mistake one more.
+    - kind: Rule
+      match: >-
+        Host(`infisical.bereket.dev`) && Method(`POST`) && (Path(`/api/v3/auth/login`) || Path(`/api/v2/auth/mfa/send`)
+        || Path(`/api/v2/auth/mfa/verify`) || Path(`/api/v2/auth/mfa/verify/recovery-code`)
+        || PathRegexp(`^/api/v2/mfa-sessions/[^/]+/verify$`) || Path(`/api/v2/password/user/password-reset`)
+        || Path(`/api/v1/password/password-setup`) || Path(`/api/v1/password/email/password-setup`))
+      middlewares:
+        - name: infisical-guess-limit
+      services:
+        - name: infisical
+          port: 8080
+    # What a session is carried by, and no guess can be made against: each takes a token this server signed. One correct sign-in with an
+    # authenticator app makes 4 of these, and every page load one more, measured the same way, so this limit is a wider one.
+    - kind: Rule
+      match: >-
+        Host(`infisical.bereket.dev`) && ((Method(`POST`) && (Path(`/api/v3/auth/select-organization`) || Path(`/api/v1/auth/token`)
+        || Path(`/api/v1/auth/logout`))) || (Method(`GET`) && (Path(`/api/v2/auth/mfa/check/totp`) || Path(`/api/v2/auth/mfa/check/webauthn`))))
+      middlewares:
+        - name: infisical-session-limit
+      services:
+        - name: infisical
+          port: 8080
+    # The rest of the API a browser calls. Left off the first list: machine logins, the OpenAPI document, SCIM, sign-up, invitations, account
+    # recovery, shared secrets, and the families no page calls. The second list takes back what a family holds for a machine or a stranger:
+    # gateways', relays', agents' and KMIP's own calls, ACME, OCSP and CRLs, callbacks for integrations this platform has none of, the SSO
+    # logins, and the few calls that take only a machine's credential, as an identity reading its own details. The last lines refuse any
+    # request carrying a machine's credential: a machine identity's access token, whose payload always begins {"identityId": and so
+    # eyJpZGVudGl0eUlkIjo, a service token, which Infisical reads after the scheme's 7 characters, or an API key. A person's session begins
+    # {"authMethod":, and no browser sends the others. Infisical reads 7 bytes and a regexp 7 characters, so a header with any byte outside
+    # printable ASCII is refused whole, and then the two agree.
+    - kind: Rule
+      match: >-
+        Host(`infisical.bereket.dev`)
+        && PathRegexp(`^/api/(status$|v1/auth/([a-z-]+-auth/identities|token-auth/tokens)/|v1/(access-approvals|admin|agent-vault|alerts|announcement|app-connections|approval-policies|audit-log-streams|cert-manager|dashboard|delegated-approvals|dynamic-secrets|email-domains|external-kms|gateway-pools|github-apps|github-org-sync-config|groups|honey-tokens|identities|identity-templates|insights|integration|integration-auth|kmip|kms|ldap|notifications|oauth|organization|organization-admin|organizations|pam|pit|pki|project-folder-grants|project-templates|projects|proxied-services|relays|reminders|secret-approval-requests|secret-syncs|secret-validation-rules|secrets|sso|sub-organizations|user|user-activation|user-engagement|user-project-additional-privilege|webhooks|workflow-integrations)(/|$)|v2/(folders|gateways|identities|identity-project-additional-privilege|mfa-sessions|organizations|pki|relays|secret-approvals|secret-imports|secret-rotations|secret-scanning|secret-versions|service-token|users)(/|$)|v3/(external-migration|gateways)(/|$)|v4/secrets(/|$))`)
+        && !PathRegexp(`(?i)^/api/(v1/(admin/(bootstrap|signup)|agent-vault/(proxy|session)/|announcement/assets/|cert-manager/(acme|crl|ocsp)/|delegated-approvals/callback|github-apps/manifest/callback|honey-tokens/aws/trigger|identities/details|kmip/(server-registration|servers/(connect|login)|spec/)|ldap/login|oauth/(authorize|token|validate)|organization/agent-proxy-ca|pam/accounts/[^/]+/web-access($|/)|pam/sessions/[^/]+/(chunks(/presigned-put)?|credentials|end)($|/)|pki/ca/[^/]+/certificates/[^/]+/der|proxied-services/[^/]+/report-usage|relays/(heartbeat|register)|sso/(github|gitlab|google|oidc/(callback|login)|redirect|saml2|token-exchange)|user/[^/]+/unlock|workflow-integrations/(microsoft-teams/message-endpoint|slack/oauth_redirect))|v2/(gateways/(heartbeat|metrics|pam-session-key)|mfa-sessions/[^/]+/verify|relays/(connect|heartbeat|login))|v3/gateways/(connect|login|token-auth/enroll))`)
+        && !(Method(`POST`) && PathRegexp(`(?i)^/api/v2/gateways/?$`))
+        && !((Method(`GET`) || Method(`HEAD`)) && PathRegexp(`(?i)^/api/v2/service-token/?$`))
+        && !HeaderRegexp(`Authorization`, `[^ -~]|^.{7}st\.|\.eyJpZGVudGl0eUlkIjo`)
+        && !HeaderRegexp(`X-Api-Key`, `.*`)
+      services:
+        - name: infisical
+          port: 8080
+    # The pages and their files. Every path that is not one of these is the same index.html, so this needs no list of them, only of those to
+    # refuse. Case is ignored there, because the web client's own router ignores it, and because with it ignored /API goes the way /api does.
+    # A page's path has no need of an encoded slash, a semicolon or a percent sign, and %20 is for the images with a space in their name, so the
+    # rest never reaches a router that might read them another way.
+    - kind: Rule
+      match: >-
+        Host(`infisical.bereket.dev`) && PathRegexp(`^/([A-Za-z0-9._~@:$/-]|%20)*$`)
+        && !PathRegexp(`(?i)^/(api|\.well-known|scep|secret-scanning|signup|admin/signup|requestnewinvite|account-recovery|email-not-verified|login/(ldap|oidc|saml|provider)|cli-redirect|share-secret|shared|secret-request)`)
+      services:
+        - name: infisical
+          port: 8080
+  tls:
+    secretName: infisical-tls
+---
+# A person's guesses, measured per client, as Grafana's login is. The connection's address and no header, because this entry point trusts no
+# forwarded header and a client could otherwise send a new one with each try. One correct sign-in spends 2, and with three mistakes 5, so
+# ten leaves room for twice that in a minute, and after it one more try every 6 seconds.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: infisical-guess-limit
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      ipStrategy:
+        depth: 0
+---
+# Enough that thirty tabs can come back at once, and a page load every two seconds after that. It bounds what one address can ask of the
+# server, and a person loading pages does not reach it.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: infisical-session-limit
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  rateLimit:
+    average: 30
+    period: 1m
+    burst: 30
+    sourceCriterion:
+      ipStrategy:
+        depth: 0

@@ -22,8 +22,8 @@ spec:
     - repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
       targetRevision: deploy/plane-prod
       ref: values
-    # Postgres, Redis and the server's ServiceAccount: the chart has no hook for them, and the values file disables its
-    # bundled copies. No route: reach it through the SSH tunnel and a port-forward.
+    # Postgres, Redis, the server's ServiceAccount and its public route: the chart has no hook for them, and the values file
+    # disables its bundled copies and its Ingress. The route is policy/hosted.rego's words, and the tunnel still reaches the server.
     - repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
       targetRevision: deploy/plane-prod
       path: gitops/clusters/plane-prod/platform/infisical

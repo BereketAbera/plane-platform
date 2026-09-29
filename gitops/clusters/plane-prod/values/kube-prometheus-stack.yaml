@@ -193,7 +193,7 @@ alertmanager:
 
 grafana:
   fullnameOverride: kps-grafana
-  # The one console with a public route, https://grafana.bereket.dev, which is the IngressRoute in monitoring-extras and not the
+  # One of the two consoles with a public route, https://grafana.bereket.dev, which is the IngressRoute in monitoring-extras and not the
   # chart's Ingress, because policy/hosted.rego refuses every Ingress in Git.
   ingress: { enabled: false }
   image:
