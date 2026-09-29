@@ -47,3 +47,41 @@ test_one_object_alone_ignored if {
 	count(hosted_combined.deny) == 0 with input as grafana("Deployment")
 	count(hosted_combined.deny) == 0 with input as {"kind": "ConfigMap", "data": {"contents": grafana("Deployment")}}
 }
+
+infisical(kind, name) := {"kind": kind, "metadata": {"name": name, "namespace": "infisical"}}
+
+infisical_everything := [
+	infisical("IngressRoute", "infisical"),
+	infisical("Middleware", "infisical-guess-limit"),
+	infisical("Middleware", "infisical-session-limit"),
+	infisical("Probe", "infisical"),
+	infisical("Probe", "infisical-claimed"),
+	infisical("Probe", "infisical-sign-in"),
+	infisical("Probe", "infisical-session"),
+]
+
+# The IngressRoute and a Probe share the name infisical, so this names the kind too.
+infisical_without(kind, name) := [object | some object in infisical_everything; object != infisical(kind, name)]
+
+test_infisical_route_with_its_limits_and_probes_accepted if {
+	count(hosted_combined.deny) == 0 with input as as_read(infisical_everything)
+}
+
+# Each limit and each Probe, gone, is a route that fails closed or an alert that reads nothing, and neither shows in one object.
+test_infisical_route_without_a_limit_or_a_probe_rejected if {
+	every gone in [["Middleware", "infisical-guess-limit"], ["Middleware", "infisical-session-limit"], ["Probe", "infisical"], ["Probe", "infisical-claimed"], ["Probe", "infisical-sign-in"], ["Probe", "infisical-session"]] {
+		denied := hosted_combined.deny with input as as_read(infisical_without(gone[0], gone[1]))
+		count(denied) == 1
+		some msg in denied
+		contains(msg, sprintf("%s infisical/%s is not", gone))
+	}
+}
+
+test_infisical_limit_in_another_namespace_rejected if {
+	elsewhere := json.patch(infisical("Middleware", "infisical-guess-limit"), [{"op": "replace", "path": "/metadata/namespace", "value": "monitoring"}])
+	count(hosted_combined.deny) == 1 with input as as_read(array.concat(infisical_without("Middleware", "infisical-guess-limit"), [elsewhere]))
+}
+
+test_no_infisical_route_accepted if {
+	count(hosted_combined.deny) == 0 with input as as_read([infisical("Middleware", "infisical-guess-limit")])
+}

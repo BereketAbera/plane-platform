@@ -410,6 +410,100 @@ deny contains msg if {
 	msg := sprintf("%s: container %q sets %s to %q, and with a public route it must be %q", [identity, c.name, name, got, want])
 }
 
+# ---- What watches Infisical's route
+
+# The alerts in monitoring-extras/shared/rules-hosted.yaml read these Probes by their probe label, and what a reading means by its module. So
+# each is written out here whole: another module, target or label would leave its alerts reading something else, as a claim probe on a
+# module that reads no body leaves all three claim alerts quiet.
+infisical_probes := {
+	"infisical": {"module": "http_infisical_login", "target": "https://infisical.bereket.dev/login"},
+	"infisical-claimed": {"module": "http_infisical_claimed", "target": "https://infisical.bereket.dev/api/v1/admin/config"},
+	"infisical-sign-in": {"module": "http_infisical_no_bearer_post", "target": "https://infisical.bereket.dev/api/v2/auth/mfa/send"},
+	"infisical-session": {"module": "http_infisical_no_bearer", "target": "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"},
+}
+
+infisical_probe_spec(name) := {
+	"jobName": "infisical-http",
+	"interval": "30s",
+	"scrapeTimeout": "10s",
+	"module": infisical_probes[name].module,
+	"prober": {"url": "blackbox.monitoring.svc.cluster.local:9115", "path": "/probe"},
+	"targets": {"staticConfig": {"static": [infisical_probes[name].target], "labels": {"probe": name}}},
+}
+
+deny contains msg if {
+	input.kind == "Probe"
+	in_infisical_namespace
+	not infisical_probes[input.metadata.name]
+	msg := sprintf("%s: the only Probes in namespace %s are %v, which its alerts read", [identity, infisical_namespace, object.keys(infisical_probes)])
+}
+
+deny contains msg if {
+	input.kind == "Probe"
+	in_infisical_namespace
+	infisical_probes[input.metadata.name]
+	input.spec != infisical_probe_spec(input.metadata.name)
+	msg := sprintf("%s: must be exactly %v, because Infisical's alerts read this Probe's module, target and label", [identity, infisical_probe_spec(input.metadata.name)])
+}
+
+# The same label from anywhere else would be a second series those alerts read.
+deny contains msg if {
+	input.kind == "Probe"
+	not in_infisical_namespace
+	label := object.get(input, ["spec", "targets", "staticConfig", "labels", "probe"], "")
+	infisical_probes[label]
+	msg := sprintf("%s: carries probe label %s, which Infisical's alerts read, and only its Probe in namespace %s may", [identity, label, infisical_namespace])
+}
+
+# Each module those Probes use, as blackbox reads it from the ConfigMap kustomize makes of shared/blackbox.yml. Nothing else reads that file.
+infisical_blackbox_modules := {
+	"http_infisical_login": {"prober": "http", "timeout": "5s", "http": {
+		"preferred_ip_protocol": "ip4",
+		"fail_if_not_ssl": true,
+		"valid_status_codes": [200],
+		"fail_if_body_not_matches_regexp": [`<title id="initial-document-title">Infisical</title>`],
+	}},
+	"http_infisical_claimed": {"prober": "http", "timeout": "5s", "http": {
+		"preferred_ip_protocol": "ip4",
+		"fail_if_not_ssl": true,
+		"valid_status_codes": [200],
+		"fail_if_body_json_not_matches_cel": "body.config.initialized == true && body.config.allowSignUp == false",
+	}},
+	"http_infisical_no_bearer": {"prober": "http", "timeout": "5s", "http": {
+		"preferred_ip_protocol": "ip4",
+		"fail_if_not_ssl": true,
+		"valid_status_codes": [401],
+		"fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`],
+	}},
+	"http_infisical_no_bearer_post": {"prober": "http", "timeout": "5s", "http": {
+		"method": "POST",
+		"preferred_ip_protocol": "ip4",
+		"fail_if_not_ssl": true,
+		"valid_status_codes": [401],
+		"fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`],
+	}},
+}
+
+is_blackbox_config if {
+	input.kind == "ConfigMap"
+	object.get(input.metadata, "namespace", "") == "monitoring"
+	startswith(input.metadata.name, "blackbox-config")
+}
+
+deny contains msg if {
+	is_blackbox_config
+	not yaml.is_valid(object.get(input, ["data", "blackbox.yml"], ""))
+	msg := sprintf("%s: blackbox.yml is not YAML, so nothing here can say what Infisical's Probes read", [identity])
+}
+
+deny contains msg if {
+	is_blackbox_config
+	modules := object.get(yaml.unmarshal(object.get(input, ["data", "blackbox.yml"], "")), "modules", {})
+	some name, want in infisical_blackbox_modules
+	object.get(modules, name, "missing") != want
+	msg := sprintf("%s: blackbox module %s is %v, and must be exactly %v, because Infisical's alerts read what it reports", [identity, name, object.get(modules, name, "missing"), want])
+}
+
 public_backend(service) if {
 	public_backends[service.name] == service.port
 	object.get(service, "kind", "Service") == "Service"

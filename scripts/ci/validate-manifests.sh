@@ -104,6 +104,9 @@ if has_yaml "$WORK/hosted"; then
   fi
   check "kubeconform: hosted tree" "${HOSTED_KUBECONFORM[@]}" "$WORK/hosted"
   check "conftest: hosted tree" conftest_run gitops,workloads,plane,hosted "$WORK"/hosted/*.yaml
+  # The tree alone, read at once, so what policy/hosted_combined.rego asks of it is asked without the charts too: Infisical's route and its
+  # limits and Probes are all in the tree. With the charts it runs again below, and Grafana's rules there need them.
+  check "conftest: hosted tree together" conftest test --combine --policy policy --no-color --namespace hosted_combined "$WORK"/hosted/*.yaml
   check "hosted tree stands alone" hosted_tree_stands_alone "$WORK/hosted-alone"
   check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
   check "hosted Alloy scrubs a Telegram bot token" alloy_scrubs_the_telegram_token "$HOSTED_TREE/values/alloy.yaml"
