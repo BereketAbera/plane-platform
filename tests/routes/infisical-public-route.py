@@ -16,11 +16,14 @@ import base64
 import json
 import pathlib
 import re
+import secrets
 import socket
 import ssl
 import subprocess
 import threading
 import time
+import urllib.error
+import urllib.request
 
 HOST = "infisical.bereket.dev"
 ECHO_MARK = "echo-reached-backend"
@@ -651,9 +654,79 @@ def run(arguments: argparse.Namespace) -> int:
 
     if echo is not None:
         print(f"the echo server received {len(echo.lines)} requests in all")
+    if real and arguments.direct:
+        print("== real tokens from this version, made at the backend itself")
+        real_tokens(report, client, arguments.direct)
+
     pathlib.Path(arguments.log).write_text("\n".join(report.lines) + "\n")
     print(f"SUMMARY passed={report.passed} failed={report.failed} info={report.info}, each row in {arguments.log}")
     return 1 if report.failed else 0
+
+
+def direct_call(base: str, method: str, path: str, body: dict | None = None, token: str = "") -> tuple[int, dict]:
+    """A call to the backend itself, past Traefik, as the bootstrap scripts make theirs through a port-forward."""
+    headers = {"Content-Type": "application/json", "User-Agent": "infisical-public-route-test"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(base.rstrip("/") + path, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return response.status, json.loads(response.read() or b"{}")
+    except urllib.error.HTTPError as error:
+        try:
+            return error.code, json.loads(error.read() or b"{}")
+        except ValueError:
+            return error.code, {}
+
+
+def payload_text(token: str) -> str:
+    """A token's payload as the JSON text it was signed as, keys in the order the server wrote them."""
+    part = token.split(".")[1]
+    return base64.urlsafe_b64decode(part + "=" * (-len(part) % 4)).decode("utf-8", "replace")
+
+
+def real_tokens(report: Report, client: Client, direct: str) -> None:
+    """The header refusal reads a machine identity's token by how this version's payload begins, and a person's by how theirs does. Both are
+    made here by the server itself, on a copy nobody has claimed: the bootstrap call hands out the instance admin identity's token, and the
+    admin it makes signs in. So a version that writes its tokens another way fails here, before the route is moved to it."""
+    status, config = direct_call(direct, "GET", "/api/v1/admin/config")
+    if status != 200 or config.get("config", {}).get("initialized") is not False:
+        report.row("INFO", "real tokens", f"the backend at {direct} is claimed already or did not answer ({status}), so it hands out none")
+        return
+    # A throwaway admin for a throwaway copy, made at run time and never printed or kept.
+    email = f"route-test-{secrets.token_hex(4)}@example.invalid"
+    password = secrets.token_hex(24)
+    status, answer = direct_call(direct, "POST", "/api/v1/admin/bootstrap", {"email": email, "password": password, "organization": "route-test"})
+    identity = str(answer.get("identity", {}).get("credentials", {}).get("token", ""))
+    if status != 200 or identity.count(".") != 2:
+        report.row("FAIL", "the bootstrap call on the backend hands out the instance admin identity's token", f"status {status}")
+        return
+    shape = payload_text(identity)
+    report.row("PASS" if shape.startswith('{"identityId":') else "FAIL", 'a machine identity\'s real token begins {"identityId":, which the route reads it by', shape[:14])
+    for method, path in [("GET", "/api/v1/organization"), ("GET", "/api/v4/secrets?projectId=x&environment=prod"), ("GET", "/api/v2/folders")]:
+        status, answered, body = client.ask(method, path, headers={"Authorization": "Bearer " + identity})
+        who = who_answered(status, answered, body, True, method)
+        report.row("PASS" if who != "backend" else "FAIL", f"{method} {path} with a real machine identity's token is refused", f"{status} from {who}")
+    status, _ = direct_call(direct, "GET", "/api/v1/organization", token=identity)
+    report.row("PASS" if status == 200 else "FAIL", "the same token works at the backend itself, so the refusal above is the route's", str(status))
+
+    status, answer = direct_call(direct, "POST", "/api/v3/auth/login", {"email": email, "password": password})
+    first = str(answer.get("accessToken", ""))
+    organizations = direct_call(direct, "GET", "/api/v1/organization", token=first)[1].get("organizations", []) if status == 200 else []
+    session = ""
+    if organizations:
+        status, answer = direct_call(direct, "POST", "/api/v3/auth/select-organization", {"organizationId": organizations[0]["id"]}, token=first)
+        session = str(answer.get("token", "")) if status == 200 else ""
+    if session.count(".") != 2:
+        report.row("FAIL", "the admin the bootstrap call made signs in at the backend", f"status {status}")
+        return
+    shape = payload_text(session)
+    report.row("PASS" if shape.startswith('{"authMethod":') else "FAIL", 'a person\'s real session begins {"authMethod":, which the route lets through', shape[:14])
+    for method, path in [("GET", "/api/v1/organization"), ("GET", "/api/v1/user")]:
+        status, answered, body = client.ask(method, path, headers={"Authorization": "Bearer " + session})
+        who = who_answered(status, answered, body, True, method)
+        report.row("PASS" if who == "backend" and status == 200 else "FAIL", f"{method} {path} with that real session reaches Infisical and is answered", f"{status} from {who}")
 
 
 def main() -> int:
@@ -661,6 +734,8 @@ def main() -> int:
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--echo-port", type=int, default=0)
     parser.add_argument("--backend", choices=["echo", "real"], default="echo")
+    # The backend's own address from this machine, past Traefik. Given with a copy nobody has claimed, real_tokens claims it and asks with what it hands out.
+    parser.add_argument("--direct", default="")
     parser.add_argument("--log", required=True)
     return run(parser.parse_args())
 
