@@ -249,6 +249,10 @@ tests:
     input_series:
       - series: 'probe_success{namespace="infisical",probe="infisical",instance="https://infisical.bereket.dev/login"}'
         values: '1x4 0x20'
+      - series: 'probe_success{namespace="infisical",probe="infisical-sign-in",instance="https://infisical.bereket.dev/api/v2/auth/mfa/send"}'
+        values: '1x24'
+      - series: 'probe_success{namespace="infisical",probe="infisical-session",instance="https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"}'
+        values: '1x24'
     alert_rule_test:
       - { eval_time: 3m, alertname: InfisicalRouteDown, exp_alerts: [] }
       - { eval_time: 8m, alertname: InfisicalRouteDown, exp_alerts: [] }
@@ -256,9 +260,32 @@ tests:
         alertname: InfisicalRouteDown
         exp_alerts:
           - exp_labels: { namespace: infisical, probe: infisical, instance: "https://infisical.bereket.dev/login", severity: warning, component: infisical }
-            exp_annotations: { summary: "https://infisical.bereket.dev has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+            exp_annotations: { summary: "https://infisical.bereket.dev/login has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
       - { eval_time: 16m, alertname: InfisicalRouteNotWatched, exp_alerts: [] }
-  - name: with no probe of Infisical's route or claim running, the rules that say so fire
+  # With a limit's Middleware gone, Traefik answers that part of the route 404, while the page and the config still answer 200.
+  - name: a failing probe of the sign-in or the session part fires InfisicalRouteDown for that path alone
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="infisical",probe="infisical",instance="https://infisical.bereket.dev/login"}'
+        values: '1x24'
+      - series: 'probe_success{namespace="infisical",probe="infisical-sign-in",instance="https://infisical.bereket.dev/api/v2/auth/mfa/send"}'
+        values: '1x4 0x20'
+      - series: 'probe_success{namespace="infisical",probe="infisical-session",instance="https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"}'
+        values: '1x14 0x10'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: InfisicalRouteDown
+        exp_alerts:
+          - exp_labels: { namespace: infisical, probe: infisical-sign-in, instance: "https://infisical.bereket.dev/api/v2/auth/mfa/send", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v2/auth/mfa/send has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+      - eval_time: 21m
+        alertname: InfisicalRouteDown
+        exp_alerts:
+          - exp_labels: { namespace: infisical, probe: infisical-sign-in, instance: "https://infisical.bereket.dev/api/v2/auth/mfa/send", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v2/auth/mfa/send has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+          - exp_labels: { namespace: infisical, probe: infisical-session, instance: "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+  - name: with no probe of Infisical's route or claim running, the rules that say so fire, one for each probe
     interval: 1m
     input_series:
       - series: 'probe_success{namespace="plane-prod",probe="frontend"}'
@@ -269,12 +296,34 @@ tests:
         alertname: InfisicalRouteNotWatched
         exp_alerts:
           - exp_labels: { probe: infisical, severity: warning, component: infisical }
-            exp_annotations: { summary: "The probe of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire" }
+            exp_annotations: { summary: "The probe infisical of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire for it" }
+          - exp_labels: { probe: infisical-sign-in, severity: warning, component: infisical }
+            exp_annotations: { summary: "The probe infisical-sign-in of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire for it" }
+          - exp_labels: { probe: infisical-session, severity: warning, component: infisical }
+            exp_annotations: { summary: "The probe infisical-session of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire for it" }
       - eval_time: 16m
         alertname: InfisicalClaimNotWatched
         exp_alerts:
           - exp_labels: { probe: infisical-claimed, severity: warning, component: infisical }
-            exp_annotations: { summary: "The probe of Infisical's sign-up and admin is not running, so InfisicalOpenToClaim cannot fire" }
+            exp_annotations: { summary: "The probe of Infisical's sign-up and admin is not running, or does not read the config's body, so InfisicalOpenToClaim cannot fire" }
+  # Read with the pinned blackbox: http_infisical_login on the claim's target gives probe_success 0 and no probe_failed_due_to_cel series, so
+  # neither InfisicalOpenToClaim nor InfisicalClaimNotRead can fire. Only the watch says so.
+  - name: the claim probe with a module that reads no body with CEL is not watched
+    interval: 30s
+    input_series:
+      - series: 'probe_success{namespace="infisical",probe="infisical-claimed",instance="https://infisical.bereket.dev/api/v1/admin/config"}'
+        values: '0x80'
+      - series: 'probe_success{namespace="infisical",probe="infisical",instance="https://infisical.bereket.dev/login"}'
+        values: '1x80'
+    alert_rule_test:
+      - { eval_time: 39m, alertname: InfisicalOpenToClaim, exp_alerts: [] }
+      - { eval_time: 39m, alertname: InfisicalClaimNotRead, exp_alerts: [] }
+      - { eval_time: 14m, alertname: InfisicalClaimNotWatched, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: InfisicalClaimNotWatched
+        exp_alerts:
+          - exp_labels: { probe: infisical-claimed, severity: warning, component: infisical }
+            exp_annotations: { summary: "The probe of Infisical's sign-up and admin is not running, or does not read the config's body, so InfisicalOpenToClaim cannot fire" }
   # As the pinned blackbox reads it, run in Docker against an answer of each kind: claimed and shut, 0; open, unclaimed, a field gone or a page
   # that is not JSON, 1. A 404 or a 500 leaves it at 0 with probe_success 0.
   - name: sign-up open or no admin is critical at the first reading, and a claimed instance is quiet

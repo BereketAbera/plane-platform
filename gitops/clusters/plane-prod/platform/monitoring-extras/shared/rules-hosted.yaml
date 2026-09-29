@@ -98,18 +98,23 @@ spec:
     - name: hosted.infisical
       interval: 30s
       rules:
+        # Its page, and one path under each of the route's two limits: a limit's Middleware gone turns sign-in or token refresh into
+        # Traefik's 404, and only its own probe sees that.
         - alert: InfisicalRouteDown
-          expr: probe_success{probe="infisical"} == 0
+          expr: probe_success{probe=~"infisical|infisical-sign-in|infisical-session"} == 0
           for: 5m
           labels: { severity: warning, component: infisical }
           annotations:
-            summary: https://infisical.bereket.dev has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route
+            summary: "{{ $labels.instance }} has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route"
         - alert: InfisicalRouteNotWatched
-          expr: absent(probe_success{probe="infisical"})
+          expr: |
+            absent(probe_success{probe="infisical"})
+              or absent(probe_success{probe="infisical-sign-in"})
+              or absent(probe_success{probe="infisical-session"})
           for: 15m
           labels: { severity: warning, component: infisical }
           annotations:
-            summary: The probe of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire
+            summary: The probe {{ $labels.probe }} of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire for it
         # At once, as NetworkPolicyNotEnforced: the body was read and says it, so this is never a flake. scripts/hosted/README.md, section
         # Infisical reads open, says what to do.
         - alert: InfisicalOpenToClaim
@@ -123,12 +128,16 @@ spec:
           labels: { severity: warning, component: infisical }
           annotations:
             summary: The config at https://infisical.bereket.dev/api/v1/admin/config has not answered for 10m, so InfisicalOpenToClaim cannot fire
+        # With another module on the Probe, probe_success reads 0 and there is no probe_failed_due_to_cel at all, so the two rules above
+        # stay quiet. Only a module that reads the body with CEL gives that series, so its absence counts as not watched too.
         - alert: InfisicalClaimNotWatched
-          expr: absent(probe_success{probe="infisical-claimed"})
+          expr: |
+            absent(probe_success{probe="infisical-claimed"})
+              or absent(probe_failed_due_to_cel{probe="infisical-claimed"})
           for: 15m
           labels: { severity: warning, component: infisical }
           annotations:
-            summary: The probe of Infisical's sign-up and admin is not running, so InfisicalOpenToClaim cannot fire
+            summary: The probe of Infisical's sign-up and admin is not running, or does not read the config's body, so InfisicalOpenToClaim cannot fire
     # The metric appears only after a first success, so absent also covers a CronJob that has never worked, and for: gives the first
     # nightly run time to happen. PlaneBackupFailed sees only a Job that ran and failed, and misses one that never runs.
     - name: hosted.backups
