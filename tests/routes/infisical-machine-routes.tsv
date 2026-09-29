@@ -1,0 +1,44 @@
+# Every route Infisical v0.167.6 registers that refuses a person's session by its kind, read by asking each registered route with the admin's
+# own session on a throwaway copy of this version: verifyAuth answered 403 Forbidden access to it. So each takes only a machine's credential,
+# and no browser calls it. tests/routes/infisical-public-route.py asks each through the public route, and each must not reach the server.
+# decision, method, route
+refused	POST	/api/v1/agent-vault/proxy/bootstrap
+refused	POST	/api/v1/agent-vault/proxy/heartbeat
+refused	POST	/api/v1/agent-vault/proxy/resolve
+refused	POST	/api/v1/agent-vault/proxy/services/:serviceId/credential-refresh
+refused	POST	/api/v1/agent-vault/proxy/services/:serviceId/missing-scopes
+refused	POST	/api/v1/agent-vault/proxy/sessions/:sessionId/logs/chunks
+refused	GET	/api/v1/identities/details
+refused	POST	/api/v1/kmip/server-registration
+refused	POST	/api/v1/kmip/servers/connect
+refused	GET	/api/v1/oauth/validate
+refused	GET	/api/v1/organization/agent-proxy-ca
+refused	POST	/api/v1/organization/agent-proxy-ca/sign
+refused	POST	/api/v1/pam/sessions/:sessionId/chunks
+refused	POST	/api/v1/pam/sessions/:sessionId/chunks/presigned-put
+refused	GET	/api/v1/pam/sessions/:sessionId/credentials
+refused	POST	/api/v1/pam/sessions/:sessionId/end
+refused	POST	/api/v1/relays/heartbeat-org-relay
+refused	POST	/api/v1/relays/register-org-relay
+refused	GET	/api/v1/scim/Groups
+refused	POST	/api/v1/scim/Groups
+refused	DELETE	/api/v1/scim/Groups/:groupId
+refused	GET	/api/v1/scim/Groups/:groupId
+refused	PATCH	/api/v1/scim/Groups/:groupId
+refused	PUT	/api/v1/scim/Groups/:groupId
+refused	GET	/api/v1/scim/ServiceProviderConfig
+refused	GET	/api/v1/scim/Users
+refused	POST	/api/v1/scim/Users
+refused	DELETE	/api/v1/scim/Users/:orgMembershipId
+refused	GET	/api/v1/scim/Users/:orgMembershipId
+refused	PATCH	/api/v1/scim/Users/:orgMembershipId
+refused	PUT	/api/v1/scim/Users/:orgMembershipId
+refused	POST	/api/v2/gateways
+refused	POST	/api/v2/gateways/heartbeat
+refused	POST	/api/v2/gateways/metrics
+refused	GET	/api/v2/gateways/pam-session-key
+refused	POST	/api/v2/relays/connect
+refused	POST	/api/v2/relays/heartbeat
+refused	GET	/api/v2/service-token
+refused	POST	/api/v3/gateways/connect
+refused	DELETE	/api/v3/secrets/tags/:secretName
