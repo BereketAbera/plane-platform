@@ -1110,3 +1110,87 @@ test_blackbox_module_for_infisical_changed_rejected if {
 test_other_config_maps_in_monitoring_ignored if {
 	count(hosted.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "alert-sink-5h2m8c", "namespace": "monitoring"}, "data": {"sink.py": "print()"}}
 }
+
+# Every policy in namespace infisical that admits anything, as the hosted tree writes it.
+server_pods := {"matchLabels": {"app": "infisical-standalone", "component": "infisical"}}
+
+traefik_peer := {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}}
+
+netpol(namespace, name, spec) := {"apiVersion": "networking.k8s.io/v1", "kind": "NetworkPolicy", "metadata": {"name": name, "namespace": namespace}, "spec": spec}
+
+infisical_postgres_policy := netpol("infisical", "infisical-postgres", {
+	"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}},
+	"policyTypes": ["Ingress"],
+	"ingress": [{"from": [{"podSelector": server_pods}, {"podSelector": {"matchLabels": {"app.kubernetes.io/component": "backup"}}}], "ports": [{"protocol": "TCP", "port": 5432}]}],
+})
+
+infisical_policies := [
+	netpol("infisical", "infisical-server", {
+		"podSelector": server_pods,
+		"policyTypes": ["Ingress", "Egress"],
+		"ingress": [
+			{"from": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}}], "ports": [{"protocol": "TCP", "port": 8080}]},
+			{"from": [traefik_peer], "ports": [{"protocol": "TCP", "port": 8080}]},
+		],
+		"egress": [
+			{"to": [{"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}}], "ports": [{"protocol": "TCP", "port": 5432}]},
+			{"to": [{"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-redis"}}}], "ports": [{"protocol": "TCP", "port": 6379}]},
+			{"to": [{"ipBlock": {"cidr": "5.253.234.127/32"}}], "ports": [{"protocol": "TCP", "port": 6443}]},
+		],
+	}),
+	infisical_postgres_policy,
+	netpol("infisical", "infisical-redis", {
+		"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-redis"}},
+		"policyTypes": ["Ingress"],
+		"ingress": [{"from": [{"podSelector": server_pods}], "ports": [{"protocol": "TCP", "port": 6379}]}],
+	}),
+	netpol("infisical", "acme-http01-solver", {
+		"podSelector": {"matchLabels": {"acme.cert-manager.io/http01-solver": "true"}},
+		"policyTypes": ["Ingress"],
+		"ingress": [{"from": [traefik_peer], "ports": [{"protocol": "TCP", "port": 8089}]}],
+	}),
+	netpol("infisical", "default-deny", {"podSelector": {}, "policyTypes": ["Ingress", "Egress"]}),
+]
+
+test_infisical_network_policies_accepted if {
+	every policy in infisical_policies {
+		count(hosted.deny) == 0 with input as policy
+	}
+}
+
+# NetworkPolicy adds up, so a rule more anywhere in the namespace is a way in.
+test_a_way_into_infisical_postgres_rejected if {
+	says(json.patch(infisical_postgres_policy, [{"op": "add", "path": "/spec/ingress/0/from/-", "value": {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}}}]), "spec must be exactly")
+	says(json.patch(infisical_postgres_policy, [{"op": "replace", "path": "/spec/ingress/0/from/0", "value": {"podSelector": {}}}]), "spec must be exactly")
+	says(netpol("infisical", "open", {"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}, "ingress": [{}]}), "admits traffic into namespace infisical")
+	says(netpol("infisical", "allow-all", {"podSelector": {}, "policyTypes": ["Ingress"], "ingress": [{"from": [{"namespaceSelector": {}}]}]}), "admits traffic into namespace infisical")
+	says(json.patch(infisical_policies[0], [{"op": "replace", "path": "/spec/podSelector", "value": {}}]), "spec must be exactly")
+}
+
+traefik_egress_rules := [
+	{"to": [{"ipBlock": {"cidr": "5.253.234.127/32"}}], "ports": [{"protocol": "TCP", "port": 6443}]},
+	{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}}], "ports": [{"protocol": "TCP", "port": 3000}, {"protocol": "TCP", "port": 8000}, {"protocol": "TCP", "port": 8089}, {"protocol": "TCP", "port": 9000}]},
+	{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "monitoring"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "grafana"}}}], "ports": [{"protocol": "TCP", "port": 3000}]},
+	{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "infisical"}}, "podSelector": server_pods}], "ports": [{"protocol": "TCP", "port": 8080}]},
+	{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "infisical"}}, "podSelector": {"matchLabels": {"acme.cert-manager.io/http01-solver": "true"}}}], "ports": [{"protocol": "TCP", "port": 8089}]},
+]
+
+traefik_egress(rules) := netpol("traefik", "traefik-egress", {"podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}, "policyTypes": ["Egress"], "egress": rules})
+
+test_traefik_egress_accepted if {
+	count(hosted.deny) == 0 with input as traefik_egress(traefik_egress_rules)
+}
+
+test_traefik_egress_wider_into_infisical_rejected if {
+	every rule in [
+		{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "infisical"}}, "podSelector": {}}], "ports": [{"protocol": "TCP", "port": 8080}, {"protocol": "TCP", "port": 5432}]},
+		{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "infisical"}}, "podSelector": server_pods}], "ports": [{"protocol": "TCP", "port": 8080}, {"protocol": "TCP", "port": 6379}]},
+		{"to": [{"namespaceSelector": {}}], "ports": [{"protocol": "TCP", "port": 5432}]},
+		{"to": [{"namespaceSelector": {"matchExpressions": [{"key": "kubernetes.io/metadata.name", "operator": "In", "values": ["infisical"]}]}}]},
+		{"to": [{"ipBlock": {"cidr": "10.244.0.0/16"}}], "ports": [{"protocol": "TCP", "port": 5432}]},
+		{"to": [{"ipBlock": {"cidr": "0.0.0.0/0"}}]},
+		{"ports": [{"protocol": "TCP", "port": 5432}]},
+	] {
+		says(traefik_egress(array.concat(traefik_egress_rules, [rule])), "where Traefik reaches only Infisical's server on 8080 and a solver on 8089")
+	}
+}
