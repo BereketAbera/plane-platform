@@ -86,6 +86,8 @@ tests:
         values: '1x40'
       - series: 'certmanager_certificate_ready_status{namespace="monitoring",name="grafana-tls",condition="True"}'
         values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="infisical",name="infisical-tls",condition="True"}'
+        values: '1x40'
     alert_rule_test:
       - { eval_time: 29m, alertname: CertificateNotReady, exp_alerts: [] }
       - eval_time: 31m
@@ -94,7 +96,7 @@ tests:
           - exp_labels: { namespace: plane-prod, name: wayline-tls, condition: "False", severity: critical, component: certificate }
             exp_annotations: { summary: "Certificate plane-prod/wayline-tls has not been Ready for 30m" }
       - { eval_time: 31m, alertname: CertificateNotWatched, exp_alerts: [] }
-  - name: cert-manager reporting nothing for either certificate fires, because the rules above would stay silent
+  - name: cert-manager reporting nothing for any of the three certificates fires, because the rules above would stay silent
     interval: 1m
     input_series:
       - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="another",condition="True"}'
@@ -108,6 +110,39 @@ tests:
             exp_annotations: { summary: "cert-manager reports nothing for wayline-tls, so the certificate alerts cannot fire" }
           - exp_labels: { name: grafana-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "cert-manager reports nothing for grafana-tls, so the certificate alerts cannot fire" }
+          - exp_labels: { name: infisical-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for infisical-tls, so the certificate alerts cannot fire" }
+  - name: with only infisical-tls missing, the same rule names it alone
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="wayline-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="monitoring",name="grafana-tls",condition="True"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: CertificateNotWatched
+        exp_alerts:
+          - exp_labels: { name: infisical-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for infisical-tls, so the certificate alerts cannot fire" }
+  - name: infisical-tls fires like any other certificate, under the namespace it lives in
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="infisical",name="infisical-tls",condition="False"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_expiration_timestamp_seconds{namespace="infisical",name="infisical-tls"}'
+        values: '1209600x40'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: CertificateNotReady
+        exp_alerts:
+          - exp_labels: { namespace: infisical, name: infisical-tls, condition: "False", severity: critical, component: certificate }
+            exp_annotations: { summary: "Certificate infisical/infisical-tls has not been Ready for 30m" }
+      - eval_time: 1m
+        alertname: CertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: infisical, name: infisical-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "Certificate infisical/infisical-tls expires in 13d 23h 59m 0s, so renewal is failing" }
   - name: grafana-tls fires like any other certificate, under the namespace it lives in
     interval: 1m
     input_series:
@@ -154,6 +189,24 @@ tests:
         exp_alerts:
           - exp_labels: { namespace: monitoring, severity: critical, component: certificate }
             exp_annotations: { summary: "The certificate served for monitoring expires in 13d 23h 59m 0s" }
+  - name: the certificate served at Infisical's route fires under its own namespace, with Grafana's and Plane's healthy
+    interval: 1m
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="infisical",instance="https://infisical.bereket.dev/login",probe="infisical"}'
+        values: '1209660x10'
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="infisical",instance="https://infisical.bereket.dev/api/v1/admin/config",probe="infisical-claimed"}'
+        values: '1209660x10'
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="monitoring",instance="https://grafana.bereket.dev/login",probe="grafana"}'
+        values: '2592000x10'
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="plane-prod",instance="https://wayline.bereket.dev/",probe="frontend"}'
+        values: '2592000x10'
+    alert_rule_test:
+      - { eval_time: 0m, alertname: ServedCertificateExpiringSoon, exp_alerts: [] }
+      - eval_time: 2m
+        alertname: ServedCertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: infisical, severity: critical, component: certificate }
+            exp_annotations: { summary: "The certificate served for infisical expires in 13d 23h 59m 0s" }
   - name: a new app's Probe in its own namespace is covered by the same rule, with nothing added for it
     interval: 1m
     input_series:
@@ -191,6 +244,69 @@ tests:
         exp_alerts:
           - exp_labels: { probe: grafana, severity: warning, component: grafana }
             exp_annotations: { summary: "The probe of https://grafana.bereket.dev is not running, so GrafanaRouteDown cannot fire" }
+  - name: Infisical's route failing its probe warns after 5 minutes, and says the operator does not use it
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="infisical",probe="infisical",instance="https://infisical.bereket.dev/login"}'
+        values: '1x4 0x20'
+    alert_rule_test:
+      - { eval_time: 3m, alertname: InfisicalRouteDown, exp_alerts: [] }
+      - { eval_time: 8m, alertname: InfisicalRouteDown, exp_alerts: [] }
+      - eval_time: 11m
+        alertname: InfisicalRouteDown
+        exp_alerts:
+          - exp_labels: { namespace: infisical, probe: infisical, instance: "https://infisical.bereket.dev/login", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+      - { eval_time: 16m, alertname: InfisicalRouteNotWatched, exp_alerts: [] }
+  - name: with no probe of Infisical's route or claim running, the rules that say so fire
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="plane-prod",probe="frontend"}'
+        values: '1x40'
+    alert_rule_test:
+      - { eval_time: 14m, alertname: InfisicalRouteNotWatched, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: InfisicalRouteNotWatched
+        exp_alerts:
+          - exp_labels: { probe: infisical, severity: warning, component: infisical }
+            exp_annotations: { summary: "The probe of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire" }
+      - eval_time: 16m
+        alertname: InfisicalClaimNotWatched
+        exp_alerts:
+          - exp_labels: { probe: infisical-claimed, severity: warning, component: infisical }
+            exp_annotations: { summary: "The probe of Infisical's sign-up and admin is not running, so InfisicalOpenToClaim cannot fire" }
+  # As the pinned blackbox reads it, run in Docker against an answer of each kind: claimed and shut, 0; open, unclaimed, a field gone or a page
+  # that is not JSON, 1. A 404 or a 500 leaves it at 0 with probe_success 0.
+  - name: sign-up open or no admin is critical at the first reading, and a claimed instance is quiet
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="infisical",probe="infisical-claimed",instance="https://infisical.bereket.dev/api/v1/admin/config"}'
+        values: '1x3 0x10'
+      - series: 'probe_failed_due_to_cel{namespace="infisical",probe="infisical-claimed",instance="https://infisical.bereket.dev/api/v1/admin/config"}'
+        values: '0x3 1x10'
+    alert_rule_test:
+      - { eval_time: 2m, alertname: InfisicalOpenToClaim, exp_alerts: [] }
+      - eval_time: 4m
+        alertname: InfisicalOpenToClaim
+        exp_alerts:
+          - exp_labels: { namespace: infisical, probe: infisical-claimed, instance: "https://infisical.bereket.dev/api/v1/admin/config", severity: critical, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v1/admin/config does not read claimed and closed to sign-up, so whoever signs up or claims it first may own every production secret" }
+      - { eval_time: 14m, alertname: InfisicalClaimNotRead, exp_alerts: [] }
+  - name: a config that does not answer is a warning after 10 minutes, and never the critical one
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="infisical",probe="infisical-claimed",instance="https://infisical.bereket.dev/api/v1/admin/config"}'
+        values: '1x3 0x20'
+      - series: 'probe_failed_due_to_cel{namespace="infisical",probe="infisical-claimed",instance="https://infisical.bereket.dev/api/v1/admin/config"}'
+        values: '0x24'
+    alert_rule_test:
+      - { eval_time: 12m, alertname: InfisicalClaimNotRead, exp_alerts: [] }
+      - eval_time: 14m
+        alertname: InfisicalClaimNotRead
+        exp_alerts:
+          - exp_labels: { namespace: infisical, probe: infisical-claimed, instance: "https://infisical.bereket.dev/api/v1/admin/config", severity: warning, component: infisical }
+            exp_annotations: { summary: "The config at https://infisical.bereket.dev/api/v1/admin/config has not answered for 10m, so InfisicalOpenToClaim cannot fire" }
+      - { eval_time: 14m, alertname: InfisicalOpenToClaim, exp_alerts: [] }
   - name: a backup older than 26 hours fires, in either namespace, and other CronJobs do not count
     interval: 1h
     input_series:
