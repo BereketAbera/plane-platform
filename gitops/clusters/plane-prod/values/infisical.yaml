@@ -62,6 +62,11 @@ infisical:
     # pinned Traefik in Docker, a sign-in recorded the CF-Connecting-IP it sent without this, and Traefik's own reading with it.
     - name: TRUSTED_PROXY_CIDRS
       value: "10.244.0.0/16"
+    # Anyone may share a secret through this version's anonymous POST /api/v1/shared-secrets/public unless this is set, and the anonymous
+    # config said isPublicSecretSharingDisabled false on this cluster. The route refuses that call too, and the server should not lean on
+    # it: this is the server's own refusal, which a super admin's Server Console override could still turn back.
+    - name: DISABLE_PUBLIC_SECRET_SHARING
+      value: "true"
     - name: TELEMETRY_ENABLED
       value: "false"
     - name: DISABLE_UPDATE_CHECK
