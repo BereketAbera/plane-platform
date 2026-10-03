@@ -46,8 +46,11 @@ spec:
     - name: hosted.certificates
       interval: 30s
       rules:
+        # cert-manager reports an expiry of 0 for a Certificate that has no certificate yet, so a new one's first order read as one that
+        # had expired 20,000 days ago and paged: grafana-tls did at 07:08 UTC on 7 November, within a minute of being created. A certificate
+        # that is never issued is CertificateNotReady's, below. A renewal that fails still has its old certificate's expiry, so it still fires.
         - alert: CertificateExpiringSoon
-          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 21 * 86400
+          expr: (certmanager_certificate_expiration_timestamp_seconds > 0) - time() < 21 * 86400
           labels: { severity: warning, component: certificate }
           annotations:
             summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}, so renewal is failing
