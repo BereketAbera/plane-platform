@@ -262,9 +262,9 @@ tests:
     input_series:
       - series: 'probe_success{namespace="infisical",probe="infisical",instance="https://infisical.bereket.dev/login"}'
         values: '1x4 0x20'
-      - series: 'probe_success{namespace="infisical",probe="infisical-sign-in",instance="https://infisical.bereket.dev/api/v2/auth/mfa/send"}'
+      - series: 'probe_success{namespace="infisical",probe="infisical-sign-in",instance="https://infisical.bereket.dev/api/v1/password/password-setup"}'
         values: '1x24'
-      - series: 'probe_success{namespace="infisical",probe="infisical-session",instance="https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"}'
+      - series: 'probe_success{namespace="infisical",probe="infisical-session",instance="https://infisical.bereket.dev/api/v1/auth/token"}'
         values: '1x24'
     alert_rule_test:
       - { eval_time: 3m, alertname: InfisicalRouteDown, exp_alerts: [] }
@@ -281,23 +281,23 @@ tests:
     input_series:
       - series: 'probe_success{namespace="infisical",probe="infisical",instance="https://infisical.bereket.dev/login"}'
         values: '1x24'
-      - series: 'probe_success{namespace="infisical",probe="infisical-sign-in",instance="https://infisical.bereket.dev/api/v2/auth/mfa/send"}'
+      - series: 'probe_success{namespace="infisical",probe="infisical-sign-in",instance="https://infisical.bereket.dev/api/v1/password/password-setup"}'
         values: '1x4 0x20'
-      - series: 'probe_success{namespace="infisical",probe="infisical-session",instance="https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"}'
+      - series: 'probe_success{namespace="infisical",probe="infisical-session",instance="https://infisical.bereket.dev/api/v1/auth/token"}'
         values: '1x14 0x10'
     alert_rule_test:
       - eval_time: 11m
         alertname: InfisicalRouteDown
         exp_alerts:
-          - exp_labels: { namespace: infisical, probe: infisical-sign-in, instance: "https://infisical.bereket.dev/api/v2/auth/mfa/send", severity: warning, component: infisical }
-            exp_annotations: { summary: "https://infisical.bereket.dev/api/v2/auth/mfa/send has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+          - exp_labels: { namespace: infisical, probe: infisical-sign-in, instance: "https://infisical.bereket.dev/api/v1/password/password-setup", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v1/password/password-setup has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
       - eval_time: 21m
         alertname: InfisicalRouteDown
         exp_alerts:
-          - exp_labels: { namespace: infisical, probe: infisical-sign-in, instance: "https://infisical.bereket.dev/api/v2/auth/mfa/send", severity: warning, component: infisical }
-            exp_annotations: { summary: "https://infisical.bereket.dev/api/v2/auth/mfa/send has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
-          - exp_labels: { namespace: infisical, probe: infisical-session, instance: "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp", severity: warning, component: infisical }
-            exp_annotations: { summary: "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+          - exp_labels: { namespace: infisical, probe: infisical-sign-in, instance: "https://infisical.bereket.dev/api/v1/password/password-setup", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v1/password/password-setup has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
+          - exp_labels: { namespace: infisical, probe: infisical-session, instance: "https://infisical.bereket.dev/api/v1/auth/token", severity: warning, component: infisical }
+            exp_annotations: { summary: "https://infisical.bereket.dev/api/v1/auth/token has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route" }
   - name: with no probe of Infisical's route or claim running, the rules that say so fire, one for each probe
     interval: 1m
     input_series:

@@ -1058,8 +1058,8 @@ infisical_probe(name, module, target) := {
 infisical_probes := [
 	infisical_probe("infisical", "http_infisical_login", "https://infisical.bereket.dev/login"),
 	infisical_probe("infisical-claimed", "http_infisical_claimed", "https://infisical.bereket.dev/api/v1/admin/config"),
-	infisical_probe("infisical-sign-in", "http_infisical_no_bearer_post", "https://infisical.bereket.dev/api/v2/auth/mfa/send"),
-	infisical_probe("infisical-session", "http_infisical_no_bearer", "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"),
+	infisical_probe("infisical-sign-in", "http_infisical_no_bearer_post", "https://infisical.bereket.dev/api/v1/password/password-setup"),
+	infisical_probe("infisical-session", "http_infisical_no_refresh_cookie", "https://infisical.bereket.dev/api/v1/auth/token"),
 ]
 
 test_infisical_probes_accepted if {
@@ -1075,7 +1075,7 @@ test_infisical_probe_changed_rejected if {
 	says(json.patch(claimed, [{"op": "replace", "path": "/spec/targets/staticConfig/static/0", "value": "https://infisical.bereket.dev/api/status"}]), "must be exactly")
 	says(json.patch(claimed, [{"op": "replace", "path": "/spec/targets/staticConfig/labels/probe", "value": "other"}]), "must be exactly")
 	says(json.patch(claimed, [{"op": "replace", "path": "/spec/interval", "value": "1h"}]), "must be exactly")
-	says(json.patch(infisical_probes[2], [{"op": "replace", "path": "/spec/module", "value": "http_infisical_no_bearer"}]), "must be exactly")
+	says(json.patch(infisical_probes[2], [{"op": "replace", "path": "/spec/module", "value": "http_infisical_no_refresh_cookie"}]), "must be exactly")
 	says(infisical_probe("infisical-extra", "http_2xx", "https://infisical.bereket.dev/"), "the only Probes in namespace infisical")
 }
 
@@ -1089,8 +1089,8 @@ blackbox_modules := {
 	"http_2xx": {"prober": "http"},
 	"http_infisical_login": {"prober": "http", "timeout": "5s", "http": {"preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [200], "fail_if_body_not_matches_regexp": [`<title id="initial-document-title">Infisical</title>`]}},
 	"http_infisical_claimed": {"prober": "http", "timeout": "5s", "http": {"preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [200], "fail_if_body_json_not_matches_cel": "body.config.initialized == true && body.config.allowSignUp == false"}},
-	"http_infisical_no_bearer": {"prober": "http", "timeout": "5s", "http": {"preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [401], "fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`]}},
-	"http_infisical_no_bearer_post": {"prober": "http", "timeout": "5s", "http": {"method": "POST", "preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [401], "fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`]}},
+	"http_infisical_no_bearer_post": {"prober": "http", "timeout": "5s", "http": {"method": "POST", "preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [401], "fail_if_body_not_matches_regexp": [`"message":\s*"Token missing"`]}},
+	"http_infisical_no_refresh_cookie": {"prober": "http", "timeout": "5s", "http": {"method": "POST", "preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [404], "fail_if_body_not_matches_regexp": [`"error":\s*"AuthTokenNotFound"`]}},
 }
 
 blackbox_config(modules) := {"kind": "ConfigMap", "metadata": {"name": "blackbox-config-7c8f5b9t4k", "namespace": "monitoring"}, "data": {"blackbox.yml": yaml.marshal({"modules": modules})}}
@@ -1104,6 +1104,7 @@ test_blackbox_module_for_infisical_changed_rejected if {
 	says(blackbox_config(json.remove(blackbox_modules, ["http_infisical_claimed/http/fail_if_body_json_not_matches_cel"])), "blackbox module http_infisical_claimed")
 	says(blackbox_config(json.patch(blackbox_modules, [{"op": "replace", "path": "/http_infisical_claimed/http/fail_if_body_json_not_matches_cel", "value": "body.config.initialized == true"}])), "blackbox module http_infisical_claimed")
 	says(blackbox_config(json.patch(blackbox_modules, [{"op": "replace", "path": "/http_infisical_no_bearer_post/http/valid_status_codes", "value": [401, 404]}])), "blackbox module http_infisical_no_bearer_post")
+	says(blackbox_config(json.remove(blackbox_modules, ["http_infisical_no_refresh_cookie/http/fail_if_body_not_matches_regexp"])), "blackbox module http_infisical_no_refresh_cookie")
 	says(object.union(blackbox_config(blackbox_modules), {"data": {"blackbox.yml": "modules: [unclosed"}}), "blackbox.yml is not YAML")
 }
 

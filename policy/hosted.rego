@@ -418,8 +418,8 @@ deny contains msg if {
 infisical_probes := {
 	"infisical": {"module": "http_infisical_login", "target": "https://infisical.bereket.dev/login"},
 	"infisical-claimed": {"module": "http_infisical_claimed", "target": "https://infisical.bereket.dev/api/v1/admin/config"},
-	"infisical-sign-in": {"module": "http_infisical_no_bearer_post", "target": "https://infisical.bereket.dev/api/v2/auth/mfa/send"},
-	"infisical-session": {"module": "http_infisical_no_bearer", "target": "https://infisical.bereket.dev/api/v2/auth/mfa/check/totp"},
+	"infisical-sign-in": {"module": "http_infisical_no_bearer_post", "target": "https://infisical.bereket.dev/api/v1/password/password-setup"},
+	"infisical-session": {"module": "http_infisical_no_refresh_cookie", "target": "https://infisical.bereket.dev/api/v1/auth/token"},
 }
 
 infisical_probe_spec(name) := {
@@ -469,18 +469,19 @@ infisical_blackbox_modules := {
 		"valid_status_codes": [200],
 		"fail_if_body_json_not_matches_cel": "body.config.initialized == true && body.config.allowSignUp == false",
 	}},
-	"http_infisical_no_bearer": {"prober": "http", "timeout": "5s", "http": {
-		"preferred_ip_protocol": "ip4",
-		"fail_if_not_ssl": true,
-		"valid_status_codes": [401],
-		"fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`],
-	}},
 	"http_infisical_no_bearer_post": {"prober": "http", "timeout": "5s", "http": {
 		"method": "POST",
 		"preferred_ip_protocol": "ip4",
 		"fail_if_not_ssl": true,
 		"valid_status_codes": [401],
-		"fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`],
+		"fail_if_body_not_matches_regexp": [`"message":\s*"Token missing"`],
+	}},
+	"http_infisical_no_refresh_cookie": {"prober": "http", "timeout": "5s", "http": {
+		"method": "POST",
+		"preferred_ip_protocol": "ip4",
+		"fail_if_not_ssl": true,
+		"valid_status_codes": [404],
+		"fail_if_body_not_matches_regexp": [`"error":\s*"AuthTokenNotFound"`],
 	}},
 }
 
