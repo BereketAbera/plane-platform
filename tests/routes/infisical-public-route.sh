@@ -12,7 +12,8 @@
 #                                                                                              nobody has claimed, the test claims it there and sends the
 #                                                                                              real tokens it hands out through the route
 #
-# Exit, as scripts/test.sh: 0 every row passed, 1 something got through, 2 it could not run. No cluster and no credential: it asks nothing of production.
+# Exit, as scripts/test.sh: 0 every row passed, 1 something got through, 2 nothing did and something could not be asked, a BLOCKED row or the
+# whole run. No cluster and no credential: it asks nothing of production.
 # It listens on this machine's loopback alone. CI has no Docker to spare for this, so it runs by hand, and policy/hosted.rego holds the route to the words it proved.
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"

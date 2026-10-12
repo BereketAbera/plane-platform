@@ -2,7 +2,8 @@
 """What Infisical's public route refuses, in every spelling, asked of the pinned Traefik with the manifest in this repository.
 
 Run by tests/routes/infisical-public-route.sh, which starts that Traefik. Standard library only. Requests go out as raw bytes, because any
-HTTP client tidies a path before it sends it, and that tidying is what this exists to try without.
+HTTP client tidies a path before it sends it, and that tidying is what this exists to try without. --selftest checks this file's own
+verdicts with no Docker, no Traefik and no Infisical, so CI can run it.
 
 Each row says who answered. A refused path passes when Traefik answers it, and fails when it reaches the backend. With the echo server
 behind Traefik, that means the request got through in any shape, which is the proof that nothing refused arrives. With a real Infisical
@@ -13,6 +14,8 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
+import io
 import json
 import pathlib
 import re
@@ -373,20 +376,28 @@ class Report:
     def __init__(self) -> None:
         self.failed = 0
         self.passed = 0
+        self.blocked = 0
         self.info = 0
         self.lines: list[str] = []
 
     def row(self, verdict: str, name: str, detail: str = "") -> None:
-        # INFO says what was seen where this test has nothing to hold it to, and counts neither way.
+        # INFO says what was seen where this test has nothing to hold it to, and counts neither way. BLOCKED says a row could not be asked,
+        # which is no pass and says nothing about the route, as in scripts/test.sh.
         if verdict == "FAIL":
             self.failed += 1
+        elif verdict == "BLOCKED":
+            self.blocked += 1
         elif verdict == "INFO":
             self.info += 1
         else:
             self.passed += 1
         self.lines.append(f"{verdict:5} {name} {detail}".rstrip())
-        if verdict == "FAIL":
+        if verdict in ("FAIL", "BLOCKED"):
             print(self.lines[-1])
+
+    def exit_code(self) -> int:
+        """1 when something got through, else 2 when something could not be asked, else 0."""
+        return 1 if self.failed else 2 if self.blocked else 0
 
 
 def infisical_found_no_route(status: int, body: bytes, method: str) -> bool:
@@ -463,6 +474,65 @@ def refused(report: Report, client: Client, method: str, target: str, label: str
             report.row("FAIL", f"{method} {target} is refused [{label}]", f"status {status}, reached the backend as {forwarded}, which Fastify routes as {route}")
         else:
             report.row("PASS", f"{method} {target} is refused [{label}]", f"{status}: forwarded as {forwarded}, which is not {route} to Fastify's router")
+
+
+def reset_as_malformed(returncode: int, stderr: str) -> bool:
+    """Go's HTTP/2 server resets a stream whose :path it cannot read, as one with %zz or no leading slash, before Traefik sees the request,
+    and curl says so. curl 8.7.1 against the pinned Traefik: exit 92, "HTTP/2 stream 1 was not closed cleanly: PROTOCOL_ERROR (err 1)".
+    That is a refusal, and the same one at every try."""
+    return returncode == 92 and "PROTOCOL_ERROR" in stderr
+
+
+def h2_ask(port: int, target: str, run_command=subprocess.run, pause=time.sleep) -> tuple[int, str, str]:
+    """A POST over HTTP/2, as curl's exit status, what it printed, and what it said went wrong. The target goes as the request target itself,
+    because curl's URL parser refuses one with no leading slash, which left five rows reading PASS with nothing sent, and drops what follows
+    a #. A try that got no answer is made again, as Client.ask makes one, because a refusal is read only from an answer."""
+    command = [
+        "curl", "-k", "-sS", "--http2", "--max-time", "10", "-o", "-", "-w", "\n%{http_code} %{http_version}", "-D", "-",
+        "--resolve", f"{HOST}:{port}:127.0.0.1", "-X", "POST", "-H", "Content-Type: application/json", "--data-binary", "{}",
+        "--request-target", target, f"https://{HOST}:{port}/",
+    ]
+    attempt = 1
+    while True:
+        answer = run_command(command, capture_output=True, text=True, errors="replace", check=False)
+        if answer.returncode == 0 or reset_as_malformed(answer.returncode, answer.stderr) or attempt == 5:
+            return answer.returncode, answer.stdout, answer.stderr
+        pause(attempt)
+        attempt += 1
+
+
+def h2_verdict(returncode: int, stdout: str, stderr: str, path: str, real: bool, arrived: list[str] | None) -> tuple[str, str]:
+    """PASS, FAIL or BLOCKED for one HTTP/2 row, and what it saw. arrived holds the request lines the echo server received while curl asked,
+    and is None with a real backend, which cannot show them. Only an answer over HTTP/2 or a stream reset as malformed is a refusal: no
+    answer is none, and an answer over HTTP/1.1 says nothing of HTTP/2."""
+    output, _, tail = stdout.rpartition("\n")
+    code, _, version = tail.partition(" ")
+    # -D - and -o - print the headers, a blank line and the body, and -w adds its line after them. Text mode has made each CRLF a LF.
+    head, _, payload = output.partition("\n\n")
+    lines = list(arrived or [])
+    if "x-echo-reached: 1" in head.lower():
+        # The echo's own answer too, read as the JSON it is, so a backslash in what it received stays one.
+        try:
+            lines.append(str(json.loads(payload).get(ECHO_MARK, "")))
+        except (ValueError, AttributeError):
+            pass
+    forwarded = [line.split(" ", 1)[1].rsplit(" ", 1)[0] for line in lines if line.count(" ") >= 2]
+    slipped = next((seen for seen in forwarded if fastify_reads(seen) == path), None)
+    if slipped is not None:
+        return "FAIL", f"reached the backend as {slipped}, which Fastify routes as {path}"
+    elsewhere = f", forwarded as {forwarded[0]}, which is not {path} to Fastify's router" if forwarded else ""
+    if reset_as_malformed(returncode, stderr):
+        return "PASS", f"Traefik's HTTP/2 server reset the stream as malformed{elsewhere}"
+    if returncode != 0 or not code.isdigit() or code == "000":
+        said = stderr.strip().splitlines()[-1] if stderr.strip() else f"curl exit {returncode}"
+        return "BLOCKED", f"no answer over HTTP/2: {said}"
+    if version != "2":
+        return "BLOCKED", f"{code} over HTTP/{version}, so this row asked nothing of HTTP/2"
+    if real and "x-download-options" in head.lower():
+        if not infisical_found_no_route(int(code), payload.encode(), "POST"):
+            return "FAIL", f"{code} over HTTP/2, and a route of Infisical's answered"
+        return "PASS", f"{code} over HTTP/2 from infisical-no-route"
+    return "PASS", f"{code} over HTTP/2 from {'backend' if forwarded else 'traefik'}{elsewhere}"
 
 
 def run(arguments: argparse.Namespace) -> int:
@@ -631,26 +701,16 @@ def run(arguments: argparse.Namespace) -> int:
 
     print("== the same spellings over HTTP/2, where the path travels as a header of its own")
     sample = ["/api/v1/auth/universal-auth/login", "/api/docs", "/signup", "/api/v1/admin/bootstrap"]
-    for path in sample:
-        for label, target in spellings(path).items():
-            if "\\" in target or "#" in target:
-                continue
-            command = [
-                "curl", "-k", "-sS", "--http2", "--path-as-is", "--max-time", "10", "-o", "-", "-w", "\n%{http_code} %{http_version}", "-D", "-",
-                "--resolve", f"{HOST}:{arguments.port}:127.0.0.1", "-X", "POST", "-H", "Content-Type: application/json", "--data-binary", "{}",
-                f"https://{HOST}:{arguments.port}{target}",
-            ]
-            answer = subprocess.run(command, capture_output=True, text=True, errors="replace", check=False)
-            output, _, tail = answer.stdout.rpartition("\n")
-            code = tail.split(" ")[0] if tail else "000"
-            # -D - and -o - print the headers, a blank line and the body, and -w adds its line after them. Text mode has made each CRLF a LF.
-            head, _, payload = output.partition("\n\n")
-            seen = re.search(ECHO_MARK + r'": "POST ([^ ]+) ', payload)
-            infisical_ran = "x-download-options" in head.lower() and not infisical_found_no_route(int(code) if code.isdigit() else 0, payload.encode(), "POST")
-            if (seen and fastify_reads(seen.group(1)) == path) or (real and infisical_ran):
-                report.row("FAIL", f"h2 POST {target} is refused [{label}]", f"{code} reached the backend {seen.group(1) if seen else ''}")
-            else:
-                report.row("PASS", f"h2 POST {target} is refused [{label}]", f"{code} {tail} {seen.group(1) if seen else ''}")
+    asks = [(path, label, target) for path in sample for label, target in spellings(path).items()]
+    for index, (path, label, target) in enumerate(asks):
+        before = len(echo.lines) if echo is not None else 0
+        returncode, stdout, stderr = h2_ask(arguments.port, target)
+        verdict, detail = h2_verdict(returncode, stdout, stderr, path, real, echo.lines[before:] if echo is not None else None)
+        report.row(verdict, f"h2 POST {target} is refused [{label}]", detail)
+        if verdict == "BLOCKED" and index + 1 < len(asks):
+            # A Traefik that gave no answer in five tries, or none over HTTP/2, gives the rest none either, and each would wait as long.
+            report.row("BLOCKED", f"the {len(asks) - index - 1} HTTP/2 rows after it", "were not asked")
+            break
 
     if echo is not None:
         print(f"the echo server received {len(echo.lines)} requests in all")
@@ -659,8 +719,8 @@ def run(arguments: argparse.Namespace) -> int:
         real_tokens(report, client, arguments.direct)
 
     pathlib.Path(arguments.log).write_text("\n".join(report.lines) + "\n")
-    print(f"SUMMARY passed={report.passed} failed={report.failed} info={report.info}, each row in {arguments.log}")
-    return 1 if report.failed else 0
+    print(f"SUMMARY passed={report.passed} failed={report.failed} blocked={report.blocked} info={report.info}, each row in {arguments.log}")
+    return report.exit_code()
 
 
 def direct_call(base: str, method: str, path: str, body: dict | None = None, token: str = "") -> tuple[int, dict]:
@@ -729,15 +789,91 @@ def real_tokens(report: Report, client: Client, direct: str) -> None:
         report.row("PASS" if who == "backend" and status == 200 else "FAIL", f"{method} {path} with that real session reaches Infisical and is answered", f"{status} from {who}")
 
 
+def selftest() -> int:
+    """This file's own verdicts, with no Docker, no Traefik and no Infisical, so CI can run it. It proves nothing about the route. What curl
+    prints below is what curl 8.7.1 printed against the pinned Traefik on this machine."""
+    traefik_404 = ("HTTP/2 404 \ncontent-type: text/plain; charset=utf-8\nx-content-type-options: nosniff\ncontent-length: 19\n\n"
+                   "404 page not found\n\n404 2")
+    h1_404 = "HTTP/1.1 404 Not Found\nContent-Type: text/plain; charset=utf-8\nContent-Length: 19\n\n404 page not found\n\n404 1.1"
+    refused_connection = "curl: (7) Failed to connect to infisical.bereket.dev port 18543 after 0 ms: Couldn't connect to server\n"
+    reset = "curl: (92) HTTP/2 stream 1 was not closed cleanly: PROTOCOL_ERROR (err 1)\n"
+
+    def echoed(line: str) -> str:
+        body = json.dumps({ECHO_MARK: line})
+        return f"HTTP/2 200 \ncontent-type: application/json\nx-echo-reached: 1\ncontent-length: {len(body)}\n\n{body}\n200 2"
+
+    def infisical(status: int, answer: dict) -> str:
+        body = json.dumps(answer)
+        return f"HTTP/2 {status} \ncontent-type: application/json; charset=utf-8\nx-download-options: noopen\ncontent-length: {len(body)}\n\n{body}\n{status} 2"
+
+    path = "/api/docs"
+    for real in (False, True):
+        arrived = None if real else []
+        # What once read PASS in both modes: curl's "000 0" when nothing answered.
+        assert h2_verdict(7, "\n000 0", refused_connection, path, real, arrived)[0] == "BLOCKED", "no answer is no refusal"
+        assert h2_verdict(0, h1_404, "", path, real, arrived)[0] == "BLOCKED", "an answer over HTTP/1.1 says nothing of HTTP/2"
+        assert h2_verdict(0, traefik_404, "", path, real, arrived)[0] == "PASS", "Traefik's 404 over HTTP/2 is a refusal"
+        assert h2_verdict(92, "\n000 0", reset, path, real, arrived)[0] == "PASS", "a stream reset as malformed is a refusal"
+    assert h2_verdict(92, "\n000 0", reset, path, False, [f"POST {path} HTTP/1.1"])[0] == "FAIL", "a reset after it arrived is no refusal"
+    assert h2_verdict(0, echoed(f"POST {path}/ HTTP/1.1"), "", path, False, [f"POST {path}/ HTTP/1.1"])[0] == "FAIL", "Fastify routes it as the path"
+    assert h2_verdict(0, echoed(f"POST {path} HTTP/1.1"), "", path, False, [])[0] == "FAIL", "the echo's answer counts, should its line be missed"
+    assert h2_verdict(0, echoed("POST /api%2Fdocs HTTP/1.1"), "", path, False, ["POST /api%2Fdocs HTTP/1.1"])[0] == "PASS", "one segment to Fastify"
+    handler = infisical(401, {"statusCode": 401, "message": "Token missing", "error": "UnauthorizedError"})
+    assert h2_verdict(0, handler, "", path, True, None)[0] == "FAIL", "a handler of Infisical's answered"
+    no_route = infisical(404, {"statusCode": 404, "message": f"Route POST:{path} not found", "error": "Not Found"})
+    assert h2_verdict(0, no_route, "", path, True, None)[0] == "PASS", "Infisical's router found no route"
+
+    class Curl:
+        """In place of subprocess.run: each try gets the next of these results, and the last one after that."""
+
+        def __init__(self, *results: tuple[int, str]) -> None:
+            self.results = list(results)
+            self.commands: list[list[str]] = []
+
+        def __call__(self, command: list[str], **_: object) -> subprocess.CompletedProcess:
+            self.commands.append(command)
+            returncode, stderr = self.results.pop(0) if len(self.results) > 1 else self.results[0]
+            return subprocess.CompletedProcess(command, returncode, traefik_404 if returncode == 0 else "\n000 0", stderr)
+
+    def no_wait(_seconds: float) -> None:
+        pass
+
+    flaky = Curl((7, refused_connection), (7, refused_connection), (0, ""))
+    assert h2_ask(1, path, flaky, no_wait)[0] == 0 and len(flaky.commands) == 3, "a try with no answer is made again"
+    gone = Curl((7, refused_connection))
+    assert h2_ask(1, path, gone, no_wait)[0] == 7 and len(gone.commands) == 5, "five tries, and then no answer"
+    malformed = Curl((92, reset))
+    assert h2_ask(1, "%2fsignup", malformed, no_wait)[0] == 92 and len(malformed.commands) == 1, "a reset is the same answer at every try"
+    command = malformed.commands[0]
+    assert command[command.index("--request-target") + 1] == "%2fsignup", "the target goes as it is, past curl's URL parser"
+
+    report = Report()
+    with contextlib.redirect_stdout(io.StringIO()):
+        report.row("PASS", "a row")
+        report.row("BLOCKED", "a row that could not be asked")
+        assert report.exit_code() == 2, "a row that could not be asked is no pass"
+        report.row("FAIL", "a row that got through")
+        assert report.exit_code() == 1, "what got through outweighs what could not be asked"
+    print("selftest ok")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--port", type=int)
     parser.add_argument("--echo-port", type=int, default=0)
     parser.add_argument("--backend", choices=["echo", "real"], default="echo")
     # The backend's own address from this machine, past Traefik. Given with a copy nobody has claimed, real_tokens claims it and asks with what it hands out.
     parser.add_argument("--direct", default="")
-    parser.add_argument("--log", required=True)
-    return run(parser.parse_args())
+    parser.add_argument("--log")
+    # This file's own verdicts, with nothing started, so CI can run it.
+    parser.add_argument("--selftest", action="store_true")
+    arguments = parser.parse_args()
+    if arguments.selftest:
+        return selftest()
+    if arguments.port is None or not arguments.log:
+        parser.error("a run needs --port and --log")
+    return run(arguments)
 
 
 if __name__ == "__main__":
