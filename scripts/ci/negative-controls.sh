@@ -259,6 +259,21 @@ INFISICAL_PROBES=gitops/clusters/plane-prod/platform/monitoring-extras/infisical
 INFISICAL_VALUES=gitops/clusters/plane-prod/values/infisical.yaml
 plant_hosted_infisical_claim_probe_on_another_module() { replace_first "$INFISICAL_PROBES" 'module: http_infisical_claimed' 'module: http_infisical_login'; }
 plant_hosted_infisical_claim_module_reads_no_body() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/blackbox.yml '\n      fail_if_body_json_not_matches_cel: "body\.config\.initialized[^\n]*' ''; }
+# The same module loosened where blackbox reads it, out of sight of the rule on a ConfigMap named blackbox-config: in the generator renamed,
+# with the volume, or in a second file of it that the flag names.
+MONITORING_SHARED=gitops/clusters/plane-prod/platform/monitoring-extras/shared
+CLAIM_CEL='fail_if_body_json_not_matches_cel: "body\.config\.initialized == true && body\.config\.allowSignUp == false"'
+plant_hosted_infisical_claim_loosened_in_a_renamed_config() {
+  replace_first "$MONITORING_SHARED/kustomization.yaml" '- name: blackbox-config\n' '- name: bb-config\n'
+  replace_first "$MONITORING_SHARED/blackbox.yaml" 'configMap: \{ name: blackbox-config \}' 'configMap: { name: bb-config }'
+  replace_first "$MONITORING_SHARED/blackbox.yml" "$CLAIM_CEL" 'fail_if_body_json_not_matches_cel: "has(body.config)"'
+}
+plant_hosted_infisical_claim_loosened_in_a_second_file() {
+  cp "$MONITORING_SHARED/blackbox.yml" "$MONITORING_SHARED/probes.yml"
+  replace_first "$MONITORING_SHARED/probes.yml" "$CLAIM_CEL" 'fail_if_body_json_not_matches_cel: "has(body.config)"'
+  replace_first "$MONITORING_SHARED/kustomization.yaml" 'files: \[blackbox\.yml\]' 'files: [blackbox.yml, probes.yml]'
+  replace_first "$MONITORING_SHARED/blackbox.yaml" '--config\.file=/config/blackbox\.yml' '--config.file=/config/probes.yml'
+}
 plant_hosted_infisical_claim_watch_misses_the_module() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml '\n\s+or absent\(probe_failed_due_to_cel\{probe="infisical-claimed"\}\)' ''; }
 plant_hosted_infisical_guess_limit_gone() { replace_first "$INFISICAL_ROUTE" '(?s)---\n# A person.s guesses, measured per client.*?(?=---\n)' ''; }
 plant_hosted_infisical_session_probe_gone() { replace_first "$INFISICAL_PROBES" '(?s)---\n# The route.s session part.*\Z' ''; }
@@ -571,6 +586,8 @@ CONTROL_SKIP_CHARTS=no control hosted-infisical-upgrade-unread validate-manifest
 control hosted-infisical-open-alert-late validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_open_alert_late
 control hosted-infisical-claim-probe-on-another-module validate-manifests.sh "because Infisical's alerts read this Probe's module" plant_hosted_infisical_claim_probe_on_another_module
 control hosted-infisical-claim-module-reads-no-body validate-manifests.sh "blackbox module http_infisical_claimed is" plant_hosted_infisical_claim_module_reads_no_body
+control hosted-infisical-claim-loosened-in-a-renamed-config validate-manifests.sh "reads /config/blackbox.yml from ConfigMap monitoring/bb-config-" plant_hosted_infisical_claim_loosened_in_a_renamed_config
+control hosted-infisical-claim-loosened-in-a-second-file validate-manifests.sh "reads /config/probes.yml from ConfigMap monitoring/blackbox-config-" plant_hosted_infisical_claim_loosened_in_a_second_file
 control hosted-infisical-claim-watch-misses-the-module validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_claim_watch_misses_the_module
 control hosted-infisical-guess-limit-gone validate-manifests.sh "Middleware infisical/infisical-guess-limit is not" plant_hosted_infisical_guess_limit_gone
 control hosted-infisical-session-probe-gone validate-manifests.sh "Probe infisical/infisical-session is not" plant_hosted_infisical_session_probe_gone

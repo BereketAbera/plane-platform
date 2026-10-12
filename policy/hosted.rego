@@ -424,12 +424,15 @@ infisical_probes := {
 	"infisical-session": {"module": "http_infisical_no_refresh_cookie", "target": "https://infisical.bereket.dev/api/v1/auth/token"},
 }
 
+# The Service each Probe asks. policy/hosted_combined.rego follows it to the file its pods read.
+infisical_prober := {"url": "blackbox.monitoring.svc.cluster.local:9115", "path": "/probe"}
+
 infisical_probe_spec(name) := {
 	"jobName": "infisical-http",
 	"interval": "30s",
 	"scrapeTimeout": "10s",
 	"module": infisical_probes[name].module,
-	"prober": {"url": "blackbox.monitoring.svc.cluster.local:9115", "path": "/probe"},
+	"prober": infisical_prober,
 	"targets": {"staticConfig": {"static": [infisical_probes[name].target], "labels": {"probe": name}}},
 }
 
@@ -458,6 +461,8 @@ deny contains msg if {
 }
 
 # Each module those Probes use, as blackbox reads it from the ConfigMap kustomize makes of shared/blackbox.yml. Nothing else reads that file.
+# The rules below hold that ConfigMap by its name, and policy/hosted_combined.rego holds these modules in whatever file the pods behind
+# infisical_prober read, under any name, which no rule reading one object at a time can find.
 infisical_blackbox_modules := {
 	"http_infisical_login": {"prober": "http", "timeout": "5s", "http": {
 		"preferred_ip_protocol": "ip4",
