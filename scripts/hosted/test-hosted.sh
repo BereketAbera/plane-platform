@@ -3,7 +3,8 @@
 #
 #   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/test-hosted.sh
 #   ONLY="outside backups"   sections to run, of: outside argo netpol routes psa secrets smoke alerts backups
-#   scripts/hosted/test-hosted.sh --selftest   the verdicts on Grafana's rows, from a table, with no cluster, so CI can run it
+#   scripts/hosted/test-hosted.sh --selftest   the verdicts on the public consoles' rows, from tables, and the tries at Infisical's limits
+#                                              against a stand-in on this machine, with no cluster, so CI can run it
 #
 # CONFIRM, because it starts short-lived probe pods, mints 10-minute tokens, signs in, and sends one synthetic alert, which reaches
 # the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's and Infisical's public routes, and its
@@ -16,7 +17,7 @@
 # Neither is a pass, and neither is ever reported as one. The restore test is separate: scripts/hosted/restore-test.sh.
 set -euo pipefail
 
-# ------ Verdicts on Grafana's rows, as verdict|detail, from what came back. Ahead of lib.sh, so --selftest needs no cluster -------------
+# ------ Verdicts on Grafana's and Infisical's rows, as verdict|detail, from what came back. Ahead of lib.sh, so --selftest needs no cluster
 
 # The held login, posted to the form.
 grafana_form_verdict() { # <status>
@@ -114,15 +115,96 @@ infisical_refusal_verdict() { # <PASS if the route was shown to reach Infisical>
   esac
 }
 
-# The last of a run of tries at a limit, which stops at the first 429.
-infisical_limit_verdict() { # <answer>...
-  [[ "$#" -gt 0 ]] || { printf 'BLOCKED|no answer'; return 0; }
-  local last="${!#}"
-  case "$last" in
-    429) printf 'PASS|%s answers before 429' "$(($# - 1))" ;;
-    000 | "") printf 'BLOCKED|no answer, after %s' "$*" ;;
-    *) printf 'FAIL|no 429 in %s answers, the last %s' "$#" "$last" ;;
-  esac
+# A run of tries at one of the route's limits, from limit_tries below, held to route.yaml's numbers from both sides. Every try before the 429
+# must have reached Infisical, which gives this call the status named, and the 429 must be Traefik's. Infisical must have answered at least
+# the burst, and no more than the burst and what the bucket refills in the time the tries took, with the half second that Traefik holds a try
+# for a token. So a limit of 5 or of 44, or Infisical's own, reads FAIL. Traefik forgets an address it has not seen for 1 + 60 / <per minute>
+# seconds, and then starts it full again, so a pause that long reads BLOCKED. So do tries too slow to empty the bucket, which cannot show it.
+infisical_limit_verdict() { # <burst> <per minute> <Infisical's status> <ms the tries took> <longest pause between two, in ms> <status/who>...
+  local burst="$1" per_minute="$2" status="$3" took="${4:-}" pause="${5:-}" answer served=0 met=no forget most seconds
+  [[ "$#" -gt 5 && "$took" =~ ^[0-9]+$ && "$pause" =~ ^[0-9]+$ ]] || { printf 'BLOCKED|no answer'; return 0; }
+  shift 5
+  for answer in "$@"; do
+    case "$answer" in
+      "$status/helmet") served=$((served + 1)) ;;
+      429/none)
+        met=yes
+        break
+        ;;
+      000/*) printf 'BLOCKED|no answer to try %s, after %s from Infisical' "$((served + 1))" "$served"; return 0 ;;
+      429/helmet) printf "FAIL|try %s met Infisical's own limit, and not the route's" "$((served + 1))"; return 0 ;;
+      */helmet) printf 'FAIL|try %s answered %s from Infisical, which gives this call %s' "$((served + 1))" "${answer%/*}" "$status"; return 0 ;;
+      *) printf 'FAIL|try %s answered %s, and not from Infisical, so the route does not pass this call' "$((served + 1))" "${answer%/*}"; return 0 ;;
+    esac
+  done
+  forget=$((1 + 60 / per_minute))
+  most=$((burst + per_minute * (took + 500) / 60000))
+  seconds="$((took / 1000)).$((took % 1000 / 100))"
+  # Too few comes first, because no pause can explain it: a bucket that Traefik forgot starts full again, and lets more through, not fewer.
+  if [[ "$met" == yes && "$served" -lt "$burst" ]]; then
+    printf "FAIL|Traefik's 429 at try %s, after %s from Infisical, where the limit lets %s through at once. So it is lower than route.yaml's, or this address used it in the %s s before" \
+      "$((served + 1))" "$served" "$burst" "$forget"
+  elif [[ "$pause" -ge $((forget * 1000)) ]]; then
+    printf 'BLOCKED|a pause of %s.%s s between two tries, and Traefik forgets an address after %s s, so the count says nothing. Run this again' \
+      "$((pause / 1000))" "$((pause % 1000 / 100))" "$forget"
+  elif [[ "$met" == yes && "$served" -gt "$most" ]]; then
+    printf "FAIL|Traefik's 429 at try %s, after %s from Infisical in %s s, where the limit lets at most %s through in that time. So it is wider than route.yaml's" \
+      "$((served + 1))" "$served" "$seconds" "$most"
+  elif [[ "$met" == yes ]]; then
+    printf "PASS|Traefik's 429 at try %s, after %s from Infisical in %s s, where the limit lets %s to %s through" "$((served + 1))" "$served" "$seconds" "$burst" "$most"
+  elif [[ "$served" -gt "$most" ]]; then
+    printf 'FAIL|no 429 in %s tries in %s s, where the limit lets at most %s through in that time' "$served" "$seconds" "$most"
+  else
+    printf 'BLOCKED|no 429 in %s tries in %s s, which the limit lets through at that pace, so they could not reach it' "$served" "$seconds"
+  fi
+}
+
+# The tries at one of the route's limits, one after another over one kept-alive connection, until the first 429 or <most> of them. A curl for
+# each try opened a connection of its own, three round trips from this Mac to the VPS, and at that pace the bucket refilled about as fast as
+# the tries emptied it, so a working limit read FAIL. Over one connection a try costs one round trip. Each try sends a new X-Forwarded-For,
+# which the limit must not read, and the certificate is not checked here, because it has its own row. Prints the milliseconds from the start of
+# the first try to the last answer, the longest pause from the start of one try to the start of the next, and each answer as its status and
+# helmet, when Infisical sent it, or none. A try with no answer reads 000/none, and is the last.
+limit_tries() { # address port host method path most [JSON body]
+  python3 -I -c '
+import http.client, socket, ssl, sys, time
+address, port, host, method, path, most = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4], sys.argv[5], int(sys.argv[6])
+body = sys.argv[7] if len(sys.argv) > 7 else None
+context = ssl.create_default_context()
+context.check_hostname = False
+context.verify_mode = ssl.CERT_NONE
+
+# To the node by its address, with the host in the handshake and in Host, as curl --resolve asks.
+class Pinned(http.client.HTTPSConnection):
+    def connect(self):
+        self.sock = context.wrap_socket(socket.create_connection((address, self.port), self.timeout), server_hostname=host)
+
+connection = Pinned(host, port, timeout=15)
+try:
+    connection.connect()
+except OSError:
+    print(0, 0, "000/none")
+    sys.exit()
+answers, starts = [], []
+for attempt in range(1, most + 1):
+    headers = {"User-Agent": "test-hosted", "X-Forwarded-For": "203.0.113.%d" % attempt}
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+    starts.append(time.monotonic())
+    try:
+        connection.request(method, path, body=body, headers=headers)
+        response = connection.getresponse()
+        response.read()
+    except (OSError, http.client.HTTPException):
+        answers.append("000/none")
+        break
+    answers.append("%d/%s" % (response.status, "helmet" if response.getheader("X-Download-Options") else "none"))
+    if response.status == 429:
+        break
+took = time.monotonic() - starts[0]
+pause = max([later - earlier for earlier, later in zip(starts, starts[1:])] or [0])
+print(int(took * 1000), int(pause * 1000), " ".join(answers))
+' "$@"
 }
 
 # One try from another address, once this machine's tries have met the limit: anything but 429 from Infisical shows the count is this
@@ -243,16 +325,144 @@ BLOCKED FAIL refused
 BLOCKED BLOCKED refused
 BLOCKED FAIL HTTP/2_401
 TABLE
-  while read -r want answers; do
-    # shellcheck disable=SC2086  # each answer is its own argument
-    check_verdict "$want" infisical_limit_verdict $answers
+  # The burst, the limit a minute, the status Infisical gives the call, the milliseconds the tries took, the longest pause between two, then
+  # the answers, where 30x401/helmet is thirty of those. Dashes for the two times are a run that printed nothing.
+  while read -r want burst per_minute status took pause answers; do
+    expanded=()
+    for answer in $answers; do
+      if [[ "$answer" == [0-9]*x* ]]; then
+        count="${answer%%x*}"
+        while [[ "$count" -gt 0 ]]; do
+          expanded+=("${answer#*x}")
+          count=$((count - 1))
+        done
+      else
+        expanded+=("$answer")
+      fi
+    done
+    if [[ "$took" == - ]]; then
+      check_verdict "$want" infisical_limit_verdict "$burst" "$per_minute" "$status"
+    else
+      check_verdict "$want" infisical_limit_verdict "$burst" "$per_minute" "$status" "$took" "$pause" ${expanded[@]+"${expanded[@]}"}
+    fi
   done <<'TABLE'
-PASS 400 400 400 429
-PASS 429
-FAIL 400 400 400 400
-FAIL 401 401 404
-BLOCKED 400 000
+PASS 30 30 401 9000 400 30x401/helmet 429/none
+PASS 30 30 401 9000 2900 34x401/helmet 429/none
+PASS 30 30 401 29000 900 44x401/helmet 429/none
+PASS 10 10 400 3000 400 10x400/helmet 429/none
+PASS 10 10 400 12000 1300 12x400/helmet 429/none
+FAIL 30 30 401 9000 400 35x401/helmet 429/none
+FAIL 30 30 401 12000 400 44x401/helmet 429/none
+FAIL 10 10 400 3000 400 11x400/helmet 429/none
+FAIL 30 30 401 9000 400 5x401/helmet 429/none
+FAIL 30 30 401 300 0 429/none
+FAIL 30 30 401 9000 3500 5x401/helmet 429/none
+FAIL 30 30 401 9000 400 30x401/helmet 429/helmet
+FAIL 30 30 401 9000 400 29x401/helmet 401/none 429/none
+FAIL 10 10 400 3000 400 3x401/helmet 429/none
+FAIL 30 30 401 9000 400 404/none
+FAIL 30 30 401 12000 400 60x401/helmet
+BLOCKED 30 30 401 100000 1700 60x401/helmet
+BLOCKED 30 30 401 9000 3000 34x401/helmet 429/none
+BLOCKED 10 10 400 9000 7000 10x400/helmet 429/none
+BLOCKED 30 30 401 9000 400 12x401/helmet 000/none
+BLOCKED 30 30 401 0 0 000/none
+BLOCKED 30 30 401 x 0 401/helmet
+BLOCKED 30 30 401 - -
 TABLE
+  # limit_tries itself, against a stand-in on this machine for Traefik in front of Infisical: TLS, and a bucket of 30 that refills one every 2 s,
+  # as route.yaml's session limit, answering 401 with helmet's header until it is empty and 429 without it after. The run must read PASS, end at
+  # the first 429, and keep to one connection, because a connection for each try is what let the bucket refill as fast as the tries emptied it.
+  limit_tries_problem() ( # prints what is wrong, or nothing
+    folder="$(mktemp -d)"
+    pid=""
+    # The wait as well, and its notice thrown away, because bash reports a job that a signal ended.
+    trap '[[ -z "$pid" ]] || { kill "$pid" && wait "$pid"; } 2>/dev/null; rm -rf "$folder"' EXIT
+    openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=localhost -keyout "$folder/key.pem" -out "$folder/cert.pem" >/dev/null 2>&1 || {
+      printf 'openssl could not make a certificate for the stand-in'
+      exit 0
+    }
+    python3 -I -c '
+import http.server, os, ssl, sys, threading, time
+folder, burst, per_minute = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+rate = per_minute / 60
+lock = threading.Lock()
+bucket = {"tokens": float(burst), "last": time.monotonic()}
+
+def note(line):
+    with lock, open(os.path.join(folder, "log"), "a") as log:
+        log.write(line + "\n")
+
+# Traefik serves a try that has to wait half a second or less for its token, as golang.org/x/time/rate reserves it, and refuses the rest.
+class Handler(http.server.BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    def setup(self):
+        super().setup()
+        note("connection")
+
+    def answer(self):
+        self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        note("request")
+        with lock:
+            now = time.monotonic()
+            bucket["tokens"] = min(burst, bucket["tokens"] + (now - bucket["last"]) * rate)
+            bucket["last"] = now
+            served = bucket["tokens"] >= 1 - rate / 2
+            if served:
+                bucket["tokens"] -= 1
+        body = b"{}" if served else b"Too Many Requests"
+        self.send_response(401 if served else 429)
+        if served:
+            self.send_header("X-Download-Options", "noopen")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    do_GET = do_POST = answer
+
+    def log_message(self, *arguments):
+        pass
+
+server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(os.path.join(folder, "cert.pem"), os.path.join(folder, "key.pem"))
+server.socket = context.wrap_socket(server.socket, server_side=True)
+with open(os.path.join(folder, "port.new"), "w") as out:
+    out.write(str(server.server_address[1]))
+os.replace(os.path.join(folder, "port.new"), os.path.join(folder, "port"))
+server.serve_forever()
+' "$folder" 30 30 >"$folder/out" 2>&1 &
+    pid=$!
+    waited=0
+    while [[ ! -s "$folder/port" && "$waited" -lt 100 ]]; do
+      sleep 0.1
+      waited=$((waited + 1))
+    done
+    [[ -s "$folder/port" ]] || {
+      printf 'the stand-in did not start: %s' "$(head -c 300 "$folder/out")"
+      exit 0
+    }
+    tries="$(limit_tries 127.0.0.1 "$(cat "$folder/port")" localhost GET /api/v2/auth/mfa/check/totp 60 || true)"
+    # shellcheck disable=SC2086  # the two times and each answer are arguments of their own
+    got="$(infisical_limit_verdict 30 30 401 $tries)"
+    connections="$(grep -c '^connection$' "$folder/log" || true)"
+    requests="$(grep -c '^request$' "$folder/log" || true)"
+    # After the first 429 the stand-in answers 429 again, so a run that went on would still end in one: it is the count of them that tells.
+    limited="$(tr ' ' '\n' <<<"$tries" | grep -c '^429/' || true)"
+    if [[ "${got%%|*}" != PASS ]]; then
+      printf 'it read %s, from %s' "$got" "$tries"
+    elif [[ "$connections" != 1 ]]; then
+      printf 'it made %s connections for %s tries, where the point is one' "$connections" "$requests"
+    elif [[ "$limited" != 1 || "$tries" != *" 429/none" || "$requests" -ne $(($(wc -w <<<"$tries") - 2)) ]]; then
+      printf 'it did not end at the first 429: the stand-in saw %s tries, and it read %s' "$requests" "$tries"
+    fi
+  )
+  problem="$(limit_tries_problem)"
+  if [[ -n "$problem" ]]; then
+    printf 'FAIL limit_tries against a stand-in for Traefik: %s\n' "$problem"
+    failures=$((failures + 1))
+  fi
   while read -r want mine code who; do
     [[ "$code" != - ]] || code=""
     check_verdict "$want" infisical_other_client_verdict "$mine" "$code" "$who"
@@ -595,18 +805,15 @@ a service token|Authorization: Bearer st.00000000-0000-4000-8000-000000000000.no
 an API key|X-Api-Key: not-a-key
 HEADERS
 
-  # A made-up account and a new X-Forwarded-For with each try, which the limit must not read. The limit is 10 a minute. That shows the
-  # limit holds whatever the header says, and not whose count it is: the row after it asks that.
-  local answers="" attempt=1
-  while [[ "$attempt" -le 14 ]]; do
-    code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -H "X-Forwarded-For: 203.0.113.$attempt" \
-      --data-binary '{"email":"test-hosted-rate-limit@invalid.example","password":"not-a-password"}' "$url/api/v3/auth/login" 2>/dev/null || true)"
-    answers="$answers $code"
-    [[ "$code" != 429 ]] || break
-    attempt=$((attempt + 1))
-  done
-  # shellcheck disable=SC2086  # each answer is its own argument
-  verdict_row "guessing at Infisical's sign-in meets its limit, whatever X-Forwarded-For says" "$(infisical_limit_verdict $answers)"
+  # Guesses at the sign-in, under the limit route.yaml gives it, 10 a minute with a burst of 10: a made-up account, which Infisical answers
+  # 400. A new X-Forwarded-For with each try shows the limit holds whatever the header says, and not whose count it is: the row after it asks that.
+  local tries
+  tries="$(limit_tries "$HOSTED_HOST" 443 "$host" POST /api/v3/auth/login 20 '{"email":"test-hosted-rate-limit@invalid.example","password":"not-a-password"}' 2>/dev/null || true)"
+  # shellcheck disable=SC2086  # the two times and each answer are arguments of their own
+  verdict_row "guessing at Infisical's sign-in meets its limit, whatever X-Forwarded-For says" "$(infisical_limit_verdict 10 10 400 $tries)"
+  # This machine's last answer, for the row after it.
+  code="${tries##* }"
+  code="${code%%/*}"
 
   # Per client: once this machine has met the limit, one try from another address must still reach Infisical. The api's pod is that address,
   # through the CoreDNS rewrite to Traefik's Service, as in the routes section. Code passed as an argument and carrying nothing secret.
@@ -631,17 +838,11 @@ print('ANSWER', response.status, 'helmet' if response.getheader('X-Download-Opti
     fi
   fi
 
-  # The session part's own limit, 30 a minute, past which an anonymous two-factor check meets 429, the first 30 having reached Infisical's 401.
-  answers=""
-  attempt=1
-  while [[ "$attempt" -le 45 ]]; do
-    code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' "$url/api/v2/auth/mfa/check/totp" 2>/dev/null || true)"
-    answers="$answers $code"
-    [[ "$code" != 429 ]] || break
-    attempt=$((attempt + 1))
-  done
-  # shellcheck disable=SC2086  # each answer is its own argument
-  verdict_row "the session part meets its wider limit, past 30 calls" "$(infisical_limit_verdict $answers)"
+  # The session part's own limit, which route.yaml gives as 30 a minute with a burst of 30: an anonymous two-factor check, which Infisical's MFA
+  # router answers 401 before it reads anything, until Traefik answers 429.
+  tries="$(limit_tries "$HOSTED_HOST" 443 "$host" GET /api/v2/auth/mfa/check/totp 60 2>/dev/null || true)"
+  # shellcheck disable=SC2086  # the two times and each answer are arguments of their own
+  verdict_row "the session part meets its wider limit, after its burst of 30" "$(infisical_limit_verdict 30 30 401 $tries)"
 }
 
 outside() {
