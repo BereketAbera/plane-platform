@@ -19,10 +19,6 @@
 source "$(dirname "$0")/../../scripts/lib/common.sh"
 
 cd "$ROOT"
-"$ROOT/scripts/install-tools.sh" yq helm >/dev/null
-command -v docker >/dev/null 2>&1 || { warn "docker not found"; exit 2; }
-docker info >/dev/null 2>&1 || { warn "Docker does not answer"; exit 2; }
-
 VALUES=gitops/clusters/plane-prod/values/traefik.yaml
 ROUTE=gitops/clusters/plane-prod/platform/infisical/route.yaml
 APPLICATION=gitops/clusters/plane-prod/applications/traefik.yaml
@@ -33,6 +29,25 @@ TLS_PORT="${INFISICAL_ROUTE_TEST_PORT:-18543}"
 ECHO_PORT="${INFISICAL_ROUTE_TEST_ECHO_PORT:-18111}"
 BACKEND="${INFISICAL_BACKEND:-}"
 HOST=infisical.bereket.dev
+if [[ -n "$BACKEND" ]]; then
+  backend_url="$BACKEND"
+  mode="real"
+else
+  backend_url="http://host.docker.internal:$ECHO_PORT"
+  mode="echo"
+fi
+
+# The questions, with what this run was given.
+questions() {
+  python3 -I "$ROOT/tests/routes/infisical-public-route.py" --echo-port "$ECHO_PORT" --backend "$mode" --direct "${INFISICAL_ROUTE_TEST_DIRECT:-}" "$@"
+}
+# What would stop them is asked before anything starts. Another run's echo server on this one's port would answer this run's Traefik, and
+# the questions would then stop with none asked.
+[[ "${INFISICAL_ROUTE_TEST_SERVE:-}" == yes ]] || questions --preflight || exit 2
+
+"$ROOT/scripts/install-tools.sh" yq helm >/dev/null
+command -v docker >/dev/null 2>&1 || { warn "docker not found"; exit 2; }
+docker info >/dev/null 2>&1 || { warn "Docker does not answer"; exit 2; }
 
 WORK="$(mktemp -d)"
 cleanup() {
@@ -63,14 +78,6 @@ grep -q -- '--entryPoints.websecure.address=:8443/tcp' "$WORK/flags" || { warn "
 
 openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 2 -subj "/CN=$HOST" -addext "subjectAltName=DNS:$HOST" \
   -keyout "$WORK/tls.key" -out "$WORK/tls.crt" >/dev/null 2>&1
-
-if [[ -n "$BACKEND" ]]; then
-  backend_url="$BACKEND"
-  mode="real"
-else
-  backend_url="http://host.docker.internal:$ECHO_PORT"
-  mode="echo"
-fi
 
 # Traefik's provider for IngressRoutes hands each route's match and each Middleware's spec to the same code as this file's, so the words stay the words.
 yq -o=json -I=0 . "$ROUTE" >"$WORK/route.json"
@@ -116,8 +123,11 @@ network=()
 [[ -z "${INFISICAL_ROUTE_TEST_NETWORK:-}" ]] || network=(--network "$INFISICAL_ROUTE_TEST_NETWORK")
 docker create --name "$NAME" ${network[@]+"${network[@]}"} -p "127.0.0.1:$TLS_PORT:8443" "$image" "${flags[@]}" --providers.file.filename=/conf/dynamic.yaml >/dev/null
 docker cp "$WORK/." "$NAME:/conf" >/dev/null 2>&1
-# A port another run holds fails here, and says so, rather than asking that run's Traefik.
-docker start "$NAME" >/dev/null || { warn "Traefik could not start on 127.0.0.1:$TLS_PORT. Another run may hold it: set INFISICAL_ROUTE_TEST_PORT"; exit 2; }
+# A port another run holds fails here, and says so, rather than asking that run's Traefik. That run holds the echo server's port too.
+docker start "$NAME" >/dev/null || {
+  warn "Traefik could not start on 127.0.0.1:$TLS_PORT. Another run may hold it: give this one its own ports with INFISICAL_ROUTE_TEST_PORT and INFISICAL_ROUTE_TEST_ECHO_PORT"
+  exit 2
+}
 
 deadline=$((SECONDS + 30))
 until curl -k -s -o /dev/null --max-time 2 --resolve "$HOST:$TLS_PORT:127.0.0.1" "https://$HOST:$TLS_PORT/login"; do
@@ -139,5 +149,4 @@ fi
 log "Traefik ${digest:0:19}, chart $chart_version, $mode backend. Asking"
 mkdir -p "$LOCAL_DIR/evidence-raw"
 evidence="$LOCAL_DIR/evidence-raw/infisical-public-route-$mode-$(date -u +%Y%m%dT%H%M%SZ).log"
-python3 -I "$ROOT/tests/routes/infisical-public-route.py" --port "$TLS_PORT" --echo-port "$ECHO_PORT" --backend "$mode" \
-  --direct "${INFISICAL_ROUTE_TEST_DIRECT:-}" --log "$evidence"
+questions --port "$TLS_PORT" --log "$evidence"
