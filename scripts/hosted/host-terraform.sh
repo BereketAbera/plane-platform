@@ -9,8 +9,10 @@
 # this one process. They reach no command line, no file here and no output. Refresh Vercel's with: vercel whoami
 #
 # Its state is in this checkout's .local, and only one checkout holds it. Run from another, Terraform would start from nothing: import
-# wayline's record again and create a second A record for each of the others. So both verbs stop here without it. apply makes its own plan,
-# and applies that plan only if its changes are exactly the ones EXPECT names, which plan prints, so what a person read is what is applied.
+# wayline's record again and create a second A record for each of the others. So both verbs stop here without it. apply makes a plan of its
+# own and applies it at once, and only if its changes are the ones EXPECT names, as plan prints them: the same action on each of the same
+# addresses. So it applies no change whose action and address a person did not read. It does not hold the values: a record whose content
+# moved between the two runs is applied with what this run's plan shows, which it prints above the apply.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -61,6 +63,10 @@ if [[ "${1:-}" == --selftest ]]; then
   check "replace vercel_dns_record.grafana, update vercel_dns_record.wayline" "$(printf '{"resource_changes":[%s,%s]}' "$(change vercel_dns_record.wayline '["update"]')" "$(change vercel_dns_record.grafana '["delete","create"]')" | plan_changes)" "a replace and an update"
   check "import+update vercel_dns_record.wayline" "$(printf '{"resource_changes":[%s]}' "$(change vercel_dns_record.wayline '["update"]' importing)" | plan_changes)" "an import that changes the record"
   check "delete vercel_dns_record.infisical" "$(printf '{"resource_changes":[%s]}' "$(change vercel_dns_record.infisical '["delete"]')" | plan_changes)" "a delete"
+  # What EXPECT cannot hold, written down: an update reads as its action and address, whatever values it changes.
+  check "update vercel_dns_record.wayline" \
+    "$(printf '{"resource_changes":[{"address":"vercel_dns_record.wayline","mode":"managed","change":{"actions":["update"],"before":{"value":"203.0.113.1"},"after":{"value":"203.0.113.2"}}}]}' | plan_changes)" \
+    "an update's values are not part of what EXPECT compares"
   scratch="$(mktemp -d)"
   check "" "$(printf '{}' >"$scratch/state" && state_problem "$scratch/state")" "a state file is enough"
   check yes "$(problem="$(state_problem "$scratch/none")"; [[ "$problem" == *"is missing"* ]] && echo yes)" "a missing state stops both verbs"
@@ -106,7 +112,7 @@ changes="$("$TF" -chdir="$CHDIR" show -json "$PLAN" | plan_changes)"
 case "$1" in
   plan)
     printf '\nThis plan: %s\n' "${changes:-nothing}"
-    [[ -z "$changes" ]] || printf "To apply exactly that: TARGET=plane-prod CONFIRM=plane-prod EXPECT='%s' %s apply\n" "$changes" "$0"
+    [[ -z "$changes" ]] || printf "To apply the same changes, which apply plans again and stops if they differ: TARGET=plane-prod CONFIRM=plane-prod EXPECT='%s' %s apply\n" "$changes" "$0"
     ;;
   apply)
     [[ "${changes:-nothing}" == "$EXPECT" ]] || die "this plan is: ${changes:-nothing}. EXPECT says: $EXPECT. Nothing was applied"
