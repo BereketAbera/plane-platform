@@ -270,6 +270,14 @@ plant_hosted_infisical_server_egress_opened() {
   printf -- '---\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: planted\n  namespace: infisical\nspec:\n  podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }\n  policyTypes: [Egress]\n  egress:\n    - {}\n' >>gitops/clusters/plane-prod/platform/network-policies/infisical.yaml
 }
 plant_hosted_infisical_dns_egress_widened() { replace_first gitops/clusters/plane-prod/platform/network-policies/infisical.yaml '    - to:\n        - namespaceSelector: \{ matchLabels: \{ kubernetes\.io/metadata\.name: kube-system \} \}\n          podSelector: \{ matchLabels: \{ k8s-app: kube-dns \} \}\n      ports:' '    - ports:'; }
+# Argo CD puts an object that states no namespace in its Application's destination, which for platform/infisical is namespace infisical, and
+# every rule on what reaches the secret store, and on the route's limits, reads the namespace an object states.
+plant_hosted_infisical_policy_with_no_namespace() {
+  printf 'apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: planted\nspec:\n  podSelector: { matchLabels: { app.kubernetes.io/name: infisical-postgres } }\n  policyTypes: [Ingress]\n  ingress:\n    - {}\n' >gitops/clusters/plane-prod/platform/infisical/planted.yaml
+}
+plant_hosted_infisical_limit_with_no_namespace() {
+  printf -- '---\napiVersion: traefik.io/v1alpha1\nkind: Middleware\nmetadata:\n  name: infisical-guess-limit\nspec:\n  rateLimit:\n    average: 1000\n    period: 1m\n    burst: 1000\n    sourceCriterion:\n      requestHeaderName: X-Forwarded-For\n' >>"$INFISICAL_ROUTE"
+}
 plant_hosted_infisical_image_another_digest() { replace_first "$INFISICAL_VALUES" '@sha256:ca5cbd14' '@sha256:1a5cbd14'; }
 plant_hosted_infisical_public_sharing_on() { replace_first "$INFISICAL_VALUES" '\n    - name: DISABLE_PUBLIC_SECRET_SHARING\n      value: "true"' ''; }
 # The verdicts test-hosted.sh and host-terraform.sh read, which their selftests hold to tables.
@@ -563,6 +571,8 @@ control hosted-infisical-postgres-open-to-traefik validate-manifests.sh "so noth
 control hosted-traefik-egress-to-all-of-infisical validate-manifests.sh "where Traefik reaches only Infisical's server on 8080" plant_hosted_traefik_egress_to_all_of_infisical
 control hosted-infisical-server-egress-opened validate-manifests.sh "is not one of the NetworkPolicies in namespace infisical" plant_hosted_infisical_server_egress_opened
 control hosted-infisical-dns-egress-widened validate-manifests.sh "and they reach nothing new" plant_hosted_infisical_dns_egress_widened
+control hosted-infisical-policy-with-no-namespace validate-manifests.sh "NetworkPolicy -/planted: states no namespace" plant_hosted_infisical_policy_with_no_namespace
+control hosted-infisical-limit-with-no-namespace validate-manifests.sh "Middleware -/infisical-guess-limit: states no namespace" plant_hosted_infisical_limit_with_no_namespace
 CONTROL_SKIP_CHARTS=no control hosted-infisical-image-another-digest validate-manifests.sh "Infisical's public route was read from v0.167.6" plant_hosted_infisical_image_another_digest
 CONTROL_SKIP_CHARTS=no control hosted-infisical-public-sharing-on validate-manifests.sh "sets DISABLE_PUBLIC_SECRET_SHARING to" plant_hosted_infisical_public_sharing_on
 control hosted-infisical-refusal-read-without-reach lint.sh "hosted test verdict self check FAILED" plant_hosted_infisical_refusal_read_without_reach

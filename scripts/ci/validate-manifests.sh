@@ -103,7 +103,9 @@ if has_yaml "$WORK/hosted"; then
     check "helm lint: hosted bootstrap chart" helm lint --strict --quiet "$HOSTED_TREE/bootstrap-chart"
   fi
   check "kubeconform: hosted tree" "${HOSTED_KUBECONFORM[@]}" "$WORK/hosted"
-  check "conftest: hosted tree" conftest_run gitops,workloads,plane,hosted "$WORK"/hosted/*.yaml
+  # hosted_tree only here: it wants every object to state its namespace, which is true of what is written in the tree, and not of a chart's
+  # render, where Helm leaves the namespace to whatever applies it.
+  check "conftest: hosted tree" conftest_run gitops,workloads,plane,hosted,hosted_tree "$WORK"/hosted/*.yaml
   # The tree alone, read at once, so what policy/hosted_combined.rego asks of it is asked without the charts too: Infisical's route and its
   # limits and Probes are all in the tree. With the charts it runs again below, and Grafana's rules there need them.
   check "conftest: hosted tree together" conftest test --combine --policy policy --no-color --namespace hosted_combined "$WORK"/hosted/*.yaml
