@@ -3,6 +3,8 @@
 # does. Run it after scripts/hosted/provision-node.sh, scripts/hosted/kubeconfig.sh and scripts/hosted/owner-inputs.sh.
 #
 #   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/bootstrap.sh
+#   scripts/hosted/bootstrap.sh --selftest   the way back that step 6 prints when nothing here can log in to Infisical, with no cluster,
+#                                            so CI can run it
 #
 # In this order, because each needs the one before:
 #   1. A read-only deploy key on GitHub, generated here and held here.
@@ -20,6 +22,30 @@
 #
 # Secret zero, the restic password, the deploy key and alert credentials live in .local/hosted/plane-prod and never in Infisical,
 # so nothing here is circular. No value reaches an argv: Secrets come from files, through --from-file.
+
+if [[ "${1:-}" == --selftest ]]; then
+  # shellcheck source=../lib/common.sh
+  source "$(dirname "$0")/../lib/common.sh"
+  # Step 6 runs scripts/infisical-bootstrap.sh with WAYLINE_TARGET=plane-prod and the LOCAL_DIR that scripts/hosted/target.sh gives it. When
+  # nothing there can log in, it prints the way back, and names itself as what to run next, which run as printed reaches the local platform.
+  # Both ways back must name the command that runs step 6 again, and hosted production's token file.
+  steps="$(
+    WAYLINE_TARGET=plane-prod
+    # shellcheck disable=SC2030  # for this subshell alone, as target.sh sets it for the bootstrap it runs
+    LOCAL_DIR="$ROOT/.local/hosted/plane-prod"
+    # shellcheck source=../../infisical/lib/api.sh
+    source "$ROOT/infisical/lib/api.sh"
+    ia_print_sign_in_steps scripts/infisical-bootstrap.sh 2>&1
+  )"
+  runs="$(grep -c '^ *[0-9]\. Run: ' <<<"$steps" || true)"
+  hosted="$(grep -c '^ *[0-9]\. Run: make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod$' <<<"$steps" || true)"
+  [[ "$runs" == 2 && "$hosted" == 2 ]] ||
+    die "selftest: $hosted of the $runs commands in the way back are make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod: $(grep 'Run: ' <<<"$steps" | tr -s ' ' | tr '\n' ' ')"
+  [[ "$steps" == *" .local/hosted/plane-prod/secret-zero/infisical-admin-token.new, "* ]] || die "selftest: the way back does not name hosted production's token file"
+  ok "selftest passed"
+  exit 0
+fi
+
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
 # shellcheck source=lib-infisical-claim.sh
