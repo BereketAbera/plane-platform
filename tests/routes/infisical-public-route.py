@@ -725,7 +725,7 @@ def run(arguments: argparse.Namespace) -> int:
         print(f"the echo server received {len(echo.lines)} requests in all")
     if real and arguments.direct:
         print("== real tokens from this version, made at the backend itself")
-        direct_rows(report, client, arguments.direct)
+        direct_rows(report, client, arguments.direct, arguments.throwaway)
 
     pathlib.Path(arguments.log).write_text("\n".join(report.lines) + "\n")
     print(f"SUMMARY passed={report.passed} failed={report.failed} blocked={report.blocked} info={report.info}, each row in {arguments.log}")
@@ -783,22 +783,69 @@ def payload_text(token: str) -> str:
         return ""
 
 
-def direct_rows(report: Report, client: Client, direct: str) -> None:
+def docker_inspect(container: str) -> dict | None:
+    """What Docker says of a container on this machine, or None when it knows none by that name."""
+    try:
+        answer = subprocess.run(["docker", "inspect", "--type", "container", container], capture_output=True, text=True, check=False, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    try:
+        found = json.loads(answer.stdout) if answer.returncode == 0 else []
+    except ValueError:
+        found = []
+    return found[0] if isinstance(found, list) and found and isinstance(found[0], dict) else None
+
+
+def throwaway_refusal(direct: str, container: str, inspect=docker_inspect) -> str:
+    """Why direct mode may not claim what answers at direct, or "" when it may. It claims a copy with an admin it never keeps, so a real
+    Infisical nobody has claimed yet, as production's is behind scripts/hosted/bootstrap.sh's port-forward until step 6 claims it, would be
+    lost to it for good. So it asks only a running container named as a copy to throw away, at the port that container publishes on
+    127.0.0.1. Docker holds that address while the container runs, so no port-forward can listen there. A binding on every address would
+    not do, because a port-forward on 127.0.0.1 answers before it."""
+    if not container:
+        return ("direct mode claims the copy it asks, so it asks only a container named as one to throw away: name the container that "
+                f"answers at {direct} in INFISICAL_ROUTE_TEST_THROWAWAY")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", container):
+        return f"{container!r} is not a container's name"
+    found = re.fullmatch(r"http://127\.0\.0\.1:([0-9]{1,5})/?", direct)
+    if not found or not 0 < int(found.group(1)) < 65536:
+        return f"direct mode asks only http://127.0.0.1:<port>, a port a container publishes on this machine's loopback, and was given {direct}"
+    port = str(int(found.group(1)))
+    details = inspect(container)
+    if details is None:
+        return f"Docker knows no container named {container}"
+    if dig(details, "State", "Running") is not True:
+        return f"container {container} is not running"
+    published = dig(details, "NetworkSettings", "Ports")
+    bindings = [binding for each in published.values() if isinstance(each, list) for binding in each] if isinstance(published, dict) else []
+    if not any(isinstance(binding, dict) and binding.get("HostIp") == "127.0.0.1" and binding.get("HostPort") == port for binding in bindings):
+        return f"container {container} does not publish 127.0.0.1:{port}, so what answers at {direct} may be something else"
+    return ""
+
+
+def direct_rows(report: Report, client: Client, direct: str, throwaway: str, inspect=docker_inspect) -> None:
     """real_tokens, with a backend that stops answering read as a row that could not be asked."""
     try:
-        real_tokens(report, client, direct)
+        real_tokens(report, client, direct, throwaway, inspect)
     except NoAnswer as error:
         report.row("BLOCKED", "real tokens", f"the backend at {direct} gave no answer: {error}")
 
 
-def real_tokens(report: Report, client: Client, direct: str) -> None:
+def real_tokens(report: Report, client: Client, direct: str, throwaway: str, inspect=docker_inspect) -> None:
     """The header refusal reads a machine identity's token by how this version's payload begins, and a person's by how theirs does. Both are
     made here by the server itself, on a copy nobody has claimed: the bootstrap call hands out the instance admin identity's token, and the
     admin it makes signs in. So a version that writes its tokens another way fails here, before the route is moved to it. A copy claimed
     already hands out none, which is a row that could not be asked, and no pass."""
+    # Asked again at the claim itself, so whatever calls this cannot claim a target nobody named as a copy to throw away, nor a container
+    # that has stopped since the preflight, whose port anything may hold now.
+    refusal = throwaway_refusal(direct, throwaway, inspect)
+    if refusal:
+        report.row("BLOCKED", "real tokens", f"nothing asked or claimed: {refusal}")
+        return
     status, config = direct_call(direct, "GET", "/api/v1/admin/config")
     if status != 200 or dig(config, "config", "initialized") is not False:
-        report.row("BLOCKED", "real tokens", f"the backend at {direct} is claimed already ({status}), so it hands out none: start a new copy")
+        said = "is claimed already" if status == 200 else f"answers {status} for its config"
+        report.row("BLOCKED", "real tokens", f"the backend at {direct} {said}, so it hands out no token: start a new copy")
         return
     # A throwaway admin for a throwaway copy, made at run time and never printed or kept.
     email = f"route-test-{secrets.token_hex(4)}@example.invalid"
@@ -844,14 +891,30 @@ def echo_port_taken(port: int, error: OSError) -> str:
             "port with INFISICAL_ROUTE_TEST_ECHO_PORT")
 
 
-def preflight(arguments: argparse.Namespace) -> str:
+def preflight(arguments: argparse.Namespace, inspect=docker_inspect) -> str:
     """Why a run cannot start, or "" when it can. The shell wrapper asks this before it starts Traefik, so a refused run starts nothing."""
     if arguments.backend == "echo":
+        if arguments.direct:
+            return "INFISICAL_ROUTE_TEST_DIRECT asks a real Infisical past Traefik, and this run's backend is the echo server: set INFISICAL_BACKEND to it too"
         # Another run's echo server here would answer this run's Traefik, and this run's own would then fail to listen with no row asked.
         try:
             socket.create_server(("127.0.0.1", arguments.echo_port)).close()
         except OSError as error:
             return echo_port_taken(arguments.echo_port, error)
+    if arguments.throwaway and not arguments.direct:
+        return "INFISICAL_ROUTE_TEST_THROWAWAY names a copy for direct mode, and no INFISICAL_ROUTE_TEST_DIRECT says where to ask it"
+    if arguments.direct:
+        refusal = throwaway_refusal(arguments.direct, arguments.throwaway, inspect)
+        if refusal:
+            return refusal
+        try:
+            status, config = direct_call(arguments.direct, "GET", "/api/v1/admin/config")
+        except NoAnswer as error:
+            return f"the copy at {arguments.direct} gives no answer: {error}"
+        if status != 200:
+            return f"the copy at {arguments.direct} answers {status} for the config every sign-in page reads, so it is no Infisical this test can ask"
+        if dig(config, "config", "initialized") is not False:
+            return f"the copy at {arguments.direct} is claimed already, by an earlier run of this test or by someone, so it hands out no token: start a new one"
     return ""
 
 
@@ -1037,18 +1100,53 @@ def selftest() -> int:
     with socket.create_server(("127.0.0.1", 0)) as held, tempfile.TemporaryDirectory() as directory:
         port = held.getsockname()[1]
         log = pathlib.Path(directory, "rows.log")
-        second = argparse.Namespace(port=1, echo_port=port, backend="echo", direct="", log=str(log))
+        second = argparse.Namespace(port=1, echo_port=port, backend="echo", direct="", throwaway="", log=str(log))
         assert "INFISICAL_ROUTE_TEST_ECHO_PORT" in preflight(second), "the preflight names the port, and how to give this run its own"
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as said:
             assert run(second) == 2, "a port taken after the preflight stops the run as one that could not run"
         assert "INFISICAL_ROUTE_TEST_ECHO_PORT" in said.getvalue() and not log.exists(), said.getvalue()
-        assert preflight(argparse.Namespace(echo_port=port, backend="real", direct="")) == "", "a real backend needs no echo server"
+        assert preflight(argparse.Namespace(echo_port=port, backend="real", direct="", throwaway="")) == "", "a real backend needs no echo server"
 
-    def real_token_rows(copy: Copy, address: str = "") -> Report:
+    def published(address: str, host_ip: str = "127.0.0.1", running: bool = True):
+        """docker inspect for a container that publishes the port of address, as Docker Desktop writes it."""
+        port = address.rstrip("/").rsplit(":", 1)[1]
+        return lambda _name: {"State": {"Running": running}, "NetworkSettings": {"Ports": {"8080/tcp": [{"HostIp": host_ip, "HostPort": port}]}}}
+
+    def never(_name: str) -> dict:
+        raise AssertionError("Docker was asked about a target nobody named")
+
+    def real_token_rows(copy: Copy, address: str = "", throwaway: str = "copy", inspect=None) -> Report:
+        address = address or copy.address
         report = Report()
         with contextlib.redirect_stdout(io.StringIO()):
-            direct_rows(report, Route(copy), address or copy.address)
+            direct_rows(report, Route(copy), address, throwaway, inspect or published(address))
         return report
+
+    # Direct mode claims what it asks, so it asks only a running container named as a copy to throw away, at the port it publishes on
+    # loopback. It once claimed whatever unclaimed Infisical answered there, a port-forward to production's among them.
+    direct = "http://127.0.0.1:18210"
+    assert "INFISICAL_ROUTE_TEST_THROWAWAY" in throwaway_refusal(direct, "", never), "with no name, nothing is asked"
+    for address in ("http://localhost:18210", "https://127.0.0.1:18210", "http://127.0.0.1", "http://127.0.0.1:18210/api", "http://10.0.0.5:18210",
+                    "http://127.0.0.1:99999", "http://user@127.0.0.1:18210"):
+        assert throwaway_refusal(address, "copy", published(direct)), address
+    assert throwaway_refusal(direct, "--format", published(direct)), "a flag is no container's name"
+    assert throwaway_refusal(direct, "copy", lambda _name: None), "Docker knows no such container"
+    assert throwaway_refusal(direct, "copy", published(direct, running=False)), "a stopped container holds no port"
+    assert throwaway_refusal(direct, "copy", published(direct, host_ip="0.0.0.0")), "a port-forward on 127.0.0.1 answers before a binding on every address"
+    assert throwaway_refusal(direct, "copy", published("http://127.0.0.1:18211")), "another port is another target"
+    assert throwaway_refusal(direct, "copy", published(direct)) == throwaway_refusal(direct + "/", "copy", published(direct)) == ""
+    with serving(Copy()) as copy:
+        unnamed = argparse.Namespace(backend="real", echo_port=0, direct=copy.address, throwaway="")
+        assert "INFISICAL_ROUTE_TEST_THROWAWAY" in preflight(unnamed, never) and copy.calls == [], "an unnamed copy is asked nothing"
+        report = real_token_rows(copy, throwaway="", inspect=never)
+        assert report.blocked == 1 and copy.calls == [] and not copy.claimed, "the claim refuses it too, whatever called it"
+        named = argparse.Namespace(backend="real", echo_port=0, direct=copy.address, throwaway="copy")
+        assert preflight(named, published(copy.address)) == "" and copy.calls == ["GET /api/v1/admin/config"] and not copy.claimed
+        assert preflight(argparse.Namespace(backend="echo", echo_port=0, direct=copy.address, throwaway="copy")), "the echo server hands out no token"
+        assert preflight(argparse.Namespace(backend="real", echo_port=0, direct="", throwaway="copy"), never), "a copy named with nowhere to ask it"
+    with serving(Copy(claimed=True)) as copy:
+        claimed = argparse.Namespace(backend="real", echo_port=0, direct=copy.address, throwaway="copy")
+        assert "claimed already" in preflight(claimed, published(copy.address)), "a copy claimed already stops the run before it starts"
 
     # The copy answers an identity's token 403 at GET /api/v1/organization, as the image does, so the row that once asked there reads FAIL.
     with serving(Copy()) as copy:
@@ -1070,7 +1168,7 @@ def selftest() -> int:
     with socket.create_server(("127.0.0.1", 0)) as nothing:
         address = f"http://127.0.0.1:{nothing.getsockname()[1]}"
     report = real_token_rows(Copy(), address)
-    assert (report.blocked, report.passed) == (1, 0), report.lines
+    assert (report.blocked, report.passed) == (1, 0) and "gave no answer" in report.lines[0], report.lines
     print("selftest ok")
     return 0
 
@@ -1080,8 +1178,10 @@ def main() -> int:
     parser.add_argument("--port", type=int)
     parser.add_argument("--echo-port", type=int, default=0)
     parser.add_argument("--backend", choices=["echo", "real"], default="echo")
-    # The backend's own address from this machine, past Traefik. Given with a copy nobody has claimed, real_tokens claims it and asks with what it hands out.
+    # The backend's own address from this machine, past Traefik, and the container that publishes it there, named as a copy to throw away.
+    # Given both, on a copy nobody has claimed, real_tokens claims it and asks with what it hands out.
     parser.add_argument("--direct", default="")
+    parser.add_argument("--throwaway", default="")
     parser.add_argument("--log")
     # Whether a run could start, and nothing more, so the shell wrapper can ask before it starts Traefik.
     parser.add_argument("--preflight", action="store_true")
