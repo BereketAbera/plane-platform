@@ -363,8 +363,9 @@ deny contains msg if {
 
 # The route's lists were read from this version's running server and its web client, and its header refusal from how this version's tokens
 # begin, so another version may hold a login, a sign-up or a token they do not name. Moving Infisical on means reading those again, with
-# tests/routes/infisical-public-route.sh against the new image and INFISICAL_ROUTE_TEST_DIRECT set, and then moving this. The whole reference,
-# so another digest under the same tag counts too, and any image whose repository is infisical/infisical, however its registry is spelled.
+# tests/routes/infisical-public-route.sh against the new image, INFISICAL_ROUTE_TEST_DIRECT set to a throwaway copy's 127.0.0.1 port and
+# INFISICAL_ROUTE_TEST_THROWAWAY to its container, and then moving this. The whole reference, so another digest under the same tag counts
+# too, and any image whose repository is infisical/infisical, however its registry is spelled.
 infisical_route_version := "v0.167.6"
 
 infisical_route_image := concat("", ["docker.io/infisical/infisical:", infisical_route_version, "@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c"])
