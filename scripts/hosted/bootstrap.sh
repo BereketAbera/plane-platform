@@ -130,7 +130,7 @@ refuse_public_unclaimed_infisical() { # the stage edge.sh status printed
   local verdict
   verdict="$(infisical_claim)"
   [[ "$verdict" == claimed ]] && return 0
-  die "443 is open to everyone, and Infisical reads $verdict, so the apply that follows would publish it before step 6 makes its admin. Move the firewall back first: CONFIRM=plane-prod scripts/hosted/edge.sh http, and open it again after this run with edge.sh open, which asks the same"
+  die "443 is open to everyone, and Infisical reads $verdict, so the apply that follows would publish it before step 6 makes its admin. Move the firewall back first: CONFIRM=plane-prod scripts/hosted/edge.sh http, and open it again after this run with TWO_FACTOR=on edge.sh open, which asks the same"
 }
 
 terraform_all() {
@@ -249,4 +249,4 @@ secret_zero
 infisical
 alerts
 bundle
-ok "bootstrap finished. Read: make remote-status TARGET=plane-prod. Next: Infisical's two-factor, through the tunnel, before scripts/hosted/edge.sh open puts its sign-in on the internet (scripts/hosted/README.md, section Two-factor for Infisical's admin). Then the first promotion, then make remote-test TARGET=plane-prod CONFIRM=plane-prod"
+ok "bootstrap finished. Read: make remote-status TARGET=plane-prod. Next: Infisical's two-factor, through the tunnel (scripts/hosted/README.md, section Two-factor for Infisical's admin), and then TWO_FACTOR=on scripts/hosted/edge.sh open, which puts its sign-in on the internet. Then the first promotion, then make remote-test TARGET=plane-prod CONFIRM=plane-prod"

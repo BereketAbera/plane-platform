@@ -5,10 +5,11 @@
 #   scripts/hosted/edge.sh closed        22 only
 #   scripts/hosted/edge.sh http          22, and 80 so Let's Encrypt can reach the HTTP-01 challenge
 #   scripts/hosted/edge.sh owner <ipv4>  22, 80, and 443 from one address, while the first admin is created
-#   scripts/hosted/edge.sh open          22, 80, 443: the site is public
+#   scripts/hosted/edge.sh open          22, 80, 443: the site is public. With TWO_FACTOR=on, once Infisical's admin has two-factor
 #   scripts/hosted/edge.sh status        the stage in force
 #   scripts/hosted/edge.sh scan          ports reachable from this machine, which is the check that counts
-#   scripts/hosted/edge.sh --selftest    the verdict on Infisical's config that open reads, with no server, so CI can run it
+#   scripts/hosted/edge.sh --selftest    the verdict on Infisical's config that open reads, and that open stops for two-factor first, with
+#                                        no server, so CI can run it
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -20,14 +21,39 @@ KNOWN_HOSTS="$ROOT/.local/hosted/known_hosts"
 die() { printf 'fail %s\n' "$*" >&2; exit 1; }
 ok() { printf ' ok %s\n' "$*"; }
 
+# Opening 443 to everyone puts Infisical's sign-in on the internet, and nothing here can read whether its admin has two-factor on. So the
+# person who set it up says so, and until then open stops with this, before it reads the target or reaches the server, so the note comes
+# while there is still time to act on it. Prints nothing for any other stage, or once TWO_FACTOR=on says it is on.
+two_factor_note() { # stage
+  [[ "$1" == open && "${TWO_FACTOR:-}" != on ]] || return 0
+  printf "open puts Infisical's sign-in on the internet, and nothing here can read whether its admin has two-factor on. Once it is, set up through the tunnel as scripts/hosted/README.md, section Two-factor for Infisical's admin, says, run this again with TWO_FACTOR=on. Nothing was read or changed"
+}
+
 # shellcheck source=lib-infisical-claim.sh
 source "$ROOT/scripts/hosted/lib-infisical-claim.sh"
 if [[ "${1:-}" == --selftest ]]; then
   command -v jq >/dev/null 2>&1 || die "jq not found"
   infisical_claim_selftest || die "selftest: the verdict on Infisical's config changed"
+  [[ -n "$(TWO_FACTOR='' two_factor_note open)" && -n "$(TWO_FACTOR=yes two_factor_note open)" ]] || die "selftest: open goes on without TWO_FACTOR=on"
+  [[ -z "$(TWO_FACTOR=on two_factor_note open)" ]] || die "selftest: open stops even with TWO_FACTOR=on"
+  for stage in closed http owner status scan; do
+    [[ -z "$(TWO_FACTOR='' two_factor_note "$stage")" ]] || die "selftest: stage $stage stops for two-factor, and only open puts the sign-in on the internet"
+  done
+  # And where it stops: open run for real, with an ssh first on PATH that writes down each call, must stop at the note and reach no server.
+  scratch="$(mktemp -d)"
+  trap 'rm -rf "$scratch"' EXIT
+  printf '#!/bin/sh\necho called >>"%s/ssh-calls"\nexit 1\n' "$scratch" >"$scratch/ssh"
+  chmod 700 "$scratch/ssh"
+  rc=0
+  said="$(env -u TWO_FACTOR TARGET=plane-prod CONFIRM=plane-prod PATH="$scratch:$PATH" "$ROOT/scripts/hosted/edge.sh" open 2>&1)" || rc=$?
+  [[ "$rc" -ne 0 && "$said" == *"two-factor"* ]] || die "selftest: open without TWO_FACTOR=on did not stop at the note. It said: $said"
+  [[ ! -e "$scratch/ssh-calls" ]] || die "selftest: open reached the server before it stopped for two-factor"
   ok "selftest passed"
   exit 0
 fi
+
+note="$(two_factor_note "${1:-}")"
+[[ -z "$note" ]] || die "$note"
 
 HOST="$("$YQ" -r .host "$TARGET_FILE")"
 KEY="$("$YQ" -r .ssh_key "$TARGET_FILE")"
@@ -115,8 +141,6 @@ EOF
     open-to-sign-up) die "Infisical reads open to sign-up, so anyone could make an account on the secret store. Close it first: scripts/hosted/README.md, section Infisical reads open." ;;
     *) die "Infisical's config did not answer, so nothing says it has its admin and is closed to sign-up, and Plane stays off the internet with it until it does. Read: make remote-status TARGET=plane-prod. Meanwhile edge.sh owner <your ipv4> reaches the site from one address" ;;
   esac
-  # Nothing here can read whether the admin has two-factor, so this says it. Opening 443 puts Infisical's sign-in on the internet.
-  printf 'note Infisical signs in at its public route from here on. If its admin has not set up two-factor yet, do that through the tunnel first: scripts/hosted/README.md, section Two-factor for Infisical'"'"'s admin\n' >&2
 fi
 
 rendered="$(TEMPLATE="$HOSTED/edge.nft.tmpl" RULES="$rules" python3 -I -c '
