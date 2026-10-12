@@ -264,6 +264,12 @@ plant_hosted_infisical_guess_limit_gone() { replace_first "$INFISICAL_ROUTE" '(?
 plant_hosted_infisical_session_probe_gone() { replace_first "$INFISICAL_PROBES" '(?s)---\n# The route.s session part.*\Z' ''; }
 plant_hosted_infisical_postgres_open_to_traefik() { replace_first gitops/clusters/plane-prod/platform/network-policies/infisical.yaml '(        - podSelector: \{ matchLabels: \{ app\.kubernetes\.io/component: backup \} \}\n)' '\1        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }\n'; }
 plant_hosted_traefik_egress_to_all_of_infisical() { replace_first gitops/clusters/plane-prod/platform/network-policies/traefik.yaml 'podSelector: \{ matchLabels: \{ app: infisical-standalone, component: infisical \} \}\n(\s+)ports:\n(\s+)- \{ protocol: TCP, port: 8080 \}' 'podSelector: {}\n\1ports:\n\2- { protocol: TCP, port: 8080 }\n\2- { protocol: TCP, port: 5432 }'; }
+# The way out of namespace infisical, which bounds the server's relaxed SSRF protection: a policy with no ingress rule, and DNS's own rule
+# opened to any address on 53.
+plant_hosted_infisical_server_egress_opened() {
+  printf -- '---\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: planted\n  namespace: infisical\nspec:\n  podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }\n  policyTypes: [Egress]\n  egress:\n    - {}\n' >>gitops/clusters/plane-prod/platform/network-policies/infisical.yaml
+}
+plant_hosted_infisical_dns_egress_widened() { replace_first gitops/clusters/plane-prod/platform/network-policies/infisical.yaml '    - to:\n        - namespaceSelector: \{ matchLabels: \{ kubernetes\.io/metadata\.name: kube-system \} \}\n          podSelector: \{ matchLabels: \{ k8s-app: kube-dns \} \}\n      ports:' '    - ports:'; }
 plant_hosted_infisical_image_another_digest() { replace_first "$INFISICAL_VALUES" '@sha256:ca5cbd14' '@sha256:1a5cbd14'; }
 plant_hosted_infisical_public_sharing_on() { replace_first "$INFISICAL_VALUES" '\n    - name: DISABLE_PUBLIC_SECRET_SHARING\n      value: "true"' ''; }
 # The verdicts test-hosted.sh and host-terraform.sh read, which their selftests hold to tables.
@@ -555,6 +561,8 @@ control hosted-infisical-guess-limit-gone validate-manifests.sh "Middleware infi
 control hosted-infisical-session-probe-gone validate-manifests.sh "Probe infisical/infisical-session is not" plant_hosted_infisical_session_probe_gone
 control hosted-infisical-postgres-open-to-traefik validate-manifests.sh "so nothing new reaches the secret store or its database" plant_hosted_infisical_postgres_open_to_traefik
 control hosted-traefik-egress-to-all-of-infisical validate-manifests.sh "where Traefik reaches only Infisical's server on 8080" plant_hosted_traefik_egress_to_all_of_infisical
+control hosted-infisical-server-egress-opened validate-manifests.sh "is not one of the NetworkPolicies in namespace infisical" plant_hosted_infisical_server_egress_opened
+control hosted-infisical-dns-egress-widened validate-manifests.sh "and they reach nothing new" plant_hosted_infisical_dns_egress_widened
 CONTROL_SKIP_CHARTS=no control hosted-infisical-image-another-digest validate-manifests.sh "Infisical's public route was read from v0.167.6" plant_hosted_infisical_image_another_digest
 CONTROL_SKIP_CHARTS=no control hosted-infisical-public-sharing-on validate-manifests.sh "sets DISABLE_PUBLIC_SECRET_SHARING to" plant_hosted_infisical_public_sharing_on
 control hosted-infisical-refusal-read-without-reach lint.sh "hosted test verdict self check FAILED" plant_hosted_infisical_refusal_read_without_reach

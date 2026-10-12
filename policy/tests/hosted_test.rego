@@ -1112,7 +1112,7 @@ test_other_config_maps_in_monitoring_ignored if {
 	count(hosted.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "alert-sink-5h2m8c", "namespace": "monitoring"}, "data": {"sink.py": "print()"}}
 }
 
-# Every policy in namespace infisical that admits anything, as the hosted tree writes it.
+# Every policy in namespace infisical, as the hosted tree writes it, the ones that only let something out among them.
 server_pods := {"matchLabels": {"app": "infisical-standalone", "component": "infisical"}}
 
 traefik_peer := {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}}
@@ -1151,7 +1151,26 @@ infisical_policies := [
 		"ingress": [{"from": [traefik_peer], "ports": [{"protocol": "TCP", "port": 8089}]}],
 	}),
 	netpol("infisical", "default-deny", {"podSelector": {}, "policyTypes": ["Ingress", "Egress"]}),
+	infisical_dns_policy,
+	infisical_backup_policy,
 ]
+
+infisical_dns_policy := netpol("infisical", "allow-dns", {
+	"podSelector": {},
+	"policyTypes": ["Egress"],
+	"egress": [{
+		"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "kube-system"}}, "podSelector": {"matchLabels": {"k8s-app": "kube-dns"}}}],
+		"ports": [{"protocol": "UDP", "port": 53}, {"protocol": "TCP", "port": 53}],
+	}],
+})
+
+infisical_backup_policy := netpol("infisical", "backup", {
+	"podSelector": {"matchLabels": {"app.kubernetes.io/component": "backup"}},
+	"policyTypes": ["Egress"],
+	"egress": [{"to": [{"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}}], "ports": [{"protocol": "TCP", "port": 5432}]}],
+})
+
+not_a_policy_there := "is not one of the NetworkPolicies in namespace infisical"
 
 test_infisical_network_policies_accepted if {
 	every policy in infisical_policies {
@@ -1163,9 +1182,22 @@ test_infisical_network_policies_accepted if {
 test_a_way_into_infisical_postgres_rejected if {
 	says(json.patch(infisical_postgres_policy, [{"op": "add", "path": "/spec/ingress/0/from/-", "value": {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}}}]), "spec must be exactly")
 	says(json.patch(infisical_postgres_policy, [{"op": "replace", "path": "/spec/ingress/0/from/0", "value": {"podSelector": {}}}]), "spec must be exactly")
-	says(netpol("infisical", "open", {"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}, "ingress": [{}]}), "admits traffic into namespace infisical")
-	says(netpol("infisical", "allow-all", {"podSelector": {}, "policyTypes": ["Ingress"], "ingress": [{"from": [{"namespaceSelector": {}}]}]}), "admits traffic into namespace infisical")
+	says(netpol("infisical", "open", {"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}, "ingress": [{}]}), not_a_policy_there)
+	says(netpol("infisical", "allow-all", {"podSelector": {}, "policyTypes": ["Ingress"], "ingress": [{"from": [{"namespaceSelector": {}}]}]}), not_a_policy_there)
 	says(json.patch(infisical_policies[0], [{"op": "replace", "path": "/spec/podSelector", "value": {}}]), "spec must be exactly")
+}
+
+# The same both ways: the server's egress is what bounds its relaxed SSRF protection, so a policy that only lets something out is a way out of
+# the secret store, and the same in one written out here, or the default taken away, is one too.
+test_a_way_out_of_infisical_rejected if {
+	says(netpol("infisical", "server-egress-open", {"podSelector": server_pods, "policyTypes": ["Egress"], "egress": [{}]}), not_a_policy_there)
+	says(netpol("infisical", "server-to-plane", {"podSelector": server_pods, "policyTypes": ["Egress"], "egress": [{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}}]}]}), not_a_policy_there)
+	says(netpol("infisical", "quiet", {"podSelector": {}, "policyTypes": ["Egress"]}), not_a_policy_there)
+	says(json.patch(infisical_dns_policy, [{"op": "replace", "path": "/spec/egress", "value": [{}]}]), "spec must be exactly")
+	says(json.patch(infisical_dns_policy, [{"op": "remove", "path": "/spec/egress/0/to/0/podSelector"}]), "spec must be exactly")
+	says(json.patch(infisical_backup_policy, [{"op": "add", "path": "/spec/egress/-", "value": {"to": [{"ipBlock": {"cidr": "0.0.0.0/0"}}]}}]), "spec must be exactly")
+	says(json.patch(infisical_policies[0], [{"op": "add", "path": "/spec/egress/-", "value": {"to": [{"ipBlock": {"cidr": "0.0.0.0/0"}}], "ports": [{"protocol": "TCP", "port": 443}]}}]), "spec must be exactly")
+	says(netpol("infisical", "default-deny", {"podSelector": {}, "policyTypes": ["Ingress"]}), "spec must be exactly")
 }
 
 traefik_egress_rules := [
