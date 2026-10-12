@@ -95,9 +95,9 @@ Token Auth tab works only inside the cluster, because the route refuses a machin
 
 Email codes are not an option: with no SMTP this version shows them as Unavailable, and its API refuses them. Use an authenticator app. Set it
 up through the tunnel before 443 is open to everyone, which on a new VPS means after `bootstrap.sh` and before `edge.sh open`, so the account
-is never on the internet with a password alone. Nothing here can read whether it is on, so `edge.sh open` only says so. These are this
-version's steps and labels, as they were run in Chrome against its image in Docker, through the pinned Traefik and through a tunnel's
-`http://localhost`, which works the same:
+is never on the internet with a password alone. Nothing here can read whether it is on, so `edge.sh open` stops before it changes anything
+until you say it is, with `TWO_FACTOR=on`. These are this version's steps and labels, as they were run in Chrome against its image in Docker,
+through the pinned Traefik and through a tunnel's `http://localhost`, which works the same:
 
 1. Sign in. Until someone has finished it, a sign-in opens **Control who can join** first: keep **Invite-only**, then **Continue**, then **Finish
    setup**, then **Go to dashboard**. Anyone would open sign-up to the internet, and `InfisicalOpenToClaim` would page.
@@ -177,9 +177,9 @@ layer is the one left, and it is not to be left alone.
    the config shows at once. Or run `UPDATE super_admin SET "allowSignUp" = false;` through `psql` as above: Infisical keeps the config in Redis
    for 60 seconds, and only a change through its API clears that, so this one shows within a minute.
 3. In Server Console, **Resource Overview**, **User Identities**, look for anyone who is not the admin, and remove them, before 443 opens again.
-4. `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open`, which refuses until Infisical reads claimed and closed, so for up to a
-   minute after a `psql` change. It refuses as well while Infisical's config does not answer at all, and then Plane stays off the internet with
-   it: `edge.sh owner <your ipv4>` until Infisical answers.
+4. `TARGET=plane-prod CONFIRM=plane-prod TWO_FACTOR=on scripts/hosted/edge.sh open`, which refuses until Infisical reads claimed and closed, so
+   for up to a minute after a `psql` change. It refuses as well while Infisical's config does not answer at all, and then Plane stays off the
+   internet with it: `edge.sh owner <your ipv4>` until Infisical answers.
 
 ## Locked out of Grafana
 
