@@ -63,6 +63,14 @@ the solver, and `kc -n infisical describe challenge` why it waits, in the Challe
 the quota's numbers, or the self-check that fails. The values that come with the route roll the server, so they go out in a push of their own,
 and the Certificate in a later one, once that rollout has finished. On a new VPS there is nothing to roll, and both fit.
 
+Until `infisical-tls` is issued, Traefik refuses every handshake that names `infisical.bereket.dev`, so each of the route's probes fails. If
+they have been failing for about 5 minutes before the first order is done, `InfisicalRouteDown` warns for each of the probes `infisical`,
+`infisical-sign-in` and `infisical-session`, and after 10 minutes `InfisicalClaimNotRead` warns too. They clear by themselves once the
+certificate is served. When Grafana's route went out on 7 November, its probe failed for about 2 minutes before `grafana-tls` was served,
+and `GrafanaRouteDown`, which waits 5 minutes too, did not fire. `CertificateExpiringSoon` stays quiet at a first order, because cert-manager
+reports an expiry of 0 until there is a certificate, and the rule leaves 0 out. An order not done in 30 minutes pages as `CertificateNotReady`,
+and then the steps above apply.
+
 Port 80 alone is enough for a retry. If 443 was closed as well, `edge.sh open` refuses while Infisical's config does not answer, so with
 Infisical down Plane stays off the internet too: `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh owner <your ipv4>` reaches the
 site from one address meanwhile.
