@@ -838,11 +838,13 @@ print('ANSWER', response.status, 'helmet' if response.getheader('X-Download-Opti
     fi
   fi
 
-  # The session part's own limit, which route.yaml gives as 30 a minute with a burst of 30: an anonymous two-factor check, which Infisical's MFA
-  # router answers 401 before it reads anything, until Traefik answers 429.
-  tries="$(limit_tries "$HOSTED_HOST" 443 "$host" GET /api/v2/auth/mfa/check/totp 60 2>/dev/null || true)"
+  # The session part's own limit, which route.yaml gives as 30 a minute with a burst of 30: a token refresh with no refresh cookie, which
+  # Infisical answers 404 AuthTokenNotFound before any account is read, until Traefik answers 429. The infisical-session Probe asks the same.
+  # Not the two-factor checks beside it under the same router: v0.167.6's MFA router answers a call with no token from its own hook, in a body
+  # its route's 401 schema refuses, so the server answers 500 and logs a ResponseValidationError for every try.
+  tries="$(limit_tries "$HOSTED_HOST" 443 "$host" POST /api/v1/auth/token 60 2>/dev/null || true)"
   # shellcheck disable=SC2086  # the two times and each answer are arguments of their own
-  verdict_row "the session part meets its wider limit, after its burst of 30" "$(infisical_limit_verdict 30 30 401 $tries)"
+  verdict_row "the session part meets its wider limit, after its burst of 30" "$(infisical_limit_verdict 30 30 404 $tries)"
 }
 
 outside() {
