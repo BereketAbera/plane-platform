@@ -117,7 +117,9 @@ if [[ "$SCAN_ONLY" == built ]]; then
   built_images | add_images built
 elif [[ "$SCAN_ONLY" == hosted ]]; then
   log "Listing what hosted production runs, as this checkout says"
-  [[ -s "$HOSTED_IMAGE_LIST" ]] || die "$HOSTED_IMAGE_LIST is missing or empty"
+  # A list of comments alone lists nothing, and the render would then stand for all of it. So it must name an image as
+  # add_images reads one: a line that is no comment, with a / or a : in it.
+  grep -qE '^[^#].*[/:]' "$HOSTED_IMAGE_LIST" 2>/dev/null || die "$HOSTED_IMAGE_LIST is missing or lists no image"
   [[ -s "$HOSTED_ENVIRONMENT/manifests.yaml" ]] || die "$HOSTED_ENVIRONMENT/manifests.yaml is missing or empty: run make render"
   { grep -vE '^(#|$)' "$HOSTED_IMAGE_LIST" || true; } | add_images hosted-list
   # The same reading of the render as the list's own check, so the two cannot disagree on what an image is.
