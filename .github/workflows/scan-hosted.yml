@@ -46,11 +46,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       # This runner has about 14 GiB free, and the two databases take about 3 of it. Each image's temp space comes back
       # after that image, so the floor stays where it starts.
+      # GitHub cancels a job at its timeout-minutes, and a cancelled job uploads nothing. So the scan ends well inside it: no
+      # image starts after SCAN_MINUTES, and the one in hand has two tries of SCAN_TIMEOUT, 75 minutes at most in all. This
+      # step's own limit is for whatever else hangs, and a step past it fails rather than being cancelled, so the upload runs.
       - name: Scan, for linux/amd64
+        timeout-minutes: 80
         env:
           SCAN_ONLY: hosted
           SCAN_HOSTED_RELEASE: origin/deploy/plane-prod
           SCAN_MIN_FREE_GIB: "5"
+          SCAN_TIMEOUT: 10m
+          SCAN_MINUTES: "55"
           SCAN_OUTPUT_DIR: ${{ runner.temp }}/scan-hosted
         run: ./scripts/ci/scan-images.sh
       - name: Keep the report and the raw results

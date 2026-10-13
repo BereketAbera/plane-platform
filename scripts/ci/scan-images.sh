@@ -45,7 +45,9 @@
 # with the report this prints in report.txt. Copying them to docs/evidence is a deliberate step, as for all evidence.
 # It refuses to start with less than SCAN_MIN_FREE_GIB free (15). Between images it stops, reporting the rest as not
 # scanned, below SCAN_FLOOR_GIB (the same unless set). Each image's temp space comes back after that image, so the floor
-# may sensibly be lower. SCAN_TIMEOUT limits each image (30m), and SCAN_OUTPUT_DIR moves the results.
+# may sensibly be lower. SCAN_TIMEOUT limits each try at an image (30m), and each image gets two. SCAN_MINUTES, when set, stops
+# it in the same way once that many minutes have passed since it started, so a job with a limit of its own still gets the
+# report: the image in hand may take two tries more. SCAN_OUTPUT_DIR moves the results.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 # shellcheck source=lib-manifests.sh
@@ -53,6 +55,8 @@ source "$(dirname "$0")/lib-manifests.sh"
 
 MIN_FREE="${SCAN_MIN_FREE_GIB:-15}"
 FLOOR="${SCAN_FLOOR_GIB:-$MIN_FREE}"
+MINUTES="${SCAN_MINUTES:-}"
+[[ -z "$MINUTES" || "$MINUTES" =~ ^[1-9][0-9]*$ ]] || die "SCAN_MINUTES takes a whole number of minutes, got '$MINUTES'"
 SCAN_ONLY="${SCAN_ONLY:-}"
 [[ -z "$SCAN_ONLY" || "$SCAN_ONLY" == built || "$SCAN_ONLY" == hosted ]] || die "SCAN_ONLY may only be built or hosted, got '$SCAN_ONLY'"
 if [[ "$SCAN_ONLY" == hosted ]]; then
@@ -69,6 +73,7 @@ HOSTED_RELEASE="${SCAN_HOSTED_RELEASE:-}"
 [[ -z "$HOSTED_RELEASE" || "$SCAN_ONLY" == hosted ]] || die "SCAN_HOSTED_RELEASE names what hosted production runs, so it is for SCAN_ONLY=hosted alone"
 guard_disk "$MIN_FREE"
 log "Disk limits for this run: ${MIN_FREE} GiB free to start, ${FLOOR} GiB free to keep going. $(free_disk_gib) GiB free now."
+[[ -z "$MINUTES" ]] || log "Time limit for this run: no image starts after $MINUTES minutes"
 log "Reading each image for $PLATFORM${SCAN_ALSO_PLATFORM:+, and allowing a plain manifest of $SCAN_ALSO_PLATFORM}"
 cd "$ROOT"
 
@@ -251,16 +256,21 @@ scan() { # scan <image> <json>
 
 : >"$OUT/not-scanned.txt"
 count=0
-stop=no
+# Why the rest go unscanned, once something stops the run.
+stop=""
 while IFS=$'\t' read -r image _ file; do
   count=$((count + 1))
   json="$OUT/images/$file"
-  if [[ "$stop" == no && "$(free_disk_gib)" -lt "$FLOOR" ]]; then
+  if [[ -z "$stop" && "$(free_disk_gib)" -lt "$FLOOR" ]]; then
     warn "the host is below ${FLOOR} GiB free, so stopping here"
-    stop=yes
+    stop="stopped, below $FLOOR GiB free"
   fi
-  if [[ "$stop" == yes ]]; then
-    printf '%s\tstopped, below %s GiB free\n' "$image" "$FLOOR" >>"$OUT/not-scanned.txt"
+  if [[ -z "$stop" && -n "$MINUTES" && "$SECONDS" -ge $((MINUTES * 60)) ]]; then
+    warn "SCAN_MINUTES=$MINUTES has passed, so stopping here"
+    stop="stopped, at SCAN_MINUTES=$MINUTES"
+  fi
+  if [[ -n "$stop" ]]; then
+    printf '%s\t%s\n' "$image" "$stop" >>"$OUT/not-scanned.txt"
     continue
   fi
   log "[$count/$total] $image"
