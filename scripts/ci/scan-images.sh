@@ -78,6 +78,8 @@ RESULTS_NAME=scan-images
 OUT="${SCAN_OUTPUT_DIR:-$LOCAL_DIR/evidence-raw/$RESULTS_NAME-$(date -u +%Y%m%dT%H%M%SZ)}"
 mkdir -p "$OUT/images"
 printf '%s\n' "$PLATFORM" ${SCAN_ALSO_PLATFORM:+"$SCAN_ALSO_PLATFORM"} >"$OUT/platform.txt"
+# What the report advises on a result of another platform depends on the kind of scan, because only a full one takes SCAN_ALSO_PLATFORM.
+printf '%s\n' "${SCAN_ONLY:-full}" >"$OUT/mode.txt"
 RAW_LIST="$WORK/images"
 : >"$RAW_LIST"
 

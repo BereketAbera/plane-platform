@@ -4,10 +4,10 @@
     scan-images-report.py <results directory>
     scan-images-report.py --selftest
 
-Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and writes summary.tsv,
-critical.tsv and report.txt beside them, the last being what this prints. Exits 1 if an image we build has a CRITICAL
-finding with a fix available, if any image was not scanned, or if any result is of a platform this scan was not for.
-See scan-images.sh for why the policy is that and no wider.
+Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and mode.txt where the run wrote
+it, and writes summary.tsv, critical.tsv and report.txt beside them, the last being what this prints. Exits 1 if
+an image we build has a CRITICAL finding with a fix available, if any image was not scanned, or if any result is of a platform
+this scan was not for. See scan-images.sh for why the policy is that and no wider.
 """
 import csv
 import json
@@ -20,6 +20,13 @@ OURS = re.compile(r"^(localhost:5001|ghcr\.io/[^/]+)/wayline/")
 SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
 NO_PLATFORM = "none"
 LOCKFILES_ROW = "wayline-source-lockfiles"
+# What a result of another platform means depends on what the scan read, so each kind of run says what to do about one.
+# Only a full scan takes SCAN_ALSO_PLATFORM, and scan-images.sh refuses it on the other two.
+PLATFORM_ADVICE = {
+    "full": "A digest dev runs under emulation on purpose can be allowed on a full scan with SCAN_ALSO_PLATFORM",
+    "built": "It was just built for that platform, so the build made another",
+    "hosted": "Hosted production pins it, and the VPS is one linux/amd64 node, which cannot run it as built, so the pin is wrong",
+}
 SUMMARY_FIELDS = ["image", "sources", "ours", "scanned", "os", "os_end_of_life", "architecture", "platform"] + [
     f"{severity.lower()}{suffix}" for severity in SEVERITIES for suffix in ("", "_fixable")
 ] + ["why_not_scanned"]
@@ -93,13 +100,23 @@ def read_not_scanned(directory):
     return reasons
 
 
-def read_platforms(directory):
-    """What scan-images.sh asked trivy for, then any other platform it lets a plain manifest be."""
+def read_lines(directory, name):
+    """Each line of a file scan-images.sh wrote beside the results, or none if it wrote no such file."""
     try:
-        with open(os.path.join(directory, "platform.txt"), encoding="utf-8") as handle:
+        with open(os.path.join(directory, name), encoding="utf-8") as handle:
             return [line.strip() for line in handle if line.strip()]
     except OSError:
         return []
+
+
+def read_platforms(directory):
+    """What scan-images.sh asked trivy for, then any other platform it lets a plain manifest be."""
+    return read_lines(directory, "platform.txt")
+
+
+def read_mode(directory):
+    """full, built or hosted, as scan-images.sh records it. Results from before it did are read as a full scan's, as they were."""
+    return (read_lines(directory, "mode.txt") or ["full"])[0]
 
 
 def analyze(directory):
@@ -115,14 +132,15 @@ def analyze(directory):
     return rows, critical
 
 
-def policy_failures(rows, critical, platforms):
+def policy_failures(rows, critical, platforms, mode="full"):
     failures = [f"{row['image']} was not scanned: {row['why_not_scanned']}" for row in rows if row["scanned"] == "no"]
     if not platforms:
         failures.append("platform.txt names no platform, so nothing says what this scan was meant to read")
     # trivy's --platform chooses a child of an index. On a plain manifest it does nothing: it exits 0 and scans whatever the
     # manifest is, so without this a scan for the wrong architecture would read as a clean one.
+    advice = PLATFORM_ADVICE.get(mode)
     failures += [
-        f"{row['image']} is {row['platform']}, and this scan is for {' or '.join(platforms)}. A digest dev runs under emulation on purpose can be allowed on a full scan with SCAN_ALSO_PLATFORM"
+        f"{row['image']} is {row['platform']}, and this scan is for {' or '.join(platforms)}." + (f" {advice}" if advice else "")
         for row in rows
         if platforms and row["scanned"] == "yes" and row["platform"] not in (NO_PLATFORM, *platforms)
     ]
@@ -191,7 +209,7 @@ def main(directory):
     write_tsv(os.path.join(directory, "summary.tsv"), SUMMARY_FIELDS, rows)
     write_tsv(os.path.join(directory, "critical.tsv"), ["image", "ours", "id", "package", "installed", "fixed_in", "target"], critical)
     platforms = read_platforms(directory)
-    failures = policy_failures(rows, critical, platforms)
+    failures = policy_failures(rows, critical, platforms, read_mode(directory))
     lines = report_lines(rows, critical, failures, platforms)
     print("\n".join(lines))
     # Kept with the results, so whoever reads them later, as an artifact or as evidence, reads what was printed here.
@@ -212,13 +230,17 @@ def selftest():
     ours_ghcr = "ghcr.io/owner/wayline/web@sha256:" + "b" * 64
     upstream = "docker.io/makeplane/plane-frontend:v1@sha256:" + "c" * 64
 
-    def run(images, not_scanned=(), asked=("linux/arm64",), read_as=("linux", "arm64"), artifact_type="container_image"):
-        """images: {image: [vulnerabilities]}. asked goes in platform.txt, and read_as is what each result says it read. Returns (exit code, summary rows)."""
+    def run(images, not_scanned=(), asked=("linux/arm64",), read_as=("linux", "arm64"), artifact_type="container_image", mode=None):
+        """images: {image: [vulnerabilities]}. asked goes in platform.txt, and read_as is what each result says it read. mode goes
+        in mode.txt, which None leaves out, as an older run did. Returns (exit code, summary rows, report)."""
         with tempfile.TemporaryDirectory() as directory:
             os.mkdir(os.path.join(directory, "images"))
             if asked is not None:
                 with open(os.path.join(directory, "platform.txt"), "w", encoding="utf-8") as handle:
                     handle.write("".join(f"{platform}\n" for platform in asked))
+            if mode is not None:
+                with open(os.path.join(directory, "mode.txt"), "w", encoding="utf-8") as handle:
+                    handle.write(f"{mode}\n")
             with open(os.path.join(directory, "inventory.tsv"), "w", encoding="utf-8") as inventory:
                 for number, (image, vulnerabilities) in enumerate(images.items()):
                     filename = f"{number}.json"
@@ -244,13 +266,15 @@ def selftest():
             finally:
                 sys.stdout.close()
                 sys.stdout = stdout
-            return code, analyze(directory)[0]
+            with open(os.path.join(directory, "report.txt"), encoding="utf-8") as handle:
+                report = handle.read()
+            return code, analyze(directory)[0], report
 
     assert run({ours: [critical_fixed]})[0] == 1, "a fixable CRITICAL in our image must fail"
     assert run({ours_ghcr: [critical_fixed]})[0] == 1, "the same image in GHCR must fail"
     assert run({ours: [critical_unfixed]})[0] == 0, "no fix means nothing to do yet"
     assert run({ours: [high_fixed]})[0] == 0, "a fixable HIGH is reported only"
-    code, rows = run({upstream: [critical_fixed, high_fixed, critical_unfixed]})
+    code, rows, _ = run({upstream: [critical_fixed, high_fixed, critical_unfixed]})
     assert code == 0, "upstream findings must not fail"
     assert rows[0]["critical"] == 2 and rows[0]["critical_fixable"] == 1 and rows[0]["high"] == 1, "upstream findings must still be counted"
     assert rows[0]["os_end_of_life"] == "yes", "an end-of-life OS must be reported"
@@ -263,7 +287,7 @@ def selftest():
     assert run({ours: []}, read_as=amd64)[0] == 1, "a plain amd64 manifest in an arm64 scan must fail"
     assert run({ours_ghcr: []}, asked=("linux/amd64",))[0] == 1, "a plain arm64 manifest in an amd64 scan must fail"
     assert run({upstream: []}, read_as=amd64)[0] == 1, "another architecture must fail upstream too: the child read was not the one asked for"
-    code, rows = run({ours_ghcr: []}, asked=("linux/amd64",), read_as=amd64)
+    code, rows, _ = run({ours_ghcr: []}, asked=("linux/amd64",), read_as=amd64)
     assert code == 0 and rows[0]["platform"] == "linux/amd64" and rows[0]["architecture"] == "amd64", "the architecture asked for passes"
     assert run({ours: []}, asked=("linux/arm64", "linux/amd64"), read_as=amd64)[0] == 0, "a platform allowed on a full scan passes"
     assert run({ours: []}, asked=("linux/arm64", "linux/amd64"), read_as=("linux", "riscv64"))[0] == 1, "a platform nobody allowed still fails"
@@ -274,6 +298,15 @@ def selftest():
     assert run({"wayline-source-lockfiles": []}, read_as=("", ""), artifact_type="filesystem")[0] == 0, "a directory has no platform"
     assert run({"wayline-source-lockfiles": []}, read_as=("", ""), artifact_type="repository")[0] == 0, "a Git checkout has no platform either"
     assert run({ours: []}, read_as=("", ""), artifact_type="container_image")[0] == 1, "an image with no platform is not a directory"
+    # Only a full scan takes SCAN_ALSO_PLATFORM, so only its failure may suggest it.
+    arm64_in_amd64 = {"asked": ("linux/amd64",), "read_as": ("linux", "arm64")}
+    for mode in (None, "full"):
+        code, _, report = run({upstream: []}, mode=mode, **arm64_in_amd64)
+        assert code == 1 and "SCAN_ALSO_PLATFORM" in report, f"a full scan, mode {mode}, must say how to allow a platform on purpose"
+    code, _, report = run({upstream: []}, mode="hosted", **arm64_in_amd64)
+    assert code == 1 and "SCAN_ALSO_PLATFORM" not in report and "the pin is wrong" in report, "a hosted scan must not suggest what it refuses"
+    code, _, report = run({ours_ghcr: []}, mode="built", **arm64_in_amd64)
+    assert code == 1 and "SCAN_ALSO_PLATFORM" not in report and "the build made another" in report, "a scan of a build must not suggest what it refuses"
     print("selftest ok")
     return 0
 
