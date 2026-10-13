@@ -2,7 +2,11 @@
 
 How Plane gets from an upstream chart to manifests on the cluster, what the platform changes on the way, and how to
 change it safely. Wayline is a customized Plane Community Edition v1.4.3 deployment, not an original product. The chart
-is upstream's `plane-ce` 1.8.6, unmodified.
+is upstream's `plane-ce` 1.8.6, unmodified, and all three environments render from it.
+
+Every section from [Render flow](#render-flow) to [Teardown](#teardown) is about the kind cluster, and holds for hosted production
+wherever [Hosted production](#hosted-production) does not say otherwise. That section covers its overlay, its charts and values, K3s's own
+components, and what differs from kind.
 
 **Status of this page.** It describes configuration in the code, and says so where a real run has settled something. On
 2026-11-05 Plane ran in both namespaces on the final branded images from `84b63d9`, and the runs below on those images say so. A full restore from backup into
@@ -12,7 +16,8 @@ production-inspired platform.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one
 node, one API server, one etcd, one CoreDNS, one Traefik, one Infisical server and one Docker VM disk. Failure of any of
-those takes down both. Quotas cover memory and object counts only. See [environments.md](environments.md).
+those takes down both. Quotas cover memory and object counts only. See [environments.md](environments.md). Hosted production
+shares none of those with them, and has the same kind of single points inside itself: one node, one API server and one disk.
 
 ## Render flow
 
@@ -32,9 +37,9 @@ flowchart LR
 | Stage | Path | Who edits it |
 |---|---|---|
 | Vendored chart | `helm/plane/vendor/plane-ce-1.8.6/plane-ce/` | Nobody. It is the release tarball untarred. `VENDOR.md` records the tarball sha256 and a tree hash |
-| Overlay | `helm/plane/overlays/{dev,prod-sim}/` | You, except `images:` lines: only `make promote` edits them, and `make rollback` takes an edit back with `git revert` |
-| Hardening component | `helm/plane/components/hardening/` | You. Shared by both environments |
-| Rendered output | `gitops/environments/{dev,prod-sim}/manifests.yaml` | Only `make render`. The file header says so |
+| Overlay | `helm/plane/overlays/{dev,prod-sim,prod}/` | You, except `images:` lines. In dev and prod-sim only `make promote` edits them, and `make rollback` takes an edit back with `git revert`. In `prod` only `scripts/ci/promote-prod.sh` does, from a signed set |
+| Hardening component | `helm/plane/components/hardening/` | You. Shared by all three environments |
+| Rendered output | `gitops/environments/{dev,prod-sim,prod}/manifests.yaml` | Only `make render`, which runs `scripts/render.sh` and then `scripts/render.sh --env prod`. The file header says so |
 
 **Why render and commit.**
 
@@ -43,7 +48,7 @@ flowchart LR
 - CI can check the exact objects: schema, policy, zero Secrets, digest pinning.
 
 **Why a Component.** Kustomize runs generators before components, so these patches apply to the chart's output, and one
-patch set fits both environments because the Helm release is `plane` in each and object names match.
+patch set fits all three environments because the Helm release is `plane` in each and object names match.
 
 **Why a vendored chart.** An upgrade is a directory swap. A patch that no longer applies shows up in the render, not at sync.
 
@@ -423,3 +428,163 @@ owns and Argo CD will not recreate.
 
 The empty-render safeguard: `allowEmpty` stays false on the Plane Applications, so an empty render cannot prune everything.
 `PruneLast=true` applies removals only after the new state is healthy.
+
+## Hosted production
+
+Hosted production renders Plane from the same chart and the same hardening component, and installs its platform from the same charts
+at the same versions, plus cert-manager. What differs is its overlay, its values, and the cluster under them: K3s on one VPS, not kind.
+
+### The prod overlay
+
+`helm/plane/overlays/prod` renders, through `scripts/render.sh --env prod`, into `gitops/environments/prod/manifests.yaml`, which hosted
+Argo CD's Application `plane-prod` syncs from `deploy/plane-prod`. It copies prod-sim's shape on purpose, so a change for this cluster
+cannot re-render dev or prod-sim. `components/hardening` is shared, so everything above about it holds here: the security contexts, the
+probes, the `preStop` sleep, the migrator as a Sync hook at wave 2, `progressDeadlineSeconds: 600`, and no Secret in the render.
+
+| Setting | Here | Why |
+|---|---|---|
+| Namespace | `plane-prod` | The one Plane namespace on this cluster |
+| `ingress.appHost`, entry points | `wayline.bereket.dev`, `websecure` only | Port 80 only redirects, so a route on `web` would never be used |
+| `ssl.tls_secret_name` | `wayline-tls` | The Secret cert-manager writes for Certificate `wayline-tls` |
+| `CORS_ALLOWED_ORIGINS` | `https://wayline.bereket.dev`, by patch | The chart always adds an `http://` origin, and Django takes Secure off the session and CSRF cookies when any origin holds `http:`. A value cannot remove it |
+| `ENABLE_SIGNUP` | `0`, by patch | Upstream's default is open sign-up, and it is seeded once, at first boot, so it must be right before then |
+| `minio.env.minio_endpoint_ssl` | `true` | Presigned upload URLs must be `https` |
+| Volumes | `local-path-retain`: Postgres 30Gi, Valkey 2Gi, RabbitMQ 4Gi, Silo 64Gi | Reclaim `Retain`. The sizes are not enforced, as on kind, but the quota's `requests.storage` counts them |
+| Images | `ghcr.io/bereketabera/wayline/{web,admin,space,backend}` by digest, and the same upstream index digests as the local overlays | Production runs what dev ran, and only a signed set changes them: [argocd.md](argocd.md#exact-digest-image-sets) |
+| ServiceAccount `plane` | `imagePullSecrets: [ghcr-pull]`, by patch | The packages are private, and `dockerRegistry.existingSecret` does nothing when the chart does not make the account |
+| `InfisicalStaticSecret` `ghcr-pull` | A seventh one, at wave -1 | The pull token, seeded from the owner's file and synced from Infisical like the other six |
+| Job `plane-prod-predeploy-dump` | A Sync hook at wave 1, before the migrator | It waits for Postgres, tolerates an empty database, and dumps to the backup volume, so every migration has a fresh dump behind it. `scripts/hosted/README.md`, section After a rollback, says how to restore one |
+| `GUNICORN_WORKERS`, `CELERY_WORKER_CONCURRENCY` | 3 and 4, where the local overlays hold 1 and 2 | Starting values from the hosted sizing, with the resources below |
+| CPU | Requests and limits of this overlay's own, and none of prod-sim's CPU patches | Nothing here competes with dev for the node |
+
+`policy/hosted.rego` holds the render to what a public site needs, in CI: no `localhost:` image and Wayline's only from GHCR, an `https`
+`WEB_URL` and no `http` origin, routes on `websecure` alone with `tls` naming only `wayline-tls`, no route to a console, no NodePort or
+LoadBalancer Service, no `hostPort` but Traefik's, and no `kind: Ingress` in Git. `validate-manifests.sh` runs
+`scripts/render.sh --env prod --check` beside the local check.
+
+**Resources.** Starting values from the hosted sizing, to be measured again on the node. They replace the hardening component's.
+
+| Workload | Memory request | Memory limit | CPU request | CPU limit |
+|---|---:|---:|---:|---:|
+| web | 32Mi | 128Mi | 20m | 500m |
+| admin | 32Mi | 128Mi | 20m | 500m |
+| space | 128Mi | 384Mi | 50m | 500m |
+| live | 256Mi | 768Mi | 100m | 1000m |
+| api | 768Mi | 2048Mi | 500m | 3000m |
+| worker | 512Mi | 1536Mi | 250m | 2000m |
+| beat | 128Mi | 256Mi | 20m | 200m |
+| postgres | 2048Mi | 4096Mi | 1000m | 4000m |
+| valkey | 64Mi | 512Mi | 50m | 500m |
+| rabbitmq | 256Mi | 1024Mi | 100m | 1000m |
+| silo | 384Mi | 1536Mi | 100m | 1000m |
+| migrator (Job) | 128Mi | 512Mi | 50m | 750m |
+| predeploy dump (Job) | 64Mi | 512Mi | 50m | 1000m |
+
+What they use on the node is in [resource-utilization.md](resource-utilization.md).
+
+**To change a value here.** Edit `helm/plane/overlays/prod/`, or `gitops/clusters/plane-prod/values/<chart>.yaml` for a platform chart,
+then `make render`, read `git diff gitops/environments/prod/`, run `make ci`, commit and push to `main`. CI's release job moves
+`deploy/plane-prod`, and Argo CD syncs it. A change that is not an image needs no new evidence, because a set is images alone, so read
+the rendered diff as the review it is.
+
+### Platform charts and values
+
+The hosted Applications install these charts, with values under `gitops/clusters/plane-prod/values/`. Each file is a plain copy adapted
+from `helm/values/`, never a patch over it, so a change for this cluster cannot reach the kind cluster, and a chart bump reaches here
+only by an edit here. Every image is pinned by digest.
+
+| Chart | Version | Values | What changes from the local copy, and why |
+|---|---|---|---|
+| `traefik` | 42.3.0 | `traefik.yaml` | hostPorts 80 and 443, and a ClusterIP Service, because the hostPort is the only way in. The host firewall runs before portmap's DNAT, which does not masquerade, so Traefik sees each client's own address. `maxSurge: 0`, because a second pod could not bind the same hostPorts, at the cost of a brief outage on each Traefik rollout. A redirect on entry point `web` to `websecure`, with `allowACMEByPass` for the challenge path. TLS 1.2 at least, with `sniStrict`, and no certificate resolver, because cert-manager is the only certificate owner. The Ingress provider is on, for class `traefik` in three namespaces, only for cert-manager's HTTP-01 solver. JSON access logs with query strings dropped, because a presigned URL carries its signature there |
+| `cert-manager` | v1.21.3, OCI, from `quay.io/jetstack/charts` | `cert-manager.yaml` | Hosted only. CRDs on and kept, leader election in its own namespace, each image by digest, the solver's among them, and its ServiceMonitor in `monitoring-extras`, because the chart's own would arrive before the CRD |
+| `metrics-server` | 3.14.0 | `metrics-server.yaml` | `--kubelet-insecure-tls`, because K3s signs the kubelet's serving certificate with its own CA, which the pod does not hold. The port is reached only by pods the policies allow, and the host firewall drops it |
+| `kube-prometheus-stack` | 92.18.0 | `kube-prometheus-stack.yaml` | No scrapes of etcd, the controller manager, the scheduler or kube-proxy, because K3s runs the control plane in one process and exposes none of them, so they would fire `*Down` for good. The API server's scrape is off too, for its series count. Prometheus keeps 15 days, up to 12GiB, on 16Gi, and Alertmanager 120h on 1Gi, both on `local-path-retain`. Grafana takes its admin from Secret `grafana-admin`, keeps no volume, and answers at `https://grafana.bereket.dev` |
+| `loki` | 20.4.1 | `loki.yaml` | 168h of retention on 10Gi of `local-path-retain`. Only retention bounds that volume |
+| `alloy` | 1.15.0 | `alloy.yaml` | Pods' logs from every namespace but K3s's own and the restore tests, read through the Kubernetes API, with a Telegram bot token in a line replaced before Loki keeps it. No kindnet counter, because K3s has no kindnet |
+| `infisical-standalone` | 1.12.0 | `infisical.yaml` | Its bundled Postgres and Redis off, with its own from `platform/infisical`, and the settings its public route needs, `SITE_URL` among them. See [infisical.md](infisical.md) |
+| `secrets-operator` | 0.11.16 | `infisical-operator-prod.yaml` | One operator, in `plane-prod`, which installs the CRDs |
+| `argo-cd` | 10.11.7 | `argocd.yaml` | Installed by Terraform, not by Argo CD. See [argocd.md](argocd.md#hosted-production) |
+
+### K3s's own components
+
+K3s v1.36.6+k3s1 is one binary on the node. It runs the API server, controller manager, scheduler and kubelet in one process, with
+containerd 2.3.7, flannel for the pod network, kube-router as the NetworkPolicy controller, and SQLite as its datastore, K3s's default
+for one server. It also deploys components of its own, and `infrastructure/hosted/plane-prod/k3s-config.yaml` turns three of them off:
+
+| Component | Here | Why |
+|---|---|---|
+| CoreDNS | K3s's own, `rancher/mirrored-coredns-coredns:1.14.7` | Kept. Terraform's `coredns-custom` adds the three rewrites beside it: [terraform.md](terraform.md#hosted-production) |
+| local-path-provisioner | K3s's own, `rancher/local-path-provisioner:v0.0.37`, with its class `local-path` and reclaim `Delete` | Kept as the provisioner. The platform's claims use `local-path-retain` instead, which Terraform makes on the same provisioner with reclaim `Retain` |
+| Traefik | Off | Argo CD installs it, at the pinned chart and values |
+| ServiceLB | Off | Its klipper pods hide the client's address, which Plane's throttle needs, and Traefik's hostPorts are the way in |
+| metrics-server | Off | Argo CD installs it |
+
+K3s pulls its own images by tag, so only the node can say which digest it holds. `policy/hosted-system-images.txt` lists what each tag
+named when it was added, for the hosted image scan ([security.md](security.md)).
+
+Written by `provision-node.sh k3s` before K3s first starts, from `infrastructure/hosted/plane-prod/`:
+
+| Setting | Value | Why |
+|---|---|---|
+| `cluster-cidr`, `service-cidr`, `cluster-dns` | `10.244.0.0/16`, `10.96.0.0/16`, `10.96.0.10` | The kind cluster's ranges, so the policies and docs need no second set of numbers. They cannot change after the first start |
+| `flannel-backend` | `host-gw` | One node needs no overlay, so nothing listens on VXLAN's UDP port |
+| `secrets-encryption` | `true` | Secrets are encrypted at rest. The node read Enabled after provisioning ([hosted-node](evidence/runs/hosted-node-20261106T225936Z.txt)) |
+| `protect-kernel-defaults` | `true` | `provision-node.sh os` sets the sysctls first |
+| `resolv-conf` | `1.1.1.1` and `8.8.8.8` | Contabo's resolvers were slow. The config's comment gives over 3 seconds a lookup, and no file in `docs/evidence` holds that reading |
+| Audit log | Policy `audit.yaml`, at Metadata, kept 14 days in 5 files of 100 MB | |
+| `registries.yaml` | `docker.io` through `mirror.gcr.io`, then Docker Hub | Docker Hub limits anonymous pulls by address. Every image is pinned by digest, so a mirror cannot change what runs |
+| Kubelet drop-in | Reserves 1000m and 3Gi for K3s and 500m and 1Gi for the system. Evicts below 1Gi of memory or 10% of disk. Collects images above 75% of the disk, down to 65%, and any unused for 336h. 4096 PIDs a pod | K3s sets only disk eviction, which zeroes every other signal, so these are stated in full. Starting values, to measure again |
+
+Upgrading K3s has not been tried. `provision-node.sh k3s` installs what `target.yaml`'s `k3s_version` names, and changes nothing when K3s
+is at that version already.
+
+### Storage, quotas and limits on the VPS
+
+| Fact | Detail |
+|---|---|
+| Class | `local-path-retain`: `rancher.io/local-path`, reclaim `Retain`, `WaitForFirstConsumer`, made by Terraform. Plane's, Infisical's and monitoring's claims use it |
+| Location | `/var/lib/rancher/k3s/storage` on the node's one disk. There is no replication or snapshot, and the backups are the copy elsewhere |
+| Requested size | Not enforced, as on kind. The quotas' `requests.storage` caps what claims may ask, and only the disk alerts bound what a volume holds |
+| Deleting a claim or a namespace | Leaves the volume and its data on the disk, because of `Retain`, and nothing binds it again by itself |
+| Backups | Static `hostPath` volumes on `/srv/wayline/backups/plane-prod` and `/srv/wayline/backups/infisical`, 40Gi and 10Gi, reclaim `Retain`, each bound to a claim `backups`, from Application `backup`. The nightly CronJobs seal into them with restic. See [data-operations.md](data-operations.md) |
+
+The quotas come from `infrastructure/hosted/plane-prod/capacity.yaml`, which Terraform applies as `ResourceQuota/budget`:
+
+| Namespace | `requests.cpu` | `requests.memory` | `limits.memory` | `pods` | Claims | `requests.storage` |
+|---|---:|---:|---:|---:|---:|---:|
+| `plane-prod` | 3300m | 7Gi | 14688Mi | 32 | 6 | 140Gi |
+| `argocd` | 250m | 512Mi | 1984Mi | 8 | 0 | 0 |
+| `traefik` | 100m | 192Mi | 512Mi | 3 | 0 | 0 |
+| `cert-manager` | 50m | 192Mi | 448Mi | 6 | 0 | 0 |
+| `monitoring` | 300m | 1792Mi | 4416Mi | 14 | 3 | 27Gi |
+| `monitoring-agents` | 20m | 48Mi | 128Mi | 2 | 0 | 0 |
+| `infisical` | 300m | 1664Mi | 2400Mi | 6 | 3 | 13Gi |
+| `frameflow` | | | | 0 | 0 | 0 |
+
+Unlike the kind cluster's, these cap `requests.cpu` too, because requests are what the scheduler holds back and they must fit one node,
+and each `LimitRange/defaults` gives a container with no request 10m of CPU, so such a pod stays admissible. Each `limits.memory` is
+what every pod there may reach at once, plus room for one rollout's surge: a quota with no room for the largest pod would stop that
+rollout for good. Frameflow is not deployed. Its reservation, 18Gi of memory, 6 CPU of requests and 100Gi of disk, exists only as what the
+other quotas leave free, and `scripts/ci/check-capacity.sh` fails CI unless their sum, with the system's share and Frameflow's, fits the
+node. In `infisical` the quota fits one of a server rollout, the nightly backup or a certificate's solver at a time, so they wait for each
+other: `scripts/hosted/README.md`, section The first certificate.
+
+### What differs from kind
+
+| | kind | K3s on the VPS |
+|---|---|---|
+| Distribution | kind v0.33.0, Kubernetes v1.36.4, kubeadm's control plane in containers | K3s v1.36.6+k3s1 in one process, with SQLite, and Secrets encrypted at rest |
+| Node | A container in Docker Desktop's VM on this Mac, arm64 | The VPS itself, x86-64, 12 vCPU and 47 GiB |
+| Images | arm64 builds in prod-sim. Dev runs the amd64 builds under Rosetta | linux/amd64. For an upstream index, its amd64 child |
+| Pod network | kindnet | flannel, `host-gw` |
+| NetworkPolicy | kindnet: a denied connection times out | kube-router: a denied connection is refused at once, so the hosted matrix counts a deny only as a refusal from a port the node really connected to ([first run](evidence/runs/hosted-netpol-first-20261107T043810Z.txt)) |
+| The way in | NodePorts 30080 and 30443, which kind maps to `127.0.0.1:80` and `:443` | Traefik's hostPorts 80 and 443 on the public address, behind the host firewall |
+| TLS | None | cert-manager, with Let's Encrypt by HTTP-01, terminated by Traefik ([ADR 0018](adr/0018-hosted-tls-cert-manager.md)) |
+| CoreDNS rewrite | kubeadm's Corefile, rewritten in place | `coredns-custom`, which K3s's Corefile imports |
+| Storage class | `standard`, reclaim `Delete` | `local-path-retain`, reclaim `Retain` |
+| Backup volumes | `hostPath` on `/backups`, which is `.local/backups` on this Mac | `hostPath` on `/srv/wayline/backups`, on the VPS |
+| Quotas | Memory and object counts, worked out in the module | CPU requests too, from `capacity.yaml`, checked against the node in CI |
+| Control plane metrics | Scraped | Not exposed by K3s, so not scraped |
+
+**Do not `kubectl delete namespace plane-prod`.** It deletes every claim with it. The volumes stay, on `Retain`, but nothing would be
+bound to them, and the quota and labels Terraform owns would be gone, which Argo CD does not make again.

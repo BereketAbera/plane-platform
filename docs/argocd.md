@@ -3,7 +3,12 @@
 Argo CD deploys the workloads. Terraform owns namespaces, quotas and the rest that [the bootstrap chain](#the-bootstrap-chain) lists, and Argo CD itself. Wayline, the application Argo CD delivers, is
 a customized Plane Community Edition v1.4.3 deployment, not an original product.
 
-**Status of this page.** It describes the configuration in the code, and what ran on local kind clusters, one at a time, on
+There are two Argo CDs, one per cluster. The kind cluster's reads `main` from a Git daemon on this Mac and deploys dev and prod-sim,
+and every section from [Access](#access) to [Promotion](#promotion) is about it. Hosted production's reads branch `deploy/plane-prod`
+on GitHub, which only CI writes, and [Hosted production](#hosted-production) covers it.
+
+**Status of this page.** It describes the configuration in the code. Its hosted section adds what ran on hosted production on
+2026-11-07, where `docs/evidence` holds it. The rest is what ran on local kind clusters, one at a time, on
 2026-11-04 and 2026-11-05 with Argo CD v3.5.7: the first, the clean and cold installs' own, and three restored from backup. A measured statement links its file under
 [`docs/evidence/runs/`](evidence/README.md). What Pass 1 did not test is stated where it comes up, among them a cluster-scoped refusal, a restore during a failing sync and a rollback of prod-sim.
 The clean install inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` finished at about 08:10Z on 2026-11-05. Its evidence is [published](evidence/runs/clean-install-20261105T075041Z/summary.txt). Several results come from scratch
@@ -41,7 +46,7 @@ flowchart TD
 | Step | Owner | Notes |
 |---|---|---|
 | Bare repo at `.local/git/plane-platform.git` | `make gitops-publish`, the only writer | Publishes commits on `main`. Uncommitted work never reaches Argo CD |
-| `plane-git` | Compose | Read-only `git daemon` on the `kind` network. GitHub runs CI, but Argo CD does not read it in Pass 1 |
+| `plane-git` | Compose | Read-only `git daemon` on the `kind` network. GitHub runs CI, and this Argo CD never reads it. Hosted production's reads only GitHub |
 | Argo CD release | Terraform | Values in `helm/values/argocd.yaml`. **A change there needs `terraform apply`, not a publish** |
 | AppProjects, root Application | Terraform, through local chart `gitops/bootstrap/chart` | Not synced from Git, so a commit cannot edit what a project allows. A commit can still set `project: platform` on an Application. `policy/gitops.rego` refuses that for both Plane Applications, for anything that syncs `gitops/environments`, and for project `default`, in `make ci` and in CI. GitHub Free cannot make a failing check block a merge. See [`.github/workflows/README.md`](../.github/workflows/README.md) |
 | Namespaces, quotas, LimitRanges, the CoreDNS rewrite | Terraform, through `infrastructure/terraform/modules/foundation` | No project may deploy a `Namespace`, `ResourceQuota` or `LimitRange`. See [terraform.md](terraform.md#what-terraform-owns) |
@@ -468,9 +473,10 @@ nothing ([argocd-kubectl-diff-1.txt](evidence/runs/argocd-kubectl-diff-1.txt)). 
 
 ## Promotion
 
-Image digests for an environment live in `helm/plane/overlays/<env>/kustomization.yaml` under `images:`. Only
-`scripts/promote.sh` writes those lines. It edits them with `kustomize edit set image`, re-renders, commits with
-`Promote-Env:` and `Promote-Image:` trailers, and publishes.
+Image digests for an environment live in `helm/plane/overlays/<env>/kustomization.yaml` under `images:`. For dev and
+prod-sim only `scripts/promote.sh` writes those lines. It edits them with `kustomize edit set image`, re-renders, commits with
+`Promote-Env:` and `Promote-Image:` trailers, and publishes. Hosted production's, in `helm/plane/overlays/prod`, change only through
+[a signed set and a pull request](#exact-digest-image-sets).
 
 ```mermaid
 flowchart LR
@@ -485,8 +491,9 @@ flowchart LR
 ```
 
 **Images.** Both overlays name `localhost:5001/wayline/{web,admin,space,backend}` by digest: dev since `4f622e3` and prod-sim since `0af8956`, both on 2026-11-05.
-Their `live` image and the data services stay upstream. Both environments now run the final images built from `84b63d9` (web `3d7575a1`, admin `ce7adc37`, space `5f0119ff`, backend `8c04bd18`), promoted to dev by `1fc9fbe`
-and to prod-sim by `9c8e098`. Dev's drills moved it away and back, and `29316f2` is the promotion it stands on.
+Their `live` image and the data services stay upstream. Prod-sim's overlay names the final Pass 1 images, built on this Mac from `84b63d9` (web `3d7575a1`, admin `ce7adc37`, space `5f0119ff`, backend `8c04bd18`) and promoted by `9c8e098`.
+Dev ran those too, promoted by `1fc9fbe` and, after its drills, `29316f2`. Since `e499212` on 2026-11-07, dev's overlay names the four that `images.yml` built on GitHub as plain linux/amd64 manifests
+(web `23890443`, admin `c8edb3cb`, space `a0cf0e9a`, backend `9df47b8a`), copied to the local registry with their digests. Dev ran them under Rosetta, and they are the ones hosted production runs. See [Through GitHub](#through-github) below.
 
 ### Dev
 
@@ -502,23 +509,32 @@ make promote ENV=dev IMAGE=web DIGEST=sha256:<64-hex>
 `web` maps to the chart's `plane-frontend`. Add `REPO=` when the digest comes from another repository. A digest under
 `localhost:5001/` must already be in the local registry, or the script stops before Argo CD can sit in `ImagePullBackOff`.
 
-**Through GitHub.** The first step has run twice, on 2026-11-05, at `9c8e098` and `76e98ee`. Run 41975430939 built four images, published four private GHCR packages and opened
-[pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), and run 42044273310 did the same and force-updated it. It stays open and unmerged (rows CI-4 and CI-5 in [evidence/ci/README.md](evidence/ci/README.md)). Nothing has copied those digests to the local
-registry, so steps 2 and 3 have not run, and what runs in the cluster came from `make images`.
+#### Through GitHub
 
-1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It needs the repository setting that lets workflows open pull requests, on since 2026-11-05 by the owner's decision.
+This is the path hosted production's images take. `images.yml` builds plain linux/amd64 manifests on `ubuntu-24.04`, because the VPS is
+x86-64, while `make images` on this Mac stays linux/arm64. Dev runs the same bytes under Rosetta.
+
+1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where the kind cluster's Argo CD pulls from. It needs the repository setting that lets workflows open pull requests, on since 2026-11-05 by the owner's decision.
 2. Merge it, and `git pull`.
-3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not. The script lower-cases `<owner>`, because an image reference takes only lower case.
+3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not. The script lower-cases `<owner>`, because an image reference takes only lower case. The packages are private, so this Mac's `gh` needs `read:packages`, which `scripts/hosted/owner-inputs.sh github` grants.
 
 ```bash
-scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
+scripts/ci/copy-to-local-registry.sh ghcr.io/bereketabera/wayline dev
 make gitops-publish
+make test-e2e ENV=dev
 ```
 
-A merge changes nothing running. GitHub Actions cannot reach the cluster. It reaches the cluster only at `make gitops-publish`.
+A merge changes nothing running. GitHub Actions cannot reach the kind cluster. It reaches it only at `make gitops-publish`.
 
-That copy has never finished. From this Mac, with the owner as GitHub spells it, `BereketAbera`, it stopped at the first image with `invalid reference format`, before the script lower-cased the owner. In lower case it stopped there with a 401, because the packages are private and nothing here can read them. The local registry stayed at 404 for those digests
-([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt), [ci-4-20261105T055130Z-ghcr-local-token.txt](evidence/ci/ci-4-20261105T055130Z-ghcr-local-token.txt)). `scripts/gitops-publish.sh` has no registry check, so a publish without the copy would point `plane-dev` at digests nothing can pull. That last part is read from the code, and no run has done it.
+All three steps ran on 2026-11-07. Run 42318206339 built the four images from `5161bf9`, which the [signed record](evidence/promotions/6d3610b95f013b4f07212106e467577f8f45e9ede9ec282ef1223b95d72e5d12.json) names,
+and [pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), merged that day, carried them as `e499212`. The copy kept every digest, and the copy and the publish each exited 0
+([copy and publish](evidence/runs/DEV-VALIDATE-copy-publish-20261107T050522Z.txt)). The smoke test read BLOCKED once, and PASS on a second run after the old pods had gone
+([BLOCKED](evidence/runs/DEV-VALIDATE-smoke-20261107T051110Z.txt), [PASS](evidence/runs/DEV-VALIDATE-smoke-20261107T051309Z.txt)). On 2026-11-05 the same copy had stopped at the first image, with `invalid reference format`
+before the script lower-cased the owner, and then with a 401, because nothing here could read the private packages yet
+([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt), [ci-4-20261105T055130Z-ghcr-local-token.txt](evidence/ci/ci-4-20261105T055130Z-ghcr-local-token.txt)). Those were the arm64 builds of
+runs 41975430939 and 42044273310 (rows CI-4 and CI-5 in [evidence/ci/README.md](evidence/ci/README.md)), which never reached the cluster.
+
+`scripts/gitops-publish.sh` has no registry check, so a publish without the copy would point `plane-dev` at digests nothing can pull. That is read from the code, and no run has done it.
 
 ### Prod-sim
 
@@ -547,7 +563,7 @@ review covers that.
 asks GitHub for a pull request. It never builds. On a real runner it refused an unrecorded digest on 2026-11-04 (run 41905513020), and on 2026-11-05 an invented digest and another image's digest
 (runs 41976950402 and 41977025314). Run 41977114312 at `9c8e098` opened [pull request 2](https://github.com/BereketAbera/plane-platform/pull/2), closed unmerged as a test
 (rows CI-6 and CI-6b in [evidence/ci/README.md](evidence/ci/README.md)). The repository setting that lets a workflow open a pull request has been on since 2026-11-05, by the owner's decision. With it off, GitHub refused
-the pull request in runs 41905611391 and 41908167069. A pull request opened this way starts no job: GitHub holds its `ci` run for approval. No promotion pull request has been merged, so steps 2 and 3 have not run.
+the pull request in runs 41905611391 and 41908167069. A pull request opened this way starts no job: GitHub holds its `ci` run for approval. No prod-sim promotion pull request has been merged, so steps 2 and 3 have not run. Hosted production's first promotion, pull request 3, is another workflow, [below](#exact-digest-image-sets).
 
 1. Run the workflow, with `image` and `digest` or with neither to copy every image from dev. If that setting is off, the run goes red at the pull request step and links to the page for opening it by hand.
 2. Review and merge. **Merging is the approval, and GitHub cannot enforce it.** The repository is private on the Free plan, so there are no environment reviewers and no protected branches. See [`.github/workflows/README.md`](../.github/workflows/README.md).
@@ -593,3 +609,212 @@ again, and took no second dump ([promote-prod-sim-final-2.txt](evidence/runs/pro
 One run each, on a small database: the dump is 806,858 bytes. So about 15 of prod-sim's seconds were that dump, and a large database would take longer. Neither run waited for Argo CD's own look, which can add up to the 289s above.
 
 If it goes wrong, see [Rollback](#rollback). Failure handling is in [runbooks](runbooks/).
+
+## Hosted production
+
+Hosted production runs an Argo CD of its own, the same v3.5.7 from chart `argo-cd` 10.11.7, installed by Terraform root
+`environments/prod` with values from `gitops/clusters/plane-prod/values/argocd.yaml`. Those values are a copy of the local ones, with
+the same health checks and the same lean shape: one replica of each part that runs, no Dex, no notifications, and the ApplicationSet
+controller at 0 replicas. What differs is where it reads, who writes that, and how a change gets there.
+
+| | Kind cluster | Hosted production |
+|---|---|---|
+| Git source | `git://plane-git/plane-platform.git`, branch `main` | `ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git`, branch `deploy/plane-prod`, with a read-only deploy key |
+| Who writes it | `make gitops-publish`, from this Mac | CI's `release-plane-prod` job alone, after a push to `main` passes |
+| What the branch holds | All of `main` | `gitops/clusters/plane-prod`, `gitops/environments/prod` and `RELEASE.json`, and nothing else |
+| Promotion | `make promote`, with the plane-dev check and a dump | A signed record that dev ran the exact set, then a pull request that a person merges |
+| Rollback | `make rollback`: a revert, then a publish | A revert on `main`, or the promotion of an older set. `make rollback` refuses `ENV=prod` |
+| Access | `http://argocd.localhost` | No public route: `make remote-ui TARGET=plane-prod UI=argocd`, on `http://localhost:18080` |
+| Applications | Root and 13 children | Root and 13 children, a different set, so 14 in all |
+
+No CI job holds a Kubernetes credential, so GitHub cannot reach the cluster: it changes what Argo CD reads, and Argo CD pulls, with no
+webhook, at its next look, as locally. With this Mac off, production should keep running, because by design nothing it needs is here, which no test has checked. New digests wait
+meanwhile, because new evidence needs this Mac's dev cluster and its signing key.
+
+### The bootstrap chain on hosted production
+
+| Step | Owner | Notes |
+|---|---|---|
+| Deploy key | `scripts/hosted/bootstrap.sh`, step 1 | Made on this Mac, added to GitHub read-only, and kept in `.local/hosted/plane-prod/argocd-deploy-key`. A key added with `gh`'s token goes if that token's app is de-authorized, and that shows at once as Argo CD failing to fetch |
+| Secret `argocd/argocd-repo-plane-platform` | Bootstrap, step 2 | Written after the namespaces and before Argo CD starts, so its first look at the repository works. It cannot come from Infisical, because Argo CD deploys Infisical |
+| Argo CD, AppProjects, root Application | Terraform, bootstrap step 3 | The bootstrap chart in `gitops/clusters/plane-prod/bootstrap-chart`. Read from no branch, so nothing Git delivers can widen a project |
+| Everything else | Argo CD, from `deploy/plane-prod` | |
+
+The chart's default known hosts already hold `[ssh.github.com]:443`, so no host key is configured.
+
+### Projects on hosted production
+
+| Project | Destinations | Source repos | Cluster-scoped | Denied in namespaces |
+|---|---|---|---|---|
+| `platform` | All namespaces | The GitHub repository and seven chart repositories, one of them the OCI repository `quay.io/jetstack/charts` | All except `Namespace` | `ResourceQuota`, `LimitRange` |
+| `plane-prod` | `plane-prod` only | The GitHub repository only | None | `ResourceQuota`, `LimitRange`, `NetworkPolicy` |
+
+`policy/hosted.rego` holds the hosted tree to more, in CI: one Git source at that branch, paths only under
+`gitops/clusters/plane-prod/platform/` or the render, Helm values only from `$values/gitops/clusters/plane-prod`, each chart pinned to one
+version, no inline parameters or values on a source, no ApplicationSet, and no project but these two.
+
+### Root and its children
+
+`root` reads `gitops/clusters/plane-prod/applications/`, its one source, so its status carries `status.sync.revision`. Each file there
+is one child, and every child reads the same branch. Paths are under `gitops/clusters/plane-prod/`.
+
+| Wave | Application | Project | Namespace | Source | Finalizer |
+|---:|---|---|---|---|---|
+| -10 | `network-policies` | platform | several | `platform/network-policies` | No |
+| -10 | `backup` | platform | `plane-prod`, `infisical` | `platform/backup`: the static volumes on `/srv/wayline/backups`, their claims, and the nightly CronJobs | No |
+| -9 | `traefik` | platform | `traefik` | chart 42.3.0 | Yes |
+| -8 | `cert-manager` | platform | `cert-manager` | chart v1.21.3, from the OCI repository | No |
+| -8 | `metrics-server` | platform | `kube-system` | chart 3.14.0 | Yes |
+| -7 | `certificates` | platform | `plane-prod`, `monitoring`, `infisical` | `platform/certificates`: ClusterIssuers `letsencrypt-staging` and `letsencrypt-production`, and Certificates `wayline-tls`, `grafana-tls` and `infisical-tls` | No |
+| -7 | `kube-prometheus-stack` | platform | `monitoring` | chart 92.18.0 | Yes |
+| -6 | `loki` | platform | `monitoring` | chart 20.4.1 | Yes |
+| -6 | `alloy` | platform | `monitoring` | chart 1.15.0 | Yes |
+| -5 | `monitoring-extras` | platform | `monitoring`, with probes and exporters in `plane-prod` and `infisical` | `platform/monitoring-extras` | Yes |
+| -4 | `infisical` | platform | `infisical` | chart `infisical-standalone` 1.12.0, and `platform/infisical`: Postgres, Redis, the server's ServiceAccount and its public route | No |
+| -3 | `infisical-operator-prod` | platform | `plane-prod` | chart `secrets-operator` 0.11.16. The only operator on this cluster, so it installs the CRDs | No |
+| 0 | `plane-prod` | plane-prod | `plane-prod` | `gitops/environments/prod` | No |
+
+Against the kind cluster's waves: cert-manager comes at -8, so its CRDs exist before the Certificates at -7. The Certificates, the
+ClusterIssuers and the backup CronJobs carry `argocd.argoproj.io/ignore-healthcheck`, so an ACME outage, a closed firewall or a failed
+night cannot hold root at their wave, and alert rules report those failures instead. postgres-exporter carries it too, because
+`plane-pgdb`'s Secret exists only once Plane's Application does, at wave 0, after it. There is no prod-sim, one operator, and no route
+for Argo CD.
+
+**Plane arrives with the first promotion.** `applications/plane-prod.yaml` is a copy of
+`gitops/clusters/plane-prod/plane-prod-application.yaml.tmpl`, which `scripts/ci/promote-prod.sh` makes on the first promotion. Until then
+root holds no Plane Application, and the platform comes up alone. A revert of that promotion would take the file away, and root would
+prune the Application and leave Plane running unmanaged with its availability alerts quiet. So the release job refuses to go from a set
+back to none.
+
+Inside the Plane Application the waves are those of [Inside a Plane Application](#inside-a-plane-application), with two more objects. A
+seventh `InfisicalStaticSecret`, `ghcr-pull`, at wave -1, gives ServiceAccount `plane` its GHCR pull secret. Job
+`plane-prod-predeploy-dump`, a Sync hook at wave 1, waits for Postgres and dumps it to the backup volume, so every migration at wave 2 has
+a fresh dump behind it.
+
+Every hosted Application has `automated: {prune: true, selfHeal: true}`, `retry.limit: -1` with `refresh: true`, and a backoff of 30s,
+factor 2, cap 5m. So a failing sync on hosted production reads `Running` too, and [Retry behaviour](#retry-behaviour) applies as it
+stands. `monitoring/ops/lib.sh` refuses `ENV=prod`, so pausing auto-sync there is by hand, root first and back last, with the
+`kubectl` of [install.md](install.md#day-to-day). The rollback steps in [scripts/hosted/README.md](../scripts/hosted/README.md) show the
+patches.
+
+### Releases: deploy/plane-prod
+
+`scripts/ci/publish-release.sh` is the only writer of `deploy/plane-prod`. `ci.yml`'s job `release-plane-prod` runs it on each push to
+`main`, once Lint, Manifests and Security have passed, one run at a time, with `contents: write` to move the branch and `packages: read`
+to read GHCR. It stops at the first check that fails. A failure leaves the branch where it is, so a merged change that fails reaches
+nothing, and production keeps running what it ran.
+
+1. `scripts/ci/check-prod-evidence.sh` on the commit. Exit 0 names the set the render runs. Exit 3 means plane-prod is not promoted yet,
+   and the release holds the platform alone. Anything else refuses.
+2. It refuses to move backwards: the branch's `RELEASE.json` names a main commit, and this one must descend from it. A rollback is a
+   revert, which moves forwards.
+3. It refuses a branch that no longer holds what its `RELEASE.json` names, because someone pushed it by hand, and overwriting that would
+   hide it. See [check-deploy-branch.yml](#check-deploy-branchyml).
+4. It refuses to go from a set back to none, which is what a revert of the first promotion leaves.
+5. If the two hosted trees already match the branch's, it changes nothing.
+6. Each Wayline digest must be a plain linux/amd64 manifest on GHCR, whose bytes hash to that digest, and whose revision label is the one
+   the evidence signed.
+7. It writes a commit that holds only `gitops/clusters/plane-prod`, `gitops/environments/prod` and `RELEASE.json`, parented on the
+   branch's tip, and pushes it without force. So no workflow file can cross to the branch, and a branch that moved meanwhile refuses it.
+
+`RELEASE.json` says where a release came from:
+
+```json
+{
+  "main_commit": "<the main commit, 40 hex>",
+  "repository": "BereketAbera/plane-platform",
+  "run": {"id": "<run id>", "attempt": "<attempt>", "url": "https://github.com/BereketAbera/plane-platform/actions/runs/<run id>"},
+  "set_hash": "<the set, 64 hex, or null before the first promotion>"
+}
+```
+
+The commit's subject is `release: main <12 hex>, set <12 hex>`. To see what production should be running, and what it does run:
+
+```bash
+git fetch origin deploy/plane-prod
+git log --format='%h %cI %s' FETCH_HEAD | head
+git show FETCH_HEAD:RELEASE.json
+make remote-status TARGET=plane-prod      # each Application's revision, and the branch check
+```
+
+Read from GitHub on 2026-11-07, the branch's first three releases held the platform alone, and each release since the first promotion
+names set `6d3610b95f01`. The release job's runs are on GitHub, and none is in `docs/evidence` yet.
+
+### Exact-digest image sets
+
+A set is every image the render runs, by digest. Its name, `set_hash`, is the sha256 of the sorted, unique lines
+`<production repository>@<digest>`, one for each image, so a tag does not count, because the runtime pulls by digest.
+`docs/evidence/promotions/<set_hash>.json` says plane-dev ran exactly that set and that its smoke passed against those containers, and
+`<set_hash>.json.sig` is its signature, made on this Mac with `~/.ssh/wayline_evidence_ed25519`, whose public half is in
+`.github/evidence-signers`. The key stays on the laptop, so nothing in CI can make evidence. [The promotions README](evidence/promotions/README.md)
+describes the file, and what a signature does and does not prove.
+
+`scripts/ci/check-prod-evidence.sh` reads the commit and not the working tree, asks no cluster, and takes no argument or setting that
+could make it lenient. Every image in `gitops/environments/prod/manifests.yaml` must be in one signed record that covers exactly that
+set. It holds no clock either, so an older set keeps its evidence, and a rollback to it passes. It covers the render and nothing else:
+Traefik, cert-manager, monitoring, Infisical and the backup Jobs never ran in dev as they do here, and `validate-manifests.sh` holds the
+images outside the render to `policy/hosted-images.txt`, which makes a new one a diff that a person reads.
+
+From a digest bump to production:
+
+1. Dev runs the exact bytes: the `images.yml` bump merged, the copy, `make gitops-publish`, `make test-e2e ENV=dev` and
+   `make publish-evidence`, as [Through GitHub](#through-github) says.
+2. `make record-dev-evidence` writes the record and its signature. It refuses unless the newest dev smoke passed, with its branding
+   check, every container started before that smoke began, every digest runs in a ready container in plane-dev, and each branded digest
+   is a plain linux/amd64 manifest on GHCR, built by a successful `images.yml` run on a commit in `main`'s history. Commit the two files
+   with the published smoke, and push.
+3. `gh workflow run promote-plane-prod.yml -f set_hash=<set_hash>` maps the set to GHCR names in `helm/plane/overlays/prod`, renders,
+   adds `applications/plane-prod.yaml` on the first promotion, runs the check on the result, and opens a pull request from
+   `promote/plane-prod`. It never builds, and cannot reach the cluster.
+4. A person merges it. **Merging is the approval, and GitHub cannot enforce it**: the repository is private on the Free plan, with no
+   environment reviewers and no protected branches. See [`.github/workflows/README.md`](../.github/workflows/README.md).
+5. The release job checks the merged commit again, confirms each digest on GHCR, and moves `deploy/plane-prod`. Argo CD syncs it.
+
+On the first promotion Plane's first admin can be claimed by whoever posts first, so keep the firewall at `owner` or lower until the
+owner has made it ([install.md](install.md#firewall-stages)).
+
+**The one set promoted so far** is `6d3610b95f01` ([record](evidence/promotions/6d3610b95f013b4f07212106e467577f8f45e9ede9ec282ef1223b95d72e5d12.json)):
+the four branded images that `images.yml` run 42318206339 built from `5161bf9`, and five upstream indexes, Plane's `live`, Postgres
+15.19, RabbitMQ 3.13.7, Valkey 7.2.15 and Silo. Plane-dev ran it at `201c85b`, under Rosetta, and the record names the smoke it passed
+([smoke](evidence/runs/smoke-dev-20261107T051309Z-98217.json)). For an upstream index, dev ran its linux/arm64 child and production runs
+its linux/amd64 child, which dev never ran, and the record says so. The promotion was
+[pull request 3](https://github.com/BereketAbera/plane-platform/pull/3), merged on 2026-11-07.
+
+### check-deploy-branch.yml
+
+GitHub Free cannot protect a branch of a private repository. Anyone with write access can push `deploy/plane-prod`, and so can any job
+with `contents: write`, whatever its comments say. Root and its children sync what the branch holds, so writing it amounts to
+cluster-admin. Nothing short of a paid plan or a check on the cluster prevents that. Three places detect it, and by then Argo CD may
+have deployed it:
+
+| Where | When | What it does |
+|---|---|---|
+| `.github/workflows/check-deploy-branch.yml` | Each day at 05:23 UTC, and on dispatch | Runs `scripts/ci/check-deploy-branch.sh` with `contents: read`, and changes nothing. Exit 0: the branch holds what its `RELEASE.json` says main released, or there is no branch yet. 1: it does not, and it names what differs. 2: the branch could not be read, which says nothing |
+| `make remote-status TARGET=plane-prod` | When someone runs it | The same script, because GitHub may delay or drop a scheduled run |
+| The release job | Each push to `main` | Refuses on the same comparison, step 3 above, rather than overwrite the push and report success |
+
+The comparison: the branch holds nothing but `RELEASE.json` and the two hosted trees, its `RELEASE.json` names a commit on `main`, and
+each tree is that commit's, object for object. Without the daily run, a push between two releases could stay for as long as `main` is
+quiet. To put the branch back, read the diff the message prints, push a commit on the branch whose trees are the recorded commit's, and
+run the release job again.
+
+### Rollback on hosted production
+
+**Rollback is a revert on `main`, or the promotion of an older set.** Both move `deploy/plane-prod` forwards. The release job refuses
+to move it backwards, so never push an older release commit to the branch.
+
+| Way | How | Note |
+|---|---|---|
+| Revert a promotion | `git revert` of the promotion commit on `main`, then the release job | The older set still has its evidence, so the gate passes |
+| Promote an older set | `gh workflow run promote-plane-prod.yml -f set_hash=<older set>`, then merge | The same gate, and the same evidence |
+| Revert the first promotion | Refused by the release job | It would leave no set, and root would prune Plane's Application. Promote another set, or revert the revert |
+| Revert a platform change | `git revert` on `main`, then the release job | A change Terraform owns needs root `prod` applied again: [terraform.md](terraform.md#plan-and-apply-on-hosted-production) |
+
+**Images roll back, the database does not.** A migration the newer image ran stays applied. If the older image runs on that schema,
+stop there. If it does not, or if the migration did the damage, restore the dump Job `plane-prod-predeploy-dump` took just before it.
+Everything written since that dump is lost, so a person decides. [scripts/hosted/README.md](../scripts/hosted/README.md), section After a
+rollback: the database does not go back, says which dump to take and gives the steps in order, and the runbook
+[Rollback on hosted production](runbooks/hosted-rollback.md) walks the whole of it. `make rollback` and `make restore` refuse `ENV=prod`.
+
+**What has run.** No rollback of hosted production has run, by either way: NOT RUN. The restore of a predeploy dump has not run on a real
+cluster either: NOT RUN.
