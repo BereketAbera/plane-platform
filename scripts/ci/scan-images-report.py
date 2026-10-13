@@ -4,10 +4,10 @@
     scan-images-report.py <results directory>
     scan-images-report.py --selftest
 
-Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and writes summary.tsv and
-critical.tsv beside them. Exits 1 if an image we build has a CRITICAL finding with a fix available, if any image
-was not scanned, or if any result is of a platform this scan was not for. See scan-images.sh for why the policy is
-that and no wider.
+Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and writes summary.tsv,
+critical.tsv and report.txt beside them, the last being what this prints. Exits 1 if an image we build has a CRITICAL
+finding with a fix available, if any image was not scanned, or if any result is of a platform this scan was not for.
+See scan-images.sh for why the policy is that and no wider.
 """
 import csv
 import json
@@ -194,6 +194,9 @@ def main(directory):
     failures = policy_failures(rows, critical, platforms)
     lines = report_lines(rows, critical, failures, platforms)
     print("\n".join(lines))
+    # Kept with the results, so whoever reads them later, as an artifact or as evidence, reads what was printed here.
+    with open(os.path.join(directory, "report.txt"), "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines) + "\n")
     summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_file:
         with open(summary_file, "a", encoding="utf-8") as handle:

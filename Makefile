@@ -61,9 +61,12 @@ test-alert: ## Prove alert delivery end to end: make test-alert ENV=dev
 test-load: ## Run the k6 load test and capture resource use, dev only: make test-load ENV=dev [THINK=0]
 	@./tests/load/run.sh "$(ENV)"
 
-.PHONY: scan-images
+.PHONY: scan-images scan-images-hosted
 scan-images: ## Scan every image the platform runs, each read for PLATFORM, and report it all. Fails on a fixable CRITICAL in an image we build, a missed image, or a result of another platform. On the laptop a full scan needs SCAN_ALSO_PLATFORM=linux/amd64, because dev runs plain linux/amd64 manifests. [PLATFORM=linux/arm64] [SCAN_MIN_FREE_GIB=15] [SCAN_FLOOR_GIB=15]
 	@./scripts/ci/scan-images.sh
+
+scan-images-hosted: ## Scan every image hosted production runs, each read for linux/amd64 from its registry and never from the cluster, with the same report and failures. Needs Docker logged in to ghcr.io with read:packages, for the private Wayline images. [SCAN_MIN_FREE_GIB=15] [SCAN_FLOOR_GIB=15]
+	@SCAN_ONLY=hosted ./scripts/ci/scan-images.sh
 
 .PHONY: publish-evidence
 publish-evidence: ## Copy .local/evidence-raw to docs/evidence/runs with secrets scrubbed. Fails on any gitleaks finding
