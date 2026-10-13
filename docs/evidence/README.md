@@ -217,6 +217,7 @@ from a search domain, and the fix was a trailing dot on the name.
 | [branding/live-final/](branding/live-final/README.md) | A real browser on the final images after a full restore, in both environments: a work item typed before the delete, a published board, the first sign-in on prod-sim, and both sessions at once |
 | [ci/](ci/README.md) | GitHub Actions runs, `make ci`, negative controls and promotion flow tests, by row, with reads of what GitHub served, one `make status` and what the last publishes printed |
 | [security/](security/README.md) | `scripts/ci/scan-images.sh` runs: two complete, the later one whole, one stopped early, and four runs of what is built here, the last on the final images |
+| [promotions/](promotions/README.md) | The signed record of each set of digests dev ran, which hosted production's release job checks before it moves `deploy/plane-prod` |
 
 ### `runs/`, by topic
 
@@ -311,3 +312,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `traefik-` | Routes through Traefik, and the source address seen at the NodePort |
 | `validate-manifests-ops-` | `scripts/ci/validate-manifests.sh` during the entry-point work |
 | `wayline-` | Early branding builds and checks. `wayline-assets-sheet.png` is the contact sheet of generated images. The final build is in [branding/](branding/README.md) |
+| `DEV-VALIDATE-` | Dev on set `6d3610b95f01`, 2026-11-07: GHCR's four linux/amd64 images copied into `localhost:5001` by digest and published (`-copy-publish-`), and dev's smoke under Rosetta, BLOCKED at 05:11Z while the rollout ran and PASS at 05:13Z (`-smoke-`). The smoke JSON is `smoke-dev-20261107T*` |
+| `LOCAL-` | The local platform since Pass 1: `make up` after `make down` and two Docker restarts, 2026-11-07 |
+| `gate-` | The exact-digest gate for hosted production at `5dccc91`, 00:15Z to 00:28Z on 2026-11-07: lint, `scripts/ci/test-prod-gate.sh` on macOS and on Ubuntu 24.04 (`-linux-`), the planted mutations, and the real render and tree with stubs (`-real-tree-`) |
+| `hosted-` | Hosted production, `plane-prod`: the read-only check of the VPS and its DNS (`-access-dns-`), the node after provisioning (`-node-`), both runs of the bootstrap, the first matrix run and its refusal without `CONFIRM` (`-netpol-first-`, with its rows in `netpol-plane-prod-*.tsv`), and `hosted-images-amd64-*/`, one file per check of the linux/amd64 image work on 2026-11-06. Later hosted runs stay in `.local/evidence-raw/` until `make remote-publish-evidence TARGET=plane-prod` copies them |
