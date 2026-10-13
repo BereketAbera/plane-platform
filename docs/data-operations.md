@@ -1,10 +1,65 @@
 # Data operations
 
-Postgres, Valkey, RabbitMQ and Silo in each Plane environment, where their bytes live, what a backup contains, and how to restore it.
+Postgres, Valkey, RabbitMQ and Silo in each Plane environment, where their bytes live, what a backup contains, and how to restore it. [Hosted production](#hosted-production) comes first, and the rest of the page is the kind cluster's, where dev and prod-sim run.
 
-**Status, 2026-11-05.** Backups of dev, prod-sim and Infisical have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a clean cluster ran on 2026-11-05 inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, with every restore step PASS, and `make test` then passed on the restored platform ([restore-clean-20261105T081017Z.json](evidence/runs/restore-clean-20261105T081017Z.json), [MAKE-TEST-20261105T083455Z.txt](evidence/runs/MAKE-TEST-20261105T083455Z.txt)). Two later drills restored into new clusters too, every restore step PASS: one with the registry and caches removed as well, and `LOSE_CLUSTER=yes`, whose log reads `RESULT PASS` ([second](evidence/runs/restore-clean-20261105T124518Z.json), [third](evidence/runs/restore-clean-20261105T130828Z.json), [log](evidence/runs/drill-clean-restore-20261105T130633Z.log)), and `make test` passed again on the cluster the third left ([output](evidence/runs/MAKE-TEST-20261105T140019Z.txt)). A result links to its file under `docs/evidence/runs/`.
+**Hosted production, 2026-11-07.** Its nightly backups are restic CronJobs on the node, and their first scheduled run is due at 01:47Z on 2026-11-08. A run of tonight's backups by hand sealed both namespaces, a restore test on the VPS proved both, and a copy pulled to the Mac restored. What has run, and its evidence, is under [Hosted production](#hosted-production).
+
+**Kind cluster, 2026-11-05.** Backups of dev, prod-sim and Infisical have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a clean cluster ran on 2026-11-05 inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, with every restore step PASS, and `make test` then passed on the restored platform ([restore-clean-20261105T081017Z.json](evidence/runs/restore-clean-20261105T081017Z.json), [MAKE-TEST-20261105T083455Z.txt](evidence/runs/MAKE-TEST-20261105T083455Z.txt)). Two later drills restored into new clusters too, every restore step PASS: one with the registry and caches removed as well, and `LOSE_CLUSTER=yes`, whose log reads `RESULT PASS` ([second](evidence/runs/restore-clean-20261105T124518Z.json), [third](evidence/runs/restore-clean-20261105T130828Z.json), [log](evidence/runs/drill-clean-restore-20261105T130633Z.log)), and `make test` passed again on the cluster the third left ([output](evidence/runs/MAKE-TEST-20261105T140019Z.txt)). A result links to its file under `docs/evidence/runs/`.
 
 These are single-replica services on a local kind node. There is no replication, no failover and no point-in-time recovery. "prod-sim" is a simulation, and sharing one node with dev is not equivalent to an independent production cluster.
+
+## Hosted production
+
+`plane-prod` runs the same four services, from the same chart and the same pinned images, on one K3s node. Infisical's own Postgres 16.15 and Redis 7.2.17 run in `infisical`. They are single replicas there too, with no replication, no failover and no point-in-time recovery.
+
+### Services and volumes
+
+| Data | PVC | Size requested |
+|---|---|---|
+| Postgres | `pvc-plane-pgdb-vol-plane-pgdb-wl-0` | 30Gi |
+| Valkey | `pvc-plane-redis-vol-plane-redis-wl-0` | 2Gi |
+| RabbitMQ | `pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0` | 4Gi |
+| Silo | `pvc-plane-minio-vol-plane-minio-wl-0` | 64Gi |
+| Infisical Postgres | `data-infisical-postgres-0` | 2Gi |
+| Infisical Redis | `data-infisical-redis-0` | 1Gi |
+| Backups | `backups` in each namespace, bound to a hostPath PV on `/srv/wayline/backups/<namespace>` | 40Gi in `plane-prod`, 10Gi in `infisical` |
+
+The data volumes are on storage class `local-path-retain`, which Terraform makes, under `/var/lib/rancher/k3s/storage/`. Its reclaim policy is Retain, and so is the backup PVs', so deleting a claim leaves its data on the disk. Getting it back means binding a new claim to the old volume by hand, which has not been tried. Sizes are labels: local-path enforces none, so what bounds a volume is the namespace's `requests.storage` quota in [`capacity.yaml`](../infrastructure/hosted/plane-prod/capacity.yaml) and the disk alerts in [monitoring](monitoring.md#rules). The system, K3s's images, every volume and the backups share the node's one filesystem, and the kubelet starts evicting at 10% free.
+
+The commands under [Operating each service](#operating-each-service) work there with `.tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod` and `NS=plane-prod`, through the tunnel, `make remote-tunnel TARGET=plane-prod VERB=start`. The local `make backup`, `make restore` and `make logs` know only the kind cluster, and reach no hosted cluster. Prometheus has no public route there, so the bucket query goes through `make remote-ui TARGET=plane-prod UI=prometheus`.
+
+### Hosted backups
+
+Nightly CronJobs `plane-backup` in [`gitops/clusters/plane-prod/platform/backup/`](../gitops/clusters/plane-prod/platform/backup/): `infisical` at 01:47 UTC, then `plane-prod` at 02:17 UTC, because a restore starts with Infisical. Each runs the body of `scripts/backup.sh`'s Job with no laptop, and seals the result with restic 0.19.1, pinned by digest:
+
+| Step | What it does |
+|---|---|
+| Dump | `pg_dump -Fc -Z 0`, with the rows of `api_activity_logs`, `webhook_logs` and `email_notification_logs` left out as locally, uncompressed because restic compresses. Then a scratch restore into `scratch_<id>` on the same server, for row counts, and for Plane content hashes too. A `scratch_*` left by a killed run is dropped first |
+| Objects | Plane only. `rclone copy` of bucket `uploads` after the dump, `rclone check --download`, and a count of the rows marked uploaded that have no object, which must be 0 |
+| Manifest | `manifest.json` and `SHA256SUMS`, with the first 16 hex of the sha256 of the key this data needs, `SECRET_KEY` for Plane and `ENCRYPTION_KEY` for Infisical, and never the key |
+| Seal | `restic backup` of that folder into `/backups/restic`, tag `wayline`. Then `forget --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune`, and `restic check --read-data-subset=5%`, with a further quarter of the data on Sundays, so a month reads all of it |
+| Predeploy | Plane only. What Job `plane-prod-predeploy-dump` left under `/backups/predeploy` is sealed with tag `predeploy`, kept 90 days, and its folder emptied |
+
+Plaintext exists only in an `emptyDir`, up to 30Gi for Plane and 2Gi for Infisical, which goes with the pod. What stays on the node is restic's repository, encrypted with the restic password, which the read-only pull user can read and not decrypt. A Job runs at most 4 hours for Plane and 2 for Infisical, with `backoffLimit: 0` and `concurrencyPolicy: Forbid`, and stays 36 hours after it ends. Argo CD ignores the CronJobs' health, so one failed night cannot hold root's sync at its first wave; `PlaneBackupFailed`, `BackupTooOld` and `BackupNeverSucceeded` report it instead ([monitoring](monitoring.md#rules)).
+
+**The dump behind every migration.** Job `plane-prod-predeploy-dump`, a Sync hook at wave 1 beside Postgres, dumps the database before the migrator at wave 2 runs, once for each new backend image, into `/backups/predeploy/<UTC time>-<first 16 hex of the backend digest>`, and keeps the newest five folders. It fails the sync if it fails, so no migration runs without a dump behind it. That dump is plain, mode 0600 for UID 70, until the next night seals it, because restic's image cannot be in Plane's render: every image there must be one dev ran. [`scripts/hosted/README.md`](../scripts/hosted/README.md), section After a rollback, says which dump undoes which image's migrations, and how to restore it.
+
+**By hand.** `make remote-backup TARGET=plane-prod CONFIRM=plane-prod`, with `ONLY=plane-prod` or `ONLY=infisical` for one, makes Jobs from the CronJobs as the cluster holds them, so it proves what the night will do, and prints their logs. A Plane Job that says there is nothing to back up while Application `plane-prod` exists counts as a failure.
+
+**Off the VPS.** The VPS holds no credential for anywhere else. The Mac pulls instead: `make remote-pull-setup TARGET=plane-prod CONFIRM=plane-prod` makes `wayline-pull`, a user that can only read over SFTP, and `make remote-pull-backups TARGET=plane-prod` runs `restic copy` of tag `wayline` into `.local/hosted/plane-prod/offsite-restic/`, still encrypted. A compromised VPS can neither reach that copy nor delete it, and nothing leaves the VPS while the Mac is off. The predeploy snapshots are not pulled. `make remote-backup-dest TARGET=plane-prod VERB=verify` restores the newest snapshot of each namespace from each copy into a temporary folder and checks every file against its sealed hashes. Off-VPS status reads complete only while each namespace has been restored that way in the last 35 days. An S3-compatible destination is supported, from `scripts/hosted/owner-inputs.sh offsite` and `VERB=push`, and none is set, so the Mac's pull is the only copy off the VPS.
+
+**The restore test.** `make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod` restores the newest backup of both namespaces into a namespace of its own, `restore-test-<14 digits>`, at Pod Security `restricted`, with default deny, a quota, no route and no Application, and the repository mounted read-only. In a pod there it checks every file against its hashes, restores the dump into an empty Postgres on a socket with no TCP, and compares row counts, Plane's content hashes and uploaded objects with what the backup recorded. From the Mac it shows that the namespace cannot reach Plane's or Infisical's Postgres, Silo, the API server or DNS while the node can, that the keys' fingerprints match the live ones, and that live workloads, volumes, Secrets and databases read the same after as before. Then it removes the namespace. `RESTORE_ON=kind` does the same from the Mac's copy, in the local cluster, and touches no VPS.
+
+| What | When, UTC | Result | Evidence |
+|---|---|---|---|
+| `make remote-backup`, first: Infisical's Job failed, its Postgres refusing the connection. Plane's read Plane as absent, dumped nothing, and sealed the predeploy dump of 06:05Z, which `backup.sh` now refuses to count as a backup | 2026-11-07 06:47 | FAIL | Not yet published: `hosted-backup-first-20261107T064756Z.log`, `backup-plane-prod-20261107064758.txt` |
+| `make remote-backup`, again: Infisical 785 tables counted from a scratch restore, Plane 110 tables, 2 objects checked and 1 row marked uploaded with none missing, both sealed, retention applied, and `restic check` found no errors | 2026-11-07 07:07 | PASS | Not yet published: `hosted-backup-second-20261107T070750Z.log`, `backup-plane-prod-20261107070754.txt` |
+| `make remote-pull-backups`, then `make remote-backup-dest VERB=verify`: both snapshots copied to the Mac, then restored there, all 5 of Infisical's files and all 16 of Plane's matching their hashes. Status: complete, with no S3 destination | 2026-11-07 07:13 | PASS | Not yet published: `hosted-pull-20261107T071339Z.log` |
+| `make remote-restore-test` on the VPS: the namespace isolated, 5 targets refused while the node reached them, Infisical 785 tables and 5 files, Plane 110 tables, 16 files, its content hashes and 2 objects, both key fingerprints matching, and 41 live objects and the database list the same after | 2026-11-07 07:14 to 07:19 | PASS | Not yet published: `hosted-restore-test-vps-20261107T071414Z.log`, `restore-test-plane-prod-20261107071414.json` |
+| `make remote-restore-test RESTORE_ON=kind`, from the Mac's copy | | NOT RUN | |
+| The first scheduled night: the CronJobs were made at 04:29Z on 2026-11-07, after that night's times | Due 2026-11-08 01:47 and 02:17 | NOT RUN | |
+
+These runs held little data, on an instance a few hours old: Plane had 9 work items and 2 files at the first restart check, by that run's own count (not yet published: `hosted-restart-check-20261107T075212Z.log`). So they show the path, and say nothing about time or size at a real workload.
 
 ## Services per environment
 
@@ -159,7 +214,7 @@ make backup ENV=all
 
 `make backup` runs `scripts/backup.sh`, which applies a Kubernetes Job in the environment's namespace. A Job rather than `kubectl exec`, because it survives a dropped client stream, has limits and a NetworkPolicy label, and binary data never crosses the API stream.
 
-**Nothing schedules backups.** There is no CronJob. A backup happens only when someone runs it, or as a side effect of:
+**Nothing schedules backups on kind.** There is no CronJob there, unlike [hosted production](#hosted-backups). A backup happens only when someone runs it, or as a side effect of:
 
 | Trigger | Environment |
 |---|---|
@@ -257,7 +312,7 @@ Run `make test-e2e ENV=<env>` before the first backup. It writes `.local/test-se
 
 ### Retention
 
-Dev keeps 3, prod-sim and Infisical keep 5, and `KEEP=<n>` overrides. Nothing checks age, and nothing alerts on an old backup.
+Dev keeps 3, prod-sim and Infisical keep 5, and `KEEP=<n>` overrides. On kind nothing checks age, and nothing alerts on an old backup. Hosted production's retention is restic's, under [Hosted backups](#hosted-backups).
 
 Plane's retention runs in its backup Job. It keeps the newest `KEEP` finished backups and, past that, the newest one whose `rowcounts.tsv` counts users above 0, so backups of an empty environment cannot push out the last real one. Only folders with a final timestamped name and a manifest are removed. The "kept" branch has run only on BusyBox and stubs ([dr-backup-job-real-1.txt](evidence/runs/dr-backup-job-real-1.txt), [dr-job-lines-busybox-2.txt](evidence/runs/dr-job-lines-busybox-2.txt)).
 
@@ -402,7 +457,8 @@ Reclaiming disk: removing a 273 MB kind volume gave back 254 MB on the host with
 
 ## Related documents
 
-- [disaster-recovery.md](disaster-recovery.md): scenarios and full restoration.
+- [disaster-recovery.md](disaster-recovery.md): scenarios and full restoration, on kind and on hosted production.
+- [`scripts/hosted/README.md`](../scripts/hosted/README.md): the scripts behind each `make remote-*` target, and the way back after a rollback.
 - [infisical.md](infisical.md): secrets, rotation, and Infisical recovery.
 - [monitoring.md](monitoring.md): dashboards and the alerts named here.
 - [resource-utilization.md](resource-utilization.md): resource use.

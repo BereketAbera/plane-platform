@@ -16,9 +16,13 @@ As soon as the app's pods run in its namespace, with nothing added for it:
 | The namespace's CPU, memory and restarts on the page Grafana opens on | `Platform overview`, for the same namespaces Alloy reads | Its row `Workloads by namespace` |
 | An alert on repeated restarts, or a container near its memory limit | `PodRestarting` and `ContainerMemorySaturation`, for the same namespaces Alloy reads | The alert receiver |
 | An alert on a crash loop, a pod not ready, a stuck rollout or a failed Job | The chart's `KubePodCrashLooping`, `KubePodNotReady`, `KubeDeploymentRolloutStuck` and `KubeJobFailed`, for any namespace. Each waits about 15 minutes, and reads as a warning | The alert receiver |
-| An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics | The alert receiver |
+| An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics. `CertificateNotWatched` names only Plane's, Grafana's and Infisical's | The alert receiver |
 
-The alert receiver is Telegram once `make remote-alerts TARGET=plane-prod VERB=state` says COMPLETE, and until then a log nobody reads.
+The alert receiver is the owner's Telegram, for `severity: warning` and `critical`. An `info` alert reaches nobody, and shows only in Grafana
+and Alertmanager, so give anything that should reach a person one of the other two. Alerts are grouped by `alertname` and `namespace`, and a
+critical alert silences warning and info alerts of the same name in the same namespace. With the owner's Telegram files missing, the receiver
+is a log nobody reads, and `make remote-alerts TARGET=plane-prod VERB=state` says INCOMPLETE. [Monitoring](monitoring.md#where-alerts-go) has
+the routing.
 
 Prometheus also selects every ServiceMonitor, PodMonitor, Probe and PrometheusRule in any namespace, so what you add below needs no label and no
 change to Prometheus.
@@ -125,5 +129,8 @@ A public route is a separate change. `policy/hosted.rego` allows Plane's, Grafan
 - **The app's traffic on `Platform overview`.** Its request rate and 5xx panels read Plane's services, so a new app's belong on its own dashboard, in step 4.
 - **Anything in the app's own terms,** such as queue depth or failed jobs, until it exports a metric and a rule reads it. A pod can look healthy here while
   the app is broken, which is why step 3 matters most.
+- **The app from outside.** The Probe in step 3 runs on the node, through the CoreDNS rewrite to Traefik, so a closed port, a wrong DNS record
+  or Contabo's network failing reads nothing. `make remote-test`'s `outside` section reads Plane's, Grafana's and Infisical's hosts from the
+  Mac, and nothing reads a new app's host from outside.
 - **The node dying.** Nothing on it can report that. Healthchecks does, through Watchdog, once the same command says COMPLETE.
 - **History past its retention.** Prometheus keeps 15 days, or 12 GiB, and Loki 7 days. Both are shared with every other app here.

@@ -1,8 +1,10 @@
 # Disaster recovery
 
-What fails, what survives, how to recover, and how to restore the whole platform into a clean environment.
+What fails, what survives, how to recover, and how to restore the whole platform into a clean environment. [Hosted production](#hosted-production) comes first, and the rest of the page is the kind cluster's, where dev and prod-sim run.
 
-**Status, 2026-11-05.** The pod restart drill has run in both environments on the final images, and backups have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. `make down` and `make up` resumed with the data intact.
+**Hosted production, 2026-11-07.** Backups have run by hand and restored in an isolated namespace on the VPS, and a copy pulled to the Mac restored. Nothing has been restored into hosted production itself, no rebuild of the VPS has run, and the steps that would bring its data back onto a new VPS are not written. The restart check is PENDING tonight.
+
+**Kind cluster, 2026-11-05.** The pod restart drill has run in both environments on the final images, and backups have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. `make down` and `make up` resumed with the data intact.
 
 **The destroying run has finished, and its restore read PASS.** `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` deleted the cluster, ran a clean install from a fresh clone with new secrets, tested it and deleted it, then restored Infisical, dev and prod-sim from backup into a new cluster. All four restore files read PASS on every step, with `not_run` empty ([restore-clean-20261105T081017Z.json](evidence/runs/restore-clean-20261105T081017Z.json), [restore-infisical-20261105T081608Z.json](evidence/runs/restore-infisical-20261105T081608Z.json), [restore-dev-20261105T082337Z.json](evidence/runs/restore-dev-20261105T082337Z.json), [restore-prod-sim-20261105T082657Z.json](evidence/runs/restore-prod-sim-20261105T082657Z.json)), and `make test` then passed on the restored platform ([MAKE-TEST-20261105T083455Z.txt](evidence/runs/MAKE-TEST-20261105T083455Z.txt)). The drill's own last line reads `RESULT FAIL   1 failure(s)`, and that one is a defect in the test, as [Path C](#path-c-nothing-to-restore) says ([log](evidence/runs/drill-clean-restore-20261105T074859Z.log)). It kept the local registry and the pull-through caches, and `.tools` was copied rather than downloaded, so it is not a new machine.
 
@@ -10,7 +12,75 @@ What fails, what survives, how to recover, and how to restore the whole platform
 
 **A third destroying run read `RESULT PASS`.** `make drill-clean-restore CONFIRM=yes LOSE_CLUSTER=yes`, from 13:06:33Z to 13:35:01Z at `06b8be7`, took fresh backups, deleted with kind alone, as a disaster would, and left the local Terraform state behind. The restore moved that state aside, to `.local/terraform/local.stale-20261105T130830Z`, did not apply over it, and finished 1,474 s after the delete, with nothing else in the gap. All four restore files read PASS on every step, with `not_run` empty ([restore-clean-20261105T130828Z.json](evidence/runs/restore-clean-20261105T130828Z.json), [restore-infisical-20261105T132002Z.json](evidence/runs/restore-infisical-20261105T132002Z.json), [restore-dev-20261105T132634Z.json](evidence/runs/restore-dev-20261105T132634Z.json), [restore-prod-sim-20261105T132932Z.json](evidence/runs/restore-prod-sim-20261105T132932Z.json)), and the last line reads `RESULT PASS`, `make` exit 0 ([output](evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt), [log](evidence/runs/drill-clean-restore-20261105T130633Z.log)). It has no stage 4b, so it does not exercise `1374c1e`, and the last small restore fixes, on a branch merged afterward at `90ef495`, have run on stubs only. `make test` then passed whole on the cluster it left, from 14:00:19Z to 14:11:52Z at `f30a7f5` ([output](evidence/runs/MAKE-TEST-20261105T140019Z.txt)).
 
-A result links to its file under `docs/evidence/runs/`. This platform is local, production-inspired and single-node, and nothing here is a claim about any other environment.
+A result links to its file under `docs/evidence/runs/`. The kind cluster is local, production-inspired and single-node, and from [Principles](#principles) on nothing on this page is a claim about hosted production.
+
+## Hosted production
+
+One node, on one disk, run by one person. Recovery there means restarting, restoring, or building a new node, and a restore means losing what was written since the backup it uses. Backups and their checks are in [Data operations](data-operations.md#hosted-backups).
+
+### What lives where
+
+| What | On the VPS | On the Mac | Anywhere else |
+|---|---|---|---|
+| Plane's and Infisical's data | Volumes under `/var/lib/rancher/k3s/storage/` | | |
+| Backups | restic repositories under `/srv/wayline/backups/`, each night | `.local/hosted/plane-prod/offsite-restic/`, as of the last pull | Nowhere: no S3 destination is set |
+| Secret zero, the restic password, the deploy key, the alert credentials | As Secrets in the cluster | `.local/hosted/plane-prod/` | The recovery bundle, once the owner copies it off the Mac |
+| Terraform state of the three roots, `prod`, `prod-host` and Infisical's | | `.local/hosted/plane-prod/terraform/` | The recovery bundle, as above |
+| The recovery identity | | `~/.wayline/recovery-identity.txt`, until the owner moves it | The owner's password manager |
+| The SSH key to the node, and the key that signs promotion evidence | | `~/.ssh/` | Nowhere the bundle reaches: it holds neither |
+| What runs | Argo CD's copy | The repository | GitHub: `main`, and `deploy/plane-prod` |
+| Wayline's images | containerd's store | | GHCR, by digest, where nothing deletes a version |
+
+The VPS holds no credential for anywhere off it, so a compromised VPS cannot reach or delete the Mac's copy, and the Mac must be on for anything to leave the VPS.
+
+### What each failure loses
+
+| Failure | What is lost | Do | Run |
+|---|---|---|---|
+| A pod | Nothing: a StatefulSet's pod reattaches its volume. Every workload has one replica, so there is an outage while it restarts | Nothing | PENDING, `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`. Its first run, at 07:52Z on 2026-11-07, restarted the four data services and the seven app Deployments one at a time, and each came back. It then timed out after 180 s waiting for the public API to answer 200, so it compared nothing: FAIL (not yet published: `hosted-restart-check-20261107T075212Z.log`, `restart-check-20261107T075237Z.txt`) |
+| A reboot of the node | Nothing on disk. The site is down until K3s and its pods are back | Nothing: the firewall's own unit loads before K3s. `NodeRebootRequired` asks for a planned one, because nothing reboots unasked | NOT RUN |
+| A claim deleted | Nothing at first: the class and the backup volumes are Retain | Bind a new claim to the old volume by hand | NOT RUN |
+| A bad migration, or rows removed by mistake | Everything written since the dump that is restored | Roll back on `main`, then restore the dump taken before that image's migrations: [`scripts/hosted/README.md`](../scripts/hosted/README.md), section After a rollback | NOT RUN on a real cluster |
+| Infisical's database | Its values, until restored. Plane keeps running on the Kubernetes Secrets it has, and the operator stops syncing | No script restores Infisical in place on hosted production. The restore test shows its nightly restores into an empty Postgres, and the steps after that are not written | NOT RUN |
+| The VPS, or its disk | Everything on it, the restic repositories among them | [Rebuild from nothing](#rebuilding-the-vps-from-nothing), from the Mac's copy | NOT RUN |
+| The Mac | Nothing that runs. The only copy off the VPS, the bundle and identity unless copied off, and the SSH and signing keys unless copied, which stops SSH to the node and every new promotion | A new Mac: the repository, `make setup`, and `.local/hosted/plane-prod/` from the bundle with the identity | NOT RUN |
+| The Mac and the VPS together | All of Plane's and Infisical's data, unless a copy of the pull exists elsewhere | A new, empty production from Git and GHCR | NOT RUN |
+| `ENCRYPTION_KEY` on the Mac, in the cluster and in every bundle | Infisical's database, for good. Plane runs on what its Secrets hold until they change | A new Infisical, and Plane's data back with a `SECRET_KEY` mismatch accepted, as [Path B](#path-b-encryption_key-is-lost) on kind | NOT RUN |
+| The restic password everywhere | Every repository, on the node and on the Mac | Nothing reads them again | |
+| The recovery identity | Every bundle made for it | A new identity with `scripts/hosted/bundle.sh init`, and a new bundle while the Mac still holds the files | |
+
+### RPO and RTO
+
+None is promised, and few numbers exist yet.
+
+| | Hosted production |
+|---|---|
+| RPO on the VPS | Up to a day, from the nightly, and the dump taken before each migration. The first night is due at 01:47Z on 2026-11-08, and until then the newest backup is the one made by hand on 2026-11-07, in the run that began at 07:07:50Z and sealed Plane's snapshot at 07:12Z |
+| RPO off the VPS | The age of the last `make remote-pull-backups`. It ran at 07:13Z on 2026-11-07 (not yet published: `hosted-pull-20261107T071339Z.log`), and nothing schedules it |
+| RTO | Not measured. The restore test into an isolated namespace took under 5 minutes from its start to its evidence, on very little data (not yet published: `restore-test-plane-prod-20261107071414.json`). A rebuild has never run |
+
+### Rebuilding the VPS from nothing
+
+Nothing here has rebuilt the VPS. The scripts that built this one would build another, in this order:
+
+1. **A VPS,** by hand at Contabo. Terraform only reads the instance, because as a resource its provider can reinstall the disk or cancel the contract. Write its address, instance id and node name into [`target.yaml`](../infrastructure/hosted/plane-prod/target.yaml), with `kube_system_uid: pending`, which admits only provisioning, and record its host key with `ssh-keyscan` into `.local/hosted/known_hosts`.
+2. **Local state.** On a new Mac, the repository and `make setup`. Unpack the newest bundle with the identity into `.local/hosted/plane-prod/`, mode 0700, because its paths are relative to that folder. That brings back secret zero, the restic password, the deploy key, the alert and GHCR credentials, Grafana's login and the Terraform states, so nothing below makes a new one.
+3. **DNS.** With a new address, `TARGET=plane-prod scripts/hosted/host-terraform.sh plan`, then `apply` with `EXPECT` naming exactly its changes. Each record refuses an address Contabo does not report for the instance. The records must answer before Argo CD first sees a Certificate, or its order fails and waits an hour or more.
+4. **The node.** `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/provision-node.sh access`, then `os`, then `k3s`. `os` leaves the firewall at `closed`.
+5. **The cluster.** `make remote-kubeconfig TARGET=plane-prod` prints the new `kube-system` UID. Every script and the Terraform root refuse the cluster until `target.yaml` names it.
+6. **Bootstrap.** `make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod`, after `scripts/hosted/owner-inputs.sh` for anything missing. Argo CD then deploys whatever `deploy/plane-prod` names, Plane included, because that branch already holds the promotion.
+7. **In.** Infisical's two-factor through the tunnel, `edge.sh open`, which refuses until Plane and Infisical each have an admin, and `make remote-test TARGET=plane-prod CONFIRM=plane-prod`.
+
+**What that does not bring back is the data.** On a new node Infisical's database is empty, so bootstrap's Infisical step makes a new instance: it moves the old admin files and Terraform state aside, then makes a new admin, identity and values, a new `SECRET_KEY` among them. Plane then starts empty, with new passwords, and its backups no longer pair with its key. Keeping the data needs Infisical's database, then Plane's database and objects, back from the Mac's restic copy before that step and before Plane first syncs, and bootstrap in restored mode. On kind, `make restore-clean` does exactly that ([Full restoration](#full-restoration-into-a-clean-environment)). On hosted production nothing does yet: no script puts the Mac's copy back on a node, restores it into the live namespaces, or runs `scripts/infisical-bootstrap.sh` with `INFISICAL_RESTORED=yes` there. Until one exists, a lost VPS means a new, empty production, with the backups kept to restore by hand. `make remote-restore-test TARGET=plane-prod RESTORE_ON=kind` would prove the Mac's copy restores into a database, and it has not run.
+
+### Before anything fails, on hosted production
+
+These are the owner's, and they are manual.
+
+- Copy the newest bundle off the Mac, and the identity into a password manager, apart from each other.
+- Copy `~/.ssh/wayline_contabo_ed25519` and `~/.ssh/wayline_evidence_ed25519` off the Mac too, because no bundle holds them.
+- `make remote-bundle TARGET=plane-prod` after every bootstrap, token mint or Terraform apply. The applies at 18:12Z and 18:13Z on 2026-11-07 left the bundle the Mac holds stale, and it has not run since.
+- `make remote-pull-backups TARGET=plane-prod`, then `make remote-backup-dest TARGET=plane-prod VERB=verify`, at least every 35 days, or off-VPS status goes back to incomplete. An S3 copy is optional: `scripts/hosted/owner-inputs.sh offsite`, then `VERB=push`.
 
 ## Principles
 
@@ -115,6 +185,8 @@ A stopped node resumed with its data, kubeconfig and API server on 2026-11-05. `
 
 ### Scenario: Infisical lost
 
+On kind. On hosted production no script restores Infisical in place yet, and bootstrap on an empty Infisical makes new secrets: see [What each failure loses](#what-each-failure-loses).
+
 | What is lost | Effect on Plane | Do |
 |---|---|---|
 | Server pod | None immediately. Kubernetes Secrets stay, so restarts should still work. Sync stops | Nothing |
@@ -194,11 +266,11 @@ A rebuild does not reproduce the digest: the cold install's two builds gave web 
 
 **Rebuild on `b4f6cc9` or later.** The cold install ran under umask 077, and the images it built from `e602dad` crashed at start, web, admin, space and api, with Permission denied in the logs of web, admin and api, because their non-root users could not read their own files. Every build step had passed, and `make up` waited with no explanation. `b4f6cc9` runs `chmod -R a+rX` on each build context, and the same umask then gave images that came up healthy, in the same cluster, after [the stuck operation was ended](runbooks/argo-sync-stuck.md#end-an-operation) ([rebuild](evidence/runs/INST-1-cold-rebuild-20261105T122036Z.txt), [Clean rebuild](runbooks/clean-rebuild.md#the-umask-defect)).
 
-**As things stand, GHCR does not hold what `main` deploys.** `main` names digests built on this Mac. The four private GHCR packages hold the digests built by `images.yml` at `9c8e098` and at `76e98ee`, which are different, and pull request 1, open and unmerged, is the only thing that names the newer set ([ci-4-20261105T055033Z-ghcr-visibility.txt](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt), [ci-5-20261105T150014Z-pr-1.txt](evidence/ci/ci-5-20261105T150014Z-pr-1.txt), `helm/plane/overlays/dev/kustomization.yaml`). So today the way back is the rebuild. GitHub's quota for private packages is documented and has not been measured, and the prune in `images.yml` has deleted nothing so far. A digest that exists nowhere means the pinned version is lost.
+**As things stand, GHCR holds what dev runs, and not what prod-sim runs.** On 2026-11-05 `main` named only digests built on this Mac, and the GHCR packages held other digests, built by `images.yml` at `9c8e098` and at `76e98ee` ([ci-4-20261105T055033Z-ghcr-visibility.txt](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt), [ci-5-20261105T150014Z-pr-1.txt](evidence/ci/ci-5-20261105T150014Z-pr-1.txt)). Since 2026-11-07 dev's overlay names set `6d3610b95f01`, the linux/amd64 images `images.yml` published to GHCR, which pull request 1 brought when it was merged as `6204af2`, and which hosted production runs too (`helm/plane/overlays/dev/kustomization.yaml`). Prod-sim's overlay still names the Mac's build of `84b63d9`, which was never pushed, so for prod-sim the way back is the rebuild. GitHub's quota for private packages is documented and has not been measured. Nothing in `images.yml` deletes a version on GHCR now: its prune job was removed, because it could have deleted a digest production runs. A digest that exists nowhere means the pinned version is lost.
 
-The copy command keeps the digest: with `--prefer-index=false`, a throwaway registry answered with the source's digest, and without it a new index's ([ci-5-20261105T060108Z-copy-keeps-digest.txt](evidence/ci/ci-5-20261105T060108Z-copy-keeps-digest.txt)). The script has never finished a copy. With the owner as `BereketAbera` it failed on `invalid reference format`, before the script lower-cased the owner. In lower case it stopped at the first image with a 401, for want of a token with `read:packages` ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Pods do pull the digests built here through `localhost:5001`, on the final images, and `make test-e2e` checks they run the digests in the overlay ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt)).
+The copy command keeps the digest: with `--prefer-index=false`, a throwaway registry answered with the source's digest, and without it a new index's ([ci-5-20261105T060108Z-copy-keeps-digest.txt](evidence/ci/ci-5-20261105T060108Z-copy-keeps-digest.txt)). In Pass 1 the script never finished a copy. With the owner as `BereketAbera` it failed on `invalid reference format`, before the script lower-cased the owner. In lower case it stopped at the first image with a 401, for want of a token with `read:packages` ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). On 2026-11-07 it copied GHCR's four linux/amd64 images into `localhost:5001` under their own digests, exit 0, and dev then ran them ([copy](evidence/runs/DEV-VALIDATE-copy-publish-20261107T050522Z.txt), LOC-2 and LOC-3 in [validation.md](validation.md#local-since-pass-1)). Pods do pull the digests built here through `localhost:5001`, on the final images, and `make test-e2e` checks they run the digests in the overlay ([plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt)).
 
-A finished copy from GHCR, and pods pulling what it copied: Not tested in Pass 1. A full pull with empty caches ran once, on the cold install, and reached all 14 Applications Synced and Healthy after a rebuild and both promotions ([make up](evidence/runs/clean-install-20261105T105546Z/make-up.txt), [Applications](evidence/runs/clean-install-20261105T105546Z/apps-after-up.txt)). Against the Docker Hub quota: Not measured in Pass 1. Its files show no limit being met, but they do not read pull errors, and no file says what held `metrics-server` Progressing and Degraded for its first 968 s.
+A finished copy from GHCR, and pods pulling what it copied: Not tested in Pass 1, and done for dev on 2026-11-07, as above. A full pull with empty caches ran once, on the cold install, and reached all 14 Applications Synced and Healthy after a rebuild and both promotions ([make up](evidence/runs/clean-install-20261105T105546Z/make-up.txt), [Applications](evidence/runs/clean-install-20261105T105546Z/apps-after-up.txt)). Against the Docker Hub quota: Not measured in Pass 1. Its files show no limit being met, but they do not read pull errors, and no file says what held `metrics-server` Progressing and Degraded for its first 968 s.
 
 ### Scenario: Docker VM disk lost
 
@@ -387,13 +459,15 @@ Recorded plainly, because each changes what a real recovery needs.
 | Terraform state lost with no Infisical backup | `.local/terraform/infisical`, `recovery/terraform.tfstate` | Bootstrap fails, because Terraform would create what the restored database already holds | Copy it from the newest Infisical backup. Otherwise a fresh instance. Importing each resource in `infisical/terraform/main.tf`: Not tested in Pass 1 |
 | A dump older than the last rotation | `SKIP_BACKUP=yes` on `make rotate`, or a backup that failed there | Restoring it in place gives Infisical a stale `PG_PASSWORD`, so `make restore` refuses it unless `ALLOW_STALE_PLANE_SECRETS=yes` | `make backup ENV=infisical` |
 | No off-machine copy | No script | Machine loss is total without a manual archive | [Before anything fails](#before-anything-fails) |
-| No scheduled backup, no backup-age alert | No CronJob, `PlaneBackupFailed` covers only failed Jobs | RPO unbounded | Run `make backup` deliberately |
+| No scheduled backup, no backup-age alert | No CronJob on kind, `PlaneBackupFailed` covers only failed Jobs. Hosted production has both | RPO unbounded on kind | Run `make backup` deliberately |
 
 Infisical's Redis is flushed on restore now, because the server caches secrets, permissions and KMS material there and keeps its queues there, so stale jobs no longer outlive a database restore (`redis` step in [restore-infisical-20261105T001834Z.json](evidence/runs/restore-infisical-20261105T001834Z.json)).
 
 ## Related documents
 
-- [data-operations.md](data-operations.md): backup contents, restore steps and proofs.
+- [data-operations.md](data-operations.md): backup contents, restore steps and proofs, on kind and on hosted production.
+- [`scripts/hosted/README.md`](../scripts/hosted/README.md): the scripts that reach hosted production, getting back into its consoles, and the way back after a rollback.
+- [security.md](security.md#the-recovery-bundle): what the recovery bundle holds, and what it does not.
 - [infisical.md](infisical.md): secret zero and Infisical recovery detail.
 - [`infisical/README.md`](../infisical/README.md): every refusal of a clean restore, how a restore logs in, and what each measurement rests on.
 - [security.md](security.md): what `.local/` exposes.
