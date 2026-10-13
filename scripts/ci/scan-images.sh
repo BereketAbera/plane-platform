@@ -19,7 +19,10 @@
 # SCAN_ONLY=hosted reads registries alone and never the cluster, so it scans what this checkout says hosted production runs.
 # validate-manifests.sh holds policy/hosted-images.txt to what the hosted tree and its charts name, and
 # policy/hosted-system-images.txt to K3s's own images and those of the probe pods the remote tests start, which no manifest
-# names. The render holds the rest, Wayline's own among them. The VPS is one x86-64 node, so each image is read for
+# names. The render holds the rest, Wayline's own among them. Hosted Argo CD syncs deploy/plane-prod, which a refused or pending
+# release leaves behind main, so SCAN_HOSTED_RELEASE=<its ref>, as scan-hosted.yml sets, reads that branch's render too, and the
+# report says whether its two trees differ from this checkout's. The lists are this checkout's alone, so a note says when the
+# branch's tree may name an image this did not read. The VPS is one x86-64 node, so each image is read for
 # linux/amd64 and an index for its linux/amd64 child: PLATFORM may only be that, and SCAN_ALSO_PLATFORM does not apply.
 # Wayline's images there are private packages on GHCR, which trivy reads with Docker's login, as it does after a push in
 # images.yml. So this needs docker login ghcr.io with a token holding read:packages, which is the login
@@ -62,6 +65,8 @@ SCAN_ALSO_PLATFORM="${SCAN_ALSO_PLATFORM:-}"
 [[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ALSO_PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "SCAN_ALSO_PLATFORM must be linux/amd64 or linux/arm64, got '$SCAN_ALSO_PLATFORM'"
 [[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ONLY" != built ]] || die "SCAN_ONLY=built reads what was just built, which must be $PLATFORM, so SCAN_ALSO_PLATFORM does not apply"
 [[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ONLY" != hosted ]] || die "SCAN_ONLY=hosted reads what the VPS runs, which is linux/amd64 alone, so SCAN_ALSO_PLATFORM does not apply"
+HOSTED_RELEASE="${SCAN_HOSTED_RELEASE:-}"
+[[ -z "$HOSTED_RELEASE" || "$SCAN_ONLY" == hosted ]] || die "SCAN_HOSTED_RELEASE names what hosted production runs, so it is for SCAN_ONLY=hosted alone"
 guard_disk "$MIN_FREE"
 log "Disk limits for this run: ${MIN_FREE} GiB free to start, ${FLOOR} GiB free to keep going. $(free_disk_gib) GiB free now."
 log "Reading each image for $PLATFORM${SCAN_ALSO_PLATFORM:+, and allowing a plain manifest of $SCAN_ALSO_PLATFORM}"
@@ -83,6 +88,9 @@ printf '%s\n' "$PLATFORM" ${SCAN_ALSO_PLATFORM:+"$SCAN_ALSO_PLATFORM"} >"$OUT/pl
 # What the report advises on a result of another platform depends on the kind of scan, because only a full one takes
 # SCAN_ALSO_PLATFORM.
 printf '%s\n' "${SCAN_ONLY:-full}" >"$OUT/mode.txt"
+# What the listing finds that a reader of the report needs, which the report prints as it is.
+: >"$OUT/notes.txt"
+note() { printf '%s\n' "$*" >>"$OUT/notes.txt"; }
 RAW_LIST="$WORK/images"
 : >"$RAW_LIST"
 
@@ -116,6 +124,29 @@ registry_wayline_images() {
   done
 }
 
+# The branch hosted Argo CD syncs: its render is read too, and a note says how its two trees compare with this checkout's.
+read_release() {
+  local release from differ where
+  release="$(git rev-parse --verify --quiet "${HOSTED_RELEASE}^{commit}")" ||
+    die "SCAN_HOSTED_RELEASE is $HOSTED_RELEASE, which this checkout cannot read. Fetch it first: git fetch origin deploy/plane-prod"
+  from="$(git show "$release:RELEASE.json" 2>/dev/null | yq -p json -r '.main_commit // ""' 2>/dev/null || true)"
+  [[ "$from" =~ ^[a-f0-9]{40}$ ]] || die "$HOSTED_RELEASE has no RELEASE.json naming a main commit, so it is no release, and nothing says it is what production runs"
+  git show "$release:$HOSTED_ENVIRONMENT/manifests.yaml" >"$WORK/release-render.yaml" 2>/dev/null ||
+    die "$HOSTED_RELEASE has no $HOSTED_ENVIRONMENT/manifests.yaml"
+  images_named_in "$WORK/release-render.yaml" | add_images hosted-release
+  # Against the working tree, so a run on uncommitted changes compares what it read.
+  differ="$(git diff --name-only "$release" -- "$HOSTED_TREE" "$HOSTED_ENVIRONMENT")"
+  where="$HOSTED_RELEASE at ${release:0:12}, released from main ${from:0:12}, is what hosted Argo CD syncs, and it"
+  if [[ -z "$differ" ]]; then
+    note "$where holds the same two hosted trees as this checkout."
+  elif ! grep -q "^$HOSTED_TREE/" <<<"$differ"; then
+    note "$where has another render than this checkout. Both were read."
+  else
+    note "$where differs from this checkout under $HOSTED_TREE. Its render was read as well, but $HOSTED_IMAGE_LIST holds what this checkout's tree and charts name, so production may run an image this did not read. Read: git diff ${release:0:12} -- $HOSTED_TREE"
+    warn "$HOSTED_RELEASE differs from this checkout under $HOSTED_TREE, so production may run an image this does not read"
+  fi
+}
+
 if [[ "$SCAN_ONLY" == built ]]; then
   built_images | add_images built
 elif [[ "$SCAN_ONLY" == hosted ]]; then
@@ -131,6 +162,11 @@ elif [[ "$SCAN_ONLY" == hosted ]]; then
   { grep -vE '^(#|$)' "$HOSTED_SYSTEM_IMAGE_LIST" || true; } | add_images hosted-system
   # The same reading of the render as the list's own check, so the two cannot disagree on what an image is.
   images_named_in "$HOSTED_ENVIRONMENT/manifests.yaml" | add_images hosted-render
+  if [[ -n "$HOSTED_RELEASE" ]]; then
+    read_release
+  else
+    note "This read the hosted trees as this checkout holds them, and hosted Argo CD syncs deploy/plane-prod. SCAN_HOSTED_RELEASE=origin/deploy/plane-prod reads that branch's render too, and says whether the two differ."
+  fi
   grep -q '/wayline/' "$RAW_LIST" || warn "the hosted render names no Wayline image, so none is scanned"
 else
   log "Listing what this platform runs"
