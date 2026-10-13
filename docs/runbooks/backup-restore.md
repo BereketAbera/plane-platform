@@ -169,3 +169,18 @@ Restore duration: Infisical 44 s to 71 s in place, over seven runs, and the 71 s
 | Treat backups as off-site | They are on the same disk as Docker. Losing the Mac loses both |
 | Copy a backup into `docs/evidence/` | It holds hashes and tokens. Copy only the JSON evidence, which holds counts and step results |
 | Rely on `.local/backups` while the disk is nearly full | Check `df -h .` first. See [Disk pressure](disk-pressure.md) |
+
+## Hosted production
+
+None of this page reaches hosted production. `make backup` and `make restore` take `dev`, `prod-sim` and `infisical` on kind only.
+[Restore on hosted production](hosted-restore.md) covers its backups, the restore tests and the ways back. What differs:
+
+| | Here | Hosted production |
+|---|---|---|
+| When backups run | When a script takes them | Nightly CronJobs, Infisical at 01:47Z and Plane at 02:17Z, and `make remote-backup TARGET=plane-prod CONFIRM=plane-prod` |
+| Where they go | `.local/backups/<env>/<id>/` on this Mac, a folder at 0700 | restic repositories on the node under `/srv/wayline/backups`, encrypted, and a copy on this Mac when someone runs `make remote-pull-backups TARGET=plane-prod` |
+| Before a migration | `make promote ENV=prod-sim` takes a dump | The Sync hook `plane-prod-predeploy-dump` takes one per backend image |
+| Kept | The newest 3 or 5 | 7 daily, 4 weekly and 3 monthly. Predeploy dumps 90 days, and the copy on this Mac 90 days |
+| Proof | `make restore`, in place, with its sentinel | `make remote-restore-test`, into an isolated namespace. PASS on the VPS on 2026-11-07, with its evidence not published yet |
+| Restore in place | `make restore`, PASS in each environment | No script. The steps for Plane's database are in [`scripts/hosted/README.md`](../../scripts/hosted/README.md), section After a rollback: the database does not go back. NOT RUN |
+| Off the machine | No copy | This Mac's pull, the only one. S3 once its files exist |

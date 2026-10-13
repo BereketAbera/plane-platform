@@ -233,3 +233,28 @@ On the final images on 2026-11-05, `make test-e2e ENV=dev` read 45 PASS and 1 SK
 | `FLUSHALL` Valkey as a first move | Cache and rate-limit counters all go at once, and live state with them. It belongs after a restore |
 | Purge `celery` to clear a backlog on a live system | It drops real activity and notification work |
 | Report Wayline-specific behaviour as a Plane bug upstream without reproducing on stock v1.4.3 | This is a customized deployment |
+
+## Hosted production
+
+Hosted production runs the same images, by digest, with the same workload names, so the symptoms and causes above hold there. What differs
+is how you reach it:
+
+```bash
+kc() { .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod "$@"; }
+NS=plane-prod HOST=wayline.bereket.dev
+kc -n "$NS" get pods
+kc -n "$NS" logs deploy/plane-api-wl --tail=100
+curl -s -o /dev/null -w 'instances %{http_code}\n' "https://$HOST/api/instances/"
+curl -s -w '\nanchor %{http_code}\n' "https://$HOST/api/public/anchor/__probe__/settings/"
+curl -s "https://$HOST/live/health"; echo
+```
+
+- Replace `kubectl` with `kc` in the commands above, and `http://` with `https://`. Port 80 only redirects.
+- `make logs` takes `dev` and `prod-sim` only. On hosted production read `kc logs`, or the Logs dashboard at https://grafana.bereket.dev,
+  where Loki keeps 168 hours.
+- Plane's own calls to its public host go to Traefik's Service, through the CoreDNS rewrite of `wayline.bereket.dev`.
+- Its alerts go to Telegram. `PlaneApiDown`, `PlaneApiDatabaseProbeFailing`, `PlaneFrontendDown` and `PlaneValkeyDown` fire only while
+  Application `plane-prod` exists ([rules](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted-plane.yaml)).
+- `make remote-smoke TARGET=plane-prod` signs in with an existing account, at hidden prompts, and removes what it makes. It passed all 21
+  steps on 2026-11-07 at 06:45Z, after a run at 06:41Z that read BLOCKED on a refused sign-in (`smoke-plane-prod-20261107T064551Z.json` and
+  `smoke-plane-prod-20261107T064131Z.json`, not published yet). Tonight's final smoke: PENDING.

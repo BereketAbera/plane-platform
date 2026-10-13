@@ -1,9 +1,22 @@
 # Runbooks
 
-Operating procedures for the local Wayline platform, a customized Plane Community Edition v1.4.3 deployment on one
-kind node.
+Operating procedures for Wayline, a customized Plane Community Edition v1.4.3 deployment, in its three environments:
 
-**Status.** These runbooks were written from the code, the contract and recorded research, then corrected against what ran on the
+| Environment | Where | Plane namespace | How a change reaches it |
+|---|---|---|---|
+| `dev` | A kind cluster on this Mac, started with `make up` | `plane-dev` | `make promote ENV=dev`, through `make gitops-publish` |
+| `prod-sim` | The same kind cluster, as the promotion target that simulates production | `plane-prod-sim` | `make promote ENV=prod-sim CONFIRM=yes` |
+| Hosted production, `plane-prod` | One K3s node on a Contabo VPS, at https://wayline.bereket.dev, with https://grafana.bereket.dev and https://infisical.bereket.dev | `plane-prod` | A merge to `main`, which CI releases to branch `deploy/plane-prod` |
+
+The runbooks below were written for the first two. Each of them but [Clean rebuild](clean-rebuild.md), which is for kind alone, ends with a
+section **Hosted production** that says what differs there. Three are for hosted production alone: [rollback](hosted-rollback.md),
+[restore](hosted-restore.md) and [lockout](hosted-lockout.md).
+
+**Status of hosted production.** It has run since 2026-11-07. Its runs so far are under [Hosted runs](#hosted-runs): a restore test on the
+VPS and a restore of this Mac's copy passed, while no rollback, no real restore and no lockout recovery has run there. Most of their
+evidence is not in `docs/evidence` yet, and the rows say so.
+
+**Status of the local platform.** These runbooks were written from the code, the contract and recorded research, then corrected against what ran on the
 cluster on 2026-11-04 and 2026-11-05. A result links its file under [`docs/evidence/runs/`](../evidence/README.md). These repair paths have been followed from start to finish on the final images: the failed-deploy drill, a failing migrator and a rollback in dev, and
 a secret rotation, an in-place restore of Plane, the pod restart drill and the alert test in each environment, and a rotation killed part way, both finished and undone, in prod-sim. Infisical's in-place restore ran earlier ([`infisical/README.md`](../../infisical/README.md)). A rollback of prod-sim was not tested in Pass 1. A clean install from a fresh clone, keeping the registry and caches, and a full restore into a new cluster ran
 through `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, and `make down`, `make up` and `make test` then passed on the restored platform ([make test](../evidence/runs/MAKE-TEST-20261105T083455Z.txt)). The drill with the cold install restored with every restore step PASS too, its last line failing the same test step ([log](../evidence/runs/drill-clean-restore-20261105T105347Z.log)), and `LOSE_CLUSTER=yes`, with no such step, read `RESULT PASS` ([log](../evidence/runs/drill-clean-restore-20261105T130633Z.log)), and `make test` passed again on the cluster it left ([make test](../evidence/runs/MAKE-TEST-20261105T140019Z.txt)). Anything else with no result beside it is design intent. A successful drill, not this page, is what would show a runbook works.
@@ -27,6 +40,22 @@ through `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, and `mak
 | You want to start over from nothing | [Clean rebuild](clean-rebuild.md) |
 | `make up` or `make backup` refuses because a clean restore is under way, or a resume refuses | [Troubleshooting](troubleshooting.md#a-clean-restore-is-marked-as-under-way) |
 | `make up` or a script stops, and nothing above fits | [Troubleshooting](troubleshooting.md) |
+
+On hosted production:
+
+| What you see | Go to |
+|---|---|
+| A release broke the site, or you need the set before it back | [Rollback on hosted production](hosted-rollback.md) |
+| A commit on `main` has not reached the cluster, or `release-plane-prod` is red. Any `Argo*` alert | [Argo sync stuck](argo-sync-stuck.md#hosted-production) |
+| Data is wrong or missing. `PlaneBackupFailed`, `BackupTooOld`, `BackupNeverSucceeded`, or `off-VPS backups incomplete` | [Restore on hosted production](hosted-restore.md) |
+| Grafana or Infisical refuses you, SSH or the tunnel fails, or 443 is closed. `PublicFirewallNotLoaded` | [Lockout on hosted production](hosted-lockout.md) |
+| `NodeDiskLow`, `NodeDiskCritical`, `NodeDiskNotRead` | [Disk pressure](disk-pressure.md#hosted-production) |
+| `NodeMemoryLow`, `ContainerMemorySaturation`, `PodRestarting`, `exceeded quota` | [Memory pressure](memory-pressure.md#hosted-production) |
+| `Plane*` alerts, or Plane misbehaves at https://wayline.bereket.dev | [Plane app debugging](plane-app-debugging.md#hosted-production) |
+| A certificate, a console's route, `InfisicalOpenToClaim`, `NetworkPolicyNotEnforced`, `NodeRebootRequired`, or a script that refuses to start | [Troubleshooting](troubleshooting.md#hosted-production) |
+| A password, token or key to change | [Secret rotation](secret-rotation.md#hosted-production) |
+
+[Clean rebuild](clean-rebuild.md) is for kind alone: `make destroy` and `make up` never reach hosted production.
 
 For what each alert sees and cannot see, and which have really fired, see [Monitoring](../monitoring.md#alert-rules).
 
@@ -55,6 +84,34 @@ Valkey and Silo (a MinIO-compatible fork). `make logs` takes `SVC=api`, `worker`
 Deployment, StatefulSet or Job in the namespace, such as `postgres-exporter`. `make logs ENV=dev` with no `SVC` lists them.
 `scripts/logs.sh dev api --no-follow` prints the last lines and stops.
 
+### Hosted production
+
+Run hosted commands from the checkout that holds `.local/hosted/plane-prod/`. Each script finds `.local` and `.tools` beside itself, so the
+checkout decides which state and kubeconfig it uses. Everything goes through `make remote-<verb> TARGET=plane-prod`, and what changes
+something also needs `CONFIRM=plane-prod`. `CONFIRM=yes` does not count there, and no local target reaches it. [`scripts/hosted/README.md`](../../scripts/hosted/README.md)
+lists every script.
+
+The cluster's API is reached only through an SSH tunnel, from 127.0.0.1:16443 to the node. Raw commands need it up, and this function:
+
+```bash
+make remote-tunnel TARGET=plane-prod VERB=status   # VERB=start if it is down
+kc() { .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod "$@"; }
+```
+
+`kc` skips the check that the scripts make first, that the live `kube-system` UID and node name match
+[`target.yaml`](../../infrastructure/hosted/plane-prod/target.yaml). `make remote-status TARGET=plane-prod` makes it, and reads everything
+else in one go. Never merge that kubeconfig into `~/.kube/config`.
+
+| Name | Value |
+|---|---|
+| Node | `vmi3733427`, K3s, at 5.253.234.127 |
+| Namespaces | `plane-prod`, `infisical`, `monitoring`, `monitoring-agents`, `argocd`, `traefik`, `cert-manager`, and `frameflow`, which allows no pods |
+| Argo CD Applications | `root`, and thirteen children, `plane-prod` among them. [Argo sync stuck](argo-sync-stuck.md#hosted-production) lists them |
+| Plane workloads | The names in the table above, and the Sync hook `plane-prod-predeploy-dump` beside the migrator |
+| Consoles | `make remote-ui TARGET=plane-prod UI=argocd`, `grafana`, `prometheus`, `alertmanager` or `infisical`. Only Grafana and Infisical also have a public route |
+| Backups on the node | `/srv/wayline/backups/plane-prod` and `/srv/wayline/backups/infisical` |
+| State on this Mac | `.local/hosted/plane-prod/`, at mode 0700, and never in Git |
+
 ## Rules that apply to every runbook
 
 1. **Git is the desired state.** Argo CD self-heals, so `kubectl scale`, `edit` and `set` are reverted in seconds: 3s for the one replica change timed ([GITOPS-4-20261105T073240Z.txt](../evidence/runs/GITOPS-4-20261105T073240Z.txt)). Make
@@ -71,7 +128,17 @@ Deployment, StatefulSet or Job in the namespace, such as `postgres-exporter`. `m
    production clusters would give.
 6. **Record results honestly.** `make publish-evidence` copies `.local/evidence-raw/` to `docs/evidence/runs/` with secrets scrubbed. A
    result is labelled PASS, FAIL, BLOCKED or NOT RUN, with date and command (contract section 12). See
-   [the evidence README](../evidence/README.md#publishing).
+   [the evidence README](../evidence/README.md#publishing). For hosted production, `make remote-publish-evidence TARGET=plane-prod` reads its
+   Secrets' values first, so the scrub knows them too.
+7. **On hosted production the way in is `main`.** Its Argo CD reads only branch `deploy/plane-prod`, which CI's `release-plane-prod` job
+   writes after a push to `main` passes, so pushing `main` deploys and `make gitops-publish` reaches nothing there. Self-heal puts back a
+   change made with `kc` there as it does here.
+8. **Name hosted production twice.** `TARGET=plane-prod` aims a command at it, and `CONFIRM=plane-prod` lets the command change something.
+   `CONFIRM=yes` never does.
+9. **Never type a production secret on a command line, and never print a Secret's value.** Hosted scripts read secrets from files under
+   `.local/hosted/plane-prod/` or from hidden prompts. A real login, such as the smoke's account, is typed by its owner in a terminal.
+10. **Hosted production is one node too.** It shares nothing with kind, but every Plane workload runs one replica on it, so a restart is an
+    outage, and a node fault stops everything.
 
 ## Scripted drills
 
@@ -89,3 +156,25 @@ Deployment, StatefulSet or Job in the namespace, such as `postgres-exporter`. `m
 | Secret rotation | `make rotate ENV=dev`, or `make rotate ENV=prod-sim CONFIRM=yes` | `.local/evidence-raw/rotate-<env>-<stamp>.log` | PASS in dev and in prod-sim, on 2026-11-05 ([rotate-dev-20261105T072345Z.log](../evidence/runs/rotate-dev-20261105T072345Z.log), [rotate-prod-sim-20261105T073240Z.log](../evidence/runs/rotate-prod-sim-20261105T073240Z.log)). A rotation in prod-sim stopped with SIGKILL 4 seconds in was finished by `RESUME=yes` ([SEC-4-20261105T073843Z.txt](../evidence/runs/SEC-4-20261105T073843Z.txt)), and another, on the restored cluster, undone by `ROLLBACK=yes` ([SEC-4b-20261105T084615Z.txt](../evidence/runs/SEC-4b-20261105T084615Z.txt)). See [Secret rotation](secret-rotation.md) |
 | Alert delivery | `make test-alert ENV=dev` or `ENV=prod-sim` | `.local/evidence-raw/alert-test-<env>-<stamp>.json` | PASS, once in each environment, on 2026-11-05 ([alert-test-dev-20261105T055044Z.json](../evidence/runs/alert-test-dev-20261105T055044Z.json), [alert-test-prod-sim-20261105T072541Z.json](../evidence/runs/alert-test-prod-sim-20261105T072541Z.json)) |
 | Data service alerts, dev only | `tests/drills/alert-rules.sh ENV=dev`, alone. It pauses auto-sync and takes RabbitMQ and then Silo away | `.local/evidence-raw/alert-rules-dev-<stamp>.txt` | FAIL on both rows on the old rules, which is how the defect was found ([alert-rules-dev-20261105T100605Z.txt](../evidence/runs/alert-rules-dev-20261105T100605Z.txt)), then PASS on both after `63105af` ([alert-rules-dev-20261105T101707Z.txt](../evidence/runs/alert-rules-dev-20261105T101707Z.txt)). A scale to 0 only. See [Monitoring](../monitoring.md#the-data-service-drill) |
+
+## Hosted runs
+
+On hosted production, all on 2026-11-07. Where a row names a file in code and says it is not published yet, the file is in
+`.local/evidence-raw/` and `make remote-publish-evidence TARGET=plane-prod` will copy it to `docs/evidence/runs/` under the same name.
+
+| Run | How to run | Evidence file | Result so far |
+|---|---|---|---|
+| Bootstrap | `make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod` | Kept by hand, `hosted-bootstrap-<stamp>.txt` | Stopped at step 6 for want of the GHCR token, exit 2, at 04:30Z ([first](../evidence/runs/hosted-bootstrap-20261107T042651Z.txt)). Finished, exit 0, at 05:05Z, with alert delivery and the recovery bundle then INCOMPLETE ([second](../evidence/runs/hosted-bootstrap-20261107T050333Z.txt)) |
+| Network policy matrix | `make remote-netpol TARGET=plane-prod CONFIRM=plane-prod` | `.local/evidence-raw/netpol-plane-prod-<stamp>.tsv` | Without `CONFIRM`, refused, exit 2 ([record](../evidence/runs/hosted-netpol-first-20261107T043754Z.txt)). At 04:38Z, before any Plane workload: 143 PASS, 0 FAIL, 67 INCONCLUSIVE, exit 2 ([log](../evidence/runs/hosted-netpol-first-20261107T043810Z.txt), [matrix](../evidence/runs/netpol-plane-prod-20261107T043811Z.tsv)). With Plane up: 208 PASS and 2 INCONCLUSIVE at 06:18Z, 212 PASS, 1 FAIL and 1 INCONCLUSIVE at 06:32Z, the FAIL a policy refusing Traefik on its way to Grafana's new route, and 206 PASS, 0 FAIL and 8 INCONCLUSIVE at 07:27Z (`netpol-plane-prod-20261107T061822Z.tsv`, `-063238Z.tsv` and `-072728Z.tsv`, not published yet). A clean run: PENDING, tonight. See [Troubleshooting](troubleshooting.md#hosted-production) |
+| Backups, run now | `make remote-backup TARGET=plane-prod CONFIRM=plane-prod` | `.local/evidence-raw/backup-plane-prod-<stamp>.txt` | FAIL at 06:47Z, then PASS at 07:07Z (`backup-plane-prod-20261107064758.txt`, `backup-plane-prod-20261107070754.txt`, not published yet). See [Restore on hosted production](hosted-restore.md) |
+| Restore test on the VPS | `make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod` | `.local/evidence-raw/restore-test-plane-prod-<stamp>.json` | PASS, 11 of 11 rows, ended 07:19:11Z (`restore-test-plane-prod-20261107071414.json`, not published yet) |
+| Off-VPS copy | `make remote-pull-backups TARGET=plane-prod`, then `make remote-backup-dest TARGET=plane-prod VERB=verify` | Kept by hand, `hosted-pull-<stamp>.log` | PASS at 07:13Z: both repositories pulled, restored here and every file matched (`hosted-pull-20261107T071339Z.log`, not published yet) |
+| Restore test of this Mac's copy, in kind | `make remote-restore-test TARGET=plane-prod RESTORE_ON=kind` | `.local/evidence-raw/restore-test-plane-prod-<stamp>.json` | NOT RUN |
+| Alert delivery | `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=alerts` | `.local/evidence-raw/test-hosted-<stamp>.txt` | PASS, every row, at 07:31Z: delivery COMPLETE, to Telegram, with Watchdog to Healthchecks, and a synthetic alert left Alertmanager (`test-hosted-20261107T073149Z.txt`, not published yet) |
+| Rendered Secrets, after Infisical's new values | `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=secrets` | `.local/evidence-raw/test-hosted-<stamp>.txt` | PASS, every row, at 18:44Z (`test-hosted-20261107T184239Z.txt`, not published yet) |
+| Infisical's route from outside, its Secrets and its routes | `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside secrets routes"` | `.local/evidence-raw/test-hosted-<stamp>.txt` | PENDING, tonight |
+| The whole hosted suite | `make remote-test TARGET=plane-prod CONFIRM=plane-prod` | `.local/evidence-raw/test-hosted-<stamp>.txt` | PENDING, tonight |
+| Restart check | `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`. The site is down while the API's pod restarts | `.local/evidence-raw/restart-check-<stamp>.txt` | FAIL at 07:52Z: every pod came back, and the public API did not answer 200 from this Mac within 180s, so the check stopped before it compared what Postgres held (`restart-check-20261107T075237Z.txt`, not published yet). The next run: PENDING, tonight |
+| Smoke | `make remote-smoke TARGET=plane-prod`, which the owner runs, since it asks for a login at hidden prompts | `.local/evidence-raw/smoke-plane-prod-<stamp>.json` | BLOCKED at 06:41Z, on a refused sign-in, then PASS at 06:45Z, 21 of 21 steps (`smoke-plane-prod-20261107T064131Z.json`, `smoke-plane-prod-20261107T064551Z.json`, not published yet). The final smoke: PENDING, tonight |
+| Image scan of all 45 hosted images, on GitHub | `gh workflow run scan-hosted.yml`, and each Monday at 04:41Z | The run's artifact | PENDING, tonight. See [Container scanning](../security.md#container-scanning) |
+| Rollback, real restore, lockout recovery | [Rollback](hosted-rollback.md), [restore](hosted-restore.md), [lockout](hosted-lockout.md) | | NOT RUN |

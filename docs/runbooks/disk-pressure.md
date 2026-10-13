@@ -153,3 +153,38 @@ Free space should be above 25 GiB before a first install, and above the 10 GiB f
 | Delete a Postgres PVC to free space | That is data loss, for a few hundred MiB. Look at images first |
 | Delete from `/var/lib/containerd` directly | It corrupts the store. Use `crictl` |
 | Set `MIN_FREE_DISK_GIB=0` to get past a refusal | The guard exists because a full disk gives write errors in Postgres, not a clean stop |
+
+## Hosted production
+
+On hosted production the disk is the node's own, and the traps above do not apply. One filesystem, `/`, holds the system, K3s and its
+images, every volume and the backups. It read 387G, with 2.7G used, right after provisioning on 2026-11-06
+([hosted-node-20261106T225936Z.txt](../evidence/runs/hosted-node-20261106T225936Z.txt)). A later reading is not in `docs/evidence` yet.
+
+| | Here | Hosted production |
+|---|---|---|
+| Disk protection | Off: kind sets image GC at 100% and eviction at 0% | On, from [`kubelet.conf`](../../infrastructure/hosted/plane-prod/kubelet.conf): image GC from 75% down to 65%, images unused for 336h removed, and eviction below 10% free or 5% of inodes |
+| What sees the real limit | Nothing in the cluster | `NodeDiskLow` under 20% free for 10 minutes, `NodeDiskCritical` under 10% for 5 minutes, `NodeDiskNotRead` when nothing reports `/` ([rules](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml)) |
+| Volumes | local-path on the VM, size ignored | Class `local-path-retain`, under `/var/lib/rancher/k3s/storage`, reclaim `Retain`. Sizes are not enforced either, and each namespace's `requests.storage` quota caps what claims ask for |
+| Backups | `.local/backups` on the Mac | `/srv/wayline/backups`, on the same disk. Its two PVs are 40Gi and 10Gi, which are labels: hostPath enforces nothing |
+| Budget | | [`capacity.yaml`](../../infrastructure/hosted/plane-prod/capacity.yaml): 40Gi for the system and images, 50 GiB for backups, and 100Gi kept free for Frameflow |
+
+**Diagnosis.** `make remote-status TARGET=plane-prod` prints `df -h` of `/` and `/srv/wayline/backups` over SSH. To look closer:
+
+```bash
+ssh -i ~/.ssh/wayline_contabo_ed25519 -o IdentitiesOnly=yes -o UserKnownHostsFile=.local/hosted/known_hosts wayline-admin@5.253.234.127 \
+  'df -h /; sudo du -sh /var/lib/rancher/k3s/agent/containerd /var/lib/rancher/k3s/storage/* /srv/wayline/backups/* /var/log 2>/dev/null; sudo k3s crictl images'
+```
+
+**Fix**, cheapest first. None of these has run on hosted production: NOT RUN.
+
+1. **Images.** The kubelet removes unused ones itself from 75% use. `sudo k3s crictl rmi --prune` on the node removes every image no
+   container uses now, and a Job's image is pulled again when it next runs.
+2. **Backups.** The nightly prunes restic's repositories after each run, and seals the plain predeploy dumps. `make remote-backup TARGET=plane-prod
+   CONFIRM=plane-prod ONLY=plane-prod` seals a plain dump at once. Do not remove repository files by hand: [Restore on hosted production](hosted-restore.md#what-not-to-do).
+3. **Logs and metrics.** Loki keeps 168h, and Prometheus 15 days or 12GiB, whichever comes first. Their claims of 10Gi and 16Gi are
+   labels that local-path does not enforce, so those retention settings are what bound them.
+4. **A volume that grew.** Find it under `/var/lib/rancher/k3s/storage`, and fix what writes it. Never delete a volume's folder: reclaim is
+   `Retain` so that a deleted claim keeps its data.
+
+**This Mac's disk** still matters for hosted work. `make remote-pull-backups` and `make remote-backup-dest VERB=verify` check it with
+`guard_disk` first, because a pull copies both repositories here and a verify restores them into a folder here.
