@@ -190,6 +190,104 @@ hosted_images_listed() {
   return "$status"
 }
 
+# Production runs these as well, and no manifest here names them: K3s's own images, and those of the probe pods that make
+# remote-netpol, make remote-test and the restore test start on the VPS. scan-images.sh reads the list beside the other.
+HOSTED_SYSTEM_IMAGE_LIST=policy/hosted-system-images.txt
+HOSTED_PROBE_SCRIPTS=(scripts/test-netpol.sh scripts/hosted/restore-test.sh)
+
+# Each image the probe scripts pin, one to a line. A script that pins none fails, because nothing would then say what it runs.
+hosted_probe_images() {
+  local script found
+  for script in "${HOSTED_PROBE_SCRIPTS[@]}"; do
+    found="$(grep -oE '[[:alnum:]][[:alnum:]._/:-]*@sha256:[a-f0-9]{64}' "$script")" ||
+      { warn "$script pins no image, so nothing here says what its probe pods run"; return 1; }
+    printf '%s\n' "$found"
+  done
+}
+
+# Offline: every line names a tag and a digest, and every probe image is listed. K3s's lines are read against its release below.
+hosted_probe_images_listed() {
+  local listed unpinned probes unlisted status=0
+  [[ -f "$HOSTED_SYSTEM_IMAGE_LIST" ]] || { warn "$HOSTED_SYSTEM_IMAGE_LIST is missing"; return 1; }
+  listed="$(grep -vE '^(#|$)' "$HOSTED_SYSTEM_IMAGE_LIST" | LC_ALL=C sort -u || true)"
+  # The tag is what K3s's release names and its pull uses, and the digest is what the scan reads.
+  unpinned="$(grep -vE '^[^[:space:]@]+:[^[:space:]@/:]+@sha256:[a-f0-9]{64}$' <<<"$listed" || true)"
+  if [[ -n "$unpinned" ]]; then
+    warn "$HOSTED_SYSTEM_IMAGE_LIST names each image as name:tag@sha256:<digest>, and these are not: ${unpinned//$'\n'/, }"
+    status=1
+  fi
+  probes="$(hosted_probe_images | LC_ALL=C sort -u)" || return 1
+  unlisted="$(LC_ALL=C comm -23 <(printf '%s\n' "$probes") <(printf '%s\n' "$listed"))"
+  if [[ -n "$unlisted" ]]; then
+    warn "the probe pods on the VPS run these, and they are not in $HOSTED_SYSTEM_IMAGE_LIST, so the hosted scan would miss them: ${unlisted//$'\n'/, }"
+    status=1
+  fi
+  return "$status"
+}
+
+# What each component k3s-config.yaml can disable runs, as K3s's own manifests name it at v1.36.6+k3s1, so the images of one
+# turned off are not expected. Its pause image is every pod's sandbox, and nothing turns it off.
+k3s_component_repositories() { # k3s_component_repositories <component>
+  case "$1" in
+    coredns) echo docker.io/rancher/mirrored-coredns-coredns ;;
+    local-storage) echo docker.io/rancher/local-path-provisioner docker.io/rancher/mirrored-library-busybox ;;
+    metrics-server) echo docker.io/rancher/mirrored-metrics-server ;;
+    servicelb) echo docker.io/rancher/klipper-lb ;;
+    # The helm-controller runs klipper-helm for each HelmChart, and Traefik's are the only ones K3s ships.
+    traefik) echo docker.io/rancher/mirrored-library-traefik docker.io/rancher/klipper-helm ;;
+    *) return 1 ;;
+  esac
+}
+
+# K3s's own images for target.yaml's k3s_version, one to a line, less what k3s-config.yaml turns off. It needs the network once.
+hosted_k3s_images() {
+  local version cache component repositories="" image
+  version="$(yq -r '.k3s_version // ""' infrastructure/hosted/plane-prod/target.yaml)"
+  [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\+k3s[0-9]+$ ]] || { warn "infrastructure/hosted/plane-prod/target.yaml states no k3s_version such as v1.36.6+k3s1"; return 1; }
+  # A release's files never change, so one fetch serves every later run here.
+  cache="$LOCAL_DIR/k3s-images/$version.txt"
+  if [[ ! -s "$cache" ]]; then
+    mkdir -p "${cache%/*}"
+    if ! curl -fsSL --retry 8 --retry-connrefused -o "$cache.part" "https://github.com/k3s-io/k3s/releases/download/${version//+/%2B}/k3s-images.txt"; then
+      rm -f "$cache.part"
+      warn "could not read k3s-images.txt from K3s $version's release"
+      return 1
+    fi
+    mv "$cache.part" "$cache"
+  fi
+  for component in $(yq -r '[.disable // []] | flatten | .[] | split(",") | .[]' infrastructure/hosted/plane-prod/k3s-config.yaml); do
+    repositories+=" $(k3s_component_repositories "$component")" ||
+      { warn "k3s-config.yaml disables $component, and nothing here says which images that leaves out"; return 1; }
+  done
+  while read -r image; do
+    [[ -n "$image" ]] || continue
+    case "$repositories " in *" ${image%:*} "*) continue ;; esac
+    printf '%s\n' "$image"
+  done <"$cache"
+}
+
+# The list's lines, each without its digest, hold K3s's own images, no more and no fewer, beside the probes.
+hosted_k3s_images_listed() {
+  local expected probes listed others missing stale status=0
+  expected="$(hosted_k3s_images | LC_ALL=C sort -u)" || return 1
+  [[ -n "$expected" ]] || { warn "K3s's release lists no image, which cannot be right"; return 1; }
+  probes="$(hosted_probe_images | LC_ALL=C sort -u)" || return 1
+  listed="$(grep -vE '^(#|$)' "$HOSTED_SYSTEM_IMAGE_LIST" | LC_ALL=C sort -u || true)"
+  others="$(LC_ALL=C comm -23 <(printf '%s\n' "$listed") <(printf '%s\n' "$probes") | sed -E 's/@sha256:[a-f0-9]{64}$//' | LC_ALL=C sort -u)"
+  # A probe could be one of K3s's own too, and then it is listed once, as a probe.
+  missing="$(LC_ALL=C comm -23 <(printf '%s\n' "$expected") <(printf '%s\n%s\n' "$others" "$(sed -E 's/@sha256:[a-f0-9]{64}$//' <<<"$probes")" | LC_ALL=C sort -u))"
+  if [[ -n "$missing" ]]; then
+    warn "K3s runs these, and they are not in $HOSTED_SYSTEM_IMAGE_LIST. Add each with the digest its tag names: ${missing//$'\n'/, }"
+    status=1
+  fi
+  stale="$(LC_ALL=C comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$others"))"
+  if [[ -n "$stale" ]]; then
+    warn "$HOSTED_SYSTEM_IMAGE_LIST lists these, and neither K3s nor a probe runs them, so take them out: ${stale//$'\n'/, }"
+    status=1
+  fi
+  return "$status"
+}
+
 # No Alloy here to run it, so this takes the stage's own expression and does as stage.replace does, on the line Alertmanager logs when
 # a send to Telegram fails: each capture group becomes the replacement.
 alloy_scrubs_the_telegram_token() { # alloy_scrubs_the_telegram_token <values file>

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Everything Argo CD will be asked to apply, on either cluster, checked without one: render drift, Kubernetes
 # schemas, project policy, Prometheus rules, and the promotion invariant.
-# SKIP_CHARTS=yes leaves out the third-party platform charts, which need network and take minutes.
+# SKIP_CHARTS=yes leaves out what needs the network: the third-party platform charts, which take minutes, and the image list
+# of K3s's release.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 # shellcheck source=lib-manifests.sh
@@ -112,6 +113,7 @@ if has_yaml "$WORK/hosted"; then
   check "conftest: hosted tree together" conftest test --combine --policy policy --no-color --namespace hosted_combined "$WORK"/hosted/*.yaml "$HOSTED_TARGET"
   check "hosted tree stands alone" hosted_tree_stands_alone "$WORK/hosted-alone"
   check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
+  check "hosted system images: every probe image is listed" hosted_probe_images_listed
   check "hosted Alloy scrubs a Telegram bot token" alloy_scrubs_the_telegram_token "$HOSTED_TREE/values/alloy.yaml"
 fi
 # A few seconds, and offline. negative-controls.sh sets SKIP_FLOWS, as for the promotion flows below, because none of its defects are in
@@ -197,6 +199,9 @@ else
     if has_yaml "$WORK/hosted-chart-rules"; then
       check "promtool: hosted chart rules" promtool_check "$WORK/hosted-chart-rules"
     fi
+  fi
+  if has_yaml "$WORK/hosted"; then
+    check "hosted system images: K3s's own are what its release runs" hosted_k3s_images_listed
   fi
   # Last, and only in the full run: it re-renders the overlays many times, so it takes some minutes.
   # negative-controls.sh sets SKIP_FLOWS, because none of its defects are in those scripts' paths.

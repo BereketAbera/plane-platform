@@ -1,0 +1,13 @@
+# What hosted production runs that no manifest in Git names, so neither policy/hosted-images.txt nor the render can hold it.
+# K3s's own images, which it pulls by tag through the mirror in registries.yaml: what its release's k3s-images.txt lists for
+# target.yaml's k3s_version, less what each component k3s-config.yaml disables runs. Each digest is the one its tag named on
+# Docker Hub when it was added here, and only the node can say which it holds. The rest are what scripts/test-netpol.sh and
+# scripts/hosted/restore-test.sh pin for the probe pods they start on the VPS.
+# scripts/ci/validate-manifests.sh fails on an image missing here and on a line nothing accounts for, so a K3s upgrade or a new
+# probe is a diff a person reads. A new K3s line takes the digest of its tag: docker buildx imagetools inspect <image:tag>.
+docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40
+docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+docker.io/rancher/local-path-provisioner:v0.0.37@sha256:e757967a5ec338f6a9b371c5a9688bedaa8c3578ea3dd4db329ea0084be0a86f
+docker.io/rancher/mirrored-coredns-coredns:1.14.7@sha256:7efd3c635b03efd68c4e8398fc45f0d993d0e9ab016f72c1cefb0fd6d01aa286
+docker.io/rancher/mirrored-library-busybox:1.37.0@sha256:101b4afd76732482eff9b95cae5f94bcf295e521fbec4e01b69c5421f3f3f3e5
+docker.io/rancher/mirrored-pause:3.10.2@sha256:f548e0e8e3dc1896ca956272154dde3314e8cc4fde0a57577ee9fa1c63f5baf4
