@@ -97,5 +97,7 @@ Added 2026-11-07.
   created. `ec76d65` leaves a zero expiry to `CertificateNotReady`, with a promtool test, as the rule's comment records. It went out with
   `infisical-tls`, whose first order began before Prometheus had loaded it, so the rule fired once more, at 19:23Z, by Prometheus's own
   record read at 20:30Z. Neither page is in `docs/evidence`.
-- **`infisical-tls`**, ordered once its route was released: PENDING, from tonight's outside run of
-  `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside secrets routes"`.
+- **`infisical-tls` serves.** It was ordered once its route was released. The outside run of
+  `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside secrets routes"` at 19:31Z read a publicly trusted certificate for
+  `infisical.bereket.dev` with 89 days left, issued by Let's Encrypt, and at 19:47:29Z the Certificate read Ready from
+  `letsencrypt-production` (`test-hosted-20261107T193135Z.txt` and `hosted-routes-20261107T194729Z.txt`, not published yet).
