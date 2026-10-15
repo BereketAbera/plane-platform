@@ -66,8 +66,11 @@ Around it:
   neither rule, and only the list of hosted images, [`policy/hosted-images.txt`](../../policy/hosted-images.txt), makes that change a diff a
   person reads. Policy also holds the four Probes and their blackbox modules, and every NetworkPolicy in namespace infisical, egress-only ones
   too. [`policy/hosted_combined.rego`](../../policy/hosted_combined.rego) wants both limits and every Probe beside any route on the host
-  [`target.yaml`](../../infrastructure/hosted/plane-prod/target.yaml) gives Infisical, and those modules in the file blackbox's pods read, and
-  [`policy/hosted_tree.rego`](../../policy/hosted_tree.rego) refuses an object in the hosted tree that states no namespace.
+  [`target.yaml`](../../infrastructure/hosted/plane-prod/target.yaml) gives Infisical. In each container of the pods the Probes' Service
+  selects, it wants the blackbox exporter's own image and entrypoint with one `--config.file`, that file from one ConfigMap mounted whole or by
+  items at its directory, no other mount at or under that directory, a subPath one included, and those modules in that file exactly as
+  `policy/hosted.rego` writes them. [`policy/hosted_tree.rego`](../../policy/hosted_tree.rego) refuses an object in the hosted tree that states
+  no namespace.
 - **Proved against the pinned Traefik.** [`tests/routes/infisical-public-route.sh`](../../tests/routes/infisical-public-route.sh) starts the
   Traefik image and flags hosted production pins, in Docker, with `route.yaml`, and asks every anonymous and machine route, and the named ones in
   49 spellings each: trailing and doubled slashes, case, percent-encoding once and twice, encoded slashes and dots, dot segments, semicolons,

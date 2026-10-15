@@ -241,6 +241,35 @@ test_a_blackbox_whose_file_cannot_be_named_rejected if {
 	}
 }
 
+# A second ConfigMap's loosened module mounted by subPath over the file, beside the whole-directory mount: the runtime mounts the deeper
+# path last, so the exporter reads the second one. So any other mount at or under the file's directory is refused, however it is spelled.
+shadow_volume := {"name": "shadow", "configMap": {"name": "bb-shadow"}}
+
+with_mount(mount, volume) := json.patch(
+	blackbox_deployment("blackbox", object.union(blackbox_container, {"volumeMounts": array.concat(blackbox_container.volumeMounts, [mount])}), config_volume("blackbox-config-4mt2645788")),
+	[{"op": "add", "path": "/spec/template/spec/volumes/-", "value": volume}],
+)
+
+test_a_mount_over_the_blackbox_config_rejected if {
+	every mount in [
+		{"name": "shadow", "mountPath": "/config/blackbox.yml", "subPath": "blackbox.yml", "readOnly": true},
+		{"name": "shadow", "mountPath": "//config/./blackbox.yml", "subPath": "blackbox.yml"},
+		{"name": "shadow", "mountPath": "/tmp/../config/blackbox.yml", "subPath": "blackbox.yml"},
+		{"name": "shadow", "mountPath": "/config/", "subPathExpr": "$(POD_NAME)"},
+		{"name": "shadow", "mountPath": "/config/modules"},
+	] {
+		read := with_blackbox([blackbox_service, with_mount(mount, shadow_volume), the_blackbox_config, blackbox_config("bb-shadow", {"blackbox.yml": blackbox_file(loosened_modules)})])
+		says_once(read, "at or under /config, the directory of /config/blackbox.yml, which it reads Infisical's Probes' modules from")
+	}
+}
+
+# A mount elsewhere, or one that only begins with the same letters, leaves the file as it was.
+test_a_mount_beside_the_blackbox_config_accepted if {
+	every mount in [{"name": "tmp", "mountPath": "/tmp"}, {"name": "tmp", "mountPath": "/configs/blackbox.yml", "subPath": "x"}, {"name": "tmp", "mountPath": "/config.d"}] {
+		count(hosted_combined.deny) == 0 with input as with_blackbox([blackbox_service, with_mount(mount, {"name": "tmp", "emptyDir": {}}), the_blackbox_config])
+	}
+}
+
 test_a_blackbox_config_that_is_not_here_rejected if {
 	says_once(with_blackbox([blackbox_service, the_blackbox]), "which is key blackbox.yml of ConfigMap monitoring/blackbox-config-4mt2645788, and no one ConfigMap here by that name holds that key")
 	says_once(with_blackbox([blackbox_service, the_blackbox, blackbox_config("blackbox-config-4mt2645788", {"other.yml": blackbox_file(blackbox_modules)})]), "no one ConfigMap here by that name holds that key")

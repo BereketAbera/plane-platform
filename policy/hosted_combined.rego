@@ -122,9 +122,10 @@ infisical_present(need) if {
 
 # Each of Infisical's Probes asks the prober policy/hosted.rego names for a module, and what a module means is what the pods behind that
 # Service read: the file their --config.file names, in the ConfigMap mounted at its directory. policy/hosted.rego holds a ConfigMap by its
-# name, so with kustomize's generator renamed, or the flag pointed at a second file, a claim module loosened to read no body passed, and it
-# would leave all three claim alerts quiet. So this follows that Service to every pod it selects, and wants each module those Probes use in
-# the file that pod reads, as policy/hosted.rego writes it.
+# name, so with kustomize's generator renamed, the flag pointed at a second file, or a second ConfigMap mounted by subPath over the file, a
+# claim module loosened to read no body passed, and it would leave all three claim alerts quiet. So this follows that Service to every pod it
+# selects, and wants each module those Probes use in the file that pod reads, as policy/hosted.rego writes it, with no other mount at or under
+# that file's directory.
 prober_host := split(hosted.infisical_prober.url, ":")[0]
 
 blackbox := {"name": split(prober_host, ".")[0], "namespace": split(prober_host, ".")[1]}
@@ -202,7 +203,8 @@ config_file(c) := substring(flags[0], count(config_flag), -1) if {
 }
 
 # The ConfigMap and key that file comes from: a configMap volume mounted at the file's directory, whole or with items that name the file. A
-# set, so two that could each be it read as neither.
+# set, so two that could each be it read as neither. A mount with subPath is never a source here, and the rule on mounts_over_config below
+# refuses one at or under that directory, with every other mount there.
 config_sources(doc, c) := {source |
 	file := config_file(c)
 	some mount in object.get(c, "volumeMounts", [])
@@ -221,6 +223,31 @@ config_sources(doc, c) := {source |
 configmap_keys(configmap, name) := {name} if not configmap.items
 
 configmap_keys(configmap, name) := {item.key | some item in configmap.items; item.path == name} if configmap.items
+
+# A path as the runtime mounts it: empty and "." segments mean nothing, so "/config/", "//config" and "/config/." are all "/config".
+path_segments(path) := [segment | some segment in split(path, "/"); segment != ""; segment != "."]
+
+config_directory(c) := array.slice(segments, 0, count(segments) - 1) if {
+	segments := path_segments(config_file(c))
+	count(segments) > 0
+}
+
+# The runtime mounts the deeper path last, so a mount at or under the file's directory, a subPath mount of a second ConfigMap at the file
+# itself above all, lays its own file over what the mount config_sources reads, and the exporter reads that one. A path with ".." could land
+# anywhere, so it counts as there too.
+at_or_under(path, directory) if {
+	segments := path_segments(path)
+	count(segments) >= count(directory)
+	array.slice(segments, 0, count(directory)) == directory
+}
+
+at_or_under(path, _) if ".." in split(path, "/")
+
+mounts_over_config(c) := [mount.mountPath |
+	directory := config_directory(c)
+	some mount in object.get(c, "volumeMounts", [])
+	at_or_under(object.get(mount, "mountPath", ""), directory)
+]
 
 configmap_text(source) := texts[0] if {
 	texts := [text |
@@ -261,6 +288,15 @@ deny contains msg if {
 	some [doc, c] in blackbox_containers
 	count(config_sources(doc, c)) != 1
 	msg := sprintf("%s: container %q is behind Service %s/%s, which Infisical's Probes ask for their modules, and nothing here can say which file it reads them from. Run the blackbox exporter's own image and entrypoint with one --config.file=<file>, and mount the ConfigMap that holds it at its directory", [kube.label(doc), object.get(c, "name", ""), blackbox.namespace, blackbox.name])
+}
+
+# Only the mount of that directory may be there, so the file it holds is the file read.
+deny contains msg if {
+	some [doc, c] in blackbox_containers
+	paths := mounts_over_config(c)
+	count(paths) > 1
+	directory := concat("", ["/", concat("/", config_directory(c))])
+	msg := sprintf("%s: container %q mounts %v at or under %s, the directory of %s, which it reads Infisical's Probes' modules from. Only the mount that holds that file may be there, because another, a subPath mount of a second ConfigMap among them, lays its own file over it", [kube.label(doc), object.get(c, "name", ""), paths, directory, config_file(c)])
 }
 
 deny contains msg if {
