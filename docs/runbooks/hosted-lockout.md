@@ -69,7 +69,7 @@ Safari drops Infisical's Secure cookies on `http://localhost`, so a sign-in thro
 | Situation | Way back |
 |---|---|
 | Account is locked, after wrong codes: 5 lock it for 5 minutes, 10 for 30, 15 for an hour, 20 until someone unlocks it | Wait, or clear the lock in the database through the tunnel. After 20, Infisical writes an unlock link to its log, and the same path works through the tunnel |
-| 429 at sign-in | The route allows 10 tries a minute per address, then one every 6 seconds. Wait, or use the tunnel |
+| 429 at sign-in | The route allows an address a burst of 10 tries, then one every 6 seconds, and a full 10 again once it has sent nothing for about 7 seconds. Wait, or use the tunnel |
 | Phone lost, recovery codes kept | Sign in, choose **Use a recovery code**, then in Personal Settings, Authentication, **Disable 2FA**, then **Remove** the authenticator app, and set up the new phone |
 | Phone and recovery codes both gone | Turn two-factor off in the database through the tunnel, sign in with the password alone, and set it up again at once |
 | Password lost | A new hash in the same database: [`infisical/README.md`](../../infisical/README.md), section Admin token and password both gone |

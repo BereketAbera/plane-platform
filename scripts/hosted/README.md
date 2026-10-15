@@ -120,8 +120,10 @@ public host would not work through the tunnel.
 
 Five wrong codes in a row lock the account for 5 minutes, ten for 30, fifteen for an hour, and twenty until someone unlocks it. A lock refuses even
 the right password, with Account is locked, and a sign-in that gets through clears the count. A stranger cannot cause any of this without the
-password: wrong passwords lock nothing in this version, because their count only asks for a captcha, which needs a key this platform does not set,
-and the route's limit is 10 a minute per address. That limit answers 429 and lets one more try through every 6 seconds: wait, or use the tunnel.
+password: wrong passwords lock nothing in this version, because their count only asks for a captcha, which needs a key this platform does not set.
+The route's limit gives an address a burst of 10 tries and one more every 6 seconds, and a full 10 again once it has sent nothing for about 7
+seconds, so it is no cap of 10 a minute ([known limitations](../../docs/known-limitations.md#infisicals-public-route-the-risk-that-stays)). It
+answers 429: wait, or use the tunnel.
 
 Locked, with the phone at hand: wait, or clear the lock in the database through the tunnel, and sign in with the password and a code. After twenty,
 Infisical writes an unlock link to its log, because there is no SMTP to mail it. The link names the public host, which refuses it, and the same

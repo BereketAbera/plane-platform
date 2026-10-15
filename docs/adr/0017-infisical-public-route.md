@@ -36,7 +36,9 @@ What the evidence showed, at v0.167.6, read from its running server and its web 
 A route at `https://infisical.bereket.dev`, in four parts that share no path,
 [`route.yaml`](../../gitops/clusters/plane-prod/platform/infisical/route.yaml):
 
-1. The sign-in, two-factor and password endpoints, under a limit of 10 a minute per client address.
+1. The sign-in, two-factor and password endpoints, under a limit per client address of a burst of 10 and one more every 6 seconds. That is
+   no cap of 10 a minute: Traefik forgets an address after about 7 seconds with no request from it and starts it again with a full burst, so
+   a client that waits about 8 seconds between bursts of 10 gets about 70 tries a minute.
 2. The session endpoints, select-organization, token refresh, logout and the two-factor checks, under a wider limit of 30 a minute.
 3. **An allow list** for the rest of the API: the families the web client calls, and in them a list of refusals for what takes a credential and
    no browser needs. A family a later version adds is refused until someone reads it. Any request carrying a machine's credential is refused too.
@@ -106,8 +108,11 @@ Around it:
 ## Consequences
 
 **What is left.** Anyone on the internet can reach the sign-in, the two-factor step, the token refresh and the config a sign-in page reads, and
-guess at the password at 10 tries a minute per address, as many addresses as they have. The password is 48 random hex characters, so guessing is
-not the threat. These are:
+guess at the password at about 70 tries a minute per address, waiting about 8 seconds between bursts of 10, as many addresses as they have.
+Measured against the pinned Traefik v3.7.17 in Docker, Traefik forgets an idle address after about 1 + 60/n seconds, for a limit of n a minute,
+and starts it again with a full bucket: 10 tries got 200, a try 5 s later got 429, and a burst 9 s later got 10 more 200s. Infisical asks for no
+captcha without `CAPTCHA_SECRET`, which is not set. The password is 48 random hex characters, and two-factor stands behind it, so guessing is not
+the threat. These are:
 
 - **A flaw in what stays reachable.** The sign-in, two-factor, session and secret endpoints, and the web client's own code, run for anyone. A bug
   in them is now reachable from the internet, where before it needed the SSH key. Watch Infisical's security releases, and read the route again at
