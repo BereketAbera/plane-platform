@@ -3,7 +3,8 @@
 Terraform owns the cluster's foundation and hands everything else to Argo CD
 ([contract section 4](../../docs/platform-contract.md)).
 
-**The kind CLI creates the cluster, not Terraform.** `scripts/cluster-up.sh` does that first. The Kubernetes and Helm
+**The kind CLI creates the cluster, not Terraform.** `scripts/cluster-up.sh` does that first, and on hosted production
+`scripts/hosted/provision-node.sh` installs K3s over SSH. The Kubernetes and Helm
 providers read the kubeconfig during plan, and the [provider docs](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs)
 warn against creating a cluster and its Kubernetes resources in one module.
 
@@ -12,11 +13,14 @@ warn against creating a cluster and its Kubernetes resources in one module.
 | `modules/foundation` | Used | Namespaces with PSA and platform labels; ResourceQuota and LimitRange per Plane namespace, or as the caller passes them; a StorageClass if asked; CoreDNS rewrite, by kubeadm's Corefile or K3s's `coredns-custom` |
 | `modules/argocd` | Used | Argo CD release; second release with the AppProjects and the root Application |
 | `environments/local` | Used | Root module for the kind cluster. State at `.local/terraform/local/terraform.tfstate` |
-| `environments/prod` | Written, not yet run against a cluster | Hosted production's cluster bootstrap. State at `.local/hosted/plane-prod/terraform/terraform.tfstate`. See [its README](environments/prod/README.md) |
-| `environments/prod-host` | Written, not yet planned | Read-only `data "contabo_instance"` and the one imported DNS record. State at `.local/hosted/plane-prod/terraform/host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
+| `environments/prod` | Used, on hosted production since 2026-11-07, through `scripts/hosted/bootstrap.sh` only | Hosted production's cluster bootstrap. State at `.local/hosted/plane-prod/terraform/terraform.tfstate`. See [its README](environments/prod/README.md) |
+| `environments/prod-host` | Used, through `scripts/hosted/host-terraform.sh` only | Read-only `data "contabo_instance"`, and the A records of `wayline`, imported, and of `grafana` and `infisical`, made here. State at `.local/hosted/plane-prod/terraform/host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
 | `environments/dev` | **Untested template** | Interface documents from an earlier plan. Nothing to run |
 
 ## Workflow
+
+This is the local root. Hosted production's two run only through their scripts, as [docs/terraform.md](../../docs/terraform.md#hosted-production)
+says.
 
 The cluster must be running. From the repo root, with `.tools/bin` on `PATH`:
 

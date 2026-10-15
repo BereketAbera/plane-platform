@@ -9,7 +9,8 @@ It runs only through `scripts/hosted/bootstrap.sh`, against `.local/hosted/plane
 UID matches `infrastructure/hosted/plane-prod/target.yaml`. So `kube_system_uid` there must be recorded first.
 
 `terraform validate` needs no cluster: `terraform -chdir=infrastructure/terraform/environments/prod init -backend=false`, then `validate`.
-Not run against a cluster yet.
+It has run against hosted production since 2026-11-07: the first bootstrap applied 26 resources and then 2, and the second found nothing
+to change ([first](../../../../docs/evidence/runs/hosted-bootstrap-20261107T042651Z.txt), [second](../../../../docs/evidence/runs/hosted-bootstrap-20261107T050333Z.txt)).
 
 **Do not run `terraform destroy` here.** It deletes the namespaces, and with them every claim. The volumes stay, on reclaim Retain, but
 nothing would be bound to them. See [`environments/prod-host`](../prod-host) for the VPS and the DNS records, which this root does not touch.

@@ -21,7 +21,8 @@ other, Terraform starts from nothing: it imports wayline's record again and make
 
 ```bash
 TARGET=plane-prod scripts/hosted/host-terraform.sh plan
-# With wayline's and grafana's records in state it ends: This plan: create vercel_dns_record.infisical
+# With all three records in state and nothing to change, it ends: This plan: nothing. Before infisical's record
+# existed it ended: This plan: create vercel_dns_record.infisical, and this applied it:
 TARGET=plane-prod CONFIRM=plane-prod EXPECT='create vercel_dns_record.infisical' scripts/hosted/host-terraform.sh apply
 ```
 
