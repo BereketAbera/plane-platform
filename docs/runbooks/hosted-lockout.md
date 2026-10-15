@@ -139,13 +139,14 @@ NodePort cannot get past it. [`edge.sh`](../../scripts/hosted/edge.sh) moves it 
 scripts/hosted/edge.sh status                                                    # the stage in force, and whether the table is loaded
 scripts/hosted/edge.sh scan                                                      # what answers from this machine, the check that counts
 TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh owner <your public ipv4>
-TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open
+TARGET=plane-prod CONFIRM=plane-prod TWO_FACTOR=on scripts/hosted/edge.sh open   # once Infisical's admin has two-factor on
 ```
 
 `owner` is the way back to the site while 443 is closed to everyone else: after `edge.sh http`, which [`scripts/hosted/README.md`](../../scripts/hosted/README.md)
-tells you to run for an Infisical that reads open, or while `open` refuses. `open` refuses unless Plane's instance reads claimed and Infisical
-reads claimed and closed to sign-up, and it refuses too while Infisical's config does not answer at all, so then Plane stays off the
-internet with it. A VPN or another network gives you another address, so run `owner` again then.
+tells you to run for an Infisical that reads open, or while `open` refuses. Without `TWO_FACTOR=on`, `open` stops at its note on two-factor
+before it reads or changes anything, because nothing here can read whether two-factor is on. With it, `open` refuses unless Plane's instance
+reads claimed and Infisical reads claimed and closed to sign-up, and it refuses too while Infisical's config does not answer at all, so then
+Plane stays off the internet with it. A VPN or another network gives you another address, so run `owner` again then.
 
 `PublicFirewallNotLoaded` means the table is not loaded, so the API's 6443, the kubelet's 10250 and node-exporter's 9100 answer on the public
 address. `edge.sh status` says whether it is loaded, and running `edge.sh` again with the stage you want loads it, with its timer. The unit

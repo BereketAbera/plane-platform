@@ -89,8 +89,10 @@ jobs:
             **If the title says first promotion:** the firewall must be at `owner` or lower before this merges, because a new
             instance's first-admin sign-up is public, and whoever posts first owns it. `ENABLE_SIGNUP` does not govern that.
             `scripts/hosted/edge.sh status` shows the stage. Create the admin from your own address, and only then run
-            `scripts/hosted/edge.sh open`. `make remote-test` fails on an instance with no admin and 443 open. A revert does not
-            undo this one: `publish-release.sh` refuses it.
+            `TARGET=plane-prod CONFIRM=plane-prod TWO_FACTOR=on scripts/hosted/edge.sh open`, as `scripts/hosted/README.md` gives it,
+            once Infisical's admin has two-factor on. Without `TWO_FACTOR=on`, open stops at its note on two-factor and changes
+            nothing. `make remote-test` fails on an instance with no admin and 443 open. A revert does not undo this one:
+            `publish-release.sh` refuses it.
       # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
       # promotion. The run stays red, because the pull request this workflow promises does not exist.
       - name: Explain a refused pull request
