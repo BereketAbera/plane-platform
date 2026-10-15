@@ -70,11 +70,13 @@ Around it:
   Traefik image and flags hosted production pins, in Docker, with `route.yaml`, and asks every anonymous and machine route, and the named ones in
   49 spellings each: trailing and doubled slashes, case, percent-encoding once and twice, encoded slashes and dots, dot segments, semicolons,
   backslashes, NUL and the rest, over HTTP/1.1 and HTTP/2. With an echo server behind it, which sees each request as Traefik forwards it, it
-  shows what Traefik lets through, not that nothing refused arrives. Traefik answers most refused spellings itself, and 52 arrive in another shape,
-  with an encoded slash or backslash, a doubly encoded slash or dot, an overlong encoded dot, a NUL or a semicolon inside one segment. Those pass
-  on the test's own model of Fastify's router, which does not read them as the path refused, and none of them reaches a refused route when routed
-  by hand through this image's own find-my-way. With a real Infisical of this version behind it, the test shows what Infisical answers, and cannot
-  see what Traefik forwarded, so neither run stands in for the other. The verdict that run now uses has not run against the image, only against a
+  shows what Traefik lets through, not that nothing refused arrives. Traefik answers most refused spellings itself, and 55 arrive in another
+  shape, 52 over HTTP/1.1 and 3 over HTTP/2, the 3 in shapes three of the 52 arrive in: an encoded slash or backslash, a doubly encoded slash
+  or dot, an overlong encoded dot, a NUL or a semicolon inside one segment. Those pass on the test's own model of Fastify's router, which does
+  not read them as the path refused. Routed by hand, none of the 52 reaches a refused route. That ran on a separate copy of the published
+  find-my-way 9.9.0, because the extract of this image holds only its `node_modules/find-my-way/package.json`, which names 9.9.0. With a
+  real Infisical of this version behind it, the test shows what Infisical answers, and cannot see what Traefik forwarded, so neither run
+  stands in for the other. The verdict that run now uses has not run against the image, only against a
   stand-in that routes with the same model. [`docs/infisical.md`](../infisical.md#the-public-route) says what each run showed. Given a throwaway
   copy nobody has claimed, named by its container and asked at the port it publishes on 127.0.0.1, it also claims that copy and sends the real
   tokens it hands out through the route, so a version whose tokens begin another way fails it. It refuses any other target, and this mode too
