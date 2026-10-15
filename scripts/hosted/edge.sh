@@ -39,13 +39,16 @@ if [[ "${1:-}" == --selftest ]]; then
   for stage in closed http owner status scan; do
     [[ -z "$(TWO_FACTOR='' two_factor_note "$stage")" ]] || die "selftest: stage $stage stops for two-factor, and only open puts the sign-in on the internet"
   done
-  # And where it stops: open run for real, with an ssh first on PATH that writes down each call, must stop at the note and reach no server.
+  # And where it stops: open run for real must stop at the note and reach no server. lint and make ci run this on the operator's checkout,
+  # which holds the real key, so it runs with no TARGET or CONFIRM, and a gate that went missing makes no call shaped for production either.
+  # The note comes before the TARGET check, so a gate gone, or moved after that check, ends at the refusal of the target and fails this. An
+  # ssh first on PATH writes down any call that gets past both.
   scratch="$(mktemp -d)"
   trap 'rm -rf "$scratch"' EXIT
   printf '#!/bin/sh\necho called >>"%s/ssh-calls"\nexit 1\n' "$scratch" >"$scratch/ssh"
   chmod 700 "$scratch/ssh"
   rc=0
-  said="$(env -u TWO_FACTOR TARGET=plane-prod CONFIRM=plane-prod PATH="$scratch:$PATH" "$ROOT/scripts/hosted/edge.sh" open 2>&1)" || rc=$?
+  said="$(env -u TWO_FACTOR -u TARGET -u CONFIRM PATH="$scratch:$PATH" "$ROOT/scripts/hosted/edge.sh" open 2>&1)" || rc=$?
   [[ "$rc" -ne 0 && "$said" == *"two-factor"* ]] || die "selftest: open without TWO_FACTOR=on did not stop at the note. It said: $said"
   [[ ! -e "$scratch/ssh-calls" ]] || die "selftest: open reached the server before it stopped for two-factor"
   ok "selftest passed"
