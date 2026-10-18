@@ -1,7 +1,8 @@
 # 0017. A public route for hosted production's Infisical, for its one admin
 
-**Status:** Accepted, 2026-11-07, by the owner. Built and proved against the pinned Traefik and this Infisical's image in Docker. Not yet deployed
-to hosted production.
+**Status:** Accepted, 2026-11-07, by the owner. Built and proved against the pinned Traefik and this Infisical's image in Docker. Deployed to hosted
+production with release `f2bff57` at 19:21:48Z, where its tests from outside ran at 19:31Z, not published
+([validation.md](../validation.md#hosted-infisicals-public-route)).
 
 ## Context
 
