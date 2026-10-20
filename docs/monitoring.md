@@ -56,8 +56,9 @@ reading, and `InfisicalRouteDown` was firing for both, active since 19:23:47Z, w
 Infisical v0.167.6's own: its MFA router answers a two-factor call with no token from its own hook, in a body its route's 401 schema refuses,
 so the server answers 500 ([known limitations](known-limitations.md#what-real-runs-found)). The probe fix `1cb99ef`, released at 20:38:06Z
 as `928b5fc`, pointed the two probes at paths beside it under the same two limits: `POST /api/v1/password/password-setup`, which answers 401
-`Token missing`, and `POST /api/v1/auth/token`, which answers 404 `AuthTokenNotFound`. All four of Infisical's probes have read 1 since
-20:40:49Z, and `InfisicalRouteDown` resolved. Read from Prometheus with `kubectl`, last at 21:46Z for this page, and no file in
+`Token missing`, and `POST /api/v1/auth/token`, which answers 404 `AuthTokenNotFound`. All four of Infisical's probes read 1 from
+20:40:49Z to at least 21:46Z, and `InfisicalRouteDown` resolved. Since about 22:00Z a single sample has now and then timed out at
+5 s while the blackbox container ran under `CPUThrottlingHigh`, short of the 5 minutes the alert waits. Read from Prometheus with `kubectl`, last at 21:46Z for this page, and no file in
 `docs/evidence` holds those readings.
 
 ### Rules
@@ -96,7 +97,7 @@ order at 07:08Z on 2026-11-07, because cert-manager reports an expiry of 0 befor
 does, as the rule's comment records, with a promtool test that fails on the old rule. It fired once more, at 19:23Z, for `infisical-tls`'s
 first order, which the hosted handoff says began before Prometheus had loaded that rule. `InfisicalRouteDown` is the other,
 [above](#probes): its two probes asked paths that v0.167.6 answers 500, and it resolved once `1cb99ef` moved them, with all four probes at 1
-since 20:40:49Z. Prometheus's own record of both was read at 20:30Z, and of the probes again at 21:46Z, and no file in `docs/evidence` holds
+from 20:40:49Z to at least 21:46Z. Prometheus's own record of both was read at 20:30Z, and of the probes again at 21:46Z, and no file in `docs/evidence` holds
 either.
 
 ### Where alerts go

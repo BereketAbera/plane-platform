@@ -356,7 +356,7 @@ there at 19:31Z, not published ([validation.md](validation.md#hosted-infisicals-
 | Route | What | Limit, per client address |
 |---|---|---|
 | Guesses | `POST` sign-in, the two-factor code and recovery code, a step-up code, password change and setup | A burst of 10, then one every 6 seconds, which is no cap of 10 a minute, as below. One correct sign-in with an authenticator app makes 2, and each mistake one more |
-| Sessions | `POST` select-organization, token refresh and logout, `GET` the two-factor checks | 30 a minute. One correct sign-in makes 4, and each page load 1 |
+| Sessions | `POST` select-organization, token refresh and logout, `GET` the two-factor checks | A burst of 30, then one every 2 seconds. By the rule that lets the guess limit through after a pause, Traefik forgets an idle address here after about 3 seconds, which was not measured. One correct sign-in makes 4, and each page load 1 |
 | API | The 71 families the web client calls, and its calls that set up a machine identity's logins, less what in them takes a credential and no browser needs, and less any request that carries a machine's credential | None |
 | Pages | Every page and file of the web client, with a clean path, less sign-up, account recovery, shared secrets and the SSO, LDAP and CLI logins | None |
 
