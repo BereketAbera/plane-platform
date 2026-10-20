@@ -284,6 +284,16 @@ plant_hosted_infisical_claim_loosened_in_a_subpath_mount() {
   replace_first "$MONITORING_SHARED/blackbox.yaml" '(- \{ name: config, mountPath: /config, readOnly: true \}\n)' '\1            - { name: shadow, mountPath: /config/blackbox.yml, subPath: blackbox.yml, readOnly: true }\n'
   replace_first "$MONITORING_SHARED/blackbox.yaml" '(configMap: \{ name: blackbox-config \}\n)' '\1        - name: shadow\n          configMap: { name: bb-shadow }\n'
 }
+# Or behind a flag spelled so that the file the exporter opens is not the one its mount names. Kubernetes expands $(X) in args and not in
+# mountPath, so the pinned ConfigMap sits at the path as written, and a second one sits at the path the exporter reads.
+plant_hosted_infisical_claim_loosened_behind_an_expanded_flag() {
+  cp "$MONITORING_SHARED/blackbox.yml" "$MONITORING_SHARED/shadow.yml"
+  replace_first "$MONITORING_SHARED/shadow.yml" "$CLAIM_CEL" 'fail_if_body_json_not_matches_cel: "has(body.config)"'
+  replace_first "$MONITORING_SHARED/kustomization.yaml" 'configMapGenerator:\n' 'configMapGenerator:\n  - name: bb-shadow\n    files: [blackbox.yml=shadow.yml]\n'
+  replace_first "$MONITORING_SHARED/blackbox.yaml" 'args: \[--config\.file=/config/blackbox\.yml\]\n' 'args: ["--config.file=/conf$(X)ig/blackbox.yml"]\n          env: [{ name: X, value: "" }]\n'
+  replace_first "$MONITORING_SHARED/blackbox.yaml" '- \{ name: config, mountPath: /config, readOnly: true \}\n' '- { name: config, mountPath: "/conf$(X)ig", readOnly: true }\n            - { name: shadow, mountPath: /config, readOnly: true }\n'
+  replace_first "$MONITORING_SHARED/blackbox.yaml" '(configMap: \{ name: blackbox-config \}\n)' '\1        - name: shadow\n          configMap: { name: bb-shadow }\n'
+}
 plant_hosted_infisical_claim_watch_misses_the_module() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml '\n\s+or absent\(probe_failed_due_to_cel\{probe="infisical-claimed"\}\)' ''; }
 plant_hosted_infisical_guess_limit_gone() { replace_first "$INFISICAL_ROUTE" '(?s)---\n# A person.s guesses, measured per client.*?(?=---\n)' ''; }
 plant_hosted_infisical_session_probe_gone() { replace_first "$INFISICAL_PROBES" '(?s)---\n# The route.s session part.*\Z' ''; }
@@ -604,6 +614,7 @@ control hosted-infisical-claim-module-reads-no-body validate-manifests.sh "black
 control hosted-infisical-claim-loosened-in-a-renamed-config validate-manifests.sh "reads /config/blackbox.yml from ConfigMap monitoring/bb-config-" plant_hosted_infisical_claim_loosened_in_a_renamed_config
 control hosted-infisical-claim-loosened-in-a-second-file validate-manifests.sh "reads /config/probes.yml from ConfigMap monitoring/blackbox-config-" plant_hosted_infisical_claim_loosened_in_a_second_file
 control hosted-infisical-claim-loosened-in-a-subpath-mount validate-manifests.sh 'mounts ["/config", "/config/blackbox.yml"] at or under /config, the directory of /config/blackbox.yml' plant_hosted_infisical_claim_loosened_in_a_subpath_mount
+control hosted-infisical-claim-loosened-behind-an-expanded-flag validate-manifests.sh "nothing here can say which file it reads them from" plant_hosted_infisical_claim_loosened_behind_an_expanded_flag
 control hosted-infisical-claim-watch-misses-the-module validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_claim_watch_misses_the_module
 control hosted-infisical-guess-limit-gone validate-manifests.sh "Middleware infisical/infisical-guess-limit is not" plant_hosted_infisical_guess_limit_gone
 control hosted-infisical-session-probe-gone validate-manifests.sh "Probe infisical/infisical-session is not" plant_hosted_infisical_session_probe_gone

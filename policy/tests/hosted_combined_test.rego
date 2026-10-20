@@ -270,6 +270,38 @@ test_a_mount_beside_the_blackbox_config_accepted if {
 	}
 }
 
+# A flag spelled so that the file the exporter opens is not the one the mounts name: Kubernetes expands $(VAR) in args and not in mountPath,
+# a relative path opens from the container's workingDir, and an empty segment, "." or ".." moves the directory. Each could read a second
+# ConfigMap's loosened modules while the pinned one sits at the path as written, so only a clean absolute path names a file here.
+flag_trick(fields, mounts) := json.patch(
+	blackbox_deployment("blackbox", object.union(blackbox_container, object.union(fields, {"volumeMounts": mounts})), config_volume("blackbox-config-4mt2645788")),
+	[{"op": "add", "path": "/spec/template/spec/volumes/-", "value": shadow_volume}],
+)
+
+test_a_config_flag_spelled_around_the_mounts_rejected if {
+	every trick in [
+		{
+			"fields": {"args": ["--config.file=/conf$(X)ig/blackbox.yml"], "env": [{"name": "X", "value": ""}]},
+			"mounts": [{"name": "config", "mountPath": "/conf$(X)ig", "readOnly": true}, {"name": "shadow", "mountPath": "/config", "readOnly": true}],
+		},
+		{
+			"fields": {"args": ["--config.file=config/blackbox.yml"], "workingDir": "/w"},
+			"mounts": [{"name": "config", "mountPath": "config", "readOnly": true}, {"name": "shadow", "mountPath": "/w/config", "readOnly": true}],
+		},
+		{
+			"fields": {"args": ["--config.file=/a/../b/blackbox.yml"]},
+			"mounts": [{"name": "config", "mountPath": "/a/../b", "readOnly": true}, {"name": "shadow", "mountPath": "/b", "readOnly": true}],
+		},
+		{
+			"fields": {"args": ["--config.file=/config/./blackbox.yml"]},
+			"mounts": [{"name": "config", "mountPath": "/config/.", "readOnly": true}],
+		},
+	] {
+		read := with_blackbox([blackbox_service, flag_trick(trick.fields, trick.mounts), the_blackbox_config, blackbox_config("bb-shadow", {"blackbox.yml": blackbox_file(loosened_modules)})])
+		says_once(read, "nothing here can say which file it reads them from")
+	}
+}
+
 test_a_blackbox_config_that_is_not_here_rejected if {
 	says_once(with_blackbox([blackbox_service, the_blackbox]), "which is key blackbox.yml of ConfigMap monitoring/blackbox-config-4mt2645788, and no one ConfigMap here by that name holds that key")
 	says_once(with_blackbox([blackbox_service, the_blackbox, blackbox_config("blackbox-config-4mt2645788", {"other.yml": blackbox_file(blackbox_modules)})]), "no one ConfigMap here by that name holds that key")

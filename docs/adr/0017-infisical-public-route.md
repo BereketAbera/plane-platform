@@ -68,7 +68,8 @@ Around it:
   person reads. Policy also holds the four Probes and their blackbox modules, and every NetworkPolicy in namespace infisical, egress-only ones
   too. [`policy/hosted_combined.rego`](../../policy/hosted_combined.rego) wants both limits and every Probe beside any route on the host
   [`target.yaml`](../../infrastructure/hosted/plane-prod/target.yaml) gives Infisical. In each container of the pods the Probes' Service
-  selects, it wants the blackbox exporter's own image and entrypoint with one `--config.file`, that file from one ConfigMap mounted whole or by
+  selects, it wants the blackbox exporter's own image and entrypoint with one `--config.file` naming a clean absolute path, with no `$(VAR)` for
+  Kubernetes to expand and no empty, `.` or `..` segment, that file from one ConfigMap mounted whole or by
   items at its directory, no other mount at or under that directory, a subPath one included, and those modules in that file exactly as
   `policy/hosted.rego` writes them. [`policy/hosted_tree.rego`](../../policy/hosted_tree.rego) refuses an object in the hosted tree that states
   no namespace.
