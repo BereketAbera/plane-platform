@@ -1,0 +1,106 @@
+[1;34m==>[0m Backing up infisical: Job plane-backup-manual-20261107070754
+== infisical plane-backup-manual-20261107070754: ok
+[pod/plane-backup-manual-20261107070754-xzp74/postgres] postgres: 20261107T070804Z complete, 785 tables counted from a scratch restore
+[pod/plane-backup-manual-20261107070754-xzp74/seal] created restic repository 9f3e2d9b20 at /backups/restic
+[pod/plane-backup-manual-20261107070754-xzp74/seal] 
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Please note that knowledge of your password is required to access
+[pod/plane-backup-manual-20261107070754-xzp74/seal] the repository. Losing your password means that your data is
+[pod/plane-backup-manual-20261107070754-xzp74/seal] irrecoverably lost.
+[pod/plane-backup-manual-20261107070754-xzp74/seal] no parent snapshot found, will read all files
+[pod/plane-backup-manual-20261107070754-xzp74/seal] 
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Files:           6 new,     0 changed,     0 unmodified
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Dirs:            3 new,     0 changed,     0 unmodified
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Added to the repository: 5.167 MiB (429.286 KiB stored)
+[pod/plane-backup-manual-20261107070754-xzp74/seal] 
+[pod/plane-backup-manual-20261107070754-xzp74/seal] processed 6 files, 5.164 MiB in 0:00
+[pod/plane-backup-manual-20261107070754-xzp74/seal] snapshot c039c5c4 saved
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Applying Policy: keep 7 daily, 4 weekly, 3 monthly snapshots
+[pod/plane-backup-manual-20261107070754-xzp74/seal] keep 1 snapshots:
+[pod/plane-backup-manual-20261107070754-xzp74/seal] ID        Time                 Host        Tags        Reasons           Paths         Size
+[pod/plane-backup-manual-20261107070754-xzp74/seal] ------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-xzp74/seal] c039c5c4  2026-11-07 07:11:48  infisical   wayline     daily snapshot    /work/backup  5.164 MiB
+[pod/plane-backup-manual-20261107070754-xzp74/seal]                                                        weekly snapshot
+[pod/plane-backup-manual-20261107070754-xzp74/seal]                                                        monthly snapshot
+[pod/plane-backup-manual-20261107070754-xzp74/seal] ------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261107070754-xzp74/seal] 1 snapshots
+[pod/plane-backup-manual-20261107070754-xzp74/seal] 
+[pod/plane-backup-manual-20261107070754-xzp74/seal] using temporary cache in /work/cache/restic-check-cache-1109667522
+[pod/plane-backup-manual-20261107070754-xzp74/seal] create exclusive lock for repository
+[pod/plane-backup-manual-20261107070754-xzp74/seal] load indexes
+[pod/plane-backup-manual-20261107070754-xzp74/seal] check all packs
+[pod/plane-backup-manual-20261107070754-xzp74/seal] check snapshots, trees and blobs
+[pod/plane-backup-manual-20261107070754-xzp74/seal] [0:00] 100.00%  1 / 1 snapshots
+[pod/plane-backup-manual-20261107070754-xzp74/seal] read 5.0% of packfiles
+[pod/plane-backup-manual-20261107070754-xzp74/seal] [0:00] 100.00%  1 / 1 packs
+[pod/plane-backup-manual-20261107070754-xzp74/seal] no errors were found
+[pod/plane-backup-manual-20261107070754-xzp74/seal] ID        Time                 Host       Tags     Size
+[pod/plane-backup-manual-20261107070754-xzp74/seal] ------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-xzp74/seal] c039c5c4  2026-11-07 07:11:48  infisical  wayline  5.164 MiB
+[pod/plane-backup-manual-20261107070754-xzp74/seal] ------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-xzp74/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261107070754-xzp74/seal] 1 snapshots
+[pod/plane-backup-manual-20261107070754-xzp74/seal] seal: complete
+[1;32m ok[0m infisical sealed
+[1;34m==>[0m Backing up plane-prod: Job plane-backup-manual-20261107070754
+== plane-prod plane-backup-manual-20261107070754: ok
+[pod/plane-backup-manual-20261107070754-6gbcb/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] 2026/11/07 07:12:32 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] 2026/11/07 07:12:33 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] 2026/11/07 07:12:33 NOTICE: Local file system at /work/backup/objects: 0 differences found
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] 2026/11/07 07:12:33 NOTICE: Local file system at /work/backup/objects: 2 matching files
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] 2026/11/07 07:12:33 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] objects: 2 checked
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] 2026/11/07 07:12:34 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261107070754-6gbcb/objects] GATE2: 1 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-manual-20261107070754-6gbcb/manifest] manifest: 20261107T071214Z complete
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] no parent snapshot found, will read all files
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Files:          17 new,     0 changed,     0 unmodified
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Dirs:            6 new,     0 changed,     0 unmodified
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Added to the repository: 1.013 MiB (285.590 KiB stored)
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] processed 17 files, 1.006 MiB in 0:00
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] snapshot 28d20d15 saved
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Applying Policy: keep all snapshots with tags [[wayline]] and all snapshots within 90d of the newest
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] keep 2 snapshots:
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ID        Time                 Host        Tags        Reasons             Paths                                                 Size
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ------------------------------------------------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] f58a4bd6  2026-11-07 06:48:22  plane-prod  predeploy   within 90d          /backups/predeploy/20261107T060516Z-9df47b8afbd64228  1.465 KiB
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 28d20d15  2026-11-07 07:12:38  plane-prod  wayline     has tags [wayline]  /work/backup                                          1.006 MiB
+[pod/plane-backup-manual-20261107070754-6gbcb/seal]                                                        within 90d
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ------------------------------------------------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 2 snapshots
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Applying Policy: keep 7 daily, 4 weekly, 3 monthly snapshots
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] keep 1 snapshots:
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ID        Time                 Host        Tags        Reasons           Paths         Size
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 28d20d15  2026-11-07 07:12:38  plane-prod  wayline     daily snapshot    /work/backup  1.006 MiB
+[pod/plane-backup-manual-20261107070754-6gbcb/seal]                                                        weekly snapshot
+[pod/plane-backup-manual-20261107070754-6gbcb/seal]                                                        monthly snapshot
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 1 snapshots
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] using temporary cache in /work/cache/restic-check-cache-4073898574
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] create exclusive lock for repository
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] load indexes
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] check all packs
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] check snapshots, trees and blobs
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] [0:00] 100.00%  2 / 2 snapshots
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] read 5.0% of packfiles
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] [0:00] 100.00%  1 / 1 packs
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] no errors were found
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] ID        Time                 Host        Tags     Size
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] -------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 28d20d15  2026-11-07 07:12:38  plane-prod  wayline  1.006 MiB
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] -------------------------------------------------------------
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] 1 snapshots
+[pod/plane-backup-manual-20261107070754-6gbcb/seal] seal: complete
+[1;32m ok[0m plane-prod sealed
+[1;34m==>[0m Evidence: .local/evidence-raw/backup-plane-prod-20261107070754.txt
+[1;32m ok[0m backed up: infisical plane-prod
+rc=0

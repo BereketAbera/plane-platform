@@ -1,0 +1,191 @@
+{
+  "counts": {
+    "BLOCKED": 14,
+    "FAIL": 0,
+    "PASS": 7,
+    "SKIP": 0
+  },
+  "environment": "hosted",
+  "finished_at": "2026-11-07T06:41:49Z",
+  "host": "wayline.bereket.dev",
+  "mode": "verify",
+  "result": "BLOCKED",
+  "run_id": "03c933a6",
+  "started_at": "2026-11-07T06:41:31Z",
+  "steps": [
+    {
+      "data": {
+        "days_left": 89,
+        "issuer": "Let's Encrypt",
+        "issuer_common_name": "YE2",
+        "tls_version": "TLSv1.3"
+      },
+      "detail": "TLSv1.3, issued by Let's Encrypt, 89 days left, and valid for wayline.bereket.dev",
+      "duration_ms": 237,
+      "name": "tls-certificate",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "scheme": "https",
+        "status": 301
+      },
+      "detail": "http answers 301 to https",
+      "duration_ms": 207,
+      "name": "http-redirect",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "instances_status": 200,
+        "web_status": 200
+      },
+      "detail": "web 200, /api/instances/ 200 via wayline.bereket.dev",
+      "duration_ms": 677,
+      "name": "reachable",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "admin": 15,
+        "space": 16,
+        "web": 35
+      },
+      "detail": "web, admin and space pages and the assets they name are served",
+      "duration_ms": 10507,
+      "name": "frontends",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "live_health": {
+          "status": "OK",
+          "timestamp": "2026-11-07T06:41:46.433Z",
+          "version": "1.0.0"
+        }
+      },
+      "detail": "bare paths redirect, deep links reach admin, /live/health answers",
+      "duration_ms": 2801,
+      "name": "routes",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "enable_signup": false,
+        "is_setup_done": true
+      },
+      "detail": "set up, and sign-up is off",
+      "duration_ms": 514,
+      "name": "instance",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "status": 200
+      },
+      "detail": "sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)",
+      "duration_ms": 710,
+      "name": "csrf-enforced",
+      "status": "PASS"
+    },
+    {
+      "data": {},
+      "detail": "this account was refused: 5065 AUTHENTICATION_FAILED_SIGN_IN",
+      "duration_ms": 1562,
+      "name": "sign-in",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs sign-in",
+      "duration_ms": 0,
+      "name": "secure-cookies",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs sign-in",
+      "duration_ms": 0,
+      "name": "workspace",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs sign-in",
+      "duration_ms": 0,
+      "name": "api-token",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs workspace, api-token",
+      "duration_ms": 0,
+      "name": "project",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs project",
+      "duration_ms": 0,
+      "name": "work-item",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs work-item",
+      "duration_ms": 0,
+      "name": "background-job",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs work-item",
+      "duration_ms": 0,
+      "name": "attachment-upload",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs attachment-upload",
+      "duration_ms": 0,
+      "name": "attachment-download",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs project",
+      "duration_ms": 0,
+      "name": "realtime-page",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs realtime-page",
+      "duration_ms": 0,
+      "name": "realtime-auth",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs realtime-page",
+      "duration_ms": 0,
+      "name": "realtime-denied",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs realtime-auth",
+      "duration_ms": 0,
+      "name": "realtime-sync",
+      "status": "BLOCKED"
+    },
+    {
+      "data": {},
+      "detail": "needs sign-in",
+      "duration_ms": 0,
+      "name": "cleanup",
+      "status": "BLOCKED"
+    }
+  ],
+  "tool": "tests/e2e/smoke.py"
+}

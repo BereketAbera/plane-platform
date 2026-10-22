@@ -1,0 +1,31 @@
+[1;34m==>[0m Restore test in restore-test-20261107071414, on vps
+PASS     namespace restore-test-20261107071414 is default deny, with a quota PSA restricted, no route, no Application
+[1;34m==>[0m Can this namespace reach live data? Trying: 10.244.0.93:5432 10.244.0.90:9000 10.244.0.33:5432 10.96.0.1:443 10.96.0.10:53 
+PASS     no route to 10.244.0.93:5432                                     refused from here, which is how kube-router denies, while the node connected to that port
+PASS     no route to 10.244.0.90:9000                                     refused from here, which is how kube-router denies, while the node connected to that port
+PASS     no route to 10.244.0.33:5432                                     refused from here, which is how kube-router denies, while the node connected to that port
+PASS     no route to 10.96.0.1:443                                        refused from here, which is how kube-router denies, while the node connected to that port
+PASS     no route to 10.96.0.10:53                                        refused from here, which is how kube-router denies, while the node connected to that port
+[1;34m==>[0m Proving infisical in restore-test-20261107071414
+PROOF manifest id=20261107T070804Z created_at=2026-11-07T07:11:43Z
+PROOF fingerprint  43c3543a54e8fb11
+PROOF hashes 5 files match
+PROOF restored the dump into an empty database
+PROOF rowcounts 785 tables, 716 rows, as recorded
+PROOF-RESULT pass 5 785
+PASS     infisical: restored, and proved                                  5 files match their hashes, 785 tables match their recorded counts
+PASS     infisical: backup and ENCRYPTION_KEY are a pair                  the fingerprints match
+[1;34m==>[0m Proving plane-prod in restore-test-20261107071414
+PROOF manifest id=20261107T071214Z created_at=2026-11-07T07:12:36Z
+PROOF fingerprint c85970d5981327e7 
+PROOF hashes 16 files match
+PROOF restored the dump into an empty database
+PROOF rowcounts 110 tables, 904 rows, as recorded
+PROOF content the hashes of issues, projects and file_assets match
+PROOF objects 2 objects, 1 rows marked uploaded, none missing
+PROOF-RESULT pass 16 110
+PASS     plane-prod: restored, and proved                                 16 files match their hashes, 110 tables match their recorded counts
+PASS     plane-prod: backup and SECRET_KEY are a pair                     the fingerprints match
+PASS     live data untouched                                              41 live objects and database lists read the same after as before
+[1;34m==>[0m Evidence: .local/evidence-raw/restore-test-plane-prod-20261107071414.json
+[1;32m ok[0m restore test passed

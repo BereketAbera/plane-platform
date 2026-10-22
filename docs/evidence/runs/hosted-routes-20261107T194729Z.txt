@@ -1,0 +1,27 @@
+started: 20261107T194729Z
+command: read-only kubectl get over the tunnel already up: hosted production's Certificates, Traefik routes and Middlewares, by name. By the docs pass.
+## 2026-11-07T19:47:29Z kubectl get certificates -A
+NAMESPACE    NAME            READY   SECRET          AGE
+infisical    infisical-tls   True    infisical-tls   24m
+monitoring   grafana-tls     True    grafana-tls     12h
+plane-prod   wayline-tls     True    wayline-tls     15h
+## 2026-11-07T19:47:31Z kubectl get certificates -A, issuer and expiry
+NAMESPACE    NAME            ISSUER                   DNS                       NOT_AFTER              RENEWAL
+infisical    infisical-tls   letsencrypt-production   [infisical.bereket.dev]   2027-02-05T18:24:58Z   2027-01-06T18:24:58Z
+monitoring   grafana-tls     letsencrypt-production   [grafana.bereket.dev]     2027-02-05T06:09:33Z   2027-01-06T06:09:33Z
+plane-prod   wayline-tls     letsencrypt-production   [wayline.bereket.dev]     2027-02-05T04:26:09Z   2027-01-06T04:26:09Z
+## 2026-11-07T19:47:33Z kubectl get ingressroutes -A, with their hosts
+NAMESPACE    NAME            ENTRYPOINTS   CREATED
+infisical    infisical       [websecure]   2026-11-07T19:22:16Z
+monitoring   grafana         [websecure]   2026-11-07T07:05:44Z
+plane-prod   plane-ingress   [websecure]   2026-11-07T06:13:54Z
+## 2026-11-07T19:47:37Z kubectl get middlewares -A
+NAMESPACE    NAME                      AGE
+infisical    infisical-guess-limit     25m
+infisical    infisical-session-limit   25m
+monitoring   grafana-login-limit       12h
+plane-prod   plane-body-limit          13h
+plane-prod   plane-trailing-slash      13h
+## 2026-11-07T19:47:40Z kubectl get ingress -A
+No resources found
+## 2026-11-07T19:47:42Z done

@@ -1,0 +1,413 @@
+started: 20261107T193041Z
+command: a read-only capture for docs/resource-utilization.md, by the docs pass. kubectl get and top over the tunnel already up on 127.0.0.1:16443, the kubelet's /stats/summary, and Prometheus queries through the API server's service proxy (kubectl get --raw). Nothing started, changed or written on the cluster, and no Secret read. The scripts it ran are at the end.
+
+## 2026-11-07T19:30:42Z release Argo CD runs: root at f2bff57d6a852739c671908d815e0d4dbc66dc4e, every Application:
+NAME                      SYNC     HEALTH
+alloy                     Synced   Healthy
+backup                    Synced   Healthy
+cert-manager              Synced   Healthy
+certificates              Synced   Healthy
+infisical                 Synced   Healthy
+infisical-operator-prod   Synced   Healthy
+kube-prometheus-stack     Synced   Healthy
+loki                      Synced   Healthy
+metrics-server            Synced   Healthy
+monitoring-extras         Synced   Healthy
+network-policies          Synced   Healthy
+plane-prod                Synced   Healthy
+root                      Synced   Healthy
+traefik                   Synced   Healthy
+## 2026-11-07T19:30:47Z kubectl top node
+NAME         CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+vmi3733427   1635m        15%      5672Mi          13%         
+## 2026-11-07T19:30:53Z node capacity, then allocatable
+{"cpu":"12","ephemeral-storage":"405196772Ki","hugepages-1Gi":"0","hugepages-2Mi":"0","memory":"49330592Ki","pods":"110"}
+{"cpu":"10500m","ephemeral-storage":"357323217097","hugepages-1Gi":"0","hugepages-2Mi":"0","memory":"44087712Ki","pods":"110"}
+## 2026-11-07T19:30:55Z kubectl top pods -A --sum=true
+NAMESPACE           NAME                                           CPU(cores)   MEMORY(bytes)   
+argocd              argocd-application-controller-0                38m          373Mi           
+argocd              argocd-redis-ff6755697-stsn7                   62m          18Mi            
+argocd              argocd-repo-server-db76884d4-cv6sj             2m           148Mi           
+argocd              argocd-server-dbd9bc98c-llm8l                  3m           27Mi            
+cert-manager        cert-manager-544dc88969-nrpqb                  5m           31Mi            
+cert-manager        cert-manager-cainjector-84865d6d76-sq5s9       12m          56Mi            
+cert-manager        cert-manager-webhook-bbbc7bf89-gh8x6           6m           13Mi            
+infisical           infisical-55f8b54cdc-pdmpg                     90m          686Mi           
+infisical           infisical-postgres-0                           99m          74Mi            
+infisical           infisical-redis-0                              92m          10Mi            
+kube-system         coredns-7cfb7bc9c7-t6p25                       39m          23Mi            
+kube-system         local-path-provisioner-5598c9cb4c-4kvrt        1m           11Mi            
+kube-system         metrics-server-8f755d95b-b9gvr                 37m          25Mi            
+monitoring          alert-sink-78dcd6dbb4-hw4sk                    4m           11Mi            
+monitoring          alertmanager-kps-alertmanager-0                7m           34Mi            
+monitoring          alloy-7cd58d4db7-xc9jz                         57m          71Mi            
+monitoring          blackbox-5499dbdd7c-z48jl                      42m          18Mi            
+monitoring          kps-grafana-687985786c-5psml                   129m         297Mi           
+monitoring          kps-kube-state-metrics-58c95899dd-vjgpw        8m           17Mi            
+monitoring          kps-operator-85894ccc7f-cm2q6                  13m          24Mi            
+monitoring          loki-0                                         85m          93Mi            
+monitoring          prometheus-kps-prometheus-0                    122m         457Mi           
+monitoring-agents   kps-node-exporter-dvxvs                        12m          11Mi            
+plane-prod          iso-prod-controller-manager-8494556bf6-bz6fc   25m          19Mi            
+plane-prod          plane-admin-wl-54c89d444d-94vzj                1m           3Mi             
+plane-prod          plane-api-wl-c75c98f99-5hksc                   62m          395Mi           
+plane-prod          plane-beat-worker-wl-7594dc496d-pzfvp          33m          148Mi           
+plane-prod          plane-live-wl-77d9b7794c-gfz7j                 3m           152Mi           
+plane-prod          plane-minio-wl-0                               10m          86Mi            
+plane-prod          plane-pgdb-wl-0                                60m          33Mi            
+plane-prod          plane-rabbitmq-wl-0                            59m          139Mi           
+plane-prod          plane-redis-wl-0                               42m          5Mi             
+plane-prod          plane-space-wl-df4758f8-4rtj9                  3m           81Mi            
+plane-prod          plane-web-wl-7c8f4b578c-87mp7                  1m           3Mi             
+plane-prod          plane-worker-wl-855df54c6d-h26px               31m          376Mi           
+plane-prod          postgres-exporter-6fffc6c5dc-scq5s             2m           24Mi            
+plane-prod          redis-exporter-5b59d6cb7c-8ssph                1m           9Mi             
+traefik             traefik-548db89586-pkcxg                       70m          60Mi            
+                                                                   ________     ________        
+                                                                   1348m        4080Mi          
+## 2026-11-07T19:31:00Z ResourceQuotas, used/hard, through quota.py below
+argocd budget limits.memory 1856Mi/1984Mi; persistentvolumeclaims 0/0; pods 5/8; requests.cpu 195m/250m; requests.memory 376Mi/512Mi; requests.storage 0/0
+cert-manager budget limits.memory 384Mi/448Mi; persistentvolumeclaims 0/0; pods 4/6; requests.cpu 40m/50m; requests.memory 144Mi/192Mi; requests.storage 0/0
+frameflow budget persistentvolumeclaims 0/0; pods 0/0; requests.storage 0/0
+infisical budget limits.memory 1376Mi/2400Mi; persistentvolumeclaims 3/3; pods 3/6; requests.cpu 160m/300m; requests.memory 848Mi/1664Mi; requests.storage 13Gi/13Gi
+monitoring-agents budget limits.memory 64Mi/128Mi; persistentvolumeclaims 0/0; pods 1/2; requests.cpu 10m/20m; requests.memory 24Mi/48Mi; requests.storage 0/0
+monitoring budget limits.memory 4128Mi/4416Mi; persistentvolumeclaims 3/3; pods 9/14; requests.cpu 255m/300m; requests.memory 1536Mi/1792Mi; requests.storage 27Gi/27Gi
+plane-prod budget limits.memory 12624Mi/14688Mi; persistentvolumeclaims 5/6; pods 14/32; requests.cpu 2235m/3300m; requests.memory 4700Mi/7Gi; requests.storage 140Gi/140Gi
+traefik budget limits.memory 256Mi/512Mi; persistentvolumeclaims 0/0; pods 1/3; requests.cpu 50m/100m; requests.memory 96Mi/192Mi; requests.storage 0/0
+## 2026-11-07T19:31:01Z LimitRanges
+NAMESPACE           DEFAULT             DEFAULT_REQUEST            MAX
+argocd              map[memory:256Mi]   map[cpu:10m memory:64Mi]   map[memory:1Gi]
+cert-manager        map[memory:128Mi]   map[cpu:10m memory:32Mi]   map[memory:1Gi]
+infisical           map[memory:256Mi]   map[cpu:10m memory:64Mi]   map[memory:1Gi]
+monitoring-agents   map[memory:64Mi]    map[cpu:10m memory:24Mi]   map[memory:1Gi]
+monitoring          map[memory:256Mi]   map[cpu:10m memory:64Mi]   map[memory:2Gi]
+plane-prod          map[memory:256Mi]   map[cpu:10m memory:64Mi]   map[memory:4Gi]
+traefik             map[memory:256Mi]   map[cpu:10m memory:64Mi]   map[memory:1Gi]
+## 2026-11-07T19:31:04Z PersistentVolumeClaims
+NAMESPACE    NAME                                                               STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS        VOLUMEATTRIBUTESCLASS   AGE
+infisical    backups                                                            Bound    backups-infisical                          10Gi       RWO                                <unset>                 15h
+infisical    data-infisical-postgres-0                                          Bound    pvc-e3c7dbf8-92ae-4268-b7ab-91b9e93a3a12   2Gi        RWO            local-path-retain   <unset>                 14h
+infisical    data-infisical-redis-0                                             Bound    pvc-add424db-38eb-4b6b-8073-f0e380babae0   1Gi        RWO            local-path-retain   <unset>                 14h
+monitoring   alertmanager-kps-alertmanager-db-alertmanager-kps-alertmanager-0   Bound    pvc-113d7405-fed6-415b-92a7-a954bb1328dc   1Gi        RWO            local-path-retain   <unset>                 14h
+monitoring   prometheus-kps-prometheus-db-prometheus-kps-prometheus-0           Bound    pvc-48404df1-960a-4e94-bddb-a0e87d420c10   16Gi       RWO            local-path-retain   <unset>                 14h
+monitoring   storage-loki-0                                                     Bound    pvc-aa581a81-ff19-4d03-8179-5ee89ff89354   10Gi       RWO            local-path-retain   <unset>                 14h
+plane-prod   backups                                                            Bound    backups-plane-prod                         40Gi       RWO                                <unset>                 15h
+plane-prod   pvc-plane-minio-vol-plane-minio-wl-0                               Bound    pvc-060419ae-4937-4f30-be3f-4bc152d80031   64Gi       RWO            local-path-retain   <unset>                 13h
+plane-prod   pvc-plane-pgdb-vol-plane-pgdb-wl-0                                 Bound    pvc-96f5dfac-93fa-4cfa-b4be-e42886a1fd7d   30Gi       RWO            local-path-retain   <unset>                 13h
+plane-prod   pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0                         Bound    pvc-8c5c20f6-ab13-4ced-a6f3-d2a498e21316   4Gi        RWO            local-path-retain   <unset>                 13h
+plane-prod   pvc-plane-redis-vol-plane-redis-wl-0                               Bound    pvc-9ee627b6-4c62-4552-b7d3-0a430c2619bd   2Gi        RWO            local-path-retain   <unset>                 13h
+## 2026-11-07T19:31:06Z PersistentVolumes
+NAME                                       CAPACITY   RECLAIM   CLASS               NAMESPACE    CLAIM                                                              HOSTPATH
+backups-infisical                          10Gi       Retain    <none>              infisical    backups                                                            /srv/wayline/backups/infisical
+backups-plane-prod                         40Gi       Retain    <none>              plane-prod   backups                                                            /srv/wayline/backups/plane-prod
+pvc-060419ae-4937-4f30-be3f-4bc152d80031   64Gi       Retain    local-path-retain   plane-prod   pvc-plane-minio-vol-plane-minio-wl-0                               /var/lib/rancher/k3s/storage/pvc-060419ae-4937-4f30-be3f-4bc152d80031_plane-prod_pvc-plane-minio-vol-plane-minio-wl-0
+pvc-113d7405-fed6-415b-92a7-a954bb1328dc   1Gi        Retain    local-path-retain   monitoring   alertmanager-kps-alertmanager-db-alertmanager-kps-alertmanager-0   /var/lib/rancher/k3s/storage/pvc-113d7405-fed6-415b-92a7-a954bb1328dc_monitoring_alertmanager-kps-alertmanager-db-alertmanager-kps-alertmanager-0
+pvc-48404df1-960a-4e94-bddb-a0e87d420c10   16Gi       Retain    local-path-retain   monitoring   prometheus-kps-prometheus-db-prometheus-kps-prometheus-0           /var/lib/rancher/k3s/storage/pvc-48404df1-960a-4e94-bddb-a0e87d420c10_monitoring_prometheus-kps-prometheus-db-prometheus-kps-prometheus-0
+pvc-8c5c20f6-ab13-4ced-a6f3-d2a498e21316   4Gi        Retain    local-path-retain   plane-prod   pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0                         /var/lib/rancher/k3s/storage/pvc-8c5c20f6-ab13-4ced-a6f3-d2a498e21316_plane-prod_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+pvc-96f5dfac-93fa-4cfa-b4be-e42886a1fd7d   30Gi       Retain    local-path-retain   plane-prod   pvc-plane-pgdb-vol-plane-pgdb-wl-0                                 /var/lib/rancher/k3s/storage/pvc-96f5dfac-93fa-4cfa-b4be-e42886a1fd7d_plane-prod_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+pvc-9ee627b6-4c62-4552-b7d3-0a430c2619bd   2Gi        Retain    local-path-retain   plane-prod   pvc-plane-redis-vol-plane-redis-wl-0                               /var/lib/rancher/k3s/storage/pvc-9ee627b6-4c62-4552-b7d3-0a430c2619bd_plane-prod_pvc-plane-redis-vol-plane-redis-wl-0
+pvc-aa581a81-ff19-4d03-8179-5ee89ff89354   10Gi       Retain    local-path-retain   monitoring   storage-loki-0                                                     /var/lib/rancher/k3s/storage/pvc-aa581a81-ff19-4d03-8179-5ee89ff89354_monitoring_storage-loki-0
+pvc-add424db-38eb-4b6b-8073-f0e380babae0   1Gi        Retain    local-path-retain   infisical    data-infisical-redis-0                                             /var/lib/rancher/k3s/storage/pvc-add424db-38eb-4b6b-8073-f0e380babae0_infisical_data-infisical-redis-0
+pvc-e3c7dbf8-92ae-4268-b7ab-91b9e93a3a12   2Gi        Retain    local-path-retain   infisical    data-infisical-postgres-0                                          /var/lib/rancher/k3s/storage/pvc-e3c7dbf8-92ae-4268-b7ab-91b9e93a3a12_infisical_data-infisical-postgres-0
+## 2026-11-07T19:31:08Z StorageClasses and backup CronJobs
+NAME                   PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+local-path (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  20h
+local-path-retain      rancher.io/local-path   Retain          WaitForFirstConsumer   true                   15h
+NAMESPACE    NAME           SCHEDULE     TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+infisical    plane-backup   47 1 * * *   Etc/UTC    False     0        <none>          15h
+plane-prod   plane-backup   17 2 * * *   Etc/UTC    False     0        <none>          15h
+## 2026-11-07T19:31:14Z the kubelet's /stats/summary, through stats-summary.py below
+node fs: capacity 414.92 GB, used 18.45 GB, available 396.45 GB, inodes used 544382 of 52297728
+image fs: capacity 414.92 GB, used 10.71 GB
+node memory: working set 5.61 GiB, rss 5.15 GiB, available 41.43 GiB
+ephemeral storage used by all 40 pods: 0.34 GB
+## 2026-11-07T19:31:23Z Prometheus, node-wide, through promq.sh below
+count(count by (cpu) (node_cpu_seconds_total))
+  => [({}, '12')]
+time() - min_over_time(timestamp(node_load1)[24h:1m])
+  => [({}, '53926.08699989319')]
+sum by (mode) (rate(node_cpu_seconds_total[5m]))
+  => [({'mode': 'idle'}, '6.151501459237722'), ({'mode': 'iowait'}, '0.10010962800551144'), ({'mode': 'irq'}, '0'), ({'mode': 'nice'}, '0'), ({'mode': 'softirq'}, '0.10155405105109495'), ({'mode': 'steal'}, '0'), ({'mode': 'system'}, '0.8445800802951099'), ({'mode': 'user'}, '0.6956933971348594')]
+sum(rate(node_cpu_seconds_total[5m])) / count(count by (cpu) (node_cpu_seconds_total))
+  => [({}, '0.6577865513103583')]
+1 - sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) / sum(rate(node_cpu_seconds_total[5m]))
+  => [({}, '0.2206816624907314')]
+instance:node_cpu_utilisation:rate5m
+  => [({}, '0.47903240939639724')]
+sum(rate(node_cpu_seconds_total{mode!~"idle|iowait|steal"}[5m]))
+  => [({}, '1.6418275284810646')]
+sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))
+  => [({}, '1.7951765762260024')]
+node_load1
+  => [({}, '10.03')]
+node_load5
+  => [({}, '10.12')]
+node_load15
+  => [({}, '9.72')]
+rate(node_pressure_cpu_waiting_seconds_total[5m])
+  => [({}, '0.4236813444444528')]
+rate(node_pressure_memory_waiting_seconds_total[5m])
+  => [({}, '3.222222222222361e-07')]
+rate(node_pressure_io_waiting_seconds_total[5m])
+  => [({}, '0.016253737037037034')]
+(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024^3
+  => [({}, '6.158100128173828')]
+node_memory_MemTotal_bytes / 1024^3
+  => [({}, '47.045318603515625')]
+node_memory_SwapTotal_bytes
+  => [({}, '0')]
+node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"} / 1e9
+  => [({'device': '/dev/sda1', 'fstype': 'ext4', 'mountpoint': '/'}, '414.921494528')]
+(node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"} - node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"}) / 1e9
+  => [({'device': '/dev/sda1', 'fstype': 'ext4', 'mountpoint': '/'}, '18.47031808')]
+avg_over_time((sum(rate(node_cpu_seconds_total[5m])) / 12)[12h:1m])
+  => [({}, '0.722646393716404')]
+min_over_time((sum(rate(node_cpu_seconds_total[5m])) / 12)[12h:1m])
+  => [({}, '0.5789598765432106')]
+max_over_time((sum(rate(node_cpu_seconds_total[5m])) / 12)[12h:1m])
+  => [({}, '0.9512394010775514')]
+avg_over_time((1 - sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) / sum(rate(node_cpu_seconds_total[5m])))[12h:1m])
+  => [({}, '0.17970351878818788')]
+max_over_time((1 - sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) / sum(rate(node_cpu_seconds_total[5m])))[12h:1m])
+  => [({}, '0.3196969455975964')]
+avg_over_time(instance:node_cpu_utilisation:rate5m[12h])
+  => [({}, '0.399456230642216')]
+max_over_time(instance:node_cpu_utilisation:rate5m[12h])
+  => [({}, '0.5728695952786627')]
+avg_over_time(sum(rate(node_cpu_seconds_total{mode!~"idle|iowait|steal"}[5m]))[12h:1m])
+  => [({}, '1.4720279309042124')]
+max_over_time(sum(rate(node_cpu_seconds_total{mode!~"idle|iowait|steal"}[5m]))[12h:1m])
+  => [({}, '1.9934448086217431')]
+avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+  => [({}, '1.5986554573385472')]
+max_over_time(sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+  => [({}, '2.6917883429531786')]
+avg_over_time(sum(rate(node_cpu_seconds_total{mode="steal"}[5m]))[12h:1m])
+  => [({}, '0')]
+avg_over_time(node_load1[12h])
+  => [({}, '8.86361111111111')]
+max_over_time(node_load1[12h])
+  => [({}, '18.23')]
+avg_over_time(node_load15[12h])
+  => [({}, '8.770423611111111')]
+avg_over_time(rate(node_pressure_cpu_waiting_seconds_total[5m])[12h:1m])
+  => [({}, '0.31391646794309036')]
+max_over_time(rate(node_pressure_cpu_waiting_seconds_total[5m])[12h:1m])
+  => [({}, '0.4844378206766811')]
+avg_over_time(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024^3)[12h:1m])
+  => [({}, '6.262543365690443')]
+max_over_time(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024^3)[12h:1m])
+  => [({}, '6.756160736083984')]
+avg_over_time(sum(container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+  => [({}, '4060.812206623783')]
+max_over_time(sum(container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+  => [({}, '4479.6171875')]
+## 2026-11-07T19:32:51Z Prometheus, per namespace, summed at each 1-minute step and then averaged or topped over 12 hours, through promq-ns.sh below
+avg_over_time(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+  argocd                                                       0.2070
+  cert-manager                                                 0.0239
+  infisical                                                    0.2446
+  kube-system                                                  0.0711
+  monitoring                                                   0.4262
+  monitoring-agents                                            0.0096
+  netpol-sentinel-072728                                       0.0019
+  netpol-sentinel-192436                                       0.0039
+  plane-prod                                                   0.5885
+  traefik                                                      0.0278
+max_over_time(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+  argocd                                                       0.6892
+  cert-manager                                                 0.0415
+  infisical                                                    0.7352
+  kube-system                                                  0.1044
+  monitoring                                                   0.7328
+  monitoring-agents                                            0.0181
+  netpol-sentinel-072728                                       0.0029
+  netpol-sentinel-192436                                       0.0058
+  plane-prod                                                   0.9587
+  traefik                                                      0.1113
+avg_over_time(sum by (namespace) (container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+  argocd                                                       480.8487
+  cert-manager                                                 92.9598
+  infisical                                                    830.5084
+  kube-system                                                  59.4374
+  monitoring                                                   1049.0069
+  monitoring-agents                                            11.6166
+  netpol-sentinel-192436                                       3.7865
+  plane-prod                                                   1483.0081
+  traefik                                                      53.4105
+max_over_time(sum by (namespace) (container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+  argocd                                                       726.9492
+  cert-manager                                                 110.9570
+  infisical                                                    1272.7695
+  kube-system                                                  62.5273
+  monitoring                                                   1314.1875
+  monitoring-agents                                            13.4844
+  netpol-sentinel-192436                                       4.0430
+  plane-prod                                                   1622.1914
+  traefik                                                      87.3242
+## 2026-11-07T19:33:01Z done
+
+## the scripts, as run
+### capture-resources.sh
+#!/usr/bin/env bash
+# Read-only resource capture on hosted production: kubectl get and top over the existing tunnel, the kubelet's summary,
+# and Prometheus through the API server's service proxy. Starts nothing, changes nothing, reads no Secret.
+set -uo pipefail
+T=/private/tmp/claude-501/-Users-bek--claude-spares-spare-wPUddt/04886525-43a8-478b-9f1c-5161a0a6159f/scratchpad/tools
+K=/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl
+KC=/Users/bek/dev/pr/plane-platform/.local/hosted/plane-prod/kubeconfig
+k() { "$K" --kubeconfig "$KC" --context plane-prod --request-timeout=60s "$@"; }
+now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+echo "## $(now) release Argo CD runs: root at $(k -n argocd get application root -o jsonpath='{.status.sync.revision}'), every Application:"
+k -n argocd get applications -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status
+echo "## $(now) kubectl top node"
+k top node
+echo "## $(now) node capacity, then allocatable"
+k get node vmi3733427 -o jsonpath='{.status.capacity}{"\n"}{.status.allocatable}{"\n"}'
+echo "## $(now) kubectl top pods -A --sum=true"
+k top pods -A --sum=true
+echo "## $(now) ResourceQuotas, used/hard, through quota.py below"
+k get resourcequota -A -o json | python3 -I "$T/quota.py"
+echo "## $(now) LimitRanges"
+k get limitrange -A -o custom-columns=NAMESPACE:.metadata.namespace,DEFAULT:.spec.limits[0].default,DEFAULT_REQUEST:.spec.limits[0].defaultRequest,MAX:.spec.limits[0].max
+echo "## $(now) PersistentVolumeClaims"
+k get pvc -A
+echo "## $(now) PersistentVolumes"
+k get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage,RECLAIM:.spec.persistentVolumeReclaimPolicy,CLASS:.spec.storageClassName,NAMESPACE:.spec.claimRef.namespace,CLAIM:.spec.claimRef.name,HOSTPATH:.spec.hostPath.path
+echo "## $(now) StorageClasses and backup CronJobs"
+k get storageclass
+k get cronjob -A
+echo "## $(now) the kubelet's /stats/summary, through stats-summary.py below"
+k get --raw /api/v1/nodes/vmi3733427/proxy/stats/summary | python3 -I "$T/stats-summary.py"
+echo "## $(now) Prometheus, node-wide, through promq.sh below"
+"$T/promq.sh" <<'Q'
+count(count by (cpu) (node_cpu_seconds_total))
+time() - min_over_time(timestamp(node_load1)[24h:1m])
+sum by (mode) (rate(node_cpu_seconds_total[5m]))
+sum(rate(node_cpu_seconds_total[5m])) / count(count by (cpu) (node_cpu_seconds_total))
+1 - sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) / sum(rate(node_cpu_seconds_total[5m]))
+instance:node_cpu_utilisation:rate5m
+sum(rate(node_cpu_seconds_total{mode!~"idle|iowait|steal"}[5m]))
+sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))
+node_load1
+node_load5
+node_load15
+rate(node_pressure_cpu_waiting_seconds_total[5m])
+rate(node_pressure_memory_waiting_seconds_total[5m])
+rate(node_pressure_io_waiting_seconds_total[5m])
+(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024^3
+node_memory_MemTotal_bytes / 1024^3
+node_memory_SwapTotal_bytes
+node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"} / 1e9
+(node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"} - node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"}) / 1e9
+avg_over_time((sum(rate(node_cpu_seconds_total[5m])) / 12)[12h:1m])
+min_over_time((sum(rate(node_cpu_seconds_total[5m])) / 12)[12h:1m])
+max_over_time((sum(rate(node_cpu_seconds_total[5m])) / 12)[12h:1m])
+avg_over_time((1 - sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) / sum(rate(node_cpu_seconds_total[5m])))[12h:1m])
+max_over_time((1 - sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) / sum(rate(node_cpu_seconds_total[5m])))[12h:1m])
+avg_over_time(instance:node_cpu_utilisation:rate5m[12h])
+max_over_time(instance:node_cpu_utilisation:rate5m[12h])
+avg_over_time(sum(rate(node_cpu_seconds_total{mode!~"idle|iowait|steal"}[5m]))[12h:1m])
+max_over_time(sum(rate(node_cpu_seconds_total{mode!~"idle|iowait|steal"}[5m]))[12h:1m])
+avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+max_over_time(sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+avg_over_time(sum(rate(node_cpu_seconds_total{mode="steal"}[5m]))[12h:1m])
+avg_over_time(node_load1[12h])
+max_over_time(node_load1[12h])
+avg_over_time(node_load15[12h])
+avg_over_time(rate(node_pressure_cpu_waiting_seconds_total[5m])[12h:1m])
+max_over_time(rate(node_pressure_cpu_waiting_seconds_total[5m])[12h:1m])
+avg_over_time(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024^3)[12h:1m])
+max_over_time(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024^3)[12h:1m])
+avg_over_time(sum(container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+max_over_time(sum(container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+Q
+echo "## $(now) Prometheus, per namespace, summed at each 1-minute step and then averaged or topped over 12 hours, through promq-ns.sh below"
+KEEP=namespace "$T/promq-ns.sh" <<'Q'
+avg_over_time(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+max_over_time(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))[12h:1m])
+avg_over_time(sum by (namespace) (container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+max_over_time(sum by (namespace) (container_memory_working_set_bytes{container!="",container!="POD"})[12h:1m]) / 1024^2
+Q
+echo "## $(now) done"
+### promq.sh
+#!/usr/bin/env bash
+# Read-only Prometheus queries through the API server's service proxy. Prints "query => result".
+set -euo pipefail
+K=/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl
+KC=/Users/bek/dev/pr/plane-platform/.local/hosted/plane-prod/kubeconfig
+while IFS= read -r q; do
+  [[ -z "$q" || "$q" == \#* ]] && continue
+  enc=$(python3 -I -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$q")
+  out=$("$K" --kubeconfig "$KC" --context plane-prod --request-timeout=60s get --raw "/api/v1/namespaces/monitoring/services/kps-prometheus:9090/proxy/api/v1/query?query=${enc}" 2>&1 || true)
+  res=$(printf '%s' "$out" | python3 -I -c '
+import json,sys
+try:
+    d=json.load(sys.stdin)
+except Exception as e:
+    print("ERR", sys.stdin.read()[:200]); sys.exit()
+if d.get("status")!="success":
+    print("ERR", d); sys.exit()
+r=d["data"]["result"]
+out=[]
+for s in r:
+    m={k:v for k,v in s["metric"].items() if k not in ("__name__","job","endpoint","service","namespace","pod","container","instance")}
+    out.append((m, s["value"][1]))
+print(out)
+')
+  printf '%s\n  => %s\n' "$q" "$res"
+done
+### promq-ns.sh
+#!/usr/bin/env bash
+# Read-only Prometheus queries through the API server's service proxy, printing every series with the labels named in $KEEP.
+set -euo pipefail
+K=/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl
+KC=/Users/bek/dev/pr/plane-platform/.local/hosted/plane-prod/kubeconfig
+while IFS= read -r q; do
+  [[ -z "$q" || "$q" == \#* ]] && continue
+  enc=$(python3 -I -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$q")
+  out=$("$K" --kubeconfig "$KC" --context plane-prod --request-timeout=90s get --raw "/api/v1/namespaces/monitoring/services/kps-prometheus:9090/proxy/api/v1/query?query=${enc}" 2>&1 || true)
+  printf '%s\n' "$q"
+  printf '%s' "$out" | KEEP="${KEEP:-namespace}" python3 -I -c '
+import json,os,sys
+keep=os.environ["KEEP"].split(",")
+raw=sys.stdin.read()
+try:
+    d=json.loads(raw)
+except Exception:
+    print("  ERR", raw[:300]); sys.exit()
+if d.get("status")!="success":
+    print("  ERR", d); sys.exit()
+rows=[]
+for s in d["data"]["result"]:
+    rows.append((" ".join(s["metric"].get(k,"-") for k in keep), float(s["value"][1])))
+for name,v in sorted(rows):
+    print("  %-60s %.4f" % (name, v))
+'
+done
+### quota.py
+import json, sys
+d = json.load(sys.stdin)
+for q in d["items"]:
+    ns = q["metadata"]["namespace"]
+    h = q["status"].get("hard", {})
+    u = q["status"].get("used", {})
+    parts = []
+    for key in sorted(h):
+        parts.append("%s %s/%s" % (key, u.get(key, "-"), h[key]))
+    print(ns, q["metadata"]["name"], "; ".join(parts))
+### stats-summary.py
+# Print the node's disk, image and memory figures from the kubelet's /stats/summary, read from stdin.
+import json, sys
+d = json.load(sys.stdin)
+n = d["node"]
+G = 1e9
+fs = n["fs"]
+im = n["runtime"]["imageFs"]
+print("node fs: capacity %.2f GB, used %.2f GB, available %.2f GB, inodes used %s of %s" % (
+    fs["capacityBytes"] / G, fs["usedBytes"] / G, fs["availableBytes"] / G, fs.get("inodesUsed"), fs.get("inodes")))
+print("image fs: capacity %.2f GB, used %.2f GB" % (im["capacityBytes"] / G, im["usedBytes"] / G))
+print("node memory: working set %.2f GiB, rss %.2f GiB, available %.2f GiB" % (
+    n["memory"]["workingSetBytes"] / 2**30, n["memory"]["rssBytes"] / 2**30, n["memory"]["availableBytes"] / 2**30))
+total = sum(p.get("ephemeral-storage", {}).get("usedBytes", 0) for p in d["pods"])
+print("ephemeral storage used by all %d pods: %.2f GB" % (len(d["pods"]), total / G))

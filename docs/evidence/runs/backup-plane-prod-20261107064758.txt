@@ -1,0 +1,22 @@
+== infisical plane-backup-manual-20261107064758: failed
+[pod/plane-backup-manual-20261107064758-2rx7m/postgres] psql: error: connection to server at "infisical-postgres" (10.244.0.33), port 5432 failed: Connection refused
+[pod/plane-backup-manual-20261107064758-2rx7m/postgres] 	Is the server running on that host and accepting TCP/IP connections?
+[pod/plane-backup-manual-20261107064758-2rx7m/postgres] pg_dump: error: connection to server at "infisical-postgres" (10.244.0.33), port 5432 failed: Connection refused
+[pod/plane-backup-manual-20261107064758-2rx7m/postgres] 	Is the server running on that host and accepting TCP/IP connections?
+== plane-prod plane-backup-manual-20261107064758: ok
+[pod/plane-backup-manual-20261107064758-6mbkp/postgres] postgres: Plane has not been deployed here yet and no backup exists, so there is nothing to back up
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] created restic repository 8e9ca48b5e at /backups/restic
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] 
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] Please note that knowledge of your password is required to access
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] the repository. Losing your password means that your data is
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] irrecoverably lost.
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] no parent snapshot found, will read all files
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] 
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] Files:           4 new,     0 changed,     0 unmodified
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] Dirs:            3 new,     0 changed,     0 unmodified
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] Added to the repository: 3.718 KiB (2.574 KiB stored)
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] 
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] processed 4 files, 1.465 KiB in 0:00
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] snapshot f58a4bd6 saved
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] seal: 20261107T060516Z-9df47b8afbd64228 is in restic, tag predeploy, and gone from this disk
+[pod/plane-backup-manual-20261107064758-6mbkp/seal] seal: nothing else to seal

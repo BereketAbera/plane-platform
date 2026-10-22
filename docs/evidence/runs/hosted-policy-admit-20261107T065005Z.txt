@@ -1,0 +1,5 @@
+How long a new pod in plane-prod, labelled app.kubernetes.io/component=backup, is refused by kube-router before it is admitted.
+pg_isready -h plane-pgdb -t 2 once a second from the moment the container starts. down:2 is no connection, which is a refusal here.
+settle-probe-1-065005: t=0 down:2 t=1 up t=2 up t=3 up t=4 up t=5 up
+settle-probe-2-065029: t=0 down:2 t=2 up t=3 up t=4 up t=5 up t=6 up
+settle-probe-3-065049: t=0 down:2 t=1 up t=2 up t=4 up t=5 up t=6 up

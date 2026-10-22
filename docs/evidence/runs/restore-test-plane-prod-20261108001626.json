@@ -1,0 +1,57 @@
+{
+  "namespace": "restore-test-20261108001626",
+  "on": "vps",
+  "sources": [
+    "plane-prod"
+  ],
+  "finished_at": "2026-11-08T00:20:10Z",
+  "failed": 0,
+  "blocked": 0,
+  "rows": [
+    {
+      "verdict": "PASS",
+      "what": "namespace restore-test-20261108001626 is default deny, with a quota",
+      "detail": "PSA restricted, no route, no Application"
+    },
+    {
+      "verdict": "PASS",
+      "what": "no route to 10.244.0.24:5432",
+      "detail": "refused from here, which is how kube-router denies, while the node connected to that port"
+    },
+    {
+      "verdict": "PASS",
+      "what": "no route to 10.244.0.26:9000",
+      "detail": "refused from here, which is how kube-router denies, while the node connected to that port"
+    },
+    {
+      "verdict": "PASS",
+      "what": "no route to 10.244.0.33:5432",
+      "detail": "refused from here, which is how kube-router denies, while the node connected to that port"
+    },
+    {
+      "verdict": "PASS",
+      "what": "no route to 10.96.0.1:443",
+      "detail": "refused from here, which is how kube-router denies, while the node connected to that port"
+    },
+    {
+      "verdict": "PASS",
+      "what": "no route to 10.96.0.10:53",
+      "detail": "refused from here, which is how kube-router denies, while the node connected to that port"
+    },
+    {
+      "verdict": "PASS",
+      "what": "plane-prod: restored, and proved",
+      "detail": "17 files match their hashes, 110 tables match their recorded counts"
+    },
+    {
+      "verdict": "PASS",
+      "what": "plane-prod: backup and SECRET_KEY are a pair",
+      "detail": "the fingerprints match"
+    },
+    {
+      "verdict": "PASS",
+      "what": "live data untouched",
+      "detail": "42 live objects and database lists read the same after as before"
+    }
+  ]
+}
