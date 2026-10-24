@@ -349,7 +349,8 @@ chose it knowing that this instance holds every production secret: [ADR 0017](ad
 risk is left. Everything below was read from v0.167.6's running server and its web client, and run against that image in Docker, with its own
 Postgres and Redis, behind the Traefik image and flags hosted production pins and [`route.yaml`](../gitops/clusters/plane-prod/platform/infisical/route.yaml)
 as it stands. On hosted production the route has served since release `f2bff57` at 19:21:48Z on 2026-11-07, and its tests from outside ran
-there at 19:31Z, not published ([validation.md](validation.md#hosted-infisicals-public-route)).
+there at 19:31Z ([run](evidence/runs/test-hosted-20261107T193135Z.txt)), and again in the whole suite at 21:40Z, with every row on the route
+PASS ([run](evidence/runs/test-hosted-20261107T214054Z.txt), [validation.md](validation.md#hosted-infisicals-public-route)).
 
 **What it passes.** Four routes, which share no path:
 

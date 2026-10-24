@@ -1,8 +1,9 @@
 # 0017. A public route for hosted production's Infisical, for its one admin
 
 **Status:** Accepted, 2026-11-07, by the owner. Built and proved against the pinned Traefik and this Infisical's image in Docker. Deployed to hosted
-production with release `f2bff57` at 19:21:48Z, where its tests from outside ran at 19:31Z, not published
-([validation.md](../validation.md#hosted-infisicals-public-route)).
+production with release `f2bff57` at 19:21:48Z, where its tests from outside ran at 19:31Z
+([run](../evidence/runs/test-hosted-20261107T193135Z.txt)), and again in the whole suite at 21:40Z, with every row on the route PASS
+([run](../evidence/runs/test-hosted-20261107T214054Z.txt), [validation.md](../validation.md#hosted-infisicals-public-route)).
 
 ## Context
 

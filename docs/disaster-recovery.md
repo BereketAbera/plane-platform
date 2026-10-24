@@ -2,7 +2,7 @@
 
 What fails, what survives, how to recover, and how to restore the whole platform into a clean environment. [Hosted production](#hosted-production) comes first, and the rest of the page is the kind cluster's, where dev and prod-sim run.
 
-**Hosted production, 2026-11-07.** Backups have run by hand and restored in an isolated namespace on the VPS, and a copy pulled to the Mac restored. Nothing has been restored into hosted production itself, no rebuild of the VPS has run, and the steps that would bring its data back onto a new VPS are not written. The restart check is PENDING tonight.
+**Hosted production, 2026-11-07 and 2026-11-08.** Backups have run by hand and restored in an isolated namespace on the VPS, the second time from 00:14Z to 00:20Z on 2026-11-08, for Plane with the objects step that copies, describes and checks one listing taken first, and a copy pulled to the Mac restored. Nothing has been restored into hosted production itself, no rebuild of the VPS has run, and the steps that would bring its data back onto a new VPS are not written. The restart check again is PENDING, waiting for the owner.
 
 **Kind cluster, 2026-11-05.** The pod restart drill has run in both environments on the final images, and backups have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. `make down` and `make up` resumed with the data intact.
 
@@ -37,7 +37,7 @@ The VPS holds no credential for anywhere off it, so a compromised VPS cannot rea
 
 | Failure | What is lost | Do | Run |
 |---|---|---|---|
-| A pod | Nothing: a StatefulSet's pod reattaches its volume. Every workload has one replica, so there is an outage while it restarts | Nothing | PENDING, `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`. Its first run, at 07:52Z on 2026-11-07, restarted the four data services and the seven app Deployments one at a time, and each came back. It then timed out after 180 s waiting for the public API to answer 200, so it compared nothing: FAIL (not yet published: `hosted-restart-check-20261107T075212Z.log`, `restart-check-20261107T075237Z.txt`) |
+| A pod | Nothing: a StatefulSet's pod reattaches its volume. Every workload has one replica, so there is an outage while it restarts | Nothing | PENDING, `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`, waiting for the owner. Its first run, at 07:52Z on 2026-11-07, restarted the four data services and the seven app Deployments one at a time, and each came back. It then timed out after 180 s waiting for the public API to answer 200, so it compared nothing: FAIL ([log](evidence/runs/hosted-restart-check-20261107T075212Z.log), [record](evidence/runs/restart-check-20261107T075237Z.txt)) |
 | A reboot of the node | Nothing on disk. The site is down until K3s and its pods are back | Nothing: the firewall's own unit loads before K3s. `NodeRebootRequired` asks for a planned one, because nothing reboots unasked | NOT RUN |
 | A claim deleted | Nothing at first: the class and the backup volumes are Retain | Bind a new claim to the old volume by hand | NOT RUN |
 | A bad migration, or rows removed by mistake | Everything written since the dump that is restored | Roll back on `main`, then restore the dump taken before that image's migrations: [`scripts/hosted/README.md`](../scripts/hosted/README.md), section After a rollback | NOT RUN on a real cluster |
@@ -55,9 +55,9 @@ None is promised, and few numbers exist yet.
 
 | | Hosted production |
 |---|---|
-| RPO on the VPS | Up to a day, from the nightly, and the dump taken before each migration. The first night is due at 01:47Z on 2026-11-08, and until then the newest backup is the one made by hand on 2026-11-07, in the run that began at 07:07:50Z and sealed Plane's snapshot at 07:12Z |
-| RPO off the VPS | The age of the last `make remote-pull-backups`. It ran at 07:13Z on 2026-11-07 (not yet published: `hosted-pull-20261107T071339Z.log`), and nothing schedules it |
-| RTO | Not measured. The restore test into an isolated namespace took under 5 minutes from its start to its evidence, on very little data (not yet published: `restore-test-plane-prod-20261107071414.json`). A rebuild has never run |
+| RPO on the VPS | Up to a day, from the nightly, and the dump taken before each migration. The first night is due at 01:47Z on 2026-11-08 for Infisical and 02:17Z for Plane. Until then the newest backups are by hand: Plane's from 00:14:30Z on 2026-11-08, snapshot `d62b7760` sealed at 00:15:59Z ([run](evidence/runs/backup-plane-prod-20261108001433.txt)), and Infisical's in the run that began at 07:07:50Z on 2026-11-07 ([run](evidence/runs/backup-plane-prod-20261107070754.txt)) |
+| RPO off the VPS | The age of the last `make remote-pull-backups`. It ran at 07:13Z on 2026-11-07 ([log](evidence/runs/hosted-pull-20261107T071339Z.log)), and nothing schedules it |
+| RTO | Not measured. Each restore test into an isolated namespace took under 5 minutes from its start to its evidence, on very little data: both namespaces from 07:14:14Z to 07:19:11Z on 2026-11-07 ([record](evidence/runs/restore-test-plane-prod-20261107071414.json)), and Plane alone from 00:16:26Z to 00:20:14Z on 2026-11-08 ([record](evidence/runs/restore-test-plane-prod-20261108001626.json)). A rebuild has never run |
 
 ### Rebuilding the VPS from nothing
 
@@ -79,7 +79,7 @@ These are the owner's, and they are manual.
 
 - Copy the newest bundle off the Mac, and the identity into a password manager, apart from each other.
 - Copy `~/.ssh/wayline_contabo_ed25519` and `~/.ssh/wayline_evidence_ed25519` off the Mac too, because no bundle holds them.
-- `make remote-bundle TARGET=plane-prod` after every bootstrap, token mint or Terraform apply. The applies at 18:12Z and 18:13Z on 2026-11-07 left the bundle the Mac holds stale, and it has not run since.
+- `make remote-bundle TARGET=plane-prod` after every bootstrap, token mint or Terraform apply. The applies at 18:12Z and 18:13Z on 2026-11-07 left the bundle of 05:09:50Z stale. A new one, `wayline-recovery-20261108T001505Z.tar.age`, was written at 00:15Z on 2026-11-08 with 24 files, decrypted again and matched, and read COMPLETE: PASS by its own lines. `bundle.sh` writes no record, so no file in `docs/evidence` holds that.
 - `make remote-pull-backups TARGET=plane-prod`, then `make remote-backup-dest TARGET=plane-prod VERB=verify`, at least every 35 days, or off-VPS status goes back to incomplete. An S3 copy is optional: `scripts/hosted/owner-inputs.sh offsite`, then `VERB=push`.
 
 ## Principles
