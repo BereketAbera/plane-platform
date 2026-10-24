@@ -198,8 +198,8 @@ kc -n plane-prod describe resourcequota
 ```
 
 Grafana at https://grafana.bereket.dev has the node and per-pod dashboards. Read CPU on the node with `top` as well before acting on a
-CPU panel: how far the stock dashboards and `top` differ on this VM is not in `docs/evidence` yet. [Resource utilization](../resource-utilization.md)
-is the page for measured figures.
+CPU panel: how far the stock dashboards and `top` differ on this VM is in [a capture of 12 hours to 19:31Z on 2026-11-07](../evidence/runs/hosted-resources-20261107T193041Z.txt),
+and [Resource utilization](../resource-utilization.md#cpu) works it out. It is the page for measured figures.
 
 **One container is too small.** Change it in Git, with a measurement: Plane's in `helm/plane/overlays/prod/patches/<workload>.yaml`, then
 `make render`, and the platform's in `gitops/clusters/plane-prod/values/<chart>.yaml`. If the new limits no longer fit the namespace's quota,

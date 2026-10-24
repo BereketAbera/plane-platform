@@ -158,7 +158,8 @@ Free space should be above 25 GiB before a first install, and above the 10 GiB f
 
 On hosted production the disk is the node's own, and the traps above do not apply. One filesystem, `/`, holds the system, K3s and its
 images, every volume and the backups. It read 387G, with 2.7G used, right after provisioning on 2026-11-06
-([hosted-node-20261106T225936Z.txt](../evidence/runs/hosted-node-20261106T225936Z.txt)). A later reading is not in `docs/evidence` yet.
+([hosted-node-20261106T225936Z.txt](../evidence/runs/hosted-node-20261106T225936Z.txt)). At 19:31Z on 2026-11-07 the kubelet read 18.45 GB used of
+414.92 GB ([hosted-resources-20261107T193041Z.txt](../evidence/runs/hosted-resources-20261107T193041Z.txt)).
 
 | | Here | Hosted production |
 |---|---|---|

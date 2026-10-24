@@ -298,7 +298,8 @@ Problems with hosted production's platform, one K3s node on a Contabo VPS. Plane
 [Plane app debugging](plane-app-debugging.md#hosted-production). Start with `make remote-status TARGET=plane-prod`: it only reads, and prints
 the node and its disk, the Applications, pods not ready, certificates, backups, the firewall, the release branch, alert delivery, the copies
 off the VPS, Infisical's admin token and the recovery bundle. Then `make remote-test TARGET=plane-prod CONFIRM=plane-prod`, which exits 0, 1
-or 2 and says BLOCKED or INCOMPLETE where it could not say yes. Its whole run tonight: PENDING.
+or 2 and says BLOCKED or INCOMPLETE where it could not say yes. Its whole run, from 21:40:54Z to 22:07Z on 2026-11-07, read FAIL on the
+port scan's 8080 alone, on this Mac's network path, with the smoke BLOCKED at its prompt ([run](../evidence/runs/test-hosted-20261107T214054Z.txt)).
 
 **A script refuses before it starts.** [`scripts/hosted/lib.sh`](../../scripts/hosted/lib.sh) is the only way a script reaches this cluster,
 and it fails closed:
@@ -326,7 +327,7 @@ and it fails closed:
 | `NodeRebootRequired` | Unattended upgrades installed something that needs a reboot, and nothing reboots the node by itself | A reboot takes everything down until K3s and every pod are back, which has not been timed. Choose a quiet time, and afterwards read `make remote-status` and run `make remote-test` |
 | `PublicFirewallNotLoaded`, critical | The firewall's table is not loaded | [Lockout on hosted production](hosted-lockout.md#the-firewall) |
 | A Wayline image in `ImagePullBackOff` | GHCR's packages are private, and Secret `ghcr-pull` in `plane-prod`, rendered from Infisical, holds no working token | `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=secrets` reads it. [Secret rotation](secret-rotation.md#hosted-production) has the token's way in |
-| A new pod's first connections refused, for a second or two | kube-router admits a new pod a moment after it starts. Three pods on this node were refused at once and answered at 1 to 2s (`hosted-policy-admit-20261107T065005Z.txt`, not published yet) | Retry. The backup Jobs wait up to a minute |
+| A new pod's first connections refused, for a second or two | kube-router admits a new pod a moment after it starts. Three pods on this node were refused at once and answered at 1 to 2s ([hosted-policy-admit-20261107T065005Z.txt](../evidence/runs/hosted-policy-admit-20261107T065005Z.txt)) | Retry. The backup Jobs wait up to a minute |
 | `kubectl top` fails | metrics-server is Argo CD's, at wave -8, not K3s's | `kc -n kube-system get deploy metrics-server` |
 
 **NetworkPolicy reads differently here.** K3s enforces policy with kube-router, which refuses what a policy denies, where kindnet drops it.
@@ -336,8 +337,9 @@ could not read is INCONCLUSIVE, never a pass. The matrix:
 | Run | Result | Evidence |
 |---|---|---|
 | 2026-11-07, 04:38Z, before any Plane workload | 143 PASS, 0 FAIL, 67 INCONCLUSIVE, exit 2. 62 of those were names that did not resolve yet | [log](../evidence/runs/hosted-netpol-first-20261107T043810Z.txt), [matrix](../evidence/runs/netpol-plane-prod-20261107T043811Z.tsv) |
-| 2026-11-07, 07:27Z, with Plane and Grafana's route | 206 PASS, 0 FAIL, 8 INCONCLUSIVE, exit 2. Seven had no witness reading, because this Mac's SSH to the node failed with `Can't assign requested address`, and one was refused to the node too, during a Grafana restart | `hosted-netpol-grafana-20261107T072723Z.log` and `netpol-plane-prod-20261107T072728Z.tsv`, not published yet |
-| 2026-11-07, 19:24Z, with Infisical's route | 219 PASS, 0 FAIL, 0 INCONCLUSIVE, the first clean run | `netpol-plane-prod-20261107T192436Z.tsv`, not published yet |
+| 2026-11-07, 07:27Z, with Plane and Grafana's route | 206 PASS, 0 FAIL, 8 INCONCLUSIVE, exit 2. Seven had no witness reading, because this Mac's SSH to the node failed with `Can't assign requested address`, and one was refused to the node too, during a Grafana restart | [log](../evidence/runs/hosted-netpol-grafana-20261107T072723Z.log), [matrix](../evidence/runs/netpol-plane-prod-20261107T072728Z.tsv) |
+| 2026-11-07, 19:24Z, with Infisical's route | 219 PASS, 0 FAIL, 0 INCONCLUSIVE, the first clean run | [matrix](../evidence/runs/netpol-plane-prod-20261107T192436Z.tsv) |
+| 2026-11-07, 21:43Z, inside the whole suite | 219 PASS, 0 FAIL, 0 INCONCLUSIVE | [matrix](../evidence/runs/netpol-plane-prod-20261107T214332Z.tsv), [run](../evidence/runs/test-hosted-20261107T214054Z.txt) |
 
 **Lookups.** Contabo's resolvers took over 3 seconds a lookup, so K3s's CoreDNS forwards to 1.1.1.1 and 8.8.8.8 through
 `/etc/rancher/k3s/resolv.conf` ([`k3s-config.yaml`](../../infrastructure/hosted/plane-prod/k3s-config.yaml)). Inside pods, the three public
