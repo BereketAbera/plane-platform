@@ -288,6 +288,28 @@ hosted_k3s_images_listed() {
   return "$status"
 }
 
+# The digest of zeros stands for an image that is not built yet, and the list and the manifest agree on it, so hosted_images_listed passes.
+# No registry serves it, and nothing after the merge refuses it: publish-release.sh confirms Wayline's digests on GHCR and no others. It
+# would show only after the sync, as ImagePullBackOff, with the app's Application Degraded and the root's sync failing with it. The render
+# is not read here, because there it means a set not yet promoted, which scripts/ci/check-prod-evidence.sh reads.
+HOSTED_PLACEHOLDER_DIGEST="sha256:$(printf '0%.0s' {1..64})"
+
+no_placeholder_digest() { # no_placeholder_digest <file or directory...>: comments too, as the Wayline name check reads them
+  local found status=0
+  found="$(grep -rnE -- "$HOSTED_PLACEHOLDER_DIGEST([^0-9a-f]|\$)" "$@")" || status=$?
+  case "$status" in
+    0)
+      warn "these name the placeholder digest of zeros, which no registry serves. Promote each built image in its place first, with promote-app.yml or make promote-app: ${found//$'\n'/, }"
+      return 1
+      ;;
+    1) return 0 ;;
+    *)
+      warn "could not read $*"
+      return 1
+      ;;
+  esac
+}
+
 # No Alloy here to run it, so this takes the stage's own expression and does as stage.replace does, on the line Alertmanager logs when
 # a send to Telegram fails: each capture group becomes the replacement.
 alloy_scrubs_the_telegram_token() { # alloy_scrubs_the_telegram_token <values file>
