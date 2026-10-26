@@ -178,7 +178,9 @@ terraform_all() {
 backup_prerequisites() {
   step "4 of 8: backup folders, the read-only pull user, and the restic password"
   # Owned by UID 70, which the Jobs run as, because hostPath ignores fsGroup. Group 70 is how the read-only pull user reads
-  # restic's files. predeploy is made by its Job at 0700 and stays out of that group's reach.
+  # restic's files. predeploy is made by its Job at 0700 and stays out of that group's reach. Frameflow's Job opens its SQLite
+  # database as the app's UID 1000, and that container reads its folder through group 70, which the Job's fsGroup gives it, so its
+  # folder is the same as the others.
   node_root <<EOF
 set -euo pipefail
 owner="\$(getent group 70 | cut -d: -f1 || true)"
@@ -188,7 +190,7 @@ case "\$owner" in
   *) echo "group 70 already belongs to \$owner" >&2; exit 1 ;;
 esac
 install -d -m 755 $HOSTED_BACKUP_ROOT
-install -d -m 750 -o 70 -g 70 $HOSTED_BACKUP_ROOT/plane-prod $HOSTED_BACKUP_ROOT/infisical
+install -d -m 750 -o 70 -g 70 $HOSTED_BACKUP_ROOT/plane-prod $HOSTED_BACKUP_ROOT/infisical $HOSTED_BACKUP_ROOT/frameflow
 EOF
   ok "folders under $HOSTED_BACKUP_ROOT are ready"
   "$ROOT/scripts/hosted/pull-backups.sh" setup
@@ -199,7 +201,7 @@ EOF
     if [[ -n "$live" ]]; then
       printf '%s' "$live" >"$RESTIC_PASSWORD_LOCAL"
       warn "${RESTIC_PASSWORD_LOCAL#"$ROOT"/} was missing here: restored it from Secret plane-prod/restic-password"
-    elif node_ssh_quiet "sudo -n test -e $HOSTED_BACKUP_ROOT/plane-prod/restic/config -o -e $HOSTED_BACKUP_ROOT/infisical/restic/config"; then
+    elif node_ssh_quiet "sudo -n test -e $HOSTED_BACKUP_ROOT/plane-prod/restic/config -o -e $HOSTED_BACKUP_ROOT/infisical/restic/config -o -e $HOSTED_BACKUP_ROOT/frameflow/restic/config"; then
       die "a restic repository exists on the node and this machine has no password for it. A new one could never read it. Get restic-password from the recovery bundle."
     else
       openssl rand -hex 32 | tr -d '\n' >"$RESTIC_PASSWORD_LOCAL"
@@ -209,10 +211,12 @@ EOF
     chmod 600 "$RESTIC_PASSWORD_LOCAL"
   fi
   local namespace
-  for namespace in plane-prod infisical; do
+  # One password for every repository, so the pull and the restore test read them all with the one file. Frameflow's namespace is
+  # Terraform's, from step 2, as the others are, so this needs nothing from the frameflow Application.
+  for namespace in plane-prod infisical frameflow; do
     apply_secret_files "$namespace" restic-password --from-file=password="$RESTIC_PASSWORD_LOCAL"
   done
-  ok "Secret restic-password in plane-prod and infisical"
+  ok "Secret restic-password in plane-prod, infisical and frameflow"
 }
 
 # ------ 5. Secret zero -------------------------------------------------------------------------------------------------
