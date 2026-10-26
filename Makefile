@@ -141,7 +141,7 @@ ci: ## Run every CI check locally, the same scripts as GitHub Actions. Runs them
 # ---- hosted production ----------------------------------------------------------------------
 # Nothing above reaches it, and these reach nothing else. Each needs TARGET=plane-prod, and what changes something needs
 # CONFIRM=plane-prod as well, not yes. Reads and writes .local/hosted/plane-prod. See scripts/hosted/.
-.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-grafana-admin remote-infisical-admin remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle remote-publish-evidence
+.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-grafana-admin remote-infisical-admin remote-pull-secrets remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle remote-publish-evidence
 remote-guard:
 	@[[ "$(TARGET)" == plane-prod ]] || { echo "this reaches hosted production, so it needs TARGET=plane-prod" >&2; exit 2; }
 
@@ -165,6 +165,9 @@ remote-grafana-admin: remote-guard ## Hosted: Grafana's admin login. VERB=login 
 
 remote-infisical-admin: remote-guard ## Hosted: Infisical's admin login, for its public route. VERB=login prints the URL and email and copies the password: make remote-infisical-admin TARGET=plane-prod VERB=login
 	@./scripts/hosted/infisical-admin.sh "$(VERB)"
+
+remote-pull-secrets: remote-guard ## Hosted: Secret ghcr-pull in the static sites' namespaces, from .local/hosted/plane-prod/ghcr-pull-token. Run it again after a new token: make remote-pull-secrets TARGET=plane-prod CONFIRM=plane-prod
+	@./scripts/hosted/pull-secrets.sh
 
 remote-smoke: remote-guard ## Hosted: smoke over https on an existing account, asked at a hidden prompt, removing what it makes: make remote-smoke TARGET=plane-prod [SMOKE_WORKSPACE=<slug>] [SMOKE_ALLOW_STAGING=yes]
 	@./scripts/hosted/smoke.sh

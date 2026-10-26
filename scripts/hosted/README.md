@@ -13,10 +13,11 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `tunnel.sh` | SSH tunnel, 127.0.0.1:16443 to the node's 6443. Started by `lib.sh` when needed | `remote-tunnel` |
 | `kubeconfig.sh` | Fetch K3s's kubeconfig, rewrite it for the tunnel, and print the UID for `target.yaml` | `remote-kubeconfig` |
 | `status.sh` | Read-only summary | `remote-status` |
-| `bootstrap.sh` | Deploy key, Grafana's login, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
+| `bootstrap.sh` | Deploy key, Grafana's login, the static sites' pull Secrets, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
 | `ui.sh` | Port-forward an admin UI. None has a public route but Grafana and Infisical, which this also reaches when a route is down | `remote-ui` |
 | `grafana-admin.sh` | Make Grafana's admin login once and write its Secret (`apply`), replace its password (`rotate`), or print the URL and username and copy the password (`login`) | `remote-grafana-admin` |
 | `infisical-admin.sh` | Print Infisical's URL and admin email, and copy its password to the clipboard (`login`). Bootstrap makes that login, and this only reads it | `remote-infisical-admin` |
+| `pull-secrets.sh` | Secret ghcr-pull in the static sites' namespaces, from the owner's GHCR token file. Run it again after saving a new token | `remote-pull-secrets`, and through `remote-bootstrap` |
 | `alerts.sh` | Render `alertmanager.yaml` from the owner's files into a Secret, and say COMPLETE or INCOMPLETE | `remote-alerts` |
 | `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again | `remote-bundle` |
 | `backup.sh` | Run tonight's backups now, from the CronJobs | `remote-backup` |
