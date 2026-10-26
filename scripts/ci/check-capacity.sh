@@ -35,9 +35,14 @@ for directory in monitoring-extras backup; do
     as_json "$WORK/$directory.yaml" "$WORK/manifests/$directory.json"
   fi
 done
-while read -r file; do
-  as_json "$file" "$WORK/manifests/$(basename "$file" .yaml).json"
-done < <(find "$HOSTED_TREE/platform/infisical" "$HOSTED_TREE/platform/certificates" -type f -name '*.yaml' 2>/dev/null | LC_ALL=C sort)
+# The plain folders, in which each object names its own namespace. A new app's folder is counted only once it is listed here. Each file
+# is named by its folder too, because the static sites' folders hold files of the same names, and one would overwrite the other.
+for directory in infisical certificates rillmark awushi-cloudgarden; do
+  [[ -d "$HOSTED_TREE/platform/$directory" ]] || { warn "$HOSTED_TREE/platform/$directory does not exist, so nothing there is counted"; continue; }
+  while read -r file; do
+    as_json "$file" "$WORK/manifests/$directory-$(basename "$file" .yaml).json"
+  done < <(find "$HOSTED_TREE/platform/$directory" -type f -name '*.yaml' 2>/dev/null | LC_ALL=C sort)
+done
 if [[ -f "$HOSTED_ENVIRONMENT/manifests.yaml" ]]; then
   as_json "$HOSTED_ENVIRONMENT/manifests.yaml" "$WORK/manifests/plane-prod-render.json"
 else

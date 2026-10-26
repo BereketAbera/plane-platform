@@ -40,17 +40,21 @@ HOSTED_HOST6="$(hosted_field host6)"
 HOSTED_DOMAIN="$(hosted_field domain)"
 HOSTED_GRAFANA_DOMAIN="$(hosted_field grafana_domain)"
 HOSTED_INFISICAL_DOMAIN="$(hosted_field infisical_domain)"
+HOSTED_FRAMEFLOW_DOMAIN="$(hosted_field frameflow_domain)"
+HOSTED_RILLMARK_DOMAIN="$(hosted_field rillmark_domain)"
+HOSTED_CLOUDGARDEN_DOMAIN="$(hosted_field cloudgarden_domain)"
 HOSTED_SSH_USER="$(hosted_field ssh_user)"
 HOSTED_SSH_KEY="$(hosted_field ssh_key)"
 HOSTED_SSH_KEY="${HOSTED_SSH_KEY/#\~/$HOME}"
 HOSTED_NODE="$(hosted_field node_name)"
 HOSTED_UID="$(hosted_field kube_system_uid)"
 HOSTED_TUNNEL_PORT="$(hosted_field tunnel_port)"
-for hosted_required in HOSTED_HOST HOSTED_DOMAIN HOSTED_GRAFANA_DOMAIN HOSTED_INFISICAL_DOMAIN HOSTED_SSH_USER HOSTED_SSH_KEY HOSTED_NODE HOSTED_UID HOSTED_TUNNEL_PORT; do
+for hosted_required in HOSTED_HOST HOSTED_DOMAIN HOSTED_GRAFANA_DOMAIN HOSTED_INFISICAL_DOMAIN HOSTED_FRAMEFLOW_DOMAIN HOSTED_RILLMARK_DOMAIN \
+  HOSTED_CLOUDGARDEN_DOMAIN HOSTED_SSH_USER HOSTED_SSH_KEY HOSTED_NODE HOSTED_UID HOSTED_TUNNEL_PORT; do
   [[ -n "${!hosted_required}" ]] || die "$HOSTED_TARGET_FILE leaves $hosted_required empty"
 done
 unset hosted_required
-export HOSTED_NAME HOSTED_HOST HOSTED_DOMAIN HOSTED_GRAFANA_DOMAIN HOSTED_INFISICAL_DOMAIN HOSTED_NODE
+export HOSTED_NAME HOSTED_HOST HOSTED_DOMAIN HOSTED_GRAFANA_DOMAIN HOSTED_INFISICAL_DOMAIN HOSTED_FRAMEFLOW_DOMAIN HOSTED_RILLMARK_DOMAIN HOSTED_CLOUDGARDEN_DOMAIN HOSTED_NODE
 
 # Re-rooted, so nothing this does can read or write the local platform's state.
 export LOCAL_DIR="$ROOT/.local/hosted/plane-prod"

@@ -19,9 +19,11 @@ system:
   memory: 5Gi
   # The OS, K3s's data and every image.
   disk: 40Gi
+# Less what the two static sites' quotas below take: 512Mi of limits.memory and 100m of requests.cpu, half each. It was 18Gi and 6 CPU,
+# and the node had no memory left over for them.
 frameflow:
-  memory: 18Gi
-  cpu_requests: "6"
+  memory: 17.5Gi
+  cpu_requests: 5900m
   cpu_limits: "8"
   temp_disk: 100Gi
 # Per namespace: Terraform makes a ResourceQuota of each. limits.memory counts what every pod here may reach at once, plus the room
@@ -96,6 +98,23 @@ quotas:
     persistentvolumeclaims: "3"
     # Postgres 2, Redis 1, and the backups PVC's 10.
     requests.storage: 13Gi
+  # 64Mi steady, one nginx pod, and 192Mi of room: the two probe pods scripts/test-netpol.sh starts at once, and the web pod's surge or
+  # rillmark-tls's solver, 64Mi each. Requests hold all five at once: 50m, and 128Mi of the 160Mi, 16Mi each and the solver's 64Mi.
+  rillmark:
+    requests.cpu: 50m
+    requests.memory: 160Mi
+    limits.memory: 256Mi
+    pods: "5"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
+  # The same pods as rillmark's, with devops-tls's solver.
+  awushi-cloudgarden:
+    requests.cpu: 50m
+    requests.memory: 160Mi
+    limits.memory: 256Mi
+    pods: "5"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
   frameflow:
     pods: "0"
     persistentvolumeclaims: "0"
@@ -131,3 +150,12 @@ limit_ranges:
     default: { memory: 256Mi }
     default_request: { cpu: 10m, memory: 64Mi }
     max: { memory: 1Gi }
+  # nginx, the solver and the probe pods each set a 64Mi limit, and max allows twice that.
+  rillmark:
+    default: { memory: 64Mi }
+    default_request: { cpu: 10m, memory: 16Mi }
+    max: { memory: 128Mi }
+  awushi-cloudgarden:
+    default: { memory: 64Mi }
+    default_request: { cpu: 10m, memory: 16Mi }
+    max: { memory: 128Mi }

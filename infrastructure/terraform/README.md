@@ -13,8 +13,8 @@ warn against creating a cluster and its Kubernetes resources in one module.
 | `modules/foundation` | Used | Namespaces with PSA and platform labels; ResourceQuota and LimitRange per Plane namespace, or as the caller passes them; a StorageClass if asked; CoreDNS rewrite, by kubeadm's Corefile or K3s's `coredns-custom` |
 | `modules/argocd` | Used | Argo CD release; second release with the AppProjects and the root Application |
 | `environments/local` | Used | Root module for the kind cluster. State at `.local/terraform/local/terraform.tfstate` |
-| `environments/prod` | Used, on hosted production since 2026-11-07, through `scripts/hosted/bootstrap.sh` only | Hosted production's cluster bootstrap. State at `.local/hosted/plane-prod/terraform/terraform.tfstate`. See [its README](environments/prod/README.md) |
-| `environments/prod-host` | Used, through `scripts/hosted/host-terraform.sh` only | Read-only `data "contabo_instance"`, and the A records of `wayline`, imported, and of `grafana` and `infisical`, made here. State at `.local/hosted/plane-prod/terraform/host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
+| `environments/prod` | Used, on hosted production since 2026-11-07, through `scripts/hosted/bootstrap.sh` only | Hosted production's cluster bootstrap: each namespace with its quota, the CoreDNS rewrite of each public host, Argo CD and the AppProjects. State at `.local/hosted/plane-prod/terraform/terraform.tfstate`. See [its README](environments/prod/README.md) |
+| `environments/prod-host` | Used, through `scripts/hosted/host-terraform.sh` only | Read-only `data "contabo_instance"`, and the A record of each public host: `wayline`'s, imported, and those of `grafana`, `infisical`, `frameflow`, `rillmark` and `devops`, made here. State at `.local/hosted/plane-prod/terraform/host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
 | `environments/dev` | **Untested template** | Interface documents from an earlier plan. Nothing to run |
 
 ## Workflow

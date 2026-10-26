@@ -35,7 +35,12 @@ module "foundation" {
     cert-manager      = { enforce = "baseline" }
     # Baseline until a dry run of restricted passes on the branded images.
     plane-prod = { enforce = "baseline", environment = "prod" }
-    # Not deployed, and its quota allows no pods, so nothing here needs less than the strictest level.
+    # The static sites. nginx runs as user 101 with every capability dropped, and cert-manager's solver pod passes too, so they start
+    # at the strictest level.
+    rillmark           = { enforce = "restricted" }
+    awushi-cloudgarden = { enforce = "restricted" }
+    # About to be deployed, by the change that gives its quota room for pods: until then that allows none. It keeps the strictest level,
+    # so each workload the change adds must pass restricted.
     frameflow = { enforce = "restricted" }
   }
 
@@ -51,12 +56,16 @@ module "foundation" {
     }
   }
 
-  # The Plane API dials its own public host, and blackbox and cert-manager's self-check read it and the two consoles' too. Inside a pod
-  # that must reach Traefik's Service, not go out through the host firewall and back, which cert-manager's egress refuses.
+  # The Plane API dials its own public host, and blackbox and cert-manager's self-check read it, the two consoles' and each app's too.
+  # Inside a pod that must reach Traefik's Service, not go out through the host firewall and back, which cert-manager's egress refuses: an
+  # app's Certificate never becomes Ready without its line here.
   k3s_coredns_rewrites = {
-    (local.target.domain)           = "traefik.traefik.svc.cluster.local"
-    (local.target.grafana_domain)   = "traefik.traefik.svc.cluster.local"
-    (local.target.infisical_domain) = "traefik.traefik.svc.cluster.local"
+    (local.target.domain)             = "traefik.traefik.svc.cluster.local"
+    (local.target.grafana_domain)     = "traefik.traefik.svc.cluster.local"
+    (local.target.infisical_domain)   = "traefik.traefik.svc.cluster.local"
+    (local.target.frameflow_domain)   = "traefik.traefik.svc.cluster.local"
+    (local.target.rillmark_domain)    = "traefik.traefik.svc.cluster.local"
+    (local.target.cloudgarden_domain) = "traefik.traefik.svc.cluster.local"
   }
 
   depends_on = [terraform_data.right_cluster]
