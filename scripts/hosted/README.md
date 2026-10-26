@@ -52,7 +52,7 @@ points at Vercel, so each A record has to be live before Argo CD first sees that
 
 `infisical-tls` has one more condition, at its first order and at every renewal, about every 60 days. Its solver pod takes 64Mi of the
 namespace's `limits.memory` quota, 1376Mi of 2400Mi is used steady, and the server's rollout and the nightly backup each take 1024Mi more, so
-the quota fits one of the three at a time, and the node has no memory to raise it. A pod the quota refuses is never created, so it never fails
+the quota fits one of the three at a time. A pod the quota refuses is never created, so it never fails
 either. A solver that meets a rollout or a backup waits for it to finish. A solver whose self-check keeps failing holds its 64Mi until its
 challenge passes or is deleted, and meanwhile the next rollout's new pod and the backup's pod are refused. The backup Job then ends at its
 2-hour deadline with no pod failed, and `PlaneBackupFailed`, which counts failed pods, stays quiet. kube-prometheus-stack's `KubeJobFailed`

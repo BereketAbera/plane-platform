@@ -39,8 +39,8 @@ module "foundation" {
     # at the strictest level.
     rillmark           = { enforce = "restricted" }
     awushi-cloudgarden = { enforce = "restricted" }
-    # About to be deployed, by the change that gives its quota room for pods: until then that allows none. It keeps the strictest level,
-    # so each workload the change adds must pass restricted.
+    # Frameflow, its Hatchet, Postgres and Silo, its operator and its Jobs. Each runs as a user that is not root, with every capability
+    # dropped and no privilege escalation, as cert-manager's solver does, so it keeps the strictest level, and anything added must pass it.
     frameflow = { enforce = "restricted" }
   }
 
