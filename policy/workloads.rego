@@ -8,8 +8,8 @@ import rego.v1
 # name real operators only. It is keyed on name, never on a label or annotation the manifest
 # could set for itself. These are the Deployment names the secrets-operator chart renders with the
 # fullnameOverride in helm/values/infisical-operator-{dev,prod-sim}.yaml, and for hosted production in
-# gitops/clusters/plane-prod/values.
-api_clients := {"iso-dev-controller-manager", "iso-prod-sim-controller-manager", "iso-prod-controller-manager"}
+# gitops/clusters/plane-prod/values/infisical-operator-{prod,frameflow}.yaml, one for each namespace.
+api_clients := {"iso-dev-controller-manager", "iso-prod-sim-controller-manager", "iso-prod-controller-manager", "iso-frameflow-controller-manager"}
 
 deny contains msg if {
 	kube.is_workload(input)
