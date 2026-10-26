@@ -689,15 +689,19 @@ deny contains msg if {
 	msg := sprintf("%s: route %q must be limited to %s, with any other condition ANDed to it", [identity, match, data.plane.host_matcher(app.host)])
 }
 
-# The other direction: only an app's namespace may name its host, so a route anywhere else cannot take it, however it spells it.
+# The other direction: only an app's namespace may name its host, so a route anywhere else cannot take it, however it spells it. Grafana's
+# host is bound the same way, to monitoring, because the rules there read only that namespace, and a route elsewhere that took its host
+# would be read by none of them. policy/plane.rego binds Plane's.
+bound_hosts := object.union({grafana_namespace: grafana_host}, {namespace: app.host | some namespace, app in app_routes})
+
 deny contains msg if {
 	input.kind == "IngressRoute"
-	some namespace, app in app_routes
+	some namespace, host in bound_hosts
 	this_namespace != namespace
 	some route in input.spec.routes
 	match := object.get(route, "match", "")
-	names_host(match, app.host)
-	msg := sprintf("%s: route %q names %s, which only namespace %s may serve", [identity, match, app.host, namespace])
+	names_host(match, host)
+	msg := sprintf("%s: route %q names %s, which only namespace %s may serve", [identity, match, host, namespace])
 }
 
 # Traefik matches a host in any case, and a HostRegexp would escape its dots, with a backslash or as a class.

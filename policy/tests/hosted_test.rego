@@ -356,7 +356,6 @@ test_an_app_route_off_its_host_rejected if {
 		every match in [
 			"Host(`other.bereket.dev`)",
 			"Host(`wayline.bereket.dev`)",
-			"Host(`grafana.bereket.dev`)",
 			sprintf("Host(`www.%s`)", [app.host]),
 			"PathPrefix(`/`)",
 			"HostRegexp(`.+`)",
@@ -368,6 +367,38 @@ test_an_app_route_off_its_host_rejected if {
 		] {
 			count(hosted.deny) == 1 with input as app_with_match(namespace, match)
 		}
+
+		# Grafana's host is refused twice: it is not the app's, and it is monitoring's alone.
+		on_grafana := app_with_match(namespace, "Host(`grafana.bereket.dev`)")
+		count(hosted.deny) == 2 with input as on_grafana
+		says(on_grafana, sprintf("must be limited to Host(`%s`)", [app.host]))
+		says(on_grafana, "names grafana.bereket.dev, which only namespace monitoring may serve")
+	}
+}
+
+# Traefik reads each argument as a string, so a parenthesis inside one opens nothing, and an OR between two of them is at the top, where
+# it lets the rule out of its host. A comment is skipped the same way, so a parenthesis in one opens nothing either.
+test_an_app_route_with_an_or_hidden_by_a_string_rejected if {
+	every namespace, app in apps {
+		every rest in [
+			"PathPrefix(`/(`) || Host(`grafana.bereket.dev`) && PathPrefix(`/)`)",
+			"PathPrefix(`/(`) || PathPrefix(`/)`)",
+			"PathPrefix(\"/(\") || PathPrefix(\"/)\")",
+			"PathPrefix(\"/\\\"(\") || PathPrefix(`/)`)",
+			"PathPrefix(`/`) /* ( */ || PathPrefix(`/`) /* ) */",
+			"PathPrefix(`/a)",
+			"PathPrefix('(') || PathPrefix(')')",
+		] {
+			says(app_with_match(namespace, sprintf("%s && %s", [on_host(app.host), rest])), sprintf("must be limited to Host(`%s`)", [app.host]))
+		}
+	}
+}
+
+# The same strings with no OR at the top are paths like any other.
+test_an_app_route_with_a_parenthesis_in_a_string_accepted if {
+	every namespace, app in apps {
+		count(hosted.deny) == 0 with input as app_with_match(namespace, sprintf("%s && PathPrefix(`/(`)", [on_host(app.host)]))
+		count(hosted.deny) == 0 with input as app_with_match(namespace, sprintf("%s && (PathPrefix(`/a)`) || Path(\"/b\\\"(\"))", [on_host(app.host)]))
 	}
 }
 
@@ -404,6 +435,24 @@ test_another_namespace_naming_an_app_host_rejected if {
 		count(hosted.deny) == 1 with input as doc
 		says(doc, sprintf("which only namespace %s may serve", [pair[1]]))
 	}
+}
+
+# Grafana's host is bound to monitoring the same way: its rules there read nothing elsewhere.
+test_another_namespace_naming_the_grafana_host_rejected if {
+	every match in [
+		"Host(`grafana.bereket.dev`)",
+		"Host(`wayline.bereket.dev`) && Host(`GRAFANA.bereket.dev`)",
+		"HostRegexp(`^grafana\\.bereket\\.dev$`)",
+		"HostRegexp(`^grafana[.]bereket[.]dev$`)",
+	] {
+		says(plane_route_on(match), "names grafana.bereket.dev, which only namespace monitoring may serve")
+		says(route_doc("traefik", object.union(route_spec, {"routes": [page_rule(match, {"name": "kps-grafana", "port": 80})]})), "names grafana.bereket.dev, which only namespace monitoring may serve")
+		every namespace, _ in apps {
+			says(app_with_match(namespace, match), "names grafana.bereket.dev, which only namespace monitoring may serve")
+		}
+	}
+	count(hosted.deny) == 1 with input as plane_route_on("Host(`wayline.bereket.dev`) && Host(`grafana.bereket.dev`)")
+	says({"kind": "IngressRoute", "metadata": {"name": "x"}, "spec": grafana_spec}, "which only namespace monitoring may serve")
 }
 
 # Only the Services on the app's own list, in its own namespace: not Plane's, not a console, and not another app's.

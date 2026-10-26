@@ -195,14 +195,24 @@ deny contains msg if {
 
 host_matcher(host) := sprintf("Host(`%s`)", [host])
 
+# Traefik parses a rule as a Go expression: an argument in backticks is a raw string and one in double quotes an interpreted one, so a
+# parenthesis or a || inside either is only text. Counted as code, one in PathPrefix(`/(`) would open a group that a later `)` closes,
+# with a top-level || hidden inside it.
+rule_string := "`[^`]*`|\"(?:[^\"\\\\]|\\\\.)*\""
+
 stays_on_host(match, host) if match == host_matcher(host)
 
 stays_on_host(match, host) if {
 	prefix := sprintf("%s && ", [host_matcher(host)])
 	startswith(match, prefix)
+	# Each string becomes one placeholder before anything is counted. A quote left after that is a string that never closes, or a rune,
+	# from which Traefik reads no rule, and a slash outside a string starts a comment, which Traefik skips and this would read as code.
+	# So each is refused.
+	rest := regex.replace(trim_prefix(match, prefix), rule_string, "_")
+	not regex.match("[`\"'/]", rest)
 	# What is left outside balanced parentheses, to three levels. Anything deeper leaves a parenthesis
 	# behind and is refused, which errs on the safe side.
-	outside := regex.replace(trim_prefix(match, prefix), `\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)`, "")
+	outside := regex.replace(rest, `\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)`, "")
 	not contains(outside, "||")
 	not contains(outside, "(")
 	not contains(outside, ")")
