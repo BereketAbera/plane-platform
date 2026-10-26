@@ -4,7 +4,8 @@
 # root or a local script see production. Run by scripts/ci/lint.sh, so by make ci and CI alike.
 #
 #   no plane-git, localhost:5001, *.localhost, kind-<name> or kind's address pool in the hosted trees and scripts
-#   no gitops/clusters, no plane-prod, no grafana.bereket.dev and no infisical.bereket.dev in the local trees (plane-prod-sim is a local name)
+#   no gitops/clusters, no plane-prod, no grafana.bereket.dev, no infisical.bereket.dev and no app's host in the local trees
+#     (plane-prod-sim is a local name)
 #   no kubectl in scripts/hosted except through the kubeconfig and context lib.sh sets
 #
 # Reads what Git would track, so CI and make ci see the same files. Markdown is left out, because prose may say why not.
@@ -65,6 +66,10 @@ report "the hosted Grafana host in a local tree" "$(matches 'grafana\.bereket\.d
 
 # The same for Infisical's four routes, which hold the secret store's own login.
 report "the hosted Infisical host in a local tree" "$(matches 'infisical\.bereket\.dev' "${LOCAL_PATHS[@]}")"
+
+# The apps' public hosts, which policy/hosted.rego binds to their namespaces on the hosted trees alone. A local script that dials one
+# reaches production, and a local route on one answers for it on the laptop.
+report "a hosted app's host in a local tree" "$(matches '(frameflow|rillmark|devops)\.bereket\.dev' "${LOCAL_PATHS[@]}")"
 
 # A kubectl of its own would follow whatever KUBECONFIG and current context this shell has, which may be kind's. On the node
 # it is `k3s kubectl`, which reaches only that node. Installing the tool is not running it.
