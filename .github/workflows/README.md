@@ -21,7 +21,9 @@ clone and requires the matching check to go red. It takes minutes, so `make ci` 
 against a stub `kubectl`. The full `validate-manifests.sh` runs it. It proves how the scripts behave given those answers,
 and nothing about a real cluster. `scripts/ci/test-grafana-admin.sh` does the same for `scripts/hosted/grafana-admin.sh`: the
 password file, the Secret and the admin a running Grafana pod holds must agree after each verb, and after each step of one fails.
-`validate-manifests.sh` runs it, with the charts or without them.
+`validate-manifests.sh` runs it, with the charts or without them. `scripts/ci/test-hosted-target.sh` sources
+`scripts/hosted/target.sh` with no cluster: which environments it hands Infisical's bootstrap and Terraform, and that it leaves
+the apps' out for a restore of Infisical alone, refused anywhere else before it reaches for the cluster. `lint.sh` runs it.
 
 `make scan-images` runs trivy over every image the platform runs, for `PLATFORM`, by default `linux/arm64`. It fails only on a
 CRITICAL finding with a fix in an image we build, on an image it could not scan, or on a result of another architecture, and reports

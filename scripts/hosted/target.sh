@@ -26,6 +26,23 @@ if [[ "${CONFIRM:-}" != plane-prod ]]; then
   printf 'fail WAYLINE_TARGET=plane-prod aims this script at hosted production, so it needs CONFIRM=plane-prod. CONFIRM=yes does not count. If you did not mean hosted production: unset WAYLINE_TARGET\n' >&2
   exit 1
 fi
+# HOSTED_RESTORE_WITHOUT_APPS=yes leaves every app's environment out, and only beside INFISICAL_RESTORED=yes. Restored mode stops when
+# Terraform would make anything, so a database restored from before an app's project would stop it there, before prod's CA and identity,
+# and Wayline's secrets must not wait on an app's. A plain run after it makes the app's again, as a first bootstrap does. Anywhere else,
+# Terraform would destroy the project of each environment left out, and every secret in it.
+case "${HOSTED_RESTORE_WITHOUT_APPS:-}" in
+  "") ;;
+  yes)
+    if [[ "${INFISICAL_RESTORED:-}" != yes ]]; then
+      printf 'fail HOSTED_RESTORE_WITHOUT_APPS=yes is for INFISICAL_RESTORED=yes alone: anywhere else, Terraform would destroy the project of every app it leaves out\n' >&2
+      exit 1
+    fi
+    ;;
+  *)
+    printf 'fail HOSTED_RESTORE_WITHOUT_APPS takes yes or nothing, and got "%s"\n' "$HOSTED_RESTORE_WITHOUT_APPS" >&2
+    exit 1
+    ;;
+esac
 export TARGET=plane-prod
 # shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -33,8 +50,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # Plane's environment, then Frameflow's: a project of its own, with a reader bound to its own namespace, because a viewer reads every key
 # in its project. Never rename the prod key or its project. Terraform's resources are keyed by them, so it would destroy plane-prod's
 # project and every secret in it, and a destroyed slug stays taken for 14 days.
-export WAYLINE_ENVIRONMENTS="prod frameflow"
-export TF_VAR_environments='{"prod":{"project":"plane-prod","namespace":"plane-prod"},"frameflow":{"project":"frameflow-prod","namespace":"frameflow"}}'
+if [[ "${HOSTED_RESTORE_WITHOUT_APPS:-}" == yes ]]; then
+  export WAYLINE_ENVIRONMENTS="prod"
+  export TF_VAR_environments='{"prod":{"project":"plane-prod","namespace":"plane-prod"}}'
+else
+  export WAYLINE_ENVIRONMENTS="prod frameflow"
+  export TF_VAR_environments='{"prod":{"project":"plane-prod","namespace":"plane-prod"},"frameflow":{"project":"frameflow-prod","namespace":"frameflow"}}'
+fi
 export HOSTED_INFISICAL_ADMIN_EMAIL="admin@$HOSTED_DOMAIN"
 export HOSTED_INFISICAL_TF_BACKEND="path=$LOCAL_DIR/terraform/infisical/terraform.tfstate"
 export HOSTED_NETPOL_MATRIX="$ROOT/tests/network-policy-matrix-plane-prod.yaml"
