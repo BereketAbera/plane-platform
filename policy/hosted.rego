@@ -961,6 +961,50 @@ deny contains msg if {
 	msg := sprintf("%s: an HTTP-01 solver's serviceType is %v, and it must be ClusterIP, or each challenge opens a NodePort", [identity, service_type])
 }
 
+# ---- Certificates
+
+# The ClusterIssuers' HTTP-01 solver answers for any host it is asked for, from the namespace of the Certificate that asks, through
+# Traefik's Ingress provider, which reads each app's namespace. So a Certificate there for Wayline's host would be issued, and its key
+# would sit beside the app, where the app's pods could read it. An app's namespace holds its own Certificate and no other, as
+# platform/certificates writes it: another host, another field or another issuer is a change here that a person reads.
+app_certificate_spec(app) := {
+	"secretName": app.tls_secret,
+	"dnsNames": [app.host],
+	"privateKey": {"algorithm": "ECDSA", "size": 256, "rotationPolicy": "Always"},
+	"revisionHistoryLimit": 3,
+	"issuerRef": {"name": "letsencrypt-production", "kind": "ClusterIssuer", "group": "cert-manager.io"},
+}
+
+deny contains msg if {
+	input.kind == "Certificate"
+	app := app_routes[this_namespace]
+	object.get(input, "spec", {}) != app_certificate_spec(app)
+	msg := sprintf("%s: a Certificate in namespace %s is exactly %v, for its own host alone", [identity, this_namespace, app_certificate_spec(app)])
+}
+
+# The other direction, as for its routes: only an app's namespace holds a certificate for its host, however the spec spells it.
+deny contains msg if {
+	input.kind == "Certificate"
+	some namespace, app in app_routes
+	this_namespace != namespace
+	names_host(json.marshal(object.get(input, "spec", {})), app.host)
+	msg := sprintf("%s: names %s, whose certificate only namespace %s may hold", [identity, app.host, namespace])
+}
+
+# cert-manager makes these from a Certificate, so none belongs in Git, and one written here would ask for a certificate past the rules
+# above.
+deny contains msg if {
+	cert_manager_request
+	msg := sprintf("%s: no %s in Git. cert-manager makes it from a Certificate, which the rules here read", [identity, input.kind])
+}
+
+cert_manager_request if input.kind == "CertificateRequest"
+
+cert_manager_request if {
+	input.kind in {"Order", "Challenge"}
+	startswith(object.get(input, "apiVersion", ""), "acme.cert-manager.io/")
+}
+
 # ---- Where this cluster reads from
 
 git_repo := "ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git"
@@ -1156,12 +1200,18 @@ deny contains msg if {
 	msg := sprintf("%s: this project must hold no clusterResourceWhitelist, because cluster scope is what it may never touch", [identity])
 }
 
-# What holds an app in: Terraform owns its quota and limits, and the platform project its NetworkPolicies. Were any of these off the
-# list, the app's own Application could rewrite its quota or its limits, or add a NetworkPolicy that opens it.
+# What holds an app in: Terraform owns its quota and limits, and the platform project its NetworkPolicies and its certificate. Were any
+# of these off the list, the app's own Application could rewrite its quota or its limits, add a NetworkPolicy that opens it, or ask
+# cert-manager for another host's certificate, which the ClusterIssuer's solver would answer from the app's namespace.
 app_project_refuses := {
 	{"group": "", "kind": "ResourceQuota"},
 	{"group": "", "kind": "LimitRange"},
 	{"group": "networking.k8s.io", "kind": "NetworkPolicy"},
+	{"group": "cert-manager.io", "kind": "Certificate"},
+	{"group": "cert-manager.io", "kind": "CertificateRequest"},
+	{"group": "cert-manager.io", "kind": "Issuer"},
+	{"group": "acme.cert-manager.io", "kind": "Order"},
+	{"group": "acme.cert-manager.io", "kind": "Challenge"},
 }
 
 deny contains msg if {

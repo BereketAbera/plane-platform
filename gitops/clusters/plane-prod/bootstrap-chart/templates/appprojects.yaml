@@ -55,7 +55,9 @@ spec:
       kind: NetworkPolicy
 ---
 # Each other app has a project like plane-prod's, so what its Application syncs stays in its own namespace, and cannot touch the
-# platform's policies, quotas or cluster-scoped objects.
+# platform's policies, quotas or cluster-scoped objects, or ask cert-manager for anything. Its certificate comes from the platform's
+# certificates Application, for its own host alone (policy/hosted.rego), and the ClusterIssuer's solver answers for any host, so a
+# Certificate synced from here could be for Wayline's.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -76,6 +78,16 @@ spec:
       kind: LimitRange
     - group: networking.k8s.io
       kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -97,6 +109,16 @@ spec:
       kind: LimitRange
     - group: networking.k8s.io
       kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -118,3 +140,13 @@ spec:
       kind: LimitRange
     - group: networking.k8s.io
       kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge
