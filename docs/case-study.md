@@ -364,7 +364,7 @@ On 2026-11-07 the platform went live on the owner's Contabo VPS, at https://wayl
 
 ### What was validated on hosted production
 
-[validation.md](validation.md) is authoritative, and its hosted rows name each file. The runs up to 00:20Z on 2026-11-08 are in `docs/evidence/`, so each result below links its file, apart from the scan on GitHub, whose report is the run's artifact. PENDING marks a run planned for the night of 2026-11-07 that waits for the owner.
+[validation.md](validation.md) is authoritative, and its hosted rows name each file. The runs up to 00:20Z on 2026-11-08 are in `docs/evidence/`, so each result below links its file, apart from the release job's logs and the scan's report, which stay on GitHub, and the scans on this Mac. PENDING marks a run planned for the night of 2026-11-07 that waits for the owner.
 
 | Claim to prove | Command | Result |
 |---|---|---|
