@@ -228,23 +228,27 @@ infisical_limit_specs := {
 }
 
 # The apps beside Plane, each in a namespace of its own, on a host and a certificate of its own. These are all the Services each may
-# route to, so a console or a database beside them gets no public route, and another Service is a change here that a person reads. Each
-# host is bound to its namespace both ways, below, as policy/plane.rego binds Plane's.
+# route to, on one port each, so a console or a database beside them gets no public route, and another Service is a change here that a
+# person reads. Each host is bound to its namespace both ways, below, as policy/plane.rego binds Plane's. Each Service is bound to the
+# pods it sends to, by their app.kubernetes.io/component, and to their port, by number or by name, because a route names only a Service.
 app_routes := {
 	"frameflow": {
 		"host": "frameflow.bereket.dev",
 		"tls_secret": "frameflow-tls",
-		"backends": {"frameflow-web": 3000, "frameflow-silo": 9000},
+		"backends": {
+			"frameflow-web": {"port": 3000, "component": "web", "target_ports": {3000, "http"}},
+			"frameflow-silo": {"port": 9000, "component": "s3", "target_ports": {9000, "api"}},
+		},
 	},
 	"rillmark": {
 		"host": "rillmark.bereket.dev",
 		"tls_secret": "rillmark-tls",
-		"backends": {"rillmark": 80},
+		"backends": {"rillmark": {"port": 80, "component": "web", "target_ports": {8080, "http"}}},
 	},
 	"awushi-cloudgarden": {
 		"host": "devops.bereket.dev",
 		"tls_secret": "devops-tls",
-		"backends": {"awushi-cloudgarden": 80},
+		"backends": {"awushi-cloudgarden": {"port": 80, "component": "web", "target_ports": {8080, "http"}}},
 	},
 }
 
@@ -668,13 +672,13 @@ public_backend(service) if {
 # An app's own, from its namespace alone. Traefik reads a Service with no namespace in the route's own, and that is this one.
 public_backend(service) if {
 	app := app_routes[this_namespace]
-	app.backends[service.name] == service.port
+	app.backends[service.name].port == service.port
 	object.get(service, "kind", "Service") == "Service"
 	object.get(service, "namespace", this_namespace) == this_namespace
 }
 
 # What the message above names, for the namespace the route is in.
-routable_here := sprintf("%s's own %s", [this_namespace, concat(" and ", sort({sprintf("%v:%v", [name, port]) | some name, port in app_routes[this_namespace].backends}))]) if {
+routable_here := sprintf("%s's own %s", [this_namespace, concat(" and ", sort({sprintf("%v:%v", [name, backend.port]) | some name, backend in app_routes[this_namespace].backends}))]) if {
 	app_routes[this_namespace]
 } else := "Plane's own Services"
 
@@ -745,6 +749,49 @@ app_rate_limit(spec) if {
 		app_rate_limit_fields[field]
 	}
 	object.get(spec.rateLimit, "sourceCriterion", {}) == app_rate_limit_source
+}
+
+# A route names a Service, and the Service decides which pods, and which of their ports, that reaches. So each Service an app's route may
+# name selects the pods of its own component, the ones its NetworkPolicy and Traefik's egress are written for, and sends the route's port
+# to theirs. Without this, a frameflow-web that selected Silo's pods would give the general route all of Silo's API, which the rule above
+# keeps to presigned PUTs. Other labels in the selector only narrow it.
+service_selector := selector if {
+	selector := input.spec.selector
+	is_object(selector)
+} else := {}
+
+deny contains msg if {
+	input.kind == "Service"
+	backend := app_routes[this_namespace].backends[input.metadata.name]
+	component := object.get(service_selector, "app.kubernetes.io/component", "none")
+	component != backend.component
+	msg := sprintf("%s: selects app.kubernetes.io/component %v, and a route reaches this Service, so it selects the pods of component %s alone", [identity, component, backend.component])
+}
+
+deny contains msg if {
+	input.kind == "Service"
+	backend := app_routes[this_namespace].backends[input.metadata.name]
+	some port in object.get(input, ["spec", "ports"], [])
+	port.port == backend.port
+	target := object.get(port, "targetPort", port.port)
+	not backend.target_ports[target]
+	msg := sprintf("%s: sends port %v to %v, and a route reaches it there, so it goes to %v on the pods of component %s", [identity, port.port, target, concat(" or ", sort([sprintf("%v", [wanted]) | some wanted in backend.target_ports])), backend.component])
+}
+
+# Kubernetes writes a Service's endpoints from its selector. One with none, an ExternalName among them, sends to whatever addresses are
+# written for it, which can be any that Traefik reaches, Plane's pods among them. So every Service in an app's namespace selects its pods.
+deny contains msg if {
+	input.kind == "Service"
+	app_routes[this_namespace]
+	count(service_selector) == 0
+	msg := sprintf("%s: has no selector, and a Service in namespace %s selects the pods it sends to, so no address written by hand joins a route", [identity, this_namespace])
+}
+
+# Kubernetes writes these from each Service's selector, and Traefik sends to every slice that names a Service. So one in Git would add an
+# address to a Service past every rule that reads the Service, such as Plane's Silo behind an app's route.
+deny contains msg if {
+	input.kind in {"Endpoints", "EndpointSlice"}
+	msg := sprintf("%s: no %s in Git. Kubernetes writes them from each Service's selector, and one written here would add an address to a Service past every rule that reads it", [identity, input.kind])
 }
 
 # cert-manager makes its own Ingress for a challenge and removes it, so none belongs in Git. Traefik reads the Ingress
