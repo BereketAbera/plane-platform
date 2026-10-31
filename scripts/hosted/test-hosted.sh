@@ -866,7 +866,7 @@ outside() {
   fi
 
   # Frameflow's host passes these two before Frameflow is deployed, because Terraform owns its record and port 80 redirects every host.
-  # Its certificate comes when Frameflow does, so it has no row below yet.
+  # Its certificate comes with Frameflow's first release, and until then its row below fails.
   local host
   for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN" "$HOSTED_RILLMARK_DOMAIN" "$HOSTED_CLOUDGARDEN_DOMAIN" "$HOSTED_FRAMEFLOW_DOMAIN"; do resolves_to_the_node "$host"; done
 
@@ -886,6 +886,7 @@ outside() {
   served_certificate "$HOSTED_INFISICAL_DOMAIN" infisical-tls
   served_certificate "$HOSTED_RILLMARK_DOMAIN" rillmark-tls
   served_certificate "$HOSTED_CLOUDGARDEN_DOMAIN" devops-tls
+  served_certificate "$HOSTED_FRAMEFLOW_DOMAIN" frameflow-tls
   grafana_public
   infisical_public
 
