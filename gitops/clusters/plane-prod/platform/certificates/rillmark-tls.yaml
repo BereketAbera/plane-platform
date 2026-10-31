@@ -1,0 +1,33 @@
+# Rillmark's public certificate, with cert-manager as its only owner, as for wayline-tls. It must share the namespace of the route that
+# names it, so its solver pods run in rillmark too, and they need the NetworkPolicy acme-http01-solver there and room in that quota.
+#
+# No renewBefore, for the reason wayline-tls gives.
+#
+# ignore-healthcheck, for the same reason as wayline-tls: an order that fails would otherwise hold every later wave, and nothing in this
+# cluster needs the Secret to start. Until it appears, sniStrict refuses every handshake for this name, so the site serves nothing, and
+# the certificate rules in monitoring-extras report it.
+#
+# DNS must answer with this node before Argo CD first sees this, and port 80 must be open. An order that fails on either has its next
+# try an hour or more away. scripts/hosted/README.md says how to try again at once. The host also needs its line in
+# k3s_coredns_rewrites, in infrastructure/terraform/environments/prod/main.tf: cert-manager reads each token itself before it asks
+# Let's Encrypt, and its policy lets it reach this host only through Traefik's Service.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rillmark-tls
+  namespace: rillmark
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  secretName: rillmark-tls
+  dnsNames:
+    - rillmark.bereket.dev
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  revisionHistoryLimit: 3
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+    group: cert-manager.io

@@ -1,0 +1,69 @@
+# rillmark. Rillmark's documentation site, https://rillmark.bereket.dev: nginx serving built files from its image, with no backend,
+# database or secret. Traefik is the only way in, to the web pods on nginx's container port and to the solver for rillmark-tls, and
+# nothing else may enter. Nothing may leave but DNS, because nginx calls nothing: no other pod, no API server and no internet.
+#
+# DNS is for the netpol probe pods, which resolve a cluster name first and last, or every row from here reads INCONCLUSIVE. nginx
+# resolves no name of its own.
+#
+# No allow-prometheus: nginx here exports no metrics, and blackbox probes the site through Traefik, which needs no rule here. The
+# kubelet's probes of /healthz come from the node, which policy exempts.
+#
+# Policies see pod IPs and target ports: kube-router evaluates after DNAT, so 8080 is the container port behind the Service's 80.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: rillmark
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: rillmark
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# The public route, and the only way to the site. Traefik's half of this pair is in traefik.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web
+  namespace: rillmark
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: web } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+# cert-manager starts one of these for each HTTP-01 challenge of rillmark-tls, with this label, beside that Certificate. Each answers
+# Let's Encrypt on 8089 through Traefik, and has nothing to call, the site least of all. Its quota room is in
+# infrastructure/hosted/plane-prod/capacity.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: acme-http01-solver
+  namespace: rillmark
+spec:
+  podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8089 }

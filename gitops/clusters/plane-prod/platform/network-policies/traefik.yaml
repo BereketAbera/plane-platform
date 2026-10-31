@@ -130,3 +130,45 @@ spec:
           podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
       ports:
         - { protocol: TCP, port: 8089 }
+    # The apps' namespaces, each rule naming its pods and their container port, never a whole namespace, as for monitoring and infisical.
+    # Frameflow's will hold Hatchet, Postgres and Silo's console beside what its route reaches, and a static site's gets the same,
+    # so a pod added there later is reachable only once a rule here names it too. Rillmark's site, and the solver for rillmark-tls.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: rillmark } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: web } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: rillmark } }
+          podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+      ports:
+        - { protocol: TCP, port: 8089 }
+    # devops.bereket.dev's site, in awushi-cloudgarden, and the solver for devops-tls.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: awushi-cloudgarden } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: web } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: awushi-cloudgarden } }
+          podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+      ports:
+        - { protocol: TCP, port: 8089 }
+    # Frameflow's, before it has pods, which its quota does not allow yet, and before frameflow.yaml lets anything in: its web on
+    # 3000, and Silo on its S3 port alone, for the upload route, never Silo's console. Then the solver for frameflow-tls, once that
+    # Certificate exists.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: web } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
+          podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+      ports:
+        - { protocol: TCP, port: 8089 }

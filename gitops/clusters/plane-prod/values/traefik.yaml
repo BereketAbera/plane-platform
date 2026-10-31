@@ -46,20 +46,25 @@ tlsOptions:
     minVersion: VersionTLS12
     sniStrict: true
 
+# Both lists below are arguments of Traefik's container, so changing either rolls its pod once: the brief outage the update strategy
+# above explains, for every host at once, Wayline's and Grafana's included. So namespaces are added together, in one change, and
+# frameflow is listed before it has a route or a Certificate, so deploying it rolls nothing here.
 providers:
   kubernetesCRD:
     enabled: true
-    # Plane's route, Grafana's in monitoring, Infisical's in infisical, and the namespace that holds the TLSOption above. Nothing else here
-    # publishes anything.
-    namespaces: [plane-prod, monitoring, infisical, traefik]
+    # Plane's route, Grafana's in monitoring, Infisical's in infisical, each app's in its own namespace (Frameflow's, Rillmark's, and
+    # devops.bereket.dev's in awushi-cloudgarden), and the namespace that holds the TLSOption above. Nothing else here publishes anything.
+    namespaces: [plane-prod, monitoring, infisical, frameflow, rillmark, awushi-cloudgarden, traefik]
     # So a default TLSOption in a namespace with a route cannot lower the minimum version.
     defaultTLSResourcesNamespace: traefik
   # Only for cert-manager's HTTP-01 solver, which makes a temporary Ingress and has no IngressRoute shim, in the namespace of each
   # Certificate. Every route is still an IngressRoute, and policy/hosted.rego refuses an Ingress in Git.
+  # Each Certificate sits beside the route that names it, so this list is the route namespaces again, for wayline-tls, grafana-tls,
+  # infisical-tls, rillmark-tls, devops-tls, and frameflow-tls once Frameflow is deployed.
   kubernetesIngress:
     enabled: true
     ingressClass: traefik
-    namespaces: [plane-prod, monitoring, infisical]
+    namespaces: [plane-prod, monitoring, infisical, frameflow, rillmark, awushi-cloudgarden]
     # The status it would copy is empty on a ClusterIP Service, and cert-manager does not read it.
     publishedService:
       enabled: false

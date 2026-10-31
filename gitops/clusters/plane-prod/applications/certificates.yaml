@@ -1,6 +1,7 @@
-# The ClusterIssuers and Certificates wayline-tls, grafana-tls and infisical-tls. Project platform, because a ClusterIssuer is cluster-scoped. They ignore their
-# own health, so an ACME outage or a closed firewall cannot hold monitoring or Infisical behind this wave, and the certificate
-# rules in rules-hosted.yaml say when it fails. No finalizer: the certificate is rate-limited, so it should not be thrown away.
+# The ClusterIssuers and Certificates wayline-tls, grafana-tls, infisical-tls, rillmark-tls and devops-tls. Project platform, because a
+# ClusterIssuer is cluster-scoped. They ignore their own health, so an ACME outage or a closed firewall cannot hold monitoring or Infisical
+# behind this wave, and the certificate rules in rules-hosted.yaml say when it fails. No finalizer: the certificate is rate-limited, so it
+# should not be thrown away.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

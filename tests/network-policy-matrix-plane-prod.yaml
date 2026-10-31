@@ -1,6 +1,6 @@
 # Expected network reachability on hosted production, for scripts/test-netpol.sh. WAYLINE_TARGET=plane-prod picks this file, and
-# make remote-test runs it. Run only after the network-policies Application is Synced, and once Plane is deployed, or its rows read
-# INCONCLUSIVE, which is not a pass.
+# make remote-test runs it. Run only after the network-policies Application is Synced, and once Plane and the two static sites are
+# deployed, or their rows read INCONCLUSIVE, which is not a pass.
 #
 # How a row runs is written at the head of tests/network-policy-matrix.yaml and scripts/test-netpol.sh. In short: a NEW short-lived
 # pod in from.ns with from.labels, never hostNetwork. kube-router rejects what a policy denies, where the local cluster drops it, so
@@ -17,8 +17,9 @@
 # - api and blackbox reach Traefik on 443. The web entrypoint only redirects, so nothing but cert-manager's self-check needs 80.
 # - Argo CD reads GitHub on 443. No Git remote on a local network.
 # - Alertmanager reaches public 443, for Telegram and Healthchecks.
-# - New: cert-manager, the HTTP-01 solvers in the three namespaces with a Certificate, the node's own ports from a pod. No frameflow rows:
-#   its quota is no pods, so none can start.
+# - New: cert-manager, the HTTP-01 solvers in each namespace with a Certificate, the node's own ports from a pod, and the two static sites,
+#   rillmark and awushi-cloudgarden, which only Traefik reaches and which reach nothing but DNS. No frameflow rows yet: its quota is still
+#   no pods, so none can start. They come with the pull request that deploys it.
 #
 # Known limit, deliberately not a row: api is allowed to Traefik, and Traefik routes by Host header, so api could ask for any host
 # Traefik serves. NetworkPolicy cannot see that. scripts/hosted/test-hosted.sh shows the UI hosts answer 404 to it. Grafana's and Infisical's
@@ -34,6 +35,8 @@ cases:
   - { from: { ns: argocd, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
   - { from: { ns: cert-manager, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
   - { from: { ns: monitoring-agents, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: rillmark, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: awushi-cloudgarden, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
 
   # plane-prod: Traefik to the app
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-web.plane-prod.svc.cluster.local, port: 3000 }, expect: allow }
@@ -193,7 +196,8 @@ cases:
   - { from: { ns: infisical, labels: { app.kubernetes.io/component: backup } }, to: { host: infisical-redis.infisical.svc.cluster.local, port: 6379 }, expect: deny }
   - { from: { ns: infisical, labels: { probe: unlabelled } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: deny }
 
-  # traefik: Plane, Grafana, Infisical's server and the API server. Nothing else has a route, and policy refuses it the other consoles as well
+  # traefik: Plane, Grafana, Infisical's server and the API server, and the static sites in their own rows at the end. Nothing else has a
+  # route, and policy refuses it the other consoles as well
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "CRD and Ingress providers" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: allow, note: "the public route. Service 80 is pod port 3000" }
@@ -292,3 +296,36 @@ cases:
   - { from: { ns: kube-system, labels: { app.kubernetes.io/name: metrics-server } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
   - { from: { ns: kube-system, labels: { app.kubernetes.io/name: metrics-server } }, to: { host: 5.253.234.127, port: 10250 }, expect: allow, note: "kubelet" }
   - { from: { ns: kube-system, labels: { app.kubernetes.io/name: metrics-server } }, to: { host: plane-api.plane-prod.svc.cluster.local, port: 8000 }, expect: deny }
+
+  # rillmark: Traefik reaches the site, nothing else does, and the site and its solver reach nothing but DNS. The row from kube-system is
+  # the one whose source no policy limits, so it alone shows the site's own ingress rule refusing
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: allow, note: "the public route. Service 80 is pod port 8080" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny, note: "only Traefik's pods, by the site's own ingress rule" }
+  - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: api } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny, note: "no tenant reaches another" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny, note: "no metrics here, and blackbox goes through Traefik" }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: 5.253.234.127, port: 10250 }, expect: deny, note: "the kubelet" }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: traefik.traefik.svc.cluster.local, port: 443 }, expect: deny, note: "unlike Plane's api, it never dials a public host" }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: deny, note: "nor the other site" }
+  - { from: { ns: rillmark, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: rillmark, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny }
+
+  # awushi-cloudgarden, devops.bereket.dev's site: the same as rillmark
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: allow, note: "the public route. Service 80 is pod port 8080" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: deny, note: "only Traefik's pods, by the site's own ingress rule" }
+  - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: api } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: deny, note: "no tenant reaches another" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: deny, note: "no metrics here, and blackbox goes through Traefik" }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: 5.253.234.127, port: 10250 }, expect: deny, note: "the kubelet" }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: traefik.traefik.svc.cluster.local, port: 443 }, expect: deny, note: "unlike Plane's api, it never dials a public host" }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny, note: "nor the other site" }
+  - { from: { ns: awushi-cloudgarden, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: awushi-cloudgarden, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: deny }
