@@ -326,6 +326,25 @@ plant_hosted_infisical_public_sharing_on() { replace_first "$INFISICAL_VALUES" '
 plant_hosted_infisical_refusal_read_without_reach() { replace_first scripts/hosted/test-hosted.sh 'if \[\[ "\$1" != PASS \]\]; then' 'if false; then'; }
 plant_hosted_terraform_import_unread() { replace_first scripts/hosted/host-terraform.sh '\(if \.change\.importing then "import" else "" end\)' '""'; }
 plant_hosted_terraform_without_its_state() { replace_first scripts/hosted/host-terraform.sh 'if \[\[ -s "\$1" \|\| "\$\{HOST_TERRAFORM_FIRST_STATE:-\}" == yes \]\]; then return 0; fi' 'return 0'; }
+# Rillmark's real route, standing for each app's, with what policy/hosted.rego's app_routes table exists to refuse on it.
+RILLMARK_ROUTE=gitops/clusters/plane-prod/platform/rillmark/ingressroute.yaml
+plant_hosted_app_on_another_host() { replace_first "$RILLMARK_ROUTE" 'Host\(`rillmark\.bereket\.dev`\)' 'Host(`grafana.bereket.dev`)'; }
+plant_hosted_app_route_to_plane() { replace_first "$RILLMARK_ROUTE" '- name: rillmark\n(\s+)port: 80' '- name: plane-web\n\1port: 3000\n\1namespace: plane-prod'; }
+plant_hosted_app_without_its_certificate() { replace_first "$RILLMARK_ROUTE" 'secretName: rillmark-tls' 'secretName: wayline-tls'; }
+# A Middleware beside the site's route that asks Plane's Silo first, which no backend list names, and hands back what it answers.
+plant_hosted_app_middleware_past_its_routes() {
+  cat >gitops/clusters/plane-prod/platform/rillmark/middleware.yaml <<'YAML'
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: planted
+  namespace: rillmark
+spec:
+  forwardAuth:
+    address: http://plane-minio.plane-prod.svc.cluster.local:9000/
+YAML
+}
+plant_hosted_app_host_in_a_local_tree() { printf '# see https://rillmark.bereket.dev\n' >>helm/values/traefik.yaml; }
 # What the check adds for a solver, and no more: this is over the operator's surge and under one solver.
 plant_hosted_no_quota_room_for_a_solver() { yq -i '.quotas.monitoring."requests.memory" = "1690Mi"' infrastructure/hosted/plane-prod/capacity.yaml; }
 plant_hosted_node_port() {
@@ -648,6 +667,11 @@ CONTROL_SKIP_CHARTS=no control hosted-infisical-public-sharing-on validate-manif
 control hosted-infisical-refusal-read-without-reach lint.sh "hosted test verdict self check FAILED" plant_hosted_infisical_refusal_read_without_reach
 control hosted-terraform-import-unread lint.sh "host Terraform plan check self check FAILED" plant_hosted_terraform_import_unread
 control hosted-terraform-without-its-state lint.sh "host Terraform plan check self check FAILED" plant_hosted_terraform_without_its_state
+control hosted-app-on-another-host validate-manifests.sh 'must be limited to Host(`rillmark.bereket.dev`)' plant_hosted_app_on_another_host
+control hosted-app-route-to-plane validate-manifests.sh "reaches plane-web:3000" plant_hosted_app_route_to_plane
+control hosted-app-without-its-certificate validate-manifests.sh "must name only secretName rillmark-tls" plant_hosted_app_without_its_certificate
+control hosted-app-middleware-past-its-routes validate-manifests.sh "a Middleware in namespace rillmark may only be a rateLimit" plant_hosted_app_middleware_past_its_routes
+control hosted-app-host-in-a-local-tree check-cluster-separation.sh "a hosted app's host in a local tree" plant_hosted_app_host_in_a_local_tree
 CONTROL_SKIP_CHARTS=no control hosted-no-quota-room-for-a-solver check-capacity.sh "for the largest rollout, Job or solver), and its quota is 1690Mi" plant_hosted_no_quota_room_for_a_solver
 control hosted-node-port-in-the-tree validate-manifests.sh "no NodePort Service" plant_hosted_node_port
 control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalancer Service" plant_hosted_load_balancer_in_the_render
