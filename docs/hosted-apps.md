@@ -508,15 +508,19 @@ token's CR, then the API, the worker and the CronJobs, and the upload route.
    ```bash
    WAYLINE_TARGET=plane-prod CONFIRM=plane-prod PLAN_ONLY=yes INFISICAL_URL=http://127.0.0.1:<port> scripts/infisical-bootstrap.sh
    ```
-   Then apply, and bundle what changed:
+   Then apply, bundle what changed, and back Infisical up at once:
    ```bash
    make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
    make remote-bundle TARGET=plane-prod
+   make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=infisical     # so a dump holds frameflow-prod
    ```
    Bootstrap gives Frameflow its quota, makes `/srv/wayline/backups/frameflow` and Secret `restic-password` in the namespace, and runs
    Infisical's bootstrap. That adds project `frameflow-prod`, its read-only identity and its Kubernetes Auth, bound to namespace
    `frameflow` alone, and the seed writes each Frameflow value that is missing, generated or from the owner's files. The identity's id
-   goes into Secret `plane-infisical-identity` in the namespace, where `InfisicalAuth` reads it. Before the next merge:
+   goes into Secret `plane-infisical-identity` in the namespace, where `InfisicalAuth` reads it. Until a dump of Infisical holds
+   `frameflow-prod`, restoring Infisical brings back a database older than it, and restored mode then stops before prod's CA and identity,
+   so the backup comes straight after: [after a lost VPS](#frameflow-backups-and-restore) says what to do if one is restored anyway.
+   Before the next merge:
    ```bash
    kc -n frameflow get resourcequota budget -o jsonpath='{.spec.hard.pods}{"\n"}'       # 16, where it was 0
    kc -n frameflow get secret plane-infisical-identity restic-password
@@ -1014,6 +1018,22 @@ TARGET=plane-prod bash -c 'HOSTED_NO_CLUSTER=yes; source scripts/hosted/lib.sh
 
 The copy is a full restic repository, under the same password and with the same snapshots, `--host frameflow --tag wayline`, because the
 pull made it with `--copy-chunker-params`.
+
+**If Infisical's dump is older than project `frameflow-prod`,** as one from before the first deploy's bootstrap is, its restored mode stops
+before it refreshes anything of prod's: Terraform wants to make Frameflow's five resources, and restored mode makes nothing. Bring prod back
+alone, then make Frameflow's again as a first bootstrap does, with Infisical forwarded as `make remote-ui TARGET=plane-prod UI=infisical`
+does. Not tried:
+
+```bash
+WAYLINE_TARGET=plane-prod CONFIRM=plane-prod INFISICAL_RESTORED=yes HOSTED_RESTORE_WITHOUT_APPS=yes INFISICAL_URL=http://127.0.0.1:<port> scripts/infisical-bootstrap.sh
+WAYLINE_TARGET=plane-prod CONFIRM=plane-prod INFISICAL_URL=http://127.0.0.1:<port> scripts/infisical-bootstrap.sh
+```
+
+`HOSTED_RESTORE_WITHOUT_APPS=yes` is refused without `INFISICAL_RESTORED=yes`, because anywhere else Terraform would destroy the project
+it leaves out, and the first command refuses too if the dump holds `frameflow-prod` after all. The second makes the project, its reader and
+its Kubernetes Auth, and seeds it: the keysets and the owner's sha256 from this machine's files, and a new value for everything else. So
+mint the token again, and a Hatchet Postgres or a Silo that kept its volume needs the change [secrets](#frameflow-secrets) describes for its
+password, or for its root keys.
 
 **If the keysets are lost too,** Hatchet's dump cannot be used, and the `keyset` step stops. Remove the old keyset files, make new ones
 with `make remote-frameflow-inputs TARGET=plane-prod`, and replace their values in Infisical by hand, because the seed never overwrites
