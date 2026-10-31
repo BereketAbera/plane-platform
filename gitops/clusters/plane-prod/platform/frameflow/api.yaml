@@ -95,8 +95,8 @@ spec:
           # args and no command, so the image's tini stays in front and passes SIGTERM on, as Frameflow's README asks of every role. The
           # image's own default, written out, so that each role here says what it runs.
           args: [node, --import, tsx, src/api/server.ts]
-          # Its settings, the owner's keys, the callback secret, Silo's app user, and the Hatchet client token. The API, the worker and
-          # the CronJobs all check AUTH_MODE=owner against the owner's keys when they start.
+          # Its settings, the owner's keys, the callback secret, Silo's app user, and the Hatchet client token. It alone reads
+          # frameflow-app, the one Secret that holds the owner's keys.
           envFrom:
             - configMapRef:
                 name: frameflow-env
@@ -104,6 +104,14 @@ spec:
                 name: frameflow-app
             - secretRef:
                 name: hatchet-client-token
+          # Visitors browse and watch, and only the holder of the owner's access key uploads, edits or deletes. Unset, every visitor would
+          # act as the owner, but Frameflow then refuses the owner's keys, so with frameflow-app the API would not start rather than open.
+          # Here and not in config.yaml, because the other roles sign no one in and are given no such keys. The user the owner acts as.
+          env:
+            - name: AUTH_MODE
+              value: owner
+            - name: OWNER_USER_ID
+              value: local-development
           ports:
             - name: http
               containerPort: 4000

@@ -63,12 +63,12 @@ spec:
               image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
               # args and no command, so the image's tini stays in front. --apply deletes: without it, cleanup only prints its plan.
               args: [node, --import, tsx, src/cleanup.ts, --apply]
-              # The owner's keys too, because every role checks AUTH_MODE=owner against them when it starts.
+              # Its settings and Silo's app user. Not the owner's keys or the callback secret: it signs no one in and reports to no one.
               envFrom:
                 - configMapRef:
                     name: frameflow-env
                 - secretRef:
-                    name: frameflow-app
+                    name: frameflow-maintenance
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
@@ -149,11 +149,12 @@ spec:
             - name: reconcile
               image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
               args: [node, --import, tsx, src/reconcile.ts]
+              # As cleanup's, and the token.
               envFrom:
                 - configMapRef:
                     name: frameflow-env
                 - secretRef:
-                    name: frameflow-app
+                    name: frameflow-maintenance
                 - secretRef:
                     name: hatchet-client-token
               securityContext:
