@@ -43,9 +43,10 @@ Each app's code and CI stay in its own repository, and nothing there can change 
 | DNS A record | `vercel_dns_record.rillmark` in `infrastructure/terraform/environments/prod-host` | `vercel_dns_record.cloudgarden` | Terraform, through `scripts/hosted/host-terraform.sh` |
 | Image pins | the manifest, and the same line in `policy/hosted-images.txt` | the same | a promotion pull request |
 
-Each AppProject deploys to its own namespace only, may create nothing cluster-scoped, and may not create a NetworkPolicy, ResourceQuota or
-LimitRange, so an app cannot widen what contains it. `policy/hosted.rego`'s `app_routes` table binds each host to its namespace, its
-certificate and its Service, both ways.
+Each AppProject deploys to its own namespace only, may create nothing cluster-scoped, and may not create a NetworkPolicy, ResourceQuota,
+LimitRange or any of cert-manager's kinds, so an app cannot widen what contains it or ask for another host's certificate. Its certificate
+comes from the `certificates` Application instead. `policy/hosted.rego`'s `app_routes` table binds each host to its namespace and its
+certificate, both ways, and its route to its own Services, each of which must select the pods of one component and send to their port.
 
 ## What they share with Wayline, and what they do not
 
@@ -140,10 +141,18 @@ nothing else hosted Argo CD reads names it, and the list holds it once. It also 
 
 ## The first deploy
 
-Order matters, and every step but the merge runs from this machine.
+Order matters, and it takes two merges. Terraform's state and the kubeconfig live in this checkout, which applies what `main` holds, and
+Argo CD must find the namespaces, projects and pull Secrets that the apply makes before it reads the apps' manifests. Every step but the
+two merges runs from this machine.
 
 1. **The images.** Each app's `images.yml` has run on its `main`, and the pins here name those digests and not the placeholder.
-2. **DNS.** `vercel dns ls bereket.dev` first, because a record made by hand would sit beside Terraform's. Then plan, which should add the
+   `validate-manifests.sh` refuses the placeholder digest of zeros anywhere in `gitops/clusters/plane-prod/` or `policy/hosted-images.txt`,
+   so the manifests' pull request stays red until a promotion replaces each.
+2. **The first merge: what Terraform and the bootstrap read.** `infrastructure/hosted/plane-prod/`, both Terraform roots, the AppProjects
+   in the bootstrap chart, `policy/` and its checks, and `scripts/hosted/pull-secrets.sh` with the bootstrap step and the make target that
+   run it. Argo CD reads none of it: the release copies the bootstrap chart onto `deploy/plane-prod`, and only Terraform installs that.
+   Then pull `main` into this checkout.
+3. **DNS.** `vercel dns ls bereket.dev` first, because a record made by hand would sit beside Terraform's. Then plan, which should add the
    three app records and change nothing else, and apply with `EXPECT` set to what the plan printed. `apply` makes its own plan again, and
    applies nothing unless that plan's changes are exactly the ones in `EXPECT`:
    ```bash
@@ -154,16 +163,23 @@ Order matters, and every step but the merge runs from this machine.
    ```
    Wait until `dig +short rillmark.bereket.dev` and `dig +short devops.bereket.dev` print only `5.253.234.127`.
    [Its README](../infrastructure/terraform/environments/prod-host/README.md) has the rest.
-3. **The cluster.** Namespaces, quotas, LimitRanges, the CoreDNS rewrites and the AppProjects come from Terraform, and the pull Secrets
-   from `scripts/hosted/pull-secrets.sh`, all through `make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod`. It applies with
-   `-auto-approve` and shows no plan, so read one first, as
+4. **The cluster.** Namespaces, quotas, LimitRanges, the CoreDNS rewrites and the AppProjects come from Terraform, and Secret `ghcr-pull`
+   in both sites' namespaces from `scripts/hosted/pull-secrets.sh`, all through `make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod`.
+   It applies with `-auto-approve` and shows no plan, so read one first, as
    [`environments/prod/README.md`](../infrastructure/terraform/environments/prod/README.md) says, and expect `0 to destroy`. Terraform's
    state exists once, in this checkout, and an apply from a tree that lacks another change on `main` reverts it. Then
-   `make remote-bundle TARGET=plane-prod`, because the state changed.
-4. **The merge.** Only now, because Argo CD must find the namespaces and projects, and cert-manager the DNS records. Root syncs in waves:
-   `network-policies` at -10, `traefik` at -9, which rolls once, `certificates` at -7, `monitoring-extras` at -5, then both sites at 1.
-   Each Probe syncs before its site, so a first deploy can page once before its route answers.
-5. **Verify**, as the next section says, and with `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside psa netpol"`.
+   `make remote-bundle TARGET=plane-prod`, because the state changed. Before the next merge, see that what it waits for is there:
+   ```bash
+   kc -n rillmark get secret ghcr-pull && kc -n awushi-cloudgarden get secret ghcr-pull
+   kc -n argocd get appproject rillmark awushi-cloudgarden frameflow
+   ```
+   Without the Secret a site's first pod fails its pull with `401`, and its Application reads Progressing, then Degraded once the
+   Deployment passes its progress deadline, which fails the root's sync at wave 1, until `make remote-pull-secrets TARGET=plane-prod
+   CONFIRM=plane-prod` runs.
+5. **The second merge: the manifests.** Only now, because Argo CD must find the namespaces, projects and Secrets, and cert-manager the DNS
+   records. Root syncs in waves: `network-policies` at -10, `traefik` at -9, which rolls once, `certificates` at -7, `monitoring-extras` at -5,
+   then both sites at 1. Each Probe syncs before its site, so a first deploy can page once before its route answers.
+6. **Verify**, as the next section says, and with `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside psa netpol"`.
 
 ## Checking status
 
@@ -368,7 +384,9 @@ What is already in place, shared with the static sites' change:
 - NetworkPolicy `default-deny` alone, in `network-policies/frameflow.yaml`, and Traefik's egress rules to its web on 3000, to Silo's S3
   port 9000 for the upload route, and to its solver on 8089, which nothing in the namespace admits yet.
 - AppProject `frameflow`, its row in `policy/hosted.rego`'s `app_routes`, and the namespace in both of Traefik's provider lists, so its
-  deploy rolls nothing in Traefik.
+  deploy rolls nothing in Traefik. The row already holds its two Services to their pods: `frameflow-web` on port 3000 to component `web`
+  on 3000 or `http`, and `frameflow-silo` on 9000 to component `s3` on 9000 or `api`. Its Certificate must be the one
+  `platform/certificates` would write for its host, and Pod Security is asked about its namespace by `make remote-test`.
 - Its DNS record and CoreDNS rewrite. Once that record is applied, `frameflow.bereket.dev` resolves to the VPS: http redirects to https,
   and https fails at the handshake, because it has no certificate yet. It no longer reaches Vercel.
 
