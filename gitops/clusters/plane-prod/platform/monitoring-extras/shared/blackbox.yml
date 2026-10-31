@@ -1,9 +1,10 @@
 # Body assertions are mandatory. With no endpoints Traefik can fall through to the catch-all web
 # route, which answers 200 with HTML, so a status-only probe would pass while the API is gone.
 #
-# Every target is https://wayline.bereket.dev, https://grafana.bereket.dev or https://infisical.bereket.dev. Inside the cluster CoreDNS
-# rewrites those names to Traefik's Service, so a probe crosses the same TLS, certificate and routes as a browser, without leaving the node.
-# The certificate is verified, so a staging certificate or a failed renewal reads as a failed probe. SNI and Host come from the target.
+# Every target is a public host of this cluster: https://wayline.bereket.dev, https://grafana.bereket.dev, https://infisical.bereket.dev,
+# https://rillmark.bereket.dev or https://devops.bereket.dev. Inside the cluster CoreDNS rewrites those names to Traefik's Service, so a
+# probe crosses the same TLS, certificate and routes as a browser, without leaving the node. The certificate is verified, so a staging
+# certificate or a failed renewal reads as a failed probe. SNI and Host come from the target.
 modules:
   http_html:
     prober: http
