@@ -30,7 +30,7 @@ on:
         default: web
         type: string
       digest:
-        description: The digest to run, sha256:..., as the app's images.yml run on main recorded it. For the static sites, the index.
+        description: The digest to run, sha256:..., as the app's images.yml run on main recorded it. For the static sites, the linux/amd64 one.
         required: true
         type: string
       tag:
