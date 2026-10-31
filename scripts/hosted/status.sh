@@ -96,7 +96,7 @@ if [[ "$reachable" == yes ]]; then
   kc get clusterissuer 2>/dev/null || true
 
   section "Backups"
-  for namespace in infisical plane-prod; do
+  for namespace in infisical plane-prod frameflow; do
     kc -n "$namespace" get cronjob plane-backup -o json 2>/dev/null |
       jq -r --arg ns "$namespace" '"  \($ns): last success \(.status.lastSuccessfulTime // "never"), last started \(.status.lastScheduleTime // "never")"' ||
       printf '  %s: no CronJob yet\n' "$namespace"

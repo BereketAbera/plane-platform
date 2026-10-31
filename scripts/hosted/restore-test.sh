@@ -5,13 +5,14 @@
 #   TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/restore-test.sh   on the VPS, from the node's own repositories
 #   TARGET=plane-prod RESTORE_ON=kind scripts/hosted/restore-test.sh      in the local cluster, from this machine's off-VPS copy, which
 #                                                                         is what makes off-VPS status complete. Touches no VPS
-#   ONLY=plane-prod or ONLY=infisical    one of them, in place of both
-#   KEEP=yes                             leave the namespace, to look at it. Then delete it by hand
+#   ONLY=plane-prod, ONLY=infisical or ONLY=frameflow   one of them, in place of lib-restic.sh's BACKUP_NAMESPACES, which the pull takes
+#   KEEP=yes                                            leave the namespace, to look at it. Then delete it by hand
 #
 # What it proves, from infrastructure/hosted/plane-prod/restore-test/prove.sh, in a pod of the isolated namespace:
 #   every file against the hashes sealed with it, the objects among them,
-#   the dump restores into an empty Postgres, on a socket in that pod and with no TCP at all,
-#   row counts equal what the backup recorded, Plane's content hashes too, and every row marked uploaded has its object.
+#   the dump restores into an empty Postgres, on a socket in that pod and with no TCP at all, Hatchet's for Frameflow,
+#   row counts equal what the backup recorded, Plane's content hashes too, and every row marked uploaded has its object,
+#   and for Frameflow that its SQLite copy is the one that passed integrity_check, and every object its rows name is there.
 # And from here:
 #   the namespace is default deny, and a pod in it cannot reach live data, the API or DNS, while the node reaches each,
 #   the keys' fingerprints match the live ones, so this backup and its keys are a pair,
@@ -133,6 +134,9 @@ CURL_IMAGE="docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472
 RESTIC_IMAGE="$(yq -r '.spec.jobTemplate.spec.template.spec.containers[] | select(.name == "seal") | .image' "$BACKUP_MANIFESTS/plane-prod.yaml")"
 SCRATCH="${RESTORE_SCRATCH:-40Gi}"
 SETTLE="${RESTORE_SETTLE_SECONDS:-15}"
+# Hatchet's master keyset as the owner made it, from which Frameflow's Infisical project was seeded and a lost VPS would be rebuilt. The
+# name is the one scripts/hosted/frameflow-inputs.sh writes and scripts/infisical-seed.sh reads.
+FRAMEFLOW_MASTER_KEYSET="$LOCAL_DIR/frameflow/HATCHET_MASTER_KEYSET"
 
 STAMP="$(date -u +%Y%m%d%H%M%S)"
 NS="${RESTORE_NAMESPACE:-restore-test-$STAMP}"
@@ -147,7 +151,7 @@ if [[ "$RESTORE_ON" == kind ]]; then
 else
   hosted_verify
   hosted_require_confirm "this restores a backup into a temporary namespace"
-  LIVE_NAMESPACES="plane-prod infisical"
+  LIVE_NAMESPACES="plane-prod infisical frameflow"
   [[ -s "$RESTIC_PASSWORD_LOCAL" ]] || die "${RESTIC_PASSWORD_LOCAL#"$ROOT"/} is missing. The recovery bundle holds a copy."
 fi
 
@@ -202,6 +206,8 @@ live_fingerprint() {
 live_postgres_pod() { # namespace: StatefulSet pod and container, if this namespace has one
   case "$1" in
     infisical) printf 'infisical-postgres-0 postgres' ;;
+    # Hatchet's. Frameflow's own database is SQLite, on a volume no pod outside its namespace can mount.
+    frameflow) printf 'hatchet-postgres-0 postgres' ;;
     *) printf 'plane-pgdb-wl-0 plane-pgdb' ;;
   esac
 }
@@ -229,11 +235,11 @@ scratch_databases_left() {
   done
 }
 
-# Rows a person could change while this runs, so a difference warns and does not fail. Recorded either way.
+# Rows a person could change while this runs, so a difference warns and does not fail. Recorded either way. Plane's tables alone.
 live_counts() {
   local namespace pod container
   for namespace in $LIVE_NAMESPACES; do
-    [[ "$namespace" != infisical ]] || continue
+    case "$namespace" in infisical | frameflow) continue ;; esac
     read -r pod container <<<"$(live_postgres_pod "$namespace")"
     kc -n "$namespace" get pod "$pod" >/dev/null 2>&1 || continue
     # shellcheck disable=SC2016  # expanded in the pod
@@ -256,6 +262,8 @@ plane-prod plane-minio 9000
 plane-dev plane-pgdb 5432
 plane-prod-sim plane-pgdb 5432
 infisical infisical-postgres 5432
+frameflow hatchet-postgres 5432
+frameflow frameflow-silo 9000
 EOF
   printf '%s:443\n' "$(kc -n default get service kubernetes -o jsonpath='{.spec.clusterIP}')"
   printf '%s:53\n' "$(kc -n kube-system get service kube-dns -o jsonpath='{.spec.clusterIP}')"
@@ -320,8 +328,10 @@ probe_no_route() {
 
 # ------ One restore ----------------------------------------------------------------------------------------------------
 
-postgres_image_of() { # source
-  yq -r '.spec.jobTemplate.spec.template.spec.initContainers[] | select(.name == "postgres") | .image' "$BACKUP_MANIFESTS/$1.yaml"
+postgres_image_of() { # source: the image of the container that dumps its Postgres, which is that server's own version
+  local container=postgres
+  [[ "$1" != frameflow ]] || container=hatchet-postgres
+  CONTAINER="$container" yq -r '.spec.jobTemplate.spec.template.spec.initContainers[] | select(.name == strenv(CONTAINER)) | .image' "$BACKUP_MANIFESTS/$1.yaml"
 }
 
 # Stream a restored copy from this machine into the pod's receive container. It waits for the marker, then prove runs.
@@ -375,6 +385,24 @@ check_fingerprints() { # source
         row PASS "plane-prod: backup and SECRET_KEY are a pair" "the fingerprints match"
       else
         row FAIL "plane-prod: backup and SECRET_KEY are a pair" "the fingerprints differ, so encrypted rows in this dump would not decrypt"
+      fi
+      ;;
+    frameflow)
+      # Its manifest holds neither of the two above, and awk closes up the empty fields, so its own is the first on the line. On the VPS
+      # the keyset is the one Hatchet runs with. In kind it is this machine's file, the copy a lost VPS would be rebuilt from.
+      if [[ "$RESTORE_ON" == kind ]]; then
+        if [[ ! -s "$FRAMEFLOW_MASTER_KEYSET" ]]; then
+          row BLOCKED "frameflow: backup and Hatchet's master keyset are a pair" "no ${FRAMEFLOW_MASTER_KEYSET#"$ROOT"/} on this machine to compare with"
+          return 0
+        fi
+        live="$(tr -d '\r\n' <"$FRAMEFLOW_MASTER_KEYSET" | hosted_sha256 | cut -c1-16)"
+      else
+        live="$(kc -n frameflow get secret hatchet-server -o json 2>/dev/null | jq -j '.data.SERVER_ENCRYPTION_MASTER_KEYSET // empty | @base64d' | hosted_sha256 | cut -c1-16 || true)"
+      fi
+      if [[ -n "$plane_fp" && "$live" == "$plane_fp" ]]; then
+        row PASS "frameflow: backup and Hatchet's master keyset are a pair" "the fingerprints match"
+      else
+        row FAIL "frameflow: backup and Hatchet's master keyset are a pair" "the fingerprints differ, or the backup recorded none, so Hatchet could not read this dump's tokens and secrets"
       fi
       ;;
   esac
@@ -437,11 +465,13 @@ restore_one() { # source
 
 # ------ The run --------------------------------------------------------------------------------------------------------
 
-SOURCES="${ONLY:-infisical plane-prod}"
+# What the pull takes off the VPS, so a namespace joins both at once: Frameflow only once its first backup is sealed, or every run here
+# would read BLOCKED. ONLY=frameflow asks for it before then.
+SOURCES="${ONLY:-$BACKUP_NAMESPACES}"
 for source in $SOURCES; do
   case "$source" in
-    infisical | plane-prod) ;;
-    *) die "ONLY takes infisical or plane-prod, and got '$source'" ;;
+    infisical | plane-prod | frameflow) ;;
+    *) die "ONLY takes infisical, plane-prod or frameflow, and got '$source'" ;;
   esac
 done
 
