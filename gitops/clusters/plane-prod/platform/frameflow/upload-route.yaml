@@ -1,0 +1,28 @@
+# Release B (kustomization.yaml). The browser's uploads: the API signs a PUT of each source to
+# https://frameflow.bereket.dev/frameflow-media/videos/<id>/source/source.mp4, path style, and this sends exactly that to Silo, with the
+# Host header unchanged, because the signature covers it. policy/hosted.rego allows a route to frameflow-silo this rule alone, word for
+# word, and no Middleware, so no other method or path reaches Silo's API from the internet, and its console has no route at all.
+#
+# No buffering limit either: it would hold a whole video in Traefik. The size is the API's to check, against the size the upload
+# declares before it signs the URL, and the size Silo holds after. The rule is longer than the web route's, so Traefik tries it first.
+# Release B, with the API that signs these URLs.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: frameflow-uploads
+  labels:
+    app.kubernetes.io/name: frameflow-silo
+    app.kubernetes.io/component: s3
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/frameflow-media/videos/`)
+      services:
+        - name: frameflow-silo
+          port: 9000
+  tls:
+    secretName: frameflow-tls
