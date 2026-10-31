@@ -35,6 +35,7 @@ TARGET=plane-prod scripts/hosted/host-terraform.sh plan
 TARGET=plane-prod CONFIRM=plane-prod \
   EXPECT='create vercel_dns_record.cloudgarden, create vercel_dns_record.frameflow, create vercel_dns_record.rillmark' \
   scripts/hosted/host-terraform.sh apply
+# Once all six records are in state and nothing changes, the plan ends: This plan: nothing.
 ```
 
 If the plan shows anything else, stop and read it. `apply` makes its own plan again and refuses, applying nothing, unless its changes are

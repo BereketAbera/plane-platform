@@ -49,7 +49,7 @@ Read this table before assuming anything below was provisioned by Terraform.
 | **The VPS: its disk, its OS, its contract** | The owner, at Contabo | Ordered by hand. Root `prod-host` holds it as a data source only, because the provider's resource can reinstall the disk or cancel the contract, and `prevent_destroy` stops neither |
 | The node's users, SSH, packages, sysctls, firewall and K3s | `scripts/hosted/provision-node.sh` and `scripts/hosted/edge.sh` | Over SSH, from the files in `infrastructure/hosted/plane-prod/`. See [install.md](install.md#hosted-production) |
 | Every other record in `bereket.dev` | The owner, on Vercel | Vercel's provider acts on the record ids it holds and never lists the zone, so nothing else there can change |
-| Hosted Secrets: the deploy key, secret zero, the restic password, Grafana's login, alert delivery | `scripts/hosted/bootstrap.sh` and the scripts it calls | Files in `.local/hosted/plane-prod/`, applied by `kubectl`, never in Terraform state |
+| Hosted Secrets: the deploy key, secret zero, the restic password, Grafana's login, the static sites' `ghcr-pull`, alert delivery | `scripts/hosted/bootstrap.sh` and the scripts it calls | Files in `.local/hosted/plane-prod/`, applied by `kubectl`, never in Terraform state |
 | What hosted Argo CD syncs | CI's `release-plane-prod` job | Branch `deploy/plane-prod`. See [argocd.md](argocd.md#hosted-production) |
 | Anything on Hetzner or Cloudflare | Nobody | Pass 1 planned both, and nothing was made on either. Hosted production went to Contabo, with DNS on Vercel |
 
@@ -448,6 +448,6 @@ in, and a destroyed project's slug stays reserved for 14 days. Do not use it to 
 |---|---|
 | `prod` | Delete the namespaces, and with them every claim. The volumes stay, on reclaim `Retain`, but nothing would be bound to them. The root Application has no finalizer, so the children would not cascade, and the six with a finalizer would hold namespace `argocd`, as locally |
 | `prod-host` | Stop at `prevent_destroy` on each record. The VPS is a data source, so no destroy can reach it, which is why it is one |
-| `infisical/terraform`, hosted | Delete project `plane-prod` and its identity, as locally, so the operator in `plane-prod` could no longer log in |
+| `infisical/terraform`, hosted | Delete projects `plane-prod` and `frameflow-prod` and their identities, as locally, so the operator in `plane-prod` could no longer log in, nor Frameflow's in `frameflow` once it runs |
 
 None of this has been run. It is read from the code, and from [`environments/prod`'s README](../infrastructure/terraform/environments/prod/README.md).
