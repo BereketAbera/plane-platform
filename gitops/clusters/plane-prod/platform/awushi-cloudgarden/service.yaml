@@ -1,0 +1,21 @@
+# What the route sends to. The route names this port, 80, and the NetworkPolicy names the pod's, 8080, because that is the port a
+# connection reaches the pod on.
+apiVersion: v1
+kind: Service
+metadata:
+  name: awushi-cloudgarden
+  namespace: awushi-cloudgarden
+  labels:
+    app.kubernetes.io/name: awushi-cloudgarden-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: awushi-cloudgarden
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

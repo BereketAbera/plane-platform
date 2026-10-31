@@ -1,0 +1,91 @@
+# Rillmark's documentation site: nginx serving the files built into its image, which are all the site is. It holds no data, so a
+# rollout or a reschedule loses nothing. The image's nginx listens on 8080 and writes only its pid and temp files, under /tmp, so the
+# root filesystem stays read-only and /tmp is the one writable path.
+#
+# One replica. A rollout starts the new pod and waits for it to be ready before the old one goes, so a deploy is no outage, and the
+# quota has room for that second pod.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: rillmark
+  labels:
+    app.kubernetes.io/name: rillmark-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: rillmark
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rillmark-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rillmark-web
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: rillmark
+    spec:
+      serviceAccountName: web
+      automountServiceAccountToken: false
+      securityContext:
+        # UID and GID 101 are nginx in the nginx-unprivileged image, which the Dockerfile runs as.
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: ghcr.io/bereketabera/rillmark/web:PLACEHOLDER@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          ports:
+            - name: http
+              containerPort: 8080
+          # nginx answers /healthz itself and reads no file for it, so these say the server is up. Whether the site is, through Traefik
+          # and its certificate, is the Probe's to say, in monitoring-extras/rillmark.
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          # Traefik can still send a request for a moment after the pod is told to stop, so nginx keeps serving for 5s. Plane's routed
+          # Deployments do the same, which took their rollouts from 502s to no failed request (helm/plane/components/hardening).
+          # The sleep action needs no shell or binary in the image.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 250m
+              memory: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

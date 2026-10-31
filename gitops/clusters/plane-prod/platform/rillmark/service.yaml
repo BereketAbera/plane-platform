@@ -1,0 +1,21 @@
+# What the route sends to. The route names this port, 80, and the NetworkPolicy names the pod's, 8080, because that is the port a
+# connection reaches the pod on.
+apiVersion: v1
+kind: Service
+metadata:
+  name: rillmark
+  namespace: rillmark
+  labels:
+    app.kubernetes.io/name: rillmark-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: rillmark
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
