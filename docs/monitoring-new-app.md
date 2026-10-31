@@ -19,7 +19,7 @@ As soon as the app's pods run in its namespace, with nothing added for it:
 | The namespace's CPU, memory and restarts on the page Grafana opens on | `Platform overview`, for the same namespaces Alloy reads | Its row `Workloads by namespace` |
 | An alert on repeated restarts, or a container near its memory limit | `PodRestarting` and `ContainerMemorySaturation`, for the same namespaces Alloy reads | The alert receiver |
 | An alert on a crash loop, a pod not ready, a stuck rollout or a failed Job | The chart's `KubePodCrashLooping`, `KubePodNotReady`, `KubeDeploymentRolloutStuck` and `KubeJobFailed`, for any namespace. Each waits about 15 minutes, and reads as a warning | The alert receiver |
-| An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics. `CertificateNotWatched` names only Plane's, Grafana's, Infisical's, Rillmark's and Awushi Cloudgarden's | The alert receiver |
+| An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics. `CertificateNotWatched` names only Plane's, Grafana's, Infisical's and the three apps' | The alert receiver |
 
 The alert receiver is the owner's Telegram, for `severity: warning` and `critical`. An `info` alert reaches nobody, and shows only in Grafana
 and Alertmanager, so give anything that should reach a person one of the other two. Alerts are grouped by `alertname` and `namespace`, and a

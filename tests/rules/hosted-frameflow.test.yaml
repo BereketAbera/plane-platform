@@ -1,0 +1,171 @@
+# Frameflow's rules, in gitops/clusters/plane-prod/platform/monitoring-extras/frameflow/rules.yaml. Run by promtool from
+# scripts/ci/validate-manifests.sh, which writes each PrometheusRule's spec beside a copy of this file as rules-<name>.yaml.
+#
+# Each number here is the hosted design's: the probe 2 minutes, Hatchet and the API 5, the worker 15, and the bucket's 12GiB quota, a
+# warning past 80% for 15 minutes and critical past 95% for 5. The series carry the labels kube-state-metrics' and Silo's scrapes add, so
+# each test also says which of them an alert keeps.
+rule_files:
+  - rules-hosted-frameflow.yaml
+evaluation_interval: 30s
+tests:
+  - name: Frameflow failing its probe is critical after 2 minutes, and clears once it answers
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="frameflow",probe="frameflow",instance="https://frameflow.bereket.dev/"}'
+        values: '1x4 0x5 1x10'
+    alert_rule_test:
+      - { eval_time: 6m, alertname: FrameflowDown, exp_alerts: [] }
+      - eval_time: 8m
+        alertname: FrameflowDown
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, probe: frameflow, instance: "https://frameflow.bereket.dev/", severity: critical, component: frameflow }
+            exp_annotations: { summary: "https://frameflow.bereket.dev has failed its probe for 2m" }
+      - { eval_time: 12m, alertname: FrameflowDown, exp_alerts: [] }
+      - { eval_time: 16m, alertname: FrameflowNotWatched, exp_alerts: [] }
+  - name: with no probe of Frameflow running, the rule that says so fires, and another app's probe failing says nothing here
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="rillmark",probe="rillmark",instance="https://rillmark.bereket.dev/"}'
+        values: '0x40'
+    alert_rule_test:
+      - { eval_time: 14m, alertname: FrameflowNotWatched, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: FrameflowNotWatched
+        exp_alerts:
+          - exp_labels: { probe: frameflow, severity: warning, component: frameflow }
+            exp_annotations: { summary: "The probe of https://frameflow.bereket.dev is not running, so FrameflowDown cannot fire" }
+      - { eval_time: 16m, alertname: FrameflowDown, exp_alerts: [] }
+  - name: Hatchet or the API with no available pod is critical after 5 minutes, a 3 minute rollout is not, and neither names kube-state-metrics' pod
+    interval: 1m
+    input_series:
+      # Hatchet rolls out for 3 minutes from 6m, and has none from 15m. The API has none from 14m.
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="hatchet",job="kube-state-metrics",pod="kps-kube-state-metrics-1",instance="10.42.0.9:8080"}'
+        values: '1x5 0x2 1x5 0x20'
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="frameflow-api",job="kube-state-metrics",pod="kps-kube-state-metrics-1",instance="10.42.0.9:8080"}'
+        values: '1x13 0x20'
+    alert_rule_test:
+      - { eval_time: 8m, alertname: HatchetUnavailable, exp_alerts: [] }
+      - { eval_time: 19m, alertname: HatchetUnavailable, exp_alerts: [] }
+      - eval_time: 21m
+        alertname: HatchetUnavailable
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, deployment: hatchet, severity: critical, component: hatchet }
+            exp_annotations: { summary: "Hatchet has had no available pod for 5m, so new uploads fail to queue and no video is processed" }
+      - { eval_time: 18m, alertname: FrameflowApiUnavailable, exp_alerts: [] }
+      - eval_time: 21m
+        alertname: FrameflowApiUnavailable
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, deployment: frameflow-api, severity: critical, component: api }
+            exp_annotations: { summary: "Frameflow's API has had no available pod for 5m, so no video plays or uploads" }
+  - name: kube-state-metrics replaced while Hatchet has no pod keeps the alert firing, because the alert names only the Deployment
+    interval: 1m
+    input_series:
+      # The new pod's series starts at 9m, and the old one's goes stale at 11m.
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="hatchet",pod="kps-kube-state-metrics-1",instance="10.42.0.9:8080"}'
+        values: '0x10 stale'
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="hatchet",pod="kps-kube-state-metrics-2",instance="10.42.0.31:8080"}'
+        values: '_x8 0x20'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: HatchetUnavailable
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, deployment: hatchet, severity: critical, component: hatchet }
+            exp_annotations: { summary: "Hatchet has had no available pod for 5m, so new uploads fail to queue and no video is processed" }
+      - eval_time: 12m
+        alertname: HatchetUnavailable
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, deployment: hatchet, severity: critical, component: hatchet }
+            exp_annotations: { summary: "Hatchet has had no available pod for 5m, so new uploads fail to queue and no video is processed" }
+  - name: the worker with no available pod warns after 15 minutes, and a rollout that drains an encode for its whole grace says nothing
+    interval: 1m
+    input_series:
+      # A rollout from 6m: the old pod drains for 600s, and the new one is available at 17m. Then none from 23m.
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="frameflow-worker",job="kube-state-metrics",pod="kps-kube-state-metrics-1"}'
+        values: '1x5 0x10 1x5 0x25'
+    alert_rule_test:
+      - { eval_time: 16m, alertname: FrameflowWorkerUnavailable, exp_alerts: [] }
+      - { eval_time: 37m, alertname: FrameflowWorkerUnavailable, exp_alerts: [] }
+      - eval_time: 39m
+        alertname: FrameflowWorkerUnavailable
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, deployment: frameflow-worker, severity: warning, component: worker }
+            exp_annotations: { summary: "No Frameflow worker has been available for 15m, so videos wait in Hatchet's queue" }
+  - name: in the first release there is no API or worker to read, so their rules say nothing, while Hatchet's reads its own Deployment
+    interval: 1m
+    input_series:
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="hatchet"}'
+        values: '0x30'
+      - series: 'kube_deployment_status_replicas_available{namespace="frameflow",deployment="frameflow-web"}'
+        values: '1x30'
+      # Plane's worker with none, in its own namespace.
+      - series: 'kube_deployment_status_replicas_available{namespace="plane-prod",deployment="plane-worker-wl"}'
+        values: '0x30'
+    alert_rule_test:
+      - { eval_time: 30m, alertname: FrameflowApiUnavailable, exp_alerts: [] }
+      - { eval_time: 30m, alertname: FrameflowWorkerUnavailable, exp_alerts: [] }
+      - eval_time: 30m
+        alertname: HatchetUnavailable
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, deployment: hatchet, severity: critical, component: hatchet }
+            exp_annotations: { summary: "Hatchet has had no available pod for 5m, so new uploads fail to queue and no video is processed" }
+  - name: before Frameflow deploys at all, none of its Deployments' rules says anything
+    interval: 1m
+    input_series:
+      - series: 'kube_deployment_status_replicas_available{namespace="plane-prod",deployment="plane-api-wl"}'
+        values: '0x30'
+    alert_rule_test:
+      - { eval_time: 30m, alertname: HatchetUnavailable, exp_alerts: [] }
+      - { eval_time: 30m, alertname: FrameflowApiUnavailable, exp_alerts: [] }
+      - { eval_time: 30m, alertname: FrameflowWorkerUnavailable, exp_alerts: [] }
+  - name: the bucket past 80 percent of its quota warns after 15 minutes, and past 95 is critical after 5, with neither naming Silo's address
+    interval: 1m
+    input_series:
+      # 9GiB, then 10.5GiB from 20m, 11.25GiB from 40m, and 11.5GiB from 50m.
+      - series: 'minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media",pod="frameflow-silo-0",instance="10.42.0.20:9000",metrics_path="/minio/v2/metrics/bucket"}'
+        values: '9663676416x19 11274289152x19 12079595520x9 12348030976x15'
+    alert_rule_test:
+      - { eval_time: 19m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
+      - { eval_time: 34m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
+      - eval_time: 36m
+        alertname: FrameflowBucketNearQuota
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, bucket: frameflow-media, severity: warning, component: silo }
+            exp_annotations:
+              summary: Bucket frameflow-media holds 87.5% of its 12GiB quota
+              description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some, or raise the quota in frameflow-silo-setup and in these rules together.
+      - { eval_time: 36m, alertname: FrameflowBucketFull, exp_alerts: [] }
+      - { eval_time: 49m, alertname: FrameflowBucketFull, exp_alerts: [] }
+      - { eval_time: 54m, alertname: FrameflowBucketFull, exp_alerts: [] }
+      - eval_time: 56m
+        alertname: FrameflowBucketFull
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, bucket: frameflow-media, severity: critical, component: silo }
+            exp_annotations: { summary: "Bucket frameflow-media holds 95.83% of its 12GiB quota, and past it Silo refuses every upload, the worker's included" }
+      - { eval_time: 56m, alertname: FrameflowBucketNotWatched, exp_alerts: [] }
+  - name: an empty bucket is watched, and Plane's bucket at 12GiB says nothing here
+    interval: 5m
+    input_series:
+      - series: 'minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media"}'
+        values: '0x20'
+      - series: 'minio_bucket_usage_total_bytes{namespace="plane-prod",bucket="uploads"}'
+        values: '12884901888x20'
+    alert_rule_test:
+      - { eval_time: 70m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
+      - { eval_time: 70m, alertname: FrameflowBucketFull, exp_alerts: [] }
+      - { eval_time: 70m, alertname: FrameflowBucketNotWatched, exp_alerts: [] }
+  - name: with Silo scraped and nothing for the bucket, the rule that says so fires after an hour, and Plane's bucket does not stand in for it
+    interval: 5m
+    input_series:
+      - series: 'up{namespace="frameflow",service="frameflow-silo",metrics_path="/minio/v2/metrics/bucket"}'
+        values: '1x20'
+      - series: 'minio_bucket_usage_total_bytes{namespace="plane-prod",bucket="uploads"}'
+        values: '1622x20'
+    alert_rule_test:
+      - { eval_time: 55m, alertname: FrameflowBucketNotWatched, exp_alerts: [] }
+      - eval_time: 65m
+        alertname: FrameflowBucketNotWatched
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, bucket: frameflow-media, severity: warning, component: silo }
+            exp_annotations: { summary: "Silo reports nothing for bucket frameflow-media, so the bucket alerts cannot fire" }
+      - { eval_time: 65m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
+      - { eval_time: 65m, alertname: FrameflowBucketFull, exp_alerts: [] }

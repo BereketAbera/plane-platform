@@ -1,7 +1,7 @@
 # Root for the monitoring-extras Application (platform project, wave -5). It spans namespaces: shared/ goes to monitoring, and
-# plane-prod/, infisical/, rillmark/ and awushi-cloudgarden/ go to those namespaces, because each exporter holds its credentials and the
-# operator takes the namespace label for metrics from where the object lives. Plain copies of the local manifests, changed for this
-# cluster, because the release branch holds only this tree: nothing here may point outside it.
+# plane-prod/, infisical/, rillmark/, awushi-cloudgarden/ and frameflow/ go to those namespaces, because each exporter holds its
+# credentials and the operator takes the namespace label for metrics from where the object lives. Plain copies of the local manifests,
+# changed for this cluster, because the release branch holds only this tree: nothing here may point outside it.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -10,3 +10,4 @@ resources:
   - infisical
   - rillmark
   - awushi-cloudgarden
+  - frameflow

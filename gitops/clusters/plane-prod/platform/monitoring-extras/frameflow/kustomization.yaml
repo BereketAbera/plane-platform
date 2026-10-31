@@ -1,0 +1,10 @@
+# Everything that watches Frameflow, from its own namespace, so the operator gives its Probe's and Silo's metrics namespace frameflow, and
+# the served certificate's alert tells this one from the others'. Nothing here waits for Frameflow's second release: rules.yaml reads the
+# API and the worker by their Deployments, and is quiet until they exist.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: frameflow
+resources:
+  - probes.yaml
+  - service-monitors.yaml
+  - rules.yaml

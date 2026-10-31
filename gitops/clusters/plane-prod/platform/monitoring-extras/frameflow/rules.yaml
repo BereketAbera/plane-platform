@@ -1,0 +1,86 @@
+# Frameflow's own alerts. Each reads series of namespace frameflow, so its message says where. tests/rules/hosted-frameflow.test.yaml holds
+# each rule to its numbers.
+#
+# Frameflow comes in two releases, as platform/frameflow/kustomization.yaml lists them: Hatchet, its Postgres, Silo and the web server first,
+# and the API, the worker and the CronJobs once Hatchet's token for them is minted. A rule that reads a Deployment of the second is quiet
+# while that Deployment does not exist, so nothing here pages between the two.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hosted-frameflow
+spec:
+  groups:
+    # What a visitor reaches first, so down is critical, as for the static sites, and 2m lets a pod restart without a page. The Probe syncs
+    # with monitoring-extras, ahead of Frameflow's wave, so a first deploy can page once before its route answers.
+    - name: frameflow.web
+      interval: 30s
+      rules:
+        - alert: FrameflowDown
+          expr: probe_success{probe="frameflow"} == 0
+          for: 2m
+          labels: { severity: critical, component: frameflow }
+          annotations:
+            summary: https://frameflow.bereket.dev has failed its probe for 2m
+        - alert: FrameflowNotWatched
+          expr: absent(probe_success{probe="frameflow"})
+          for: 15m
+          labels: { severity: warning, component: frameflow }
+          annotations:
+            summary: The probe of https://frameflow.bereket.dev is not running, so FrameflowDown cannot fire
+    # kube-state-metrics' count of each Deployment's available pods. Its series also carry its own pod, which the alert's message would name
+    # as if it were Frameflow's, and which changes when kube-state-metrics is replaced, so max by keeps the Deployment alone. Hatchet's
+    # readiness reads its Postgres, and the API's reads SQLite and Silo, so each of those stopping shows here too.
+    - name: frameflow.deployments
+      interval: 30s
+      rules:
+        - alert: HatchetUnavailable
+          expr: max by (namespace, deployment) (kube_deployment_status_replicas_available{namespace="frameflow",deployment="hatchet"}) < 1
+          for: 5m
+          labels: { severity: critical, component: hatchet }
+          annotations:
+            summary: Hatchet has had no available pod for 5m, so new uploads fail to queue and no video is processed
+        - alert: FrameflowApiUnavailable
+          expr: max by (namespace, deployment) (kube_deployment_status_replicas_available{namespace="frameflow",deployment="frameflow-api"}) < 1
+          for: 5m
+          labels: { severity: critical, component: api }
+          annotations:
+            summary: Frameflow's API has had no available pod for 5m, so no video plays or uploads
+        # 15m, because Recreate starts a new worker only once the old one has exited, and that one first finishes its encode, for up to its
+        # 600s grace, so a rollout can leave none available for over 10 minutes. Videos wait in Hatchet's queue meanwhile.
+        #
+        # Its scratch has no rule, because nothing here reads an emptyDir's size: the kubelet's volume metrics cover claims alone, and
+        # cAdvisor's filesystem series a container's own layer, which is read-only here. The kubelet holds it to its limits instead. Past the
+        # 8Gi sizeLimit, or 10Gi of ephemeral storage, it evicts the pod, the Deployment starts another with an empty scratch, and the
+        # chart's KubePodNotReady names the evicted pod after 15m, until someone deletes it.
+        - alert: FrameflowWorkerUnavailable
+          expr: max by (namespace, deployment) (kube_deployment_status_replicas_available{namespace="frameflow",deployment="frameflow-worker"}) < 1
+          for: 15m
+          labels: { severity: warning, component: worker }
+          annotations:
+            summary: No Frameflow worker has been available for 15m, so videos wait in Hatchet's queue
+    # Silo counts each bucket in its scanner, a minute or so behind the writes, and enforces the quota from that count, so these read what it
+    # enforces. 12GiB is the quota frameflow-silo-setup sets: change both together.
+    - name: frameflow.storage
+      interval: 30s
+      rules:
+        - alert: FrameflowBucketNearQuota
+          expr: max by (namespace, bucket) (minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media"}) / (12 * 1024^3) > 0.8
+          for: 15m
+          labels: { severity: warning, component: silo }
+          annotations:
+            summary: Bucket frameflow-media holds {{ $value | humanizePercentage }} of its 12GiB quota
+            description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some, or raise the quota in frameflow-silo-setup and in these rules together.
+        - alert: FrameflowBucketFull
+          expr: max by (namespace, bucket) (minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media"}) / (12 * 1024^3) > 0.95
+          for: 5m
+          labels: { severity: critical, component: silo }
+          annotations:
+            summary: Bucket frameflow-media holds {{ $value | humanizePercentage }} of its 12GiB quota, and past it Silo refuses every upload, the worker's included
+        # An empty bucket reads 0, so this is a Silo nothing scrapes, or a bucket its setup Job never made. The scanner reports a bucket only
+        # after its first pass, and a bucket fills over days, hence the hour.
+        - alert: FrameflowBucketNotWatched
+          expr: absent(minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media"})
+          for: 1h
+          labels: { severity: warning, component: silo }
+          annotations:
+            summary: Silo reports nothing for bucket frameflow-media, so the bucket alerts cannot fire
