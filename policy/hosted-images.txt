@@ -2,7 +2,9 @@
 # probes', which no manifest names, are in policy/hosted-system-images.txt.
 # scripts/ci/validate-manifests.sh fails on an image that is not here and on an entry nothing names, so a new or renamed image is a
 # diff a person reads. This says nothing about an image, and no evidence covers these: docs/evidence/promotions/README.md says what does.
-# Wayline's own images are in the render alone, where they move with each promotion, so they are not here.
+# Wayline's own images are in the render alone, where they move with each promotion, so they are not here. Silo is in the render too, as
+# Plane's, and is here for Frameflow's own, which the hosted tree names, so each pin moves on its own. The hatchet-admin image is not here:
+# only the owner's machine runs it, once, to make Frameflow's Hatchet keysets.
 docker.io/grafana/alloy@sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2
 docker.io/grafana/grafana:13.3.0-distroless@sha256:540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
 docker.io/grafana/loki@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
@@ -14,11 +16,15 @@ docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f
 docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84
 docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
 docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+docker.io/pgsty/mc:RELEASE.2026-10-26T00-00-00Z@sha256:ce62c9053c69ce12a527a322345b5ad9f44b5f8a7b8189f82e516f2e3f30f1d8
+docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
 docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
 docker.io/restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
 docker.io/traefik@sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748
 ghcr.io/bereketabera/awushi-cloudgarden/web:c236abab2dce@sha256:8e40655ff9525d84c8c12e111bae3bdfe873dd1a4a6f0615e906190b3637aa99
+ghcr.io/bereketabera/frameflow/web:83f693d81006@sha256:1eec65ef87141b25d3f3a4436619564d5ed3dee5936c42ae65421325572cfb6a
 ghcr.io/bereketabera/rillmark/web:d6447e38ac40@sha256:0641c33402a5eb2bce5dd185b9cdd6cf905057074c70ddaf4b81b8a73025de80
+ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.114.2@sha256:a205018e4ec2c35af4df9c86cf1e36d4b74b36ebbc849c3b33ca18815cf22d6b
 quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
 quay.io/jetstack/cert-manager-acmesolver@sha256:c8c1225bb2fe8ab37a330b77f0d8c2ee6a41210fcb54fc07ca606ab9a022b8b7
 quay.io/jetstack/cert-manager-cainjector@sha256:083d0e906f8eb44e255fe4ff817ae54e49f9ed82e22f1011bb4e9e4f4b8a641f

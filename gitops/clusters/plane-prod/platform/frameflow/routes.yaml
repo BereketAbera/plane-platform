@@ -1,0 +1,57 @@
+# Frameflow's public route, https://frameflow.bereket.dev, to the web server, which proxies the API's public routes. policy/hosted.rego
+# binds this host to this namespace both ways, and allows a route here only frameflow-web:3000 and, for presigned uploads alone,
+# frameflow-silo:9000 (upload-route.yaml). The API, the worker's callbacks, Hatchet and Postgres have no route.
+#
+# The owner's sign-in, a POST of the access key to /api/auth/session, carries the limit below. It comes first by the length of its rule,
+# which is how Traefik orders routes with no priority. Everything else goes to the web server with no Middleware.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: frameflow-web
+  labels:
+    app.kubernetes.io/name: frameflow-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    # After the web server, so its first answer is not Traefik's 503.
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: Host(`frameflow.bereket.dev`) && Path(`/api/auth/session`) && Method(`POST`)
+      middlewares:
+        - name: frameflow-login-limit
+      services:
+        - name: frameflow-web
+          port: 3000
+    - kind: Rule
+      match: Host(`frameflow.bereket.dev`)
+      services:
+        - name: frameflow-web
+          port: 3000
+  tls:
+    secretName: frameflow-tls
+---
+# Ten tries a minute from one client, as Grafana's login has five, and a try past those gets Traefik's 429 and reaches nothing behind it.
+# The access key is 32 random bytes, so its length is what stops a guess, here and on the API's other routes, which also take it as a
+# bearer: this keeps a script from spending the API's time on tries. The connection's address and no header, because this entry point
+# trusts no forwarded header, and a client could otherwise send a new one with each try.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: frameflow-login-limit
+  labels:
+    app.kubernetes.io/name: frameflow-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      ipStrategy:
+        depth: 0
