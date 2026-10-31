@@ -345,6 +345,24 @@ spec:
 YAML
 }
 plant_hosted_app_host_in_a_local_tree() { printf '# see https://rillmark.bereket.dev\n' >>helm/values/traefik.yaml; }
+# The same Middleware with no namespace line, and the route naming it. Argo CD still puts it in rillmark, the Application's destination.
+plant_hosted_app_middleware_with_no_namespace() {
+  plant_hosted_app_middleware_past_its_routes
+  replace_first gitops/clusters/plane-prod/platform/rillmark/middleware.yaml '\n  namespace: rillmark\n' '\n'
+  replace_first "$RILLMARK_ROUTE" '\n( +)services:\n' '\n\1middlewares:\n\1  - name: planted\n\1services:\n'
+}
+# An OR that a parenthesis inside a string hides from a count of parentheses, and not from Traefik, which then serves Grafana's host here.
+plant_hosted_app_or_hidden_by_a_string() {
+  replace_first "$RILLMARK_ROUTE" 'match: Host\(`rillmark\.bereket\.dev`\)' 'match: Host(`rillmark.bereket.dev`) && PathPrefix(`/(`) || Host(`grafana.bereket.dev`) && PathPrefix(`/)`)'
+}
+# rillmark-tls asking for Wayline's host as well, which the solver would answer from rillmark, beside the site's pods.
+plant_hosted_app_certificate_for_wayline() {
+  replace_first gitops/clusters/plane-prod/platform/certificates/rillmark-tls.yaml '\n( +)- rillmark\.bereket\.dev\n' '\n\1- rillmark.bereket.dev\n\1- wayline.bereket.dev\n'
+}
+# The site's Service on the pods of another component, which its route would then reach.
+plant_hosted_app_service_on_other_pods() {
+  replace_first gitops/clusters/plane-prod/platform/rillmark/service.yaml '(selector:\n +)app\.kubernetes\.io/component: web' '\1app.kubernetes.io/component: planted'
+}
 # What the check adds for a solver, and no more: this is over the operator's surge and under one solver.
 plant_hosted_no_quota_room_for_a_solver() { yq -i '.quotas.monitoring."requests.memory" = "1690Mi"' infrastructure/hosted/plane-prod/capacity.yaml; }
 plant_hosted_node_port() {
@@ -672,6 +690,10 @@ control hosted-app-route-to-plane validate-manifests.sh "reaches plane-web:3000"
 control hosted-app-without-its-certificate validate-manifests.sh "must name only secretName rillmark-tls" plant_hosted_app_without_its_certificate
 control hosted-app-middleware-past-its-routes validate-manifests.sh "a Middleware in namespace rillmark may only be a rateLimit" plant_hosted_app_middleware_past_its_routes
 control hosted-app-host-in-a-local-tree check-cluster-separation.sh "a hosted app's host in a local tree" plant_hosted_app_host_in_a_local_tree
+control hosted-app-middleware-with-no-namespace validate-manifests.sh "names no namespace, so Argo CD would put it in its Application's" plant_hosted_app_middleware_with_no_namespace
+control hosted-app-or-hidden-by-a-string validate-manifests.sh 'must be limited to Host(`rillmark.bereket.dev`)' plant_hosted_app_or_hidden_by_a_string
+control hosted-app-certificate-for-wayline validate-manifests.sh "a Certificate in namespace rillmark is exactly" plant_hosted_app_certificate_for_wayline
+control hosted-app-service-on-other-pods validate-manifests.sh "so it selects the pods of component web alone" plant_hosted_app_service_on_other_pods
 CONTROL_SKIP_CHARTS=no control hosted-no-quota-room-for-a-solver check-capacity.sh "for the largest rollout, Job or solver), and its quota is 1690Mi" plant_hosted_no_quota_room_for_a_solver
 control hosted-node-port-in-the-tree validate-manifests.sh "no NodePort Service" plant_hosted_node_port
 control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalancer Service" plant_hosted_load_balancer_in_the_render
