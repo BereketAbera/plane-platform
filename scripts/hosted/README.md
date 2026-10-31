@@ -37,7 +37,8 @@ Local state lives in `.local/hosted/plane-prod/`, mode 0700, and never in Git. B
 cert-manager's self-check goes through the CoreDNS rewrite and never leaves the node, so it passes behind a closed firewall. cert-manager
 then asks Let's Encrypt, whose connection to port 80 is dropped, and the order fails. The next try is an hour away, doubling up to 32, and
 opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before Argo CD starts. If an order failed anyway, then with port
-80 open, this removes the backoff, and cert-manager tries again at once. For Grafana's the namespace is `monitoring` and the name `grafana-tls`:
+80 open, this removes the backoff, and cert-manager tries again at once. For Grafana's the namespace is `monitoring` and the name `grafana-tls`,
+for Rillmark's `rillmark` and `rillmark-tls`, and for Awushi Cloudgarden's, on devops.bereket.dev, `awushi-cloudgarden` and `devops-tls`:
 
 ```
 .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n plane-prod patch certificate wayline-tls \
@@ -47,8 +48,9 @@ opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before 
 That is read from cert-manager v1.21.3's `shouldBackoffReissuingOnFailure` and has not run on this cluster. Moving `issuerRef` from
 staging to production also tries at once, because the next request no longer matches the Certificate.
 
-`grafana-tls` and `infisical-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no record of its own, and that
-points at Vercel, so each A record has to be live before Argo CD first sees that Certificate. For Infisical's the namespace is `infisical`.
+`grafana-tls`, `infisical-tls`, `rillmark-tls` and `devops-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no
+record of its own, and that points at Vercel, so each A record has to be live before Argo CD first sees that Certificate. For Infisical's
+the namespace is `infisical`. [docs/hosted-apps.md](../../docs/hosted-apps.md) gives the order for the apps' hosts.
 
 `infisical-tls` has one more condition, at its first order and at every renewal, about every 60 days. Its solver pod takes 64Mi of the
 namespace's `limits.memory` quota, 1376Mi of 2400Mi is used steady, and the server's rollout and the nightly backup each take 1024Mi more, so

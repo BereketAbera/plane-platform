@@ -3,7 +3,10 @@
 For an app on hosted production's cluster, in a namespace of its own. Everything below shows up at <https://grafana.bereket.dev>, and
 `make remote-grafana-admin TARGET=plane-prod VERB=login` gives you the login.
 
-Written while Wayline is the only app here and Frameflow is not deployed, so no app has gone through these steps yet. Frameflow is the example.
+Rillmark and Awushi Cloudgarden follow steps 3 and 5: each has a Probe in `monitoring-extras/rillmark/` or
+`monitoring-extras/awushi-cloudgarden/`, and its rules in `shared/rules-hosted.yaml`. They export no metrics, so they need neither step 1 nor 2.
+The examples below use Frameflow, which is not deployed yet and will need the metrics steps too, so its names, labels and port in them are
+placeholders. The apps here select pods by `app.kubernetes.io/component`. [hosted-apps.md](hosted-apps.md) is the runbook for all three.
 
 ## What is automatic
 
@@ -16,7 +19,7 @@ As soon as the app's pods run in its namespace, with nothing added for it:
 | The namespace's CPU, memory and restarts on the page Grafana opens on | `Platform overview`, for the same namespaces Alloy reads | Its row `Workloads by namespace` |
 | An alert on repeated restarts, or a container near its memory limit | `PodRestarting` and `ContainerMemorySaturation`, for the same namespaces Alloy reads | The alert receiver |
 | An alert on a crash loop, a pod not ready, a stuck rollout or a failed Job | The chart's `KubePodCrashLooping`, `KubePodNotReady`, `KubeDeploymentRolloutStuck` and `KubeJobFailed`, for any namespace. Each waits about 15 minutes, and reads as a warning | The alert receiver |
-| An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics. `CertificateNotWatched` names only Plane's, Grafana's and Infisical's | The alert receiver |
+| An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics. `CertificateNotWatched` names only Plane's, Grafana's, Infisical's, Rillmark's and Awushi Cloudgarden's | The alert receiver |
 
 The alert receiver is the owner's Telegram, for `severity: warning` and `critical`. An `info` alert reaches nobody, and shows only in Grafana
 and Alertmanager, so give anything that should reach a person one of the other two. Alerts are grouped by `alertname` and `namespace`, and a
@@ -118,7 +121,9 @@ loads within about 30 seconds, with no restart. A datasource of its own is diffe
     summary: Frameflow has failed its probe for 2m
 ```
 
-A public route is a separate change. `policy/hosted.rego` allows Plane's, Grafana's and Infisical's and no other, and a new one starts there.
+A public route is a separate change. `policy/hosted.rego` allows Plane's, Grafana's and Infisical's, and one host for each app in its
+`app_routes` table, bound to that app's namespace, certificate and Services. It allows no other, and a new one starts there.
+[hosted-apps.md](hosted-apps.md) says what else a host needs before its certificate can be issued.
 
 ## What is not covered
 
@@ -130,7 +135,7 @@ A public route is a separate change. `policy/hosted.rego` allows Plane's, Grafan
 - **Anything in the app's own terms,** such as queue depth or failed jobs, until it exports a metric and a rule reads it. A pod can look healthy here while
   the app is broken, which is why step 3 matters most.
 - **The app from outside.** The Probe in step 3 runs on the node, through the CoreDNS rewrite to Traefik, so a closed port, a wrong DNS record
-  or Contabo's network failing reads nothing. `make remote-test`'s `outside` section reads Plane's, Grafana's and Infisical's hosts from the
-  Mac, and nothing reads a new app's host from outside.
+  or Contabo's network failing reads nothing. `make remote-test`'s `outside` section reads Plane's, Grafana's, Infisical's and the three
+  apps' hosts from the Mac, and nothing reads a new app's host from outside.
 - **The node dying.** Nothing on it can report that. Healthchecks does, through Watchdog, once the same command says COMPLETE.
 - **History past its retention.** Prometheus keeps 15 days, or 12 GiB, and Loki 7 days. Both are shared with every other app here.
