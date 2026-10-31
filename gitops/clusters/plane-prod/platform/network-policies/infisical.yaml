@@ -1,6 +1,7 @@
-# infisical. The secret store: only the operator and Traefik may reach the server, and nothing here may reach Plane. Traefik is for the
-# public route, https://infisical.bereket.dev, which the owner chose to give it (docs/adr/0017-infisical-public-route.md), and it reaches
-# 8080 on the server alone: never Postgres or Redis. Scripts still come through the SSH tunnel and kubectl port-forward, which needs no rule.
+# infisical. The secret store: only plane-prod's and frameflow's operators and Traefik may reach the server, and nothing here may reach an
+# app. Traefik is for the public route, https://infisical.bereket.dev, which the owner chose to give it
+# (docs/adr/0017-infisical-public-route.md), and it reaches 8080 on the server alone: never Postgres or Redis. Scripts still come through
+# the SSH tunnel and kubectl port-forward, which needs no rule.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -39,6 +40,10 @@ spec:
   ingress:
     - from:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: plane-prod } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: secrets-operator } }
+        # Frameflow's own operator, iso-frameflow. Every release of the chart gives its pods this same label, so each element holds a
+        # namespace and the label together. Apart, they would let in every pod of that namespace, and any pod here wearing the label.
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
           podSelector: { matchLabels: { app.kubernetes.io/name: secrets-operator } }
       ports:
         - { protocol: TCP, port: 8080 }

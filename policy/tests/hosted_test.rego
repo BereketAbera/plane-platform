@@ -1788,7 +1788,10 @@ infisical_policies := [
 		"podSelector": server_pods,
 		"policyTypes": ["Ingress", "Egress"],
 		"ingress": [
-			{"from": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}}], "ports": [{"protocol": "TCP", "port": 8080}]},
+			{"from": [
+				{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}},
+				{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "frameflow"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}},
+			], "ports": [{"protocol": "TCP", "port": 8080}]},
 			{"from": [traefik_peer], "ports": [{"protocol": "TCP", "port": 8080}]},
 		],
 		"egress": [
@@ -1856,6 +1859,20 @@ test_a_way_out_of_infisical_rejected if {
 	says(json.patch(infisical_backup_policy, [{"op": "add", "path": "/spec/egress/-", "value": {"to": [{"ipBlock": {"cidr": "0.0.0.0/0"}}]}}]), "spec must be exactly")
 	says(json.patch(infisical_policies[0], [{"op": "add", "path": "/spec/egress/-", "value": {"to": [{"ipBlock": {"cidr": "0.0.0.0/0"}}], "ports": [{"protocol": "TCP", "port": 443}]}}]), "spec must be exactly")
 	says(netpol("infisical", "default-deny", {"podSelector": {}, "policyTypes": ["Ingress"]}), "spec must be exactly")
+}
+
+# Frameflow's operator is its namespace and its label in one element. Either alone, or the two apart, lets in more than that operator.
+test_a_wider_way_in_for_frameflows_operator_rejected if {
+	every patch in [
+		[{"op": "replace", "path": "/spec/ingress/0/from/1", "value": {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "frameflow"}}}}],
+		[{"op": "replace", "path": "/spec/ingress/0/from/1", "value": {"podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}}}],
+		[
+			{"op": "replace", "path": "/spec/ingress/0/from/1", "value": {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "frameflow"}}}},
+			{"op": "add", "path": "/spec/ingress/0/from/-", "value": {"podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}}},
+		],
+	] {
+		says(json.patch(infisical_policies[0], patch), "spec must be exactly")
+	}
 }
 
 traefik_egress_rules := [

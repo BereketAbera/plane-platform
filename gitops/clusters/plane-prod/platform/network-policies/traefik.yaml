@@ -131,7 +131,7 @@ spec:
       ports:
         - { protocol: TCP, port: 8089 }
     # The apps' namespaces, each rule naming its pods and their container port, never a whole namespace, as for monitoring and infisical.
-    # Frameflow's will hold Hatchet, Postgres and Silo's console beside what its route reaches, and a static site's gets the same,
+    # Frameflow's holds Hatchet, Postgres and Silo's console beside what its route reaches, and a static site's gets the same,
     # so a pod added there later is reachable only once a rule here names it too. Rillmark's site, and the solver for rillmark-tls.
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: rillmark } }
@@ -154,9 +154,8 @@ spec:
           podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
       ports:
         - { protocol: TCP, port: 8089 }
-    # Frameflow's, before it has pods, which its quota does not allow yet, and before frameflow.yaml lets anything in: its web on
-    # 3000, and Silo on its S3 port alone, for the upload route, never Silo's console. Then the solver for frameflow-tls, once that
-    # Certificate exists.
+    # Frameflow's web on 3000, and Silo on its S3 port alone, for the upload route, never Silo's console. Then the solver for
+    # frameflow-tls. frameflow.yaml lets each in from Traefik's pods, and its API, Hatchet and Postgres from nothing here.
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
           podSelector: { matchLabels: { app.kubernetes.io/component: web } }
