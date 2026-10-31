@@ -435,7 +435,7 @@ Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`,
 | `persist-credentials: false` on every checkout | All workflows |
 | Actions pinned to commit SHA | All workflows |
 | No `pull_request_target` | All workflows |
-| Write tokens only in the jobs that open a pull request (`images.yml`'s digest bump, `promote-prod-sim.yml`, `promote-plane-prod.yml`), push to GHCR (`images.yml`), or move `deploy/plane-prod` (`release-plane-prod`). Nothing deletes a version from GHCR any more, so a digest that evidence names stays | Those workflows |
+| Write tokens only in the jobs that open a pull request (`images.yml`'s digest bump, `promote-prod-sim.yml`, `promote-plane-prod.yml`, `promote-app.yml`), push to GHCR (`images.yml`), or move `deploy/plane-prod` (`release-plane-prod`). Nothing deletes a version from GHCR any more, so a digest that evidence names stays | Those workflows |
 | `release-plane-prod` runs only on a push to `main`, after lint, manifests and security, with `contents: write` and `packages: read` | `ci.yml`, `scripts/ci/publish-release.sh` |
 | A daily comparison of `deploy/plane-prod` with what its `RELEASE.json` names, read-only | `check-deploy-branch.yml`, at 05:23 UTC |
 | A weekly scan of what hosted production runs, with `contents: read` and `packages: read` | `scan-hosted.yml`, Mondays at 04:41 UTC |
@@ -464,6 +464,7 @@ The repository is private on the GitHub Free plan. On that plan GitHub provides 
 
 - `promote-prod-sim.yml` opens a pull request. A person merging it is the approval.
 - `promote-plane-prod.yml` opens a pull request too, and merging it is hosted production's approval. That merge deploys once `release-plane-prod` passes.
+- `promote-app.yml` opens one for an image of an app beside Wayline, and merging it is that app's approval. That merge deploys the same way.
 - Anyone with write access can push `deploy/plane-prod` itself, or any branch whose workflow asks for `contents: write`, and hosted Argo CD syncs whatever that branch holds. `publish-release.sh` at the next release, `check-deploy-branch.yml` each day and `make remote-status` go red when the branch differs from what its `RELEASE.json` names. None of them prevents it, and by then Argo CD may have deployed it.
 - GitHub cannot enforce that. Anyone with write access can merge their own pull request, push straight to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, by GitHub's documentation, so it does not even request a review. That has not been tried on a pull request.
 - A failing check does not block a merge.

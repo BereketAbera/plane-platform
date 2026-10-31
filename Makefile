@@ -128,6 +128,10 @@ record-dev-evidence: ## Sign that plane-dev ran this exact digest set and its sm
 promote-prod: ## What promote-plane-prod.yml does, in this checkout and with no commit: make promote-prod SET_HASH=<hash>. Reaches no cluster
 	@./scripts/ci/promote-prod.sh "$(SET_HASH)"
 
+.PHONY: promote-app
+promote-app: ## What promote-app.yml does, in this checkout and with no commit: make promote-app APP=rillmark|awushi-cloudgarden|frameflow COMPONENT=web DIGEST=sha256:... [TAG=<12-character commit>]. Reaches no cluster or registry
+	@./scripts/ci/promote-app.sh "$(APP)" "$(COMPONENT)" "$(DIGEST)"
+
 gitops-publish: ## Push the current main branch to the local Git remote that Argo CD reads. A prod-sim digest needs dev Synced and Healthy on it: [OVERRIDE_DEV_CHECK="<reason>"] goes ahead anyway and logs why
 	@./scripts/gitops-publish.sh
 
