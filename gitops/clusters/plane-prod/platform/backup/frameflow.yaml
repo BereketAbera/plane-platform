@@ -15,7 +15,9 @@
 #   Infisical project frameflow-prod and the owner's files. Only a truncated hash of it goes in the manifest.
 # - The bucket is read with the backup user's keys, which may list and read frameflow-media and nothing else.
 # - The copy and its check keep to one listing of the bucket, taken first, because Frameflow writes it at any hour: the worker publishes
-#   each video's renditions as it finishes, and the browser uploads sources. Plane's job lists the bucket again for its check.
+#   each video's renditions as it finishes, and the browser uploads sources. Plane's job keeps to one listing too, and so does its lsjson,
+#   which its restore replays Content-Type from. Here objects.lsjson is still read from a listing of its own, which is harmless: Frameflow's
+#   restore replays no Content-Type.
 #
 # The pod mounts frameflow-data, the API's volume, which comes with the API in Frameflow's second release (platform/frameflow's
 # kustomization.yaml). Until then no pod of this can start, so a night between the two releases fails at its deadline and
