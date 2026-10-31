@@ -781,9 +781,10 @@ Two copies, which survive different things:
 
 Each snapshot holds the SQLite file, copied with `VACUUM INTO` and checked with `integrity_check`, with its row counts; Hatchet's database,
 from `pg_dump -Fc`, restored into a scratch database to count each table; every object in `frameflow-media` but the staging of videos in
-flight, read as the backup user; a manifest, with the first 16 hex characters of the master keyset's sha256, so a restore can tell the
-dump's keysets from others; and `SHA256SUMS`. restic seals it as `--host frameflow --tag wayline`. Until the API has made its database
-there is nothing to keep, and the night says so and succeeds. What is not in it, and where it comes from instead:
+flight, read as the backup user from one listing taken first, so what the worker publishes or the browser uploads while it copies waits for
+the next night; a manifest, with the first 16 hex characters of the master keyset's sha256, so a restore can tell the dump's keysets from
+others; and `SHA256SUMS`. restic seals it as `--host frameflow --tag wayline`. Until the API has made its database there is nothing to keep,
+and the night says so and succeeds. What is not in it, and where it comes from instead:
 
 - Silo's users and policies, which the setup Job makes again at every sync.
 - Every secret, Hatchet's keysets among them, which are in Infisical, and Infisical's own nightly backup holds project `frameflow-prod`.
