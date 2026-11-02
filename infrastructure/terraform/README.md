@@ -98,8 +98,8 @@ memory and object counts only, since the contract budgets no CPU.
 
 **Hosted production's quotas come from a file, not from this module.** `infrastructure/hosted/plane-prod/capacity.yaml` holds them, and
 `environments/prod` passes them in. `scripts/ci/check-capacity.sh` reads the same file and fails CI if their sum, with the system's
-share and Frameflow's reservation, no longer fits the node. Passing `quotas` or `limit_ranges` also names the objects `budget` and `defaults`,
-since they then cover namespaces that are not Plane's. With neither passed the module plans what it always did.
+share and the scratch space no quota counts, no longer fits the node. Passing `quotas` or `limit_ranges` also names the objects `budget` and
+`defaults`, since they then cover namespaces that are not Plane's. With neither passed the module plans what it always did.
 
 ## After a stuck first sync
 
