@@ -90,10 +90,10 @@ wayline-upgrade-check: ## After bumping apps/wayline/UPSTREAM: overlay lock, pat
 wayline-upstream-check: ## Size of the work for another upstream ref, with no build: make wayline-upstream-check REF=preview
 	@./apps/wayline/checks/upstream-check.sh "$(REF)"
 
-promote: ## Promote images: make promote ENV=dev [IMAGE=web DIGEST=sha256:... [REPO=<repository>]] [CONFIRM=yes]
+promote: ## Promote images: make promote ENV=dev [IMAGE=web DIGEST=sha256:... [REPO=<repository>]] [CONFIRM=yes] [SKIP_BACKUP=yes] [COMMIT=no] [OVERRIDE_DEV_CHECK="<reason>"]
 	@./scripts/promote.sh "$(ENV)"
 
-rollback: ## Revert the last promotion for an environment: make rollback ENV=dev [CONFIRM=yes]
+rollback: ## Revert the last promotion for an environment: make rollback ENV=dev [CONFIRM=yes] [SKIP_BACKUP=yes] [ROLLBACK_DUMP_TIMEOUT=<seconds>]
 	@./scripts/rollback.sh "$(ENV)"
 
 gitops-publish: ## Push the current main branch to the local Git remote that Argo CD reads
