@@ -56,9 +56,11 @@ spec:
           livenessProbe:
             httpGet: { path: /, port: metrics }
             periodSeconds: 30
+          # No CPU limit: a scrape is a burst of about 200ms every 30s, 1m on average, and a 100m
+          # quota throttled 32% of its periods, which fires CPUThrottlingHigh for nothing.
           resources:
             requests: { cpu: 10m, memory: 16Mi }
-            limits: { cpu: 100m, memory: 48Mi }
+            limits: { memory: 48Mi }
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

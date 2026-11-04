@@ -176,7 +176,7 @@
    },
    "targets": [
     {
-     "expr": "sum by (name, phase) (increase(argocd_app_sync_total[$__range])) > 0",
+     "expr": "sum by (name, phase) (argocd_app_sync_total - (argocd_app_sync_total offset $__range or argocd_app_sync_total * 0)) > 0",
      "legendFormat": "__auto",
      "range": false,
      "instant": true,
@@ -188,7 +188,7 @@
      }
     }
    ],
-   "description": "Sync operations by outcome over the selected time range.",
+   "description": "Sync operations by outcome over the selected time range, counted since the application controller last started. A subtraction, because increase() reads a counter's first value as zero and would hide each Application's first sync.",
    "transformations": [
     {
      "id": "organize",
