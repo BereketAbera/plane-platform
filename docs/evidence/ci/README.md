@@ -9,12 +9,19 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 | Row | Result | Basis |
 |---|---|---|
 | CI-1, `ci.yml` on a real runner | PASS | Runs 41903137276, 41907667785, 41907841985, 41909741166: Lint, Manifests and Security all green |
-| CI-2, `make ci` locally | PASS | Exit 0 both times, see the `ci-2` files |
-| CI-3, a failing check goes red | PASS, by another route than the row names | Run 41907873100. No pull request: the defect was planted in the runner's checkout. Not run on `on: pull_request` |
+| CI-2, `make ci` locally | PASS | Exit 0 every time, see the `ci-2` files |
+| CI-3, a failing check goes red | PASS, by another route than the row names | Run 41907873100, 21 controls on a real runner. No pull request: the defect was planted in the runner's checkout. Not run on `on: pull_request`. The current 33 controls ran only on this Mac |
 | CI-4, `images.yml` builds and pushes | NOT RUN | Run 41903137226 built nothing, because `apps/wayline/images.txt` was not on main |
 | CI-5, `images.yml` opens a dev bump | NOT RUN | Follows CI-4. Expect the refusal seen in CI-6 while the setting is off |
 | CI-6, refuses an unrecorded digest | PASS | Run 41905513020 |
 | CI-6, opens a pull request | BLOCKED | Runs 41905611391, 41908167069: GitHub refuses it, because the repository setting is off |
+
+## What GitHub has not seen
+
+The commits from b19fe26 to 283b51a have not been pushed, because pushes are on hold until branding has been reviewed, so no run below
+covers them. That means the new policy rules, promtool, the digest binding, the plane-dev check, the rollback changes and the image
+scan have only run on this Mac, through the `ci-2` and `ci-3` files from 2026-11-04T22. promtool's Linux downloads have their checksums
+compared with the release's `sha256sums.txt`, but have never been fetched.
 
 ## Files
 
@@ -64,6 +71,9 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 |---|---|
 | `ci-2-20261104T201032Z-make-ci.log`, `.rc` | `make ci` in the shared checkout at f733b87, redirected to a file, and its exit code, 0. `README.md`, `docs/README.md` and `docs/case-study.md` were untracked at the time |
 | `ci-2-20261104T204746Z-make-ci.log`, `.rc` | `make ci` in a clean clone of 5fdf41d, redirected to a file, and its exit code, 0 |
+| `ci-2-20261104T223712Z-make-ci.log`, `.rc` | `make ci` in a clean clone of 283b51a, redirected to a file, and its exit code, 0. It includes the 24 stubbed scenarios of `scripts/ci/test-promotion-flows.sh` |
+| `ci-3-20261104T223937Z-negative-controls-local.log`, `.rc` | `scripts/ci/negative-controls.sh` in that clone, and its exit code, 0: 33 of 33 planted defects caught |
+| `promotion-flows-against-the-old-scripts-20261104T212746Z.log` | `scripts/ci/test-promotion-flows.sh` with `promote.sh`, `rollback.sh`, `gitops-publish.sh`, `check-promoted-digests.sh` and the drill put back to their earlier versions, in a scratch clone at 4a49a9c: 19 of 24 scenarios fail, so they can tell the difference |
 | `ci-3-20261104T202916Z-negative-controls-local.log` | `scripts/ci/negative-controls.sh` on this Mac, in a scratch clone at bc8bb91 plus the changes that became ada8dc9. Start time approximate. The last line is added by the wrapper that ran it |
 | `plan-facts-20261104T204023Z.txt` | Plan, Actions settings, the 403s from branch protection and rulesets, billing rows for this repository, pinned action SHAs compared with their tags. Commands are shown inline |
 | `plan-upstream-image-sizes-20261104T204023Z.txt` | Compressed arm64 sizes of the pinned upstream Plane images. Not Wayline images |
@@ -86,4 +96,7 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 - `ci.yml` on `on: pull_request`. Every `ci.yml` run here came from a push to main.
 - A promotion pull request opened, reviewed and merged, and `scripts/ci/copy-to-local-registry.sh`.
 - `trivy fs` has found no lockfile in this repository, so it has scanned no dependency yet. The `vulnerable-lockfile-trivy-fs`
-  control shows it fails when given one.
+  control shows it fails when given one. `make scan-images` scans the images and the Wayline source lockfiles instead. Its results
+  are in [docs/evidence/security/](../security/README.md).
+- The plane-dev check in `promote.sh`, and `rollback.sh` and the failed-deploy drill, against a real cluster. They have only run
+  against the stubs in `scripts/ci/test-promotion-flows.sh`.
