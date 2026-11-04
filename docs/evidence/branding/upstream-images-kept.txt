@@ -1,0 +1,83 @@
+=== images identical to upstream
+     490 /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/final/upstream-images.tsv
+--- apps/web/build/client
+images in build:      136
+identical to an upstream file:       53
+  29 apps/web/app/assets/cover-images
+  18 apps/web/app/assets/attachment
+   5 apps/web/app/assets/logos
+   1 apps/web/app/assets
+--- apps/admin/build/client
+images in build:       18
+identical to an upstream file:        5
+   5 apps/web/app/assets/logos
+--- apps/space/build/client
+images in build:       18
+identical to an upstream file:        5
+   5 apps/web/app/assets/logos
+--- web: files byte-identical to an upstream image
+apps/web/app/assets/attachment/audio-icon.png
+apps/web/app/assets/attachment/css-icon.png
+apps/web/app/assets/attachment/csv-icon.png
+apps/web/app/assets/attachment/default-icon.png
+apps/web/app/assets/attachment/doc-icon.png
+apps/web/app/assets/attachment/excel-icon.png
+apps/web/app/assets/attachment/figma-icon.png
+apps/web/app/assets/attachment/html-icon.png
+apps/web/app/assets/attachment/img-icon.png
+apps/web/app/assets/attachment/jpg-icon.png
+apps/web/app/assets/attachment/js-icon.png
+apps/web/app/assets/attachment/pdf-icon.png
+apps/web/app/assets/attachment/png-icon.png
+apps/web/app/assets/attachment/rar-icon.png
+apps/web/app/assets/attachment/svg-icon.png
+apps/web/app/assets/attachment/txt-icon.png
+apps/web/app/assets/attachment/video-icon.png
+apps/web/app/assets/attachment/zip-icon.png
+apps/web/app/assets/cover-images/image_1.jpg
+apps/web/app/assets/cover-images/image_10.jpg
+apps/web/app/assets/cover-images/image_11.jpg
+apps/web/app/assets/cover-images/image_12.jpg
+apps/web/app/assets/cover-images/image_13.jpg
+apps/web/app/assets/cover-images/image_14.jpg
+apps/web/app/assets/cover-images/image_15.jpg
+apps/web/app/assets/cover-images/image_16.jpg
+apps/web/app/assets/cover-images/image_17.jpg
+apps/web/app/assets/cover-images/image_18.jpg
+apps/web/app/assets/cover-images/image_19.jpg
+apps/web/app/assets/cover-images/image_2.jpg
+apps/web/app/assets/cover-images/image_20.jpg
+apps/web/app/assets/cover-images/image_21.jpg
+apps/web/app/assets/cover-images/image_22.jpg
+apps/web/app/assets/cover-images/image_23.jpg
+apps/web/app/assets/cover-images/image_24.jpg
+apps/web/app/assets/cover-images/image_25.jpg
+apps/web/app/assets/cover-images/image_26.jpg
+apps/web/app/assets/cover-images/image_27.jpg
+apps/web/app/assets/cover-images/image_28.jpg
+apps/web/app/assets/cover-images/image_29.jpg
+apps/web/app/assets/cover-images/image_3.jpg
+apps/web/app/assets/cover-images/image_4.jpg
+apps/web/app/assets/cover-images/image_5.jpg
+apps/web/app/assets/cover-images/image_6.jpg
+apps/web/app/assets/cover-images/image_7.jpg
+apps/web/app/assets/cover-images/image_8.jpg
+apps/web/app/assets/cover-images/image_9.jpg
+apps/web/app/assets/logos/gitea-logo.svg
+apps/web/app/assets/logos/github-black.png
+apps/web/app/assets/logos/github-dark.svg
+apps/web/app/assets/logos/gitlab-logo.svg
+apps/web/app/assets/logos/google-logo.svg
+apps/web/app/assets/user.png
+--- admin: files byte-identical to an upstream image
+apps/web/app/assets/logos/gitea-logo.svg
+apps/web/app/assets/logos/github-black.png
+apps/web/app/assets/logos/github-white.png
+apps/web/app/assets/logos/gitlab-logo.svg
+apps/web/app/assets/logos/google-logo.svg
+--- space: files byte-identical to an upstream image
+apps/web/app/assets/logos/gitea-logo.svg
+apps/web/app/assets/logos/github-black.png
+apps/web/app/assets/logos/github-dark.svg
+apps/web/app/assets/logos/gitlab-logo.svg
+apps/web/app/assets/logos/google-logo.svg

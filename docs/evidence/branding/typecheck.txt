@@ -1,0 +1,16 @@
+# Type checks: each package's check:types (tsc --noEmit, plus react-router typegen for apps), one at a time, Node 22,
+# on the patched and codemodded tree. packages/decorators and packages/logger have no node_modules (not in the build's
+# install filter, which the three apps do not need) so tsc could not run there. Heap 3072 MiB, 4096 for web.
+packages/types exit=0 errors=0 peak_rss_mib=202 real_s=1.23
+packages/constants exit=0 errors=0 peak_rss_mib=209 real_s=1.21
+packages/propel exit=0 errors=0 peak_rss_mib=650 real_s=4.52
+packages/ui exit=0 errors=0 peak_rss_mib=537 real_s=2.88
+packages/utils exit=0 errors=0 peak_rss_mib=343 real_s=1.86
+packages/editor exit=0 errors=0 peak_rss_mib=477 real_s=2.84
+packages/i18n exit=0 errors=0 peak_rss_mib=230 real_s=1.69
+packages/hooks exit=0 errors=0 peak_rss_mib=224 real_s=1.18
+packages/services exit=0 errors=0 peak_rss_mib=202 real_s=1.24
+packages/shared-state exit=0 errors=0 peak_rss_mib=286 real_s=1.47
+apps/admin exit=0 errors=0 peak_rss_mib=516 real_s=8.30
+apps/space exit=0 errors=0 peak_rss_mib=555 real_s=8.94
+apps/web exit=0 errors=0 peak_rss_mib=1180 real_s=15.10
