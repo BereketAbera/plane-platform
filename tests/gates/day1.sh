@@ -13,6 +13,10 @@
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"
 
+# The closing line of the EXIT trap goes here. A trap runs under the redirections of the shell function
+# it interrupted, and `kc ... >/dev/null` is one, so the trap's own stdout can be /dev/null.
+exec 3>&1
+
 NS=gate-checks
 PROBE_IMAGE="docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec"
 QUAY_IMAGE="quay.io/prometheus/busybox:latest@sha256:7379672d53c28113469275f2eb48adffa19954f39f8ef20c1e2992278f658e6c"
@@ -23,6 +27,8 @@ CURL_IMAGE="docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472
 LOCAL_PROBE="localhost:5001/gate/probe"
 READY_TIMEOUT=180s
 SERVER_URL="http://g2-server.$NS.svc.cluster.local:8080/index.html"
+# No policy selects this server, so a client that cannot reach it has a problem no policy explains.
+REFERENCE_URL="http://g2-reference.$NS.svc.cluster.local:8080/index.html"
 CONNECT_TIMEOUT=5
 # How long a NetworkPolicy change gets to reach kindnet before a probe counts against it.
 POLICY_SETTLE_SECONDS=30
@@ -53,7 +59,7 @@ on_exit() {
   local status=$?
   cleanup || true
   if [[ "$SUMMARY_DONE" == no ]]; then
-    printf -- '--- Stopped before the summary, exit %s: %s passed, %s failed, %s not run\n' "$status" "$pass" "$failed" "$not_run"
+    printf -- '--- Stopped before the summary, exit %s: %s passed, %s failed, %s not run\n' "$status" "$pass" "$failed" "$not_run" >&3
   fi
 }
 trap on_exit EXIT
@@ -159,17 +165,34 @@ local_registry_check() {
   pull_check g1-local "$LOCAL_PROBE@$digest" "localhost:5001 digest pull ($digest)" 120s
 }
 
+# Asks the mirror whether this run's pull reached it. A pull that worked cannot say, as containerd goes
+# on to `server` in hosts.toml when the mirror fails. The blob store cannot say, as blobs stay from any
+# earlier pull. The registry's access log can, with one line per request, like this:
+#   172.24.0.2 - - [date] "HEAD /v2/library/busybox/manifests/sha256:... HTTP/1.1" 200 0 "" "containerd/v2.3.4"
+# A node that already has the layers only resolves the manifest, so this shows the route containerd
+# took. It does not show that layers came through the mirror.
+mirror_check() { # <mirror container> <image> <what>
+  local mirror="$1" digest="${2##*@}" logs answers
+  if ! logs="$(docker logs --since "$RUN_START" "$mirror" 2>&1)"; then
+    result FAIL "$3 through $mirror: could not read its logs: $(tail -1 <<<"$logs")"
+    return 0
+  fi
+  answers="$(awk -v path="/manifests/$digest" '$6 ~ /^"(HEAD|GET)$/ && index($7, path) && $NF ~ /^"containerd\// { printf " %s", $9 }' <<<"$logs")"
+  if [[ "$answers " == *" 200 "* ]]; then
+    result PASS "$3 through $mirror: containerd asked it for $digest in this run, and it answered 200"
+  elif [[ -n "$answers" ]]; then
+    result FAIL "$3 through $mirror: it answered$answers for $digest, not 200, so containerd went on without it"
+  else
+    result FAIL "$3 through $mirror: it got no request for $digest in this run, so containerd bypassed it"
+  fi
+}
+
 gate1() {
-  local blobs
   echo "--- Gate 1: digest pulls through each path"
   pull_check g1-hub "$PROBE_IMAGE" "docker.io digest pull" 180s
+  mirror_check plane-mirror-docker "$PROBE_IMAGE" "docker.io digest pull"
   pull_check g1-quay "$QUAY_IMAGE" "quay.io digest pull" 180s
-  # The cache really was used: blobs must now be stored in the mirror.
-  if blobs="$(docker exec plane-mirror-docker sh -c 'ls /var/lib/registry/docker/registry/v2/blobs/sha256 2>/dev/null | wc -l' 2>&1)" && [[ "$blobs" -gt 0 ]]; then
-    result PASS "pull-through cache holds blobs (not bypassed)"
-  else
-    result FAIL "pull-through cache is empty, containerd bypassed it: $blobs"
-  fi
+  mirror_check plane-mirror-quay "$QUAY_IMAGE" "quay.io digest pull"
   local_registry_check
 }
 
@@ -210,34 +233,48 @@ classify() {
   esac
 }
 
-# Runs inside the client. Every run is a new connection, the only thing kindnet evaluates. The exit
-# code is printed rather than returned, so a kubectl failure can never be read as a curl result.
+# Runs inside the client. Every run is a new connection, the only thing kindnet evaluates. The two
+# fetches start together, so the reference speaks for the same client at the same moment as the target.
+# The exit code is printed rather than returned, so a kubectl failure can never be read as a curl result.
 # shellcheck disable=SC2016  # expanded by the pod's shell, not this one
-IN_POD_PROBE='out=$(curl -sS -o /dev/null --connect-timeout '"$CONNECT_TIMEOUT"' --max-time '"$((CONNECT_TIMEOUT + 2))"' -w "%{http_code} %{time_namelookup} %{time_connect} %{errormsg}" "$1" 2>/dev/null)
-code=$?
-echo "RESULT $code $out"'
+IN_POD_PROBE='fetch() {
+  out=$(curl -sS -o /dev/null --connect-timeout '"$CONNECT_TIMEOUT"' --max-time '"$((CONNECT_TIMEOUT + 2))"' -w "%{http_code} %{time_namelookup} %{time_connect} %{errormsg}" "$2" 2>/dev/null)
+  code=$?
+  echo "RESULT $1 $code $out"
+}
+fetch target "$1" &
+fetch reference "$2" &
+wait'
 
-probe() { # <client pod>. Sets PROBE_CLASS, PROBE_HTTP and PROBE_DETAIL.
-  local raw line code lookup connect message
-  raw="$(kc -n "$NS" exec "$1" -- sh -c "$IN_POD_PROBE" probe "$SERVER_URL" 2>&1 || true)"
-  line="$(grep '^RESULT ' <<<"$raw" || true)"
+read_result() { # <exec output> <target or reference>. Sets RESULT_CLASS, RESULT_HTTP and RESULT_DETAIL.
+  local line code lookup connect message
+  line="$(grep "^RESULT $2 " <<<"$1" || true)"
   if [[ -z "$line" ]]; then
-    PROBE_CLASS=NO_RESULT; PROBE_HTTP=none
-    PROBE_DETAIL="kubectl exec gave no result: $(tail -1 <<<"$raw")"
+    RESULT_CLASS=NO_RESULT; RESULT_HTTP=none
+    RESULT_DETAIL="kubectl exec gave no result: $(tail -1 <<<"$1")"
     return 0
   fi
-  read -r _ code PROBE_HTTP lookup connect message <<<"$line"
-  PROBE_CLASS="$(classify "$code" "$lookup" "$connect" "$message")"
-  PROBE_DETAIL="curl exit $code, HTTP $PROBE_HTTP${message:+, $message}"
+  read -r _ _ code RESULT_HTTP lookup connect message <<<"$line"
+  RESULT_CLASS="$(classify "$code" "$lookup" "$connect" "$message")"
+  RESULT_DETAIL="curl exit $code, HTTP $RESULT_HTTP${message:+, $message}"
 }
 
-# probe_until <client> <wanted class> <class worth retrying, or any, or none>
+probe() { # <client pod> <url>. Sets PROBE_* for the url and REFERENCE_* for the reference, from one exec.
+  local raw
+  raw="$(kc -n "$NS" exec "$1" -- sh -c "$IN_POD_PROBE" probe "$2" "$REFERENCE_URL" 2>&1 || true)"
+  read_result "$raw" target
+  PROBE_CLASS="$RESULT_CLASS"; PROBE_HTTP="$RESULT_HTTP"; PROBE_DETAIL="$RESULT_DETAIL"
+  read_result "$raw" reference
+  REFERENCE_CLASS="$RESULT_CLASS"; REFERENCE_HTTP="$RESULT_HTTP"; REFERENCE_DETAIL="$RESULT_DETAIL"
+}
+
+# probe_until <client> <wanted class> <class worth retrying, or any, or none> [url, the server if left out]
 # Retries only what a policy change that has not reached kindnet yet can explain.
 probe_until() {
-  local client="$1" wanted="$2" retry_on="$3" deadline=$((SECONDS + POLICY_SETTLE_SECONDS))
+  local client="$1" wanted="$2" retry_on="$3" url="${4:-$SERVER_URL}" deadline=$((SECONDS + POLICY_SETTLE_SECONDS))
   PROBE_TRIES=0
   while :; do
-    probe "$client"
+    probe "$client" "$url"
     PROBE_TRIES=$((PROBE_TRIES + 1))
     [[ "$PROBE_CLASS" != "$wanted" ]] || return 0
     [[ "$retry_on" == any || "$PROBE_CLASS" == "$retry_on" ]] || return 1
@@ -246,11 +283,18 @@ probe_until() {
   done
 }
 
-# A deny passes only on a real timeout. DNS trouble, a refused connection, or a kubectl failure says
-# nothing about the policy, so each of those fails instead of reading as blocked.
+# A deny passes only on a real timeout while the same client, at the same moment, gets an answer from
+# the reference, a server no policy selects. DNS trouble, a refused connection, a kubectl failure, or a
+# reference that did not answer says nothing about the policy, so each of those fails instead of reading
+# as blocked. This rules out loss on the client's side or across the network. Loss that hits only the
+# target still reads as blocked. The controls before and after the policies are all that bound that.
 expect_blocked() { # <client> <what> [CONNECTED, to retry until the policy has reached kindnet]
   if probe_until "$1" TIMEOUT "${3:-none}"; then
-    result PASS "$2 (try $PROBE_TRIES, client saw: $PROBE_DETAIL)"
+    if [[ "$REFERENCE_CLASS" == CONNECTED && "$REFERENCE_HTTP" == 200 ]]; then
+      result PASS "$2 (try $PROBE_TRIES, same moment, reference: $REFERENCE_DETAIL, target: $PROBE_DETAIL)"
+    else
+      result FAIL "$2: the target timed out but the reference did not answer, so this says nothing about the policy (reference: $REFERENCE_CLASS, $REFERENCE_DETAIL, target: $PROBE_DETAIL)"
+    fi
   elif [[ "$PROBE_CLASS" == CONNECTED ]]; then
     result FAIL "$2: the connection got through, so the policy was not enforced ($PROBE_DETAIL)"
   else
@@ -258,8 +302,8 @@ expect_blocked() { # <client> <what> [CONNECTED, to retry until the policy has r
   fi
 }
 
-expect_admitted() { # <client> <what> <class worth retrying, or any>
-  if probe_until "$1" CONNECTED "$3" && [[ "$PROBE_HTTP" == 200 ]]; then
+expect_admitted() { # <client> <what> <class worth retrying, or any> [url, the server if left out]
+  if probe_until "$1" CONNECTED "$3" "${4:-$SERVER_URL}" && [[ "$PROBE_HTTP" == 200 ]]; then
     result PASS "$2 (try $PROBE_TRIES, HTTP 200)"
   else
     result FAIL "$2: $PROBE_CLASS ($PROBE_DETAIL)"
@@ -267,10 +311,13 @@ expect_admitted() { # <client> <what> <class worth retrying, or any>
 }
 
 start_gate2_pods() {
-  run_pod g2-server --image="$PROBE_IMAGE" --labels=app=g2-server --port=8080 --command -- \
-    sh -c 'mkdir -p /www && echo ok > /www/index.html && exec httpd -f -p 8080 -h /www' &&
-    kc -n "$NS" expose pod g2-server --port=8080 >/dev/null &&
-    run_pod g2-plain --image="$CURL_IMAGE" --command -- sleep 900 &&
+  local server
+  for server in g2-server g2-reference; do
+    run_pod "$server" --image="$PROBE_IMAGE" --labels="app=$server" --port=8080 --command -- \
+      sh -c 'mkdir -p /www && echo ok > /www/index.html && exec httpd -f -p 8080 -h /www' &&
+      kc -n "$NS" expose pod "$server" --port=8080 >/dev/null || return 1
+  done
+  run_pod g2-plain --image="$CURL_IMAGE" --command -- sleep 900 &&
     run_pod g2-labelled --image="$CURL_IMAGE" --labels=allowed=yes --command -- sleep 900
 }
 
@@ -288,7 +335,7 @@ gate2() {
     result FAIL "could not create the gate 2 pods"
     ready=no
   fi
-  for pod in g2-server g2-plain g2-labelled; do
+  for pod in g2-server g2-reference g2-plain g2-labelled; do
     if [[ "$ready" == yes ]] && ! kc -n "$NS" wait --for=condition=Ready "pod/$pod" --timeout="$READY_TIMEOUT" >/dev/null 2>&1; then
       result FAIL "$pod never became Ready: $(pod_state "$pod")"
       ready=no
@@ -302,6 +349,8 @@ gate2() {
   failed_before="$failed"
   expect_admitted g2-plain "positive control: the unlabelled client reaches the server before any policy" any
   expect_admitted g2-labelled "positive control: the labelled client reaches the server before any policy" any
+  expect_admitted g2-plain "positive control: the unlabelled client reaches the reference before any policy" any "$REFERENCE_URL"
+  expect_admitted g2-labelled "positive control: the labelled client reaches the reference before any policy" any "$REFERENCE_URL"
   if [[ "$failed" -ne "$failed_before" ]]; then
     result "NOT RUN" "default-deny and allow rule, because a block would mean nothing with the positive control failing"
     return 0
@@ -329,10 +378,10 @@ gate2() {
     result "NOT RUN" "unlabelled client under the allow rule, because a timeout proves nothing until the rule has been seen working"
   fi
 
-  # The same client, the same server, no policy: this ties the timeouts above to the policies, and
-  # rules out a network or a server that simply stopped working.
+  # The same client, the same server, no policy. This shows the network and the server still work. It
+  # says nothing on its own about what caused the timeouts above: the reference probes speak to that.
   if kc -n "$NS" delete networkpolicy deny-to-server allow-labelled >/dev/null; then
-    expect_admitted g2-plain "control: with both policies deleted the unlabelled client connects again, so the policies caused those timeouts" TIMEOUT
+    expect_admitted g2-plain "control: with both policies deleted the unlabelled client connects again, so the network and the server still work" TIMEOUT
   else
     result FAIL "could not delete the gate's policies in $NS"
   fi
@@ -381,12 +430,33 @@ gate5() {
 
 # ------ Run ---------------------------------------------------------------------------------------
 
+# Checks the state instead of trusting cleanup, which ignores a failed rm. A failed get prints nothing
+# on stdout, so its exit code counts as well as its output.
+report_cleanup() {
+  local left clean=yes
+  cleanup || true
+  if ! left="$(kc get namespace "$NS" --ignore-not-found -o name 2>&1)" || [[ -n "$left" ]]; then
+    result FAIL "namespace $NS is not confirmed gone: $left. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl delete namespace $NS"
+    clean=no
+  fi
+  if [[ -e "$LOCAL_DIR/git/gate.git" ]]; then
+    result FAIL "the throwaway .local/git/gate.git is still there. Delete it by hand: rm -rf .local/git/gate.git"
+    clean=no
+  fi
+  if [[ "$clean" == yes ]]; then
+    result PASS "namespace $NS and the throwaway gate.git are gone"
+  fi
+}
+
 stamp_run "$@"
 if ! kc get --raw /readyz >/dev/null 2>&1; then
   result "BLOCKED" "the cluster is not reachable, so no gate ran. Run 'make up' first."
   exit 1
 fi
 guard_disk 2
+# The clock that stamps docker logs is the Docker VM's, which can drift from the host's across a sleep.
+RUN_START="$(docker info --format '{{.SystemTime}}')"
+printf '# run start on the Docker clock: %s\n' "$RUN_START"
 claim_namespace
 stamp_loaded_policies
 
@@ -395,11 +465,7 @@ gate2
 gate5
 
 echo "--- Cleanup"
-if cleanup && [[ -z "$(kc get namespace "$NS" --ignore-not-found -o name)" ]]; then
-  result PASS "namespace $NS and the throwaway gate.git are gone"
-else
-  result FAIL "namespace $NS is still there. Delete it by hand: kubectl delete namespace $NS"
-fi
+report_cleanup
 
 SUMMARY_DONE=yes
 if [[ "$not_run" -eq 0 ]]; then
