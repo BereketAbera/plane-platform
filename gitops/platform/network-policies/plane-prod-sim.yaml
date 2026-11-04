@@ -37,8 +37,10 @@ spec:
         - { protocol: TCP, port: 53 }
 ---
 # Browser traffic only. web and admin are static nginx. space renders server-side, but its build has
-# an empty API base URL, so its one fetch should fail inside the pod, with only cosmetic effect. That
-# is read from source and not yet run; if public pages need the api, add space to the api policy.
+# an empty API base URL, so its one server-side fetch fails with ERR_INVALID_URL before any connection.
+# Run on v1.4.3: a public board loads and shows its work items, because the browser makes those calls,
+# and only the page's metadata is lost. A branded build that sets that URL would need space added to
+# the api policy.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
