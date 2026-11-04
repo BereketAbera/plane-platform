@@ -51,6 +51,11 @@ kind to `127.0.0.1:80` and `127.0.0.1:443` only. No TLS locally; Pass 2 terminat
 | `alertmanager.localhost` | Alertmanager |
 | `infisical.localhost` | Infisical |
 
+**Node network.** Docker assigns the `kind` network a free `/16` that differs per machine (`172.24.0.0/16` on the
+machine this was built on), so NetworkPolicies never pin it. They use Docker's default pool, `172.16.0.0/12`, for
+node-sourced traffic: API server on 6443, the Git remote on 9418, and NodePort traffic reaching Traefik.
+`scripts/cluster-up.sh` fails if the network falls outside that range.
+
 CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to
 `traefik.traefik.svc.cluster.local`, because the Plane API dials its own public host for
 `copy_object` and OAuth avatars. Terraform owns that rewrite.
