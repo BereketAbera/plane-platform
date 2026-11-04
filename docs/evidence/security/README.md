@@ -9,7 +9,7 @@ updated 2026-11-04T19:02Z. Each image was read from its registry for linux/arm64
 |---|---|---|---|---|---|
 | `scan-images-20261104T213712Z` | `SCAN_OUTPUT_DIR=<that directory> scripts/ci/scan-images.sh`, before the code was committed | 15 GiB to start, 15 GiB floor | 2 of 35 images | 1 | FAIL. It stopped when the host fell below 15 GiB free, so 33 images are listed as not scanned |
 | `scan-images-20261104T215437Z` | `make scan-images SCAN_MIN_FREE_GIB=13 SCAN_FLOOR_GIB=12` at 06c8dca | 13 GiB to start, 12 GiB floor | 36 of 36 targets: 35 images and the Wayline source lockfiles | 1, which `make` reports as 2 | FAIL on the policy: 5 CRITICAL findings with a fix, in 2 images we build |
-| `scan-images-20261104T233230Z` | `SCAN_ONLY=built SCAN_MIN_FREE_GIB=12 SCAN_OUTPUT_DIR=<a scratch directory> scripts/ci/scan-images.sh`, on the images built from 8e328a0, with the same database | 12 GiB to start, 12 GiB floor | 5 of 5 targets: the 4 images built here and the Wayline source lockfiles | 0 | PASS: no image we build has a CRITICAL finding with a fix |
+| `scan-images-20261104T235800Z` | `SCAN_ONLY=built SCAN_MIN_FREE_GIB=12 SCAN_OUTPUT_DIR=<a scratch directory> scripts/ci/scan-images.sh`, on the images built from 1563cbf, with the same database | 12 GiB to start, 12 GiB floor | 5 of 5 targets: the 4 images built here and the Wayline source lockfiles | 0 | PASS: no image we build has a CRITICAL finding with a fix |
 
 The limits changed between the two runs. The Docker VM was growing while agents deployed, and the coordinator set 13 and 12 GiB for
 the second run because each image's temp space comes back after that image. The script's defaults stayed at 15 GiB. The lowest
@@ -41,7 +41,7 @@ plane-live, plane-space, and argocd v3.5.7. `critical.tsv` lists every CRITICAL 
 
 ## After the fixes
 
-The run `scan-images-20261104T233230Z` covers only what is built here, so the upstream images above were not scanned again. All five findings are gone from the
+The run `scan-images-20261104T235800Z` covers only what is built here, so the upstream images above were not scanned again. All five findings are gone from the
 two images, which are rebuilt with PyJWT 2.14.0, proxy-addr 2.0.8, and no storybook or tinypool.
 
 | Target | CRITICAL | HIGH | MEDIUM | LOW |
@@ -90,5 +90,5 @@ Each directory holds the output of one run:
 
 Eleven strings in `images/*.json` in the complete run were replaced with `<redacted>`, as `docs/evidence/README.md` allows, because gitleaks flagged
 them. None is a secret of this platform. Six are the CPython release key fingerprint in `GPG_KEY`, three are the `POSTHOG_API_KEY`
-in the public Infisical image's configuration, and two are an example token in the text of a PyJWT advisory. In `scan-images-20261104T233230Z` the same was done to two strings, both that
+in the public Infisical image's configuration, and two are an example token in the text of a PyJWT advisory. In `scan-images-20261104T235800Z` the same was done to two strings, both that
 fingerprint, and ANSI colour codes were stripped from `run.log`. Everything else is byte for byte. A later scan copied here will need the same replacements before it can be committed.

@@ -3,18 +3,18 @@
   "Trivy": {
     "Version": "0.76.1"
   },
-  "ReportID": "01a1a8e8-32a8-76d2-8b05-d32583c186d8",
-  "CreatedAt": "2026-11-05T02:32:32.040448+03:00",
-  "ArtifactID": "sha256:1829c938c54bd431255054b26759b204728bf478c69cfc9f3a422ea5fc10a24d",
-  "ArtifactName": "localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f",
+  "ReportID": "01a1a8ff-86dd-725d-a7d1-3ea63f3a60f0",
+  "CreatedAt": "2026-11-05T02:58:00.925156+03:00",
+  "ArtifactID": "sha256:3489f746edb40319f3495d673fb69ac0b54603b294e34a48109320f30d487061",
+  "ArtifactName": "localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c",
   "ArtifactType": "container_image",
   "Metadata": {
-    "Size": 95806976,
+    "Size": 72907264,
     "OS": {
       "Family": "alpine",
       "Name": "3.24.3"
     },
-    "ImageID": "sha256:3e9f865b5eec12199e04ec53d17e94b4c63490ea1c62aa857071098eb21ed551",
+    "ImageID": "sha256:3122126c200ab7b20e5ee53c60a17c46b179b30edee87e3590a3ca0698f811f8",
     "DiffIDs": [
       "sha256:a278e6f39431cd0ed74238a3d377893ad0d905d68b676bf9a65529080669756b",
       "sha256:c55ed3947c0dd17f391ea0475474a9d785467ce92a8a76b99fd2951c86c05797",
@@ -25,20 +25,18 @@
       "sha256:1bb97dd90c8ab18238a91a5010009a930b43457a04702134815ce3c3700797f3",
       "sha256:499ae474bbbc156a632ba4d1b3ce64f100b598b63e908f4eda1f7b818b149158",
       "sha256:e595e03eea9a4a73fdb481125583deefb9905e6de833327ccf902bbab15f2230",
-      "sha256:5845bdcf032df9adcb6b998013ff353df922109605e72bec8a07b49b9df19347",
-      "sha256:1df09d7caec5c5dbab3435eb7f38a04427859374c14b982f8f368ff84d8961e8",
-      "sha256:d254c132ecce45ba0d88f097d5239735567035acc1e5be34c0ec29fad46780f2",
-      "sha256:9b1d9afe0596a49c52b6543db14b56b4cae06ca5f5a4225f99da525b08899cfb",
-      "sha256:e76a49c261210c3bb1425a4a678bde883945847a5c548b66b28bd607f0f53cb8",
+      "sha256:5c8f62b58e794fe87697596bfe181e79996b31d1200831d3176e8fe742f3947e",
+      "sha256:b564b77631685457bfb93bbe8e129086ff3fcca17af729548bfd6ded60453260",
+      "sha256:1c28082d0cc87925bf23269afc88776426989b67ab677dbb0e6c0241cbd1ce72",
       "sha256:84c2cfcea1c66dc65166be6f253865e793d3519b930b2d546d908c03baf34255"
     ],
     "RepoDigests": [
-      "localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f"
+      "localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c"
     ],
-    "Reference": "localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f",
+    "Reference": "localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c",
     "ImageConfig": {
       "architecture": "arm64",
-      "created": "2026-11-04T23:29:07Z",
+      "created": "2026-11-04T23:53:51Z",
       "history": [
         {
           "created": "2026-10-21T22:51:39.084385804Z",
@@ -153,84 +151,74 @@
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "ARG APK_SECURITY_PATCH=2026-11-04",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "RUN |1 APK_SECURITY_PATCH=2026-11-04 /bin/sh -c echo \"apk-security-patch ${APK_SECURITY_PATCH}\" \u0026\u0026 apk upgrade --no-cache --available \u0026\u0026 rm -rf /var/cache/apk/* # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "ARG WAYLINE_SOURCE_REF",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
-          "created_by": "LABEL org.opencontainers.image.title=wayline-web org.opencontainers.image.description=Customized Plane Community Edition web client org.opencontainers.image.licenses=AGPL-3.0-only org.opencontainers.image.source=https://github.com/BereketAbera/plane-platform org.opencontainers.image.revision=8e328a06545030a43066b65112082491311e0048",
+          "created": "2026-11-04T23:53:51Z",
+          "created_by": "LABEL org.opencontainers.image.title=wayline-admin org.opencontainers.image.description=Customized Plane Community Edition instance admin org.opencontainers.image.licenses=AGPL-3.0-only org.opencontainers.image.source=https://github.com/BereketAbera/plane-platform org.opencontainers.image.revision=1563cbfbe89536541c041ec59f241edeab3740c2",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "COPY nginx.conf /etc/nginx/nginx.conf # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2026-11-04T23:29:07Z",
-          "created_by": "COPY client/ /usr/share/nginx/html/ # buildkit",
+          "created": "2026-11-04T23:53:51Z",
+          "created_by": "COPY client/ /usr/share/nginx/html/god-mode/ # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "COPY licenses/ /usr/share/licenses/wayline/ # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2026-11-04T23:29:07Z",
-          "created_by": "COPY licenses/ /usr/share/nginx/html/licenses/ # buildkit",
+          "created": "2026-11-04T23:53:51Z",
+          "created_by": "RUN |3 APK_SECURITY_PATCH=2026-11-04 WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform WAYLINE_SOURCE_REF=1563cbfbe89536541c041ec59f241edeab3740c2 /bin/sh -c chown -R 101:101 /run /var/cache/nginx # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2026-11-04T23:29:07Z",
-          "created_by": "RUN |3 APK_SECURITY_PATCH=2026-11-04 WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform WAYLINE_SOURCE_REF=8e328a06545030a43066b65112082491311e0048 /bin/sh -c test -n \"${WAYLINE_SOURCE_REF}\"   \u0026\u0026 sed -i \"s|__WAYLINE_SOURCE_URL__|${WAYLINE_SOURCE_REPO}/tree/${WAYLINE_SOURCE_REF}|\" /etc/nginx/nginx.conf   \u0026\u0026 ! grep -q __WAYLINE /etc/nginx/nginx.conf # buildkit",
-          "comment": "buildkit.dockerfile.v0"
-        },
-        {
-          "created": "2026-11-04T23:29:07Z",
-          "created_by": "RUN |3 APK_SECURITY_PATCH=2026-11-04 WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform WAYLINE_SOURCE_REF=8e328a06545030a43066b65112082491311e0048 /bin/sh -c chown -R 101:101 /run /var/cache/nginx # buildkit",
-          "comment": "buildkit.dockerfile.v0"
-        },
-        {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "USER 101",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "EXPOSE map[3000/tcp:{}]",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
-          "created_by": "HEALTHCHECK \u0026{[\"CMD\" \"wget\" \"-q\" \"-O\" \"/dev/null\" \"http://127.0.0.1:3000/\"] \"30s\" \"5s\" \"10s\" \"0s\" '\\x03'}",
+          "created": "2026-11-04T23:53:51Z",
+          "created_by": "HEALTHCHECK \u0026{[\"CMD\" \"wget\" \"-q\" \"-O\" \"/dev/null\" \"http://127.0.0.1:3000/god-mode/\"] \"30s\" \"5s\" \"10s\" \"0s\" '\\x03'}",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2026-11-04T23:29:07Z",
+          "created": "2026-11-04T23:53:51Z",
           "created_by": "CMD [\"nginx\" \"-g\" \"daemon off;\"]",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
@@ -249,11 +237,9 @@
           "sha256:1bb97dd90c8ab18238a91a5010009a930b43457a04702134815ce3c3700797f3",
           "sha256:499ae474bbbc156a632ba4d1b3ce64f100b598b63e908f4eda1f7b818b149158",
           "sha256:e595e03eea9a4a73fdb481125583deefb9905e6de833327ccf902bbab15f2230",
-          "sha256:5845bdcf032df9adcb6b998013ff353df922109605e72bec8a07b49b9df19347",
-          "sha256:1df09d7caec5c5dbab3435eb7f38a04427859374c14b982f8f368ff84d8961e8",
-          "sha256:d254c132ecce45ba0d88f097d5239735567035acc1e5be34c0ec29fad46780f2",
-          "sha256:9b1d9afe0596a49c52b6543db14b56b4cae06ca5f5a4225f99da525b08899cfb",
-          "sha256:e76a49c261210c3bb1425a4a678bde883945847a5c548b66b28bd607f0f53cb8",
+          "sha256:5c8f62b58e794fe87697596bfe181e79996b31d1200831d3176e8fe742f3947e",
+          "sha256:b564b77631685457bfb93bbe8e129086ff3fcca17af729548bfd6ded60453260",
+          "sha256:1c28082d0cc87925bf23269afc88776426989b67ab677dbb0e6c0241cbd1ce72",
           "sha256:84c2cfcea1c66dc65166be6f253865e793d3519b930b2d546d908c03baf34255"
         ]
       },
@@ -270,7 +256,7 @@
             "-q",
             "-O",
             "/dev/null",
-            "http://127.0.0.1:3000/"
+            "http://127.0.0.1:3000/god-mode/"
           ],
           "Interval": 30000000000,
           "Timeout": 5000000000,
@@ -291,11 +277,11 @@
         ],
         "Labels": {
           "maintainer": "NGINX Docker Maintainers \u003cdocker-maint@nginx.com\u003e",
-          "org.opencontainers.image.description": "Customized Plane Community Edition web client",
+          "org.opencontainers.image.description": "Customized Plane Community Edition instance admin",
           "org.opencontainers.image.licenses": "AGPL-3.0-only",
-          "org.opencontainers.image.revision": "8e328a06545030a43066b65112082491311e0048",
+          "org.opencontainers.image.revision": "1563cbfbe89536541c041ec59f241edeab3740c2",
           "org.opencontainers.image.source": "https://github.com/BereketAbera/plane-platform",
-          "org.opencontainers.image.title": "wayline-web"
+          "org.opencontainers.image.title": "wayline-admin"
         },
         "User": "101",
         "WorkingDir": "/",
@@ -354,29 +340,19 @@
         "DiffID": "sha256:e595e03eea9a4a73fdb481125583deefb9905e6de833327ccf902bbab15f2230"
       },
       {
-        "Size": 4096,
-        "Digest": "sha256:5df6a65eacc8dd3c9c2259baa53c208e24f0c958294d34dfc821df891b76ef3f",
-        "DiffID": "sha256:5845bdcf032df9adcb6b998013ff353df922109605e72bec8a07b49b9df19347"
+        "Size": 3584,
+        "Digest": "sha256:3e83f3be6fb28967799d1b109c225eee8c5af10970745393ac6b07589f2a1d33",
+        "DiffID": "sha256:5c8f62b58e794fe87697596bfe181e79996b31d1200831d3176e8fe742f3947e"
       },
       {
-        "Size": 27848704,
-        "Digest": "sha256:faa2add99015d80b5428bdd295c70e5607147b56d4a3cc77489414cf52366556",
-        "DiffID": "sha256:1df09d7caec5c5dbab3435eb7f38a04427859374c14b982f8f368ff84d8961e8"
+        "Size": 5025280,
+        "Digest": "sha256:478ae191c79f8a73c5da7693927b98437fa231919373a7a4c830300d5eb397be",
+        "DiffID": "sha256:b564b77631685457bfb93bbe8e129086ff3fcca17af729548bfd6ded60453260"
       },
       {
         "Size": 70656,
-        "Digest": "sha256:77aae00b6b18c7624499f8c89165106b23a1ffa20c7c12ff1eee6caae44530f6",
-        "DiffID": "sha256:d254c132ecce45ba0d88f097d5239735567035acc1e5be34c0ec29fad46780f2"
-      },
-      {
-        "Size": 71168,
-        "Digest": "sha256:77af4b3680c8f5b73c3f1c5489eddc67ef8211d406306a5aa4e30b7be6177eb2",
-        "DiffID": "sha256:9b1d9afe0596a49c52b6543db14b56b4cae06ca5f5a4225f99da525b08899cfb"
-      },
-      {
-        "Size": 4608,
-        "Digest": "sha256:e5f6a9e244cab3eab57beec09675f1e238f79cb70054a1ea5f102973c62b5189",
-        "DiffID": "sha256:e76a49c261210c3bb1425a4a678bde883945847a5c548b66b28bd607f0f53cb8"
+        "Digest": "sha256:676bbca0c018e7a2f6eb9f023d7022bcbe01f6b7159e6b6acce887fca338d25b",
+        "DiffID": "sha256:1c28082d0cc87925bf23269afc88776426989b67ab677dbb0e6c0241cbd1ce72"
       },
       {
         "Size": 3584,
@@ -387,7 +363,7 @@
   },
   "Results": [
     {
-      "Target": "localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f (alpine 3.24.3)",
+      "Target": "localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c (alpine 3.24.3)",
       "Class": "os-pkgs",
       "Type": "alpine"
     }

@@ -1,5 +1,5 @@
 
-== web: localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f
+== web: localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS / title names Wayline
@@ -12,9 +12,9 @@ PASS font /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
 PASS SPA route /some-workspace/projects/ status: 200
 PASS SPA route serves index.html: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
-/source -> 302 https://github.com/BereketAbera/plane-platform/tree/8e328a06545030a43066b65112082491311e0048
+/source -> 302 https://github.com/BereketAbera/plane-platform/tree/1563cbfbe89536541c041ec59f241edeab3740c2
 PASS /source is a 302 to the repository at a commit
-PASS /source names commit 8e328a06545030a43066b65112082491311e0048
+PASS /source names commit 1563cbfbe89536541c041ec59f241edeab3740c2
 NOTE /source target, followed logged out, answers 404. 404 is expected while the repository is private or the commit is unpushed
 PASS /licenses/LICENSE.txt status: 200
 PASS /licenses/LICENSE.txt content type: text/plain
@@ -25,17 +25,17 @@ PASS manifest names Wayline
 PASS X-Frame-Options: DENY
 uid in container: 101
 PASS web carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 8.625MiB / 64MiB
+memory after these requests: 3.43MiB / 64MiB
 PASS web logs show no permission or fatal errors
 
-== web: localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f
+== web: localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS web also runs without the chart's emptyDirs
 
-== admin: localhost:5001/wayline/admin@sha256:2198daa96d9361eae378ca562cd8c4716e04ba693f01f8511163fa85b4b698ba
+== admin: localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
-PASS /god-mode/ answers 200 after about 1 s
+PASS /god-mode/ answers 200 after about 0 s
 PASS /god-mode/ title names Wayline
 PASS /god-mode/ has no upstream brand
 PASS stylesheet /god-mode/assets/globals-baDRgtAC.css status: 200
@@ -48,10 +48,10 @@ PASS SPA route /god-mode/general/ status: 200
 PASS SPA route serves god-mode index.html: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
 uid in container: 101
 PASS admin carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 3.391MiB / 64MiB
+memory after these requests: 3.309MiB / 64MiB
 PASS admin logs show no permission or fatal errors
 
-== space: localhost:5001/wayline/space@sha256:19f1fac2700ecf5a1eda326904d20f25b8e7d20101890c9732be7a09badb8ce8
+== space: localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
 run as uid 1000, memory 256m, cpus 0.25, cap-drop ALL, no-new-privileges
 PASS /spaces/ answers 200 after about 8 s
 PASS /spaces/ title names Wayline
@@ -69,7 +69,7 @@ PASS /spaces/ with X-Forwarded-For '': 200
 PASS server still running after those: true
 uid in container: 1000
 PASS space carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 79.82MiB / 256MiB
+memory after these requests: 73.38MiB / 256MiB
 PASS space logs show no permission or fatal errors
 
 == What the server bundle imports
@@ -101,9 +101,9 @@ PASS space-deps.mjs check exit 0
 
 0 failure(s) in the frontend images
 
-== backend: localhost:5001/wayline/backend@sha256:cd6302a9cc04aa8badcaba102fe6ed6b091c56f666af514595a6e9a6ba34d72e
+== backend: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
 == docker image inspect
-id=sha256:cd6302a9cc04aa8badcaba102fe6ed6b091c56f666af514595a6e9a6ba34d72e arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+id=sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
 == base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 == manage.py check
@@ -133,7 +133,7 @@ PASS /code/plane/utils/email.py carries AGPL-3.0-only
 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
 
 == PyJWT as installed
-PASS PyJWT is 2.14.0
+PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
 PASS one copy installed: ['2.14.0']
 PASS pip check No broken requirements found.
 
@@ -206,7 +206,7 @@ PASS style removal matches the old regex on "<STYLE type='text/css'>\n"
 PASS style removal matches the old regex on '<style>a{}</style><style'
 PASS style removal matches the old regex on '<style</style>x</style>'
 PASS style removal matches the old regex on '<p>Hi</p><style<style<st'
-PASS 11000 unclosed style-like tags take under a second 0.017 s
+PASS 11000 unclosed style-like tags take under a second 0.016 s
 
 == PyJWT as Plane uses it
 PASS importers of jwt: ['plane/app/views/project/invite.py', 'plane/app/views/workspace/invite.py']
@@ -254,6 +254,9 @@ PASS import plane.license.management.commands.register_instance
 PASS import plane.license.utils.instance_value
 PASS import plane.settings.openapi
 PASS import plane.utils.constants
+
+== Every task module loads, as a worker's start does
+PASS 47 tasks registered
 
 == Values that reach users
 PASS openapi TITLE = 'The Wayline REST API'
