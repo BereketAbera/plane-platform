@@ -16,6 +16,12 @@ services:
   registry:
     <<: *registry
     container_name: plane-registry
+    # A push fills this limit with dirty page cache faster than the disk drains it, and the kernel then OOM-kills
+    # a registry with almost nothing of its own in memory. Measured on a scratch registry: at 128m, 2 of 8 real
+    # buildx pushes of all four Wayline images (412 MiB on disk) were killed, with file_dirty at 120 MiB and anon
+    # at 0. With room to spare the same pushes peak at 459 MiB, of which anon and swap are at most 32 MiB, so 512m
+    # keeps them off the limit. Nearly all of it is page cache, which the VM can reclaim once it is written out.
+    mem_limit: 512m
     ports: ["127.0.0.1:5001:5000"]
     environment:
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
