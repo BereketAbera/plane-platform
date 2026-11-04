@@ -118,7 +118,9 @@ notifications:
 applicationSet:
   replicas: 0
 
-# Memory below totals 360Mi requests and 1408Mi limits for the four running pods. ESTIMATE, unmeasured.
+# Memory below totals 360Mi requests and 1536Mi limits for the four running pods. Peaks measured on the
+# first real run, with monitoring and Infisical synced and no Plane workloads yet: controller 517Mi,
+# repo-server 247Mi, server 83Mi, redis 25Mi.
 # No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
 controller:
   replicas: 1
@@ -130,8 +132,9 @@ controller:
     requests:
       cpu: 100m
       memory: 192Mi
+    # 640Mi left about 120Mi of room at 517Mi, measured before either Plane environment existed.
     limits:
-      memory: 640Mi
+      memory: 768Mi
   # Upstream ships this off because restarting an overloaded controller makes things worse
   # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
   # thresholds slack enough (5 min) that first-sync load alone should not trip it.
@@ -155,9 +158,8 @@ repoServer:
     requests:
       cpu: 50m
       memory: 96Mi
-    # Measured on macOS arm64 with Helm 4.3.1, so indicative: helm pull max RSS 194 MiB for
-    # kube-prometheus-stack, 139 MiB for Alloy, 107 MiB for Loki. Two renders plus the server itself
-    # can pass 384Mi. Measure again on the first real sync.
+    # Peak 247Mi (cgroup memory.peak) with all 8 chart Applications hard-refreshed at once and
+    # reposerver.parallelism.limit at 2, so this has room.
     limits:
       memory: 512Mi
 
