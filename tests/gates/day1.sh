@@ -9,7 +9,8 @@
 # them with a redirect, not a pipe, so the exit status stays this script's:
 #   tests/gates/day1.sh > .local/evidence-raw/day1-gates.txt 2>&1
 #
-# Exit status: 0 only if every check ran and passed, otherwise 1.
+# Exit status: 0 only if every check ran and passed. 1 if a check failed or did not run, the cluster was not
+# reachable, or the script stopped on an error. A signal ends it with 129 (HUP), 130 (INT) or 143 (TERM).
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"
 
@@ -27,6 +28,8 @@ CURL_IMAGE="docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472
 LOCAL_PROBE="localhost:5001/gate/probe"
 READY_TIMEOUT=180s
 SERVER_URL="http://g2-server.$NS.svc.cluster.local:8080/index.html"
+# The server as the node asks for it, set once its Service exists. The node cannot resolve Service names.
+WITNESS_URL=""
 # No policy selects this server, so a client that cannot reach it has a problem no policy explains.
 REFERENCE_URL="http://g2-reference.$NS.svc.cluster.local:8080/index.html"
 CONNECT_TIMEOUT=5
@@ -36,7 +39,7 @@ POLICY_SETTLE_SECONDS=30
 POD_OVERRIDES='{"apiVersion":"v1","spec":{"terminationGracePeriodSeconds":0,"activeDeadlineSeconds":900,"automountServiceAccountToken":false,"enableServiceLinks":false}}'
 
 pass=0; failed=0; not_run=0
-CLAIMED=no; CLEANED=no; SUMMARY_DONE=no
+CLAIMED=no; CLAIMING=no; CLEANED=no; SUMMARY_DONE=no
 result() { # <PASS|FAIL|NOT RUN> <what>
   case "$1" in
     PASS) pass=$((pass + 1)) ;;
@@ -46,23 +49,68 @@ result() { # <PASS|FAIL|NOT RUN> <what>
   printf '%-5s %s\n' "$1" "$2"
 }
 
-# Only the run that holds the namespace cleans up. A run refused below leaves the other's things alone.
+# Only the run that holds the namespace cleans up, so a run refused below leaves the other's things alone.
+# While the create is running CLAIMED is still no. A signal there gets here with the create done, and the
+# owner's pid on the namespace says whether it is this run's. A failed get says no, and so leaves it alone.
+holds_namespace() {
+  [[ "$CLAIMED" == yes ]] && return 0
+  [[ "$CLAIMING" == yes ]] || return 1
+  [[ "$(kc get namespace "$NS" --ignore-not-found --request-timeout=10s -o jsonpath='{.metadata.annotations.plane-platform/gates-pid}' 2>/dev/null)" == "$$" ]] || return 1
+  CLAIMED=yes
+}
+
 cleanup() {
-  [[ "$CLAIMED" == yes && "$CLEANED" == no ]] || return 0
-  CLEANED=yes
+  [[ "$CLEANED" == no ]] || return 0
+  holds_namespace || return 0
   rm -rf "$LOCAL_DIR/git/gate.git"
   # The tag only. The source image stays cached, and the registry keeps the manifest this run pushed.
   docker image rm "$LOCAL_PROBE:v1" >/dev/null 2>&1 || true
-  kc delete namespace "$NS" --ignore-not-found --wait=true --timeout=120s >/dev/null 2>&1
+  kc delete namespace "$NS" --ignore-not-found --wait=true --timeout=120s >/dev/null 2>&1 || true
+  # Only now. A signal during the work above exits through on_exit, which has to run all of it again.
+  CLEANED=yes
 }
+
+# True only if the path is known to be absent. `-e` is also false for a dangling symlink, and when a parent
+# cannot be searched, where macOS `rm -rf` even exits 0.
+gone() { # <path>
+  local out
+  if out="$(LC_ALL=C ls -d "$1" 2>&1)"; then
+    return 1
+  fi
+  [[ "$out" == *"No such file or directory" ]]
+}
+
+# One line for each thing this run has to remove and has not confirmed gone, and nothing if both are.
+# Checks the state instead of trusting cleanup, which ignores a failed rm. A failed get prints nothing on
+# stdout, so its exit code counts as well as its output.
+leftovers() {
+  local left newline=$'\n'
+  if ! left="$(kc get namespace "$NS" --ignore-not-found --request-timeout=10s -o name 2>&1)" || [[ -n "$left" ]]; then
+    printf 'namespace %s is not confirmed gone: %s. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl delete namespace %s\n' "$NS" "${left//$newline/ }" "$NS"
+  fi
+  if ! gone "$LOCAL_DIR/git/gate.git"; then
+    printf 'the throwaway .local/git/gate.git is not confirmed gone. Delete it by hand: rm -rf .local/git/gate.git\n'
+  fi
+}
+
 on_exit() {
-  local status=$?
+  local status=$? left line
+  # A second signal must not cut this short. Bash holds a trap until the foreground command returns, so the
+  # first can show nothing for minutes, and a second is likely.
+  trap '' INT TERM HUP
   cleanup || true
   if [[ "$SUMMARY_DONE" == no ]]; then
     printf -- '--- Stopped before the summary, exit %s: %s passed, %s failed, %s not run\n' "$status" "$pass" "$failed" "$not_run" >&3
+    if [[ "$CLAIMED" == yes ]]; then
+      left="$(leftovers)"
+      while IFS= read -r line; do
+        [[ -z "$line" ]] || printf -- '--- Left behind: %s\n' "$line" >&3
+      done <<<"$left"
+    fi
   fi
 }
 trap on_exit EXIT
+trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
@@ -101,6 +149,7 @@ claim_namespace() {
     fi
     kc delete namespace "$NS" --wait=true --timeout=120s >/dev/null
   fi
+  CLAIMING=yes
   kc create -f - >/dev/null <<YAML
 apiVersion: v1
 kind: Namespace
@@ -233,25 +282,34 @@ classify() {
   esac
 }
 
-# Runs inside the client. Every run is a new connection, the only thing kindnet evaluates. The two
-# fetches start together, so the reference speaks for the same client at the same moment as the target.
 # The exit code is printed rather than returned, so a kubectl failure can never be read as a curl result.
-# shellcheck disable=SC2016  # expanded by the pod's shell, not this one
-IN_POD_PROBE='fetch() {
+# shellcheck disable=SC2016  # expanded by the shell it runs in, not this one
+FETCH='fetch() {
   out=$(curl -sS -o /dev/null --connect-timeout '"$CONNECT_TIMEOUT"' --max-time '"$((CONNECT_TIMEOUT + 2))"' -w "%{http_code} %{time_namelookup} %{time_connect} %{errormsg}" "$2" 2>/dev/null)
   code=$?
   echo "RESULT $1 $code $out"
-}
+}'
+# Runs inside the client. Every run is a new connection, the only thing kindnet evaluates. The two
+# fetches start together, so the reference speaks for the same client at the same moment as the target.
+# shellcheck disable=SC2016  # expanded by the pod's shell, not this one
+IN_POD_PROBE="$FETCH"'
 fetch target "$1" &
 fetch reference "$2" &
 wait'
+# Runs on the node, as root, at the same moment. kindnet's postrouting chain accepts `meta skuid 0` ahead of
+# its policy queue, so no policy governs this fetch, and an answer shows the target is up and listening. If a
+# later kindnet applied policy to it, the deny rows would fail, not pass.
+# shellcheck disable=SC2016  # expanded by the node's shell, not this one
+NODE_PROBE="$FETCH"'
+fetch witness "$1"'
 
-read_result() { # <exec output> <target or reference>. Sets RESULT_CLASS, RESULT_HTTP and RESULT_DETAIL.
+read_result() { # <exec output> <target, reference or witness>. Sets RESULT_CLASS, RESULT_HTTP and RESULT_DETAIL.
   local line code lookup connect message
   line="$(grep "^RESULT $2 " <<<"$1" || true)"
   if [[ -z "$line" ]]; then
     RESULT_CLASS=NO_RESULT; RESULT_HTTP=none
-    RESULT_DETAIL="kubectl exec gave no result: $(tail -1 <<<"$1")"
+    message="$(grep -v '^RESULT ' <<<"$1" | tail -1 || true)"
+    RESULT_DETAIL="no result${message:+: $message}"
     return 0
   fi
   read -r _ _ code RESULT_HTTP lookup connect message <<<"$line"
@@ -259,13 +317,21 @@ read_result() { # <exec output> <target or reference>. Sets RESULT_CLASS, RESULT
   RESULT_DETAIL="curl exit $code, HTTP $RESULT_HTTP${message:+, $message}"
 }
 
-probe() { # <client pod> <url>. Sets PROBE_* for the url and REFERENCE_* for the reference, from one exec.
+# <client pod> <url>. Sets PROBE_* for the url, REFERENCE_* for the reference and WITNESS_* for the node's
+# fetch of the server. All three start together. Only the deny rows read the witness.
+probe() {
   local raw
-  raw="$(kc -n "$NS" exec "$1" -- sh -c "$IN_POD_PROBE" probe "$2" "$REFERENCE_URL" 2>&1 || true)"
+  raw="$(
+    kc -n "$NS" exec "$1" -- sh -c "$IN_POD_PROBE" probe "$2" "$REFERENCE_URL" 2>&1 &
+    docker exec "$NODE_CONTAINER" sh -c "$NODE_PROBE" probe "$WITNESS_URL" 2>&1 &
+    wait
+  )" || true
   read_result "$raw" target
   PROBE_CLASS="$RESULT_CLASS"; PROBE_HTTP="$RESULT_HTTP"; PROBE_DETAIL="$RESULT_DETAIL"
   read_result "$raw" reference
   REFERENCE_CLASS="$RESULT_CLASS"; REFERENCE_HTTP="$RESULT_HTTP"; REFERENCE_DETAIL="$RESULT_DETAIL"
+  read_result "$raw" witness
+  WITNESS_CLASS="$RESULT_CLASS"; WITNESS_HTTP="$RESULT_HTTP"; WITNESS_DETAIL="$RESULT_DETAIL"
 }
 
 # probe_until <client> <wanted class> <class worth retrying, or any, or none> [url, the server if left out]
@@ -283,17 +349,24 @@ probe_until() {
   done
 }
 
-# A deny passes only on a real timeout while the same client, at the same moment, gets an answer from
-# the reference, a server no policy selects. DNS trouble, a refused connection, a kubectl failure, or a
-# reference that did not answer says nothing about the policy, so each of those fails instead of reading
-# as blocked. This rules out loss on the client's side or across the network. Loss that hits only the
-# target still reads as blocked. The controls before and after the policies are all that bound that.
+# A deny passes only on a real timeout while two things answer at the same moment: the reference, a server
+# no policy selects, answers the same client, and the target answers the node's root curl. DNS trouble, a
+# refused connection, a kubectl failure, or either of those not answering says nothing about the policy, so
+# each of those fails instead of reading as blocked. This rules out loss on the client's side, across the
+# network, and at the target itself. It cannot catch loss only on the path from this client to the target,
+# for example an egress policy on the client that lets through DNS and the reference: that reads the same as
+# the ingress policy under test. So a PASS states what was seen, not that the policy caused it. The controls
+# before and after the policies are all that bound that.
 expect_blocked() { # <client> <what> [CONNECTED, to retry until the policy has reached kindnet]
+  local seen
   if probe_until "$1" TIMEOUT "${3:-none}"; then
-    if [[ "$REFERENCE_CLASS" == CONNECTED && "$REFERENCE_HTTP" == 200 ]]; then
-      result PASS "$2 (try $PROBE_TRIES, same moment, reference: $REFERENCE_DETAIL, target: $PROBE_DETAIL)"
+    seen="target: $PROBE_DETAIL; reference: $REFERENCE_DETAIL; node: $WITNESS_DETAIL"
+    if [[ "$REFERENCE_CLASS" != CONNECTED || "$REFERENCE_HTTP" != 200 ]]; then
+      result FAIL "$2: the target timed out but the reference did not answer this client, so this says nothing about the policy ($seen)"
+    elif [[ "$WITNESS_CLASS" != CONNECTED || "$WITNESS_HTTP" != 200 ]]; then
+      result FAIL "$2: the target timed out but it did not answer the node's root curl either, so this says nothing about the policy ($seen)"
     else
-      result FAIL "$2: the target timed out but the reference did not answer, so this says nothing about the policy (reference: $REFERENCE_CLASS, $REFERENCE_DETAIL, target: $PROBE_DETAIL)"
+      result PASS "$2: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try $PROBE_TRIES, $seen)"
     fi
   elif [[ "$PROBE_CLASS" == CONNECTED ]]; then
     result FAIL "$2: the connection got through, so the policy was not enforced ($PROBE_DETAIL)"
@@ -311,14 +384,16 @@ expect_admitted() { # <client> <what> <class worth retrying, or any> [url, the s
 }
 
 start_gate2_pods() {
-  local server
+  local server server_ip
   for server in g2-server g2-reference; do
     run_pod "$server" --image="$PROBE_IMAGE" --labels="app=$server" --port=8080 --command -- \
       sh -c 'mkdir -p /www && echo ok > /www/index.html && exec httpd -f -p 8080 -h /www' &&
       kc -n "$NS" expose pod "$server" --port=8080 >/dev/null || return 1
   done
   run_pod g2-plain --image="$CURL_IMAGE" --command -- sleep 900 &&
-    run_pod g2-labelled --image="$CURL_IMAGE" --labels=allowed=yes --command -- sleep 900
+    run_pod g2-labelled --image="$CURL_IMAGE" --labels=allowed=yes --command -- sleep 900 || return 1
+  server_ip="$(kc -n "$NS" get service g2-server -o jsonpath='{.spec.clusterIP}')" && [[ -n "$server_ip" ]] || return 1
+  WITNESS_URL="${SERVER_URL/g2-server.$NS.svc.cluster.local/$server_ip}"
 }
 
 gate2() {
@@ -361,8 +436,8 @@ gate2() {
     result "NOT RUN" "default-deny and allow rule, because no policy was applied"
     return 0
   fi
-  expect_blocked g2-plain "default-deny blocked a new connection from the unlabelled client" CONNECTED
-  expect_blocked g2-labelled "default-deny blocked a new connection from the labelled client"
+  expect_blocked g2-plain "default-deny, unlabelled client" CONNECTED
+  expect_blocked g2-labelled "default-deny, labelled client"
 
   if ! kc -n "$NS" apply -f - >/dev/null <<<"$ALLOW_POLICY"; then
     result FAIL "could not apply the allow policy in $NS"
@@ -373,13 +448,13 @@ gate2() {
   failed_before="$failed"
   expect_admitted g2-labelled "allow rule admits the labelled client" TIMEOUT
   if [[ "$failed" -eq "$failed_before" ]]; then
-    expect_blocked g2-plain "allow rule admits only the labelled client: the unlabelled client is still blocked"
+    expect_blocked g2-plain "allow rule, unlabelled client"
   else
     result "NOT RUN" "unlabelled client under the allow rule, because a timeout proves nothing until the rule has been seen working"
   fi
 
   # The same client, the same server, no policy. This shows the network and the server still work. It
-  # says nothing on its own about what caused the timeouts above: the reference probes speak to that.
+  # says nothing on its own about what caused the timeouts above: the reference and the node speak to that.
   if kc -n "$NS" delete networkpolicy deny-to-server allow-labelled >/dev/null; then
     expect_admitted g2-plain "control: with both policies deleted the unlabelled client connects again, so the network and the server still work" TIMEOUT
   else
@@ -430,22 +505,17 @@ gate5() {
 
 # ------ Run ---------------------------------------------------------------------------------------
 
-# Checks the state instead of trusting cleanup, which ignores a failed rm. A failed get prints nothing
-# on stdout, so its exit code counts as well as its output.
 report_cleanup() {
-  local left clean=yes
+  local left line
   cleanup || true
-  if ! left="$(kc get namespace "$NS" --ignore-not-found -o name 2>&1)" || [[ -n "$left" ]]; then
-    result FAIL "namespace $NS is not confirmed gone: $left. Delete it by hand: KUBECONFIG=.local/kubeconfig .tools/bin/kubectl delete namespace $NS"
-    clean=no
-  fi
-  if [[ -e "$LOCAL_DIR/git/gate.git" ]]; then
-    result FAIL "the throwaway .local/git/gate.git is still there. Delete it by hand: rm -rf .local/git/gate.git"
-    clean=no
-  fi
-  if [[ "$clean" == yes ]]; then
+  left="$(leftovers)"
+  if [[ -z "$left" ]]; then
     result PASS "namespace $NS and the throwaway gate.git are gone"
+    return 0
   fi
+  while IFS= read -r line; do
+    result FAIL "$line"
+  done <<<"$left"
 }
 
 stamp_run "$@"
