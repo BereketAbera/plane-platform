@@ -1,0 +1,132 @@
+# Everything the chart lacks, shared by both environments. Object names match in both because the
+# release is `plane` in each. Generators run before components, so these patch the chart's output.
+#
+# A patch with a target that matches nothing does not fail, so scripts/render.sh asserts the
+# results it can see. A `remove` of a path the chart stops rendering does fail: that is the alarm
+# on a chart upgrade.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - serviceaccounts.yaml
+  - rabbitmq-conf.yaml
+  - traefik-redirect.yaml
+
+patches:
+  # First, so the Job-wide patches below see only the migrator. The api's create_bucket makes the
+  # bucket. This Job adds an anonymous-download policy compose does not have, always exits 0, and
+  # pulls two more images.
+  - target: {kind: Job, name: plane-minio-bucket-1}
+    patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: ignored
+
+  # `now` in the pod template changes every render, which would roll all Deployments and hit the
+  # Job's immutable template.
+  - target: {kind: Deployment|Job, name: plane-.*}
+    patch: |-
+      - {op: remove, path: /spec/template/metadata/annotations/timestamp}
+      - {op: remove, path: /spec/template/metadata/annotations}
+
+  # A TTY makes the app tools emit colour and CRLF into the logs Loki ingests.
+  - target: {kind: Deployment|StatefulSet, name: plane-.*}
+    patch: |-
+      - {op: remove, path: /spec/template/spec/containers/0/tty}
+      - {op: remove, path: /spec/template/spec/containers/0/stdin}
+
+  # Meets PSA `restricted`. Each patches/*.yaml below supplies the UID its image is built for. None
+  # has run yet (critique gate 11): if one fails, fix it in that workload's patch. Read-only root
+  # waits for the same test, and `restricted` does not require it.
+  - target: {kind: Deployment|StatefulSet|Job, name: plane-.*}
+    patch: |-
+      - {op: add, path: /spec/template/spec/automountServiceAccountToken, value: false}
+      - op: add
+        path: /spec/template/spec/securityContext
+        value: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext
+        value: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+      - {op: replace, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
+
+  # Sync waves, contract section 6. ServiceAccounts carry theirs in serviceaccounts.yaml, Infisical
+  # CRs in each overlay.
+  - target: {kind: ConfigMap|Service}
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: ignored
+        annotations:
+          argocd.argoproj.io/sync-wave: "0"
+  - target: {kind: StatefulSet}
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: ignored
+        annotations:
+          argocd.argoproj.io/sync-wave: "1"
+  - target: {kind: Deployment}
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ignored
+        annotations:
+          argocd.argoproj.io/sync-wave: "3"
+  - target: {group: traefik.io, kind: IngressRoute|Middleware}
+    patch: |-
+      apiVersion: traefik.io/v1alpha1
+      kind: IngressRoute
+      metadata:
+        name: ignored
+        annotations:
+          argocd.argoproj.io/sync-wave: "4"
+
+  # Sync at wave 2, never PreSync: Postgres is applied in the Sync phase, wait_for_db does not wait,
+  # so a PreSync migrator exhausts its retries against no database and stops a fresh install.
+  # No ttlSecondsAfterFinished: Argo can wait forever on a hook Kubernetes already deleted.
+  - target: {kind: Job, name: plane-api-migrate-1}
+    patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: ignored
+        annotations:
+          argocd.argoproj.io/hook: Sync
+          argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+          argocd.argoproj.io/sync-wave: "2"
+      spec:
+        activeDeadlineSeconds: 900
+
+  # Helm renders this value as 2.097152e+07 and the CRD field is an integer. Keep it above
+  # FILE_SIZE_LIMIT to leave room for multipart overhead.
+  - target: {kind: Middleware, name: plane-body-limit}
+    patch: |-
+      - {op: replace, path: /spec/buffering/maxRequestBodyBytes, value: 20971520}
+
+  # The redirect runs before buffering. The tests make a reordered chart fail the render instead of
+  # attaching the redirect to the wrong route.
+  - target: {kind: IngressRoute, name: plane-ingress}
+    patch: |-
+      - {op: test, path: /spec/routes/0/services/0/name, value: plane-space}
+      - {op: add, path: /spec/routes/0/middlewares/0, value: {name: plane-trailing-slash}}
+      - {op: test, path: /spec/routes/1/services/0/name, value: plane-admin}
+      - {op: add, path: /spec/routes/1/middlewares/0, value: {name: plane-trailing-slash}}
+
+  # One file per workload: labels, UID, memory from contract section 10, probes.
+  - {path: patches/web.yaml, target: {kind: Deployment, name: plane-web-wl}}
+  - {path: patches/admin.yaml, target: {kind: Deployment, name: plane-admin-wl}}
+  - {path: patches/space.yaml, target: {kind: Deployment, name: plane-space-wl}}
+  - {path: patches/live.yaml, target: {kind: Deployment, name: plane-live-wl}}
+  - {path: patches/api.yaml, target: {kind: Deployment, name: plane-api-wl}}
+  - {path: patches/worker.yaml, target: {kind: Deployment, name: plane-worker-wl}}
+  - {path: patches/beat.yaml, target: {kind: Deployment, name: plane-beat-worker-wl}}
+  - {path: patches/migrator.yaml, target: {kind: Job, name: plane-api-migrate-1}}
+  - {path: patches/postgres.yaml, target: {kind: StatefulSet, name: plane-pgdb-wl}}
+  - {path: patches/valkey.yaml, target: {kind: StatefulSet, name: plane-redis-wl}}
+  - {path: patches/rabbitmq.yaml, target: {kind: StatefulSet, name: plane-rabbitmq-wl}}
+  - {path: patches/silo.yaml, target: {kind: StatefulSet, name: plane-minio-wl}}

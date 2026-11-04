@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: plane-minio-wl
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: minio
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: plane-minio
+          resources:
+            requests: {cpu: 20m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          # Distroless, so HTTP only. The image sets HOME=/tmp and need not ship a writable /tmp.
+          startupProbe:
+            httpGet: {path: /minio/health/live, port: 9000}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: {path: /minio/health/ready, port: 9000}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: /minio/health/live, port: 9000}
+            periodSeconds: 30
+            timeoutSeconds: 5
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}

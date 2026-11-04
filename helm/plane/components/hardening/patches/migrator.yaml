@@ -1,0 +1,21 @@
+# Probes do not apply to a one-shot Job: Argo gates on its completion.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: plane-api-migrate-1
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: migrator
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: plane-api-migrate
+          env:
+            - {name: HOME, value: /tmp}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 750m, memory: 512Mi}

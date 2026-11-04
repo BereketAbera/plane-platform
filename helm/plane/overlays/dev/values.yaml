@@ -1,0 +1,43 @@
+# Only what differs from the chart's defaults. Workload hardening is in components/hardening.
+ingress:
+  enabled: true
+  appHost: plane.dev.localhost
+  ingressClass: traefik
+  traefik:
+    # Explicit, because the derived default flips to websecure as soon as TLS values appear.
+    entryPoints: [web]
+
+serviceAccount:
+  create: false
+  name: plane
+
+# With all six set the chart renders no Secret. The Infisical operator creates them (infisical.yaml).
+external_secrets:
+  app_env_existingSecret: plane-app-env
+  app_keys_existingSecret: plane-app-keys
+  live_env_existingSecret: plane-live-env
+  doc_store_existingSecret: plane-doc-store
+  pgdb_existingSecret: plane-pgdb
+  rabbitmq_existingSecret: plane-rabbitmq
+
+env:
+  # The chart ships public defaults for both keys. Empty plus this flag fails the render if the
+  # chart ever falls back to rendering its own app or live Secret, instead of using a published key.
+  requireExplicitSecrets: true
+  secret_key: ""
+  live_server_secret_key: ""
+  # Must stay `uploads` in every environment: export_task.py hardcodes that path.
+  docstore_bucket: uploads
+  # Serves the OpenAPI schema at /api/schema/ for scripted testing. Off in prod-sim.
+  enable_drf_spectacular: true
+
+# Named rather than left to the cluster default, so a volume never lands on a class the contract
+# did not choose. Immutable once created.
+postgres:
+  storageClass: standard
+redis:
+  storageClass: standard
+rabbitmq:
+  storageClass: standard
+minio:
+  storageClass: standard

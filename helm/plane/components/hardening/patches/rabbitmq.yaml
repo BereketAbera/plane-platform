@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: plane-rabbitmq-wl
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: rabbitmq
+    spec:
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+      containers:
+        - name: plane-rabbitmq
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          # TCP for startup and readiness: the CLI below boots an Erlang VM on every call.
+          startupProbe:
+            tcpSocket: {port: 5672}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket: {port: 5672}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: [rabbitmq-diagnostics, -q, ping]
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 3
+          # subPath, because mounting the directory would hide the image's 10-defaults.conf.
+          volumeMounts:
+            - name: rabbitmq-conf
+              mountPath: /etc/rabbitmq/conf.d/20-memory.conf
+              subPath: 20-memory.conf
+              readOnly: true
+      volumes:
+        - name: rabbitmq-conf
+          configMap:
+            name: plane-rabbitmq-conf

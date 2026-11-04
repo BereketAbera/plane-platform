@@ -1,0 +1,10 @@
+# RabbitMQ 3.13's default relative watermark cannot be trusted under a cgroup limit: 0.4 of a
+# limit it detects is near idle use and blocks publishers, which hangs .delay(); 0.4 of a limit
+# it misses means an OOM kill. Absolute keeps it below the 512Mi container limit either way.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plane-rabbitmq-conf
+data:
+  20-memory.conf: |
+    vm_memory_high_watermark.absolute = 256Mi

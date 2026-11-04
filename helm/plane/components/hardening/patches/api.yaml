@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-api-wl
+  # Must sit on the workload, not the pod template. It restarts api when a Secret changes, which
+  # is safe for SECRET_KEY only because that key is never rotated (contract section 8).
+  annotations:
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: api
+    spec:
+      # The image has no user 1000, and runs chmod -R 777 /code so an arbitrary UID can write
+      # logs/ and static-assets/.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: plane-api
+          env:
+            - {name: HOME, value: /tmp}
+            # Already 1 in the chart's ConfigMap. Container env beats envFrom, so this keeps the
+            # memory budget from silently changing on a chart upgrade.
+            - {name: GUNICORN_WORKERS, value: "1"}
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {cpu: 750m, memory: 768Mi}
+          # The entrypoint runs seven manage.py steps before binding, so liveness needs this gate.
+          # GET / touches no dependency, so a database outage does not restart the pod.
+          startupProbe:
+            httpGet: {path: /, port: 8000}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /, port: 8000}
+            periodSeconds: 30
+            timeoutSeconds: 5
