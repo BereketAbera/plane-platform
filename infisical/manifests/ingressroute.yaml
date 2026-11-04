@@ -1,3 +1,21 @@
+# The operators read Infisical through its in-cluster Service, and Terraform and the scripts come from the
+# host, so only pods reaching for this route lose it. The reasoning is in
+# monitoring/manifests/shared/ingress-routes.yaml, and tests/routes/internal-routes.sh proves it.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: node-network-only
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  ipAllowList:
+    sourceRange:
+      - 172.16.0.0/12
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -14,6 +32,8 @@ spec:
   routes:
     - kind: Rule
       match: Host(`infisical.localhost`)
+      middlewares:
+        - name: node-network-only
       services:
         - name: infisical
           port: 8080
