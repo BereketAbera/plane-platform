@@ -1,9 +1,13 @@
-# Thu Nov  5 00:24:37 EAT 2026 on the tree built from commit efb5af9d6e75f2a65cb9f664cf7ebb78b4735435, run directly and gated on exit code
+# Thu Nov  5 01:45:30 EAT 2026 on the tree built from commit 1242134361ffff7ddff5144bc912a98832181401, run directly and gated on exit code
 token-diff exit 0
 contrast exit 0
 leak-scan exit 0
+source-links exit 0
 font-urls-web exit 0
+bundle-art-web exit 0
 font-urls-admin exit 0
+bundle-art-admin exit 0
 font-urls-space exit 0
+bundle-art-space exit 0
 smoke-images exit 0
 smoke containers left:        0

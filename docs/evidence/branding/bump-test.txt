@@ -1,0 +1,31 @@
+# Isolated copy of apps/wayline with its own .build, and a synthetic v9.9.9 of the local upstream clone that changes one context line of 00-brand-import.patch.
+== 1. v1.4.3, fresh .build
+rc=0
+==> Codemod
+rebrand: 3739 files read, 439 changed, 8 lines dropped
+== 2. v9.9.9, tree that has v1.4.3 objects
+rc=1
+error: patch failed: packages/tailwind-config/index.css:1
+error: packages/tailwind-config/index.css: patch does not apply
+fail patch failed: 00-brand-import. It no longer fits upstream, and nothing was merged. Rebase it with patchwork.sh --rebase-from <old tag>
+== 3. v9.9.9, empty .build
+rc=1
+error: patch failed: packages/tailwind-config/index.css:1
+error: packages/tailwind-config/index.css: patch does not apply
+fail patch failed: 00-brand-import. It no longer fits upstream, and nothing was merged. Rebase it with patchwork.sh --rebase-from <old tag>
+== 4. rollback to v1.4.3 with plane-src removed
+rc=0
+==> Codemod
+rebrand: 3739 files read, 439 changed, 8 lines dropped
+== 5. overlay lock: a replaced file that upstream deleted, and one it changed
+rc=1
+    packages/propel/src/icons/brand/plane-logo.tsx: upstream changed the file this replaces whole. Read the change, then merge it by hand
+    packages/propel/src/icons/brand/plane-wordmark.tsx: upstream moved or deleted this, so the overlay file is an orphan and the real one ships upstream art
+fail overlay.lock does not match. Fix the paths above, then run apps/wayline/scripts/overlay-lock.sh --update
+== 6. rebase helper from v1.4.3 onto v9.9.9
+rc=0
+Applied patch to 'apps/space/components/views/header.tsx' cleanly.
+Applied patch to 'apps/space/lib/instance-provider.tsx' cleanly.
+ ok /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/fixpass/mini/.build/plane-patchwork ready: baseline tag
+ 1 file changed, 1 insertion(+)
+0

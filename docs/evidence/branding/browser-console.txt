@@ -1,18 +1,30 @@
---- web-signin: <title>Sign up - Wayline
-  38 "Uncaught Error: Minified React error #418; visit https://reactjs.org/
-   1 "Uncaught Error: Minified React error #423; visit https://reactjs.org/
-   1 "Error: Minified React error #418; visit https://reactjs.org/docs/erro
---- u-web-signin: <title>Sign up - Plane
-  38 "Uncaught Error: Minified React error #418; visit https://reactjs.org/
-   1 "Uncaught Error: Minified React error #423; visit https://reactjs.org/
-   1 "Error: Minified React error #418; visit https://reactjs.org/docs/erro
---- space-root: <title>Wayline Publish | Make your Wayline boards public with one-click
-  18 "Uncaught Error: Minified React error #418; visit https://reactjs.org/
-   1 "Uncaught Error: Minified React error #423; visit https://reactjs.org/
-   1 "Error: Minified React error #418; visit https://reactjs.org/docs/erro
---- u-space: <title>Plane Publish | Make your Plane boards public with one-click
-  18 "Uncaught Error: Minified React error #418; visit https://reactjs.org/
-   1 "Uncaught Error: Minified React error #423; visit https://reactjs.org/
-   1 "Error: Minified React error #418; visit https://reactjs.org/docs/erro
---- admin-signin: <title>Admin – Instance Setup &amp; Sign-In
---- u-admin: <title>Admin – Instance Setup &amp; Sign-In
+# Rendered pages: pathname, theme, [data-shell] and active [data-wl-nav] counts, non-hydration page errors (none printed means none). Stub API, built output, this commit.
+profile-light {"u":"/settings/profile/general/","t":"light","shell":2,"nav":1} 
+prefs-dark {"u":"/settings/profile/preferences/","t":"dark","shell":2,"nav":1} 
+wsset-light {"u":"/acme/settings/","t":"light","shell":2,"nav":1} 
+projset-light {"u":"/acme/settings/projects/p1/","t":"light","shell":2,"nav":1} 
+list-light {"u":"/acme/projects/p1/issues/","t":"light","shell":5,"nav":3} 
+list-dark {"u":"/acme/projects/p1/issues/","t":"dark","shell":5,"nav":3} 
+cycles-light {"u":"/acme/projects/p1/cycles/","t":"light","shell":5,"nav":3} 
+home-light {"u":"/acme/","t":"light","shell":5,"nav":2} 
+home-dark {"u":"/acme/","t":"dark","shell":5,"nav":2} 
+home-lc {"u":"/acme/","t":"light-contrast","shell":5,"nav":2} 
+home-dc {"u":"/acme/","t":"dark-contrast","shell":5,"nav":2} 
+active-cycles-light {"u":"/acme/active-cycles/","t":"light","shell":5,"nav":0} 
+createws-light {"u":"/create-workspace/","t":"light","shell":1,"nav":0} 
+invites-light {"u":"/invitations/","t":"light","shell":1,"nav":0} 
+billing-light {"u":"/acme/settings/billing/","t":"light","shell":1,"nav":0} 
+signin-light / label:JetBrainsMono,  uppercase
+signin-dark / label:JetBrainsMono,  uppercase
+signin-1024 / label:JetBrainsMono,  uppercase
+signin-1100 / label:JetBrainsMono,  uppercase
+signin-mobile / label:JetBrainsMono,  uppercase
+admin-signin-light /god-mode/ label:JetBrainsMono,  uppercase
+admin-signin-dark /god-mode/ label:JetBrainsMono,  uppercase
+help menu: items before 1 after click 0 popup http://wl.test/source
+space-home-light 200 /spaces/ shell=2 | 47°00′N 47°30′N 11°30′E 12°00′E 3°E CTR 4500 5000 5000 5000 5000 50
+space-home-dark 200 /spaces/ shell=2 | 47°00′N 47°30′N 11°30′E 12°00′E 3°E CTR 4500 5000 5000 5000 5000 500
+space-signin-light 200 /spaces/ shell=2 | 47°00′N 47°30′N 11°30′E 12°00′E 3°E CTR 4500 5000 5000 5000 5000 
+space-issue-light 200 /spaces/issues/abc/ shell=0 | Oops! Something went wrong. Sorry, the page you are looking for cann
+space-issue-dark 200 /spaces/issues/abc/ shell=0 | Oops! Something went wrong. Sorry, the page you are looking for canno
+space-404-light 200 /spaces/not-found-here/ shell=0 | That didn't work Check the URL you are entering in the browser's a
