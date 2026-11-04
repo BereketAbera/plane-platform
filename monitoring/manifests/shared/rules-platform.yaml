@@ -31,17 +31,17 @@ spec:
             summary: Docker VM has {{ $value | humanizePercentage }} of its memory available
     # kindnet fails open: if its policy controller cannot start, it logs "skipping network policies" once at
     # INFO, and every NetworkPolicy stops being enforced with nothing else to show for it. Alloy counts that
-    # line (helm/values/alloy.yaml). The metric's own namespace and pod arrive as exported_*, because the
-    # scrape's labels name Alloy. Once the kindnet pod is replaced the old count no longer applies. This sees
-    # that one log line and nothing else: `make test-netpol`, which sends real traffic, remains the real check.
+    # line (helm/values/alloy.yaml), and the chart's ServiceMonitor honors the labels it carries, so namespace
+    # and pod name kindnet. Once that pod is replaced the old count no longer applies. This sees that one log
+    # line and nothing else: `make test-netpol`, which sends real traffic, remains the real check.
     - name: platform.network
       interval: 30s
       rules:
         - alert: KindnetSkippedNetworkPolicies
           expr: |
-            max by (pod) (label_replace(loki_process_custom_kindnet_netpol_skipped_total, "pod", "$1", "exported_pod", "(.*)"))
-              and on (pod)
-            kube_pod_info{namespace="kube-system"}
+            max by (namespace, pod) (loki_process_custom_kindnet_netpol_skipped_total)
+              and on (namespace, pod)
+            kube_pod_info
           labels: { severity: critical, component: network }
           annotations:
             summary: kindnet pod {{ $labels.pod }} logged that it is skipping network policies, so NetworkPolicies are not enforced
