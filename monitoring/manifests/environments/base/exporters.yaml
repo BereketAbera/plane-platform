@@ -15,6 +15,10 @@ metadata:
     # waits in CreateContainerConfigError, the app never turns Healthy, and the Plane wave never
     # starts. Kubelet retries, so the pod comes up on its own once the Secret appears.
     argocd.argoproj.io/ignore-healthcheck: "true"
+    # The password reaches this pod through env vars, which a running pod never re-reads. Without a
+    # restart after make rotate, the exporter's next reconnection gets pg_up 0, and critical
+    # PlanePostgresDown fires on a healthy Postgres.
+    secrets.infisical.com/auto-reload: "true"
 spec:
   replicas: 1
   selector:
