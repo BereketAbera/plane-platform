@@ -53,7 +53,7 @@ test-load: ## Run the k6 load test and capture resource use, dev only: make test
 	@./tests/load/run.sh "$(ENV)"
 
 .PHONY: scan-images
-scan-images: ## Scan every image the platform runs with trivy and report it all. Fails only on images we build. Needs 15 GiB free
+scan-images: ## Scan every image the platform runs and report it all. Fails on a fixable CRITICAL in an image we build, or a missed image. [SCAN_MIN_FREE_GIB=15] [SCAN_FLOOR_GIB=15]
 	@./scripts/ci/scan-images.sh
 
 # ---- failure drills -------------------------------------------------------------------------
@@ -82,6 +82,13 @@ render: ## Re-render Plane manifests from helm/plane into gitops/environments
 
 images: ## Build the Wayline images and push them to the local registry
 	@./scripts/ci/build-images.sh localhost:5001/wayline
+
+.PHONY: wayline-upgrade-check wayline-upstream-check
+wayline-upgrade-check: ## After bumping apps/wayline/UPSTREAM: overlay lock, patches, tokens, contrast, upstream's Dockerfiles and nginx
+	@./apps/wayline/checks/upgrade-check.sh
+
+wayline-upstream-check: ## Size of the work for another upstream ref, with no build: make wayline-upstream-check REF=preview
+	@./apps/wayline/checks/upstream-check.sh "$(REF)"
 
 promote: ## Promote images: make promote ENV=dev [IMAGE=web DIGEST=sha256:... [REPO=<repository>]] [CONFIRM=yes]
 	@./scripts/promote.sh "$(ENV)"

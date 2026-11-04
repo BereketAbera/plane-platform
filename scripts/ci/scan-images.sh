@@ -136,6 +136,12 @@ YAML
 log "Making sure the vulnerability database is current"
 trivy image --cache-dir "$LOCAL_DIR/trivy-cache" --download-db-only --no-progress >"$OUT/db-update.log" 2>&1 ||
   { cat "$OUT/db-update.log" >&2; die "could not update the vulnerability database, so nothing was scanned"; }
+# Infisical's image holds JARs, so trivy would otherwise fetch this, about 950 MiB, in the middle of
+# that image's scan and against its timeout. It keeps it for three days.
+if [[ "$SCAN_ONLY" != built ]]; then
+  trivy image --cache-dir "$LOCAL_DIR/trivy-cache" --download-java-db-only --no-progress >>"$OUT/db-update.log" 2>&1 ||
+    { cat "$OUT/db-update.log" >&2; die "could not update the Java database, so nothing was scanned"; }
+fi
 
 scan_one() { # scan_one <image> <json>
   local insecure=()
