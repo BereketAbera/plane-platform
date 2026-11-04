@@ -34,9 +34,9 @@ spec:
         - { protocol: TCP, port: 53 }
 ---
 # NodePort traffic reaches this policy with its source from before kube-proxy's SNAT, so the node's own
-# address is not what must be allowed. That source is whatever Docker's port publishing presents: the
-# kind network gateway or, on Docker Desktop, an address in its VM subnet (default 192.168.65.0/24).
-# Which one is only known at runtime, so both are here. Loopback-only exposure is enforced by kind's
+# address is not what must be allowed. That source is what Docker's port publishing presents, the kind
+# network gateway. Measured on Docker Desktop with conntrack on the node: 172.24.0.1, and with this
+# ipBlock removed a request from the host timed out. Loopback-only exposure is enforced by kind's
 # listenAddress, not by this rule.
 #
 # 8080 (dashboard and ping) stays closed: kubelet probes come from root on the node and bypass policy.
@@ -51,7 +51,6 @@ spec:
   ingress:
     - from:
         - ipBlock: { cidr: 172.16.0.0/12 }
-        - ipBlock: { cidr: 192.168.65.0/24 }
       ports:
         - { protocol: TCP, port: 8000 }
         - { protocol: TCP, port: 8443 }
