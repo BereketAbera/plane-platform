@@ -11,7 +11,8 @@ source "$(dirname "$0")/lib/common.sh"
 # Taken from gitops/environments/{dev,prod-sim}/manifests.yaml, which render the same names in both
 # environments because the Helm release is `plane` in both. Matching drops `plane-` and `-wl` first, so
 # the real name plane-beat-worker-wl needs no entry of its own. Only plane-api-migrate-1 does, as it has
-# no -wl. A name this table does not know is looked up, exactly, among the namespace's live Deployments,
+# no -wl. A kind/ prefix has to agree with the table: job/api is not the api Deployment. A name this table
+# does not know, or gives another kind, is looked up, exactly, among the namespace's live Deployments,
 # StatefulSets and Jobs. That covers what runs there beyond those manifests: postgres-exporter,
 # redis-exporter and iso-<env>-controller-manager.
 WORKLOADS="api:deployment/plane-api-wl
@@ -58,13 +59,22 @@ print_names() { # The table, then whatever else is live. Call load_live first.
   fi
 }
 
-table_workload() { # <name>: prints the workload the table gives it. Non-zero if the table does not know it.
-  local wanted="${1##*/}" names target
+table_workload() { # <name, or kind/name>: prints the workload the table gives it. Non-zero if it does not know it, or gives it another kind.
+  local wanted="$1" kind="" names target
+  case "$1" in
+    */*)
+      kind="${1%%/*}"
+      kind="${kind%%.*}"
+      wanted="${1#*/}"
+      [[ -n "$kind" ]] || return 1
+      ;;
+  esac
   wanted="${wanted#plane-}"
   wanted="${wanted%-wl}"
   while IFS=: read -r names target; do
     case ",$names," in
       *",$wanted,"*)
+        [[ -z "$kind" || "$kind" == "${target%%/*}" ]] || return 1
         echo "$target"
         return 0
         ;;
@@ -118,8 +128,16 @@ if ! target="$(table_workload "$svc")"; then
     die "'$svc' names more than one live workload in $ns. Say which, as kind/name: $(tr '\n' ' ' <<<"$target")"
   fi
 fi
-# Says why before tailing: no cluster, or an environment not deployed yet.
-if ! found="$(kc -n "$ns" get "$target" -o name 2>&1)"; then
-  die "cannot tail $target in $ns: $found"
+# Says why before tailing: no cluster, an environment not deployed yet, or a workload with no pods, where
+# kubectl waits 20s and then says only "timed out waiting for the condition". All three kinds select by labels.
+# shellcheck disable=SC2016  # the go-template's variables, not the shell's
+selector_template='{{range $key, $value := .spec.selector.matchLabels}}{{$key}}={{$value}},{{end}}'
+if ! selector="$(kc -n "$ns" get "$target" -o go-template="$selector_template" 2>&1)"; then
+  die "cannot tail $target in $ns: $selector"
+fi
+if ! pods="$(kc -n "$ns" get pods -l "${selector%,}" -o name 2>/dev/null)"; then
+  die "cannot tail $target in $ns: could not list its pods."
+elif [[ -z "$pods" ]]; then
+  die "$target in $ns has no pods, so there is nothing to tail. A Deployment at 0 replicas or a Job whose pods were removed looks like this."
 fi
 exec kubectl --context "$KUBE_CONTEXT" -n "$ns" logs --follow="$follow" "$target" --all-containers --tail=100
