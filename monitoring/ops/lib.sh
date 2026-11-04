@@ -97,6 +97,7 @@ run_job() {
 ARGO_ROOT_APP="root"
 ARGO_PAUSED_APPS=()
 ARGO_PAUSED_SPECS=()
+ARGO_TERMINATED_APPS=()
 
 argo_pause_app() {
   local app="$1" spec
@@ -108,13 +109,27 @@ argo_pause_app() {
   ARGO_PAUSED_SPECS+=("$spec")
 }
 
-# A sync already in flight would finish and undo an injection, whatever the policy says now.
+# A sync already in flight would finish and undo an injection, whatever the policy says now, so wait
+# for it. A failing sync never finishes: with retry.limit -1 the controller sets each failed attempt
+# back to Running (appcontroller.go:1693-1702 at Argo CD v3.5.7), and disabling automated does not stop
+# an operation already recorded. So after 180s, terminate it. The controller then deletes any running
+# hook and ends the operation as Failed, with no retry. The patch reaches status because this CRD has
+# no status subresource. It repeats because the controller can overwrite it when finishing an attempt.
 argo_wait_idle() {
-  local app="$1" deadline=$((SECONDS + 180)) phase
+  local app="$1" terminate_at=$((SECONDS + 180)) give_up_at=$((SECONDS + 300)) terminated=no phase
   while :; do
     phase="$(kc -n argocd get application "$app" -o json | jq -r '.status.operationState.phase // "none"')"
-    [[ "$phase" != Running ]] && return 0
-    [[ $SECONDS -lt $deadline ]] || die "Application $app has had a sync running for 180s"
+    [[ "$phase" == Running || "$phase" == Terminating ]] || return 0
+    [[ $SECONDS -lt $give_up_at ]] || die "Application $app is still $phase after 300s, and terminating its sync did not end it"
+    if [[ $SECONDS -ge $terminate_at && "$phase" == Running ]]; then
+      if [[ "$terminated" == no ]]; then
+        warn "Application $app has had a sync running for 180s, so terminating it"
+        ARGO_TERMINATED_APPS+=("$app")
+        terminated=yes
+      fi
+      kc -n argocd patch application "$app" --type merge \
+        -p '{"status":{"operationState":{"phase":"Terminating"}}}' >/dev/null
+    fi
     sleep 3
   done
 }
@@ -149,6 +164,14 @@ argo_resume() {
   done
   ARGO_PAUSED_APPS=()
   ARGO_PAUSED_SPECS=()
+  # Automated sync does not retry a revision whose last attempt failed (autoSync, "will not retry"),
+  # and self-heal does not run after a failed attempt either. So auto-sync being back is not enough.
+  i=$((${#ARGO_TERMINATED_APPS[@]} - 1))
+  while [[ $i -ge 0 ]]; do
+    warn "The sync of ${ARGO_TERMINATED_APPS[$i]} was terminated, and Argo CD will not retry that revision by itself. The next commit starts a new sync: make rollback, or commit and make gitops-publish."
+    i=$((i - 1))
+  done
+  ARGO_TERMINATED_APPS=()
 }
 
 # ------ Plane shell -----------------------------------------------------------------------------
