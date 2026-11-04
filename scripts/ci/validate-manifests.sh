@@ -4,11 +4,12 @@
 # SKIP_CHARTS=yes leaves out the third-party platform charts, which need network and take minutes.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
+# shellcheck source=lib-manifests.sh
+source "$(dirname "$0")/lib-manifests.sh"
 
 "$ROOT/scripts/install-tools.sh" helm kustomize kubeconform conftest yq >/dev/null
 cd "$ROOT"
 
-K8S_VERSION=1.36.4
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 SCHEMA_DIR="$LOCAL_DIR/kubeconform-schemas/$K8S_VERSION"
@@ -52,31 +53,7 @@ for file in "${ENVIRONMENT_FILES[@]}"; do
   [[ -s "$file" ]] || die "$file is missing or empty: run make render"
 done
 
-# Plain directories are copied as they are, and anything with a kustomization.yaml is built.
-# ConfigMaps of raw config (blackbox.yml and the like) stay out because only *.yaml is read.
-collect() { # collect <directory> <label>
-  local dir="$1" label="$2" target="$WORK/in-repo/$2.yaml"
-  [[ -d "$dir" ]] || { warn "$dir does not exist, skipping"; return 0; }
-  if [[ -f "$dir/kustomization.yaml" ]]; then
-    kustomize build "$dir" >"$target"
-  else
-    local file
-    while read -r file; do
-      printf -- '---\n'
-      cat "$file"
-    done < <(find "$dir" -type f -name '*.yaml' | sort) >"$target"
-  fi
-}
-
-collect gitops/applications applications
-for platform_dir in gitops/platform/*/; do
-  collect "${platform_dir%/}" "platform-$(basename "$platform_dir")"
-done
-collect gitops/bootstrap/argocd-route argocd-route
-collect monitoring/manifests monitoring
-collect infisical/manifests infisical
-# A real Helm chart applied by Terraform: its templates are only meaningful once rendered.
-helm template bootstrap gitops/bootstrap/chart --namespace argocd >"$WORK/in-repo/bootstrap.yaml"
+collect_in_repo "$WORK/in-repo"
 
 fetch_schemas "${ENVIRONMENT_FILES[@]}" "$WORK"/in-repo/*.yaml
 
@@ -96,38 +73,14 @@ check "conftest: rendered Plane" conftest_run environments,gitops,workloads,plan
 check "conftest: platform manifests" conftest_run gitops,workloads,plane "$WORK"/in-repo/*.yaml
 check "promotion invariant" "$ROOT/scripts/ci/check-promoted-digests.sh"
 
-# Third-party charts are configured here but not authored here, so a missing memory limit or token
-# setting in one is reported as a warning. Their values are ours, so the chart must still render
-# and validate. Kinds from CRDs the catalog lacks are skipped, not failed, for this group only.
-render_platform_charts() {
-  local application name count=0 status=0
-  while read -r application; do
-    name="$(yq -r '.metadata.name' "$application")"
-    while IFS=$'\t' read -r repo chart version values; do
-      [[ -n "$chart" ]] || continue
-      local args=(--repo "$repo" --version "$version" --kube-version "$K8S_VERSION"
-        --namespace "$(yq -r '.spec.destination.namespace' "$application")")
-      local value
-      for value in $values; do args+=(--values "${value#\$values/}"); done
-      if helm template "$name" "$chart" "${args[@]}" >"$WORK/charts/$name.yaml" 2>"$WORK/charts/$name.err"; then
-        count=$((count + 1))
-      else
-        cat "$WORK/charts/$name.err" >&2
-        warn "$name: helm template failed"
-        status=1
-      fi
-    done < <(yq -r '
-      (.spec.sources // [.spec.source])[] | select(.chart != null)
-      | [.repoURL, .chart, .targetRevision, ((.helm.valueFiles // []) | join(" "))] | @tsv' "$application")
-  done < <(find gitops/applications -type f -name '*.yaml' | sort)
-  ok "$count platform chart(s) rendered"
-  return "$status"
-}
 
+# Third-party charts are configured here but not authored here, so a missing memory limit is reported
+# as a warning. Their values are ours, so the chart must still render and validate, and every image it
+# runs must be pinned. Kinds from CRDs the catalog lacks are skipped, not failed, for this group only.
 if [[ "${SKIP_CHARTS:-}" == yes ]]; then
   warn "SKIP_CHARTS=yes: third-party platform charts were not rendered"
 else
-  check "helm template: platform charts" render_platform_charts
+  check "helm template: platform charts" render_platform_charts "$WORK/charts"
   fetch_schemas "$WORK"/charts/*.yaml
   check "kubeconform: platform charts" "${KUBECONFORM[@]}" -ignore-missing-schemas "$WORK/charts"
   check "conftest: platform charts" conftest_run charts,plane "$WORK"/charts/*.yaml
