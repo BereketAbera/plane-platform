@@ -1,0 +1,37 @@
+# Loopback only in pass 1: kind maps the Traefik NodePort to 127.0.0.1. Prometheus and Alertmanager
+# have no login of their own, so pass 2 must put these behind an auth middleware before exposing them.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`grafana.localhost`)
+      kind: Rule
+      services:
+        - { name: kps-grafana, port: 80 }
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prometheus
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`prometheus.localhost`)
+      kind: Rule
+      services:
+        - { name: kps-prometheus, port: 9090 }
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alertmanager
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`alertmanager.localhost`)
+      kind: Rule
+      services:
+        - { name: kps-alertmanager, port: 9093 }

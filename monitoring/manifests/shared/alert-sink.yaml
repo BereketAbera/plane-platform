@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-sink
+  labels: { app.kubernetes.io/name: alert-sink }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: alert-sink }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: alert-sink }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: sink
+          image: docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+          imagePullPolicy: IfNotPresent
+          command: [python, -u, /app/sink.py]
+          env:
+            - { name: PYTHONDONTWRITEBYTECODE, value: "1" }
+          ports:
+            - { name: http, containerPort: 8080 }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 5m, memory: 16Mi }
+            limits: { cpu: 50m, memory: 48Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: script, mountPath: /app, readOnly: true }
+      volumes:
+        - name: script
+          configMap: { name: alert-sink }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-sink
+  labels: { app.kubernetes.io/name: alert-sink }
+spec:
+  selector: { app.kubernetes.io/name: alert-sink }
+  ports:
+    - { name: http, port: 8080, targetPort: http }

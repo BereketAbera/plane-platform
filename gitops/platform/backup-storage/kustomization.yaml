@@ -1,0 +1,10 @@
+# A pod that names a hostPath fails PSA baseline, but a pod that mounts a PVC does not, so backup
+# Jobs mount only the PVC named `backups` in their own namespace. Each environment sees only its
+# own folder. Retain plus the host mount means neither deleting the PVC nor `kind delete cluster`
+# touches a backup. kind mounts .local/backups at /backups on the node; these paths resolve there.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - dev.yaml
+  - prod-sim.yaml
+  - infisical.yaml

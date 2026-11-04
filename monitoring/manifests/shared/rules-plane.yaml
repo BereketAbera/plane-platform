@@ -1,0 +1,90 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: plane
+spec:
+  groups:
+    # Probes and this group run at 15s, so PlaneApiDown reaches the sink in about 2 minutes
+    # (15s probe + 15s evaluation + 1m for + 10s group_wait, worst case). test-alert.sh allows 180s.
+    - name: plane.availability
+      interval: 15s
+      rules:
+        - alert: PlaneApiDown
+          expr: probe_success{probe="api-instance"} == 0
+          for: 1m
+          labels: { severity: critical, component: api }
+          annotations:
+            summary: Plane API unreachable in {{ $labels.namespace }}
+            description: Blackbox probe of /api/instances/ fails. That route is cached in Valkey, so it says nothing about Postgres; see PlaneApiDatabaseProbeFailing.
+        - alert: PlaneApiDatabaseProbeFailing
+          expr: probe_success{probe="api-db"} == 0
+          for: 1m
+          labels: { severity: critical, component: api-db }
+          annotations:
+            summary: Plane API cannot reach Postgres in {{ $labels.namespace }}
+        - alert: PlaneFrontendDown
+          expr: probe_success{probe=~"frontend|live"} == 0
+          for: 2m
+          labels: { severity: warning, component: frontend }
+          annotations:
+            summary: "{{ $labels.instance }} is failing in {{ $labels.namespace }}"
+        - alert: PlanePodCrashLooping
+          expr: max_over_time(kube_pod_container_status_waiting_reason{namespace=~"plane-.*",reason="CrashLoopBackOff"}[2m]) == 1
+          for: 1m
+          labels: { severity: critical, component: pod }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+    - name: plane.data
+      interval: 30s
+      rules:
+        - alert: PlanePostgresDown
+          expr: pg_up{namespace=~"plane-.*"} == 0
+          for: 1m
+          labels: { severity: critical, component: postgres }
+          annotations:
+            summary: Postgres is down in {{ $labels.namespace }}
+        - alert: PlaneValkeyDown
+          expr: redis_up{namespace=~"plane-.*"} == 0
+          for: 1m
+          labels: { severity: critical, component: valkey }
+          annotations:
+            summary: Valkey is down in {{ $labels.namespace }}
+        - alert: PlaneRabbitmqDown
+          expr: up{namespace=~"plane-.*",service="plane-rabbitmq-metrics",metrics_path="/metrics"} == 0
+          for: 2m
+          labels: { severity: critical, component: rabbitmq }
+          annotations:
+            summary: RabbitMQ metrics scrape is failing in {{ $labels.namespace }}
+        - alert: PlaneMinioDown
+          expr: up{namespace=~"plane-.*",service="plane-minio",metrics_path="/minio/v2/metrics/cluster"} == 0
+          for: 2m
+          labels: { severity: critical, component: silo }
+          annotations:
+            summary: Silo metrics scrape is failing in {{ $labels.namespace }}
+        # Workers export nothing, so a consumer count on the only queue they read is the best
+        # available signal that no worker is alive. It shows a connection, not a working task loop.
+        - alert: PlaneWorkerNoConsumer
+          expr: rabbitmq_detailed_queue_consumers{namespace=~"plane-.*",queue="celery"} == 0
+          for: 2m
+          labels: { severity: critical, component: worker }
+          annotations:
+            summary: No Celery consumer on queue celery in {{ $labels.namespace }}
+        # A worker that never attached leaves no celery queue, so the rule above has no series to
+        # read. This is how RabbitMQ 4.3 fails: the broker is up and consumers stay at nothing.
+        - alert: PlaneCeleryQueueMissing
+          expr: rabbitmq_identity_info{namespace=~"plane-.*",metrics_path="/metrics"} unless on (namespace) rabbitmq_detailed_queue_consumers{queue="celery"}
+          for: 10m
+          labels: { severity: critical, component: worker }
+          annotations:
+            summary: RabbitMQ is up but has no celery queue in {{ $labels.namespace }}
+        - alert: PlaneCeleryBacklog
+          expr: rabbitmq_detailed_queue_messages_ready{namespace=~"plane-.*",queue="celery"} > 500
+          for: 5m
+          labels: { severity: warning, component: worker }
+          annotations:
+            summary: "{{ $value }} Celery messages waiting in {{ $labels.namespace }}"
+        - alert: PlaneBackupFailed
+          expr: kube_job_status_failed{namespace=~"plane-.*|infisical",job_name=~"plane-backup-.*"} > 0
+          labels: { severity: warning, component: backup }
+          annotations:
+            summary: "{{ $labels.job_name }} failed in {{ $labels.namespace }}"

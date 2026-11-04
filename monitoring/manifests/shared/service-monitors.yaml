@@ -1,0 +1,36 @@
+# These live here, so the Traefik and Argo CD values must enable only the metrics Services:
+#   traefik: metrics.prometheus.service.enabled=true
+#   argocd:  controller.metrics.enabled=true
+# Leave both charts' own serviceMonitor.enabled false, or the targets are scraped twice.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: traefik
+spec:
+  namespaceSelector:
+    matchNames: [traefik]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+      app.kubernetes.io/component: metrics
+  endpoints:
+    - port: metrics
+      interval: 30s
+      # Traefik's own "service" label names the backend, which every dashboard groups by. Without
+      # this it collides with the target label and becomes exported_service.
+      honorLabels: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd-application-controller
+spec:
+  namespaceSelector:
+    matchNames: [argocd]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-metrics
+      app.kubernetes.io/component: application-controller
+  endpoints:
+    - port: http-metrics
+      interval: 30s

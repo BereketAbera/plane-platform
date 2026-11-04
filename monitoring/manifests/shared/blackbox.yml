@@ -1,0 +1,34 @@
+# Body assertions are mandatory. With no endpoints Traefik can fall through to the catch-all web
+# route, which answers 200 with HTML, so a status-only probe would pass while the API is gone.
+# Do not set a Host header here: the Probes pass ?hostname= and the exporter refuses both at once.
+modules:
+  http_html:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [200]
+      fail_if_body_not_matches_regexp: ['(?i)<!doctype html']
+  # /api/instances/ is cached for 2h in Valkey, so this one does not prove Postgres is up.
+  http_plane_instance:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [200]
+      fail_if_body_json_not_matches_cel: "has(body.config) && has(body.instance)"
+  # This route does hit Postgres and answers 404 for an unknown anchor, which is the healthy case.
+  http_plane_db:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [404]
+      fail_if_body_not_matches_regexp: ['does not exist']
+  http_live:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: [200]
+      fail_if_body_json_not_matches_cel: "body.status == 'OK'"

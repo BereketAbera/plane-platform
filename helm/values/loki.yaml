@@ -1,0 +1,71 @@
+# loki 20.4.1 from oci://ghcr.io/grafana-community/helm-charts. Not grafana/loki on
+# grafana.github.io: that index looks current but has been the Enterprise chart since 2026-03-16.
+deploymentMode: Monolithic
+fullnameOverride: loki
+
+loki:
+  image:
+    registry: docker.io
+    repository: grafana/loki
+    tag: 3.7.9
+    digest: sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
+  auth_enabled: false # the chart default of true would require X-Scope-OrgID on every push
+  commonConfig:
+    replication_factor: 1 # chart default is 3
+    path_prefix: /var/loki
+  storage:
+    type: filesystem # chart default is s3
+  schemaConfig:
+    configs:
+      - from: "2026-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index: { prefix: loki_index_, period: 24h } # retention requires a 24h index period
+  limits_config:
+    retention_period: 72h
+    ingestion_rate_mb: 4
+    ingestion_burst_size_mb: 8
+  compactor:
+    working_directory: /var/loki/compactor
+    retention_enabled: true
+    delete_request_store: filesystem
+  querier:
+    max_concurrent: 2
+  analytics:
+    reporting_enabled: false
+
+# Only the rules sidecar talks to the API, and it is off. Left on, the chart also grants a
+# cluster-wide read on Secrets to this ServiceAccount.
+defaults:
+  automountServiceAccountToken: false
+serviceAccount:
+  automountServiceAccountToken: false
+rbac:
+  namespaced: true
+sidecar:
+  rules:
+    enabled: false
+
+singleBinary:
+  replicas: 1 # chart default is 0, so nothing deploys without this
+  sidecar: false # no ruler in use, so no rules sidecar and no kiwigrid image
+  resources:
+    requests: { cpu: 50m, memory: 192Mi }
+    limits: { cpu: "1", memory: 640Mi } # the chart example uses 2 to 4 GiB, so raise this first on an OOMKill
+  persistence:
+    enabled: true
+    size: 2Gi # a label on local-path: only retention bounds this volume
+read: { replicas: 0 }
+write: { replicas: 0 }
+backend: { replicas: 0 }
+
+gateway: { enabled: false } # saves an nginx pod; Loki is reached directly on :3100
+# Both caches default to on. chunksCache alone asks for 8192 MB, more than this VM has.
+chunksCache: { enabled: false }
+resultsCache: { enabled: false }
+lokiCanary: { enabled: false }
+test: { enabled: false } # must go with the canary: validate.yaml fails the render otherwise
+
+monitoring:
+  serviceMonitor: { enabled: true }
