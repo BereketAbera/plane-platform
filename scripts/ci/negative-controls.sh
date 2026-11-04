@@ -62,6 +62,13 @@ plant_digest_never_in_dev() {
   replace_every "$PROD_SIM_OVERLAY" "$digest" "$fake"
   replace_every "$PROD_SIM_RENDERED" "$digest" "$fake"
 }
+plant_digest_under_another_image() {
+  local web admin
+  web="$(yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' "$PROD_SIM_OVERLAY")"
+  admin="$(yq -r '.images[] | select(.name | test("plane-admin$")) | .digest' "$PROD_SIM_OVERLAY")"
+  replace_every "$PROD_SIM_OVERLAY" "$web" "$admin"
+  replace_every "$PROD_SIM_RENDERED" "$web" "$admin"
+}
 plant_plane_application_in_platform() { replace_first gitops/applications/plane-dev.yaml 'project: plane-dev' 'project: platform'; }
 plant_application_in_default() { replace_first gitops/applications/loki.yaml 'project: platform' 'project: default'; }
 plant_dev_route_on_prod_sim_host() { replace_first "$DEV_RENDERED" 'Host\(`plane\.dev\.localhost`\)' 'Host(`plane.prod-sim.localhost`)'; }
@@ -121,7 +128,16 @@ reset_clone() {
   git -C "$CLONE" clean --quiet -fd
 }
 
-control() { # control <name> <script> <line a failure must print> <planting function>
+plant_nothing() { :; }
+
+# The script promotions go through, asked for the admin digest under the web image.
+promote_admin_digest_as_web() {
+  local admin
+  admin="$(yq -r '.images[] | select(.name | test("plane-admin$")) | .digest' "$PROD_SIM_OVERLAY")"
+  COMMIT=no CONFIRM=yes SKIP_BACKUP=yes SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh prod-sim IMAGE=web DIGEST="$admin"
+}
+
+control() { # control <name> <script in scripts/ci, or a function> <line a failure must print> <planting function>
   local name="$1" script="$2" expected="$3" plant="$4" output="$WORK/$1.log" status=0
   [[ -z "$FILTER" || "$name" == *"$FILTER"* ]] || return 0
   total=$((total + 1))
@@ -132,7 +148,8 @@ control() { # control <name> <script> <line a failure must print> <planting func
     reset_clone
     return 0
   fi
-  (cd "$CLONE" && SKIP_CHARTS="${CONTROL_SKIP_CHARTS:-yes}" "./scripts/ci/$script") >"$output" 2>&1 || status=$?
+  [[ "$script" != *.sh ]] || script="./scripts/ci/$script"
+  (cd "$CLONE" && SKIP_CHARTS="${CONTROL_SKIP_CHARTS:-yes}" "$script") >"$output" 2>&1 || status=$?
   if [[ "$status" -ne 0 ]] && grep -qF -- "$expected" "$output"; then
     ok "$name: $script exited $status and printed: $expected"
   else
@@ -160,6 +177,8 @@ control unknown-field-in-manifest validate-manifests.sh "kubeconform: rendered P
 control digest-never-recorded-for-dev validate-manifests.sh "promotion invariant FAILED" plant_digest_never_in_dev
 control unlintable-chart validate-manifests.sh "helm lint: bootstrap chart FAILED" plant_unlintable_chart
 CONTROL_SKIP_CHARTS=no control chart-version-missing validate-manifests.sh "helm template: platform charts FAILED" plant_chart_version_missing
+control digest-under-another-image validate-manifests.sh "under another image" plant_digest_under_another_image
+control promote-digest-under-another-image promote_admin_digest_as_web "under another image" plant_nothing
 control plane-application-in-platform-project validate-manifests.sh "a Plane Application must use its own project" plant_plane_application_in_platform
 control application-in-default-project validate-manifests.sh "is not allowed, use platform" plant_application_in_default
 control dev-route-on-the-prod-sim-host validate-manifests.sh "which only namespace plane-prod-sim may serve" plant_dev_route_on_prod_sim_host
