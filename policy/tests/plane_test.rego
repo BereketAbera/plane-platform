@@ -138,3 +138,31 @@ test_tcp_route_elsewhere_ignored if {
 	doc := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {"routes": [{"match": "HostSNI(`*`)"}]}}
 	count(plane.deny) == 0 with input as doc
 }
+
+workload_with_image(image) := {
+	"kind": "Deployment",
+	"metadata": {"name": "x"},
+	"spec": {"template": {"spec": {"containers": [{"name": "c", "image": image}]}}},
+}
+
+test_bitnami_image_rejected if {
+	count(plane.deny) == 1 with input as workload_with_image("docker.io/bitnami/postgresql:17")
+	count(plane.deny) == 1 with input as workload_with_image("bitnamilegacy/redis:7")
+	count(plane.deny) == 1 with input as workload_with_image("registry-1.docker.io/bitnamisecure/minio@sha256:abc")
+}
+
+application_from(repo) := {"kind": "Application", "metadata": {"name": "x"}, "spec": {"source": {"repoURL": repo, "chart": "postgresql"}}}
+
+test_bitnami_chart_rejected if {
+	count(plane.deny) == 1 with input as application_from("https://charts.bitnami.com/bitnami")
+	count(plane.deny) == 1 with input as application_from("registry-1.docker.io/bitnamicharts")
+}
+
+test_bitnami_mention_in_prose_accepted if {
+	doc := {"kind": "ConfigMap", "metadata": {"name": "x"}, "data": {"note": "The Bitnami images are frozen, so upstream's are used."}}
+	count(plane.deny) == 0 with input as doc
+}
+
+test_similar_names_accepted if {
+	count(plane.deny) == 0 with input as workload_with_image("docker.io/notbitnami/postgresql:17")
+}
