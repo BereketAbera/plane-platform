@@ -11,6 +11,8 @@
 crash.log
 *.auto.tfvars
 !*.example.auto.tfvars
+terraform.tfvars
+!terraform.tfvars.example
 
 # Secrets, dumps, and backups must never enter Git
 *.env
