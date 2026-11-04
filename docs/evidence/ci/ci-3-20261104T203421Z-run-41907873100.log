@@ -1,0 +1,1049 @@
+GHCR with packages write, on arm64	Set up job	﻿2026-11-04T20:34:27.8853029Z Current runner version: '2.338.2'
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8885173Z ##[group]Runner Image Provisioner
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8886125Z Hosted Compute Agent
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8886911Z Version: 20261021.618
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8887641Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8888443Z Build Date: 2026-10-21T00:45:21Z
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8889681Z Worker ID: {eda21c10-33f9-4e27-9bb4-6b634dd312fd}
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8890441Z Region: northcentralus
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8891147Z Cloud: Azure
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8891761Z ##[endgroup]
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8893799Z ##[group]Operating System
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8894503Z Ubuntu
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8895058Z 24.04.5
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8895676Z LTS
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8896274Z ##[endgroup]
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8896863Z ##[group]Runner Image
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8897584Z Image: ubuntu-24.04-arm
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8898207Z Version: 20261025.165.1
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8899732Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24-arm64/20261025.165/images/ubuntu/Ubuntu2404-Arm64-Readme.md
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8901676Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24-arm64%2F20261025.165
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8902790Z ##[endgroup]
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8904057Z ##[group]GITHUB_TOKEN Permissions
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8907193Z Contents: read
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8907834Z Metadata: read
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8909036Z Packages: write
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8909664Z ##[endgroup]
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8912364Z Secret source: Actions
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8913621Z Cache mode: write
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.8914772Z Prepare workflow directory
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.9319711Z Prepare all required actions
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:27.9389001Z Getting action download info
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:28.2046086Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+GHCR with packages write, on arm64	Set up job	2026-11-04T20:34:28.4591358Z Complete job name: GHCR with packages write, on arm64
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:28.5582515Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5584240Z with:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5585021Z   persist-credentials: false
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5585706Z   repository: BereketAbera/plane-platform
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5589858Z   token: ***
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5590496Z   ssh-strict: true
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5591049Z   ssh-user: git
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5591757Z   clean: true
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5592386Z   sparse-checkout-cone-mode: true
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5593117Z   fetch-depth: 1
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5593790Z   fetch-tags: false
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5594381Z   show-progress: true
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5595030Z   lfs: false
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5595647Z   submodules: false
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5596301Z   set-safe-directory: true
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5597012Z   allow-unsafe-pr-checkout: false
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.5598331Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.6865809Z Syncing repository: BereketAbera/plane-platform
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.6925511Z ##[group]Getting Git version info
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.6943207Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.6977603Z [command]/usr/bin/git version
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.6984672Z git version 2.56.0
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7023498Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7036219Z Temporarily overriding HOME='/home/runner/work/_temp/de6ec0f2-555d-4a6f-9350-17106b33feac' before making global git config changes
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7039751Z Adding repository directory to the temporary git global config as a safe directory
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7042868Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7048154Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7051710Z ##[group]Determining repository object format
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7055419Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7057900Z ##[group]Initializing the repository
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7060853Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7100167Z hint: Using 'master' as the name for the initial branch. This default branch name
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7105681Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7107342Z hint: to use in all of your new repositories, which will suppress this warning,
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7108388Z hint: call:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7109692Z hint:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7112365Z hint: 	git config --global init.defaultBranch <name>
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7113374Z hint:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7114486Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7115795Z hint: 'development'. The just-created branch can be renamed via this command:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7116938Z hint:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7117794Z hint: 	git branch -m <name>
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7118951Z hint:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7120123Z hint: Disable this message with "git config set advice.defaultBranchName false"
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7121643Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7124783Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7167005Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7168400Z ##[group]Disabling automatic garbage collection
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7171644Z [command]/usr/bin/git config --local gc.auto 0
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7241290Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7243699Z ##[group]Setting up auth
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7244691Z Removing SSH command configuration
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7246012Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7292660Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7611635Z Removing HTTP extra header
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7616816Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7650701Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7907818Z Removing includeIf entries pointing to credentials config files
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7909771Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.7947693Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8187296Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8230755Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8266702Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8303117Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8383463Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8387056Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8388740Z ##[group]Fetching the repository
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:28.8390625Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b350fdcc061d817cffaf22b6da17be19abd9ae07:refs/remotes/origin/main
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3971165Z From https://github.com/BereketAbera/plane-platform
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3974518Z  * [new ref]         b350fdcc061d817cffaf22b6da17be19abd9ae07 -> origin/main
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3980368Z [command]/usr/bin/git branch --list --remote origin/main
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3982360Z   origin/main
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3986793Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3988986Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3994091Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3996439Z ##[group]Determining the checkout info
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.3999369Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4001046Z [command]/usr/bin/git sparse-checkout disable
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4005850Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4011430Z ##[group]Checking out the ref
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4013724Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4150559Z Switched to a new branch 'main'
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4156404Z branch 'main' set up to track 'origin/main'.
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4163215Z ##[endgroup]
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4208050Z [command]/usr/bin/git log -1 --format=%H
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4250609Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4256357Z ##[group]Removing auth
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4258430Z Removing SSH command configuration
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4262114Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4282502Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4506786Z Removing HTTP extra header
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4509296Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4541403Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4820167Z Removing includeIf entries pointing to credentials config files
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4821826Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4823424Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4825092Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4826524Z includeif.gitdir:/github/workspace/.git.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4827855Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4831190Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4860902Z /home/runner/work/_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4867210Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-fe581ada\-f352\-47fd\-8a10\-f41c4a7d9351\.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4895147Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4920911Z /home/runner/work/_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4936991Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-fe581ada\-f352\-47fd\-8a10\-f41c4a7d9351\.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.4980766Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5024197Z /github/runner_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5030304Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-fe581ada\-f352\-47fd\-8a10\-f41c4a7d9351\.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5094272Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5112098Z /github/runner_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5132120Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-fe581ada\-f352\-47fd\-8a10\-f41c4a7d9351\.config
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5159446Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5399581Z Removing credentials config '/home/runner/work/_temp/git-credentials-fe581ada-f352-47fd-8a10-f41c4a7d9351.config'
+GHCR with packages write, on arm64	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:29.5411324Z ##[endgroup]
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	﻿2026-11-04T20:34:29.5670041Z ##[group]Run ./scripts/ci/ghcr-probe.sh
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5671437Z ^[[36;1m./scripts/ci/ghcr-probe.sh^[[0m
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5831024Z shell: /usr/bin/bash -e {0}
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5832454Z env:
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5837170Z   TOKEN: ***
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5837984Z   OWNER: BereketAbera
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5839308Z   ACTOR: BereketAbera
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.5840150Z ##[endgroup]
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6014006Z --- runner
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6025277Z architecture: aarch64
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6042441Z cores: 2
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6057350Z                total        used        free      shared  buff/cache   available
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6059988Z Mem:           7.7Gi       1.0Gi       5.7Gi        41Mi       1.2Gi       6.7Gi
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6061843Z Swap:          3.0Gi          0B       3.0Gi
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6077527Z Filesystem      Size  Used Avail Use% Mounted on
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6079609Z /dev/root        72G   38G   34G  53% /
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6081016Z /dev/root        72G   38G   34G  53% /
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6113491Z avail on the workspace, the number guard_disk reads: 34 GiB
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.6740901Z docker server 28.0.4, arm64
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.8271631Z github.com/docker/buildx v0.38.1 0dbe87f36ed472fe36b6796c3f70b4210a731fc5
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:29.8296564Z size of preinstalled trees a build could reclaim:
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:31.6827261Z 6.1G	/usr/share/dotnet
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:45.9995797Z 3.4G	/opt/hostedtoolcache
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.0021389Z --- GHCR: may this token start a push to ghcr.io/bereketabera/wayline/ci-probe?
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.1535280Z GET /token, scope pull,push: HTTP 200
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.4499240Z POST blobs/uploads/, opens an upload session: HTTP 202
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.5375442Z DELETE the session, nothing was uploaded: HTTP 405
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.6253695Z GET tags/list on the probe name: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.6255392Z --- GHCR: does an image already exist under the real names?
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:46.8739422Z web: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:47.1290935Z admin: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:47.3910408Z space: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:47.6405658Z backend: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:47.6419731Z --- REST: can this token list the owner's container packages?
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:48.1335652Z GET /users/bereketabera/packages: HTTP 400
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:48.1350751Z response: {
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:48.1351600Z   "message": "Invalid argument.",
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:48.1352533Z   "documentation_url": "https://docs.github.com/rest/packages/packages#list-packages-for-a-user",
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:48.1353258Z   "status": "400"
+GHCR with packages write, on arm64	Runner facts, then ask GHCR	2026-11-04T20:34:48.1353800Z }
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:48.1552622Z Post job cleanup.
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2415471Z [command]/usr/bin/git version
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2499714Z git version 2.56.0
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2536508Z Temporarily overriding HOME='/home/runner/work/_temp/212f81b9-2dbc-4779-893f-062226601b59' before making global git config changes
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2549809Z Adding repository directory to the temporary git global config as a safe directory
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2551069Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2614794Z Removing SSH command configuration
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2615548Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2672679Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2976945Z Removing HTTP extra header
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.2990085Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.3001980Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.3290144Z Removing includeIf entries pointing to credentials config files
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.3291319Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with packages write, on arm64	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:48.3328324Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with packages write, on arm64	Complete job	﻿2026-11-04T20:34:48.3721903Z Cleaning up orphan processes
+Manifests check, red on purpose	Set up job	﻿2026-11-04T20:34:25.1847780Z Current runner version: '2.338.2'
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1919404Z ##[group]Runner Image Provisioner
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1920673Z Hosted Compute Agent
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1921472Z Version: 20261028.624
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1922230Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1923207Z Build Date: 2026-10-28T21:51:42Z
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1924075Z Worker ID: {68d23050-f9ac-422d-a935-5db4f5baec78}
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1924919Z Region: eastus
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1925729Z Cloud: Azure
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1926602Z ##[endgroup]
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1928815Z ##[group]Operating System
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1929666Z Ubuntu
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1930279Z 24.04.5
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1931124Z LTS
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1931750Z ##[endgroup]
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1932472Z ##[group]Runner Image
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1933232Z Image: ubuntu-24.04
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1933942Z Version: 20261101.360.1
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1935389Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1958139Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1959397Z ##[endgroup]
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1961398Z ##[group]GITHUB_TOKEN Permissions
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1963938Z Contents: read
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1964830Z Metadata: read
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1965518Z ##[endgroup]
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1968428Z Secret source: Actions
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1969602Z Cache mode: write
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.1970864Z Prepare workflow directory
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.2639690Z Prepare all required actions
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.2695971Z Getting action download info
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.4782185Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Manifests check, red on purpose	Set up job	2026-11-04T20:34:25.7005483Z Complete job name: Manifests check, red on purpose
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:25.7808449Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7809318Z with:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7809663Z   fetch-depth: 0
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7810038Z   persist-credentials: false
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7810588Z   repository: BereketAbera/plane-platform
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7813909Z   token: ***
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7814268Z   ssh-strict: true
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7814630Z   ssh-user: git
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7814980Z   clean: true
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7815350Z   sparse-checkout-cone-mode: true
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7815774Z   fetch-tags: false
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7816358Z   show-progress: true
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7816727Z   lfs: false
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7817064Z   submodules: false
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7817435Z   set-safe-directory: true
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7817845Z   allow-unsafe-pr-checkout: false
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.7818447Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0513403Z Syncing repository: BereketAbera/plane-platform
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0516267Z ##[group]Getting Git version info
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0517794Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0556254Z [command]/usr/bin/git version
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0707774Z git version 2.56.0
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0767524Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0775788Z Temporarily overriding HOME='/home/runner/work/_temp/9ca3b6ea-6399-47a0-b779-96466fcca2ce' before making global git config changes
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0778065Z Adding repository directory to the temporary git global config as a safe directory
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0779767Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0850376Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0852340Z ##[group]Determining repository object format
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0853610Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0854669Z ##[group]Initializing the repository
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0855807Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0974015Z hint: Using 'master' as the name for the initial branch. This default branch name
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0979341Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0981117Z hint: to use in all of your new repositories, which will suppress this warning,
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1118216Z hint: call:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1119399Z hint:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1120271Z hint: 	git config --global init.defaultBranch <name>
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1121285Z hint:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1122195Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1123653Z hint: 'development'. The just-created branch can be renamed via this command:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1124894Z hint:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1125721Z hint: 	git branch -m <name>
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1126907Z hint:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1128022Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1129916Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1133081Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1135757Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1137211Z ##[group]Disabling automatic garbage collection
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1138242Z [command]/usr/bin/git config --local gc.auto 0
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1189915Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1191427Z ##[group]Setting up auth
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1215121Z Removing SSH command configuration
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1218254Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2131781Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2135206Z Removing HTTP extra header
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2137003Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2141613Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2282006Z Removing includeIf entries pointing to credentials config files
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2283586Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2443721Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2719186Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2723968Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2728821Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2763333Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2803777Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2843225Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2844567Z ##[group]Fetching the repository
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.2850077Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6264976Z From https://github.com/BereketAbera/plane-platform
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6285061Z  * [new branch]      main       -> origin/main
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6289448Z [command]/usr/bin/git branch --list --remote origin/main
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6308493Z   origin/main
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6318919Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6357302Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6359905Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6361006Z ##[group]Determining the checkout info
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6362221Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6364233Z [command]/usr/bin/git sparse-checkout disable
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6422338Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6464228Z ##[group]Checking out the ref
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6467077Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6673999Z Switched to a new branch 'main'
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6687536Z branch 'main' set up to track 'origin/main'.
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6692928Z ##[endgroup]
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6738909Z [command]/usr/bin/git log -1 --format=%H
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6777430Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6785328Z ##[group]Removing auth
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6787316Z Removing SSH command configuration
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6792108Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.6835147Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7075742Z Removing HTTP extra header
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7078838Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7110113Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7348457Z Removing includeIf entries pointing to credentials config files
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7351762Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7387750Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7391106Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7394321Z includeif.gitdir:/github/workspace/.git.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7396762Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7403352Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7438401Z /home/runner/work/_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7449419Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-e76c4c16\-a1de\-4b71\-9513\-d766b6a909a0\.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7500998Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7542845Z /home/runner/work/_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7568323Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-e76c4c16\-a1de\-4b71\-9513\-d766b6a909a0\.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7610712Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7647705Z /github/runner_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7660851Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-e76c4c16\-a1de\-4b71\-9513\-d766b6a909a0\.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7702188Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7735713Z /github/runner_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7745463Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-e76c4c16\-a1de\-4b71\-9513\-d766b6a909a0\.config
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.7788390Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8010869Z Removing credentials config '/home/runner/work/_temp/git-credentials-e76c4c16-a1de-4b71-9513-d766b6a909a0.config'
+Manifests check, red on purpose	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8023168Z ##[endgroup]
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	﻿2026-11-04T20:34:26.8246597Z ##[group]Run printf -- '---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: planted\n  namespace: plane-dev\nstringData:\n  note: planted\n' >>gitops/environments/dev/manifests.yaml
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	2026-11-04T20:34:26.8251001Z ^[[36;1mprintf -- '---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: planted\n  namespace: plane-dev\nstringData:\n  note: planted\n' >>gitops/environments/dev/manifests.yaml^[[0m
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	2026-11-04T20:34:26.8253585Z ^[[36;1mgit diff --stat^[[0m
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	2026-11-04T20:34:26.8275614Z shell: /usr/bin/bash -e {0}
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	2026-11-04T20:34:26.8276721Z ##[endgroup]
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	2026-11-04T20:34:26.8426550Z  gitops/environments/dev/manifests.yaml | 8 ++++++++
+Manifests check, red on purpose	Plant a kind Secret in the rendered dev manifests, on this runner only	2026-11-04T20:34:26.8431064Z  1 file changed, 8 insertions(+)
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	﻿2026-11-04T20:34:26.8503330Z ##[group]Run ./scripts/ci/validate-manifests.sh
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:26.8504556Z ^[[36;1m./scripts/ci/validate-manifests.sh^[[0m
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:26.8523222Z shell: /usr/bin/bash -e {0}
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:26.8524092Z ##[endgroup]
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.0432861Z ^[[1;34m==>^[[0m render is up to date
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2707511Z --- /home/runner/work/plane-platform/plane-platform/gitops/environments/dev/manifests.yaml	2026-11-04 20:34:26.833043223 +0000
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2710232Z +++ /tmp/tmp.QrVOJLuan9/dev.yaml	2026-11-04 20:34:30.259067737 +0000
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2710776Z @@ -1764,11 +1764,3 @@
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2711076Z      permanent: true
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2711472Z      regex: ^(https?://[^/]+/(?:god-mode|spaces))(\?.*)?$
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2711911Z      replacement: ${1}/${2}
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2712252Z ----
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2712541Z -apiVersion: v1
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2712835Z -kind: Secret
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2713158Z -metadata:
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2713610Z -  name: planted
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2727937Z -  namespace: plane-dev
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2746880Z -stringData:
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2747511Z -  note: planted
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.2766530Z ^[[1;33mwarn^[[0m dev is out of date: run make render and commit the result
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.5007064Z ^[[1;32m ok^[[0m prod-sim is up to date
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.5020158Z ^[[1;33mwarn^[[0m render is up to date FAILED
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.5020736Z ^[[1;34m==>^[[0m helm lint: bootstrap chart
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.5433726Z ^[[1;32m ok^[[0m helm lint: bootstrap chart
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.5435199Z ^[[1;34m==>^[[0m kubeconform: rendered Plane
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.8883094Z Summary: 75 resources found in 2 files - Valid: 75, Invalid: 0, Errors: 0, Skipped: 0
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.8921858Z ^[[1;32m ok^[[0m kubeconform: rendered Plane
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:30.8924075Z ^[[1;34m==>^[[0m kubeconform: platform manifests
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.2099921Z Summary: 132 resources found in 7 files - Valid: 132, Invalid: 0, Errors: 0, Skipped: 0
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.2144425Z ^[[1;32m ok^[[0m kubeconform: platform manifests
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.2167012Z ^[[1;34m==>^[[0m conftest: rendered Plane
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.3939599Z FAIL - gitops/environments/dev/manifests.yaml - gitops - Secret plane-dev/planted: kind Secret must never be committed under gitops/
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.3940298Z 
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.3940582Z 825 tests, 824 passed, 0 warnings, 1 failure, 0 exceptions
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.3959189Z ^[[1;33mwarn^[[0m conftest: rendered Plane FAILED
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.3964698Z ^[[1;34m==>^[[0m conftest: platform manifests
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6238591Z 
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6239264Z 1056 tests, 1056 passed, 0 warnings, 0 failures, 0 exceptions
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6245806Z ^[[1;32m ok^[[0m conftest: platform manifests
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6246863Z ^[[1;34m==>^[[0m promotion invariant
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6574235Z ^[[1;32m ok^[[0m 9 digest(s) were recorded for dev
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6578978Z ^[[1;32m ok^[[0m promotion invariant
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:31.6601575Z ^[[1;34m==>^[[0m helm template: platform charts
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:35.3022650Z ^[[1;32m ok^[[0m 8 platform chart(s) rendered
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:35.3023716Z ^[[1;32m ok^[[0m helm template: platform charts
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:35.7735844Z ^[[1;34m==>^[[0m kubeconform: platform charts
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.0677304Z Summary: 151 resources found in 8 files - Valid: 144, Invalid: 0, Errors: 0, Skipped: 7
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.0737481Z ^[[1;32m ok^[[0m kubeconform: platform charts
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.0747953Z ^[[1;34m==>^[[0m conftest: platform charts
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.3441433Z 
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.3442459Z 755 tests, 755 passed, 0 warnings, 0 failures, 0 exceptions
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.3448239Z ^[[1;31mfail^[[0m 2 manifest check(s) failed
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.3448910Z ^[[1;32m ok^[[0m conftest: platform charts
+Manifests check, red on purpose	Render drift, kubeconform, conftest, promotion invariant	2026-11-04T20:34:36.3498252Z ##[error]Process completed with exit code 1.
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:36.3690355Z Post job cleanup.
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4537056Z [command]/usr/bin/git version
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4617147Z git version 2.56.0
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4670486Z Temporarily overriding HOME='/home/runner/work/_temp/56b5ad5d-95bc-40d8-9859-b144a64cb436' before making global git config changes
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4671563Z Adding repository directory to the temporary git global config as a safe directory
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4672494Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4780604Z Removing SSH command configuration
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4797151Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.4799268Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.5186626Z Removing HTTP extra header
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.5216988Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.5223150Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.5632162Z Removing includeIf entries pointing to credentials config files
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.5633141Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests check, red on purpose	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:36.5681882Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests check, red on purpose	Complete job	﻿2026-11-04T20:34:36.6088791Z Cleaning up orphan processes
+GHCR with no packages permission, the control	Set up job	﻿2026-11-04T20:34:25.3622825Z Current runner version: '2.338.2'
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3646046Z ##[group]Runner Image Provisioner
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3646950Z Hosted Compute Agent
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3647523Z Version: 20261028.624
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3648166Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3648866Z Build Date: 2026-10-28T21:51:42Z
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3649520Z Worker ID: {cd85dfd7-4363-4a96-84f9-c2d5284feff3}
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3650545Z Region: southcentralus
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3651118Z Cloud: Azure
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3651658Z ##[endgroup]
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3652978Z ##[group]Operating System
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3653567Z Ubuntu
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3654070Z 24.04.5
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3654586Z LTS
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3655091Z ##[endgroup]
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3655608Z ##[group]Runner Image
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3656214Z Image: ubuntu-24.04
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3656766Z Version: 20261101.360.1
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3657790Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3659391Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3660531Z ##[endgroup]
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3662339Z ##[group]GITHUB_TOKEN Permissions
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3665177Z Contents: read
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3666021Z Metadata: read
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3666743Z ##[endgroup]
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3669411Z Secret source: Actions
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3670969Z Cache mode: write
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.3671951Z Prepare workflow directory
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.4161677Z Prepare all required actions
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.4271386Z Getting action download info
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.7723280Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+GHCR with no packages permission, the control	Set up job	2026-11-04T20:34:25.9857701Z Complete job name: GHCR with no packages permission, the control
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:26.0600148Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0601324Z with:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0601903Z   persist-credentials: false
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0602547Z   repository: BereketAbera/plane-platform
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0606459Z   token: ***
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0606963Z   ssh-strict: true
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0607494Z   ssh-user: git
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0608001Z   clean: true
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0608509Z   sparse-checkout-cone-mode: true
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0609124Z   fetch-depth: 1
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0609662Z   fetch-tags: false
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0610532Z   show-progress: true
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0611084Z   lfs: false
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0611565Z   submodules: false
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0612072Z   set-safe-directory: true
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0612671Z   allow-unsafe-pr-checkout: false
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0613481Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3806516Z Syncing repository: BereketAbera/plane-platform
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3809510Z ##[group]Getting Git version info
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3811340Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3813306Z [command]/usr/bin/git version
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3825977Z git version 2.56.0
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3834622Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3990771Z Temporarily overriding HOME='/home/runner/work/_temp/be732ca9-290a-4ad2-afdd-411bb8fde7ae' before making global git config changes
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3993378Z Adding repository directory to the temporary git global config as a safe directory
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4012289Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5175283Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5178095Z ##[group]Determining repository object format
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5179815Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5181469Z ##[group]Initializing the repository
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5182904Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5184662Z hint: Using 'master' as the name for the initial branch. This default branch name
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5186778Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5188475Z hint: to use in all of your new repositories, which will suppress this warning,
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5189848Z hint: call:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5191152Z hint:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5192519Z hint: 	git config --global init.defaultBranch <name>
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5193837Z hint:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5195077Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5196815Z hint: 'development'. The just-created branch can be renamed via this command:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5200191Z hint:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5201258Z hint: 	git branch -m <name>
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5202306Z hint:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5203465Z hint: Disable this message with "git config set advice.defaultBranchName false"
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5205267Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5208614Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5211939Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5213432Z ##[group]Disabling automatic garbage collection
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5214671Z [command]/usr/bin/git config --local gc.auto 0
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5217625Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5219278Z ##[group]Setting up auth
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5220837Z Removing SSH command configuration
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5222296Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5228805Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5298386Z Removing HTTP extra header
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5306491Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5341631Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5533241Z Removing includeIf entries pointing to credentials config files
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5535151Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5571524Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5761936Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5803350Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5863640Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5898504Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5934250Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5965817Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5967592Z ##[group]Fetching the repository
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5973540Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b350fdcc061d817cffaf22b6da17be19abd9ae07:refs/remotes/origin/main
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1631302Z From https://github.com/BereketAbera/plane-platform
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1637241Z  * [new ref]         b350fdcc061d817cffaf22b6da17be19abd9ae07 -> origin/main
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1645855Z [command]/usr/bin/git branch --list --remote origin/main
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1673147Z   origin/main
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1680952Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1705857Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1711581Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1713950Z ##[group]Determining the checkout info
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1717017Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1718694Z [command]/usr/bin/git sparse-checkout disable
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1771538Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1806665Z ##[group]Checking out the ref
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1809814Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2001744Z Switched to a new branch 'main'
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2011220Z branch 'main' set up to track 'origin/main'.
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2018156Z ##[endgroup]
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2056660Z [command]/usr/bin/git log -1 --format=%H
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2082089Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2090690Z ##[group]Removing auth
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2094831Z Removing SSH command configuration
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2097826Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2129790Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2324057Z Removing HTTP extra header
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2327734Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2361882Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2562836Z Removing includeIf entries pointing to credentials config files
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2566925Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2591969Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2596827Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2601516Z includeif.gitdir:/github/workspace/.git.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2604632Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2611166Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2632774Z /home/runner/work/_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2646457Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-16800bb1\-b8e0\-4899\-b61c\-69ac95ca8b9f\.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2690383Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2722479Z /home/runner/work/_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2737666Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-16800bb1\-b8e0\-4899\-b61c\-69ac95ca8b9f\.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2797461Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2816356Z /github/runner_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2828845Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-16800bb1\-b8e0\-4899\-b61c\-69ac95ca8b9f\.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2865382Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2889577Z /github/runner_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2899686Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-16800bb1\-b8e0\-4899\-b61c\-69ac95ca8b9f\.config
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.2934957Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.3124755Z Removing credentials config '/home/runner/work/_temp/git-credentials-16800bb1-b8e0-4899-b61c-69ac95ca8b9f.config'
+GHCR with no packages permission, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.3134225Z ##[endgroup]
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	﻿2026-11-04T20:34:27.3386990Z ##[group]Run ./scripts/ci/ghcr-probe.sh
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3388594Z ^[[36;1m./scripts/ci/ghcr-probe.sh^[[0m
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3407613Z shell: /usr/bin/bash -e {0}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3408936Z env:
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3420705Z   TOKEN: ***
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3421803Z   OWNER: BereketAbera
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3422959Z   ACTOR: BereketAbera
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3423986Z ##[endgroup]
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3549569Z --- runner
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3561318Z architecture: x86_64
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3660942Z cores: 2
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3675736Z                total        used        free      shared  buff/cache   available
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3679063Z Mem:           7.7Gi       859Mi       6.4Gi        41Mi       858Mi       6.9Gi
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3681980Z Swap:          3.0Gi          0B       3.0Gi
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3788646Z Filesystem      Size  Used Avail Use% Mounted on
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3791757Z /dev/root        72G   59G   14G  82% /
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3794210Z /dev/root        72G   59G   14G  82% /
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.3821857Z avail on the workspace, the number guard_disk reads: 14 GiB
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.4884860Z docker server 28.0.4, amd64
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:30.0561723Z github.com/docker/buildx v0.38.1 0dbe87f36ed472fe36b6796c3f70b4210a731fc5
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:34:30.0586281Z size of preinstalled trees a build could reclaim:
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:35:26.6660433Z 12G	/usr/local/lib/android
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:35:35.2054965Z 5.8G	/usr/share/dotnet
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:35:36.3480442Z 3.7G	/usr/local/.ghcup
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:00.5703602Z 5.3G	/opt/hostedtoolcache
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:00.5803529Z --- GHCR: may this token start a push to ghcr.io/bereketabera/wayline/ci-probe?
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:00.7895205Z GET /token, scope pull,push: HTTP 200
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:01.1334079Z POST blobs/uploads/, opens an upload session: HTTP 403
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:01.1348486Z response: {"errors":[{"code":"DENIED","message":"installation not allowed to Create organization package"}]}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:01.2645696Z GET tags/list on the probe name: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:01.2647684Z --- GHCR: does an image already exist under the real names?
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:01.6038368Z web: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:01.9823216Z admin: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:02.3459769Z space: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:02.7016223Z backend: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:02.7031307Z --- REST: can this token list the owner's container packages?
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:03.0478570Z GET /users/bereketabera/packages: HTTP 400
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:03.0494430Z response: {
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:03.0510551Z   "message": "Invalid argument.",
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:03.0512107Z   "documentation_url": "https://docs.github.com/rest/packages/packages#list-packages-for-a-user",
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:03.0513308Z   "status": "400"
+GHCR with no packages permission, the control	Runner facts, then ask GHCR	2026-11-04T20:36:03.0514111Z }
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:36:03.0654424Z Post job cleanup.
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1558176Z [command]/usr/bin/git version
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1643282Z git version 2.56.0
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1682589Z Temporarily overriding HOME='/home/runner/work/_temp/094e1bad-f04a-4b32-9e10-ceaa5c3c77ca' before making global git config changes
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1690523Z Adding repository directory to the temporary git global config as a safe directory
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1696452Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1763463Z Removing SSH command configuration
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1764697Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.1832435Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.2143946Z Removing HTTP extra header
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.2162375Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.2180844Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.2485203Z Removing includeIf entries pointing to credentials config files
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.2500524Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with no packages permission, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:03.2540666Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with no packages permission, the control	Complete job	﻿2026-11-04T20:36:03.3306583Z Cleaning up orphan processes
+Every planted defect, on a real runner	Set up job	﻿2026-11-04T20:34:25.1140502Z Current runner version: '2.338.2'
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1161616Z ##[group]Runner Image Provisioner
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1162255Z Hosted Compute Agent
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1162626Z Version: 20261028.624
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1163076Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1163524Z Build Date: 2026-10-28T21:51:42Z
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1163972Z Worker ID: {c331ba65-38e3-4e0a-9c58-1dbdcdb5dd20}
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1164463Z Region: westus3
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1164819Z Cloud: Azure
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1165202Z ##[endgroup]
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1165968Z ##[group]Operating System
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1166406Z Ubuntu
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1166796Z 24.04.5
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1167132Z LTS
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1167764Z ##[endgroup]
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1168123Z ##[group]Runner Image
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1168499Z Image: ubuntu-24.04
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1168942Z Version: 20261101.360.1
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1169583Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1170663Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1171238Z ##[endgroup]
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1172011Z ##[group]GITHUB_TOKEN Permissions
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1173172Z Contents: read
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1173606Z Metadata: read
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1173967Z ##[endgroup]
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1175310Z Secret source: Actions
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1175880Z Cache mode: write
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1176326Z Prepare workflow directory
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1376175Z Prepare all required actions
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.1406641Z Getting action download info
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.4897686Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Every planted defect, on a real runner	Set up job	2026-11-04T20:34:25.6343315Z Complete job name: Every planted defect, on a real runner
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:25.6955797Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6957128Z with:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6957484Z   fetch-depth: 0
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6957748Z   persist-credentials: false
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6958047Z   repository: BereketAbera/plane-platform
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6960100Z   token: ***
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6960330Z   ssh-strict: true
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6960565Z   ssh-user: git
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6960792Z   clean: true
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6961038Z   sparse-checkout-cone-mode: true
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6961320Z   fetch-tags: false
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6961569Z   show-progress: true
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6961816Z   lfs: false
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6962041Z   submodules: false
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6962288Z   set-safe-directory: true
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6962565Z   allow-unsafe-pr-checkout: false
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.6962919Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9479645Z Syncing repository: BereketAbera/plane-platform
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9481472Z ##[group]Getting Git version info
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9482341Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9485013Z [command]/usr/bin/git version
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9619931Z git version 2.56.0
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9631368Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9647454Z Temporarily overriding HOME='/home/runner/work/_temp/5cdad087-d31b-49cf-bfd0-4d50bcabe395' before making global git config changes
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9649104Z Adding repository directory to the temporary git global config as a safe directory
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9665029Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9779042Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9791053Z ##[group]Determining repository object format
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9791848Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9794848Z ##[group]Initializing the repository
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9797979Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9850347Z hint: Using 'master' as the name for the initial branch. This default branch name
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9852230Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9855335Z hint: to use in all of your new repositories, which will suppress this warning,
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9855977Z hint: call:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9863585Z hint:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9864413Z hint: 	git config --global init.defaultBranch <name>
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9889725Z hint:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9928908Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9930116Z hint: 'development'. The just-created branch can be renamed via this command:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9931244Z hint:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9931971Z hint: 	git branch -m <name>
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9932883Z hint:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9934991Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9936072Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.9938036Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0018522Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0019638Z ##[group]Disabling automatic garbage collection
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0027881Z [command]/usr/bin/git config --local gc.auto 0
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0029378Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0030317Z ##[group]Setting up auth
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0030769Z Removing SSH command configuration
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0031437Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0124455Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0484703Z Removing HTTP extra header
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0500903Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0542172Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0820983Z Removing includeIf entries pointing to credentials config files
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0822157Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.0824647Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1088001Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1091242Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1116536Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1155025Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1196077Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1234770Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1235668Z ##[group]Fetching the repository
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.1239608Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9405561Z From https://github.com/BereketAbera/plane-platform
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9418259Z  * [new branch]      main       -> origin/main
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0004371Z [command]/usr/bin/git branch --list --remote origin/main
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0005545Z   origin/main
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0008002Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0009203Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0011888Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0013241Z ##[group]Determining the checkout info
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0014565Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0015332Z [command]/usr/bin/git sparse-checkout disable
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0017928Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0021074Z ##[group]Checking out the ref
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0022574Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0029085Z Switched to a new branch 'main'
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0030272Z branch 'main' set up to track 'origin/main'.
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0033332Z ##[endgroup]
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0035629Z [command]/usr/bin/git log -1 --format=%H
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0037025Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0040504Z ##[group]Removing auth
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0041593Z Removing SSH command configuration
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0043255Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0047918Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0185946Z Removing HTTP extra header
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0188575Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0225952Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0429323Z Removing includeIf entries pointing to credentials config files
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0431465Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0463450Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0468779Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0470904Z includeif.gitdir:/github/workspace/.git.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0472531Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0476317Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0510536Z /home/runner/work/_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0532657Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-0eacba7e\-000a\-42fb\-8a7f\-1d42e54fc95f\.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0592513Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0600469Z /home/runner/work/_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0611596Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-0eacba7e\-000a\-42fb\-8a7f\-1d42e54fc95f\.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0653368Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0688266Z /github/runner_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0694563Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-0eacba7e\-000a\-42fb\-8a7f\-1d42e54fc95f\.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0735657Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0769876Z /github/runner_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0775762Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-0eacba7e\-000a\-42fb\-8a7f\-1d42e54fc95f\.config
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0814362Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1026460Z Removing credentials config '/home/runner/work/_temp/git-credentials-0eacba7e-000a-42fb-8a7f-1d42e54fc95f.config'
+Every planted defect, on a real runner	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.1030218Z ##[endgroup]
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	﻿2026-11-04T20:34:27.1209920Z ##[group]Run ./scripts/ci/negative-controls.sh
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:27.1210838Z ^[[36;1m./scripts/ci/negative-controls.sh^[[0m
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:27.1230698Z shell: /usr/bin/bash -e {0}
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:27.1231355Z ##[endgroup]
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:34.7398599Z ^[[1;34m==>^[[0m baseline: an untouched clone must pass, or the failures below prove nothing
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:42.8013902Z ^[[1;32m ok^[[0m lint.sh passes on b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:49.2026355Z ^[[1;32m ok^[[0m validate-manifests.sh passes on b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:34:49.6143708Z ^[[1;32m ok^[[0m ownership.sh passes on b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:07.7794316Z ^[[1;32m ok^[[0m security.sh passes on b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:07.7795338Z ^[[1;34m==>^[[0m secret-in-rendered-manifests
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:09.4332933Z ^[[1;32m ok^[[0m secret-in-rendered-manifests: validate-manifests.sh exited 1 and printed: conftest: rendered Plane FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:09.5091524Z ^[[1;34m==>^[[0m image-without-digest
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:11.0613318Z ^[[1;32m ok^[[0m image-without-digest: validate-manifests.sh exited 1 and printed: conftest: rendered Plane FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:11.1644468Z ^[[1;34m==>^[[0m render-drift
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:12.7249406Z ^[[1;32m ok^[[0m render-drift: validate-manifests.sh exited 1 and printed: render is up to date FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:12.8433873Z ^[[1;34m==>^[[0m unknown-field-in-manifest
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:14.4118300Z ^[[1;32m ok^[[0m unknown-field-in-manifest: validate-manifests.sh exited 1 and printed: kubeconform: rendered Plane FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:14.5116672Z ^[[1;34m==>^[[0m digest-never-recorded-for-dev
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:15.8369348Z ^[[1;32m ok^[[0m digest-never-recorded-for-dev: validate-manifests.sh exited 1 and printed: promotion invariant FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:15.8910379Z ^[[1;34m==>^[[0m unlintable-chart
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:17.1547538Z ^[[1;32m ok^[[0m unlintable-chart: validate-manifests.sh exited 1 and printed: helm lint: bootstrap chart FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:17.1600257Z ^[[1;34m==>^[[0m chart-version-missing
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:28.8826498Z ^[[1;32m ok^[[0m chart-version-missing: validate-manifests.sh exited 1 and printed: helm template: platform charts FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:28.8886603Z ^[[1;34m==>^[[0m namespace-in-gitops
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:29.3082094Z ^[[1;32m ok^[[0m namespace-in-gitops: ownership.sh exited 1 and printed: is owned by Terraform, not Argo CD
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:29.3134982Z ^[[1;34m==>^[[0m bad-workflow-expression
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:33.7324717Z ^[[1;32m ok^[[0m bad-workflow-expression: lint.sh exited 1 and printed: actionlint FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:33.7383299Z ^[[1;34m==>^[[0m unpinned-action
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:38.1761354Z ^[[1;32m ok^[[0m unpinned-action: lint.sh exited 1 and printed: zizmor FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:38.1823796Z ^[[1;34m==>^[[0m shell-warning-outside-scripts
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:42.4951224Z ^[[1;32m ok^[[0m shell-warning-outside-scripts: lint.sh exited 1 and printed: shellcheck FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:42.5002764Z ^[[1;34m==>^[[0m python-syntax-error
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:46.8140993Z ^[[1;32m ok^[[0m python-syntax-error: lint.sh exited 1 and printed: python compile FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:46.8205980Z ^[[1;34m==>^[[0m floating-base-image
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:51.1295148Z ^[[1;32m ok^[[0m floating-base-image: lint.sh exited 1 and printed: hadolint FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:51.1351592Z ^[[1;34m==>^[[0m unformatted-terraform
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:56.9331845Z ^[[1;32m ok^[[0m unformatted-terraform: lint.sh exited 1 and printed: terraform fmt FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:35:56.9686885Z ^[[1;34m==>^[[0m invalid-terraform
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:01.4254791Z ^[[1;32m ok^[[0m invalid-terraform: lint.sh exited 1 and printed: terraform validate FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:01.4311517Z ^[[1;34m==>^[[0m unused-terraform-variable
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:05.8226254Z ^[[1;32m ok^[[0m unused-terraform-variable: lint.sh exited 1 and printed: tflint FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:05.8278875Z ^[[1;34m==>^[[0m weakened-policy
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:10.3034503Z ^[[1;32m ok^[[0m weakened-policy: lint.sh exited 1 and printed: conftest verify FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:10.3090241Z ^[[1;34m==>^[[0m token-in-working-tree
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:14.2982834Z ^[[1;32m ok^[[0m token-in-working-tree: security.sh exited 1 and printed: gitleaks working tree FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:14.3058595Z ^[[1;34m==>^[[0m token-only-in-history
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:18.2879634Z ^[[1;32m ok^[[0m token-only-in-history: security.sh exited 1 and printed: gitleaks history FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:18.2938333Z ^[[1;34m==>^[[0m privileged-pod-trivy-config
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:22.2381305Z ^[[1;32m ok^[[0m privileged-pod-trivy-config: security.sh exited 1 and printed: trivy config FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:22.2436366Z ^[[1;34m==>^[[0m vulnerable-lockfile-trivy-fs
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:26.1163614Z ^[[1;32m ok^[[0m vulnerable-lockfile-trivy-fs: security.sh exited 1 and printed: trivy fs FAILED
+Every planted defect, on a real runner	Plant each defect in a throwaway clone, require the matching check to fail	2026-11-04T20:36:26.1220366Z ^[[1;32m ok^[[0m 21 of 21 planted defects were caught, on b350fdcc061d817cffaf22b6da17be19abd9ae07
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:36:26.1886106Z Post job cleanup.
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2516170Z [command]/usr/bin/git version
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2574169Z git version 2.56.0
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2626802Z Temporarily overriding HOME='/home/runner/work/_temp/b94ebd1e-7c75-4c87-a1fa-da5935d9ebc9' before making global git config changes
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2627694Z Adding repository directory to the temporary git global config as a safe directory
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2628835Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2688264Z Removing SSH command configuration
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2688818Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.2748040Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.3068036Z Removing HTTP extra header
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.3068763Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.3152264Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.3386041Z Removing includeIf entries pointing to credentials config files
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.3392682Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Every planted defect, on a real runner	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:36:26.3431290Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Every planted defect, on a real runner	Complete job	﻿2026-11-04T20:36:26.3743998Z Cleaning up orphan processes
+GHCR with packages read, the control	Set up job	﻿2026-11-04T20:34:25.1861895Z Current runner version: '2.338.2'
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1899235Z ##[group]Runner Image Provisioner
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1900707Z Hosted Compute Agent
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1901725Z Version: 20261028.624
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1902781Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1904537Z Build Date: 2026-10-28T21:51:42Z
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1905987Z Worker ID: {a291ccf3-5ce7-4fa3-a0ed-2460253b9277}
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1907433Z Region: eastus
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1908773Z Cloud: Azure
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1909670Z ##[endgroup]
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1912299Z ##[group]Operating System
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1913369Z Ubuntu
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1914306Z 24.04.5
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1915229Z LTS
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1916084Z ##[endgroup]
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1917056Z ##[group]Runner Image
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1918589Z Image: ubuntu-24.04
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1919683Z Version: 20261101.360.1
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1921539Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1924686Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1926394Z ##[endgroup]
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1928735Z ##[group]GITHUB_TOKEN Permissions
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1931415Z Contents: read
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1932531Z Metadata: read
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1933511Z Packages: read
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1935030Z ##[endgroup]
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1938459Z Secret source: Actions
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1940211Z Cache mode: write
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.1941835Z Prepare workflow directory
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.2429295Z Prepare all required actions
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.2502389Z Getting action download info
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.5617432Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+GHCR with packages read, the control	Set up job	2026-11-04T20:34:25.7593505Z Complete job name: GHCR with packages read, the control
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:34:25.8666860Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8668904Z with:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8669618Z   persist-credentials: false
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8670542Z   repository: BereketAbera/plane-platform
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8678867Z   token: ***
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8679591Z   ssh-strict: true
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8680294Z   ssh-user: git
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8680972Z   clean: true
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8681716Z   sparse-checkout-cone-mode: true
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8682593Z   fetch-depth: 1
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8683311Z   fetch-tags: false
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8684041Z   show-progress: true
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8684791Z   lfs: false
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8685465Z   submodules: false
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8686216Z   set-safe-directory: true
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8687051Z   allow-unsafe-pr-checkout: false
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:25.8688578Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3591937Z Syncing repository: BereketAbera/plane-platform
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3595194Z ##[group]Getting Git version info
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3599568Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3615870Z [command]/usr/bin/git version
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3768893Z git version 2.56.0
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3794423Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3804624Z Temporarily overriding HOME='/home/runner/work/_temp/b5ff9cdc-360f-45e0-bfe6-cc18a993c1d9' before making global git config changes
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3828972Z Adding repository directory to the temporary git global config as a safe directory
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3851484Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3884676Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3887613Z ##[group]Determining repository object format
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3890175Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3891889Z ##[group]Initializing the repository
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.3900341Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4049249Z hint: Using 'master' as the name for the initial branch. This default branch name
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4051900Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4054487Z hint: to use in all of your new repositories, which will suppress this warning,
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4073426Z hint: call:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4074702Z hint:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4076194Z hint: 	git config --global init.defaultBranch <name>
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4078184Z hint:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4079792Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4081812Z hint: 'development'. The just-created branch can be renamed via this command:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4083519Z hint:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4084474Z hint: 	git branch -m <name>
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4086072Z hint:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4087458Z hint: Disable this message with "git config set advice.defaultBranchName false"
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4090123Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4094036Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4160887Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4176179Z ##[group]Disabling automatic garbage collection
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4178505Z [command]/usr/bin/git config --local gc.auto 0
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4272539Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4289418Z ##[group]Setting up auth
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4299449Z Removing SSH command configuration
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4301986Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4309855Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4927329Z Removing HTTP extra header
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4929557Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.4962031Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5235022Z Removing includeIf entries pointing to credentials config files
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5237096Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5285045Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5549089Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5600162Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5647675Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5701183Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5751848Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5796718Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5799536Z ##[group]Fetching the repository
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.5804818Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b350fdcc061d817cffaf22b6da17be19abd9ae07:refs/remotes/origin/main
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8810363Z From https://github.com/BereketAbera/plane-platform
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8813326Z  * [new ref]         b350fdcc061d817cffaf22b6da17be19abd9ae07 -> origin/main
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8819800Z [command]/usr/bin/git branch --list --remote origin/main
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8822618Z   origin/main
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8827582Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8830477Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8836680Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8840284Z ##[group]Determining the checkout info
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8843789Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8846042Z [command]/usr/bin/git sparse-checkout disable
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8851949Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8914482Z ##[group]Checking out the ref
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.8918323Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9175714Z Switched to a new branch 'main'
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9184203Z branch 'main' set up to track 'origin/main'.
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9196779Z ##[endgroup]
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9252809Z [command]/usr/bin/git log -1 --format=%H
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9293026Z b350fdcc061d817cffaf22b6da17be19abd9ae07
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9306318Z ##[group]Removing auth
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9309322Z Removing SSH command configuration
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9313410Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9363187Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9627108Z Removing HTTP extra header
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9632115Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9689451Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9954948Z Removing includeIf entries pointing to credentials config files
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:26.9961928Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0003245Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0008843Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0013748Z includeif.gitdir:/github/workspace/.git.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0017204Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0026267Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0058790Z /home/runner/work/_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0071575Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-7d17457c\-bf45\-4220\-be20\-fad2bd5537f4\.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0137222Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0176349Z /home/runner/work/_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0193919Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-7d17457c\-bf45\-4220\-be20\-fad2bd5537f4\.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0251155Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0298719Z /github/runner_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0309456Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-7d17457c\-bf45\-4220\-be20\-fad2bd5537f4\.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0356490Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0396944Z /github/runner_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0410389Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-7d17457c\-bf45\-4220\-be20\-fad2bd5537f4\.config
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0457661Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0731953Z Removing credentials config '/home/runner/work/_temp/git-credentials-7d17457c-bf45-4220-be20-fad2bd5537f4.config'
+GHCR with packages read, the control	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:34:27.0739509Z ##[endgroup]
+GHCR with packages read, the control	Runner facts, then ask GHCR	﻿2026-11-04T20:34:27.1019554Z ##[group]Run ./scripts/ci/ghcr-probe.sh
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1021041Z ^[[36;1m./scripts/ci/ghcr-probe.sh^[[0m
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1046648Z shell: /usr/bin/bash -e {0}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1048045Z env:
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1061488Z   TOKEN: ***
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1062464Z   OWNER: BereketAbera
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1063506Z   ACTOR: BereketAbera
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1064531Z ##[endgroup]
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1202386Z --- runner
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1213924Z architecture: x86_64
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1234511Z cores: 2
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1253422Z                total        used        free      shared  buff/cache   available
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1257555Z Mem:           7.7Gi       830Mi       6.4Gi        41Mi       867Mi       6.9Gi
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1261364Z Swap:          3.0Gi          0B       3.0Gi
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1414218Z Filesystem      Size  Used Avail Use% Mounted on
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1420087Z /dev/root        72G   59G   14G  82% /
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1423731Z /dev/root        72G   59G   14G  82% /
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.1464561Z avail on the workspace, the number guard_disk reads: 14 GiB
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:27.2482085Z docker server 28.0.4, amd64
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:29.9694042Z github.com/docker/buildx v0.38.1 0dbe87f36ed472fe36b6796c3f70b4210a731fc5
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:34:29.9737104Z size of preinstalled trees a build could reclaim:
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:26.3061090Z 12G	/usr/local/lib/android
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:34.7015981Z 5.8G	/usr/share/dotnet
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:35.7575515Z 3.7G	/usr/local/.ghcup
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.1068434Z 5.3G	/opt/hostedtoolcache
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.1244733Z --- GHCR: may this token start a push to ghcr.io/bereketabera/wayline/ci-probe?
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.2323250Z GET /token, scope pull,push: HTTP 200
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.4061526Z POST blobs/uploads/, opens an upload session: HTTP 403
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.4078768Z response: {"errors":[{"code":"DENIED","message":"installation not allowed to Create organization package"}]}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.4575700Z GET tags/list on the probe name: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.4589221Z --- GHCR: does an image already exist under the real names?
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.6254548Z web: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.7816725Z admin: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:55.9427109Z space: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.1044347Z backend: GET tags/list: HTTP 404, {"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.1046196Z --- REST: can this token list the owner's container packages?
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.5156242Z GET /users/bereketabera/packages: HTTP 400
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.5174307Z response: {
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.5174718Z   "message": "Invalid argument.",
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.5175545Z   "documentation_url": "https://docs.github.com/rest/packages/packages#list-packages-for-a-user",
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.5176460Z   "status": "400"
+GHCR with packages read, the control	Runner facts, then ask GHCR	2026-11-04T20:35:56.5177015Z }
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-04T20:35:56.5413095Z Post job cleanup.
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6511098Z [command]/usr/bin/git version
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6578767Z git version 2.56.0
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6803918Z Temporarily overriding HOME='/home/runner/work/_temp/f6f47fa8-6b0c-4f38-a137-9377a80752eb' before making global git config changes
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6838775Z Adding repository directory to the temporary git global config as a safe directory
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6858982Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6899837Z Removing SSH command configuration
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6900727Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.6903005Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.7169761Z Removing HTTP extra header
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.7185182Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.7249518Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.7736643Z Removing includeIf entries pointing to credentials config files
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.7737842Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+GHCR with packages read, the control	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-04T20:35:56.7812841Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+GHCR with packages read, the control	Complete job	﻿2026-11-04T20:35:56.8365770Z Cleaning up orphan processes
