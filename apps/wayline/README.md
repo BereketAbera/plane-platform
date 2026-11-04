@@ -23,6 +23,7 @@ UPSTREAM commit ──> overlay/ ──> patches/*.patch ──> codemod/rebrand
 | `checks/contrast.mjs` | WCAG contrast of the main pairs in all four themes and the ink shell |
 | `checks/leak-scan.sh` | Fails on the upstream brand in build output, except allowlisted entries with reasons |
 | `checks/font-urls.sh` | Proves from the built CSS that fonts resolve under `/`, `/god-mode/`, `/spaces/` |
+| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings. `backend/check-image.sh` is the backend's part |
 | `runtime/` | Thin Dockerfiles and nginx configs. Upstream's Dockerfiles are not used |
 | `assets/` | `masters/` holds logo masters and spinner source. `generate.mjs` and `generate-contours.mjs` regenerate the overlay's images, manifests and the auth chart. See `assets/README.md` |
 | `backend/` | Email templates, scripted string edits and the in-image check for the derived backend image |
