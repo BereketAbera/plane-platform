@@ -210,20 +210,24 @@ grafana:
       repository: kiwigrid/k8s-sidecar
       tag: 2.14.3
       sha: 52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
+    # A Python process that imports the whole Kubernetes client. At 96Mi it was OOM-killed about 35s
+    # after every start, before it logged a line, so Grafana never got a dashboard or a Ready pod.
     resources:
-      requests: { cpu: 5m, memory: 48Mi }
-      limits: { cpu: 50m, memory: 96Mi }
+      requests: { cpu: 5m, memory: 96Mi }
+      limits: { cpu: 200m, memory: 256Mi }
     dashboards:
       label: grafana_dashboard
       labelValue: "1"
       searchNamespace: null # own namespace only; matches rbac.namespaced above
       folderAnnotation: grafana_folder
+      resource: configmap # every dashboard here is a ConfigMap; the default also watches Secrets
       provider:
         foldersFromFilesStructure: true
         allowUiUpdates: false
     datasources:
       defaultDatasourceEnabled: true
       uid: prometheus # dashboards in monitoring/manifests pin this uid
+      resource: configmap # as above
   additionalDataSources:
     - name: Loki
       uid: loki
