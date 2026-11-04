@@ -2,13 +2,15 @@
 
 Secret store for both Plane environments. Infisical Community Edition v0.167.6 runs in the `infisical` namespace with its own Postgres and Redis, and two namespace-scoped operators copy values into each Plane namespace.
 
-**Status: NOT RUN.** Nothing here has run against a real cluster or a real Infisical yet. Terraform, Helm and manifests are validated statically, and the scripts were exercised against stubs only. Everything under [Not yet proven](#not-yet-proven) needs a real run and evidence in `docs/evidence/`.
+**Status: run on the real cluster on 2026-11-04, except `scripts/rotate.sh`.** [Measured](#measured) says what ran and what it showed. [Not yet proven](#not-yet-proven) lists the rest.
 
 | Path | What it is |
 |---|---|
 | `manifests/` | Postgres, Redis, IngressRoute, the server's ServiceAccount, the token-review binding. A path source of the `infisical` Application |
 | `terraform/` | Projects, the environment, machine identities, Kubernetes Auth. Separate root, state in `.local/terraform/infisical/` |
 | `lib/api.sh` | Shared by the scripts below |
+| `tests/isolation.sh` | Real logins and reads: each reader against its own project and the other one, from the host and from inside each namespace |
+| `tests/rendered-secrets.sh` | The six Secrets in each namespace against contract section 8, without printing a value |
 | `../helm/values/infisical*.yaml` | Server chart and the two operator releases |
 | `../scripts/secret-zero.sh` | Creates what must exist before Infisical does |
 | `../scripts/infisical-bootstrap.sh` | First admin, Terraform, seed, identity ids |
@@ -21,12 +23,14 @@ Secret store for both Plane environments. Infisical Community Edition v0.167.6 r
 |---|---|---|---|
 | 1 | Namespaces | `infrastructure/terraform` | |
 | 2 | `scripts/secret-zero.sh` | Script. Needs step 1 | `infisical-db`, `infisical-redis`, `infisical-secrets` exist. Postgres and Redis wait in `CreateContainerConfigError` until then, then recover |
-| 3 | `infisical` Application, wave -4 | Argo CD. Inside it: ServiceAccount -2, Postgres and Redis -1, server 0, IngressRoute 1 | First boot runs about 600 migrations |
+| 3 | `infisical` Application, wave -4 | Argo CD. Inside it: ServiceAccount -2, Postgres and Redis -1, server 0, IngressRoute 1 | First boot runs 602 migrations, 11.5s on this machine |
 | 4 | `infisical-operator-dev` and `-prod-sim`, wave -3 | Argo CD | |
 | 5 | `scripts/infisical-bootstrap.sh` | Script. Needs `http://infisical.localhost` | Terraform applied, secrets seeded, identity Secrets published |
 | 6 | `plane-dev` wave -1, `plane-prod-sim` wave 0 | Argo CD | `InfisicalAuth` stays unready until step 5 publishes `plane-infisical-identity` |
 
 Step 5 is not an Argo CD step because it needs the admin token, which never enters the cluster. It seeds before it publishes identity ids, so an operator cannot log in to an empty project.
+
+While `InfisicalAuth` is unready, a Plane sync fails at wave -2 and Argo CD retries it, every 5 minutes once backed off. After step 5 the CR turns Ready within a second, because the operator watches the Secret, but the sync moves on only at its next retry. On the first run that took 3m10s. This is normal.
 
 Steps 2 and 5 are idempotent, so rerun them on every `make up`. Step 5 finds the instance already bootstrapped, Terraform changes nothing, the seed writes nothing, and it picks up a new cluster CA if the cluster was recreated.
 
@@ -130,7 +134,7 @@ From `license-fns.ts` and the enforcement sites at v0.167.6. An unlicensed self-
 | Dynamic secrets are paid | One shared Postgres role, not per-pod credentials |
 | Audit logs are not stored (`auditLogsRetentionDays: 0`) | Who read what cannot be shown. Secret version history is the only trail |
 | `instantUpdates` is paid | The operator polls, so `refreshInterval` is the latency. The rotation script nudges the CR to shorten it |
-| Secret requests limited to 40 per minute per client IP, reads 60, writes 200 | The seed uses one batch and 3 requests per environment. Scripts honour `Retry-After` on 429. Each operator has its own IP, with 6 CRs polling every 60s |
+| None for rate limits. The plan names 40 secret requests, 60 reads and 200 writes per minute, but v0.167.6 registers the limiter only on Infisical Cloud (`app.ts`: `isProductionMode && isCloud`), and here 240 reads in 4s from one address all answered 200 | The seed still uses one batch and 3 requests per environment, and the scripts still honour `Retry-After` on 429, in case a later version applies the limit. That path has never run. Each operator polls 6 times a minute |
 | Non-wildcard trusted IPs are paid | Access tokens are valid from any address, so short TTLs (1 hour) do that job instead |
 | Gateway reviewer is paid | The client JWT reviews itself, which needs `system:auth-delegator` on `plane-infisical-auth` and `ALLOW_INTERNAL_IP_CONNECTIONS=true` |
 
@@ -138,15 +142,36 @@ Free and sufficient: unlimited identities, projects and environments, Kubernetes
 
 `ALLOW_INTERNAL_IP_CONNECTIONS` relaxes SSRF protection for the whole instance. That is acceptable on a single-user local instance and needs a new decision for pass 2.
 
+## Measured
+
+Real runs on this cluster on 2026-11-04: Kubernetes 1.36, arm64, default-deny on. Raw output is in `.local/evidence-raw/`, under the names shown.
+
+| What | Result | Evidence |
+|---|---|---|
+| First boot under the 1Gi limit and 640 MiB heap | 602 migrations in 11.5s. Container start to Ready in 21s. Peak 807 MiB by cgroup `memory.peak`, 0 OOM events | `infisical-firstboot-1.txt` |
+| A later boot | "No migrations pending". Created to Ready in 15s. Peak 822 MiB. Idle is 660 to 730 MiB | `infisical-second-boot-1.txt` |
+| Postgres and Redis, non-root with a read-only root on local-path | `initdb` and AOF both work, the root rejects a write, and both come back after a pod delete (8s and 11s) with all data. Postgres reached its 256Mi limit by `memory.peak`, but that is page cache: 8 MiB anon, 0 OOM events | `infisical-firstboot-1.txt`, `infisical-restart-1.txt` |
+| What a restart costs | Redis down: the API does not answer for about 12s. Postgres down: reads answer 500 for about 6s. No CR went into error, and values and rendered Secrets did not change | `infisical-restart-1.txt` |
+| Bootstrap and Terraform against the real API | 10 resources in 12s for the whole script. Read back: one `prod` environment per project, secrets at `/`, reader identities with org role `no-access` and project role `viewer` | `infisical-bootstrap-1.txt`, `infisical-config-1.txt` |
+| Idempotent | Two reruns: Terraform "No changes", seed writes nothing, and secret ids, versions, Secret contents and pods are identical. The first rerun raises the state serial once, to record `auth_modes` and a KMS key id; the second does not | `infisical-idempotency-1.txt` |
+| A second `POST /api/v1/admin/bootstrap` | 400, "Instance has already been set up". Sign-up is off | `infisical-config-1.txt` |
+| Partial state | With one key deleted, the CR goes to error and its Secret keeps the last good value. The seed writes only that key, the other 8 keep their id and version, and the CR recovers | `infisical-seed-partial-1.txt` |
+| Kubernetes Auth end to end | The operator logs in and caches for 42m, 70% of the TTL. The token reviews itself, with no reviewer JWT stored. A wrong CA is refused with "SSL certificate verification failed", so verification is on, and the certificate's SANs include `kubernetes.default.svc.cluster.local` | `infisical-isolation-2.txt`, `infisical-k8s-auth-tls-1.txt` |
+| Who may log in | Other namespace: 401, "K8s namespace not allowed". Same namespace, other account: 401, "K8s name not allowed". Forged token: 401 | `infisical-isolation-2.txt` |
+| Cross-project read | **403 in both directions**, on list, single read and slug lookup, from the host and from a pod over the Service. Same tokens read their own project, 200 | `infisical-isolation-2.txt` |
+| Reader role | Writing to its own project and listing org identities: both 403 | `infisical-isolation-2.txt` |
+| Rendered Secrets | All six in both namespaces hold exactly the contract's keys, with no empty or `<no value>` value, hex passwords, consistent URLs and nothing shared across environments. The check fails when a Secret is tampered with, and the operator repaired that in 9s | `infisical-rendered-secrets-1.txt`, `infisical-tamper-1.txt` |
+| `secretFrom` against `.KEY.Value` | With a missing key, `secretFrom` sets `error: true` and creates no Secret. `.KEY.Value` renders a literal `<no value>` and reports success, which is why the overlays do not use it | `infisical-no-value-1.txt` |
+| Operator scope | Each operator can read Secrets and mint tokens only in its own namespace. A CR in `plane-dev` that references the prod-sim account and identity stays unready | `infisical-rbac-1.txt` |
+| Rate limit | **Not enforced on this instance.** 240 secret reads in 4s from one address: all 200, no rate-limit headers. Each operator makes 6 secret requests a minute. So the free-tier limit the research listed does not apply, and the `Retry-After` handling has not been exercised | `infisical-rate-limit-1.txt`, `infisical-server-log-1.txt` |
+| Terraform state | Holds no admin token, no secret-zero file's content and none of the 12 generated values | `infisical-config-1.txt` |
+| Admin token recovery | Sign-in with the generated password, then a new Token Auth token for the admin identity, works as Recovery describes. Revoked afterwards, and the old one then gets 401 | `infisical-recovery-1.txt` |
+| NetworkPolicy | Rows from `infisical`: 11 PASS, 0 FAIL, 3 INCONCLUSIVE, because the prod-sim Services did not exist yet. To the server from `plane-prod-sim`: the operator label connects, `api`, `worker` and `web` time out | `netpol-infisical-1.txt`, `netpol-infisical-2.txt` |
+
 ## Not yet proven
 
 In the order that blocks the most:
 
-1. First boot of about 600 migrations under the 1Gi limit and 640 MiB heap on arm64. If it OOMKills, raise the limit to 1.5Gi temporarily.
-2. Non-root Postgres and Redis with a read-only root filesystem on kind's local-path volume.
-3. Kubernetes Auth on kind: API server reachable from the pod under default-deny, certificate SAN for `kubernetes.default.svc.cluster.local`, the token reviewing itself.
-4. Bootstrap, Terraform, and the provider's calls against the real API. The scripts have seen only a mock.
-5. A cross-project 403: the `plane-dev` reader must not read `plane-prod-sim`.
-6. Everything in `rotate.sh` against real Postgres: socket trust, 127.0.0.1 trust versus pod-IP password checks, the probe route, the error window.
-7. Argo CD and the operator's template annotations (critique gate 8). `rotate.sh` restarts by hand if the annotation is missing and reports a generation change as FAIL.
-8. Whether Argo CD waits or fails a sync while `InfisicalAuth` is unready before step 5.
+1. Everything in `rotate.sh` against real Postgres: socket trust, 127.0.0.1 trust versus pod-IP password checks, the probe route, the error window.
+2. Argo CD and the operator's template annotations during a rotation (critique gate 8). The first sync is covered: `postgres-exporter` was patched once when `plane-pgdb` appeared, stayed at generation 2, and `monitoring-extras` stayed Synced. `rotate.sh` restarts by hand if the annotation is missing and reports a generation change as FAIL.
+3. A clean install through the real waves. Here bootstrap ran with the operators already up, and the prod-sim ServiceAccounts and CRs were applied by hand ahead of wave 0, 19 minutes before `plane-prod-sim` existed. Argo CD then adopted them with the same UIDs, generation still 1 (`infisical-prod-sim-crs-1.txt`).

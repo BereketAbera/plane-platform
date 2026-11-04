@@ -160,4 +160,4 @@ ok "machine details in $MACHINE_FILE"
 
 publish_identity dev
 publish_identity prod-sim
-ok "Infisical is ready. The operators pick up the identity Secrets on their next reconcile."
+ok "Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later."

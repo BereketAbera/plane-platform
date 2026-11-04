@@ -104,6 +104,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            # The entrypoint logs "chmod: /var/run/postgresql: Operation not permitted" at every start.
+            # It is harmless: the emptyDir is root's, fsGroup 70 gives the group write, and the socket works.
             - name: run
               mountPath: /var/run/postgresql
             - name: tmp

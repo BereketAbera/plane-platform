@@ -3,8 +3,7 @@
 # Infisical is the single copy: values are generated in memory, sent, and never stored here, printed
 # or passed in argv. Existing values are never read or overwritten, so rerunning is always safe.
 #
-# Costs 3 requests per environment (list, batch create, verify) against the unlicensed limit of 40
-# secret requests per minute, which is why one batch rather than nine single writes.
+# Costs 3 requests per environment: list, batch create, verify.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../infisical/lib/api.sh

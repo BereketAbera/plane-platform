@@ -57,8 +57,9 @@ ia_curl() {
 
 # ia_request METHOD PATH [JSON_BODY] sets IA_STATUS and IA_BODY. IA_BODY can hold secret values
 # (the v4 secrets routes echo them), so callers never print it, only ia_error.
-# Retries only 429, because a throttled request was never processed. Unlicensed self-hosted allows
-# 40 secret requests per minute per client IP.
+# Retries only 429, because a throttled request was never processed. v0.167.6 registers its limiter
+# only on Infisical Cloud, and 240 reads in 4s all passed here, so this path has not run for real.
+# It stays for a later version or a licensed instance.
 ia_request() {
   local method="$1" path="$2" body="${3-}" attempt retry_after
   for attempt in 1 2 3 4 5 6; do
