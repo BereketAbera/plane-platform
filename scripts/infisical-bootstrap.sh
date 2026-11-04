@@ -143,7 +143,7 @@ mkdir -p "$TF_STATE_DIR"
 chmod 700 "$TF_STATE_DIR"
 log "Applying infisical/terraform"
 tf init -input=false -lockfile=readonly >/dev/null
-tf apply -input=false -auto-approve
+tf apply -lock-timeout=10m -input=false -auto-approve
 
 tf output -json | jq --slurpfile admin "$ADMIN_FILE" '{
     organization: $admin[0].organization,
