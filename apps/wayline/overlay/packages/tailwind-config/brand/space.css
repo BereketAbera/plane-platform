@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026 Bereket Abera
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Public pages (spaces) surfaces.
+ * Owner: the space agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
+ *
+ * Hooks come from patches/50-space.patch: data-shell="space-top|space-badge|space-art", which pick up
+ * the ink tokens from tokens.css, and data-wl-space on everything else.
+ */
+
+/* ---------- Slim ink band: issue page, signed-in landing, instance failure ---------- */
+[data-shell="space-top"] {
+  height: 3rem;
+  min-height: 3rem;
+  padding-block: 0;
+  background-color: var(--bg-surface-1);
+}
+/* Upstream's failure header is a centred .container. The band runs edge to edge. */
+[data-shell="space-top"].container {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 1.25rem;
+}
+
+/* ---------- Corner badge: the credit and the AGPL section 13 source offer ---------- */
+[data-shell="space-badge"] {
+  max-width: calc(100vw - 2.5rem);
+  line-height: 1.35;
+}
+/* The codemod and leak-scan protect "Built on ...", capital B. See powered-by.tsx. */
+[data-wl-space="credit"] {
+  display: inline-block;
+}
+[data-wl-space="credit"]::first-letter {
+  text-transform: lowercase;
+}
+
+/* ---------- Split-screen sign-in: route over contours, form beside it ---------- */
+[data-wl-space="auth-art"] {
+  display: none;
+}
+@media (min-width: 1024px) {
+  [data-wl-space="auth-art"] {
+    display: block;
+    flex: 0 0 min(46vw, 46rem);
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-surface-1);
+    border-right: 1px solid var(--border-subtle);
+  }
+}
+[data-wl-space="auth-art"] svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+[data-wl-space="auth-art"] text {
+  fill: var(--wl-ink-text-muted);
+  font-family: var(--font-code);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  /* A halo in the panel colour, so a contour crossing a label does not cut through it. */
+  paint-order: stroke;
+  stroke: var(--bg-surface-1);
+  stroke-width: 4px;
+}
+
+/* ---------- Signed-in landing: a flat outlined plate, not upstream's disc ---------- */
+[data-wl-space="hero"] {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface-1);
+}
+
+/* ---------- Instance failure: chart graticule on paper or night ---------- */
+[data-wl-space="graticule"] {
+  background-color: var(--bg-canvas);
+  background-image:
+    linear-gradient(var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+  background-size: 6rem 6rem;
+  opacity: 0.5;
+}
