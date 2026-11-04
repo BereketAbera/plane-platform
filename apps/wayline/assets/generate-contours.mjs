@@ -22,7 +22,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const OUT = join(here, "../overlay/apps/web/core/components/auth-screens/wayline-chart.tsx");
+// One sheet for every sign-in. Each app gets its own copy, because the apps cannot import from one another.
+const OUTS = [
+  "../overlay/apps/web/core/components/auth-screens/wayline-chart.tsx",
+  "../overlay/apps/admin/app/(all)/(home)/wayline-chart.tsx",
+  "../overlay/apps/space/components/views/wayline-chart.tsx",
+].map((p) => join(here, p));
 const AUTH_CSS = join(here, "../overlay/packages/tailwind-config/brand/auth.css");
 
 // ---------- Sheet geometry ----------
@@ -798,9 +803,11 @@ function preview(theme) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" width="${SIZE}" height="${SIZE}"><style>${rules}</style>${body}</svg>\n`;
 }
 
-mkdirSync(dirname(OUT), { recursive: true });
 const source = component();
-writeFileSync(OUT, source);
+for (const out of OUTS) {
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, source);
+}
 const previewAt = process.argv.indexOf("--preview");
 if (previewAt >= 0) {
   const dir = process.argv[previewAt + 1];

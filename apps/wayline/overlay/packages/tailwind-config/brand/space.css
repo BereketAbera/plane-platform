@@ -44,28 +44,31 @@
 }
 @media (min-width: 1024px) {
   [data-wl-space="auth-art"] {
-    display: block;
-    flex: 0 0 min(46vw, 46rem);
+    display: flex;
+    /* The same proportions as the main app's sign-in, so the sheet's crop keeps every waypoint and its label. */
+    flex: 0 0 62%;
+    flex-direction: column;
     height: 100%;
     overflow: hidden;
-    background-color: var(--bg-surface-1);
+    background-color: var(--wl-chart-paper);
     border-right: 1px solid var(--border-subtle);
   }
+  /* The form on the pane's left gutter, in line with the main app's sign-in. */
+  [data-wl-space="auth-pane"] {
+    align-items: flex-start;
+  }
+  [data-wl-space="auth-pane"] p.text-center {
+    text-align: left;
+  }
+  [data-wl-space="auth-pane"] span.justify-center {
+    justify-content: flex-start;
+  }
 }
-[data-wl-space="auth-art"] svg {
+[data-wl-space="auth-art"] [data-wl-chart] {
   display: block;
+  flex: 1 1 0;
   width: 100%;
-  height: 100%;
-}
-[data-wl-space="auth-art"] text {
-  fill: var(--wl-ink-text-muted);
-  font-family: var(--font-code);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  /* A halo in the panel colour, so a contour crossing a label does not cut through it. */
-  paint-order: stroke;
-  stroke: var(--bg-surface-1);
-  stroke-width: 4px;
+  min-height: 0;
 }
 
 /* ---------- Signed-in landing: a flat outlined plate, not upstream's disc ---------- */

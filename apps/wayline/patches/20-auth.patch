@@ -82,6 +82,145 @@ index 493f86de8af33c324448dec033618b087b0e5983..4d1a58ec6daf9f195ff8549962ef0bc1
        </AuthenticationWrapper>
      </DefaultLayout>
    );
+diff --git a/apps/web/app/(all)/create-workspace/page.tsx b/apps/web/app/(all)/create-workspace/page.tsx
+index 38087189cc31332e9947121722698ca4160138da..b192bcdd504f25292945321625b6d61dcae8331c 100644
+--- a/apps/web/app/(all)/create-workspace/page.tsx
++++ b/apps/web/app/(all)/create-workspace/page.tsx
+@@ -10,7 +10,7 @@ import Link from "next/link";
+ // plane imports
+ import { useTranslation } from "@plane/i18n";
+ import { Button, getButtonStyling } from "@plane/propel/button";
+-import { PlaneLogo } from "@plane/propel/icons";
++import { PlaneLockup } from "@plane/propel/icons";
+ import type { IWorkspace } from "@plane/types";
+ // assets
+ import WorkspaceCreationDisabled from "@/app/assets/workspace/workspace-creation-disabled.png?url";
+@@ -22,6 +22,7 @@ import { useInstance } from "@/hooks/store/use-instance";
+ import { useAppRouter } from "@/hooks/use-app-router";
+ // wrappers
+ import { AuthenticationWrapper } from "@/lib/wrappers/authentication-wrapper";
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ 
+ const CreateWorkspacePage = observer(function CreateWorkspacePage() {
+   const { t } = useTranslation();
+@@ -58,20 +59,14 @@ const CreateWorkspacePage = observer(function CreateWorkspacePage() {
+ 
+   return (
+     <AuthenticationWrapper>
+-      <div className="flex h-full flex-col gap-y-2 overflow-hidden bg-surface-1 sm:flex-row sm:gap-y-0">
+-        <div className="relative h-1/6 flex-shrink-0 sm:w-2/12 md:w-3/12 lg:w-1/5">
+-          <div className="absolute top-1/2 left-0 h-[0.5px] w-full -translate-y-1/2 border-b-[0.5px] border-subtle sm:top-0 sm:left-1/2 sm:h-screen sm:w-[0.5px] sm:-translate-x-1/2 sm:translate-y-0 sm:border-r-[0.5px] md:left-1/3" />
+-          <Link
+-            className="absolute top-1/2 left-5 grid -translate-y-1/2 place-items-center px-3 sm:top-12 sm:left-1/2 sm:-translate-x-[15px] sm:translate-y-0 sm:px-0 sm:py-5 md:left-1/3"
+-            href="/"
+-          >
+-            <PlaneLogo className="h-9 w-auto text-primary" />
++      <AuthSplit>
++        <div data-wl-auth="topline" className="sticky top-0 flex w-full flex-shrink-0 items-center justify-between gap-6">
++          <Link href="/">
++            <PlaneLockup height={20} width={95} className="text-primary" />
+           </Link>
+-          <div className="absolute top-1/4 right-4 -translate-y-1/2 text-13 text-primary sm:fixed sm:top-12 sm:right-16 sm:translate-y-0 sm:py-5">
+-            {currentUser?.email}
+-          </div>
++          <div className="truncate text-13 text-primary">{currentUser?.email}</div>
+         </div>
+-        <div className="relative flex h-full justify-center px-8 pb-8 sm:w-10/12 sm:items-center sm:justify-start sm:p-0 sm:pr-[8.33%] md:w-9/12 lg:w-4/5">
++        <div className="relative flex min-h-0 flex-1 items-center pb-8">
+           {isWorkspaceCreationDisabled ? (
+             <div className="flex h-full w-4/5 flex-col items-center justify-center gap-1 text-16 font-medium">
+               <img
+@@ -97,7 +92,7 @@ const CreateWorkspacePage = observer(function CreateWorkspacePage() {
+           ) : (
+             <div className="w-full space-y-7 sm:space-y-10">
+               <h4 className="text-20 font-semibold">{t("workspace_creation.heading")}</h4>
+-              <div className="sm:w-3/4 md:w-2/5">
++              <div className="w-full">
+                 <CreateWorkspaceForm
+                   onSubmit={onSubmit}
+                   defaultValues={defaultValues}
+@@ -107,7 +102,7 @@ const CreateWorkspacePage = observer(function CreateWorkspacePage() {
+             </div>
+           )}
+         </div>
+-      </div>
++      </AuthSplit>
+     </AuthenticationWrapper>
+   );
+ });
+diff --git a/apps/web/app/(all)/invitations/page.tsx b/apps/web/app/(all)/invitations/page.tsx
+index 0da54f0a888886e6654440b2a866a2f97c9d8e59..fe38e731a1b92f32bb3d0efb4d2c177fb87159f4 100644
+--- a/apps/web/app/(all)/invitations/page.tsx
++++ b/apps/web/app/(all)/invitations/page.tsx
+@@ -15,7 +15,7 @@ import { ROLE } from "@plane/constants";
+ import { useTranslation } from "@plane/i18n";
+ // types
+ import { Button } from "@plane/propel/button";
+-import { PlaneLogo } from "@plane/propel/icons";
++import { PlaneLockup } from "@plane/propel/icons";
+ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+ import type { IWorkspaceMemberInvitation } from "@plane/types";
+ import { truncateText } from "@plane/utils";
+@@ -31,6 +31,7 @@ import { useUser, useUserProfile } from "@/hooks/store/user";
+ import { useAppRouter } from "@/hooks/use-app-router";
+ // services
+ import { AuthenticationWrapper } from "@/lib/wrappers/authentication-wrapper";
++import { AuthSplit } from "@/components/auth-screens/wayline-split";
+ // plane web services
+ import { WorkspaceService } from "@/services/workspace.service";
+ 
+@@ -110,26 +111,20 @@ function UserInvitationsPage() {
+ 
+   return (
+     <AuthenticationWrapper>
+-      <div className="flex h-full flex-col gap-y-2 overflow-hidden sm:flex-row sm:gap-y-0">
+-        <div className="relative h-1/6 flex-shrink-0 sm:w-2/12 md:w-3/12 lg:w-1/5">
+-          <div className="absolute top-1/2 left-0 h-[0.5px] w-full -translate-y-1/2 border-b-[0.5px] border-subtle sm:top-0 sm:left-1/2 sm:h-screen sm:w-[0.5px] sm:-translate-x-1/2 sm:translate-y-0 sm:border-r-[0.5px] md:left-1/3" />
+-          <Link
+-            href="/"
+-            className="absolute top-1/2 left-5 z-10 grid -translate-y-1/2 place-items-center px-3 sm:top-12 sm:left-1/2 sm:-translate-x-[15px] sm:translate-y-0 sm:px-0 sm:py-5 md:left-1/3"
+-          >
+-            <PlaneLogo className="h-9 w-auto text-primary" />
++      <AuthSplit>
++        <div data-wl-auth="topline" className="sticky top-0 flex w-full flex-shrink-0 items-center justify-between gap-6">
++          <Link href="/">
++            <PlaneLockup height={20} width={95} className="text-primary" />
+           </Link>
+-          <div className="absolute top-1/4 right-4 -translate-y-1/2 text-13 text-primary sm:fixed sm:top-12 sm:right-16 sm:translate-y-0 sm:py-5">
+-            {currentUser?.email}
+-          </div>
++          <div className="truncate text-13 text-primary">{currentUser?.email}</div>
+         </div>
+         {invitations ? (
+           invitations.length > 0 ? (
+-            <div className="relative flex h-full justify-center px-8 pb-8 sm:w-10/12 sm:items-center sm:justify-start sm:p-0 sm:pr-[8.33%] md:w-9/12 lg:w-4/5">
++            <div className="relative flex min-h-0 flex-1 items-center pb-8">
+               <div className="w-full space-y-10">
+                 <h5 className="text-16">{t("we_see_that_someone_has_invited_you_to_join_a_workspace")}</h5>
+                 <h4 className="text-20 font-semibold">{t("join_a_workspace")}</h4>
+-                <div className="max-h-[37vh] space-y-4 overflow-y-auto md:w-3/5">
++                <div className="max-h-[37vh] space-y-4 overflow-y-auto">
+                   {invitations.map((invitation) => {
+                     const isSelected = invitationsRespond.includes(invitation.id);
+ 
+@@ -181,7 +176,7 @@ function UserInvitationsPage() {
+               </div>
+             </div>
+           ) : (
+-            <div className="fixed top-0 left-0 grid h-full w-full place-items-center">
++            <div className="relative grid min-h-0 flex-1 place-items-center">
+               <EmptyState
+                 title={t("no_pending_invites")}
+                 description={t("you_can_see_here_if_someone_invites_you_to_a_workspace")}
+@@ -194,7 +189,7 @@ function UserInvitationsPage() {
+             </div>
+           )
+         ) : null}
+-      </div>
++      </AuthSplit>
+     </AuthenticationWrapper>
+   );
+ }
 diff --git a/apps/web/core/components/account/auth-forms/auth-header.tsx b/apps/web/core/components/account/auth-forms/auth-header.tsx
 index 239d65829183119c16f0db1d4d33bcb6178eaeca..c54909b73db1548801081073d8daf50835a2d24e 100644
 --- a/apps/web/core/components/account/auth-forms/auth-header.tsx

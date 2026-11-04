@@ -66,8 +66,6 @@ const LINKS = [
   ["https://github.com/makeplane/plane", SOURCE],
   ["https://github.com/makeplane", SOURCE],
   ["https://app.plane.so/og-image.png", "/og-image.png"],
-  ["mailto:support@plane.so", SOURCE],
-  ["mailto:sales@plane.so", SOURCE],
   ['process.env.VITE_SUPPORT_EMAIL || "support@plane.so"', 'process.env.VITE_SUPPORT_EMAIL || ""'],
   ['process.env.VITE_WEBSITE_URL || "https://plane.so"', `process.env.VITE_WEBSITE_URL || "${SOURCE}"`],
   // Form placeholders.
@@ -90,6 +88,9 @@ const DROP_LINE = [
 ];
 // Sentences that would read wrong after a word swap.
 const PHRASES = [
+  // Before the bare address below, which would otherwise leave "mailto:" in front of a sentence.
+  ["mailto:support@plane.so", SOURCE],
+  ["mailto:sales@plane.so", SOURCE],
   ["That crashed Plane, pun intended. No worries", "That crashed Wayline. No worries"],
   ["is a customer feedback management tool built on top of plane.so", "is a customer feedback management tool"],
   ["Work in plane happens best", "Work in Wayline happens best"],
@@ -108,7 +109,11 @@ const PHRASES = [
 // so X-Plane-* headers survive and on both sides so identifiers such as PlaneLogo or EPlane survive.
 const WORD = /(?<![A-Za-z0-9_$]|X-)Plane(?![A-Za-z0-9_$])/g;
 const GALILEO = /(?<![A-Za-z0-9_$])Galileo(?![A-Za-z0-9_$])/g;
+// A placeholder that is exactly upstream's site. LINK_PATTERNS would make it /source, which is no use as a sample URL.
+const JSON_PLACEHOLDER = /^https:\/\/plane\.so\/?$/;
 const JSON_ONLY = [
+  // One locale's sample URL for a GitHub Enterprise server.
+  [/https:\/\/plane\.github\.com/g, "https://git.example.com"],
   [/https:\/\/plane\.so/g, "https://example.com"],
   [/(?<![a-z.-])plane\.so/g, "example.com"],
   [/[a-z]+\.plane\.town/g, "git.example.com"],
@@ -117,6 +122,13 @@ const JSON_ONLY = [
   [/(?<![a-z.-])planes\.so/g, "example.com"],
   // Six locales lower-case the name in one sentence. Keys are never rewritten, so "plane": stays.
   [/(?<![-_.\/@A-Za-z])plane(?![-_\/@A-Za-z0-9]|\.[A-Za-z0-9])/g, "Wayline"],
+];
+
+// Upstream's own colours where a token cannot reach: data and status colours in constants, icons and the page
+// PDF, the default avatar. The blue becomes the chart's water line and the teal the shell's ink step.
+const COLOURS = [
+  [/#3f76ff/gi, "#5f8ea3"],
+  [/#028375/g, "#30405c"],
 ];
 
 const stats = { files: 0, changed: 0, dropped: 0 };
@@ -152,7 +164,7 @@ function processSource(path) {
     } else if (DROP_LINE.some((re) => re.test(line))) {
       stats.dropped++;
     } else {
-      out.push(rewrite(line));
+      out.push(COLOURS.reduce((text, [re, to]) => text.replace(re, to), rewrite(line)));
     }
   }
   const after = out.join("\n");
@@ -166,6 +178,7 @@ function processSource(path) {
 // Values only, so keys and structure cannot change. Reformatting is harmless: nothing is committed.
 function walkValues(node, locale) {
   if (typeof node === "string") {
+    if (JSON_PLACEHOLDER.test(node)) return "https://example.com";
     let v = rewrite(node);
     // German genitive of the name. In Spanish, "Planes" means plans and must stay.
     if (locale === "de") v = v.replace(/(?<![A-Za-z])Planes(?![A-Za-z])/g, "Waylines");

@@ -1,6 +1,6 @@
 # 0013. Hybrid branding: overlay, patches and codemod
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked. `apps/wayline/` is being added and is not committed at the time of writing, and the overlays still reference upstream images, so this record describes the design.
+**Status:** Accepted, 2026-11-04, with measured numbers added 2026-11-05. Runtime validation pending where marked. `apps/wayline/` is committed, and whether the overlays reference its images is the deployment's business, not this record's.
 
 ## Context
 
@@ -16,7 +16,7 @@ The aim is a distinct look and name without taking ownership of Plane's code. Pl
 
 All three are React Router 7 on Vite. The design system is CSS variables, so a lot can change through tokens. Structure (auth layout, shell, source link) can change only in source.
 
-Upstream has 5,268 tracked files. About 20 of them need edits.
+Upstream has 5,268 tracked files. As built, 85 are patched and 155 replaced whole by the overlay, nearly all images. The research's estimate before any of this was built was about 20 edited files.
 
 ## Decision
 
@@ -32,7 +32,7 @@ A thin layer in `apps/wayline/`, applied on top of the pinned source commit at b
 | Layer | Holds |
 |---|---|
 | Overlay | New files copied in: tokens, fonts, images |
-| Patches | About 20 small source changes, applied with `git apply --3way`. A failed hunk stops the build |
+| Patches | 85 files, +311 -499 lines (measured 2026-11-05), applied with plain `git apply`. A failed hunk stops the build. `--3way` depends on which git objects a machine has, so it moved to a separate rebase path (`patchwork.sh --rebase-from`) |
 | Codemod | Scripted text replacement at build time. Its output is never committed |
 
 The codemod must never touch SPDX and copyright headers, which are in 3,804 source files.
@@ -44,7 +44,7 @@ Images are published to `localhost:5001/wayline/{web,admin,space,backend}` and a
 | Option | Reach | Why not |
 |---|---|---|
 | Post-build only, editing CSS and images in published images | Colours, radii, density, fonts, images | Cannot restructure anything. It would be a recoloured Plane, which the owner already rejected |
-| Full fork | Everything | Carries 5,268 files for about 20 edits, and makes each upstream release a merge |
+| Full fork | Everything | Carries 5,268 files to patch 85, and makes each upstream release a merge |
 | Runtime theme (`custom` in Plane's settings) | Two colours, per user | No fonts, radii or layout, and no instance-wide default |
 | No branding, deploy upstream images | None | Would be simplest, but the owner requires a distinct product name |
 
@@ -56,11 +56,13 @@ The numbers that decided this, from research on 2026-11-04:
 |---|---|---|
 | Candidate patch files touched, v1.3.0 to v1.4.0 | 12 of 65 | GitHub commits API per file |
 | Candidate patch files touched, v1.4.0 to v1.4.3 | 1 of 65 | GitHub commits API per file |
-| Patch size | About 20 files, 150 to 200 changed lines | Estimate, from listing the edits while reading source. Nothing was built |
+| Patch size, estimated | About 20 files, 150 to 200 changed lines | Estimate, from listing the edits while reading source. Nothing was built. This was far too low |
+| Patch size, as built | 85 files, +311 -499 lines, 139 hunks | `git apply --numstat`, 2026-11-05 |
+| Patches against other upstream refs | `v1.4.2` and `v1.4.0`: 0 of 7 fail. `v1.3.0`: 4 of 7, 14 files. `preview` (1.5.0, unreleased): 7 of 7, 67 files, and `variables.css` is gone | `apps/wayline/checks/upstream-check.sh`, 2026-11-05 |
 | Disk, native build | 1.3 GiB or less on the host, about 1 GiB in the Docker VM | Estimate, from dependency and output sizes |
 | Disk, upstream's three Dockerfiles | About 5 GiB in the Docker VM | Computed from image and layer sizes |
 
-- Each Plane upgrade means re-applying patches. A minor release has touched many candidate files, and a patch release few. The `--3way` failure is the signal.
+- Each Plane upgrade means re-applying patches. A patch release has needed nothing so far, a minor release a sixth of the patched files, and the next minor line looks like a rework of tokens and most patches. A failed hunk or `overlay.lock` is the signal, and `wayline-upstream-check` gives early warning.
 - A frontend build needs the pinned Node and pnpm toolchain. Peak memory during a build is 3 to 5 GiB, an estimate in `plane-branding.md`, so it should not run alongside a full cluster and a browser. [[MEASURE: peak memory and wall time of make images]]
 - Replacing `build/` in space keeps upstream's dependencies. An upstream `node_modules` change would need the base digest bumped too.
 - A user choosing Plane's `custom` theme overrides the palette, and keeps Wayline's shapes and type.

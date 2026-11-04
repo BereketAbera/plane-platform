@@ -9,7 +9,7 @@
 FROM makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
 
 ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
-ARG WAYLINE_SOURCE_REF=main
+ARG WAYLINE_SOURCE_REF
 
 LABEL org.opencontainers.image.title="wayline-space" \
       org.opencontainers.image.description="Customized Plane Community Edition public pages" \
@@ -19,6 +19,7 @@ LABEL org.opencontainers.image.title="wayline-space" \
 
 RUN rm -rf /app/apps/space/build
 COPY build/ /app/apps/space/build/
+COPY licenses/ /usr/share/licenses/wayline/
 
 # Same UID as the hardening patch. Upstream's image runs as root.
 USER 1000

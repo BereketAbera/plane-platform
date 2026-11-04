@@ -15,9 +15,15 @@ import { parseCss, tokenNames } from "./css-parse.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const tree = process.argv[2];
-if (!tree || !existsSync(join(tree, "packages/tailwind-config/variables.css"))) {
-  console.error("usage: token-diff.mjs <tree containing packages/tailwind-config/variables.css>");
+if (!tree) {
+  console.error("usage: token-diff.mjs <upstream tree>");
   process.exit(2);
+}
+if (!existsSync(join(tree, "packages/tailwind-config/variables.css"))) {
+  console.error(
+    `token-diff: ${tree} has no packages/tailwind-config/variables.css. Upstream's design system has moved, so brand/tokens.css needs reworking before anything else.`
+  );
+  process.exit(1);
 }
 
 // From tailwindcss/theme.css, which is not on disk before pnpm install. Each is a name Tailwind 4

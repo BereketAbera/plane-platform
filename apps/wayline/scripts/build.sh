@@ -8,7 +8,9 @@
 #   apps/wayline/scripts/build.sh
 #   WAYLINE_APPS="web admin" apps/wayline/scripts/build.sh     subset; leak-scan covers that subset
 #
-# Steps: apply, token-diff, contrast, pnpm install, one turbo build per app, leak-scan, assemble.
+# Steps: apply, token-diff, contrast, source-links, pnpm install, one turbo build per app, leak-scan,
+# bundle checks, assemble. Each context ends up with its licence texts, and $DIST/SOURCE.<app> records the
+# commit that built it, which scripts/ci/build-images.sh turns into the image's /source link.
 #
 # Every tool runs under env -i, because each vite.config.ts embeds every VITE_* it can see into the
 # bundle, so a stray variable in a developer's shell would ship. Per-app values match upstream's
@@ -17,7 +19,9 @@
 source "$(dirname "$0")/lib.sh"
 
 APPS="${WAYLINE_APPS:-web admin space backend}"
-NODE_MAJOR=22
+# Exact version, shared with .github/workflows/images.yml through this file.
+NODE_VERSION="$(cat "$WAYLINE/.node-version")"
+NODE_MAJOR="${NODE_VERSION%%.*}"
 TURBO_CONCURRENCY="${WAYLINE_TURBO_CONCURRENCY:-4}"
 HEAP_MB="${WAYLINE_HEAP_MB:-3072}"
 
@@ -37,6 +41,7 @@ fi
 node_version="$(node -v 2>/dev/null || echo none)"
 [[ "$node_version" == "v$NODE_MAJOR."* ]] \
   || die "Node $NODE_MAJOR is required (upstream engines and Dockerfiles), found $node_version. Install it with: nvm install $NODE_MAJOR"
+[[ "$node_version" == "v$NODE_VERSION" ]] || warn "CI builds with Node $NODE_VERSION and this is $node_version, so bundles may differ"
 NODE_BIN="$(dirname "$(command -v node)")"
 command -v corepack >/dev/null || die "corepack not found next to node in $NODE_BIN"
 log "Node $node_version"
@@ -78,6 +83,7 @@ clean_env() {
 log "Token diff and contrast"
 node "$WAYLINE/checks/token-diff.mjs" "$SRC"
 node "$WAYLINE/checks/contrast.mjs" "$SRC/packages/tailwind-config/variables.css"
+node "$WAYLINE/checks/source-links.mjs" "$SRC"
 
 cd "$SRC"
 pnpm_version="$(clean_env -- pnpm --version)"
@@ -116,11 +122,22 @@ wants space && build_app space "${ADMIN_SPACE_VITE[@]}"
 "$WAYLINE/checks/leak-scan.sh" $APPS
 for app in web admin space; do
   wants "$app" && "$WAYLINE/checks/font-urls.sh" "$app"
+  wants "$app" && "$WAYLINE/checks/bundle-art.sh" "$app"
 done
 
 # ---- assemble -----------------------------------------------------------------------------------
 log "Assemble $DIST"
 mkdir -p "$DIST"
+# AGPL section 4 and OFL 1.1: the licences travel with each copy of the program and the fonts.
+# Names end in .txt so nginx serves them as text.
+licences() {
+  mkdir -p "$1/licenses"
+  cp "$ROOT/LICENSE" "$1/licenses/LICENSE.txt"
+  cp "$ROOT/COPYRIGHT.txt" "$1/licenses/COPYRIGHT.txt"
+  cp "$ROOT/NOTICE.md" "$1/licenses/NOTICE.txt"
+  cp "$WAYLINE/MODIFICATIONS.md" "$1/licenses/MODIFICATIONS.txt"
+  cp "$OVERLAY/packages/tailwind-config/fonts/OFL-InstrumentSans.txt" "$OVERLAY/packages/tailwind-config/fonts/OFL-JetBrainsMono.txt" "$1/licenses/"
+}
 if wants web; then
   rm -rf "${DIST:?}/web"; mkdir -p "$DIST/web"
   cp -R "$SRC/apps/web/build/client" "$DIST/web/client"
@@ -137,9 +154,13 @@ if wants space; then
 fi
 if wants backend; then
   rm -rf "${DIST:?}/backend"; mkdir -p "$DIST/backend"
-  cp -R "$SRC/apps/api/templates" "$DIST/backend/templates"
-  # The backend owner extends this step when Python string edits land.
-  [[ ! -x "$WAYLINE/scripts/assemble-backend.sh" ]] || "$WAYLINE/scripts/assemble-backend.sh" "$SRC" "$DIST/backend"
+  # Upstream's templates are already in the base image, so the context holds only what leak-scan has read.
+  "$WAYLINE/scripts/assemble-backend.sh" "$SRC" "$DIST/backend"
 fi
+for app in $APPS; do
+  licences "$DIST/$app"
+  write_source_stamp "$DIST/SOURCE.$app"
+  log "$app built from $(paste -sd' ' "$DIST/SOURCE.$app")"
+done
 du -sh "$DIST"/* 2>/dev/null || true
 ok "Build complete for: $APPS"

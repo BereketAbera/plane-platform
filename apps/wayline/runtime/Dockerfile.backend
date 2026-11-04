@@ -8,13 +8,17 @@
 FROM makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
-ARG WAYLINE_SOURCE_REF=main
+ARG WAYLINE_SOURCE_REF
 
 LABEL org.opencontainers.image.title="wayline-backend" \
       org.opencontainers.image.description="Customized Plane Community Edition backend" \
-      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.licenses="AGPL-3.0-only AND LicenseRef-Plane-Commercial" \
       org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
       org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
+
+# LicenseRef-Plane-Commercial: upstream's plane/utils/email.py carries that header and ships in this image, in
+# the same tag and public image as everything else. Unresolved until the owner decides, which is D12 in
+# PASS2_HANDOFF.md. Until then scripts/ci/build-images.sh will not publish this image outside the local registry.
 
 # Upstream defaults this to a page on its own site, embedded in the "What's new" modal. Empty takes
 # upstream's own fallback.
@@ -23,6 +27,7 @@ ENV INSTANCE_CHANGELOG_URL=
 COPY templates/ /code/templates/
 COPY wayline/ /opt/wayline/
 COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+COPY licenses/ /usr/share/licenses/wayline/
 
 # Fails the build if any string does not match exactly as expected. /opt/wayline/edited-files.txt lists
 # the result and check_image.py proves it.

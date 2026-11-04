@@ -32,7 +32,7 @@ while read -r url; do
   [[ -s "$file" ]] || die "$app: font URL $url has no file at $file"
 done <<<"$urls"
 
-for value in '#b0186e' '#e65aa6' '#f4f2ea' '#0b1320'; do
+for value in '#9f1265' '#e65aa6' '#f4f2ea' '#0b1320'; do
   cat "${css_files[@]}" | grep -qi "$value" || die "$app: brand value $value missing from built CSS"
 done
 ok "$app: $count font URLs under $prefix, all files present, brand values present"

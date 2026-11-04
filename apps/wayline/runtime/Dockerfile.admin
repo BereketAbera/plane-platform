@@ -6,9 +6,12 @@
 # Digest from 'docker buildx imagetools inspect nginx:1.31-alpine', 2026-11-04.
 FROM nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
 
-ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
-ARG WAYLINE_SOURCE_REF=main
+# Per-commit values go below this RUN, because every ARG above a RUN is part of that RUN's cache key.
 ARG APK_SECURITY_PATCH=2026-11-04
+RUN echo "apk-security-patch ${APK_SECURITY_PATCH}" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
+
+ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
+ARG WAYLINE_SOURCE_REF
 
 LABEL org.opencontainers.image.title="wayline-admin" \
       org.opencontainers.image.description="Customized Plane Community Edition instance admin" \
@@ -16,10 +19,9 @@ LABEL org.opencontainers.image.title="wayline-admin" \
       org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
       org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
 
-RUN echo "apk-security-patch ${APK_SECURITY_PATCH}" && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
-
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY client/ /usr/share/nginx/html/god-mode/
+COPY licenses/ /usr/share/licenses/wayline/
 
 # Same UID as the hardening patch. These paths are writable here too, so the image also runs without
 # the chart's emptyDirs.

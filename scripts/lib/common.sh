@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Bereket Abera
+# SPDX-License-Identifier: AGPL-3.0-only
+#
 # Shared helpers for every script. Source this file; do not execute it.
 set -euo pipefail
 

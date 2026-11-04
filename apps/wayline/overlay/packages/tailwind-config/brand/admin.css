@@ -15,10 +15,10 @@
 [data-wl-admin-aside] {
   position: relative;
   display: flex;
-  flex: 0 0 44%;
-  max-width: 44rem;
+  /* The same proportions as the main app's sign-in, so the sheet's crop keeps every waypoint and its label. */
+  flex: 0 0 62%;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   overflow: hidden;
   padding: 2rem;
   background-color: var(--wl-chart-paper);
@@ -62,13 +62,6 @@
   line-height: 1.25rem;
   font-weight: 400;
   color: var(--txt-secondary);
-}
-/* Field labels only: the telemetry consent is a sentence, so it stays in the body face. */
-[data-wl-admin-auth-main] form .space-y-1 > label {
-  font-family: var(--font-code);
-  font-size: 0.6875rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 /* Upstream's text-blue-* classes compile to nothing, which leaves this link looking like plain text. */
 [data-wl-admin-auth-main] form label a,
@@ -115,7 +108,9 @@
 
 /* ---------- Sidebar: its head lines up with the band ---------- */
 [data-wl-admin-nav-head] {
+  flex: none;
   height: 2.5rem;
+  min-height: 2.5rem;
   padding-block: 0;
 }
 [data-wl-admin-nav-head] h4 {

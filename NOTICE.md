@@ -13,6 +13,9 @@ project management software by Plane Software, Inc. and contributors, licensed u
 - **License of the modifications:** AGPL-3.0-only, the same as upstream.
 - **Source:** <https://github.com/BereketAbera/plane-platform>. Every running web image also answers
   `/source` with a redirect to the repository at the commit that built it (AGPL section 13).
+  The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. This must be fixed before anyone else uses an instance.
+- **Licence texts:** every image carries `LICENSE`, `COPYRIGHT.txt`, this notice, the record of changes and the font
+  licences in `/usr/share/licenses/wayline/`, and the web image serves the same files at `/licenses/`.
 
 ## What changed from upstream
 
@@ -28,17 +31,19 @@ build time. Application functionality is unchanged except where listed.
 | Links to upstream's marketing, legal, support and community pages removed or pointed at `/source` | `codemod/rebrand.mjs`, `patches/` |
 | Upstream's customer logos and most paid-plan prompts removed | `patches/` |
 | Telemetry starts off in the setup form and at instance registration | `patches/40-admin.patch`, `backend/edit_strings.py` |
-| Billing settings hidden, "What's new" limited to same-origin pages | `patches/30-surfaces.patch` |
+| Billing settings refused for every role, and the page for a paid feature (active cycles across projects) replaced with a plain statement | `patches/30-surfaces.patch` |
 | Email templates and subjects, seed data, bot name, default sender and API metadata rebranded | `backend/`, `runtime/Dockerfile.backend` |
 | Container images: thin runtime images instead of upstream's Dockerfiles, fitted to non-root UIDs | `runtime/` |
 
 ## What is preserved
 
-- Upstream's `LICENSE.txt`, `COPYRIGHT.txt`, and every SPDX and copyright header line in source files.
-  The build's text rewrite skips those lines by rule, and modified files keep their original header.
+- Upstream's licence, as `LICENSE`, and `COPYRIGHT.txt`, verbatim at this repository's root. Every SPDX and copyright
+  header line in source files. The build's text rewrite skips those lines by rule, and modified files keep their
+  original header.
 - Functional identifiers: `@plane/*` packages, the `plane` Python module, `X-Plane-*` headers.
 - Only upstream's public Community Edition tag and images are used, and license gates are neither unlocked
-  nor bypassed. One file in that tag carries a commercial license header and is inherited unchanged. See the
+  nor bypassed. One file in that tag carries a commercial license header and is inherited unchanged. The backend
+  image's label says so, and it is not published beyond the local registry until the owner decides. See the
   open item in `apps/wayline/MODIFICATIONS.md`.
 
 ## Third-party notices
