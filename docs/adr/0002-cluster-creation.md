@@ -1,0 +1,53 @@
+# 0002. The kind CLI creates the cluster, not Terraform
+
+**Status:** Accepted, 2026-11-04. Runtime validation pending where marked.
+
+## Context
+
+Terraform's `kubernetes` and `helm` providers read a kubeconfig during plan. So the cluster has to exist before any plan that uses them. HashiCorp's provider documentation warns against passing credentials from a resource to the Kubernetes provider in the same module, because it leads to intermittent errors.
+
+So one root that creates the cluster and its contents is out. The real choice is between a shell step and a second Terraform root.
+
+This is a laptop cluster. It gets stopped and resumed often (`make down`, `make up`). Its node is a Docker container whose config cannot be changed in place, and containerd needs its mirror configuration mounted before the first image pull.
+
+## Decision
+
+`scripts/cluster-up.sh` runs `kind create cluster` with a config rendered from `infrastructure/kind/cluster.yaml.tmpl`. The node image is pinned by digest. Terraform starts only after that, and its root takes the kubeconfig path and context as inputs.
+
+The script is idempotent. It starts a stopped node instead of recreating it, and fails if the `kind` Docker network falls outside `172.16.0.0/12`, because NetworkPolicies assume that range ([0010](0010-networkpolicy-under-kindnet.md)).
+
+What kind owns, and why it has to be set at creation:
+
+| Setting | Value | Why at creation |
+|---|---|---|
+| Port mappings | `127.0.0.1:80` and `:443` to NodePorts 30080 and 30443 | Loopback only. kind's default of `0.0.0.0` would expose unauthenticated UIs to the LAN |
+| Mount | `infrastructure/kind/containerd-certs.d` to `/etc/containerd/certs.d`, read-only | Must be present before containerd pulls anything |
+| Mount | `.local/backups` to `/backups` | Backups must survive cluster deletion |
+
+## Alternatives considered
+
+| Alternative | Why not |
+|---|---|
+| One Terraform root for the cluster and its contents | The provider warning above |
+| Two roots, with a `cluster` root using the community `tehcyx/kind` provider | See the table below |
+| A bash wrapper around `terraform apply` with `-target` | Works around the problem rather than removing it, and hides the ordering in flags |
+
+| Criterion | kind CLI plus Terraform (chosen) | `tehcyx/kind` root (v0.13.0, research, 2026-11-04) |
+|---|---|---|
+| Dependencies | First-party tool only | Adds a community provider with one lead maintainer |
+| Changing config | Delete and recreate, explicitly | `ForceNew` attributes, so a `-/+` in a plan that is easy to approve by accident |
+| Stopped node | No effect | `Read` runs `cat /etc/kubernetes/admin.conf` in the node, so `plan` errors when the node or Docker is down |
+| Upstream lag | None | About 8 weeks last time (kind v0.33.0 on 2026-08-26, provider bump on 2026-10-21) |
+| State | None for a throwaway cluster | State holds kubeconfig keys |
+| "Everything in Terraform" story | Weaker | Stronger |
+
+The last row is the honest cost of this decision. The two-root option is viable. It lost on laptop lifecycle and on having one fewer dependency, not because it cannot work.
+
+## Consequences
+
+- **Terraform does not create or manage the cluster in Pass 1.** It manages only what is listed in [0001](0001-ownership-boundaries.md), inside a cluster that already exists. Any description of this platform has to keep that distinction.
+- Changing a port mapping, a mount or the node image means deleting and recreating the cluster. `make destroy` does that and takes a backup first unless `SKIP_BACKUP=yes`.
+- `make down` stops the node container and the local services. `make up` starts them again. [[VERIFY: make down followed by make up keeps Plane data in both environments]]
+- The Pass 2 seam is the pair `kubeconfig_path` and `kube_context`. `infrastructure/terraform/environments/{dev,prod}/INTERFACE.md` proposes a separate `cluster` root for Hetzner that produces them. That is an untested contract for a root that does not exist yet.
+- The cluster gets kind's kubelet defaults, including no image garbage collection and no disk-based eviction (research, 2026-11-04, `pkg/cluster/internal/kubeadm/config.go`). So `guard_disk` runs on the host in every script, because the Docker VM reports free space the host does not have.
+- [[VERIFY: scripts/cluster-up.sh is idempotent when run against a running cluster and a stopped node]]
