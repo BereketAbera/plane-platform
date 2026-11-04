@@ -106,12 +106,14 @@ if [[ ! -s "$RAW_LIST" ]]; then
   exit 0
 fi
 
-# One line per image: image, every source that names it, and the file its result goes to.
+# One line per image: image, every source that names it, and the file its result goes to. Ours first:
+# only they can fail the policy, and they need the least transfer, so a run that stops early has them.
 INVENTORY="$OUT/inventory.tsv"
 sort -u "$RAW_LIST" | awk -F'\t' '
   $1 != image { if (image != "") print image "\t" sources; image = $1; sources = $2; next }
   { sources = sources "," $2 }
   END { print image "\t" sources }' |
+  awk -F'\t' '{ print ($1 ~ /wayline/ ? 0 : 1) "\t" $0 }' | sort -s -t $'\t' -k1,1n | cut -f2- |
   while IFS=$'\t' read -r image sources; do
     # Name the file after the image, with the digest cut to 12 characters to keep it readable.
     file="$(printf '%s' "$image" | sed -E 's/@sha256:([a-f0-9]{12})[a-f0-9]*$/_\1/; s/[\/:@]/_/g').json"
