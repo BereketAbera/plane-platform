@@ -93,6 +93,7 @@ classify() {
 }
 
 # start_probe_pod <pod> <namespace> <labels as JSON> <probes, one per line>
+# shellcheck disable=SC2001  # sed indents every line of a multi-line value, which ${var//} cannot do
 start_probe_pod() {
   local pod="$1" namespace="$2" labels="$3" probes="$4"
   # The merged labels stay valid JSON, which is valid YAML. A readiness gate that nothing satisfies
@@ -176,11 +177,13 @@ run_sentinel() {
   log "Sentinel: is NetworkPolicy really enforced?"
   kc -n kube-system rollout status ds/kindnet --timeout=30s >/dev/null ||
     die "kindnet is not healthy, and it fails open"
-  if kc -n kube-system logs ds/kindnet --tail=-1 2>/dev/null | grep -q 'skipping network policies'; then
+  # grep reads to the end, not -q. With -q it stops at the first match, the writer dies of SIGPIPE, and
+  # under pipefail the pipeline reads as no match. In a large log that would hide this very line.
+  if kc -n kube-system logs ds/kindnet --tail=-1 2>/dev/null | grep 'skipping network policies' >/dev/null; then
     die "kindnet logged 'skipping network policies': it is failing open"
   fi
   # Informational. The table name was inferred from source, and the behaviour below is the real proof.
-  if ! docker exec "$NODE_CONTAINER" nft list tables 2>/dev/null | grep -q 'kube-network-policies\|kindnet-network-policies'; then
+  if ! docker exec "$NODE_CONTAINER" nft list tables 2>/dev/null | grep 'kube-network-policies\|kindnet-network-policies' >/dev/null; then
     warn "no network policy table found by name in nftables on the node. Continuing, the behaviour test decides."
   fi
 

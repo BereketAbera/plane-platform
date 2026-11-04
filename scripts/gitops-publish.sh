@@ -31,10 +31,18 @@ fi
 
 # A promotion merged on GitHub reaches the cluster here, not in the workflow, which cannot talk to
 # the cluster. So this is where such a promotion must take the dump the contract requires.
+# grep reads to the end, not -q. With -q it stops at the first match, git dies of SIGPIPE on a large
+# diff, and under pipefail the pipeline reads as no match, which would skip the dump.
 if [[ -n "$old" && "${SKIP_BACKUP:-}" != yes ]] && git cat-file -e "$old" 2>/dev/null &&
-  git diff "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -qE '^[-+].*@sha256:'; then
-  log "This publish changes a prod-sim image, so taking a backup first"
-  "$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."
+  git diff "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+].*@sha256:' >/dev/null; then
+  # A cluster with no prod-sim database has nothing to dump, which is what make up meets after make
+  # destroy. If kubectl cannot tell, go on to the backup, which fails and stops this publish.
+  if [[ -n "$(kc -n plane-prod-sim get statefulset plane-pgdb-wl --ignore-not-found -o name 2>/dev/null || echo unknown)" ]]; then
+    log "This publish changes a prod-sim image, so taking a backup first"
+    "$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was published. SKIP_BACKUP=yes overrides."
+  else
+    log "This publish changes a prod-sim image, but prod-sim has no database yet, so nothing to back up"
+  fi
 fi
 
 # Plain push on purpose: a non-fast-forward means history was rewritten, and Argo CD would then
