@@ -21,3 +21,11 @@ containers(obj) := [c |
 ]
 
 label(obj) := sprintf("%s %s/%s", [obj.kind, object.get(obj.metadata, "namespace", "-"), obj.metadata.name])
+
+# An Application's sources, whichever of the two spec fields it uses.
+app_sources(obj) := obj.spec.sources if obj.spec.sources
+
+app_sources(obj) := [obj.spec.source] if {
+	not obj.spec.sources
+	obj.spec.source
+}
