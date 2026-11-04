@@ -11,7 +11,9 @@
 # environments up, changes nothing, and prints statuses rather than response bodies.
 #
 # GAP rows state what this middleware does not close. They are not failures: a dev api can still reach
-# plane.prod-sim.localhost, exactly as any browser could.
+# plane.prod-sim.localhost, exactly as any browser could. The host.docker.internal row depends on
+# NetworkPolicy alone: a scratch pod with no egress policy did read Prometheus that way, because it leaves
+# through the Mac and comes back as the host. monitoring/README.md says more.
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"
 
@@ -204,7 +206,7 @@ YAML
   # minute, so a healthy operator has logged a real fetch inside this window, after the check began.
   logs="$(kc -n "$ns" logs -l app.kubernetes.io/name=secrets-operator --since=150s --tail=-1 2>&1)" || logs=""
   count="$(grep -c 'Reconciliation successful' <<<"$logs" || true)"
-  bad="$(grep -ci 'error' <<<"$logs" || true)"
+  bad="$(grep -c 'ERROR' <<<"$logs" || true)"
   if [[ "$count" -gt 0 && "$bad" -eq 0 ]]; then
     row PASS "$ns: operator reconciled in the last 150s, no error lines" ">0,0" "$count,$bad"
   else

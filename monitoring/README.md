@@ -66,6 +66,32 @@ calls grafana.com, because no pod here has a route out.
 **Backups stay in their own environment.** Each PVC mounts only that environment's folder, so
 `restore.sh` refuses a backup from another environment rather than copying it across.
 
+**Internal UIs admit only the node network.** Each Plane `api` must reach Traefik for the CoreDNS self-dial, and
+Traefik routes by Host header, so without this a compromised `api` could read every metric and silence alerts. Each of
+Prometheus, Alertmanager, Grafana, Argo CD and Infisical has a `node-network-only` Middleware with `ipAllowList` on
+`172.16.0.0/12`: the host arrives as the kind gateway (measured `172.24.0.1`) and pods from `10.244.0.0/16`, on the
+Service and on the NodePort alike. `tests/routes/internal-routes.sh` proves both sides. A pod gets 403, X-Forwarded-For
+changes nothing, and PSA baseline refuses the `hostNetwork` pod that would get past it. This is the door check, not a
+login: it trusts the node network, and it does not stop a dev `api` reaching `plane.prod-sim.localhost` as any browser
+could. One more door depends on NetworkPolicy. On Docker Desktop, a pod that may dial `host.docker.internal:80`
+(`192.168.65.254`) leaves through the Mac and comes back as the host, so the list admits it: a scratch pod with no egress
+policy read Prometheus that way. No Plane pod has that egress, and the test checks it, but a kindnet that fails open
+would open it.
+
+**Argo CD sync alerts.** Under `retry.limit: -1` a failing sync never completes: each failed attempt goes back to phase
+Running, `argocd_app_sync_total` does not move, and no condition is set. So `ArgoSyncFailed` also watches for an
+operation still open after 15m, from `argocd_app_info{operation="sync"}`. It cannot tell a retry loop from a wave
+waiting on something that never gets healthy, and neither is healthy at 15m. Root's operation walks every wave, so
+`ArgoRootSyncStuck` covers it at 60m. A bad image in the last wave does not trip either: that sync succeeds on apply,
+and `ArgoAppDegraded` reports it once the rollout misses its deadline.
+
+**kindnet's fail-open line.** Alloy tails kindnet's container and counts "skipping network policies", which
+`KindnetSkippedNetworkPolicies` fires on. Its other lines, a heartbeat every 10s, are counted and then dropped, so
+`KindnetLogsNotRead` can say the tail is alive and Loki's volume stays as it was. Two limits. This sees that one line and
+nothing else: the controller's `Run` error is discarded, and it is configured `FailOpen`, so `make test-netpol`, which
+sends real traffic, remains the real check. And if Alloy restarts after the kubelet has rotated that line away, the
+count starts again without it.
+
 ## Sentinels
 
 A restore proof needs something to read back:
@@ -82,4 +108,6 @@ The dump holds password hashes and plaintext API tokens, so `.local/backups` is 
 
 Run on the real kind cluster, proved by queries rather than pod status: Prometheus targets and rules,
 Grafana login, datasources and every dashboard query, LogQL through Alloy and Loki, and an alert from
-rule to sink. `scripts/test-alert.sh`, the drill that scales the API to zero, is a separate step.
+rule to sink. `ArgoSyncFailed` was proved against a real retry loop, and `KindnetSkippedNetworkPolicies` with a
+synthetic line from a scratch pod, each from the source to the sink. `scripts/test-alert.sh`, the drill that scales the
+API to zero, is a separate step.

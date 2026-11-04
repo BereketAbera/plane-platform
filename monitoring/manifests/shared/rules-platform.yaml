@@ -86,7 +86,8 @@ spec:
         # scripts/infisical-bootstrap.sh. That loop is real, and ArgoAppDegraded fires for it too.
         # A bad image in the last wave never reaches this rule: its sync succeeds on apply, and
         # ArgoAppDegraded reports it once the rollout misses its deadline.
-        # max_over_time rides out a controller restart, which would otherwise start for: again.
+        # max_over_time rides out a missed scrape, as when the controller is slow to restart, and aggregating
+        # drops the pod and instance labels that a restart changes. Either would otherwise start for: again.
         - alert: ArgoSyncFailed
           expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{operation="sync",name!="root"}[2m])) == 1
           for: 15m
