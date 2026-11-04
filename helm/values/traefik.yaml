@@ -1,0 +1,54 @@
+# traefik 42.3.0 from https://traefik.github.io/charts. Release traefik, namespace traefik.
+image:
+  registry: docker.io
+  repository: traefik
+  digest: sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748
+# The chart cannot derive the version from a digest, and its feature gates need one.
+versionOverride: v3.7.17
+
+service:
+  spec:
+    # kind maps these NodePorts to 127.0.0.1:80 and :443 only (infrastructure/kind/cluster.yaml.tmpl),
+    # so loopback is enforced there, with no hostPort for PSA baseline to reject.
+    type: NodePort
+    # Cluster would SNAT NodePort traffic to the node IP, so Traefik would see every external client
+    # as one address: access logs lose the source, and Plane's throttle, keyed on the X-Forwarded-For
+    # Traefik builds from it, would share one bucket. One node, so Local cannot blackhole traffic.
+    # On this host expect Docker's gateway rather than the browser's address: Local only removes
+    # kube-proxy's rewrite, not Docker Desktop's.
+    externalTrafficPolicy: Local
+
+ports:
+  web:
+    nodePort: 30080
+  websecure:
+    nodePort: 30443
+
+providers:
+  kubernetesCRD:
+    enabled: true
+  # Every route in this platform is an IngressRoute, including the Plane chart's.
+  kubernetesIngress:
+    enabled: false
+
+ingressClass:
+  enabled: false
+
+metrics:
+  prometheus:
+    # A dedicated Service, port 9100, for a ServiceMonitor in monitoring/manifests. Not the chart's
+    # serviceMonitor: this app syncs at wave -9 and the CRD arrives at -7, so it would fail the sync
+    # and block the wave that brings the CRD.
+    service:
+      enabled: true
+
+global:
+  # Egress is default-deny, so the check could only time out and log an error.
+  checkNewVersion: false
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 192Mi

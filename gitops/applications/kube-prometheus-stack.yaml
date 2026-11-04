@@ -1,0 +1,55 @@
+# ServerSideApply because crd-prometheuses.yaml is about 840 KiB, far over the 262144-byte
+# annotation limit of client-side apply. Metrics are re-creatable and the Prometheus volume comes
+# from a volumeClaimTemplate, which Argo CD does not track. Finalizer kept: nothing here is
+# irreplaceable, so removing this file from Git cleanly removes the app.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 92.18.0
+      helm:
+        valueFiles:
+          - $values/helm/values/kube-prometheus-stack.yaml
+    - repoURL: git://plane-git/plane-platform.git
+      targetRevision: main
+      ref: values
+  # The chart draws a new random admin password on every render, because Argo CD renders without
+  # lookup. Without this the Secret is permanently OutOfSync and self-heal rewrites the password.
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: kps-grafana
+      namespace: monitoring
+      jsonPointers:
+        - /data/admin-password
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
