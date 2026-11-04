@@ -39,7 +39,8 @@ for url in http://plane.dev.localhost/ http://plane.prod-sim.localhost/ http://a
 done
 
 log "Resources"
-docker stats --no-stream --format '    {{.Name}}: {{.MemUsage}}, CPU {{.CPUPerc}}' "$NODE_CONTAINER"
+# Docker trims leading spaces from a --format string, so the indent goes here.
+printf '    %s\n' "$(docker stats --no-stream --format '{{.Name}}: {{.MemUsage}}, CPU {{.CPUPerc}}' "$NODE_CONTAINER")"
 kc top pods -A --no-headers 2>/dev/null | awk '{split($4,m,"M"); t[$1]+=m[1]} END{for(n in t) printf "    %-22s %6d MiB\n",n,t[n]}' | sort || true
 free="$(free_disk_gib)"
 echo "    Host disk free: ${free} GiB"
