@@ -1,0 +1,19 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: infisical
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`infisical.localhost`)
+      services:
+        - name: infisical
+          port: 8080

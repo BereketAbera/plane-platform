@@ -1,0 +1,116 @@
+# Infisical's job queue and locks live here, so it needs noeviction (a documented requirement) and
+# persistence. Redis rather than Valkey because it is the documented path; the image saving is under 20 MB.
+apiVersion: v1
+kind: Service
+metadata:
+  name: infisical-redis
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical-redis
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: infisical-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: infisical-redis
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical-redis
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  serviceName: infisical-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: infisical-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: infisical-redis
+        app.kubernetes.io/part-of: infisical
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        # The redis user in the alpine image: UID 999, GID 1000 (image history).
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84
+          args:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --maxmemory-policy
+            - noeviction
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infisical-redis
+                  key: REDIS_PASSWORD
+            # redis-cli reads this, so the probes need no password on their command line.
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: infisical-redis
+                  key: REDIS_PASSWORD
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "redis-cli ping | grep -q PONG"]
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "redis-cli ping | grep -q PONG"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 96Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 256Mi

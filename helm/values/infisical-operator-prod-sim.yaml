@@ -1,0 +1,36 @@
+# secrets-operator 0.11.16, repo https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+# tgz sha256 104972678e2cd426fe978ba4249bdeff83258bfbbfe797103e0f37daeca595ee
+# Deploy into namespace plane-prod-sim under the platform AppProject: it renders cluster-scoped objects.
+#
+# infisical-operator-dev owns the CRDs. Until they exist this manager crash-loops and then recovers,
+# so the two releases can share a sync wave.
+installCRDs: false
+
+# The chart truncates fullname to 15 characters. See infisical-operator-dev.yaml.
+fullnameOverride: iso-prod-sim
+
+# Defaults to app.infisical.com, which would send identity tokens to Infisical Cloud if an
+# InfisicalConnection ever came up with an empty address.
+hostAPI: http://infisical.infisical.svc.cluster.local:8080/api
+
+# Both are required: without scopedRBAC it still gets a ClusterRole over Secrets everywhere, plus
+# token minting for any ServiceAccount.
+scopedNamespaces:
+  - plane-prod-sim
+scopedRBAC: true
+
+# The chart's own comment: Argo CD users must set this false or syncs hang.
+defaultResourcesHelmHooks: false
+
+controllerManager:
+  manager:
+    image:
+      repository: docker.io/infisical/kubernetes-operator
+      tag: "v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa"
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi

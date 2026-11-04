@@ -1,0 +1,72 @@
+# infisical-standalone 1.12.0, repo https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+# tgz sha256 9e2d2619a596f2b56dd4517886b7edd7ddfe36f8f0f96f42693d233fcf4b3864
+#
+# Postgres, Redis, the IngressRoute and this chart's ServiceAccount live in infisical/manifests,
+# which the infisical Application must carry as a second path source.
+
+infisical:
+  # Without this the Service is <release>-infisical-standalone-infisical. The operators and the
+  # IngressRoute dial http://infisical.infisical.svc.cluster.local:8080.
+  fullnameOverride: infisical
+  replicaCount: 1
+  # true stamps `updatedAt` into the pod template on every render, which rolls pods on each Argo CD
+  # regeneration. Consequence: restart by hand after changing infisical-secrets.
+  rolloutOnEveryRender: false
+  # The chart's bootstrap Job would put the admin token in a cluster Secret. Bootstrap runs from
+  # the host instead (scripts/infisical-bootstrap.sh).
+  autoBootstrap:
+    enabled: false
+  # Created by scripts/secret-zero.sh, never in Git: ENCRYPTION_KEY, AUTH_SECRET, DB_CONNECTION_URI,
+  # REDIS_URL. Argo CD does not manage it.
+  kubeSecretRef: infisical-secrets
+
+  # The pod template has no automount switch, so point at an SA from infisical/manifests that sets
+  # automountServiceAccountToken: false. Kubernetes Auth uses the client's JWT as reviewer, so this
+  # pod never needs a token of its own.
+  serviceAccount:
+    create: false
+    name: infisical-server
+
+  image:
+    repository: docker.io/infisical/infisical
+    # The chart concatenates repository:tag, so the digest travels in the tag.
+    tag: "v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c"
+    pullPolicy: IfNotPresent
+
+  extraEnv:
+    # The image bakes --max-old-space-size=2048. Above the 1Gi limit V8 grows past the cgroup and is
+    # OOMKilled rather than collecting.
+    - name: NODE_OPTIONS
+      value: "--max-old-space-size=640"
+    # Token review goes through safeRequest, which rejects private IPs. kubernetes.default.svc is
+    # 10.96.0.1 on kind, so Kubernetes Auth fails with "Local IPs not allowed" without this. It also
+    # relaxes SSRF protection globally: acceptable on a single-user instance, re-decide for pass 2.
+    - name: ALLOW_INTERNAL_IP_CONNECTIONS
+      value: "true"
+    - name: SITE_URL
+      value: "http://infisical.localhost"
+    - name: TELEMETRY_ENABLED
+      value: "false"
+    - name: DISABLE_UPDATE_CHECK
+      value: "true"
+
+  # The chart exposes only a readiness probe. No liveness probe is possible through values, and none
+  # is wanted during the first boot: 603 migrations run in-process and must not be killed.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 650Mi
+    limits:
+      cpu: 1500m
+      memory: 1Gi
+
+# Bundled subcharts stay off: ingress-nginx is retired and the Bitnami images are frozen legacy
+# builds with default passwords. Literal bundle env also overrides kubeSecretRef (infisical#7241).
+ingress:
+  enabled: false
+  nginx:
+    enabled: false
+postgresql:
+  enabled: false
+redis:
+  enabled: false
