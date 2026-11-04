@@ -41,7 +41,8 @@ jobs:
         env:
           IMAGE: ${{ inputs.image }}
           DIGEST: ${{ inputs.digest }}
-          # The workflow cannot reach the cluster. make gitops-publish takes the backup after the merge.
+          # The workflow cannot reach the cluster. make gitops-publish checks plane-dev and takes the
+          # backup after the merge.
           SKIP_BACKUP: "yes"
           CONFIRM: "yes"
           COMMIT: "no"
@@ -88,7 +89,7 @@ jobs:
             After merging:
 
             1. `git pull`
-            2. `make gitops-publish`, which takes the prod-sim backup first, because this workflow cannot reach the cluster
+            2. `make gitops-publish`, which first checks that plane-dev runs these digests and takes the prod-sim backup, because this workflow cannot reach the cluster
       # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
       # promotion. The run stays red, because the pull request this workflow promises does not exist.
       - name: Explain a refused pull request

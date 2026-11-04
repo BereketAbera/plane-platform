@@ -21,6 +21,8 @@
 # DIGESTS_FILE overrides .build/digests.tsv.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# shellcheck source=lib/dev-check.sh
+source "$(dirname "$0")/lib/dev-check.sh"
 
 usage() { die "usage: $0 dev|prod-sim [IMAGE=name DIGEST=sha256:... [REPO=repository]] [CONFIRM=yes] [SKIP_BACKUP=yes] [COMMIT=no] [OVERRIDE_DEV_CHECK=reason]"; }
 
@@ -168,52 +170,10 @@ while read -r name repo tag digest; do
   fi
 done <"$PLAN"
 
-# A recorded digest proves dev was told to run it. This asks whether dev did. Printed one problem per
-# line, so an empty answer means dev is fine.
-dev_problems() {
-  local status pods digest
-  status="$(kc -n argocd get application plane-dev -o jsonpath='{.status.sync.status}/{.status.health.status}' 2>/dev/null || true)"
-  [[ "$status" == Synced/Healthy ]] || echo "Application plane-dev is ${status:-unknown}, not Synced/Healthy"
-  # Ready containers in pods that are not on their way out. Synced and Healthy say a rollout finished,
-  # and this says it finished on this digest. The image names the digest because the overlay pins it.
-  if ! pods="$(kc -n plane-dev get pods -o json 2>/dev/null | jq -r '
-    .items[] | select(.metadata.deletionTimestamp == null and .status.phase == "Running")
-    | (.status.containerStatuses // []) as $statuses
-    | .spec.containers[] | . as $container
-    | select(any($statuses[]; .name == $container.name and .ready == true))
-    | $container.image')"; then
-    echo "could not read the pods in namespace plane-dev"
-    return 0
-  fi
-  while read -r _ _ _ digest; do
-    grep -qF "@$digest" <<<"$pods" || echo "no ready container in namespace plane-dev runs $digest"
-  done <"$PLAN"
-}
-
-DEV_CHECK=""
 if [[ "$ENV" == prod-sim ]]; then
-  if command -v kubectl >/dev/null 2>&1 && [[ -f "$KUBECONFIG" ]] && kc --request-timeout=5s get --raw /readyz >/dev/null 2>&1; then
-    problems="$(dev_problems)"
-    if [[ -z "$problems" ]]; then
-      DEV_CHECK="passed: plane-dev was Synced and Healthy and running every digest here"
-      ok "$DEV_CHECK"
-    else
-      while read -r problem; do warn "$problem"; done <<<"$problems"
-      [[ -n "${OVERRIDE_DEV_CHECK:-}" ]] || die "plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK=\"<reason>\", which is logged."
-      reason="$(tr -s '[:space:]' ' ' <<<"$OVERRIDE_DEV_CHECK")"
-      reason="${reason% }"
-      mkdir -p "$LOCAL_DIR/evidence-raw"
-      printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git config user.name || echo unknown)" "$(awk '{ printf "%s%s=%s", (NR > 1 ? "," : ""), $1, $4 }' "$PLAN")" "$reason" "$(tr '\n' ';' <<<"$problems")" \
-        >>"$LOCAL_DIR/evidence-raw/promotion-overrides.log"
-      DEV_CHECK="overridden: $reason"
-      warn "OVERRIDE_DEV_CHECK: promoting anyway. Logged in .local/evidence-raw/promotion-overrides.log and in the commit message: $reason"
-    fi
-  else
-    # Saying so is the point. A green pull request must not read as dev having been checked.
-    DEV_CHECK="skipped: no cluster in reach, so nothing checked that plane-dev is healthy or runs these digests"
-    warn "plane-dev check $DEV_CHECK"
-    [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || printf '%s\n' "**The plane-dev check was skipped.** No cluster is in reach from here, so check dev before merging." >>"$GITHUB_STEP_SUMMARY"
-  fi
+  plan_items=()
+  while read -r name _ _ digest; do plan_items+=("$name=$digest"); done <"$PLAN"
+  check_dev_proven "${plan_items[@]}" || refuse_unproven_dev "Nothing changed."
 fi
 
 # Fails now rather than folding unrelated drift into a promotion commit.
@@ -265,5 +225,6 @@ git commit --quiet --file "$message_file" -- "$OVERLAY" "$RENDERED"
 applied=no
 ok "committed $(git rev-parse --short HEAD): $subject"
 
-# Any backup this promotion needs has already happened above.
+# Any backup this promotion needs has already happened above. The plane-dev check runs once more in
+# there on purpose, so a local promotion and a merged one meet the same check at the same door.
 SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh"

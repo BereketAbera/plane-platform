@@ -39,7 +39,9 @@ So production approval here is a process, not a control:
   digest dev never recorded for that image. CI runs that check, but nothing makes a failing check block a merge.
 - Run locally, `scripts/promote.sh` also refuses unless plane-dev is Synced and Healthy with that digest in a ready container.
   `promote-prod-sim.yml` has no cluster in reach, so there the check is skipped, and the run and the commit message
-  (`Promote-Dev-Check: skipped`) say so. Nothing repeats it when the merged pull request is published, so check dev first.
+  (`Promote-Dev-Check: skipped`) say so. `make gitops-publish` then runs it after the merge, and refuses to publish a prod-sim
+  digest dev has not proven unless `OVERRIDE_DEV_CHECK="<reason>"` is set. `rollback.sh` publishes with `SKIP_DEV_CHECK`, so an
+  emergency does not depend on dev. Both reasons go in `.local/evidence-raw/promotion-overrides.log`.
 - In pass 1 a merge changes nothing running. It reaches the cluster only when someone pulls `main` and runs
   `make gitops-publish`, which takes a prod-sim backup first if the change touches a prod-sim image.
 

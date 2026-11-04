@@ -6,7 +6,9 @@
 #   scripts/rollback.sh prod-sim CONFIRM=yes
 #
 # This is the emergency path, so it does not depend on what may be broken:
-# - It publishes with SKIP_BACKUP=yes, so a failing backup cannot strand the revert on main.
+# - It publishes with SKIP_BACKUP=yes, so a failing backup cannot strand the revert on main, and with
+#   SKIP_DEV_CHECK, because a rollback of prod-sim must not need plane-dev to be healthy. gitops-publish
+#   logs that, and the revert commit of a prod-sim rollback says so in a trailer.
 # - prod-sim gets one dump of its own first, which may fail or run out of time without stopping the
 #   rollback. SKIP_BACKUP=yes leaves it out, and ROLLBACK_DUMP_TIMEOUT sets the limit in seconds.
 # - A revert that never reached Argo CD is published by the next run, instead of a second promotion
@@ -46,10 +48,12 @@ BACKUPS="$LOCAL_DIR/backups/$ENV"
 promotions="$(git log -E --format=%H \
   --grep="^Promote-Env: $ENV\$" --grep="^promote\\($ENV\\):" -- "$OVERLAY")"
 
-publish() {
-  # SKIP_BACKUP=yes means gitops-publish does not touch the cluster, which may be what is broken.
-  log "Publishing with SKIP_BACKUP=yes: the publish takes no dump of its own"
-  SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh" ||
+DEV_CHECK_WAIVER="an emergency path must not need plane-dev to be healthy"
+
+publish() { # publish <the commit being reverted>
+  # With both skips gitops-publish does not touch the cluster, which may be what is broken.
+  log "Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev"
+  SKIP_BACKUP=yes SKIP_DEV_CHECK="rollback of ${1:0:12}: $DEV_CHECK_WAIVER" "$ROOT/scripts/gitops-publish.sh" ||
     die "the revert $(git rev-parse --short HEAD) is on main but did not reach Argo CD. Fix the cause and run this again: it publishes that revert and reverts nothing else."
 }
 
@@ -66,7 +70,7 @@ if [[ -n "$published" ]] && git cat-file -e "$published" 2>/dev/null; then
     reverted="$(reverted_by "$commit")"
     if [[ -n "$reverted" ]] && grep -qxF "$reverted" <<<"$promotions"; then
       log "$(git log -1 --format='%h %s' "$commit") is on main but was never published. Publishing it, and reverting nothing else."
-      publish
+      publish "$reverted"
       ok "rollback of ${reverted:0:12} published. Run this again to step back one promotion further."
       exit 0
     fi
@@ -152,10 +156,12 @@ fi
 paths=("$RENDERED")
 while read -r path; do paths+=("$path"); done < <(git diff-tree --no-commit-id --name-only -r "$target")
 git add -- "${paths[@]}"
-git commit --quiet --no-edit -- "${paths[@]}"
+commit_flags=(--quiet --no-edit)
+[[ "$ENV" != prod-sim ]] || commit_flags+=(--trailer "Promote-Dev-Check: not run: $DEV_CHECK_WAIVER")
+git commit "${commit_flags[@]}" -- "${paths[@]}"
 ok "committed $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
 
-publish
+publish "$target"
 
 if [[ "$ENV" == prod-sim ]]; then
   if [[ -n "$restore_from" ]]; then

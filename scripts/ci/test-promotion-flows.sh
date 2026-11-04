@@ -44,10 +44,13 @@ cat >"$CLONE/.tools/bin/kubectl" <<'STUB_KUBECTL'
 #!/usr/bin/env bash
 # Answers what the promotion scripts and the drill ask, from the files in $STUB. Anything else fails.
 args=" $* "
+echo "$*" >>"$STUB/kubectl-calls"
+[[ "$(cat "$STUB/cluster")" == up ]] || exit 1
 current_web_image() { grep -m1 -E 'image: .*plane-frontend' "$CLONE/gitops/environments/dev/manifests.yaml" | sed 's/.*image: //'; }
 web_is_bad() { current_web_image | grep -qF "@$BAD_DIGEST"; }
 case "$args" in
-  *" get --raw /readyz "*) [[ "$(cat "$STUB/cluster")" == up ]] ;;
+  *" get --raw /readyz "*) exit 0 ;;
+  *" get statefulset plane-pgdb-wl "*) cat "$STUB/prod-sim-database" ;;
   *" annotate application "*) exit 0 ;;
   *" get application plane-dev -o jsonpath={.status.sync.status}/{.status.health.status} "*) cat "$STUB/app-status" ;;
   # The drill's own view: Degraded while the bad digest is what Git asks for, and back after the revert.
@@ -109,7 +112,8 @@ reset_clone() {
   git -C "$CLONE" reset --quiet --hard "$BASE"
   git -C "$CLONE" update-ref -d refs/remotes/origin/main 2>/dev/null || true
   git -C "$CLONE" clean --quiet -fd -- helm gitops
-  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls"
+  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls" "$STUB/kubectl-calls"
+  echo statefulset.apps/plane-pgdb-wl >"$STUB/prod-sim-database"
   rm -f "$CLONE/.tools/bin/curl"
   touch "$CLONE/.local/kubeconfig"
   echo up >"$STUB/cluster"
@@ -137,6 +141,8 @@ rollback() { in_clone env CONFIRM=yes ROLLBACK_DUMP_TIMEOUT="${ROLLBACK_DUMP_TIM
 head_commit() { git -C "$CLONE" rev-parse HEAD; }
 published() { git --git-dir="$BARE" rev-parse refs/heads/main; }
 reverts_on_main() { git -C "$CLONE" log --format=%B "$BASE..HEAD" | grep -c '^This reverts commit' || true; }
+backup_calls() { if [[ -e "$STUB/backup-calls" ]]; then wc -l <"$STUB/backup-calls" | tr -d ' '; else echo 0; fi; }
+OVERRIDE_LOG="$CLONE/.local/evidence-raw/promotion-overrides.log"
 
 scenario_failures=0
 expect() { # expect <description> <command...>: one assertion inside a scenario
@@ -247,7 +253,7 @@ override_is_logged() {
   echo OutOfSync/Degraded >"$STUB/app-status"
   promote_prod_sim COMMIT=no OVERRIDE_DEV_CHECK="dev is down for maintenance" || status=$?
   expect "the promotion goes ahead" [ "$status" -eq 0 ]
-  expect "the override is printed" said "OVERRIDE_DEV_CHECK: promoting anyway"
+  expect "the override is printed" said "OVERRIDE_DEV_CHECK: going ahead anyway"
   expect "the commit message keeps the reason" grep -q '^Promote-Dev-Check: overridden: dev is down for maintenance' "$CLONE/.build/promote-message.txt"
   expect "the log keeps reason and state" grep -q 'dev is down for maintenance.*OutOfSync/Degraded' "$CLONE/.local/evidence-raw/promotion-overrides.log"
 }
@@ -405,10 +411,203 @@ publish_still_backs_up_prod_sim_change() {
   git -C "$CLONE" add -- helm gitops
   git -C "$CLONE" commit --quiet -m 'promote(prod-sim): by hand'
   expect "the setup works" [ "$status" -eq 0 ]
-  # The stub kubectl answers no statefulset question, so gitops-publish falls through to the backup.
   in_clone ./scripts/gitops-publish.sh || status=$?
   expect "the publish works" [ "$status" -eq 0 ]
   expect "it took the dump" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+}
+
+# ---- publish: a promotion merged on GitHub has to prove itself on plane-dev here
+merged_prod_sim_promotion() {
+  # What a merged pull request leaves: dev promoted and published, then a prod-sim commit made where no
+  # cluster was in reach, so it says the check was skipped, and it has not been published.
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  echo down >"$STUB/cluster"
+  promote_prod_sim COMMIT=no || status=$?
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  echo up >"$STUB/cluster"
+  expect "the setup works" [ "$status" -eq 0 ]
+  expect "the commit says the check was skipped" grep -q '^Promote-Dev-Check: skipped' <(git -C "$CLONE" log -1 --format=%B)
+  PUBLISHED_BEFORE="$(published)"
+  rm -f "$STUB/backup-calls" "$STUB/kubectl-calls"
+}
+expect_refused() { # expect_refused <exit status> <the reason it must print>
+  expect "a refusal" [ "$1" -ne 0 ]
+  expect "the reason" said "$2"
+  expect "the way out" said "OVERRIDE_DEV_CHECK"
+  expect "it says nothing was published" said "Nothing was published"
+  expect "nothing was published" equal "$(published)" "$PUBLISHED_BEFORE"
+  expect "a refused publish takes no dump" equal "$(backup_calls)" 0
+}
+merged_dev_proven() {
+  local status=0
+  merged_prod_sim_promotion
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it says the check passed" said "passed: plane-dev was Synced and Healthy"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "it took the dump" equal "$(backup_calls)" 1
+}
+merged_dev_out_of_sync() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Healthy >"$STUB/app-status"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is OutOfSync/Healthy"
+}
+merged_dev_degraded() {
+  local status=0
+  merged_prod_sim_promotion
+  echo Synced/Degraded >"$STUB/app-status"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is Synced/Degraded"
+}
+merged_dev_application_missing() {
+  local status=0
+  merged_prod_sim_promotion
+  : >"$STUB/app-status"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is unknown"
+}
+merged_dev_running_another_digest() {
+  local status=0
+  merged_prod_sim_promotion
+  web_image "$DIGEST_B" true
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "no ready container in namespace plane-dev runs $DIGEST_A"
+}
+merged_dev_container_not_ready() {
+  local status=0
+  merged_prod_sim_promotion
+  web_image "$DIGEST_A" false
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "no ready container in namespace plane-dev runs $DIGEST_A"
+}
+merged_override_is_logged() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone env OVERRIDE_DEV_CHECK="dev is down for maintenance" ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "the override is printed" said "OVERRIDE_DEV_CHECK: going ahead anyway"
+  expect "the log keeps script, reason and state" grep -q 'gitops-publish.sh.overridden.*dev is down for maintenance.*OutOfSync/Degraded' "$OVERRIDE_LOG"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "the dump is still taken" equal "$(backup_calls)" 1
+}
+merged_refused_then_retried() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Healthy >"$STUB/app-status"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is OutOfSync/Healthy"
+  echo Synced/Healthy >"$STUB/app-status"
+  status=0
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes once dev is fine" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+merged_no_cluster_says_skipped() {
+  local status=0
+  merged_prod_sim_promotion
+  echo down >"$STUB/cluster"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "the skip is printed" said "plane-dev check skipped"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+skip_backup_is_no_way_past() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is OutOfSync/Degraded"
+  status=0
+  in_clone env SKIP_BACKUP=yes SKIP_DEV_CHECK= ./scripts/gitops-publish.sh || status=$?
+  expect_refused "$status" "Application plane-dev is OutOfSync/Degraded"
+}
+skip_dev_check_is_recorded() {
+  local status=0
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone env SKIP_BACKUP=yes SKIP_DEV_CHECK="a reason" ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it says so" said "plane-dev check not run for this publish: a reason"
+  expect "the log keeps the reason and the digest" grep -q "not-run.*$DIGEST_A.*a reason" "$OVERRIDE_LOG"
+  expect "it asked the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+}
+prod_sim_not_deployed() {
+  # make up after make destroy: the bare repository is older than main, and nothing is running yet.
+  local status=0
+  merged_prod_sim_promotion
+  : >"$STUB/prod-sim-database"
+  : >"$STUB/app-status"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it says why" said "nothing running for the plane-dev check to protect"
+  expect "no dump" equal "$(backup_calls)" 0
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+dev_change_needs_no_dev_check() {
+  # A fix for a broken dev has to be able to reach dev.
+  local status=0
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it asked the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+promote_override_reaches_the_publish() {
+  # With a commit, promote.sh publishes, and the publish asks again. The override has to carry through.
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  promote_prod_sim OVERRIDE_DEV_CHECK="dev is down for maintenance" || status=$?
+  expect "the promotion goes ahead" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "both are logged" equal "$(grep -c 'dev is down for maintenance' "$OVERRIDE_LOG")" 2
+}
+rollback_prod_sim_with_unhealthy_dev() {
+  local status=0
+  promote_prod_sim_committed
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  web_image "$DIGEST_B" false
+  rm -f "$STUB/kubectl-calls"
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "it says the check was not run" said "plane-dev check not run for this publish: rollback of"
+  expect "it asked the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+  expect "the log keeps the reason" grep -q 'gitops-publish.sh.not-run.*rollback of' "$OVERRIDE_LOG"
+  expect "the revert commit says so" grep -q '^Promote-Dev-Check: not run' <(git -C "$CLONE" log -1 --format=%B)
+}
+rollback_prod_sim_rerun_with_unhealthy_dev() {
+  local status=0
+  promote_prod_sim_committed
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  printf '#!/bin/sh\nexit 1\n' >"$BARE/hooks/pre-receive"
+  chmod +x "$BARE/hooks/pre-receive"
+  rollback prod-sim || status=$?
+  expect "the failed publish is reported" [ "$status" -ne 0 ]
+  rm -f "$BARE/hooks/pre-receive"
+  status=0
+  rollback prod-sim || status=$?
+  expect "the re-run works" [ "$status" -eq 0 ]
+  expect "no second revert" equal "$(reverts_on_main)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "the log keeps the reason" grep -q 'gitops-publish.sh.not-run.*rollback of' "$OVERRIDE_LOG"
+}
+make_passes_the_documented_options() {
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone make promote ENV=prod-sim COMMIT=no CONFIRM=yes SKIP_BACKUP=yes SKIP_REGISTRY_CHECK=yes OVERRIDE_DEV_CHECK="through make" || status=$?
+  expect "make promote works" [ "$status" -eq 0 ]
+  expect "the reason reached the script" grep -q '^Promote-Dev-Check: overridden: through make' "$CLONE/.build/promote-message.txt"
+  git -C "$CLONE" restore --source=HEAD --staged --worktree -- helm gitops
+  in_clone make rollback ENV=dev SKIP_BACKUP=yes ROLLBACK_DUMP_TIMEOUT=5 || status=$?
+  expect "make rollback works" [ "$status" -eq 0 ]
+  expect "published" equal "$(published)" "$(head_commit)"
 }
 
 # ---- the failed-deploy drill, with Traefik stubbed too
@@ -458,6 +657,23 @@ scenario publish-warns-when-ahead-of-origin publish_warns_when_ahead_of_origin
 scenario publish-quiet-when-level-with-origin publish_quiet_when_level_with_origin
 scenario publish-says-when-origin-is-unknown publish_says_when_origin_is_unknown
 scenario publish-still-backs-up-prod-sim-change publish_still_backs_up_prod_sim_change
+scenario publish-merged-promotion-dev-proven merged_dev_proven
+scenario publish-merged-promotion-dev-out-of-sync merged_dev_out_of_sync
+scenario publish-merged-promotion-dev-degraded merged_dev_degraded
+scenario publish-merged-promotion-dev-application-missing merged_dev_application_missing
+scenario publish-merged-promotion-dev-running-another-digest merged_dev_running_another_digest
+scenario publish-merged-promotion-dev-container-not-ready merged_dev_container_not_ready
+scenario publish-merged-promotion-override-is-logged merged_override_is_logged
+scenario publish-merged-promotion-refused-then-retried merged_refused_then_retried
+scenario publish-merged-promotion-no-cluster-says-skipped merged_no_cluster_says_skipped
+scenario publish-skip-backup-is-no-way-past-the-dev-check skip_backup_is_no_way_past
+scenario publish-skip-dev-check-is-recorded skip_dev_check_is_recorded
+scenario publish-prod-sim-not-deployed-needs-no-dev-check prod_sim_not_deployed
+scenario publish-dev-change-needs-no-dev-check dev_change_needs_no_dev_check
+scenario promote-override-reaches-the-publish promote_override_reaches_the_publish
+scenario rollback-prod-sim-with-unhealthy-dev rollback_prod_sim_with_unhealthy_dev
+scenario rollback-prod-sim-rerun-with-unhealthy-dev rollback_prod_sim_rerun_with_unhealthy_dev
+scenario make-passes-the-documented-options make_passes_the_documented_options
 scenario drill-runs-to-a-pass drill_runs_to_a_pass
 scenario drill-failed-promotion-reverts-nothing-else drill_failed_promotion_reverts_nothing_else
 
