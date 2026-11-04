@@ -908,6 +908,62 @@ class Smoke:
         data.update(sequence_id=item.get("sequence_id"), state=item.get("state"))
         return f"workspace, project and work item {project['identifier']}-{item.get('sequence_id')} all match, by key and by session"
 
+    def step_workspace_seed(self, data: dict) -> str:
+        """workspace_seed runs in the worker, and creates a project named after the workspace."""
+        slug, name = self.state["slug"], self.state["workspace_name"]
+        started = time.monotonic()
+        while time.monotonic() - started < self.args.job_timeout:
+            projects = expect(self.http.get(f"/api/workspaces/{slug}/projects/"), 200).json()
+            projects = projects.get("results", projects) if isinstance(projects, dict) else projects
+            if any(project.get("name") == name for project in projects):
+                data["seconds_until_seeded"] = round(time.monotonic() - started, 1)
+                return f"seed project present after {data['seconds_until_seeded']}s"
+            time.sleep(2)
+        raise StepFailed(f"no seed project after {self.args.job_timeout}s")
+
+    def step_app_shell(self, data: dict) -> str:
+        """What the web app asks for right after sign-in, since the sign-in page itself proves none of it."""
+        slug, project_id = self.state["slug"], self.state["project_id"]
+        workspace, project = f"/api/workspaces/{slug}", f"/api/workspaces/{slug}/projects/{project_id}"
+        targets = ["/api/users/me/profile/", "/api/users/me/settings/", "/api/users/me/workspaces/",
+                   f"{workspace}/workspace-members/me/", f"{workspace}/user-properties/", f"{workspace}/projects/details/",
+                   f"{workspace}/sidebar-preferences/", f"{workspace}/views/", f"{workspace}/members/",
+                   f"{project}/", f"{project}/states/", f"{project}/issue-labels/", f"{project}/members/",
+                   f"{project}/user-properties/", f"{project}/issues/?per_page=50&cursor=50:0:0&group_by=state_id"]
+        statuses = {target: self.http.get(target).status for target in targets}
+        failed = {target: status for target, status in statuses.items() if status != 200}
+        data["checked"] = len(statuses)
+        if failed:
+            raise StepFailed(f"{failed}")
+        return f"all {len(statuses)} requests answered 200"
+
+    def step_admin_sign_in(self, data: dict) -> str:
+        """The god-mode session and its config rows. Those are encrypted with a key derived from
+        SECRET_KEY, and a wrong key decrypts silently to an empty string, so a value must survive."""
+        admin = Http(self.host, self.connect_host, self.connect_port)
+        anonymous = admin.get("/api/instances/configurations/").status
+        response = admin.post_form("/api/instances/admins/sign-in/", {
+            "csrfmiddlewaretoken": self.csrf(admin),
+            "email": self.accounts.get("ADMIN_EMAIL"),
+            "password": self.accounts.get("ADMIN_PASSWORD"),
+        })
+        expect(response, 302)
+        self.assert_no_auth_error(response)
+        if "admin-session-id" not in admin.cookies:
+            raise StepFailed("admin sign-in did not set admin-session-id")
+        self.redact.add(admin.cookies["admin-session-id"])
+        me = expect(admin.get("/api/instances/admins/me/"), 200).json()
+        rows = expect(admin.get("/api/instances/configurations/"), 200).json()
+        by_key = {row["key"]: row for row in rows}
+        data.update(anonymous_status=anonymous, rows=len(rows), encrypted_rows=sum(1 for row in rows if row.get("is_encrypted")))
+        if anonymous == 200:
+            raise StepFailed("instance configuration answered 200 with no admin session")
+        if by_key.get("ENABLE_EMAIL_PASSWORD", {}).get("value") != "1":
+            raise StepFailed("ENABLE_EMAIL_PASSWORD did not read back as 1")
+        if not me.get("id"):
+            raise StepFailed("/api/instances/admins/me/ has no id")
+        return f"{len(rows)} config rows read, {data['encrypted_rows']} of them encrypted, refused with no session ({anonymous})"
+
     def step_second_user(self, data: dict) -> str:
         """A normal sign-up, with its own session, is refused the first user's workspace."""
         other = Http(self.host, self.connect_host, self.connect_port)
@@ -1428,6 +1484,9 @@ class Smoke:
         self.run("background-job", self.step_background_job, ("work-item",))
         self.run("work-item-list", self.step_list, ("work-item",))
         self.run("read-back", self.step_read_back, ("work-item",))
+        self.run("workspace-seed", self.step_workspace_seed, ("workspace",))
+        self.run("app-shell", self.step_app_shell, ("project",))
+        self.run("admin-sign-in", self.step_admin_sign_in, ("instance-setup",))
         self.run("second-user", self.step_second_user, ("work-item",))
         self.run("celery-consumers", self.step_consumers, ("reachable",))
         self.run("broker-memory", self.step_broker_memory, ("reachable",))
