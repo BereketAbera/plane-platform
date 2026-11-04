@@ -30,9 +30,16 @@ BAD_DIGEST="sha256:$(printf '0%.0s' {1..64})"
 drill_start failed-deploy
 NEEDS_RESTORE=no
 
+# Only what this drill committed. If the promotion failed before its commit, the newest promotion on
+# main belongs to someone else, and rolling back would revert that instead.
+bad_digest_on_main() { git grep -qF "$BAD_DIGEST" HEAD -- helm/plane/overlays/dev/kustomization.yaml; }
+
 restore() {
   local status=$?
-  if [[ "$NEEDS_RESTORE" == yes ]]; then
+  if [[ "$NEEDS_RESTORE" == yes ]] && ! bad_digest_on_main; then
+    stage "Restore (exit trap)"
+    pass "the bad digest never reached main, so there is nothing to revert"
+  elif [[ "$NEEDS_RESTORE" == yes ]]; then
     stage "Restore (exit trap)"
     if "$ROOT/scripts/rollback.sh" dev; then
       refresh_app "$APP" || true
