@@ -1,0 +1,99 @@
+[1;34m==>[0m Disk limits for this run: 13 GiB free to start, 12 GiB free to keep going. 14 GiB free now.
+[1;34m==>[0m Listing what this platform runs
+[1;32m ok[0m 9 platform chart(s) rendered
+[1;32m ok[0m 36 image(s) to scan, listed in .local/evidence-raw/scan-images-20261104T215437Z/inventory.tsv
+[1;34m==>[0m Making sure the vulnerability database is current
+[1;34m==>[0m [1/36] localhost:5001/wayline/admin@sha256:3dda83bb7d274aec96f76c019ea206456123dd3e38d09fc98e684d6037017003
+[1;34m==>[0m [2/36] localhost:5001/wayline/backend@sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615
+[1;34m==>[0m [3/36] localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c
+[1;34m==>[0m [4/36] localhost:5001/wayline/web@sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7
+[1;34m==>[0m [5/36] wayline-source-lockfiles
+[1;34m==>[0m [6/36] docker.io/grafana/alloy@sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2
+[1;34m==>[0m [7/36] docker.io/grafana/grafana:13.3.0-distroless@sha256:540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
+[1;34m==>[0m [8/36] docker.io/grafana/loki@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
+[1;34m==>[0m [9/36] docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c
+[1;34m==>[0m [10/36] docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa
+[1;34m==>[0m [11/36] docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+[1;34m==>[0m [12/36] docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+[1;34m==>[0m [13/36] docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+[1;34m==>[0m [14/36] docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+[1;34m==>[0m [15/36] docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84
+[1;34m==>[0m [16/36] docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+[1;34m==>[0m [17/36] docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+[1;34m==>[0m [18/36] docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+[1;34m==>[0m [19/36] docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+[1;34m==>[0m [20/36] docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+[1;34m==>[0m [21/36] docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+[1;34m==>[0m [22/36] docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+[1;34m==>[0m [23/36] docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+[1;34m==>[0m [24/36] docker.io/traefik@sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748
+[1;34m==>[0m [25/36] docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+[1;34m==>[0m [26/36] quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+[1;34m==>[0m [27/36] quay.io/kiwigrid/k8s-sidecar:2.14.3@sha256:52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880
+[1;34m==>[0m [28/36] quay.io/prometheus-operator/prometheus-config-reloader:v0.94.2@sha256:a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+[1;34m==>[0m [29/36] quay.io/prometheus-operator/prometheus-operator:v0.94.2@sha256:c7edf0379b7271ef1705dce258d2bb73820e299cc95559369e9f6fc3321639ec
+[1;34m==>[0m [30/36] quay.io/prometheus/alertmanager:v0.34.2@sha256:39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b
+[1;34m==>[0m [31/36] quay.io/prometheus/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13
+[1;34m==>[0m [32/36] quay.io/prometheus/node-exporter:v1.12.1-distroless@sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+[1;34m==>[0m [33/36] quay.io/prometheus/prometheus:v3.15.1-distroless@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934
+[1;34m==>[0m [34/36] quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+[1;34m==>[0m [35/36] registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0@sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b
+[1;34m==>[0m [36/36] registry.k8s.io/metrics-server/metrics-server:v0.9.1@sha256:9b0ba1926e1d3089673f45461c3c1416109dea33b3ba3434048defd380df329b
+image                                                                                    CRITICAL         HIGH       MEDIUM    LOW  os
+localhost:5001/wayline/space@6cb8cb0a7ca0                                               4 (4 fix)  31 (31 fix)  22 (22 fix)      5  alpine 3.24.3
+localhost:5001/wayline/backend@e9e571864b1d                                             1 (1 fix)  10 (10 fix)  17 (16 fix)      2  alpine 3.23.3
+localhost:5001/wayline/admin@3dda83bb7d27                                               0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+localhost:5001/wayline/web@b46eaf5e1652                                                 0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+docker.io/infisical/infisical:v0.167.6@ca5cbd14b2f1                                     5 (0 fix)   89 (5 fix)  197 (7 fix)    247  debian 13.7
+docker.io/makeplane/plane-live:v1.4.3@30741b6d6552                                      4 (4 fix)  37 (37 fix)  32 (32 fix)      8  alpine 3.24.3
+docker.io/makeplane/plane-space:v1.4.3@af9b955874a2                                     4 (4 fix)  31 (31 fix)  22 (22 fix)      5  alpine 3.24.3
+quay.io/argoproj/argocd:v3.5.7@16df57da6f22                                             2 (2 fix) 121 (121 fix) 172 (130 fix)     14  ubuntu 26.04
+docker.io/library/rabbitmq:3.13.7-management-alpine@606d8c0d6b3c                        2 (2 fix)  70 (70 fix)  91 (91 fix)     65  alpine 3.22.2
+wayline-source-lockfiles                                                                1 (1 fix)  31 (31 fix)  24 (24 fix)      7  none
+docker.io/library/postgres:15.19-alpine@54e0dd8e8cdd                                    1 (1 fix)  25 (25 fix)  31 (31 fix)      3  alpine 3.24.3
+docker.io/library/postgres:16.15-alpine@0cefaabd882e                                    1 (1 fix)  25 (25 fix)  31 (31 fix)      3  alpine 3.24.3
+docker.io/makeplane/plane-backend:v1.4.3@9b75bf46cf4f                                   1 (1 fix)  10 (10 fix)  17 (16 fix)      2  alpine 3.23.3
+docker.io/grafana/grafana:13.3.0-distroless@540b8afb775b                                0 (0 fix)  39 (39 fix)  99 (99 fix)      7  debian 13.7
+quay.io/prometheuscommunity/postgres-exporter:v0.20.1@ac5ec343104f                      0 (0 fix)  18 (18 fix)  16 (16 fix)      1  none
+quay.io/prometheus/node-exporter:v1.12.1-distroless@8c9bac11973b                        0 (0 fix)  15 (15 fix)  15 (15 fix)      1  debian 13.5
+registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0@42cfe3723a5f              0 (0 fix)  10 (10 fix)  17 (17 fix)      4  debian 13.6
+docker.io/infisical/kubernetes-operator:v0.11.16@0edfbde22637                           0 (0 fix)    8 (8 fix)    8 (8 fix)      0  debian 13.7
+docker.io/library/redis:8.6.4-alpine@2cc044fc5a07                                       0 (0 fix)    8 (8 fix)    7 (7 fix)     12  alpine 3.23.5
+docker.io/library/python:3.13.18-alpine@7984cf56cead                                    0 (0 fix)    5 (5 fix)    2 (2 fix)      1  alpine 3.24.3
+quay.io/kiwigrid/k8s-sidecar:2.14.3@52d311dcedd5                                        0 (0 fix)    5 (5 fix)    3 (3 fix)      1  alpine 3.24.3
+registry.k8s.io/metrics-server/metrics-server:v0.9.1@9b0ba1926e1d                       0 (0 fix)    5 (5 fix)    8 (8 fix)      3  debian 13.7
+docker.io/makeplane/plane-admin:v1.4.3@45c952532825                                     0 (0 fix)    3 (3 fix)    0 (0 fix)      0  alpine 3.24.3
+docker.io/makeplane/plane-frontend:v1.4.3@95ce1418b7b9                                  0 (0 fix)    3 (3 fix)    0 (0 fix)      0  alpine 3.24.3
+docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@e6544a902f42               0 (0 fix)    1 (0 fix)    0 (0 fix)      0  debian 12.15
+docker.io/grafana/alloy@12ff3a82e402                                                    0 (0 fix)    0 (0 fix)    5 (1 fix)      1  ubuntu 24.04
+docker.io/grafana/loki@0db216b630ae                                                     0 (0 fix)    0 (0 fix)    0 (0 fix)      0  debian 13.7
+docker.io/library/redis:7.2.17-alpine@2c933526722b                                      0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.21.9, end of life
+docker.io/oliver006/redis_exporter:v1.96.0@3d57b9eb142a                                 0 (0 fix)    0 (0 fix)    0 (0 fix)      0  none
+docker.io/traefik@68ae5fe5b64c                                                          0 (0 fix)    0 (0 fix)    1 (1 fix)      0  alpine 3.24.3
+docker.io/valkey/valkey:7.2.15-alpine@f8c1a646f4b3                                      0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+quay.io/prometheus-operator/prometheus-config-reloader:v0.94.2@a1897c67478b             0 (0 fix)    0 (0 fix)    0 (0 fix)      0  none
+quay.io/prometheus-operator/prometheus-operator:v0.94.2@c7edf0379b72                    0 (0 fix)    0 (0 fix)    0 (0 fix)      0  none
+quay.io/prometheus/alertmanager:v0.34.2@39d8bb3966c6                                    0 (0 fix)    0 (0 fix)    0 (0 fix)      0  none
+quay.io/prometheus/blackbox-exporter:v0.29.1@ea1c7aa3ef3f                               0 (0 fix)    0 (0 fix)    0 (0 fix)      0  none
+quay.io/prometheus/prometheus:v3.15.1-distroless@451a845bae1d                           0 (0 fix)    0 (0 fix)    0 (0 fix)      0  debian 13.7
+
+36 of 36 images scanned, 4 of the scanned ones built here.
+Findings across all images: 26 CRITICAL, 600 HIGH, 837 MEDIUM, 392 LOW, 122 UNKNOWN.
+Reported, not failing: 8 upstream image(s) have a CRITICAL finding with a fix, so a newer digest may help:
+  docker.io/library/postgres:15.19-alpine@54e0dd8e8cdd
+  docker.io/library/postgres:16.15-alpine@0cefaabd882e
+  docker.io/library/rabbitmq:3.13.7-management-alpine@606d8c0d6b3c
+  docker.io/makeplane/plane-backend:v1.4.3@9b75bf46cf4f
+  docker.io/makeplane/plane-live:v1.4.3@30741b6d6552
+  docker.io/makeplane/plane-space:v1.4.3@af9b955874a2
+  quay.io/argoproj/argocd:v3.5.7@16df57da6f22
+  wayline-source-lockfiles
+Reported, not failing: 1 image(s) on an end-of-life OS, where trivy's OS findings may be incomplete:
+  docker.io/library/redis:7.2.17-alpine@2c933526722b
+FAIL: 5 policy failure(s):
+  localhost:5001/wayline/backend@sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615 is ours and has CVE-2026-102268 in PyJWT 2.13.0, fixed in 2.14.0
+  localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c is ours and has CVE-2026-90711 in proxy-addr 2.0.7, fixed in 2.0.8
+  localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c is ours and has CVE-2026-114125 in storybook 10.4.6, fixed in 8.6.19, 9.1.21, 10.6.2, 11.0.0-alpha.6
+  localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c is ours and has CVE-2026-104848 in tinypool 2.1.0, fixed in 2.1.1
+  localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c is ours and has CVE-2026-104849 in tinypool 2.1.0, fixed in 2.1.2
+make: *** [scan-images] Error 1

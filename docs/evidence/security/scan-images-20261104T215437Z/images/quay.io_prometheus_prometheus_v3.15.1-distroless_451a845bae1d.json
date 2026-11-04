@@ -1,0 +1,627 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.1"
+  },
+  "ReportID": "01a1a8b2-09fc-7b5e-ab53-bd81e2898aa9",
+  "CreatedAt": "2026-11-05T01:33:22.684746+03:00",
+  "ArtifactID": "sha256:ab4bdae876b3175ee9eaf2d04338b625dfa46c8ab2addb1936aeb352a571258b",
+  "ArtifactName": "quay.io/prometheus/prometheus:v3.15.1-distroless@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "Size": 251190272,
+    "OS": {
+      "Family": "debian",
+      "Name": "13.7"
+    },
+    "ImageID": "sha256:7fead31c863f3dfa52bab2277145b162d3c6d1cc09314ae5feb29edc422a0a35",
+    "DiffIDs": [
+      "sha256:e842bc95a0a8664498b7881e537b5929e419d590f5a9954fb7f81c73c20fc6c7",
+      "sha256:621c35e751a51a9a9dc3e80aa0b7fe8be2a93402ea6ccd307d30852cd7776cda",
+      "sha256:763a77745f27b86cf26b97887b6842d83720e63b1c48848c0ba9ee54e351d63a",
+      "sha256:f0d0eff4c2312a7bd6e21797bdfea5eb35f60e76b555ce2b22794424af2cad36",
+      "sha256:275a30dd8ce958b21daa9ad962c6fbc09f98306ee2f486b65c9075dc257b1412",
+      "sha256:4d049f83d9cf21d1f5cc0e11deaf36df02790d0e60c1a3829538fb4b61685368",
+      "sha256:af5aa97ebe6ce1604747ec1e21af7136ded391bcabe4acef882e718a87c86bcc",
+      "sha256:6f1cdceb6a3146f0ccb986521156bef8a422cdbb0863396f7f751f575ba308f4",
+      "sha256:bd3cdfae1d3fdd83a2231d608969b38b82349777c2fff9a7c12d54f8ac5c9b38",
+      "sha256:4cde6b0bb6f50a5f255eef7b2a42162c661cf776b803225dcac9a659e396bb6b",
+      "sha256:ad51d0769d16ba578106a177987dfe3d2e02c1668c852b795b2f6b024068242a",
+      "sha256:187cfc6d1e3e8a40a5e64653bcd3239c140807dcf1c09e48021178705a5a6139",
+      "sha256:5e387454b02f499442fa024ebdf2a59f0c6deeac75e774e59e3377a79e1e8bb9",
+      "sha256:2a5dca89563e4af5ec5f479f945a33947073c5a673b67d4d03e6c30987cbb0b2",
+      "sha256:d6413d59caa9ba11c90cfda462e9351e2688026ec5a504c80e2894de8746ce9e",
+      "sha256:985eadbef55dd476b4afd11e6ee59a9e4434852683c328d531dc2d775bf1b3a2",
+      "sha256:ea0555596d5f2b89beb5c4f0077873fbb5c03d7db01a330ebf000806627ed89d",
+      "sha256:3a7b7180690206b19d2a576049b920e22d1b14bf0813611aa782c6ee6ca26860"
+    ],
+    "RepoDigests": [
+      "quay.io/prometheus/prometheus@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934"
+    ],
+    "Reference": "quay.io/prometheus/prometheus@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934",
+    "ImageConfig": {
+      "architecture": "arm64",
+      "created": "2026-10-21T14:04:22.335805157Z",
+      "history": [
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build @trixie//base-files/arm64:data_statusd"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build @trixie//netbase/arm64:data_statusd"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build @trixie//tzdata/arm64:data_statusd"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build @trixie//tzdata-legacy/arm64:data_statusd"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build @trixie//media-types/arm64:data_statusd"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:rootfs"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:passwd"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:home"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:group"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:tmp"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //static:nsswitch"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:os_release_debian13"
+        },
+        {
+          "created": "1970-01-01T00:00:00Z",
+          "created_by": "bazel build //common:cacerts_debian13_arm64_tar"
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "ARG ARCH=arm64",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "ARG OS=linux",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.authors=The Prometheus Authors",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.vendor=Prometheus",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.title=Prometheus",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.description=The Prometheus monitoring system and time series database",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.source=https://github.com/prometheus/prometheus",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.url=https://github.com/prometheus/prometheus",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.documentation=https://prometheus.io/docs",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL org.opencontainers.image.licenses=Apache License 2.0",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "LABEL io.prometheus.image.variant=distroless",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:21.029675245Z",
+          "created_by": "COPY documentation/examples/prometheus.yml /etc/prometheus/prometheus.yml # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T14:04:21.036511824Z",
+          "created_by": "COPY LICENSE NOTICE / # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T14:04:21.742186504Z",
+          "created_by": "COPY .build/linux-arm64/prometheus /bin/prometheus # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T14:04:22.327622556Z",
+          "created_by": "COPY .build/linux-arm64/promtool /bin/promtool # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T14:04:22.335805157Z",
+          "created_by": "WORKDIR /prometheus",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T14:04:22.335805157Z",
+          "created_by": "EXPOSE map[9090/tcp:{}]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:22.335805157Z",
+          "created_by": "ENTRYPOINT [\"/bin/prometheus\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T14:04:22.335805157Z",
+          "created_by": "CMD [\"--config.file=/etc/prometheus/prometheus.yml\" \"--storage.tsdb.path=/prometheus\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:e842bc95a0a8664498b7881e537b5929e419d590f5a9954fb7f81c73c20fc6c7",
+          "sha256:621c35e751a51a9a9dc3e80aa0b7fe8be2a93402ea6ccd307d30852cd7776cda",
+          "sha256:763a77745f27b86cf26b97887b6842d83720e63b1c48848c0ba9ee54e351d63a",
+          "sha256:f0d0eff4c2312a7bd6e21797bdfea5eb35f60e76b555ce2b22794424af2cad36",
+          "sha256:275a30dd8ce958b21daa9ad962c6fbc09f98306ee2f486b65c9075dc257b1412",
+          "sha256:4d049f83d9cf21d1f5cc0e11deaf36df02790d0e60c1a3829538fb4b61685368",
+          "sha256:af5aa97ebe6ce1604747ec1e21af7136ded391bcabe4acef882e718a87c86bcc",
+          "sha256:6f1cdceb6a3146f0ccb986521156bef8a422cdbb0863396f7f751f575ba308f4",
+          "sha256:bd3cdfae1d3fdd83a2231d608969b38b82349777c2fff9a7c12d54f8ac5c9b38",
+          "sha256:4cde6b0bb6f50a5f255eef7b2a42162c661cf776b803225dcac9a659e396bb6b",
+          "sha256:ad51d0769d16ba578106a177987dfe3d2e02c1668c852b795b2f6b024068242a",
+          "sha256:187cfc6d1e3e8a40a5e64653bcd3239c140807dcf1c09e48021178705a5a6139",
+          "sha256:5e387454b02f499442fa024ebdf2a59f0c6deeac75e774e59e3377a79e1e8bb9",
+          "sha256:2a5dca89563e4af5ec5f479f945a33947073c5a673b67d4d03e6c30987cbb0b2",
+          "sha256:d6413d59caa9ba11c90cfda462e9351e2688026ec5a504c80e2894de8746ce9e",
+          "sha256:985eadbef55dd476b4afd11e6ee59a9e4434852683c328d531dc2d775bf1b3a2",
+          "sha256:ea0555596d5f2b89beb5c4f0077873fbb5c03d7db01a330ebf000806627ed89d",
+          "sha256:3a7b7180690206b19d2a576049b920e22d1b14bf0813611aa782c6ee6ca26860"
+        ]
+      },
+      "config": {
+        "Cmd": [
+          "--config.file=/etc/prometheus/prometheus.yml",
+          "--storage.tsdb.path=/prometheus"
+        ],
+        "Entrypoint": [
+          "/bin/prometheus"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"
+        ],
+        "Labels": {
+          "io.prometheus.image.variant": "distroless",
+          "org.opencontainers.image.authors": "The Prometheus Authors",
+          "org.opencontainers.image.description": "The Prometheus monitoring system and time series database",
+          "org.opencontainers.image.documentation": "https://prometheus.io/docs",
+          "org.opencontainers.image.licenses": "Apache License 2.0",
+          "org.opencontainers.image.source": "https://github.com/prometheus/prometheus",
+          "org.opencontainers.image.title": "Prometheus",
+          "org.opencontainers.image.url": "https://github.com/prometheus/prometheus",
+          "org.opencontainers.image.vendor": "Prometheus"
+        },
+        "User": "65532",
+        "WorkingDir": "/prometheus",
+        "ExposedPorts": {
+          "9090/tcp": {}
+        },
+        "ArgsEscaped": true
+      }
+    },
+    "Layers": [
+      {
+        "Size": 491520,
+        "Digest": "sha256:25a9dec5011717b6dd295e0eab4b4e784aafd2b282d79173ef9114584c9c6593",
+        "DiffID": "sha256:e842bc95a0a8664498b7881e537b5929e419d590f5a9954fb7f81c73c20fc6c7"
+      },
+      {
+        "Size": 40960,
+        "Digest": "sha256:5b3013706a463509f05fabda3a5f854b1c5f3429561cf9374db6e6681da5493f",
+        "DiffID": "sha256:621c35e751a51a9a9dc3e80aa0b7fe8be2a93402ea6ccd307d30852cd7776cda"
+      },
+      {
+        "Size": 1157120,
+        "Digest": "sha256:7e7bfd057be8b284ab3ec164ef5667119d00b3ac0beff3fe52eb7a4a4255fff4",
+        "DiffID": "sha256:763a77745f27b86cf26b97887b6842d83720e63b1c48848c0ba9ee54e351d63a"
+      },
+      {
+        "Size": 1331200,
+        "Digest": "sha256:bf8083c5c1ec791cb9b3d44a2e69f8cc7e53e05bc65996aa6f2481da26579a25",
+        "DiffID": "sha256:f0d0eff4c2312a7bd6e21797bdfea5eb35f60e76b555ce2b22794424af2cad36"
+      },
+      {
+        "Size": 102400,
+        "Digest": "sha256:9d2753d762cc58b055d94d102989775221df5156b7bec5861353454c308ad197",
+        "DiffID": "sha256:275a30dd8ce958b21daa9ad962c6fbc09f98306ee2f486b65c9075dc257b1412"
+      },
+      {
+        "Size": 1536,
+        "Digest": "sha256:0f8b424aa0b96c1c388a5fd4d90735604459256336853082afb61733438872b5",
+        "DiffID": "sha256:4d049f83d9cf21d1f5cc0e11deaf36df02790d0e60c1a3829538fb4b61685368"
+      },
+      {
+        "Size": 2560,
+        "Digest": "sha256:d557676654e572af3e3173c90e7874644207fda32cd87e9d3d66b5d7b98a7b21",
+        "DiffID": "sha256:af5aa97ebe6ce1604747ec1e21af7136ded391bcabe4acef882e718a87c86bcc"
+      },
+      {
+        "Size": 2560,
+        "Digest": "sha256:d82bc7a76a838c9a4a6025192429c2fed58f73742ef1fb9c8bb7b995fc3b7213",
+        "DiffID": "sha256:6f1cdceb6a3146f0ccb986521156bef8a422cdbb0863396f7f751f575ba308f4"
+      },
+      {
+        "Size": 2560,
+        "Digest": "sha256:68e4cd60e60fed4486d5b4b40b079e57781e828d93d80a7411e8760dcccfbbf7",
+        "DiffID": "sha256:bd3cdfae1d3fdd83a2231d608969b38b82349777c2fff9a7c12d54f8ac5c9b38"
+      },
+      {
+        "Size": 1536,
+        "Digest": "sha256:0783a66ae7492bb16937c7723c534e431404aa3ebbdcaaed65d264a95a266b9e",
+        "DiffID": "sha256:4cde6b0bb6f50a5f255eef7b2a42162c661cf776b803225dcac9a659e396bb6b"
+      },
+      {
+        "Size": 2048,
+        "Digest": "sha256:efae86a3fb38e05e6e2584bc2f48534a0d82f8d9e9a4163d04885d5c65423105",
+        "DiffID": "sha256:ad51d0769d16ba578106a177987dfe3d2e02c1668c852b795b2f6b024068242a"
+      },
+      {
+        "Size": 3072,
+        "Digest": "sha256:411e1c946a02ee44c9adc542515ae29ff58d65149a4a201cbd688297c9900ee4",
+        "DiffID": "sha256:187cfc6d1e3e8a40a5e64653bcd3239c140807dcf1c09e48021178705a5a6139"
+      },
+      {
+        "Size": 276480,
+        "Digest": "sha256:f769d9bdcbc2657e544bb16f42b4e74b2b0bddbca5cfab9c89850992ccfb3256",
+        "DiffID": "sha256:5e387454b02f499442fa024ebdf2a59f0c6deeac75e774e59e3377a79e1e8bb9"
+      },
+      {
+        "Size": 4096,
+        "Digest": "sha256:e1a78dfdd93339386342a4c26c314948564f320925f60b85d8c25b2de336a706",
+        "DiffID": "sha256:2a5dca89563e4af5ec5f479f945a33947073c5a673b67d4d03e6c30987cbb0b2"
+      },
+      {
+        "Size": 18432,
+        "Digest": "sha256:39b7e444de08a25826ccad7bf693e25b0428ef73901bc648acefa64160740bcb",
+        "DiffID": "sha256:d6413d59caa9ba11c90cfda462e9351e2688026ec5a504c80e2894de8746ce9e"
+      },
+      {
+        "Size": 135874560,
+        "Digest": "sha256:5f46835125fbb2275ec87c271aae090264b0de509a98e0ad815cabaeb589d103",
+        "DiffID": "sha256:985eadbef55dd476b4afd11e6ee59a9e4434852683c328d531dc2d775bf1b3a2"
+      },
+      {
+        "Size": 111876096,
+        "Digest": "sha256:107e656a916d8ddc3a23a3a3df3ba60458ce2526e71c3d8e4817c39d9c45067d",
+        "DiffID": "sha256:ea0555596d5f2b89beb5c4f0077873fbb5c03d7db01a330ebf000806627ed89d"
+      },
+      {
+        "Size": 1536,
+        "Digest": "sha256:cc81033e1897a2a8868bbf2064c84254c9933b9e1d2420f86181fc778723ea8e",
+        "DiffID": "sha256:3a7b7180690206b19d2a576049b920e22d1b14bf0813611aa782c6ee6ca26860"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Target": "quay.io/prometheus/prometheus:v3.15.1-distroless@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934 (debian 13.7)",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "DSA-6572-1",
+          "VendorIDs": [
+            "DSA-6572-1"
+          ],
+          "PkgID": "ca-certificates@20250419",
+          "PkgName": "ca-certificates",
+          "PkgIdentifier": {
+            "PURL": "pkg:deb/debian/ca-certificates@20250419?arch=all\u0026distro=debian-13.7",
+            "UID": "77e5d644adcf2579"
+          },
+          "InstalledVersion": "20250419",
+          "FixedVersion": "20250419+deb13u1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:f769d9bdcbc2657e544bb16f42b4e74b2b0bddbca5cfab9c89850992ccfb3256",
+            "DiffID": "sha256:5e387454b02f499442fa024ebdf2a59f0c6deeac75e774e59e3377a79e1e8bb9"
+          },
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Fingerprint": "sha256:d911eaf173dd871101151387785ef786fbc29c6b5fe0ca49beb9352768be017b",
+          "Title": "ca-certificates - security update",
+          "Description": "Description Not Available",
+          "Severity": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "Target": "usr/bin/prometheus",
+      "Class": "lang-pkgs",
+      "Type": "gobinary",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "GO-2026-5932",
+          "PkgID": "golang.org/x/crypto@v0.57.0",
+          "PkgName": "golang.org/x/crypto",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/golang.org/x/crypto@v0.57.0",
+            "UID": "f42dcc21a475f648"
+          },
+          "InstalledVersion": "v0.57.0",
+          "FixedVersion": "0.58.1-0.20261009181718-2f1f834330b2",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5f46835125fbb2275ec87c271aae090264b0de509a98e0ad815cabaeb589d103",
+            "DiffID": "sha256:985eadbef55dd476b4afd11e6ee59a9e4434852683c328d531dc2d775bf1b3a2"
+          },
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:d285e0f51d1eed10d89bbbc0ceb5711af8207de2c8361b2605f26c57a3bd8fb5",
+          "Title": "The golang.org/x/crypto/openpgp package is unmaintained, unsafe by design, and has known security issues",
+          "Description": "The golang.org/x/crypto/openpgp package is unsafe by design, has numerous known security issues, is not maintained, and should not be used.\n\nIf you are required to interoperate with OpenPGP systems and need a maintained package, consider github.com/ProtonMail/go-crypto/openpgp which is a maintained fork that aims to be a drop-in replacement for this package.",
+          "Severity": "UNKNOWN",
+          "References": [
+            "https://go.dev/issue/44226",
+            "https://go.dev/issue/81227",
+            "https://pkg.go.dev/vuln/GO-2026-5932"
+          ]
+        },
+        {
+          "VulnerabilityID": "CVE-2026-78661",
+          "VendorIDs": [
+            "GO-2026-6860"
+          ],
+          "PkgID": "golang.org/x/net@v0.60.0",
+          "PkgName": "golang.org/x/net",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/golang.org/x/net@v0.60.0",
+            "UID": "56b8882c145f1ad5"
+          },
+          "InstalledVersion": "v0.60.0",
+          "FixedVersion": "0.62.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5f46835125fbb2275ec87c271aae090264b0de509a98e0ad815cabaeb589d103",
+            "DiffID": "sha256:985eadbef55dd476b4afd11e6ee59a9e4434852683c328d531dc2d775bf1b3a2"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-78661",
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:e579f43d51dc2425c7f0b13808cb0f04b66a283cbf34d73675650d66c369b17b",
+          "Title": "When coalescing adjacent text nodes in addText and fosterParent, appen ...",
+          "Description": "When coalescing adjacent text nodes in addText and fosterParent, appending to an existing TextNode's Data via string concatenation (n.Data += text) reallocated and copied the accumulated string on every token. Inputs containing many short text runs separated by ignored end tags (such as \"a\u003c/x\u003e\") caused O(n^2) allocations and byte copies. Accumulate coalesced text in per-node byte slices during parsing and materialize Data strings once at the end of parse.",
+          "Severity": "UNKNOWN",
+          "CweIDs": [
+            "CWE-407"
+          ],
+          "References": [
+            "https://go.dev/cl/849365",
+            "https://go.dev/issue/82224",
+            "https://groups.google.com/g/golang-announce/c/sqrs2vTx_Xs",
+            "https://pkg.go.dev/vuln/GO-2026-6860"
+          ],
+          "PublishedDate": "2026-10-27T22:18:05.93Z",
+          "LastModifiedDate": "2026-11-04T17:17:37.673Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-97045",
+          "VendorIDs": [
+            "GO-2026-6866"
+          ],
+          "PkgID": "golang.org/x/net@v0.60.0",
+          "PkgName": "golang.org/x/net",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/golang.org/x/net@v0.60.0",
+            "UID": "56b8882c145f1ad5"
+          },
+          "InstalledVersion": "v0.60.0",
+          "FixedVersion": "0.62.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5f46835125fbb2275ec87c271aae090264b0de509a98e0ad815cabaeb589d103",
+            "DiffID": "sha256:985eadbef55dd476b4afd11e6ee59a9e4434852683c328d531dc2d775bf1b3a2"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-97045",
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:8ac8b32f922cf46653e8b72a92752726a5be739f842b26d4c790d5241e4c934d",
+          "Title": "In childTextNodesAreLiteral, walking up the tree previously stopped at ...",
+          "Description": "In childTextNodesAreLiteral, walking up the tree previously stopped at the nearest foreign ancestor once an HTML integration point was found. However, that integration point may itself be a descendant of an element that was foster-parented into a foreign namespace (such as \u003cmglyph\u003e or \u003cmalignmark\u003e fostered under \u003cmtext\u003e), causing a parser to resolve the subtree in a different foreign namespace upon re-parsing the rendered output. Continue walking the full ancestor chain and verify that every transition from a non-empty namespace occurs at an HTML integration point before emitting literal text.",
+          "Severity": "UNKNOWN",
+          "CweIDs": [
+            "CWE-79"
+          ],
+          "References": [
+            "https://go.dev/cl/855121",
+            "https://go.dev/issue/82622",
+            "https://groups.google.com/g/golang-announce/c/sqrs2vTx_Xs",
+            "https://pkg.go.dev/vuln/GO-2026-6866"
+          ],
+          "PublishedDate": "2026-10-27T22:19:22.613Z",
+          "LastModifiedDate": "2026-11-04T17:17:38.33Z"
+        }
+      ]
+    },
+    {
+      "Target": "usr/bin/promtool",
+      "Class": "lang-pkgs",
+      "Type": "gobinary",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "GO-2026-5932",
+          "PkgID": "golang.org/x/crypto@v0.57.0",
+          "PkgName": "golang.org/x/crypto",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/golang.org/x/crypto@v0.57.0",
+            "UID": "c2c212ebe3c88b98"
+          },
+          "InstalledVersion": "v0.57.0",
+          "FixedVersion": "0.58.1-0.20261009181718-2f1f834330b2",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:107e656a916d8ddc3a23a3a3df3ba60458ce2526e71c3d8e4817c39d9c45067d",
+            "DiffID": "sha256:ea0555596d5f2b89beb5c4f0077873fbb5c03d7db01a330ebf000806627ed89d"
+          },
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:3fab651385994d7a6d43d03055a8d742491cb005ae1b2eb885a28b8e252fccd8",
+          "Title": "The golang.org/x/crypto/openpgp package is unmaintained, unsafe by design, and has known security issues",
+          "Description": "The golang.org/x/crypto/openpgp package is unsafe by design, has numerous known security issues, is not maintained, and should not be used.\n\nIf you are required to interoperate with OpenPGP systems and need a maintained package, consider github.com/ProtonMail/go-crypto/openpgp which is a maintained fork that aims to be a drop-in replacement for this package.",
+          "Severity": "UNKNOWN",
+          "References": [
+            "https://go.dev/issue/44226",
+            "https://go.dev/issue/81227",
+            "https://pkg.go.dev/vuln/GO-2026-5932"
+          ]
+        },
+        {
+          "VulnerabilityID": "CVE-2026-78661",
+          "VendorIDs": [
+            "GO-2026-6860"
+          ],
+          "PkgID": "golang.org/x/net@v0.60.0",
+          "PkgName": "golang.org/x/net",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/golang.org/x/net@v0.60.0",
+            "UID": "8c765c2c85a23ab5"
+          },
+          "InstalledVersion": "v0.60.0",
+          "FixedVersion": "0.62.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:107e656a916d8ddc3a23a3a3df3ba60458ce2526e71c3d8e4817c39d9c45067d",
+            "DiffID": "sha256:ea0555596d5f2b89beb5c4f0077873fbb5c03d7db01a330ebf000806627ed89d"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-78661",
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:c215119e11a603f820d7c496da8146c6e21f821b7a19c1ecf2ead01ceac4f52c",
+          "Title": "When coalescing adjacent text nodes in addText and fosterParent, appen ...",
+          "Description": "When coalescing adjacent text nodes in addText and fosterParent, appending to an existing TextNode's Data via string concatenation (n.Data += text) reallocated and copied the accumulated string on every token. Inputs containing many short text runs separated by ignored end tags (such as \"a\u003c/x\u003e\") caused O(n^2) allocations and byte copies. Accumulate coalesced text in per-node byte slices during parsing and materialize Data strings once at the end of parse.",
+          "Severity": "UNKNOWN",
+          "CweIDs": [
+            "CWE-407"
+          ],
+          "References": [
+            "https://go.dev/cl/849365",
+            "https://go.dev/issue/82224",
+            "https://groups.google.com/g/golang-announce/c/sqrs2vTx_Xs",
+            "https://pkg.go.dev/vuln/GO-2026-6860"
+          ],
+          "PublishedDate": "2026-10-27T22:18:05.93Z",
+          "LastModifiedDate": "2026-11-04T17:17:37.673Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-97045",
+          "VendorIDs": [
+            "GO-2026-6866"
+          ],
+          "PkgID": "golang.org/x/net@v0.60.0",
+          "PkgName": "golang.org/x/net",
+          "PkgIdentifier": {
+            "PURL": "pkg:golang/golang.org/x/net@v0.60.0",
+            "UID": "8c765c2c85a23ab5"
+          },
+          "InstalledVersion": "v0.60.0",
+          "FixedVersion": "0.62.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:107e656a916d8ddc3a23a3a3df3ba60458ce2526e71c3d8e4817c39d9c45067d",
+            "DiffID": "sha256:ea0555596d5f2b89beb5c4f0077873fbb5c03d7db01a330ebf000806627ed89d"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-97045",
+          "DataSource": {
+            "ID": "govulndb",
+            "Name": "The Go Vulnerability Database",
+            "URL": "https://pkg.go.dev/vuln/"
+          },
+          "Fingerprint": "sha256:6d24dfb1cfed969ee1e83fce90c47190bc91e6e18d03587cfbe3e1b70b6522f1",
+          "Title": "In childTextNodesAreLiteral, walking up the tree previously stopped at ...",
+          "Description": "In childTextNodesAreLiteral, walking up the tree previously stopped at the nearest foreign ancestor once an HTML integration point was found. However, that integration point may itself be a descendant of an element that was foster-parented into a foreign namespace (such as \u003cmglyph\u003e or \u003cmalignmark\u003e fostered under \u003cmtext\u003e), causing a parser to resolve the subtree in a different foreign namespace upon re-parsing the rendered output. Continue walking the full ancestor chain and verify that every transition from a non-empty namespace occurs at an HTML integration point before emitting literal text.",
+          "Severity": "UNKNOWN",
+          "CweIDs": [
+            "CWE-79"
+          ],
+          "References": [
+            "https://go.dev/cl/855121",
+            "https://go.dev/issue/82622",
+            "https://groups.google.com/g/golang-announce/c/sqrs2vTx_Xs",
+            "https://pkg.go.dev/vuln/GO-2026-6866"
+          ],
+          "PublishedDate": "2026-10-27T22:19:22.613Z",
+          "LastModifiedDate": "2026-11-04T17:17:38.33Z"
+        }
+      ]
+    }
+  ]
+}

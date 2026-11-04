@@ -1,0 +1,37 @@
+image	sources	ours	scanned	os	os_end_of_life	architecture	critical	critical_fixable	high	high_fixable	medium	medium_fixable	low	low_fixable	unknown	unknown_fixable	why_not_scanned
+localhost:5001/wayline/admin@sha256:3dda83bb7d274aec96f76c019ea206456123dd3e38d09fc98e684d6037017003	wayline	yes	yes	alpine 3.24.3	no	arm64	0	0	0	0	0	0	0	0	0	0	
+localhost:5001/wayline/backend@sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615	wayline	yes	yes	alpine 3.23.3	no	arm64	1	1	10	10	17	16	2	2	0	0	
+localhost:5001/wayline/space@sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c	wayline	yes	yes	alpine 3.24.3	no	arm64	4	4	31	31	22	22	5	5	0	0	
+localhost:5001/wayline/web@sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7	wayline	yes	yes	alpine 3.24.3	no	arm64	0	0	0	0	0	0	0	0	0	0	
+wayline-source-lockfiles	wayline	no	yes	none	no		1	1	31	31	24	24	7	7	0	0	
+docker.io/grafana/alloy@sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2	chart:alloy	no	yes	ubuntu 24.04	no	arm64	0	0	0	0	5	1	1	0	3	3	
+docker.io/grafana/grafana:13.3.0-distroless@sha256:540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df	chart:kube-prometheus-stack	no	yes	debian 13.7	no	arm64	0	0	39	39	99	99	7	7	36	36	
+docker.io/grafana/loki@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28	chart:loki	no	yes	debian 13.7	no	arm64	0	0	0	0	0	0	0	0	4	4	
+docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c	chart:infisical	no	yes	debian 13.7	no	arm64	5	0	89	5	197	7	247	3	11	4	
+docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa	chart:infisical-operator-dev,chart:infisical-operator-prod-sim	no	yes	debian 13.7	no	arm64	0	0	8	8	8	8	0	0	3	3	
+docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984	plane	no	yes	alpine 3.24.3	no	arm64	1	1	25	25	31	31	3	3	1	1	
+docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab	platform	no	yes	alpine 3.24.3	no	arm64	1	1	25	25	31	31	3	3	1	1	
+docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8	platform	no	yes	alpine 3.24.3	no	arm64	0	0	5	5	2	2	1	1	0	0	
+docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281	plane	no	yes	alpine 3.22.2	no	arm64	2	2	70	70	91	91	65	65	3	3	
+docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84	platform	no	yes	alpine 3.21.9	yes	arm64	0	0	0	0	0	0	0	0	0	0	
+docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763	chart:argocd	no	yes	alpine 3.23.5	no	arm64	0	0	8	8	7	7	12	12	2	2	
+docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208	plane	no	yes	alpine 3.24.3	no	arm64	0	0	3	3	0	0	0	0	1	1	
+docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743	plane	no	yes	alpine 3.23.3	no	arm64	1	1	10	10	17	16	2	2	0	0	
+docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5	plane	no	yes	alpine 3.24.3	no	arm64	0	0	3	3	0	0	0	0	1	1	
+docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e	plane	no	yes	alpine 3.24.3	no	arm64	4	4	37	37	32	32	8	8	0	0	
+docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88	plane	no	yes	alpine 3.24.3	no	arm64	4	4	31	31	22	22	5	5	0	0	
+docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26	platform	no	yes	none	no	arm64	0	0	0	0	0	0	0	0	1	1	
+docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885	plane	no	yes	debian 12.15	no	arm64	0	0	1	0	0	0	0	0	7	7	
+docker.io/traefik@sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748	chart:traefik	no	yes	alpine 3.24.3	no	arm64	0	0	0	0	1	1	0	0	1	1	
+docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e	plane	no	yes	alpine 3.24.3	no	arm64	0	0	0	0	0	0	0	0	0	0	
+quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db	chart:argocd	no	yes	ubuntu 26.04	no	arm64	2	2	121	121	172	130	14	10	13	13	
+quay.io/kiwigrid/k8s-sidecar:2.14.3@sha256:52d311dcedd587421a236c4d6c621f05614c40a51386e955e0699dca97ec0880	chart:kube-prometheus-stack	no	yes	alpine 3.24.3	no	arm64	0	0	5	5	3	3	1	1	0	0	
+quay.io/prometheus-operator/prometheus-config-reloader:v0.94.2@sha256:a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71	chart:kube-prometheus-stack	no	yes	none	no	arm64	0	0	0	0	0	0	0	0	3	3	
+quay.io/prometheus-operator/prometheus-operator:v0.94.2@sha256:c7edf0379b7271ef1705dce258d2bb73820e299cc95559369e9f6fc3321639ec	chart:kube-prometheus-stack	no	yes	none	no	arm64	0	0	0	0	0	0	0	0	3	3	
+quay.io/prometheus/alertmanager:v0.34.2@sha256:39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b	chart:kube-prometheus-stack	no	yes	none	no	arm64	0	0	0	0	0	0	0	0	6	6	
+quay.io/prometheus/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13	platform	no	yes	none	no	arm64	0	0	0	0	0	0	0	0	3	3	
+quay.io/prometheus/node-exporter:v1.12.1-distroless@sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106	chart:kube-prometheus-stack	no	yes	debian 13.5	no	arm64	0	0	15	15	15	15	1	1	3	3	
+quay.io/prometheus/prometheus:v3.15.1-distroless@sha256:451a845bae1d51622b41af1780eb2ad911bbb79a9855bc8e9bb67fabbc03f934	chart:kube-prometheus-stack	no	yes	debian 13.7	no	arm64	0	0	0	0	0	0	0	0	7	7	
+quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e	platform	no	yes	none	no	arm64	0	0	18	18	16	16	1	1	3	3	
+registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.20.0@sha256:42cfe3723a5f058171c627537fb57a3ea0f26e4380fa18555a95cb1a1b4cfc5b	chart:kube-prometheus-stack	no	yes	debian 13.6	no	arm64	0	0	10	10	17	17	4	4	3	3	
+registry.k8s.io/metrics-server/metrics-server:v0.9.1@sha256:9b0ba1926e1d3089673f45461c3c1416109dea33b3ba3434048defd380df329b	chart:metrics-server	no	yes	debian 13.7	no	arm64	0	0	5	5	8	8	3	3	3	3	

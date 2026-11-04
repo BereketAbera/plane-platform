@@ -1,0 +1,255 @@
+2026-11-05T00:55:16+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:16+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:16+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T00:55:16+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=72
+2026-11-05T00:55:16+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T00:55:16+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:16+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:17+03:00	INFO	[python] Licenses acquired from one or more METADATA files may be subject to additional terms. Use `--debug` flag to see all affected packages.
+2026-11-05T00:55:18+03:00	INFO	Detected OS	family="alpine" version="3.23.3"
+2026-11-05T00:55:18+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.23" repository="3.23" pkg_num=48
+2026-11-05T00:55:18+03:00	INFO	Number of language-specific files	num=2
+2026-11-05T00:55:18+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T00:55:18+03:00	INFO	[python-pkg] Detecting vulnerabilities...
+2026-11-05T00:55:18+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:18+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:21+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T00:55:21+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=28
+2026-11-05T00:55:21+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T00:55:21+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T00:55:21+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:21+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:21+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T00:55:21+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=72
+2026-11-05T00:55:21+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T00:55:21+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:25+03:00	INFO	[pnpm] Run "pnpm install" to collect the license information of packages	dir="node_modules"
+2026-11-05T00:55:25+03:00	INFO	Suppressing dependencies for development and testing. To display them, try the '--include-dev-deps' flag.
+2026-11-05T00:55:25+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T00:55:25+03:00	INFO	[pnpm] Detecting vulnerabilities...
+2026-11-05T00:55:25+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:25+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:26+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/grafana/alloy@sha256:12ff3a82e402d34b450e7cb0555ff9703da645068dc321b2a98b9f1c110ab9e2" mirror="mirror.gcr.io"
+2026-11-05T00:55:27+03:00	INFO	Detected OS	family="ubuntu" version="24.04"
+2026-11-05T00:55:27+03:00	INFO	[ubuntu] Detecting vulnerabilities...	os_version="24.04" pkg_num=14
+2026-11-05T00:55:27+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T00:55:27+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T00:55:27+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T00:55:27+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:27+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:27+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/grafana/grafana:13.3.0-distroless@sha256:540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df" mirror="mirror.gcr.io"
+2026-11-05T00:55:28+03:00	INFO	Detected OS	family="debian" version="13.7"
+2026-11-05T00:55:28+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=6
+2026-11-05T00:55:28+03:00	INFO	Number of language-specific files	num=16
+2026-11-05T00:55:28+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T00:55:28+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T00:55:28+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T00:55:28+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:28+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:29+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/grafana/loki@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28" mirror="mirror.gcr.io"
+2026-11-05T00:55:53+03:00	INFO	Detected OS	family="debian" version="13.7"
+2026-11-05T00:55:53+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=6
+2026-11-05T00:55:53+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T00:55:53+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T00:55:53+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T00:55:53+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T00:55:53+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T00:55:54+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c" mirror="mirror.gcr.io"
+2026-11-05T01:01:11+03:00	INFO	[javadb] Downloading Java DB...
+2026-11-05T01:01:11+03:00	INFO	[javadb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-java-db:1"
+2026-11-05T01:19:05+03:00	INFO	[javadb] Artifact successfully downloaded	repo="mirror.gcr.io/aquasec/trivy-java-db:1"
+2026-11-05T01:19:05+03:00	INFO	[javadb] Java DB is cached for 3 days. If you want to update the database more frequently, "trivy clean --java-db" command clears the DB cache.
+2026-11-05T01:19:05+03:00	INFO	Detected OS	family="debian" version="13.7"
+2026-11-05T01:19:05+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=181
+2026-11-05T01:19:05+03:00	INFO	Number of language-specific files	num=2
+2026-11-05T01:19:05+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:19:05+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T01:19:05+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:19:06+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:19:06+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:19:07+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa" mirror="mirror.gcr.io"
+2026-11-05T01:19:33+03:00	INFO	Detected OS	family="debian" version="13.7"
+2026-11-05T01:19:33+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=6
+2026-11-05T01:19:33+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:19:33+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:19:33+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:19:33+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:19:33+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:19:34+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984" mirror="mirror.gcr.io"
+2026-11-05T01:21:02+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:21:02+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=45
+2026-11-05T01:21:02+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:21:02+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:21:02+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:21:02+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:21:02+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:21:03+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab" mirror="mirror.gcr.io"
+2026-11-05T01:23:22+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:23:22+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=45
+2026-11-05T01:23:22+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:23:22+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:23:22+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:23:22+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:23:22+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:23:23+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8" mirror="mirror.gcr.io"
+2026-11-05T01:23:30+03:00	WARN	Third-party SBOM may lead to inaccurate vulnerability detection
+2026-11-05T01:23:30+03:00	WARN	Recommend using Trivy to generate SBOMs
+2026-11-05T01:23:31+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:23:31+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=29
+2026-11-05T01:23:31+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:23:31+03:00	INFO	[python-pkg] Detecting vulnerabilities...
+2026-11-05T01:23:31+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:23:31+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:23:32+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281" mirror="mirror.gcr.io"
+2026-11-05T01:24:38+03:00	INFO	Detected OS	family="alpine" version="3.22.2"
+2026-11-05T01:24:38+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.22" repository="3.22" pkg_num=42
+2026-11-05T01:24:38+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T01:24:38+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:24:38+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:24:38+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:24:40+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84" mirror="mirror.gcr.io"
+2026-11-05T01:24:40+03:00	INFO	Detected OS	family="alpine" version="3.21.9"
+2026-11-05T01:24:40+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.21" repository="3.21" pkg_num=19
+2026-11-05T01:24:40+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T01:24:40+03:00	WARN	This OS version is no longer supported by the distribution	family="alpine" version="3.21.9"
+2026-11-05T01:24:40+03:00	WARN	The vulnerability detection may be insufficient because security updates are not provided
+2026-11-05T01:24:40+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:24:40+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:24:41+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763" mirror="mirror.gcr.io"
+2026-11-05T01:25:02+03:00	INFO	Detected OS	family="alpine" version="3.23.5"
+2026-11-05T01:25:02+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.23" repository="3.23" pkg_num=22
+2026-11-05T01:25:02+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T01:25:02+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:25:03+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:25:03+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:25:03+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208" mirror="mirror.gcr.io"
+2026-11-05T01:25:08+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:25:08+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=72
+2026-11-05T01:25:08+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T01:25:08+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:25:08+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:25:08+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:25:09+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743" mirror="mirror.gcr.io"
+2026-11-05T01:25:09+03:00	INFO	Detected OS	family="alpine" version="3.23.3"
+2026-11-05T01:25:09+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.23" repository="3.23" pkg_num=48
+2026-11-05T01:25:09+03:00	INFO	Number of language-specific files	num=2
+2026-11-05T01:25:09+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T01:25:09+03:00	INFO	[python-pkg] Detecting vulnerabilities...
+2026-11-05T01:25:09+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:25:09+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:25:10+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5" mirror="mirror.gcr.io"
+2026-11-05T01:25:21+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:25:21+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=72
+2026-11-05T01:25:21+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T01:25:21+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:25:21+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:25:21+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:25:22+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e" mirror="mirror.gcr.io"
+2026-11-05T01:28:44+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:28:44+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=19
+2026-11-05T01:28:44+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:28:44+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T01:28:44+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:28:44+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:28:45+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88" mirror="mirror.gcr.io"
+2026-11-05T01:28:46+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:28:46+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=28
+2026-11-05T01:28:46+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:28:46+03:00	INFO	[node-pkg] Detecting vulnerabilities...
+2026-11-05T01:28:46+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:28:46+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:28:46+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26" mirror="mirror.gcr.io"
+2026-11-05T01:28:49+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:28:49+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:28:49+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:28:49+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:28:49+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:28:50+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885" mirror="mirror.gcr.io"
+2026-11-05T01:29:04+03:00	INFO	Detected OS	family="debian" version="12.15"
+2026-11-05T01:29:04+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=5
+2026-11-05T01:29:04+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:29:04+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:29:04+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:29:04+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:29:04+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:29:05+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/traefik@sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748" mirror="mirror.gcr.io"
+2026-11-05T01:29:28+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:29:28+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=18
+2026-11-05T01:29:28+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:29:28+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:29:28+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:29:29+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:29:29+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:29:29+03:00	INFO	[remote] Using the mirror registry to get the image	image="docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e" mirror="mirror.gcr.io"
+2026-11-05T01:29:36+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:29:36+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=23
+2026-11-05T01:29:36+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T01:29:36+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:29:36+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:31:13+03:00	INFO	Detected OS	family="ubuntu" version="26.04"
+2026-11-05T01:31:13+03:00	INFO	[ubuntu] Detecting vulnerabilities...	os_version="26.04" pkg_num=139
+2026-11-05T01:31:13+03:00	INFO	Number of language-specific files	num=5
+2026-11-05T01:31:13+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:31:13+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:31:13+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:31:13+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:31:20+03:00	WARN	Third-party SBOM may lead to inaccurate vulnerability detection
+2026-11-05T01:31:20+03:00	WARN	Recommend using Trivy to generate SBOMs
+2026-11-05T01:31:25+03:00	INFO	[python] Licenses acquired from one or more METADATA files may be subject to additional terms. Use `--debug` flag to see all affected packages.
+2026-11-05T01:31:25+03:00	INFO	Detected OS	family="alpine" version="3.24.3"
+2026-11-05T01:31:25+03:00	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=30
+2026-11-05T01:31:25+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:31:25+03:00	INFO	[python-pkg] Detecting vulnerabilities...
+2026-11-05T01:31:25+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:31:25+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:31:32+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:31:32+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:31:32+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:31:32+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:31:32+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:31:41+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:31:41+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:31:41+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:31:41+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:31:41+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:31:59+03:00	INFO	Number of language-specific files	num=2
+2026-11-05T01:31:59+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:31:59+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:31:59+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:31:59+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:32:06+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:32:06+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:32:06+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:32:06+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:32:06+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:32:13+03:00	INFO	Detected OS	family="debian" version="13.5"
+2026-11-05T01:32:13+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=5
+2026-11-05T01:32:13+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:32:13+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:32:13+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:32:13+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:32:13+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:33:22+03:00	INFO	Detected OS	family="debian" version="13.7"
+2026-11-05T01:33:22+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=6
+2026-11-05T01:33:22+03:00	INFO	Number of language-specific files	num=2
+2026-11-05T01:33:22+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:33:22+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:33:22+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:33:22+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:33:29+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:33:29+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:33:29+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:33:29+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:33:29+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:33:39+03:00	INFO	Detected OS	family="debian" version="13.6"
+2026-11-05T01:33:39+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=5
+2026-11-05T01:33:39+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:33:39+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:33:39+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
+2026-11-05T01:33:39+03:00	INFO	Loaded	file_path="/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.o4ZvX6hQvI/trivy.yaml"
+2026-11-05T01:33:39+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T01:33:48+03:00	INFO	Detected OS	family="debian" version="13.7"
+2026-11-05T01:33:48+03:00	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=6
+2026-11-05T01:33:48+03:00	INFO	Number of language-specific files	num=1
+2026-11-05T01:33:48+03:00	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-05T01:33:48+03:00	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.76/guide/scanner/vulnerability#severity-selection for details.
