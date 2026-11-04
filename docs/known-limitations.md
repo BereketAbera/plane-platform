@@ -4,13 +4,13 @@ This page says what the platform is not and what has not been shown. Read it bef
 
 The platform is a customized deployment of open-source Plane Community Edition v1.4.3 (AGPL-3.0), named Wayline, on a local kind cluster. It is production-inspired. It is not production-ready, and this repository makes no such claim.
 
-Written 2026-11-04, mostly against commit `f733b87`, while integration and validation were still running. `[[VERIFY]]` and `[[MEASURE]]` markers show what a later pass must resolve against `docs/evidence/`.
+Written 2026-11-04, mostly against commit `f733b87`, while integration and validation were still running. `VERIFY` and `MEASURE` markers show what a later pass must resolve against `docs/evidence/`.
 
 ## Status
 
 [`docs/validation.md`](validation.md) is the record of what ran. It labels results PASS, FAIL, BLOCKED, or NOT RUN, per contract section 12. If a statement here and an evidence file disagree, the evidence file wins.
 
-When this was written, the only runtime results were the day-1 gates and static checks. The gates cover digest pulls, kindnet enforcing a sentinel policy, and `git://` from a pod. [[VERIFY: day-1 gate output has been copied to docs/evidence/ with date and command]]
+When this was written, the only runtime results were the day-1 gates and static checks. The gates cover digest pulls, kindnet enforcing a sentinel policy, and `git://` from a pod ([evidence](evidence/day1-gates.txt)).
 
 Plane had not been deployed. [[VERIFY: replace this paragraph with the final deployment result and link to evidence]]
 

@@ -6,7 +6,7 @@
 
 The cluster needs branded images that exist only locally, plus many upstream images. Three constraints shaped how they get onto the node.
 
-**`kind load` does not work on this host.** kind runs `ctr images import --all-platforms --digests`. With Docker's containerd image store, which this host uses (`driver-type: io.containerd.snapshotter.v1`), that fails with a missing content digest. This is kind issue #3795, listed in [kind's known issues](https://kind.sigs.k8s.io/docs/user/known-issues/) and re-confirmed on v0.33.0 (research, 2026-11-04). The documented workaround, `docker image save --platform`, reportedly fails on images with attestations, and Plane's image indexes carry attestation manifests. The other workaround turns off the containerd store for the whole host, which would affect unrelated containers. kind issue #2394 separately records that loaded images and digest references do not work together.
+**`kind load` is reported not to work with this host's image store. This platform did not reproduce the failure, because the design never calls it.** kind runs `ctr images import --all-platforms --digests`. With Docker's containerd image store, which this host uses (`driver-type: io.containerd.snapshotter.v1`), that fails with a missing content digest. This is kind issue #3795, listed in [kind's known issues](https://kind.sigs.k8s.io/docs/user/known-issues/) and re-confirmed on v0.33.0 (research, 2026-11-04). The documented workaround, `docker image save --platform`, reportedly fails on images with attestations, and Plane's image indexes carry attestation manifests. The other workaround turns off the containerd store for the whole host, which would affect unrelated containers. kind issue #2394 separately records that loaded images and digest references do not work together.
 
 **Every image is referenced by digest** (contract section 5). So the node has to resolve digests through a registry.
 
@@ -42,7 +42,7 @@ Digests are what make a mirror safe to trust: containerd verifies content agains
 
 ## Consequences
 
-- Branded and upstream images share one mechanism, and the same digest works in both environments.
+- Branded and upstream images share one mechanism, and both environments reference images the same way, by digest.
 - Cached blobs outlive the cluster, so a rebuild should not re-download. [[VERIFY: a second cluster build after kind delete pulls from the local caches rather than upstream]]
 - Disk use grows. The Docker Hub set is 2.28 GiB compressed, summed from registry metadata on 2026-11-04. [[MEASURE: on-disk size of the four registry volumes after a full make up]]
 - `mirror.gcr.io` is not complete. Blob fetches for `plane-live` and the Infisical operator returned 404 there during research, so a pull depends on falling through to Docker Hub. containerd's fallback was read in source, not run at this level of the stack. [[VERIFY: an image with blobs absent from mirror.gcr.io completes through the Docker Hub fallback]]

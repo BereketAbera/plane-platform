@@ -2,7 +2,7 @@
 
 What fails, what survives, how to recover, and how to restore the whole platform into a clean environment.
 
-**Status: NOT RUN.** No failure scenario in this file has been exercised. No restore has run, and Plane has not been deployed. `docs/evidence/` holds no result. Steps are design intent read from the scripts. Every statement that depends on a runtime result carries a `[[VERIFY: ...]]` marker. This platform is local and single-node, and nothing here is a claim of production readiness.
+**Status: NOT RUN.** No failure scenario in this file has been exercised. No restore has run, and Plane has not been deployed. `docs/evidence/` holds no result. Steps are design intent read from the scripts. Every statement that depends on a runtime result carries a `VERIFY` marker. This platform is local and single-node, and nothing here is a claim of production readiness.
 
 ## Principles
 

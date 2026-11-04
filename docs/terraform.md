@@ -5,7 +5,7 @@ does not create the cluster. The application it helps deploy, Wayline, is a cust
 deployment, not an original product.
 
 **Status of this page.** It describes configuration read from the code. Statements that depend on a real apply carry a
-`[[VERIFY]]` marker until [`docs/evidence/`](evidence/README.md) holds the result.
+`VERIFY` marker until [`docs/evidence/`](evidence/README.md) holds the result.
 
 ## What Terraform owns
 

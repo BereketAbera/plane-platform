@@ -4,7 +4,7 @@ Wayline is a customized deployment of open-source Plane Community Edition v1.4.3
 
 This is Pass 1. Everything runs on one laptop, on one kind node. Nothing in the cloud is provisioned or configured. Pass 2 is described in [future-hetzner.md](future-hetzner.md).
 
-**How to read this page.** It describes configuration: what the code asks the system to do. It does not say the system does it. Results live in [validation.md](validation.md) and [evidence/](evidence/README.md). A statement that depends on a runtime result carries a `[[VERIFY]]` marker until evidence exists. Nothing here is a claim of production readiness.
+**How to read this page.** It describes configuration: what the code asks the system to do. It does not say the system does it. Results live in [validation.md](validation.md) and [evidence/](evidence/README.md). A statement that depends on a runtime result carries a `VERIFY` marker until evidence exists. Nothing here is a claim of production readiness.
 
 Names, ownership, and ordering are binding in [platform-contract.md](platform-contract.md). Decision records are in [adr/](adr/). Tradeoffs for each tool are in [technology-choices.md](technology-choices.md). What the two environments share is in [environments.md](environments.md).
 
@@ -203,7 +203,7 @@ Each namespace starts from default-deny for ingress and egress, plus DNS. These 
 
 Nothing in a Plane namespace has a route to the internet, so Plane's telemetry to `telemetry.plane.so` has none. Valkey has no password (chart issue 113), so its policy is its only access control. RabbitMQ's management port and Silo's console stay closed.
 
-These rules only mean something if kindnet enforces them. kindnet evaluates new connections only and fails open with a log line on errors. A day-1 gate run recorded its result in `.local/evidence-raw/day1-gates-2.txt`, which is not yet in `docs/evidence/`. [[VERIFY: copy the day-1 gate 2 result into docs/evidence/ and confirm default-deny blocks a new connection on the final cluster]]
+These rules only mean something if kindnet enforces them. kindnet evaluates new connections only and fails open with a log line on errors. Day-1 gate 2 recorded a default-deny blocking a new connection in a throwaway namespace, with no platform deployed ([evidence](evidence/day1-gates.txt)). [[VERIFY: default-deny blocks a new connection on the final cluster]]
 
 [[VERIFY: full allow and deny matrix in tests/network-policy-matrix.yaml run by make test-netpol]]
 
@@ -405,7 +405,7 @@ flowchart LR
 
 **Metrics.** One Prometheus scrapes everything. Selector settings make it pick up every ServiceMonitor and Probe in every namespace. The per-environment split comes from the namespace label the operator sets, since each Probe and ServiceMonitor lives in its own Plane namespace. Exporters run in the Plane namespaces, not `monitoring`, because each holds that environment's credentials. The contract's namespace table lists exporters under `monitoring`, and this code differs.
 
-**Probes.** Blackbox probes go to Traefik's in-cluster Service with the public host passed as `?hostname=`, so a failed probe means what a failed user request means. Two API probes exist on purpose: `/api/instances/` is cached in Valkey and can answer 200 with Postgres down, while `/api/public/anchor/__probe__/settings/` needs a database connection. Two API probes every 15 seconds stay under Plane's anonymous limit of 30 a minute.
+**Probes.** Blackbox probes go to Traefik's in-cluster Service with the public host passed as `?hostname=`, so a failed probe means what a failed user request means. Two API probes exist on purpose: `/api/instances/` is cached in Valkey and can answer 200 with Postgres down, while `/api/public/anchor/__probe__/settings/` needs a database connection. [[VERIFY: /api/instances/ stays 200 with Postgres stopped, while the anchor route fails]] Two API probes every 15 seconds stay under Plane's anonymous limit of 30 a minute.
 
 **Logs.** Alloy runs as a single Deployment and reads logs through the Kubernetes API. It needs no root, no host path, and no privileged namespace. The cost is more load on the API server and kubelet. `monitoring-agents` and `kube-system` are not collected. Tail positions live in an `emptyDir`, so lines can be lost across an Alloy restart. [[MEASURE: API server CPU and memory with Alloy tailing all pods, against the same period without it]]
 
@@ -438,7 +438,7 @@ Every resource has exactly one owner. If two tools believe they own the same thi
 
 **Terraform does not create the cluster, the node, the registry, or the Git remote.** kind and Compose do, driven by scripts. In Pass 1, Terraform talks only to an existing Kubernetes API and an existing Infisical API. `infrastructure/terraform/environments/dev` and `prod` are untested interface documents for Pass 2. See [terraform.md](terraform.md).
 
-**Argo CD does not manage itself.** A bad sync cannot take down the controller that would apply the fix, and `terraform apply` works while Git is down. The cost is that Argo CD upgrades are not GitOps.
+**Argo CD does not manage itself.** A bad sync cannot take down the controller that would apply the fix, and `terraform apply` does not depend on the Git remote. The cost is that Argo CD upgrades are not GitOps.
 
 **Ownership is per resource, not per namespace.** A Plane namespace holds objects from several owners:
 

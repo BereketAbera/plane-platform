@@ -2,13 +2,13 @@
 
 The application in this project is [Plane Community Edition](https://github.com/makeplane/plane) v1.4.3, written by the Plane team and licensed AGPL-3.0. I did not write it. "Wayline" is the name of this customized deployment. My work is the platform around Plane: the cluster, delivery, secrets, hardening, observability, backups, and tests.
 
-This case study was written before the platform was fully deployed. Sections that report results say what is proven and what is not. Open items carry `[[VERIFY]]` and `[[MEASURE]]` markers until evidence exists, as [the documentation index](README.md#how-to-read-these-documents) explains.
+This case study was written before the platform was fully deployed. Sections that report results say what is proven and what is not. Open items carry `VERIFY` and `MEASURE` markers until evidence exists, as [the documentation index](README.md#how-to-read-these-documents) explains.
 
 ## Problem
 
 Take an existing open-source application with a real set of dependencies (API, workers, scheduler, three frontends, a collaboration server, Postgres, Valkey, RabbitMQ, an S3-compatible store) and run it the way a small team would want to run it in production. That means Git-driven delivery, secrets outside Git, least privilege, restricted network paths, monitoring with alerts that demonstrably reach someone, backups that demonstrably restore, and a promotion path between environments.
 
-The upstream chart works as a starting point but leaves those concerns to the operator. Reading it showed, for example, that its defaults add up to about 14,000 Mi of limits across the app Deployments, with the worker at 12 forks and no limit on the datastores (estimate: a reading of `values.yaml`, not a measurement).
+The upstream chart is a starting point, but it leaves those concerns to the operator. Reading it showed, for example, that its defaults add up to about 14,000 Mi of limits across the app Deployments, with the worker at 12 forks and no limit on the datastores (estimate: a reading of `values.yaml`, not a measurement).
 
 The goal also includes honesty about the result. A local kind cluster cannot be production, so the useful output is a platform that is reproducible, states its limits, and separates what was tested from what was only designed.
 
@@ -47,7 +47,7 @@ Research was not a formality. A skeptical cross-check of seven research reports 
 
 **Response:** `kind load` is forbidden by the contract. Branded images go through a local registry at `localhost:5001`, and every image is referenced by digest. The other workaround disables the containerd store for the whole host, which would have affected unrelated containers.
 
-**Status:** the replacement path was exercised by gate 1, below. [[VERIFY: gate 1 local registry digest pull evidence is in docs/evidence]]
+**Status:** gate 1 recorded PASS for a digest pull from `localhost:5001` ([evidence](evidence/day1-gates.txt)). It pulled a retagged busybox image, not a Wayline image.
 
 ### 2. kindnet can fail open without saying so
 
@@ -59,9 +59,7 @@ Research was not a formality. A skeptical cross-check of seven research reports 
 2. Apply a deny-all ingress policy, and try a new connection from a new pod.
 3. Add an allow rule for one label, and try from a new pod with that label.
 
-The raw capture on 2026-11-04 recorded, for step 2, `client saw: wget: download timed out`, and it listed `table inet kindnet-network-policies` on the node. A timeout is the right signal: a refused connection would mean the packet arrived.
-
-[[VERIFY: gate 2 capture from .local/evidence-raw/day1-gates-2.txt is in docs/evidence with date and command]]
+The [capture](evidence/day1-gates.txt) from 2026-11-04 recorded, for step 2, `client saw: wget: download timed out`, and it listed `table inet kindnet-network-policies` on the node. A timeout is the right signal: a refused connection would mean the packet arrived.
 
 **What the gate does not prove.** These limits are as important as the result:
 
@@ -119,9 +117,7 @@ A related trap: the default relative memory watermark may not detect a cgroup li
 
 ### 7. The gate itself was wrong once
 
-The first day-1 gate run reported 8 passed and 1 failed: pods "cannot resolve plane-git". The failure was in the test, not the platform. Busybox `nslookup` exits non-zero on the first NXDOMAIN from a search domain, even though `git ls-remote` to the same name succeeded in the next check. A trailing dot on the name (`plane-git.`) skips search domains, and the second run recorded 9 passed. Both raw captures were kept. I include this because a green gate is only as good as the gate.
-
-[[VERIFY: day1-gates-1.txt and day1-gates-2.txt are both in docs/evidence and show 8 passed, 1 failed, then 9 passed]]
+The first day-1 gate run reported 8 passed and 1 failed: pods "cannot resolve plane-git". The failure was in the test, not the platform. Busybox `nslookup` exits non-zero on the first NXDOMAIN from a search domain, even though `git ls-remote` to the same name succeeded in the next check. A trailing dot on the name (`plane-git.`) skips search domains, and the second run recorded 9 passed. Both captures are committed: the [first run](evidence/day1-gates-20261104T184733Z.txt) and the [second run](evidence/day1-gates.txt). I include this because a green gate is only as good as the gate.
 
 ### 8. Integration findings from static review
 
@@ -134,13 +130,13 @@ Components built separately can each be correct and still not work together. A s
 
 ## What was validated, with evidence
 
-Status here is deliberately narrow. [validation.md](validation.md) is authoritative. When this was written, `docs/evidence/` was empty, so everything below is either a raw capture awaiting promotion or not yet run.
+Status here is deliberately narrow. [validation.md](validation.md) is authoritative. Everything below is either backed by a file in `docs/evidence/` or not yet run.
 
 ### Run so far: nine checks in three gate groups
 
-`tests/gates/day1.sh` contains gates numbered 1, 2, and 5. Raw capture: `.local/evidence-raw/day1-gates-2.txt`, which is gitignored and has no date or command header.
+`tests/gates/day1.sh` contains gates numbered 1, 2, and 5. Capture: [day1-gates.txt](evidence/day1-gates.txt). The file has no date or command header, so the [evidence index](evidence/README.md#index) records both and says how it inferred them.
 
-| Gate | Check | Raw result |
+| Gate | Check | Result |
 |---|---|---|
 | 1 | `docker.io` digest pull | PASS |
 | 1 | `quay.io` digest pull | PASS |
@@ -151,8 +147,6 @@ Status here is deliberately narrow. [validation.md](validation.md) is authoritat
 | 2 | Allow rule admits the labelled client | PASS |
 | 5 | Pods resolve the Docker-network name `plane-git` | PASS |
 | 5 | `git ls-remote` over `git://` from a pod | PASS |
-
-[[VERIFY: this table matches a capture in docs/evidence, with date and command]]
 
 These nine checks do not cover Plane. Gate 5 used an `alpine/git` pod with no policy applied, so it does not establish that Argo CD's repo-server can fetch through default-deny. Items 3 and 4 of the research's day-1 list (NodePort source at Traefik, API server egress) are not in this script.
 

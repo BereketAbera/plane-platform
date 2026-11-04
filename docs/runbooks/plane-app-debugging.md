@@ -42,7 +42,7 @@ curl -s -w '\nanchor %{http_code}\n' "http://$HOST/api/public/anchor/__probe__/s
 curl -s "http://$HOST/live/health"; echo
 ```
 
-Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres.
+Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]]
 
 | `/api/instances/` | `/api/public/anchor/__probe__/settings/` | Likely |
 |---|---|---|

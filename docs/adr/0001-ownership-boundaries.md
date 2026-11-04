@@ -25,7 +25,7 @@ Every resource has exactly one owner (contract section 4).
 
 The reasons behind the less obvious lines:
 
-- **Terraform installs Argo CD, and Argo CD does not manage itself.** A bad sync cannot take down the controller that would apply the fix, and `terraform apply` works while the Git remote is down.
+- **Terraform installs Argo CD, and Argo CD does not manage itself.** A bad sync cannot take down the controller that would apply the fix, and `terraform apply` does not depend on the Git remote.
 - **AppProjects come from Terraform, not Git.** An Application in Git must not be able to widen its own permissions.
 - **Terraform creates namespaces, and `CreateNamespace=false` everywhere.** PSA labels, quotas and limit ranges must exist before the first workload lands.
 - **AppProjects also enforce the boundary.** `platform` blacklists Namespace, ResourceQuota and LimitRange. The Plane projects additionally blacklist NetworkPolicy and allow no cluster-scoped resources, so a chart that renders one of these fails at sync instead of creating a second owner. [[VERIFY: a sync containing a blacklisted kind is refused by the AppProject]]

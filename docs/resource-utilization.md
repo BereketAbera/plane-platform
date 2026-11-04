@@ -2,7 +2,7 @@
 
 CPU, memory, disk and storage for Wayline, a customized Plane Community Edition v1.4.3 deployment on a local kind cluster.
 
-**No measurement exists yet.** Plane has not been deployed, so every measured cell below is a `[[MEASURE]]` marker. The
+**No measurement exists yet.** Plane has not been deployed, so every measured cell below is a `MEASURE` marker. The
 tables keep three kinds of number apart:
 
 | Label | What it is | Can it be quoted as usage? |

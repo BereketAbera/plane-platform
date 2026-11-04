@@ -5,7 +5,7 @@ kind node.
 
 **Status.** These runbooks were written from the code, the contract and recorded research. None has been followed from
 start to finish on a running platform yet, and [`docs/evidence/`](../evidence/) holds no result for them. Each
-`[[VERIFY: ...]]` marks a step or behaviour that a real run must confirm. Treat the rest as design intent until then. A
+`VERIFY` marks a step or behaviour that a real run must confirm. Treat the rest as design intent until then. A
 successful drill, not this page, is what would show a runbook works.
 
 ## Find the right runbook

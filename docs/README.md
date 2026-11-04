@@ -109,5 +109,3 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | [monitoring/README.md](../monitoring/README.md) | Monitoring layout and Grafana access |
 | [tests/load/README.md](../tests/load/README.md) | The k6 load test |
 | [.github/workflows/README.md](../.github/workflows/README.md) | Workflows, and what GitHub Free does not enforce |
-
-[[VERIFY: every link in this index resolves once all planned documents are committed]]

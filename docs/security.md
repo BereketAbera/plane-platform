@@ -2,7 +2,7 @@
 
 The security posture of a local, single-node, single-operator platform that runs Wayline, a customized Plane Community Edition v1.4.3 deployment, on kind. This is a learning and portfolio platform. Nothing here is a claim of production readiness.
 
-**Status.** This file describes configuration. `docs/evidence/` holds no security result yet. A day-1 gate run exists in raw form at `.local/evidence-raw/day1-gates-2.txt`, covering digest pulls and a basic kindnet default-deny. None of the platform's own NetworkPolicies were loaded in that run. Static checks have run during development, but their output is not in `docs/evidence/` either. Each runtime-dependent statement carries a `[[VERIFY: ...]]` marker.
+**Status.** This file describes configuration. `docs/evidence/` holds one result that bears on security: [day1-gates.txt](evidence/day1-gates.txt), covering digest pulls and a basic kindnet default-deny. None of the platform's own NetworkPolicies were loaded in that run. Static checks have run during development, but their output is not in `docs/evidence/` either. Each runtime-dependent statement carries a `VERIFY` marker.
 
 ## Read this first
 
@@ -55,7 +55,7 @@ The security posture of a local, single-node, single-operator platform that runs
 | Grafana | Role over ConfigMaps in `monitoring` only (`rbac.namespaced: true`) | `helm/values/kube-prometheus-stack.yaml` |
 | Prometheus, its operator, kube-state-metrics, Alloy, Argo CD controller, Traefik | Cluster-wide roles from their charts. Not enumerated or narrowed here | `helm/values/*` |
 
-AppProjects are owned by Terraform and not synced from Git, so an Application in Git cannot widen its own permissions. Each cluster-scoped binding above is deployed under `platform`.
+AppProjects are owned by Terraform and not synced from Git, so a commit cannot edit what a project allows. A commit can still set `project: platform` on a Plane Application, and no policy rule checks that. See scenario 10 in [environments.md](environments.md#failure-scenarios). Each cluster-scoped binding above is deployed under `platform`.
 
 Conftest enforces the token rule. `policy/workloads.rego` denies a workload without `automountServiceAccountToken: false`, except a named allow-list of the two operator Deployments. The allow-list is keyed on name, so a manifest cannot exempt itself through a label.
 
@@ -133,7 +133,7 @@ Known gaps that NetworkPolicy cannot see:
 - The api may reach Traefik, and Traefik routes by Host header. A compromised api could request the other environment's public hostname. Pod-to-pod paths between the environments do not exist, but this path through Traefik does.
 - `kube-system` has no namespace default-deny. It holds kind's own components, which this platform does not own.
 
-A day-1 gate recorded a positive control, a default-deny blocking a new connection, and an allow rule admitting only a labelled client, in a throwaway namespace. [[VERIFY: copy .local/evidence-raw/day1-gates-2.txt into docs/evidence/ with date and command, otherwise remove this statement]]
+A day-1 gate recorded a positive control, a default-deny blocking a new connection, and an allow rule admitting a labelled client, in a throwaway namespace ([evidence](evidence/day1-gates.txt)). The output line says "only", but that step does not re-probe an unlabelled client under the allow rule.
 
 ## Resource limits
 

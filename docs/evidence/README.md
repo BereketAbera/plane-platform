@@ -31,6 +31,9 @@ docs/evidence/
 For example, `net-2-<timestamp>.tsv` for row NET-2. A run that produces a directory, such as the load test, keeps its
 own file names under `<test-id>-<timestamp>/`.
 
+The earlier gate run and the cluster creation log have no row of their own, so they use the step name in place of `<test-id>`,
+and the modification time of the source file in place of the start time. The index says so for each.
+
 ## Getting from a run to a committed file
 
 Scripts write raw output to `.local/evidence-raw/`, which is gitignored. Nothing reaches this directory on its own.
@@ -78,8 +81,9 @@ came from.
 | File | Test rows | Result | Date | Command | Commit | Edits |
 |---|---|---|---|---|---|---|
 | [day1-gates.txt](day1-gates.txt) | G1-1 to G5-2 | 9 PASS, 0 FAIL, as printed by the file | 2026-11-04 21:49:52 +0300, from the modification time of the source file. The output carries no date | `tests/gates/day1.sh`, inferred from the output format. The output does not record the command, or whether `make gates` called it | Script added in `0f7ba03`, committed one second after that time | None. Byte-identical to `.local/evidence-raw/day1-gates-2.txt`. Scanned with gitleaks, and read in full: no secrets. The hashes in it are an image digest and the commit of a throwaway Git repository |
+| [day1-gates-20261104T184733Z.txt](day1-gates-20261104T184733Z.txt) | G5-1, earlier run | 8 PASS, 1 FAIL, as printed by the file | 2026-11-04 21:47:33 +0300, from the modification time of the source file, which is also the time in the name. The output carries no date | `tests/gates/day1.sh`, inferred from the output format, before the fix to its name lookup | Before `0f7ba03`, which holds the fixed script | None. Byte-identical to `.local/evidence-raw/day1-gates-1.txt`. Scanned with gitleaks, and read in full: no secrets |
+| [cluster-up-20261104T184521Z.log](cluster-up-20261104T184521Z.log) | None. Backs the status line in the [README](../../README.md) | Exit status not recorded. The last line reports `cluster ready` | 2026-11-04 21:45:21 +0300, from the modification time of the source file, which is also the time in the name | `scripts/cluster-up.sh`, inferred from the output format | Not recorded | None, so it keeps terminal color codes and the build host's home path. Byte-identical to `.local/evidence-raw/cluster-up-1.log`. Scanned with gitleaks, and read in full: no secrets |
 
-An earlier run of the same gates printed 8 passed and 1 failed. The failing line was "pods resolve the Docker-network
-name". A comment in `tests/gates/day1.sh` attributes that failure to the test itself: busybox `nslookup` exits non-zero on
-the first NXDOMAIN from a search domain, and the fix was a trailing dot on the name. The output of that run is at
-`.local/evidence-raw/day1-gates-1.txt`, which is not committed.
+The earlier gate run printed 8 passed and 1 failed. The failing line was "pods resolve the Docker-network name". A comment
+in `tests/gates/day1.sh` attributes that failure to the test itself: busybox `nslookup` exits non-zero on the first NXDOMAIN
+from a search domain, and the fix was a trailing dot on the name.
