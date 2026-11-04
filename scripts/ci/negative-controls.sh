@@ -23,7 +23,8 @@ git clone --quiet "$ROOT" "$CLONE"
 git -C "$CLONE" remote remove origin
 BASE="$(git -C "$CLONE" rev-parse HEAD)"
 
-# Tools and caches are gitignored. Share them, so no control fetches them again.
+# Tools and caches are gitignored. Share them, so no control fetches them again. KUBECONFIG belongs to
+# the clone and does not exist, so nothing run here can reach a cluster.
 mkdir -p "$CLONE/.tools" "$CLONE/.local" "$LOCAL_DIR/kubeconform-schemas" "$LOCAL_DIR/trivy-cache"
 ln -s "$ROOT/.tools/bin" "$CLONE/.tools/bin"
 ln -s "$LOCAL_DIR/kubeconform-schemas" "$CLONE/.local/kubeconform-schemas"
