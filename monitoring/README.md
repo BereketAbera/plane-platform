@@ -80,4 +80,6 @@ The dump holds password hashes and plaintext API tokens, so `.local/backups` is 
 
 ## Status
 
-Static checks only so far. See the build report; nothing here has run on a cluster.
+Run on the real kind cluster, proved by queries rather than pod status: Prometheus targets and rules,
+Grafana login, datasources and every dashboard query, LogQL through Alloy and Loki, and an alert from
+rule to sink. `scripts/test-alert.sh`, the drill that scales the API to zero, is a separate step.
