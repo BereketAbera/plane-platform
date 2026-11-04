@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: "{{ .Release.Namespace }}"
+  # No resources-finalizer. Removing this release (terraform destroy) must not cascade through
+  # every child Application and delete both Plane environments' data.
+spec:
+  project: platform
+  sources:
+    - repoURL: "{{ .Values.gitRepoURL }}"
+      targetRevision: "{{ .Values.targetRevision }}"
+      path: gitops/applications
+    # The Argo CD route needs Traefik's CRD, so Helm cannot create it at bootstrap. It waits in
+    # this Application's own waves, after the traefik child reports Healthy.
+    - repoURL: "{{ .Values.gitRepoURL }}"
+      targetRevision: "{{ .Values.targetRevision }}"
+      path: gitops/bootstrap/argocd-route
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: "{{ .Release.Namespace }}"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # A Degraded child fails this sync (sync_context.go treats only Degraded as failure), and a
+    # child is often briefly Degraded on first boot. A finite limit would leave the later waves
+    # unsynced until the next commit, so retry without limit.
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

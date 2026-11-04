@@ -1,0 +1,74 @@
+# Contract section 7. No project is managed from Git: an Application in Git must not be able to
+# widen its own permissions.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: Platform services. The only project allowed cluster-scoped resources and NetworkPolicies.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+    - https://traefik.github.io/charts
+    - https://kubernetes-sigs.github.io/metrics-server/
+    - https://prometheus-community.github.io/helm-charts
+    - https://grafana-community.github.io/helm-charts
+    - https://grafana.github.io/helm-charts
+    - https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  # Terraform owns these (contract section 4), so a chart that renders one fails loudly at sync.
+  clusterResourceBlacklist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: plane-dev
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: Plane dev. Namespaced workloads and Infisical CRs in plane-dev only.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: plane-dev
+  # clusterResourceWhitelist is deliberately absent: cluster scope is allow-list, so nothing passes.
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: plane-prod-sim
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: Plane prod-sim. Namespaced workloads and Infisical CRs in plane-prod-sim only.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: plane-prod-sim
+  # clusterResourceWhitelist is deliberately absent: cluster scope is allow-list, so nothing passes.
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: networking.k8s.io
+      kind: NetworkPolicy

@@ -1,0 +1,20 @@
+# Synced by the root Application (see ../chart/templates/root-application.yaml).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    # One wave after traefik (-9), whose health check gates this one.
+    argocd.argoproj.io/sync-wave: "-8"
+    # The dry run at the start of the root sync happens before Traefik's CRD exists.
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`argocd.localhost`)
+      services:
+        - name: argocd-server
+          port: 80

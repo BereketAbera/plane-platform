@@ -1,0 +1,177 @@
+# argo-cd chart 10.11.7. Applied only by infrastructure/terraform/modules/argocd.
+# Lean by design: one replica of each component, no Dex, notifications or ApplicationSet.
+# The admin password is not here. argocd-server generates argocd-initial-admin-secret at first start.
+
+global:
+  domain: argocd.localhost
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+  # The chart defaults this on. Every NetworkPolicy belongs to the platform project (contract
+  # section 7), so the argocd rules live with the rest in gitops/platform/network-policies.
+  networkPolicy:
+    create: false
+
+configs:
+  cm:
+    # The chart would default to https://, and nothing terminates TLS locally (contract section 3).
+    url: http://argocd.localhost
+
+    # Argo CD removed this check in 1.8, so without it a child reports no health and the root's
+    # waves pass straight through. Text from docs/operator-manual/health.md at v3.5.7.
+    # A non-hook task waits on anything except Healthy and Degraded (sync_context.go), so Missing
+    # and Progressing hold the wave, while Degraded fails the root sync and the root's retry reruns it.
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          if obj.status.health.message ~= nil then
+            hs.message = obj.status.health.message
+          end
+        end
+      end
+      return hs
+
+    # Field semantics from infisical-k8-operator/v0.11.16. The operator's own comment says to trust
+    # status.error only once observedGeneration matches, so a stale false must not read as Healthy.
+    resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret: |
+      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+      if obj.status ~= nil and obj.status.observedGeneration ~= nil
+         and obj.status.observedGeneration == obj.metadata.generation then
+        if obj.status.error == true then
+          hs.status = "Degraded"
+          hs.message = "Reconcile failed, see the LastReconcileStatus condition"
+        else
+          hs.status = "Healthy"
+          hs.message = "Secrets synced"
+        end
+      end
+      return hs
+
+    # These two carry no status.observedGeneration and no status.error, only this condition.
+    resource.customizations.health.secrets.infisical.com_InfisicalAuth: |
+      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+            hs.message = c.message
+            if c.status == "True" then
+              hs.status = "Healthy"
+            else
+              hs.status = "Degraded"
+            end
+          end
+        end
+      end
+      return hs
+
+    resource.customizations.health.secrets.infisical.com_InfisicalConnection: |
+      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+            hs.message = c.message
+            if c.status == "True" then
+              hs.status = "Healthy"
+            else
+              hs.status = "Degraded"
+            end
+          end
+        end
+      end
+      return hs
+
+  params:
+    # Traefik reaches the server over plain HTTP. The CLI needs --grpc-web --plaintext.
+    server.insecure: true
+    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 384Mi limit.
+    reposerver.parallelism.limit: 2
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+# The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing.
+applicationSet:
+  replicas: 0
+
+# Memory below totals 360Mi requests and 1280Mi limits for the four running pods. ESTIMATE, unmeasured.
+# No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      memory: 640Mi
+  # Upstream ships this off because restarting an overloaded controller makes things worse
+  # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
+  # thresholds slack enough (5 min) that first-sync load alone should not trip it.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 10
+
+repoServer:
+  replicas: 1
+  # Upstream's own manifest at v3.5.7 sets false. The chart defaults to true.
+  automountServiceAccountToken: false
+  serviceAccount:
+    automountServiceAccountToken: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      memory: 384Mi
+
+server:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 48Mi
+    limits:
+      memory: 192Mi
+
+redis:
+  image:
+    # The chart defaults to ecr-public.aws.com. Same index digest on docker.io, which the node
+    # pulls through the pull-through cache (contract section 5).
+    repository: docker.io/library/redis
+    tag: 8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+  automountServiceAccountToken: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 24Mi
+    limits:
+      memory: 64Mi
+  # The chart ships both off.
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+
+# Helm hook that generates the Redis password into Secret argocd-redis at install time.
+redisSecretInit:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 192Mi
