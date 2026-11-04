@@ -1,0 +1,70 @@
+# Services that deliberately live OUTSIDE the cluster, because they must survive
+# `kind delete cluster`: the image registry, pull-through caches, and the Git remote.
+# In pass 2 these roles move to GHCR and GitHub, and this file goes away.
+name: plane-platform-local
+
+x-registry: &registry
+  # GHCR copy of the official distribution image, so setup does not spend Docker Hub quota.
+  image: ghcr.io/distribution/distribution:3.1.2@sha256:d106962e6fe3fa69c178cec77eeeee5edb626b8df6535b7bd6b95e658a0a5ca9
+  restart: unless-stopped
+  mem_limit: 128m
+  read_only: true
+  tmpfs: [/tmp]
+  networks: [kind]
+
+services:
+  registry:
+    <<: *registry
+    container_name: plane-registry
+    ports: ["127.0.0.1:5001:5000"]
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes: ["registry-data:/var/lib/registry"]
+
+  mirror-docker:
+    <<: *registry
+    container_name: plane-mirror-docker
+    environment:
+      # mirror.gcr.io has no Docker Hub pull quota. Anything it lacks falls through
+      # to Docker Hub via `server` in the containerd hosts.toml.
+      REGISTRY_PROXY_REMOTEURL: https://mirror.gcr.io
+      REGISTRY_PROXY_TTL: "0"
+    volumes: ["mirror-docker-data:/var/lib/registry"]
+
+  mirror-quay:
+    <<: *registry
+    container_name: plane-mirror-quay
+    environment:
+      REGISTRY_PROXY_REMOTEURL: https://quay.io
+      REGISTRY_PROXY_TTL: "0"
+    volumes: ["mirror-quay-data:/var/lib/registry"]
+
+  mirror-k8s:
+    <<: *registry
+    container_name: plane-mirror-k8s
+    environment:
+      REGISTRY_PROXY_REMOTEURL: https://registry.k8s.io
+      REGISTRY_PROXY_TTL: "0"
+    volumes: ["mirror-k8s-data:/var/lib/registry"]
+
+  git:
+    build: ./git-daemon
+    container_name: plane-git
+    restart: unless-stopped
+    mem_limit: 64m
+    read_only: true
+    tmpfs: [/tmp]
+    networks: [kind]
+    volumes:
+      # Read-only by construction. The only writer is `git push` on the host, to the file path.
+      - ${REPO_ROOT:?set by scripts}/.local/git:/srv/git:ro
+
+networks:
+  kind:
+    external: true
+
+volumes:
+  registry-data:
+  mirror-docker-data:
+  mirror-quay-data:
+  mirror-k8s-data:

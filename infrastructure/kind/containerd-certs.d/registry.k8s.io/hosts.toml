@@ -1,0 +1,4 @@
+server = "https://registry.k8s.io"
+
+[host."http://plane-mirror-k8s:5000"]
+  capabilities = ["pull", "resolve"]
