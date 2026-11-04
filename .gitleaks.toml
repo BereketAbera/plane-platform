@@ -1,0 +1,10 @@
+# Extends the default rules. The generic-api-key rule treats a Valkey image tag such as
+# valkey:7.2.15-alpine as a credential, because the name ends in "key". The allowlist matches
+# only that image reference shape, never a whole file, so a real secret nearby is still caught.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Valkey image tags"
+regexTarget = "match"
+regexes = ['''valkey:[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9]+)?''']
