@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Bereket Abera
 # SPDX-License-Identifier: AGPL-3.0-only
-"""Scripted brand edits of upstream's backend files, run once at image build by Dockerfile.backend.
+"""Scripted edits of upstream's backend files, run once at image build by Dockerfile.backend: the brand, the
+telemetry defaults, and the record of the PyJWT this image installs.
 
 Every edit states how many times its text must match. Any mismatch stops the build before a single file
 is written, so an upstream change fails loudly instead of leaving a string behind. This is the record of
