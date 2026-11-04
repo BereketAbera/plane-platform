@@ -180,7 +180,15 @@ query() { # name promql. A failed query records null rather than losing the whol
   jq -cn --arg name "$1" --argjson value "${value:-null}" '{($name): $value}'
 }
 CONTAINERS="namespace=\"$NS\",container!=\"\",container!=\"POD\""
-API='service=~"plane-dev-.*api.*"'
+# Traefik's service label for an IngressRoute is <namespace>-<route>-<sha256 of match, 20 hex>@kubernetescrd,
+# so it never names the backend (measured: monitoring-prometheus-fee5881c234c340f00a9@kubernetescrd).
+# Hash each match that reaches plane-api, or these three queries come back empty and look like no traffic.
+api_services="$(kc -n "$NS" get ingressroute plane-ingress -o json \
+  | jq -r '.spec.routes[] | select(.services[0].name == "plane-api") | .match' \
+  | while IFS= read -r match; do
+      printf '%s-plane-ingress-%s@kubernetescrd\n' "$NS" "$(printf '%s' "$match" | shasum -a 256 | cut -c1-20)"
+    done | paste -sd '|' -)"
+API="service=~\"$api_services\""
 {
   query peak_memory_bytes_by_pod "max_over_time(sum by (pod) (container_memory_working_set_bytes{$CONTAINERS})[$window:15s])"
   query avg_cpu_cores_by_pod "avg_over_time(sum by (pod) (rate(container_cpu_usage_seconds_total{$CONTAINERS}[1m]))[$window:15s])"

@@ -26,6 +26,12 @@ loki:
     retention_period: 72h
     ingestion_rate_mb: 4
     ingestion_burst_size_mb: 8
+  ingester:
+    wal:
+      flush_on_shutdown: true # the chart's own default, which setting wal here would otherwise drop
+      # The default of 4GB is six times this pod's limit. After a crash, a large WAL replayed into
+      # memory would OOM-kill the pod again on every restart. A 1.2 GB WAL took 522 MiB of anon memory.
+      replay_memory_ceiling: 400MB
   compactor:
     working_directory: /var/loki/compactor
     retention_enabled: true
@@ -50,9 +56,13 @@ sidecar:
 singleBinary:
   replicas: 1 # chart default is 0, so nothing deploys without this
   sidecar: false # no ruler in use, so no rules sidecar and no kiwigrid image
+  # Measured at 3.5 MB/s of pushes, about 600 times the real rate, with 8 to 16 concurrent queries:
+  # peak anon 541 MiB against the limit, no OOM kill, no failed push or query.
   resources:
     requests: { cpu: 50m, memory: 192Mi }
     limits: { cpu: "1", memory: 640Mi } # the chart example uses 2 to 4 GiB, so raise this first on an OOMKill
+  extraEnv:
+    - { name: GOMEMLIMIT, value: 560MiB } # collect harder before the limit, not an OOM kill at it
   persistence:
     enabled: true
     size: 2Gi # a label on local-path: only retention bounds this volume
