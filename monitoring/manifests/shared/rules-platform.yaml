@@ -34,22 +34,54 @@ spec:
     - name: platform.argocd
       interval: 30s
       rules:
-        # for: is longer than scripts/test-alert.sh and restore.sh hold self-heal off, so drills
+        # argocd_app_info carries sync_status, health_status, operation and autosync_enabled, and for: starts
+        # again whenever a series' labels change. These two aggregate those away so a flapping Application
+        # still fires. for: is longer than scripts/test-alert.sh and restore.sh hold self-heal off, so drills
         # that pause Argo do not page. A real drift still fires.
         - alert: ArgoAppOutOfSync
-          expr: argocd_app_info{sync_status="OutOfSync"} == 1
+          expr: max by (name, dest_namespace) (argocd_app_info{sync_status="OutOfSync"}) == 1
           for: 15m
           labels: { severity: warning, component: argocd }
           annotations:
             summary: Application {{ $labels.name }} has been out of sync for 15m
         - alert: ArgoAppDegraded
-          expr: argocd_app_info{health_status=~"Degraded|Missing"} == 1
+          expr: max by (name, dest_namespace, health_status) (argocd_app_info{health_status=~"Degraded|Missing"}) == 1
           for: 5m
           labels: { severity: critical, component: argocd }
           annotations:
             summary: Application {{ $labels.name }} is {{ $labels.health_status }}
-        # The counter first appears at 1 on an app's first failure, and increase() reads that as
-        # zero, so a new series also has to count. argocd_app_info has no phase label at v3.5.7.
+        # Every Application sets retry.limit -1, so a failing sync never completes: the controller sets each
+        # failed attempt back to phase Running, and argocd_app_sync_total does not move. What does hold is
+        # .operation, which clears only when an operation completes, and it shows as operation="sync".
+        # Measured on a throwaway Application refused by its project: no condition is set during the loop,
+        # so argocd_app_condition would not help even if it were switched on.
+        #
+        # So "still open" is the signal, and for: separates failing from slow. Sync operations measured on
+        # this cluster: under 2m on a commit (the last wave counts as done once applied), 6 to 10m for a
+        # chart's first boot. plane-dev does fire on a first boot, for its 30-odd minutes waiting on
+        # scripts/infisical-bootstrap.sh. That loop is real, and ArgoAppDegraded fires for it too.
+        # A bad image in the last wave never reaches this rule: its sync succeeds on apply, and
+        # ArgoAppDegraded reports it once the rollout misses its deadline.
+        # max_over_time rides out a controller restart, which would otherwise start for: again.
+        - alert: ArgoSyncFailed
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{operation="sync",name!="root"}[2m])) == 1
+          for: 15m
+          labels: { severity: critical, component: argocd, phase: Running }
+          annotations:
+            summary: Application {{ $labels.name }} has had a sync Running for 15m
+            description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
+        # Root's operation walks every wave, so it stays open while its children come up: 41m measured on a
+        # first boot, and scripts/up.sh allows 50m. A child that is stuck fires the rule above much sooner.
+        - alert: ArgoRootSyncStuck
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{operation="sync",name="root"}[2m])) == 1
+          for: 60m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: The root Application has had a sync Running for 60m
+        # An operation that did complete as Failed or Error: one that was terminated, as argo_wait_idle does,
+        # or an Application with a finite retry limit. Argo CD will not retry that revision by itself. The
+        # counter first appears at 1 on an app's first failure, and increase() reads that as zero, so a new
+        # series also has to count.
         - alert: ArgoSyncFailed
           expr: |
             increase(argocd_app_sync_total{phase=~"Error|Failed"}[15m]) > 0
