@@ -37,9 +37,9 @@ patches:
       - {op: remove, path: /spec/template/spec/containers/0/tty}
       - {op: remove, path: /spec/template/spec/containers/0/stdin}
 
-  # Meets PSA `restricted`. Each patches/*.yaml below supplies the UID its image is built for. None
-  # has run yet (critique gate 11): if one fails, fix it in that workload's patch. Read-only root
-  # waits for the same test, and `restricted` does not require it.
+  # Meets PSA `restricted`, checked with a server-side dry run on the running pods. Each patches/*.yaml
+  # below supplies the UID its image is built for, and all of them have run as those UIDs on the real
+  # cluster. Read-only root has not been tried, and `restricted` does not require it.
   - target: {kind: Deployment|StatefulSet|Job, name: plane-.*}
     patch: |-
       - {op: add, path: /spec/template/spec/automountServiceAccountToken, value: false}
@@ -86,12 +86,15 @@ patches:
         annotations:
           argocd.argoproj.io/sync-wave: "4"
 
-  # The default of 600s delays the Degraded report on a failed rollout, and the failed-deploy drill
-  # waits this long plus 120s. Stay above the longest startup budget (api, worker and beat, 5s x 60
-  # = 300s), because image pull and scheduling count against the same deadline.
+  # Image pulls count against this, and the kubelet pulls one image at a time, so a Deployment also
+  # waits for every pull queued ahead of it. On a cold mirror, wave 3's four new images took 175s, 216s,
+  # 52s and 5s in turn, so the last pod started 448s in. A deadline of 360s failed web, admin and space
+  # on that first boot, and held the sync until a retry. A longer deadline delays the Degraded report
+  # on a bad rollout, and the failed-deploy drill waits this long plus 120s, so this stays at 600s
+  # rather than higher. It also stays above the longest startup budget, 300s for api, worker and beat.
   - target: {kind: Deployment}
     patch: |-
-      - {op: add, path: /spec/progressDeadlineSeconds, value: 360}
+      - {op: add, path: /spec/progressDeadlineSeconds, value: 600}
 
   # Sync at wave 2, never PreSync: Postgres is applied in the Sync phase, wait_for_db does not wait,
   # so a PreSync migrator exhausts its retries against no database and stops a fresh install.
