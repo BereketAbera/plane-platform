@@ -86,6 +86,13 @@ patches:
         annotations:
           argocd.argoproj.io/sync-wave: "4"
 
+  # The default of 600s delays the Degraded report on a failed rollout, and the failed-deploy drill
+  # waits this long plus 120s. Stay above the longest startup budget (api, worker and beat, 5s x 60
+  # = 300s), because image pull and scheduling count against the same deadline.
+  - target: {kind: Deployment}
+    patch: |-
+      - {op: add, path: /spec/progressDeadlineSeconds, value: 360}
+
   # Sync at wave 2, never PreSync: Postgres is applied in the Sync phase, wait_for_db does not wait,
   # so a PreSync migrator exhausts its retries against no database and stops a fresh install.
   # No ttlSecondsAfterFinished: Argo can wait forever on a hook Kubernetes already deleted.
