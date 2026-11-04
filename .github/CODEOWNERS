@@ -1,0 +1,3 @@
+# Requests a review from the owner. On GitHub Free with a private repository this is advisory:
+# protected branches are unavailable, so GitHub does not stop a merge without that review.
+* @BereketAbera
