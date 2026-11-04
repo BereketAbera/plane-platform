@@ -13,8 +13,17 @@ run() { # run <label> <command...>
   if "$@"; then ok "$label"; else warn "$label FAILED"; failed=$((failed + 1)); fi
 }
 
-scripts_to_check() { find scripts tests -type f -name '*.sh' -not -path '*/.terraform/*' -print; }
-dockerfiles() { find apps infrastructure monitoring infisical -type f \( -name 'Dockerfile' -o -name 'Dockerfile.*' -o -name '*.Dockerfile' \) -not -path '*/node_modules/*' 2>/dev/null; }
+# Tracked files and new ones Git would pick up, so CI and make ci see the same set, and something
+# gitignored, such as a fetched upstream source tree, is never linted as if it were ours.
+files_matching() { # files_matching <pathspec...>
+  local file
+  while read -r file; do
+    if [[ -f "$file" ]]; then printf '%s\n' "$file"; fi
+  done < <(git ls-files --cached --others --exclude-standard -- "$@" ':(exclude)helm/plane/vendor/**')
+}
+scripts_to_check() { files_matching '*.sh'; }
+python_files() { files_matching '*.py'; }
+dockerfiles() { files_matching '*Dockerfile' '*Dockerfile.*' ':(exclude)*.dockerignore'; }
 terraform_dirs() { find infrastructure/terraform infisical -type f -name '*.tf' -not -path '*/.terraform/*' -exec dirname {} \; 2>/dev/null | sort -u; }
 terraform_roots() { terraform_dirs | grep -v '/modules/' || true; }
 
@@ -49,10 +58,13 @@ tflint_all() {
   return "$status"
 }
 
-smoke_self_check() {
+python_compile_all() {
   # PYTHONPYCACHEPREFIX keeps __pycache__ out of the tree.
-  PYTHONPYCACHEPREFIX="$(mktemp -d)" python3 -m py_compile tests/e2e/smoke.py &&
-    python3 tests/e2e/smoke.py --help >/dev/null &&
+  python_files | PYTHONPYCACHEPREFIX="$(mktemp -d)" xargs python3 -m py_compile
+}
+
+smoke_self_check() {
+  python3 -B tests/e2e/smoke.py --help >/dev/null &&
     python3 -B tests/e2e/smoke.py --selftest
 }
 
@@ -65,6 +77,7 @@ run "terraform validate" terraform_validate_all
 run "tflint" tflint_all
 run "hadolint" hadolint_all
 run "conftest verify" conftest verify --policy policy --no-color
+run "python compile" python_compile_all
 run "smoke.py self check" smoke_self_check
 
 [[ "$failed" -eq 0 ]] || die "$failed lint check(s) failed"

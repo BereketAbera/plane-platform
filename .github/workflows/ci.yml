@@ -9,9 +9,11 @@ on:
 
 permissions: {}
 
+# A newer push to a pull request replaces the older run. On main each pushed commit keeps its own
+# run, because several can land within a minute and a cancelled run says nothing about its commit.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:

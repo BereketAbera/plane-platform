@@ -1,3 +1,4 @@
-# Requests a review from the owner. On GitHub Free with a private repository this is advisory:
-# protected branches are unavailable, so GitHub does not stop a merge without that review.
+# Not in effect here. GitHub offers code owners on private repositories only on paid plans, and this
+# one is private on GitHub Free, so a pull request requests no review from this file. It is kept
+# because it applies by itself if the plan or the visibility changes. See workflows/README.md.
 * @BereketAbera
