@@ -92,8 +92,8 @@ LITERAL = [
      '"url": "https://github.com/makeplane/plane/blob/preview/LICENSE.txt",',
      '"url": "https://www.gnu.org/licenses/agpl-3.0.html",', 1),
     ("plane/settings/openapi.py", '        {"url": "https://api.plane.so", "description": "Production"},\n', "", 1),
-    # Top-level paths the web image answers itself (AGPL offer and licence texts), as with spaces and god-mode.
-    ("plane/utils/constants.py", '    "accounts",\n', '    "accounts",\n    "source",\n    "licenses",\n', 1),
+    # A top-level path the web image answers itself (the AGPL offer), as with spaces and god-mode.
+    ("plane/utils/constants.py", '    "accounts",\n', '    "accounts",\n    "source",\n', 1),
     # Django admin
     ("templates/admin/base_site.html", "{% trans  'plane Admin' %}", "{% trans 'Wayline Admin' %}", 1),
     ("templates/admin/base_site.html", "{% trans 'Plane Django Admin'  %}", "{% trans 'Wayline Django Admin' %}", 1),

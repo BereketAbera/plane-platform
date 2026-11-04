@@ -32,7 +32,7 @@ A thin layer in `apps/wayline/`, applied on top of the pinned source commit at b
 | Layer | Holds |
 |---|---|
 | Overlay | New files copied in: tokens, fonts, images |
-| Patches | 85 files, +311 -499 lines (measured 2026-11-05), applied with plain `git apply`. A failed hunk stops the build. `--3way` depends on which git objects a machine has, so it moved to a separate rebase path (`patchwork.sh --rebase-from`) |
+| Patches | 85 files, +310 -499 lines (measured 2026-11-05), applied with plain `git apply`. A failed hunk stops the build. `--3way` depends on which git objects a machine has, so it moved to a separate rebase path (`patchwork.sh --rebase-from`) |
 | Codemod | Scripted text replacement at build time. Its output is never committed |
 
 The codemod must never touch SPDX and copyright headers, which are in 3,804 source files.
@@ -57,7 +57,7 @@ The numbers that decided this, from research on 2026-11-04:
 | Candidate patch files touched, v1.3.0 to v1.4.0 | 12 of 65 | GitHub commits API per file |
 | Candidate patch files touched, v1.4.0 to v1.4.3 | 1 of 65 | GitHub commits API per file |
 | Patch size, estimated | About 20 files, 150 to 200 changed lines | Estimate, from listing the edits while reading source. Nothing was built. This was far too low |
-| Patch size, as built | 85 files, +311 -499 lines, 139 hunks | `git apply --numstat`, 2026-11-05 |
+| Patch size, as built | 85 files, +310 -499 lines, 139 hunks | `git apply --numstat`, 2026-11-05 |
 | Patches against other upstream refs | `v1.4.2` and `v1.4.0`: 0 of 7 fail. `v1.3.0`: 4 of 7, 14 files. `preview` (1.5.0, unreleased): 7 of 7, 67 files, and `variables.css` is gone | `apps/wayline/checks/upstream-check.sh`, 2026-11-05 |
 | Disk, native build | 1.3 GiB or less on the host, about 1 GiB in the Docker VM | Estimate, from dependency and output sizes |
 | Disk, upstream's three Dockerfiles | About 5 GiB in the Docker VM | Computed from image and layer sizes |

@@ -602,15 +602,14 @@ index 4c2cf21dc72e8ab14c729c8178177fc7495ae617..9fc199add483977df4b398f3b13b7b32
    },
  ];
 diff --git a/packages/constants/src/workspace.ts b/packages/constants/src/workspace.ts
-index 6083c77195fb5660168ca0e1cdc4a8e2245c7406..92116d20e5b9bd4197dc3342db8a6adb432b7f10 100644
+index 6083c77195fb5660168ca0e1cdc4a8e2245c7406..38155e04b99abad53e665be8a564e3d8ef415b4e 100644
 --- a/packages/constants/src/workspace.ts
 +++ b/packages/constants/src/workspace.ts
-@@ -13,6 +13,8 @@ export const RESTRICTED_URLS: string[] = [
+@@ -13,6 +13,7 @@ export const RESTRICTED_URLS: string[] = [
    "404",
    "accounts",
    "api",
 +  "source",
-+  "licenses",
    "create-workspace",
    "god-mode",
    "installations",
