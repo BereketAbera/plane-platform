@@ -178,8 +178,20 @@ if [[ -n "$(ref_of space)" ]]; then
   wait_http /spaces/ 120 || true
   check_brand_html /spaces/
   check_assets /spaces/ /spaces/assets/
+  # morgan reads req.ip on every page request, so proxy-addr handles this header each time.
+  for forwarded in '203.0.113.9, 198.51.100.7' '::ffff:203.0.113.9' 'not-an-ip, <script>' ''; do
+    check "/spaces/ with X-Forwarded-For '$forwarded'" "$(curl -s -o /dev/null -m 15 -w '%{http_code}' -H "X-Forwarded-For: $forwarded" "$base/spaces/")" 200
+  done
+  check "server still running after those" "$(docker inspect -f '{{.State.Running}}' "$container")" true
   report_process space
   docker rm -f "$container" >/dev/null
+  # Separately, with no network and no CPU limit, because it walks the whole of node_modules.
+  if docker run --rm --network none --user 1000:1000 --entrypoint node "$(ref_of space)" \
+    --experimental-vm-modules --disable-warning=ExperimentalWarning /opt/wayline/space-deps.mjs check; then
+    pass "space-deps.mjs check exit 0"
+  else
+    fail "space-deps.mjs check"
+  fi
 fi
 
 printf '\n%s failure(s) in the frontend images\n' "$failures"

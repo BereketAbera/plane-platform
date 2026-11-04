@@ -642,7 +642,7 @@ Each needs an owner decision before the phase shown. Recommendations are the aut
 | D9 | Public hostname and name | `plane.` vs. a Wayline-named host | Wayline-named host, since the upstream name is not licensed for branding | 2 |
 | D10 | Repository visibility | Public, or a separate source offer | Public | 2 |
 | D11 | Object storage for uploads | Silo in cluster, external S3 | Silo first, since `uploads` is constrained by Plane code | 6 |
-| D12 | `email.py` header | Leave as shipped, or apply upstream's change | Take legal advice. See [docs/agpl-compliance.md](docs/agpl-compliance.md#the-commercial-header-in-emailpy) | 2 |
+| D12 | `email.py` header | Decided for the image on 2026-11-05: it replaces the file with upstream's own AGPL-3.0-only version, pinned by commit, and publishes only to private GHCR packages under the owner's account (`apps/wayline/backend/email-py-decision.txt`). Still open: a public image, because the original stays in its `FROM` layer | Take advice before any public distribution of the backend image, or move to an upstream release that carries the fix. See [docs/agpl-compliance.md](docs/agpl-compliance.md#the-commercial-header-in-emailpy) | 2 |
 | D13 | Plane version at migration | Stay on v1.4.3 or upgrade first | Stay. Change one thing at a time. Security fixes may override this | 1 |
 | D14 | Hosted location and privacy | Hetzner location, data residency | Owner's decision, with legal input if real user data is held | 3 |
 

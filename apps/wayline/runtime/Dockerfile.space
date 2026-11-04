@@ -20,6 +20,12 @@ LABEL org.opencontainers.image.title="wayline-space" \
 RUN rm -rf /app/apps/space/build
 COPY build/ /app/apps/space/build/
 COPY licenses/ /usr/share/licenses/wayline/
+COPY wayline/ /opt/wayline/
+
+# Removes storybook and tinypool, which the server cannot reach, and replaces proxy-addr with 2.0.8 from an
+# integrity-checked tarball. The originals stay in the FROM layer underneath, out of the container's filesystem.
+RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "apply"]
+RUN ["node", "--experimental-vm-modules", "--disable-warning=ExperimentalWarning", "/opt/wayline/space-deps.mjs", "check"]
 
 # Same UID as the hardening patch. Upstream's image runs as root.
 USER 1000

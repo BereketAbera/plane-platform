@@ -29,6 +29,10 @@ echo "== manage.py check"
 docker run --rm --network none "${env_args[@]}" "$image" python manage.py check 2>&1 || status=1
 
 echo
+echo "== manage.py makemigrations --check: the edits must not ask for a migration"
+docker run --rm --network none "${env_args[@]}" "$image" python manage.py makemigrations --check --dry-run 2>&1 || status=1
+
+echo
 echo "== check_image.py"
 mounts=()
 [[ -z "$render_dir" ]] || { mkdir -p "$render_dir"; chmod 777 "$render_dir"; mounts=(-v "$render_dir:/rendered"); }

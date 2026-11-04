@@ -44,12 +44,8 @@ if [[ ! -f "$LIST" ]]; then
   exit 0
 fi
 
-# D12 in PASS2_HANDOFF.md: the backend image carries upstream's email.py, headed LicenseRef-Plane-Commercial.
-# Until the owner decides, that image stays on the local registry. PUSH=no and localhost publish nothing.
-if [[ "$PUSH" == yes && "$PREFIX" != localhost:* && "$PREFIX" != 127.0.0.1:* ]]; then
-  [[ "$(cat apps/wayline/backend/email-py-decision.txt)" != pending ]] \
-    || die "the owner has not decided D12 (apps/wayline/backend/email-py-decision.txt), so nothing goes to $PREFIX"
-fi
+# D12 in PASS2_HANDOFF.md decides where images may go. PUSH=no publishes nothing, so it needs no decision.
+[[ "$PUSH" != yes ]] || apps/wayline/scripts/publish-gate.sh "$PREFIX" || die "not publishing to $PREFIX"
 
 guard_disk
 if [[ "${SKIP_NATIVE_BUILD:-no}" != yes ]]; then

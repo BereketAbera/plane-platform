@@ -39,7 +39,7 @@ Named `NN-area.patch`, zero-padded, lowercase, and applied in numeric order. Num
 | `00-brand-import.patch` | `packages/tailwind-config/index.css`, the one-line import |
 | `01-fonts.patch` | The three `apps/*/app/root.tsx`: drops Inter and IBM Plex Mono imports and the preload |
 | `10-shell.patch` | Full-bleed content, ink shell hooks, active nav hooks, top bar removals |
-| `20-auth.patch` | Split-screen sign-in, sign-up, password and onboarding, auth footer, terms text |
+| `20-auth.patch` | Split-screen sign-in, sign-up, password and onboarding, auth footer, terms text, marketing consent default |
 | `30-surfaces.patch` | Help menu, error page, product updates, edition and upgrade badges, billing page |
 | `40-admin.patch` | God-mode: split sign-in, shell, source link, telemetry default off |
 | `50-space.patch` | Public pages: split sign-in, ink band, source badge, terms text |

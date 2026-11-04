@@ -59,10 +59,16 @@ LITERAL = [
      '"Plane has archived the issue"', '"Wayline has archived the issue"', 1),
     ("plane/bgtasks/issue_activities_task.py",
      '"Plane updated the state to "', '"Wayline updated the state to "', 1),
-    # Default instance name, and telemetry off at registration. The model default stays, so no migration.
+    # Default instance name, and telemetry off at registration, the only place an Instance is created. The model
+    # default stays True, because changing it would call for a migration.
     ("plane/license/management/commands/register_instance.py",
      'instance_name="Plane Community Edition",\n',
      'instance_name="Wayline",\n                is_telemetry_enabled=False,\n', 1),
+    # A setup request that leaves the field out must not switch telemetry on.
+    ("plane/license/api/views/admin.py",
+     'request.POST.get("is_telemetry_enabled", True)', 'request.POST.get("is_telemetry_enabled", False)', 1),
+    # The record of what is installed, which runtime/Dockerfile.backend upgrades. A bump that moves this pin stops here.
+    ("requirements/base.txt", "PyJWT==2.13.0\n", "PyJWT==2.14.0\n", 1),
     # Default sender. The EMAIL_FROM environment variable still takes precedence.
     ("plane/license/utils/instance_value.py",
      '"Team Plane <team@mailer.plane.so>"', f'"{DEFAULT_FROM}"', 1),

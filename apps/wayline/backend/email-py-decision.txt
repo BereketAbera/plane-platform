@@ -1,1 +1,1 @@
-pending
+replace-with-upstream-agpl-private-ghcr-only

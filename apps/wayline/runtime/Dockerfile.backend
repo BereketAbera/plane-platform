@@ -12,13 +12,14 @@ ARG WAYLINE_SOURCE_REF
 
 LABEL org.opencontainers.image.title="wayline-backend" \
       org.opencontainers.image.description="Customized Plane Community Edition backend" \
-      org.opencontainers.image.licenses="AGPL-3.0-only AND LicenseRef-Plane-Commercial" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
       org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
 
-# LicenseRef-Plane-Commercial: upstream's plane/utils/email.py carries that header and ships in this image, in
-# the same tag and public image as everything else. Unresolved until the owner decides, which is D12 in
-# PASS2_HANDOFF.md. Until then scripts/ci/build-images.sh will not publish this image outside the local registry.
+# D12 in PASS2_HANDOFF.md. At v1.4.3, plane/utils/email.py is headed LicenseRef-Plane-Commercial. Upstream relicensed
+# it to AGPL-3.0-only on preview, and the COPY below puts upstream's own file over it, so the label above describes
+# the image's filesystem. The original file is still in the FROM layer underneath, and anyone who unpacks that
+# layer can read it, so scripts/ci/build-images.sh and images.yml publish only to the owner's private GHCR packages.
 
 # Upstream defaults this to a page on its own site, embedded in the "What's new" modal. Empty takes
 # upstream's own fallback.
@@ -27,11 +28,19 @@ ENV INSTANCE_CHANGELOG_URL=
 COPY templates/ /code/templates/
 COPY wayline/ /opt/wayline/
 COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+COPY --chmod=0644 wayline/vendor/email.py /code/plane/utils/email.py
 COPY licenses/ /usr/share/licenses/wayline/
 
 # Fails the build if any string does not match exactly as expected. /opt/wayline/edited-files.txt lists
 # the result and check_image.py proves it.
 RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
+
+# CVE-2026-102268 in the base image's PyJWT. Hash-pinned, a wheel only, and no other package changes.
+RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
+
+# Stops the build if any file under /code carries the commercial header, if email.py is not upstream's AGPL file,
+# or if PyJWT is not the pinned version.
+RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
 
 # Same UID as the hardening patches. Upstream's image has no such user and chmods /code to allow it.
 USER 1000
