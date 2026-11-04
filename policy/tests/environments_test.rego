@@ -75,3 +75,11 @@ test_sync_hook_accepted if {
 test_empty_document_ignored if {
 	count(environments.deny) == 0 with input as {}
 }
+
+test_route_without_a_namespace_rejected if {
+	count(environments.deny) == 1 with input as {"kind": "IngressRoute", "metadata": {"name": "x"}}
+}
+
+test_route_with_a_namespace_accepted if {
+	count(environments.deny) == 0 with input as {"kind": "IngressRoute", "metadata": {"name": "x", "namespace": "plane-dev"}}
+}

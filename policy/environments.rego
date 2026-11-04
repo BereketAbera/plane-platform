@@ -33,3 +33,11 @@ deny contains msg if {
 	input.metadata.annotations["argocd.argoproj.io/hook"] == "PreSync"
 	msg := sprintf("%s: PreSync hook deadlocks a fresh install, use Sync at wave 2", [kube.label(input)])
 }
+
+# The route rules in plane.rego read metadata.namespace. Argo CD would place an object with none in
+# the Application's destination, where those rules would not see it.
+deny contains msg if {
+	input.kind in {"IngressRoute", "IngressRouteTCP", "IngressRouteUDP"}
+	not input.metadata.namespace
+	msg := sprintf("%s %s: a route in rendered manifests must state its namespace", [input.kind, input.metadata.name])
+}

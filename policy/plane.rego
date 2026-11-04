@@ -43,6 +43,56 @@ deny contains msg if {
 	msg := sprintf("%s: route to %s must match /uploads, got %s", [identity, svc.name, route.match])
 }
 
+# Contract section 3: the host each Plane namespace serves.
+environment_hosts := {
+	"plane-dev": "plane.dev.localhost",
+	"plane-prod-sim": "plane.prod-sim.localhost",
+}
+
+# Traefik reads IngressRoutes from every namespace, and plane-dev may create them, so a dev route
+# could capture plane.prod-sim.localhost. A rule stays on its host only when that Host is ANDed at
+# the top: with no Host, or with an OR beside it, the rule also matches other hosts.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	host := environment_hosts[input.metadata.namespace]
+	some route in input.spec.routes
+	not stays_on_host(route.match, host)
+	msg := sprintf("%s: route %q must be limited to %s, with any other condition ANDed to it", [identity, route.match, host_matcher(host)])
+}
+
+# The other direction: only that environment's namespace may name its host.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	some namespace, host in environment_hosts
+	object.get(input.metadata, "namespace", "") != namespace
+	some route in input.spec.routes
+	contains(route.match, host)
+	msg := sprintf("%s: route %q names %s, which only namespace %s may serve", [identity, route.match, host, namespace])
+}
+
+# Traefik applies TCP routers before HTTP routers on an entry point, so HostSNI(`*`) would take all
+# of its traffic. No Plane environment needs one.
+deny contains msg if {
+	input.kind in {"IngressRouteTCP", "IngressRouteUDP"}
+	environment_hosts[object.get(input.metadata, "namespace", "")]
+	msg := sprintf("%s: %s is not allowed in a Plane namespace, because it could take traffic from every host", [identity, input.kind])
+}
+
+host_matcher(host) := sprintf("Host(`%s`)", [host])
+
+stays_on_host(match, host) if match == host_matcher(host)
+
+stays_on_host(match, host) if {
+	prefix := sprintf("%s && ", [host_matcher(host)])
+	startswith(match, prefix)
+	# What is left outside balanced parentheses, to three levels. Anything deeper leaves a parenthesis
+	# behind and is refused, which errs on the safe side.
+	outside := regex.replace(trim_prefix(match, prefix), `\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)`, "")
+	not contains(outside, "||")
+	not contains(outside, "(")
+	not contains(outside, ")")
+}
+
 identity := kube.label(input) if input.metadata.name
 
 else := "document"
