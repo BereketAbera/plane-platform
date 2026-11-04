@@ -8,8 +8,8 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 
 | Row | Result | Basis |
 |---|---|---|
-| CI-1, `ci.yml` on a real runner | PASS | Runs 41903137276, 41907667785, 41907841985: Lint, Manifests and Security all green |
-| CI-2, `make ci` locally | PASS | Exit 0, see the `ci-2` files |
+| CI-1, `ci.yml` on a real runner | PASS | Runs 41903137276, 41907667785, 41907841985, 41909741166: Lint, Manifests and Security all green |
+| CI-2, `make ci` locally | PASS | Exit 0 both times, see the `ci-2` files |
 | CI-3, a failing check goes red | PASS, by another route than the row names | Run 41907873100. No pull request: the defect was planted in the runner's checkout. Not run on `on: pull_request` |
 | CI-4, `images.yml` builds and pushes | NOT RUN | Run 41903137226 built nothing, because `apps/wayline/images.txt` was not on main |
 | CI-5, `images.yml` opens a dev bump | NOT RUN | Follows CI-4. Expect the refusal seen in CI-6 while the setting is off |
@@ -28,6 +28,7 @@ nor the check-run API returns them: `plan-step-summary-check-20261104T204404Z.tx
 | [41903137276](https://github.com/BereketAbera/plane-platform/actions/runs/41903137276) | `ci`, f733b87 | push | success | First real run. It needed no fix on GitHub |
 | [41907667785](https://github.com/BereketAbera/plane-platform/actions/runs/41907667785) | `ci`, ada8dc9 | push | success | After the concurrency and lint changes |
 | [41907841985](https://github.com/BereketAbera/plane-platform/actions/runs/41907841985) | `ci`, b350fdc | push | success | With the temporary probe linted too |
+| [41909741166](https://github.com/BereketAbera/plane-platform/actions/runs/41909741166) | `ci`, 5fdf41d | push | success | After the probe was removed, with this directory in the tree |
 | [41903137226](https://github.com/BereketAbera/plane-platform/actions/runs/41903137226) | `images`, f733b87 | push | success | **Not a build.** It warns that there is nothing to build. It does show `ubuntu-24.04-arm` running in this private repository and `docker login ghcr.io` accepting `GITHUB_TOKEN` |
 | [41905415595](https://github.com/BereketAbera/plane-platform/actions/runs/41905415595) | `promote-prod-sim`, f733b87 | dispatch, no inputs | success | Dev and prod-sim match, so there is nothing to open |
 | [41905513020](https://github.com/BereketAbera/plane-platform/actions/runs/41905513020) | `promote-prod-sim`, f733b87 | dispatch, `image=web`, invented digest | failure, as intended | The digest was never recorded for dev, so `promote.sh` refuses it and no branch is pushed |
@@ -49,7 +50,7 @@ commit that added this README removed them. It wrote no layer, manifest or tag.
 |---|---|---|
 | Manifests check, red on purpose | failure, as intended | A `kind: Secret` appended on the runner made `validate-manifests.sh` exit 1 |
 | Every planted defect, on a real runner | success | `scripts/ci/negative-controls.sh`: 21 of 21 defects caught, each by the check meant to catch it |
-| GHCR with packages write, on arm64 | success | Token 200, then upload session **HTTP 202**. Canceling it answered 405, so GHCR keeps it until it expires. Nothing was uploaded |
+| GHCR with packages write, on arm64 | success | Token 200, then upload session **HTTP 202**. Canceling it answered 405, so the empty session could not be closed from here. Nothing was uploaded to it |
 | GHCR with packages read, the control | success | Same token request, then upload session **HTTP 403**, `DENIED` |
 | GHCR with no packages permission, the control | success | Upload session **HTTP 403**, `DENIED` |
 
@@ -62,6 +63,7 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 | File | What it is |
 |---|---|
 | `ci-2-20261104T201032Z-make-ci.log`, `.rc` | `make ci` in the shared checkout at f733b87, redirected to a file, and its exit code, 0. `README.md`, `docs/README.md` and `docs/case-study.md` were untracked at the time |
+| `ci-2-20261104T204746Z-make-ci.log`, `.rc` | `make ci` in a clean clone of 5fdf41d, redirected to a file, and its exit code, 0 |
 | `ci-3-20261104T202916Z-negative-controls-local.log` | `scripts/ci/negative-controls.sh` on this Mac, in a scratch clone at bc8bb91 plus the changes that became ada8dc9. Start time approximate. The last line is added by the wrapper that ran it |
 | `plan-facts-20261104T204023Z.txt` | Plan, Actions settings, the 403s from branch protection and rulesets, billing rows for this repository, pinned action SHAs compared with their tags. Commands are shown inline |
 | `plan-upstream-image-sizes-20261104T204023Z.txt` | Compressed arm64 sizes of the pinned upstream Plane images. Not Wayline images |
