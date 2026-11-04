@@ -35,6 +35,13 @@ spec:
       namespace: monitoring
       jsonPointers:
         - /data/admin-password
+    # That password feeds this checksum, so without it each regeneration would roll Grafana.
+    - group: apps
+      kind: Deployment
+      name: kps-grafana
+      namespace: monitoring
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
   syncPolicy:
     automated:
       prune: true
