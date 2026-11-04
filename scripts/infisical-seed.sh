@@ -4,6 +4,9 @@
 # or passed in argv. Existing values are never read or overwritten, so rerunning is always safe.
 #
 # Costs 3 requests per environment: list, batch create, verify.
+#
+# SEED_VERIFY_ONLY=yes writes nothing and fails if a secret is missing. That is restored mode: a new
+# value there would not match the Plane data about to be restored.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../infisical/lib/api.sh
@@ -57,6 +60,9 @@ seed_environment() {
   if [[ -z "$missing" ]]; then
     ok "$env: all secrets already exist, nothing written"
     return 0
+  fi
+  if [[ "${SEED_VERIFY_ONLY:-}" == yes ]]; then
+    die "$env: missing from the restored instance: $missing. Refusing to generate them, because new values would not match the Plane data this backup belongs to. Is this the right Infisical backup?"
   fi
 
   for name in $missing; do

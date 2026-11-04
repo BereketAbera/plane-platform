@@ -18,6 +18,9 @@
 #
 # Every step checks real state instead of trusting a log, so RESUME and ROLLBACK are the same code
 # aimed at a different password. The journal holds both values until the rotation finishes.
+#
+# A finished rotation takes an Infisical backup, because an older dump would hold the old PG_PASSWORD
+# (SKIP_BACKUP=yes skips it). If that backup fails the rotation stands, and this exits 3.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../infisical/lib/api.sh
@@ -29,6 +32,7 @@ for arg in "$@"; do
     RESUME=*) RESUME="${arg#RESUME=}" ;;
     ROLLBACK=*) ROLLBACK="${arg#ROLLBACK=}" ;;
     CONFIRM=*) CONFIRM="${arg#CONFIRM=}" ;;
+    SKIP_BACKUP=*) SKIP_BACKUP="${arg#SKIP_BACKUP=}" ;;
     dev | prod-sim) ENV="$arg" ;;
     *) die "unknown argument '$arg'. Usage: scripts/rotate.sh ENV=dev [RESUME=yes|ROLLBACK=yes]" ;;
   esac
@@ -464,3 +468,12 @@ fi
 report_error_window
 finish
 evidence PASS "$ENV: done. Evidence in $EVIDENCE"
+
+if [[ "${SKIP_BACKUP:-}" == yes ]]; then
+  evidence INFO "SKIP_BACKUP=yes: no Infisical backup, so older dumps hold the previous $SECRET_NAME"
+elif "$ROOT/scripts/backup.sh" infisical; then
+  evidence PASS "Infisical backed up, so the newest dump holds the new $SECRET_NAME"
+else
+  evidence FAIL "the rotation is complete and proven, but the Infisical backup after it failed. Run: make backup ENV=infisical. Until then every dump holds the previous $SECRET_NAME"
+  exit 3
+fi

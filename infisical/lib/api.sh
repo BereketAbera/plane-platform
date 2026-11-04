@@ -10,7 +10,10 @@ SECRET_ZERO_DIR="$LOCAL_DIR/secret-zero"
 ADMIN_FILE="$SECRET_ZERO_DIR/infisical-admin.json"
 ADMIN_PASSWORD_FILE="$SECRET_ZERO_DIR/infisical-admin-password"
 MACHINE_FILE="$SECRET_ZERO_DIR/infisical-machine.json"
-export SECRET_ZERO_DIR ADMIN_FILE ADMIN_PASSWORD_FILE MACHINE_FILE
+# Present only while `make restore-clean` is under way. Bootstrap reads it: on a fresh instance it must
+# not create new credentials and values while a restore of the old ones is half done.
+RESTORE_CLEAN_MARKER="$LOCAL_DIR/restore-clean.state"
+export SECRET_ZERO_DIR ADMIN_FILE ADMIN_PASSWORD_FILE MACHINE_FILE RESTORE_CLEAN_MARKER
 
 IA_TMP=""
 IA_STATUS=""
@@ -81,6 +84,12 @@ ia_error() {
     | cut -c1-300 || true
 }
 
+# Prints the admin token's JWT exp in epoch seconds, 0 if it has none. Reads stdin, so no token in argv.
+ia_token_exp() {
+  jq -Rr 'split(".")[1] | gsub("-"; "+") | gsub("_"; "/")
+    | (. + ("=" * ((4 - (length % 4)) % 4))) | @base64d | fromjson | .exp // 0' 2>/dev/null || echo 0
+}
+
 # Loads the admin token for later requests. It carries a JWT exp capped at 90 days, and bootstrap
 # is one-shot, so an expired token cannot be fetched again the same way. See infisical/README.md.
 ia_load_admin() {
@@ -88,8 +97,7 @@ ia_load_admin() {
   [[ -s "$ADMIN_FILE" ]] || die "$ADMIN_FILE is missing. Run scripts/infisical-bootstrap.sh first."
   token="$(jq -er '.token' "$ADMIN_FILE")" || die "$ADMIN_FILE holds no token"
   printf 'Authorization: Bearer %s\n' "$token" > "$IA_TMP/auth"
-  exp="$(printf '%s' "$token" | jq -Rr 'split(".")[1] | gsub("-"; "+") | gsub("_"; "/")
-    | (. + ("=" * ((4 - (length % 4)) % 4))) | @base64d | fromjson | .exp // 0' 2>/dev/null || echo 0)"
+  exp="$(printf '%s' "$token" | ia_token_exp)"
   now="$(date +%s)"
   if [[ "$exp" -gt 0 && "$exp" -le "$now" ]]; then
     die "the Infisical admin token has expired. infisical/README.md, section Recovery, says how to replace it."

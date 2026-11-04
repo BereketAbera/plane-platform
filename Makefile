@@ -57,20 +57,26 @@ scan-images: ## Scan every image the platform runs and report it all. Fails on a
 	@./scripts/ci/scan-images.sh
 
 # ---- failure drills -------------------------------------------------------------------------
-.PHONY: drill-failed-deploy drill-pod-restart
+.PHONY: drill-failed-deploy drill-pod-restart drill-clean-restore
 drill-failed-deploy: ## A bad image reaches dev through Git, the rollout refuses it, a revert restores it. Dev only
 	@./tests/drills/failed-deploy-rollback.sh
 
 drill-pod-restart: ## Restart each StatefulSet pod and prove the data survives: make drill-pod-restart ENV=dev
 	@./tests/drills/pod-restart-persistence.sh "$(ENV)"
 
+drill-clean-restore: ## Back up, DELETE THE CLUSTER, restore everything and prove it: make drill-clean-restore CONFIRM=yes [BACKUP=<id|latest> SKIP_BACKUP=yes] [PLAN_ONLY=yes] [SKIP_E2E=yes]
+	@./tests/drills/clean-restore.sh
+
 # ---- data -----------------------------------------------------------------------------------
-.PHONY: backup restore rotate
+.PHONY: backup restore restore-clean rotate
 backup: ## Back up an environment: make backup ENV=dev|prod-sim|infisical|all [KEEP=3]
 	@./scripts/backup.sh "$(ENV)"
 
 restore: ## Restore: make restore ENV=dev BACKUP=<backup-id|latest> [CONFIRM=yes]
 	@./scripts/restore.sh "$(ENV)" "$(BACKUP)"
+
+restore-clean: ## Bring the whole platform back into a clean environment: make restore-clean BACKUP=<infisical-backup-id|latest> [PLAN_ONLY=yes] [ENVS=dev]
+	@./scripts/restore.sh clean "$(BACKUP)"
 
 rotate: ## Rotate a database credential through Infisical: make rotate ENV=dev [RESUME=yes|ROLLBACK=yes] [CONFIRM=yes]
 	@./scripts/rotate.sh "$(ENV)"

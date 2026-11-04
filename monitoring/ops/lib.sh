@@ -90,10 +90,9 @@ run_job() {
 }
 
 # ------ Argo CD auto-sync ----------------------------------------------------------------------
-# Self-heal reverts a scale in about 5 seconds, so drills and restores must pause it. The root
-# Application has self-heal on the child Application objects too, and would undo a patch to a child,
-# so root is paused first and resumed last. Each app's whole automated block is saved and put back
-# verbatim, which leaves no field behind for root to see as drift.
+# Self-heal reverts a scale in about 5 seconds, so drills and restores must pause it. argo_pause pauses
+# root first and resumes it last. Each app's automated block is saved and put back, without `enabled`,
+# so a run that died paused cannot make the pause permanent.
 ARGO_ROOT_APP="root"
 ARGO_PAUSED_APPS=()
 ARGO_PAUSED_SPECS=()
@@ -101,7 +100,7 @@ ARGO_TERMINATED_APPS=()
 
 argo_pause_app() {
   local app="$1" spec
-  spec="$(kc -n argocd get application "$app" -o json | jq -c '.spec.syncPolicy.automated // empty')"
+  spec="$(kc -n argocd get application "$app" -o json | jq -c '.spec.syncPolicy.automated // empty | del(.enabled)')"
   [[ -n "$spec" ]] || die "Application $app has no automated sync policy, so there is nothing to pause"
   kc -n argocd patch application "$app" --type merge \
     -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}' >/dev/null
@@ -134,16 +133,26 @@ argo_wait_idle() {
   done
 }
 
-argo_pause() { # app
-  log "Pausing auto-sync: $ARGO_ROOT_APP, then $1"
-  argo_pause_app "$ARGO_ROOT_APP"
-  argo_wait_idle "$ARGO_ROOT_APP"
+# One Application, leaving root alone. For a caller that cannot wait for root: during a clean restore
+# root's sync stays Running until plane-dev has its identity Secret, which the restore itself leads to,
+# and terminating it would stop Argo CD retrying that revision. Root does not undo this pause. Measured:
+# root stayed Synced through a hard refresh with a child paused, and `kubectl apply` of the child's
+# manifest, which is what root's retries do, keeps `enabled: false` (evidence-raw/dr-child-pause-1.txt).
+argo_pause_child() { # app
+  log "Pausing auto-sync: $1"
   argo_pause_app "$1"
   argo_wait_idle "$1"
   # Catch anything still reverting the patch before the caller trusts it.
   sleep 5
   [[ "$(kc -n argocd get application "$1" -o json | jq -r '.spec.syncPolicy.automated.enabled')" == false ]] \
     || die "auto-sync on $1 was switched back on by something else"
+}
+
+argo_pause() { # app
+  log "Pausing auto-sync: $ARGO_ROOT_APP"
+  argo_pause_app "$ARGO_ROOT_APP"
+  argo_wait_idle "$ARGO_ROOT_APP"
+  argo_pause_child "$1"
 }
 
 # Safe to call twice, and never fails the script: it runs from traps, and a second error there
