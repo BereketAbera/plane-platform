@@ -1,0 +1,89 @@
+# Unit tests for the rules in monitoring/manifests/shared/rules-*.yaml, run by promtool from
+# scripts/ci/validate-manifests.sh. That script writes each PrometheusRule's spec beside a copy of this
+# file as rules-<name>.yaml, which is what rule_files below means.
+rule_files:
+  - rules-plane.yaml
+  - rules-platform.yaml
+evaluation_interval: 15s
+tests:
+  - name: PlaneApiDown fires after 1m, only for the environment that is down
+    interval: 15s
+    input_series:
+      - series: 'probe_success{namespace="plane-dev",probe="api-instance",instance="i"}'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0'
+      - series: 'probe_success{namespace="plane-prod-sim",probe="api-instance",instance="i"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 45s
+        alertname: PlaneApiDown
+        exp_alerts: []
+      - eval_time: 90s
+        alertname: PlaneApiDown
+        exp_alerts:
+          - exp_labels: { alertname: PlaneApiDown, namespace: plane-dev, probe: api-instance, instance: i, severity: critical, component: api }
+            exp_annotations:
+              summary: Plane API unreachable in plane-dev
+              description: Blackbox probe of /api/instances/ fails. That route is cached in Valkey, so it says nothing about Postgres; see PlaneApiDatabaseProbeFailing.
+  - name: consumers at zero, and a broker with no celery queue at all
+    interval: 30s
+    input_series:
+      - series: 'rabbitmq_detailed_queue_consumers{namespace="plane-dev",queue="celery"}'
+        values: '0x30'
+      - series: 'rabbitmq_identity_info{namespace="plane-dev",metrics_path="/metrics"}'
+        values: '1x30'
+      - series: 'rabbitmq_identity_info{namespace="plane-prod-sim",metrics_path="/metrics"}'
+        values: '1x30'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: PlaneWorkerNoConsumer
+        exp_alerts:
+          - exp_labels: { alertname: PlaneWorkerNoConsumer, namespace: plane-dev, queue: celery, severity: critical, component: worker }
+            exp_annotations: { summary: No Celery consumer on queue celery in plane-dev }
+      - eval_time: 11m
+        alertname: PlaneCeleryQueueMissing
+        exp_alerts:
+          - exp_labels: { alertname: PlaneCeleryQueueMissing, namespace: plane-prod-sim, metrics_path: /metrics, severity: critical, component: worker }
+            exp_annotations: { summary: RabbitMQ is up but has no celery queue in plane-prod-sim }
+  - name: memory saturation joins cAdvisor to the limit
+    interval: 30s
+    input_series:
+      - series: 'container_memory_working_set_bytes{namespace="plane-dev",pod="api-1",container="plane-api",id="/x",image="i",name="n"}'
+        values: '950x30'
+      - series: 'kube_pod_container_resource_limits{namespace="plane-dev",pod="api-1",container="plane-api",resource="memory",uid="u",node="x",unit="byte"}'
+        values: '1000x30'
+      - series: 'container_memory_working_set_bytes{namespace="plane-dev",pod="ok-1",container="ok",id="/y",image="i",name="n"}'
+        values: '100x30'
+      - series: 'kube_pod_container_resource_limits{namespace="plane-dev",pod="ok-1",container="ok",resource="memory",uid="u",node="x",unit="byte"}'
+        values: '1000x30'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ContainerMemorySaturation
+        exp_alerts:
+          - exp_labels: { alertname: ContainerMemorySaturation, namespace: plane-dev, pod: api-1, container: plane-api, severity: warning, component: pod }
+            exp_annotations: { summary: "plane-dev/api-1 container plane-api is at 95% of its memory limit" }
+  - name: Argo sync failure, including the first one for an app
+    interval: 1m
+    input_series:
+      - series: 'argocd_app_sync_total{name="plane-dev",phase="Failed"}'
+        values: '_ _ _ _ _ 1 1 1 1 1'
+      - series: 'argocd_app_info{name="plane-dev",sync_status="OutOfSync",health_status="Degraded"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ArgoSyncFailed
+        exp_alerts:
+          - exp_labels: { alertname: ArgoSyncFailed, name: plane-dev, phase: Failed, severity: critical, component: argocd }
+            exp_annotations: { summary: Application plane-dev had a Failed sync in the last 15m }
+      - eval_time: 6m
+        alertname: ArgoAppDegraded
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, sync_status: OutOfSync, health_status: Degraded, severity: critical, component: argocd }
+            exp_annotations: { summary: Application plane-dev is Degraded }
+      - eval_time: 10m
+        alertname: ArgoAppOutOfSync
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: ArgoAppOutOfSync
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppOutOfSync, name: plane-dev, sync_status: OutOfSync, health_status: Degraded, severity: warning, component: argocd }
+            exp_annotations: { summary: Application plane-dev has been out of sync for 15m }

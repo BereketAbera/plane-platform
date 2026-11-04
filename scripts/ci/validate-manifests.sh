@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Everything Argo CD will be asked to apply, checked without a cluster: render drift, Kubernetes
-# schemas, project policy, and the promotion invariant.
+# schemas, project policy, Prometheus rules, and the promotion invariant.
 # SKIP_CHARTS=yes leaves out the third-party platform charts, which need network and take minutes.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 # shellcheck source=lib-manifests.sh
 source "$(dirname "$0")/lib-manifests.sh"
 
-"$ROOT/scripts/install-tools.sh" helm kustomize kubeconform conftest yq >/dev/null
+"$ROOT/scripts/install-tools.sh" helm kustomize kubeconform conftest yq promtool >/dev/null
 cd "$ROOT"
 
 WORK="$(mktemp -d)"
@@ -73,6 +73,36 @@ check "conftest: rendered Plane" conftest_run environments,gitops,workloads,plan
 check "conftest: platform manifests" conftest_run gitops,workloads,plane "$WORK"/in-repo/*.yaml
 check "promotion invariant" "$ROOT/scripts/ci/check-promoted-digests.sh"
 
+# Prometheus refuses a bad rule file at reload, and the operator's admission webhook is off to save its
+# certificate Job (helm/values/kube-prometheus-stack.yaml), so nothing else checks rules before that.
+rule_files() { # rule_files <directory> <manifest...>: each PrometheusRule's spec, as promtool reads it
+  local out="$1" name
+  shift
+  mkdir -p "$out"
+  while read -r name; do
+    NAME="$name" yq -N 'select(.kind == "PrometheusRule" and .metadata.name == strenv(NAME)) | .spec' "$@" >"$out/rules-$name.yaml"
+  done < <(yq -N -r 'select(.kind == "PrometheusRule") | .metadata.name' "$@" | sort -u)
+}
+
+promtool_check() { # promtool_check <directory> [promtool flag...]: quiet unless it fails
+  local dir="$1" output
+  shift
+  if output="$(promtool check rules "$@" "$dir"/*.yaml 2>&1)"; then
+    ok "$(grep -c SUCCESS <<<"$output") rule file(s) valid"
+  else
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+}
+
+promtool_test() { # promtool_test <directory holding the rule files>
+  cp tests/rules/*.test.yaml "$1/"
+  (cd "$1" && promtool test rules ./*.test.yaml)
+}
+
+rule_files "$WORK/rules" "$WORK"/in-repo/*.yaml
+check "promtool: platform rules" promtool_check "$WORK/rules" --lint-fatal
+check "promtool: rule unit tests" promtool_test "$WORK/rules"
 
 # Third-party charts are configured here but not authored here, so a missing memory limit is reported
 # as a warning. Their values are ours, so the chart must still render and validate, and every image it
@@ -84,6 +114,8 @@ else
   fetch_schemas "$WORK"/charts/*.yaml
   check "kubeconform: platform charts" "${KUBECONFORM[@]}" -ignore-missing-schemas "$WORK/charts"
   check "conftest: platform charts" conftest_run charts,plane "$WORK"/charts/*.yaml
+  rule_files "$WORK/chart-rules" "$WORK"/charts/*.yaml
+  check "promtool: chart rules" promtool_check "$WORK/chart-rules"
 fi
 
 [[ "$failed" -eq 0 ]] || die "$failed manifest check(s) failed"
