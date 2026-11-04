@@ -53,6 +53,45 @@ configs:
       end
       return hs
 
+    # Argo CD's built-in check (resource_customizations/monitoring.coreos.com/Prometheus/health.lua at v3.5.7)
+    # reads NoPodReady as Degraded, and that is every Prometheus start: while its image pulls through the
+    # mirror and through each restart's WAL replay. On the first boot measured, a Degraded child failed the
+    # root sync at once, and the root's retry backoff then outlasted the image pull. So not-ready pods read
+    # as Progressing, and the wave simply waits. Reconciled False stays Degraded: the operator could not
+    # build the pods, so waiting will not help.
+    # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Root holds the wave
+    # either way, and a stopped Prometheus could not fire ArgoAppDegraded in any case.
+    resource.customizations.health.monitoring.coreos.com_Prometheus: |
+      local hs = {status = "Progressing", message = "Waiting for initialization"}
+      if obj.status == nil or obj.status.conditions == nil then
+        return hs
+      end
+      local available = nil
+      local reconcile_failure = nil
+      for _, c in ipairs(obj.status.conditions) do
+        if c.type == "Available" then
+          available = c
+        elseif c.type == "Reconciled" and c.status == "False" then
+          reconcile_failure = c
+        end
+      end
+      if available == nil then
+        return hs
+      end
+      if available.status == "True" then
+        hs.status = "Healthy"
+        hs.message = "All instances are available"
+      elseif reconcile_failure ~= nil then
+        hs.status = "Degraded"
+        hs.message = reconcile_failure.message or reconcile_failure.reason
+      elseif available.reason == "NoPodReady" or available.reason == "SomePodsNotReady" then
+        hs.message = available.reason .. ": " .. (available.message or "")
+      else
+        hs.status = "Degraded"
+        hs.message = available.message or available.reason
+      end
+      return hs
+
     # Field semantics from infisical-k8-operator/v0.11.16. The operator's own comment says to trust
     # status.error only once observedGeneration matches, so a stale false must not read as Healthy.
     resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret: |
