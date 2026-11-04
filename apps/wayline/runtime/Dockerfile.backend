@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1.7
+# Copyright (c) 2026 Bereket Abera
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Serves api, worker, beat and migrator, which all run this image with a different ./bin entrypoint.
+# Context: .build/wayline-dist/backend, filled by apps/wayline/backend/assemble.sh.
+# Index digest from 'docker buildx imagetools inspect makeplane/plane-backend:v1.4.3', 2026-11-04.
+FROM makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+
+ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
+ARG WAYLINE_SOURCE_REF=main
+
+LABEL org.opencontainers.image.title="wayline-backend" \
+      org.opencontainers.image.description="Customized Plane Community Edition backend" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
+      org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
+
+# Upstream defaults this to a page on its own site, embedded in the "What's new" modal. Empty takes
+# upstream's own fallback.
+ENV INSTANCE_CHANGELOG_URL=
+
+COPY templates/ /code/templates/
+COPY wayline/ /opt/wayline/
+COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+
+# Fails the build if any string does not match exactly as expected. /opt/wayline/edited-files.txt lists
+# the result and check_image.py proves it.
+RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
+
+# Same UID as the hardening patches. Upstream's image has no such user and chmods /code to allow it.
+USER 1000

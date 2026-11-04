@@ -1,0 +1,121 @@
+{# Copyright (c) 2023-present Plane Software, Inc. and contributors #}
+{# Modifications copyright (c) 2026 Bereket Abera. Rewritten for the Wayline identity. #}
+{# SPDX-License-Identifier: AGPL-3.0-only #}
+{% extends "emails/_wayline_base.html" %}
+{% block title %}Updates on {{entity_type}}{% endblock %}
+{% block content %}
+<p style="margin:0 0 12px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:16px;letter-spacing:.12em;text-transform:uppercase;color:#B0186E;">{{ issue.issue_identifier }} updates</p>
+<p style="margin:0 0 20px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;overflow-wrap:anywhere;color:#4A5360;">{{workspace}}/<a target="_blank" href="{{project_url}}" style="color:#B0186E;text-decoration:underline;">{{project}}</a>/<a target="_blank" href="{{issue_url}}" style="color:#B0186E;text-decoration:underline;">{{issue.issue_identifier}}</a>: {{ issue.name }}</p>
+{% if actors_involved == 1 %}
+<p style="margin:0 0 16px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#0F1B2D;">{{summary}} <strong>{% if data|length > 0 %} {{ data.0.actor_detail.first_name}} {{data.0.actor_detail.last_name}} {% else %} {{ comments.0.actor_detail.first_name}} {{comments.0.actor_detail.last_name}} {% endif %}</strong>.</p>
+{% else %}
+<p style="margin:0 0 16px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#0F1B2D;">{{summary}} <strong>{% if data|length > 0 %} {{ data.0.actor_detail.first_name}} {{data.0.actor_detail.last_name}} {% else %} {{ comments.0.actor_detail.first_name}} {{comments.0.actor_detail.last_name}} {% endif %}</strong> and others.</p>
+{% endif %}
+<!-- {% if actors_involved == 1 %} {% if data|length > 0 and comments|length == 0 %} <p> <span> {{ data.0.actor_detail.first_name}} {{data.0.actor_detail.last_name }} </span> made {{total_updates}} {% if total_updates > 1 %}updates{% else %}update{% endif %} to the issue. </p> {% elif data|length == 0 and comments|length > 0 %} <p> <span> {{ comments.0.actor_detail.first_name}} {{comments.0.actor_detail.last_name }} </span> added {{total_comments}} new {% if total_comments > 1 %}comments{% else %}comment{% endif %}. </p> {% elif data|length > 0 and comments|length > 0 %} <p> <span> {{ data.0.actor_detail.first_name}} {{data.0.actor_detail.last_name }} </span> made {{total_updates}} {% if total_updates > 1 %}updates{% else %}update{% endif %} and added {{total_comments}} new {% if total_comments > 1 %}comments{% else %}comment{% endif %} on the issue. </p> {% endif %} {% else %} <p> There are {{ total_updates }} new updates and {{total_comments}} new comments on the issue. </p> {% endif %} -->
+{% for update in data %}
+{% if update.changes.name %}
+<p style="margin:0 0 16px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#0F1B2D;">The {{entity_type}} title has been updated to {{ issue.name}}</p>
+{% endif %}
+{% if data %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border:1px solid #CFC9B6;border-radius:2px;">
+<tr><td style="padding:8px 14px;border-bottom:1px solid #CFC9B6;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:16px;letter-spacing:.12em;text-transform:uppercase;color:#B0186E;">Updates</td></tr>
+<tr><td style="padding:12px 14px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px;"><tr>
+<td valign="top">{% if update.actor_detail.avatar_url %} <img src="{{ update.actor_detail.avatar_url }}" width="24" height="24" border="0" alt="" style="display:block;border-radius:2px;" /> {% else %} <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:24px;height:24px;background-color:#0F1B2D;border-radius:2px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:24px;text-align:center;text-transform:uppercase;color:#E7E9EE;">{{ update.actor_detail.first_name.0 }}</td></tr></table> {% endif %}</td>
+<td style="padding:0 0 0 8px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:24px;font-weight:600;color:#0F1B2D;">{{ update.actor_detail.first_name }} {{ update.actor_detail.last_name }}</td>
+<td style="padding:0 0 0 8px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:24px;color:#4A5360;">{{ update.activity_time }}</td>
+</tr></table>
+{% if update.changes.target_date %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Due Date:</td>
+{% if update.changes.target_date.new_value.0 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{{ update.changes.target_date.new_value.0 }}</td>
+{% else %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;text-decoration:line-through;color:#4A5360;">{{ update.changes.target_date.old_value.0 }}</td>
+{% endif %}
+</tr></table>
+{% endif %} {% if update.changes.duplicate %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Duplicate:</td>
+{% if update.changes.duplicate.new_value.0 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% for duplicate in update.changes.duplicate.new_value|slice:":2" %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;color:#0F1B2D;">{{ duplicate }}</span> {% endfor %}</td>
+{% endif %} {% if update.changes.duplicate.new_value.2 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;"><span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.duplicate.new_value|length|add:"-2" }} more</span></td>
+{% endif %} {% if update.changes.duplicate.old_value.0 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% for duplicate in update.changes.duplicate.old_value|slice:":2" %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;text-decoration:line-through;color:#4A5360;">{{ duplicate }}</span> {% endfor %}</td>
+{% endif %} {% if update.changes.duplicate.old_value.2 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;"><span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.duplicate.old_value|length|add:"-2" }} more</span></td>
+{% endif %}
+</tr></table>
+{% endif %} {% if update.changes.assignees %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Assignee:</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% if update.changes.assignees.new_value.0 %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;color:#0F1B2D;">{{update.changes.assignees.new_value.0}}</span> {% endif %} {% if update.changes.assignees.new_value.1 %} <span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.assignees.new_value|length|add:"-1"}} more</span> {% endif %} {% if update.changes.assignees.old_value.0 %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;text-decoration:line-through;color:#4A5360;">{{update.changes.assignees.old_value.0}}</span> {% endif %} {% if update.changes.assignees.old_value.1 %} <span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.assignees.old_value|length|add:"-1"}} more</span> {% endif %}</td>
+</tr></table>
+{% endif %} {% if update.changes.labels %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Labels:</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% if update.changes.labels.new_value.0 %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;color:#0F1B2D;">{{update.changes.labels.new_value.0}}</span> {% endif %} {% if update.changes.labels.new_value.1 %} <span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.labels.new_value|length|add:"-1"}} more</span> {% endif %} {% if update.changes.labels.old_value.0 %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;text-decoration:line-through;color:#4A5360;">{{update.changes.labels.old_value.0}}</span> {% endif %} {% if update.changes.labels.old_value.1 %} <span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.labels.old_value|length|add:"-1"}} more</span> {% endif %}</td>
+</tr></table>
+{% endif %} {% if update.changes.state %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">State:</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;text-decoration:line-through;color:#4A5360;">{{ update.changes.state.old_value.0 }}</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:20px;color:#B0186E;">→</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{{update.changes.state.new_value|last }}</td>
+</tr></table>
+{% endif %} {% if update.changes.link %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Links:</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% for link in update.changes.link.new_value %} <a href="{{link}}" style="color:#B0186E;text-decoration:underline;">{{ link }}</a> {% endfor %} {% if update.changes.link.old_value|length > 0 %} {% if update.changes.link.old_value.0 != "None" %} <span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">2 Links were removed</span> {% endif %} {% endif %}</td>
+</tr></table>
+{% endif %} {% if update.changes.priority %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Priority:</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;"><span style="display:inline-block;padding:0 6px;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;font-weight:500;text-transform:capitalize;{% if update.changes.priority.old_value.0 == 'urgent' %}background-color:#FFDBDC;color:#9E1C20;{% endif %} {% if update.changes.priority.old_value.0 == 'high' %}background-color:#FFE2C7;color:#8F3209;{% endif %} {% if update.changes.priority.old_value.0 == 'medium' %}background-color:#FEFBE9;color:#755600;{% endif %} {% if update.changes.priority.old_value.0 == 'low' %}background-color:#E9F6E9;color:#1F6B32;{% endif %}">{{ update.changes.priority.old_value.0 }}</span></td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:20px;color:#B0186E;">→</td>
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;"><span style="display:inline-block;padding:0 6px;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;font-weight:500;text-transform:capitalize;{% if update.changes.priority.new_value|last == 'urgent' %}background-color:#FFDBDC;color:#9E1C20;{% endif %} {% if update.changes.priority.new_value|last == 'high' %}background-color:#FFE2C7;color:#8F3209;{% endif %} {% if update.changes.priority.new_value|last == 'medium' %}background-color:#FEFBE9;color:#755600;{% endif %} {% if update.changes.priority.new_value|last == 'low' %}background-color:#E9F6E9;color:#1F6B32;{% endif %}">{{ update.changes.priority.new_value|last }}</span></td>
+</tr></table>
+{% endif %} {% if update.changes.blocking.new_value %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr>
+<td valign="top" style="padding:2px 12px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:20px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#4A5360;">Blocking:</td>
+{% if update.changes.blocking.new_value.0 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% for blocking in update.changes.blocking.new_value|slice:":2" %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;color:#0F1B2D;">{{ blocking }}</span> {% endfor %}</td>
+{% endif %} {% if update.changes.blocking.new_value.2 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;"><span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.blocking.new_value|length|add:"-2" }} more</span></td>
+{% endif %} {% if update.changes.blocking.old_value.0 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;">{% for blocking in update.changes.blocking.old_value|slice:":2" %} <span style="display:inline-block;margin:0 4px 2px 0;padding:0 6px;border:1px solid #CFC9B6;border-radius:2px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;text-decoration:line-through;color:#4A5360;">{{ blocking }}</span> {% endfor %}</td>
+{% endif %} {% if update.changes.blocking.old_value.2 %}
+<td valign="top" style="padding:2px 6px 2px 0;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;overflow-wrap:anywhere;color:#0F1B2D;"><span style="display:inline-block;margin:0 4px 2px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:#4A5360;">+{{ update.changes.blocking.old_value|length|add:"-2" }} more</span></td>
+{% endif %}
+</tr></table>
+{% endif %}
+</td></tr>
+</table>
+{% endif %}
+{% endfor %}
+{% if comments.0 %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border:1px solid #CFC9B6;border-radius:2px;">
+<tr><td style="padding:8px 14px;border-bottom:1px solid #CFC9B6;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:16px;letter-spacing:.12em;text-transform:uppercase;color:#B0186E;">Comments</td></tr>
+<tr><td style="padding:12px 14px;">
+{% for comment in comments %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px;"><tr>
+<td valign="top" width="24" style="width:24px;">{% if comment.actor_detail.avatar_url %} <img src="{{ comment.actor_detail.avatar_url }}" width="24" height="24" border="0" alt="" style="display:block;border-radius:2px;" /> {% else %} <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:24px;height:24px;background-color:#0F1B2D;border-radius:2px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:24px;text-align:center;text-transform:uppercase;color:#E7E9EE;">{{ comment.actor_detail.first_name.0 }}</td></tr></table> {% endif %}</td>
+<td valign="top">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="padding:0 0 0 8px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:24px;font-weight:600;color:#0F1B2D;">{{ comment.actor_detail.first_name }} {{ comment.actor_detail.last_name }}</td></tr>
+{% for actor_comment in comment.actor_comments.new_value %}
+<tr><td style="padding:4px 0 0 8px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:22px;overflow-wrap:anywhere;color:#0F1B2D;">{{ actor_comment|safe }}</td></tr>
+{% endfor %}
+</table>
+</td>
+</tr></table>
+{% endfor %}
+</td></tr>
+</table>
+{% endif %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;"><tr><td bgcolor="#B0186E" style="background-color:#B0186E;border-radius:2px;"><a href="{{ issue_url }}" target="_blank" style="display:inline-block;padding:11px 20px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#FFFFFF;text-decoration:none;">View {{entity_type}}</a></td></tr></table>
+{% endblock %}
+{% block note %}
+<p style="margin:0 0 12px;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#4A5360;">This email was sent to <a href="mailto:{{receiver.email}}" style="color:#B0186E;text-decoration:underline;">{{ receiver.email }}</a>. If you'd rather not receive this kind of email, <a href="{{ issue_url }}" style="color:#B0186E;text-decoration:underline;">you can unsubscribe to the {{entity_type}}</a> or <a href="{{ user_preference }}" style="color:#B0186E;text-decoration:underline;">manage your email preferences</a>.</p>
+{% endblock %}

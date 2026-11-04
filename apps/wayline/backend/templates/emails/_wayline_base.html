@@ -1,0 +1,48 @@
+{# Copyright (c) 2023-present Plane Software, Inc. and contributors #}
+{# Modifications copyright (c) 2026 Bereket Abera. Rewritten for the Wayline identity. #}
+{# SPDX-License-Identifier: AGPL-3.0-only #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light" />
+<meta name="supported-color-schemes" content="light" />
+<title>{% block title %}Wayline{% endblock %}</title>
+</head>
+<body bgcolor="#F4F2EA" style="margin:0;padding:0;background-color:#F4F2EA;color:#0F1B2D;font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F4F2EA;">{% block preheader %}{% endblock %}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F4F2EA" style="background-color:#F4F2EA;">
+<tr>
+<td align="center" style="padding:32px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#FBFAF6" style="width:100%;max-width:600px;background-color:#FBFAF6;border:1px solid #CFC9B6;">
+<tr>
+<td bgcolor="#0F1B2D" style="padding:14px 24px;background-color:#0F1B2D;">
+{# The mark: two waypoints joined by a route, drawn in cells so no image is fetched. #}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td valign="middle"><div style="width:8px;height:8px;border:2px solid #E7E9EE;border-radius:50%;font-size:0;line-height:0;"></div></td>
+<td width="24" style="width:24px;font-size:0;line-height:0;"><div style="height:0;border-top:2px dashed #E65AA6;font-size:0;line-height:0;"></div></td>
+<td style="font-size:15px;line-height:15px;color:#E7E9EE;">◆</td>
+<td style="padding-left:10px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#E7E9EE;">Wayline</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:32px 24px 12px;">
+{% block content %}{% endblock %}
+</td>
+</tr>
+<tr>
+<td style="padding:16px 24px;border-top:1px solid #CFC9B6;">
+{% block note %}{% endblock %}
+<p style="margin:0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:16px;letter-spacing:.06em;color:#4A5360;">Wayline. Built on Plane Community Edition.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>
