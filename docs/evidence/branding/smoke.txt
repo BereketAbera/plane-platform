@@ -1,5 +1,5 @@
 
-== web: localhost:5001/wayline/web@sha256:171ba385a650141152d6d70837142c0c357cec7529ca9d75ecf42db4f01a047a
+== web: localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS / title names Wayline
@@ -11,10 +11,10 @@ PASS font content type: font/woff2
 PASS font /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
 PASS SPA route /some-workspace/projects/ status: 200
-PASS SPA route serves index.html: 4429504227754f4ff83884828b8850071e7e080e7e008c35603ce86400494bc3  -
-/source -> 302 https://github.com/BereketAbera/plane-platform/tree/1242134361ffff7ddff5144bc912a98832181401
+PASS SPA route serves index.html: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
+/source -> 302 https://github.com/BereketAbera/plane-platform/tree/8e328a06545030a43066b65112082491311e0048
 PASS /source is a 302 to the repository at a commit
-PASS /source names commit 1242134361ffff7ddff5144bc912a98832181401
+PASS /source names commit 8e328a06545030a43066b65112082491311e0048
 NOTE /source target, followed logged out, answers 404. 404 is expected while the repository is private or the commit is unpushed
 PASS /licenses/LICENSE.txt status: 200
 PASS /licenses/LICENSE.txt content type: text/plain
@@ -25,15 +25,15 @@ PASS manifest names Wayline
 PASS X-Frame-Options: DENY
 uid in container: 101
 PASS web carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 7.539MiB / 64MiB
+memory after these requests: 8.625MiB / 64MiB
 PASS web logs show no permission or fatal errors
 
-== web: localhost:5001/wayline/web@sha256:171ba385a650141152d6d70837142c0c357cec7529ca9d75ecf42db4f01a047a
+== web: localhost:5001/wayline/web@sha256:9d0b40641031fc3cafa4d0cff80f91289026777c034c370507eb44875779673f
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS web also runs without the chart's emptyDirs
 
-== admin: localhost:5001/wayline/admin@sha256:d95b4e604977fb62701faa2f489fb0ff790f146aee69230bbe0c3da30fb3da4a
+== admin: localhost:5001/wayline/admin@sha256:2198daa96d9361eae378ca562cd8c4716e04ba693f01f8511163fa85b4b698ba
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS /god-mode/ answers 200 after about 1 s
 PASS /god-mode/ title names Wayline
@@ -45,15 +45,15 @@ PASS font content type: font/woff2
 PASS font /god-mode/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
 PASS SPA route /god-mode/general/ status: 200
-PASS SPA route serves god-mode index.html: 947db9784eb348d1a881bae447fc6b229c553217c75ac8bafe15071f7c6f312a  -
+PASS SPA route serves god-mode index.html: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
 uid in container: 101
 PASS admin carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 3.379MiB / 64MiB
+memory after these requests: 3.391MiB / 64MiB
 PASS admin logs show no permission or fatal errors
 
-== space: localhost:5001/wayline/space@sha256:73a19dd1d2fde47c721e913a7cff583111c535f89bc022b5b911c494d284c8dc
+== space: localhost:5001/wayline/space@sha256:19f1fac2700ecf5a1eda326904d20f25b8e7d20101890c9732be7a09badb8ce8
 run as uid 1000, memory 256m, cpus 0.25, cap-drop ALL, no-new-privileges
-PASS /spaces/ answers 200 after about 9 s
+PASS /spaces/ answers 200 after about 8 s
 PASS /spaces/ title names Wayline
 PASS /spaces/ has no upstream brand
 PASS stylesheet /spaces/assets/globals-BbMWYMN9.css status: 200
@@ -62,20 +62,58 @@ PASS font /spaces/assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2 st
 PASS font content type: font/woff2
 PASS font /spaces/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
+PASS /spaces/ with X-Forwarded-For '203.0.113.9, 198.51.100.7': 200
+PASS /spaces/ with X-Forwarded-For '::ffff:203.0.113.9': 200
+PASS /spaces/ with X-Forwarded-For 'not-an-ip, <script>': 200
+PASS /spaces/ with X-Forwarded-For '': 200
+PASS server still running after those: true
 uid in container: 1000
 PASS space carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 134.9MiB / 256MiB
+memory after these requests: 79.82MiB / 256MiB
 PASS space logs show no permission or fatal errors
+
+== What the server bundle imports
+30 static imports and 25 import() or require() of a package, across 533 bundle files
+131 packages reachable from them and from @react-router/serve
+PASS every import and required dependency resolves
+PASS storybook and tinypool are not reachable
+PASS no bundle file mentions storybook or tinypool
+note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+
+== What is gone from the store
+PASS storybook is gone
+PASS tinypool is gone
+PASS proxy-addr@2.0.7 is gone
+PASS nothing links to them
+
+== proxy-addr, as express resolves it
+PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+PASS a plain IPv4 subnet still trusts its own addresses
+
+== X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
+
+space-deps: 0 failed
+PASS space-deps.mjs check exit 0
 
 0 failure(s) in the frontend images
 
-== backend: localhost:5001/wayline/backend@sha256:2e5e574957be703fa8233dee9f3254e1e887569d0b88b6002556453a8003fc97
+== backend: localhost:5001/wayline/backend@sha256:cd6302a9cc04aa8badcaba102fe6ed6b091c56f666af514595a6e9a6ba34d72e
 == docker image inspect
-id=sha256:2e5e574957be703fa8233dee9f3254e1e887569d0b88b6002556453a8003fc97 arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+id=sha256:cd6302a9cc04aa8badcaba102fe6ed6b091c56f666af514595a6e9a6ba34d72e arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
 == base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 == manage.py check
 System check identified no issues (0 silenced).
+
+== manage.py makemigrations --check: the edits must not ask for a migration
+/usr/local/lib/python3.12/site-packages/django/core/management/commands/makemigrations.py:161: RuntimeWarning: Got an error checking a consistent migration history performed for database connection 'default': connection failed: connection to server at "127.0.0.1", port 1 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+  warnings.warn(
+No changes detected
 
 == check_image.py
 
@@ -88,6 +126,16 @@ PASS entrypoint /code/bin/docker-entrypoint-beat.sh
 PASS entrypoint /code/bin/docker-entrypoint-migrator.sh
 PASS /code/plane/static/logos/Logo.png is Wayline's sha256 16f7b58bae95
 PASS no stale bytecode under /code/plane
+
+== Licence headers under /code
+PASS no file under /code contains LicenseRef-Plane-Commercial 707 files read
+PASS /code/plane/utils/email.py carries AGPL-3.0-only
+PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+
+== PyJWT as installed
+PASS PyJWT is 2.14.0
+PASS one copy installed: ['2.14.0']
+PASS pip check No broken requirements found.
 
 == Compile every edited Python file
 PASS compile plane/api/views/issue.py
@@ -102,6 +150,7 @@ PASS compile plane/bgtasks/user_email_update_task.py
 PASS compile plane/bgtasks/workspace_invitation_task.py
 PASS compile plane/bgtasks/workspace_seed_task.py
 PASS compile plane/db/management/commands/test_email.py
+PASS compile plane/license/api/views/admin.py
 PASS compile plane/license/api/views/configuration.py
 PASS compile plane/license/management/commands/register_instance.py
 PASS compile plane/license/utils/instance_value.py
@@ -117,6 +166,8 @@ PASS json plane/seeds/data/projects.json valid, no brand or hotlink
 == Telemetry default at registration (static: reads the create() call)
 PASS Instance.objects.create(is_telemetry_enabled=False)
 PASS Instance.objects.create(instance_name='Wayline')
+PASS the setup endpoint falls back to False when the field is missing
+PASS the model default is unchanged, so there is no migration
 PASS no migration mentions Wayline 130 files read
 
 DJANGO_SETTINGS_MODULE=plane.settings.production django=5.2.15 TEMPLATES.DIRS=['templates']
@@ -143,6 +194,31 @@ PASS every email template was rendered (12 templates)
 PASS render base.html
      django.contrib.admin installed under plane's settings: False
 PASS render admin/base_site.html against a stub parent
+
+== plane.utils.email: every caller fits, and the cases upstream tests at the pinned commit
+PASS 11 modules import only generate_plain_text_from_html ['plane/bgtasks/analytic_plot_export.py', 'plane/bgtasks/email_notification_task.py', 'plane/bgtasks/forgot_password_task.py', 'plane/bgtasks/magic_link_code_task.py', 'plane/bgtasks/project_add_user_email_task.py', 'plane/bgtasks/project_invitation_task.py', 'plane/bgtasks/user_activation_email_task.py', 'plane/bgtasks/user_deactivation_email_task.py', 'plane/bgtasks/user_email_update_task.py', 'plane/bgtasks/webhook_task.py', 'plane/bgtasks/workspace_invitation_task.py']
+PASS every call passes one positional argument
+PASS an escaped invitation URL reaches the text part whole
+PASS named and numeric character references are decoded
+PASS style blocks and tags are stripped
+PASS blank lines collapse and the output is padded
+PASS style removal matches the old regex on "<STYLE type='text/css'>\n"
+PASS style removal matches the old regex on '<style>a{}</style><style'
+PASS style removal matches the old regex on '<style</style>x</style>'
+PASS style removal matches the old regex on '<p>Hi</p><style<style<st'
+PASS 11000 unclosed style-like tags take under a second 0.017 s
+
+== PyJWT as Plane uses it
+PASS importers of jwt: ['plane/app/views/project/invite.py', 'plane/app/views/workspace/invite.py']
+PASS plane/app/views/project/invite.py calls jwt.encode with HS256 and nothing else ['encode']
+PASS plane/app/views/workspace/invite.py calls jwt.encode with HS256 and nothing else ['encode']
+/usr/local/lib/python3.12/site-packages/jwt/api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 23 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  return self._jws.encode(
+/usr/local/lib/python3.12/site-packages/jwt/api_jwt.py:370: InsecureKeyLengthWarning: The HMAC key is 23 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  decoded = self.decode_complete(
+PASS encode and decode, HS256, settings.SECRET_KEY 177 characters
+PASS encode and decode, HS256, 24 random bytes in hex 177 characters
+PASS encode and decode, HS256, get_random_secret_key() 177 characters
 
 == Template logic against upstream's copy from the pinned base image
 PASS logic emails/auth/forgot_password.html 0 tags in the same order, 2 distinct variables
@@ -172,6 +248,7 @@ PASS import plane.bgtasks.user_email_update_task
 PASS import plane.bgtasks.workspace_invitation_task
 PASS import plane.bgtasks.workspace_seed_task
 PASS import plane.db.management.commands.test_email
+PASS import plane.license.api.views.admin
 PASS import plane.license.api.views.configuration
 PASS import plane.license.management.commands.register_instance
 PASS import plane.license.utils.instance_value
@@ -192,14 +269,13 @@ PASS INSTANCE_CHANGELOG_URL = ''
          3  functional webhook header
          1  metric description, sent only if telemetry is enabled
          2  module docstring
-       464  required notice
+       465  required notice
          1  required notice and the permitted credit
          6  telemetry endpoint default, used only if telemetry is enabled
          1  the permitted credit
-         4  upstream notice, must not be edited
          4  upstream's manual: same policy as leak-allowlist.txt
          1  upstream's release check
-PASS brand scan finished 492 explained lines
+PASS brand scan finished 489 explained lines
 
 RESULT PASS: 0 failed
 PASS backend check-image.sh exit 0

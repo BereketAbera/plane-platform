@@ -1,5 +1,5 @@
-# Thu Nov  5 01:43:59 EAT 2026 commit 1242134361ffff7ddff5144bc912a98832181401
-$ rm -rf .build/plane-src && /usr/bin/time -l apps/wayline/scripts/build.sh
+# Thu Nov  5 02:28:52 EAT 2026 commit ffbef80276ae8c48aa889cf975b27e2642d49575
+$ rm -rf .build/plane-src && /usr/bin/time -l scripts/ci/build-images.sh localhost:5001/wayline
 ==> Node v22.22.2
  ok /Users/bek/dev/pr/plane-platform/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
 ==> Overlay against the pinned commit
@@ -43,13 +43,14 @@ source-links: 1579 files read, 0 problems
 ==> pnpm 11.10.0
 ==> pnpm install
 Scope: 16 of 20 workspace projects
-✓ Lockfile passes supply-chain policies (verified 2h ago)
+✓ Lockfile passes supply-chain policies (verified 3h ago)
 Lockfile is up to date, resolution step is skipped
 Progress: resolved 1, reused 0, downloaded 0, added 0
 .                                        |    +1301 ++++++++++++++++++++++++++++
-Progress: resolved 1301, reused 1297, downloaded 0, added 422
-Progress: resolved 1301, reused 1297, downloaded 0, added 834
-Progress: resolved 1301, reused 1297, downloaded 0, added 1194
+Progress: resolved 1301, reused 1297, downloaded 0, added 298
+Progress: resolved 1301, reused 1297, downloaded 0, added 763
+Progress: resolved 1301, reused 1297, downloaded 0, added 837
+Progress: resolved 1301, reused 1297, downloaded 0, added 1195
 Progress: resolved 1301, reused 1297, downloaded 0, added 1300
 Progress: resolved 1301, reused 1297, downloaded 0, added 1301, done
 .../node_modules/@swc/core postinstall$ node postinstall.js
@@ -57,7 +58,7 @@ Progress: resolved 1301, reused 1297, downloaded 0, added 1301, done
 . prepare$ husky
 . prepare: HUSKY=0 skip install
 . prepare: Done
-Done in 7.5s using pnpm v11.10.0
+Done in 8.3s using pnpm v11.10.0
 ==> turbo build web
 
    • Packages in scope: web
@@ -66,8 +67,8 @@ Done in 7.5s using pnpm v11.10.0
 
 
  Tasks:    11 successful, 11 total
-Cached:    3 cached, 11 total
-  Time:    27.074s 
+Cached:    11 cached, 11 total
+  Time:    242ms >>> FULL TURBO
 
 ==> turbo build admin
 
@@ -77,8 +78,8 @@ Cached:    3 cached, 11 total
 
 
  Tasks:    8 successful, 8 total
-Cached:    2 cached, 8 total
-  Time:    17.942s 
+Cached:    8 cached, 8 total
+  Time:    97ms >>> FULL TURBO
 
 ==> turbo build space
 
@@ -88,8 +89,8 @@ Cached:    2 cached, 8 total
 
 
  Tasks:    10 successful, 10 total
-Cached:    8 cached, 10 total
-  Time:    17.526s 
+Cached:    10 cached, 10 total
+  Time:    182ms >>> FULL TURBO
 
 leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
   allowlisted 293x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
@@ -110,18 +111,37 @@ leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
  ok space: 5 font URLs under /spaces/assets/, all files present, brand values present
  ok space ships none of upstream's empty-state illustrations
 ==> Assemble /Users/bek/dev/pr/plane-platform/.build/wayline-dist
-==> web built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
-==> admin built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
-==> space built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
-==> backend built from commit=1242134361ffff7ddff5144bc912a98832181401 dirty=no
+==> web built from commit=8e328a06545030a43066b65112082491311e0048 dirty=no
+==> admin built from commit=8e328a06545030a43066b65112082491311e0048 dirty=no
+==> space built from commit=8e328a06545030a43066b65112082491311e0048 dirty=no
+==> backend built from commit=8e328a06545030a43066b65112082491311e0048 dirty=no
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.admin
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.backend
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.space
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web
 5.0M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/admin
-188K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
+224K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
  24M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/space
  28M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/web
  ok Build complete for: web admin space backend
-       81.66 real        95.86 user        41.91 sys
-build.sh exit 0
+# Docker's part is in images-build.txt. The time below covers the native build and the images together. Turbo reused the cache from build-ci-settings.txt, which ran just before on the same commit's source, so this build's memory is not a cold build's.
+       40.16 real        10.84 user        19.30 sys
+           531759104  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              631037  page reclaims
+               12157  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+               28088  messages sent
+               14451  messages received
+                1229  signals received
+               16813  voluntary context switches
+              223805  involuntary context switches
+            92995422  instructions retired
+            61474949  cycles elapsed
+             1737016  peak memory footprint
+build-images.sh exit 0
+peak_sum_rss_mib=504 processes_at_peak=1

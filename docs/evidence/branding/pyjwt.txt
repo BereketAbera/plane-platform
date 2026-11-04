@@ -1,0 +1,42 @@
+# PyJWT in the backend image. Recorded Thu Nov  5 02:33:41 EAT 2026.
+
+$ # what pins it, in upstream's base image
+66:# jwt
+67:PyJWT==2.13.0
+Version: 2.13.0
+Requires: 
+Required-by: 
+installed packages that declare a requirement on PyJWT, including extras: []
+
+$ # the same in the derived image, localhost:5001/wayline/backend@sha256:cd6302a9cc04aa8badcaba102fe6ed6b091c56f666af514595a6e9a6ba34d72e
+66:# jwt
+67:PyJWT==2.14.0
+Version: 2.14.0
+Requires: 
+Required-by: 
+WARNING: The directory '/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+No broken requirements found.
+pip check exit 0
+/usr/local/lib/python3.12/site-packages/jwt
+/usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info
+
+$ # pip freeze, base against derived. The only difference must be PyJWT
+WARNING: The directory '/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+     111
+82c82
+< PyJWT==2.13.0
+---
+> PyJWT==2.14.0
+diff exit 1 (1 means they differ, in the lines above)
+
+$ # the hash the Dockerfile pins, against PyPI now
+# Replaces PyJWT 2.13.0 from the base image, for CVE-2026-102268. Fixed in 2.14.0. PyJWT requires nothing on this
+# Python and no installed package requires it, so runtime/Dockerfile.backend installs this with --no-deps.
+# Hash of pyjwt-2.14.0-py3-none-any.whl from https://pypi.org/pypi/PyJWT/2.14.0/json, 2026-11-05.
+PyJWT==2.14.0 \
+    --hash=sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
+pyjwt-2.14.0-py3-none-any.whl ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
+
+$ # Plane's use: see 'PyJWT as installed' and 'PyJWT as Plane uses it' in smoke.txt, and 'PyJWT through the two views' in backend-db.txt.
+# Plane imports jwt in two views and calls only jwt.encode(..., algorithm="HS256"). Nothing in Plane calls jwt.decode, and no installed package imports jwt.
+importers in site-packages outside jwt/: grep exit 123 (123 here means xargs ran grep with no match)

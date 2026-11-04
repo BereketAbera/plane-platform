@@ -1,4 +1,4 @@
-# apps/wayline/checks/upstream-check.sh against other upstream refs. A ref that does not fit is an answer, not a failure.
+# apps/wayline/checks/upstream-check.sh against other upstream refs, on 2026-11-05, with the 86-file patch set. A ref that does not fit is an answer, not a failure.
 
 $ apps/wayline/checks/upstream-check.sh v1.4.2
 upstream v1.4.2 at 5f7d92784c403f76284f0f16718f320221dc7fec, version 1.4.2
@@ -7,11 +7,12 @@ token-diff: clean
   00-brand-import        1 files,   0 do not apply
   01-fonts               3 files,   0 do not apply
   10-shell              20 files,   0 do not apply
-  20-auth               17 files,   0 do not apply
+  20-auth               18 files,   0 do not apply
   30-surfaces           21 files,   0 do not apply
   40-admin              13 files,   0 do not apply
   50-space              10 files,   0 do not apply
 patches: 0 of 7 fail, 0 files need a rebase
+exit 0
 
 $ apps/wayline/checks/upstream-check.sh v1.4.0
 upstream v1.4.0 at 917b23a6c16d93fc00cef67900eff2755e8b13f7, version 1.4.0
@@ -20,11 +21,12 @@ token-diff: clean
   00-brand-import        1 files,   0 do not apply
   01-fonts               3 files,   0 do not apply
   10-shell              20 files,   0 do not apply
-  20-auth               17 files,   0 do not apply
+  20-auth               18 files,   0 do not apply
   30-surfaces           21 files,   0 do not apply
   40-admin              13 files,   0 do not apply
   50-space              10 files,   0 do not apply
 patches: 0 of 7 fail, 0 files need a rebase
+exit 0
 
 $ apps/wayline/checks/upstream-check.sh v1.3.0
 upstream v1.3.0 at cf696d200d3e222390a01ba20e833eb11a5ed881, version 1.3.0
@@ -33,11 +35,12 @@ token-diff: clean
   00-brand-import        1 files,   0 do not apply
   01-fonts               3 files,   0 do not apply
   10-shell              20 files,   4 do not apply
-  20-auth               17 files,   1 do not apply
+  20-auth               18 files,   1 do not apply
   30-surfaces           21 files,   7 do not apply
   40-admin              13 files,   2 do not apply
   50-space              10 files,   0 do not apply
 patches: 4 of 7 fail, 14 files need a rebase
+exit 0
 
 $ apps/wayline/checks/upstream-check.sh preview
 upstream preview at 618d0eb74658329a6f6e92434ac54231422c5b96, version 1.5.0
@@ -46,8 +49,10 @@ token-diff: packages/tailwind-config/variables.css is gone, so the design system
   00-brand-import        1 files,   1 do not apply
   01-fonts               3 files,   1 do not apply
   10-shell              20 files,  17 do not apply
-  20-auth               17 files,  14 do not apply
+  20-auth               18 files,  15 do not apply
   30-surfaces           21 files,  17 do not apply
   40-admin              13 files,  11 do not apply
   50-space              10 files,   6 do not apply
-patches: 7 of 7 fail, 67 files need a rebase
+patches: 7 of 7 fail, 68 files need a rebase
+exit 0
+
