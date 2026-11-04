@@ -1,0 +1,12 @@
+diff --git a/packages/tailwind-config/index.css b/packages/tailwind-config/index.css
+index ecebd1a56b7ba12fa40bd059d07182b755509f01..b529c46ed160432c03e26be2f3773ecbff75f78b 100644
+--- a/packages/tailwind-config/index.css
++++ b/packages/tailwind-config/index.css
+@@ -1,6 +1,7 @@
+ @import "tailwindcss";
+ @import "./variables.css";
+ @import "./animations.css";
++@import "./brand.css";
+ @source "../**/*.{ts,tsx}";
+ 
+ * {

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Bereket Abera
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Wayline brand entry point, part of a customized Plane Community Edition deployment.
+ * Imported last from index.css by patches/00-brand-import.patch, so every @theme value and every
+ * @layer base declaration here comes after upstream's. Keep this file an import list.
+ */
+@import "./brand/tokens.css";
+@import "./brand/shell.css";
+@import "./brand/auth.css";
+@import "./brand/admin.css";
+@import "./brand/space.css";

@@ -1,0 +1,4 @@
+# Pinned upstream. Sourced by apps/wayline/scripts/lib.sh. Bump all three together in one commit.
+UPSTREAM_REPO=https://github.com/makeplane/plane.git
+UPSTREAM_TAG=v1.4.3
+UPSTREAM_COMMIT=37a15d99231042b3ff5a4401fed479fdbec9effe

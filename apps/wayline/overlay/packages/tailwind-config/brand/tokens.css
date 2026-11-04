@@ -1,0 +1,410 @@
+/*
+ * Copyright (c) 2026 Bereket Abera
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Wayline design tokens: a route between waypoints, drawn like an aeronautical chart.
+ *
+ * Light theme "Chart" and dark theme "Night Ops", both mapped onto upstream's variables.css
+ * neutrals, brand ramps and semantic tokens. Nothing here adds a component rule that upstream's
+ * utilities do not already reach through tokens.
+ *
+ * Rules that keep this working:
+ *  - The :root block below comes after upstream's dark block at the same specificity, so a token
+ *    set in light MUST also be set in dark or it would overwrite upstream's dark value.
+ *    checks/token-diff.mjs enforces that.
+ *  - Every semantic token points at a ramp token, never a literal, so a user's "custom" theme
+ *    (which writes --neutral-* and --brand-* inline on <html>) still works.
+ *  - Our own tokens use the --wl- prefix. Every other name must exist upstream (token-diff).
+ *  - checks/contrast.mjs computes WCAG contrast in all four themes.
+ */
+
+/*
+ * ---------- Fonts ----------
+ * Tailwind's PostCSS plugin inlines @import without rewriting url(), so Vite resolves these against
+ * the CSS entry, apps/<app>/styles/globals.css, not against this file. All three entries sit at the
+ * same depth, so one path works, and Vite then adds each app's base path. A path relative to this file
+ * builds without error and 404s at runtime. checks/font-urls.sh proves this from the build output.
+ */
+@font-face {
+  font-family: "Instrument Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("../../../packages/tailwind-config/fonts/instrument-sans-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Instrument Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("../../../packages/tailwind-config/fonts/instrument-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* The family is named JetBrainsMono because upstream's editor.css hard-codes that name for code blocks. */
+@font-face {
+  font-family: "JetBrainsMono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("../../../packages/tailwind-config/fonts/jetbrains-mono-cyrillic-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "JetBrainsMono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("../../../packages/tailwind-config/fonts/jetbrains-mono-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "JetBrainsMono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("../../../packages/tailwind-config/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- Compile-time theme: type, shape, flat outlines ---------- */
+@theme {
+  --font-heading:
+    "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-body:
+    "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-code:
+    "JetBrainsMono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Square-ish everywhere. rounded-full stays for avatars and status dots. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
+  --radius-2xl: 3px;
+  --radius-3xl: 3px;
+
+  /* Flat: outlined rather than soft. Upstream inlines these at compile time, so @theme is the place. */
+  --shadow-raised-100: 0 0 0 1px var(--border-subtle);
+  --shadow-raised-200: 0 0 0 1px var(--border-subtle);
+  --shadow-raised-300: 0 0 0 1px var(--border-subtle);
+  --shadow-overlay-100: 0 0 0 1px var(--border-strong);
+  --shadow-overlay-200: 0 0 0 1px var(--border-strong);
+  --shadow-direction-left: -1px 0 0 0 var(--border-subtle);
+  --shadow-direction-right: 1px 0 0 0 var(--border-subtle);
+
+  --height-header: 3rem;
+
+  /* Slight tracking: open at small sizes, tighter on display sizes. */
+  --tracking-default: 0.005em;
+  --text-h1-regular--letter-spacing: -0.012em;
+  --text-h1-medium--letter-spacing: -0.012em;
+  --text-h1-semibold--letter-spacing: -0.012em;
+  --text-h1-bold--letter-spacing: -0.012em;
+  --text-h2-regular--letter-spacing: -0.012em;
+  --text-h2-medium--letter-spacing: -0.012em;
+  --text-h2-semibold--letter-spacing: -0.012em;
+  --text-h2-bold--letter-spacing: -0.012em;
+  --text-h3-regular--letter-spacing: -0.012em;
+  --text-h3-medium--letter-spacing: -0.012em;
+  --text-h3-semibold--letter-spacing: -0.012em;
+  --text-h3-bold--letter-spacing: -0.012em;
+}
+
+/* ---------- Runtime palette ---------- */
+@layer base {
+  :root,
+  :host {
+    color-scheme: light;
+
+    /* ---- Chart: warm paper, ink text, grey-olive hairlines ---- */
+    --neutral-white: #fbfaf6;
+    --neutral-100: #f8f6f0;
+    --neutral-200: #f4f2ea;
+    --neutral-300: #eeebe0;
+    --neutral-400: #e7e3d6;
+    --neutral-500: #ddd8c8;
+    --neutral-600: #cfc9b6;
+    --neutral-700: #b5af9a;
+    --neutral-800: #858273;
+    --neutral-900: #5b616c;
+    --neutral-1000: #465162;
+    --neutral-1100: #2c3849;
+    --neutral-1200: #0f1b2d;
+    --neutral-black: #0b1320;
+
+    /* The magenta course line */
+    --brand-100: #faeff5;
+    --brand-200: #f6e2ed;
+    --brand-300: #efc9de;
+    --brand-400: #e5a5c9;
+    --brand-500: #d97cb1;
+    --brand-600: #cc5096;
+    --brand-700: #bf2f82;
+    --brand-800: #b0186e;
+    --brand-900: #8e1259;
+    --brand-1000: #6e0e45;
+    --brand-1100: #4f0a32;
+    --brand-1200: #330620;
+    --brand-default: #b0186e;
+
+    --bg-canvas: var(--neutral-200);
+    --bg-accent-primary-hover: var(--brand-900);
+    --bg-accent-primary-active: var(--brand-1000);
+    --bg-success-primary: var(--green-800);
+    --bg-warning-primary: var(--amber-800);
+    --bg-danger-primary: var(--red-800);
+    --bg-danger-primary-hover: var(--red-900);
+    --bg-danger-primary-active: var(--red-1000);
+    --bg-danger-primary-selected: var(--red-1000);
+
+    /* Hairlines must actually show on paper, so everything moves up the ramp. */
+    --border-subtle: var(--neutral-600);
+    --border-subtle-1: var(--neutral-600);
+    --border-strong: var(--neutral-700);
+    --border-strong-1: var(--neutral-800);
+
+    --txt-accent-primary: var(--brand-default);
+    --txt-accent-secondary: var(--brand-900);
+    --txt-link-primary: var(--brand-default);
+    --txt-link-primary-hover: var(--brand-900);
+    --txt-link-secondary: var(--neutral-1000);
+    --txt-on-color: var(--neutral-100);
+    --txt-icon-on-color: var(--neutral-white);
+    --txt-success-secondary: var(--green-900);
+    --txt-warning-secondary: var(--amber-900);
+    --txt-danger-secondary: var(--red-800);
+    --txt-icon-accent-subtle: var(--brand-500);
+    --txt-icon-tertiary: var(--neutral-1000);
+    --txt-icon-placeholder: var(--neutral-900);
+    --txt-icon-disabled: var(--neutral-800);
+
+
+
+    /* ---- Night Ops: ink-navy canvas, lighter magenta, ink on accent ---- */
+    @variant dark {
+      color-scheme: dark;
+
+      --neutral-black: #0b1320;
+      --neutral-100: #111c2e;
+      --neutral-200: #172438;
+      --neutral-300: #1e2c43;
+      --neutral-400: #26354e;
+      --neutral-500: #30405c;
+      --neutral-600: #3c4d6b;
+      --neutral-700: #4e6080;
+      --neutral-800: #76849c;
+      --neutral-900: #a0aabb;
+      --neutral-1000: #b6becc;
+      --neutral-1100: #cdd2dc;
+      --neutral-1200: #e7e9ee;
+      --neutral-white: #f4f5f7;
+
+      --brand-100: #2a1226;
+      --brand-200: #3a1833;
+      --brand-300: #521f48;
+      --brand-400: #6e2760;
+      --brand-500: #8e3079;
+      --brand-600: #b63f8f;
+      --brand-700: #ee7ab9;
+      --brand-800: #f39ccb;
+      --brand-900: #f8bedd;
+      --brand-1000: #fbd8ea;
+      --brand-1100: #fdeaf4;
+      --brand-1200: #fef4f9;
+      --brand-default: #e65aa6;
+
+      --bg-canvas: var(--neutral-black);
+      /* A light accent needs dark text, so hover and active go lighter, not darker. */
+      --bg-accent-primary-hover: var(--brand-700);
+      --bg-accent-primary-active: var(--brand-800);
+      --bg-success-primary: var(--green-700);
+      --bg-warning-primary: var(--amber-600);
+      --bg-danger-primary: var(--red-700);
+      --bg-danger-primary-hover: var(--red-800);
+      --bg-danger-primary-active: var(--red-900);
+      --bg-danger-primary-selected: var(--red-900);
+
+      --border-subtle: var(--neutral-500);
+      --border-subtle-1: var(--neutral-500);
+      --border-strong: var(--neutral-600);
+      --border-strong-1: var(--neutral-700);
+
+      --txt-accent-primary: var(--brand-700);
+      --txt-accent-secondary: var(--brand-800);
+      --txt-link-primary: var(--brand-700);
+      --txt-link-primary-hover: var(--brand-800);
+      --txt-link-secondary: var(--neutral-1100);
+      --txt-on-color: var(--neutral-black);
+      --txt-icon-on-color: var(--neutral-black);
+      --txt-success-secondary: var(--green-700);
+      --txt-warning-secondary: var(--amber-700);
+      --txt-danger-secondary: var(--red-700);
+      --txt-icon-accent-subtle: var(--brand-700);
+      --txt-icon-tertiary: var(--neutral-1000);
+      --txt-icon-placeholder: var(--neutral-800);
+      --txt-icon-disabled: var(--neutral-700);
+
+    }
+
+    /* ---- High contrast: text climbs a step, hairlines become real lines ---- */
+    @variant dark-high-contrast {
+      --neutral-black: #060b13;
+      --neutral-900: #cdd2dc;
+      --neutral-1000: #e7e9ee;
+      --neutral-1100: #f4f5f7;
+      --neutral-1200: #ffffff;
+      --brand-default: #f27bbe;
+      --brand-700: #f7a3d0;
+      --brand-800: #fac4e1;
+      --border-subtle: var(--neutral-800);
+      --border-subtle-1: var(--neutral-800);
+      --border-strong: var(--neutral-900);
+      --border-strong-1: var(--neutral-1000);
+      --border-disabled: var(--neutral-700);
+      --border-accent-strong: var(--brand-default);
+      --border-accent-subtle: var(--brand-700);
+    }
+
+    @variant light-high-contrast {
+      --neutral-white: #ffffff;
+      --neutral-100: #fdfcf9;
+      --neutral-200: #faf8f2;
+      --neutral-900: #3b4452;
+      --neutral-1000: #2c3849;
+      --neutral-1100: #1a2638;
+      --neutral-1200: #060b13;
+      --brand-default: #8e1259;
+      --brand-900: #6e0e45;
+      --brand-1000: #4f0a32;
+      --border-subtle: var(--neutral-800);
+      --border-subtle-1: var(--neutral-800);
+      --border-strong: var(--neutral-1000);
+      --border-strong-1: var(--neutral-1100);
+      --border-disabled: var(--neutral-700);
+      --border-accent-strong: var(--brand-default);
+      --border-accent-subtle: var(--brand-700);
+    }
+  }
+}
+
+/*
+ * ---------- Ink shell scope ----------
+ * Any element with a data-shell attribute re-themes its subtree to ink, in every theme, because
+ * upstream's utilities resolve straight to these variables. Structure lives in shell.css.
+ */
+:root {
+  --wl-ink-900: #0b1320;
+  --wl-ink-800: #0f1b2d;
+  --wl-ink-700: #172438;
+  --wl-ink-600: #1e2c43;
+  --wl-ink-500: #30405c;
+  --wl-ink-400: #4e6080;
+  --wl-ink-text: #e7e9ee;
+  --wl-ink-text-muted: #b6becc;
+  --wl-ink-text-faint: #a0aabb;
+  --wl-ink-accent: #e65aa6;
+  --wl-ink-accent-text: #ee7ab9;
+  /* The mark's route segment follows the accent. See the on-color rule further down. */
+  --wl-logo-route: var(--bg-accent-primary);
+}
+[data-shell] {
+  color-scheme: dark;
+  --bg-canvas: var(--wl-ink-800);
+  --bg-surface-1: var(--wl-ink-800);
+  --bg-surface-2: var(--wl-ink-700);
+  --bg-layer-1: var(--wl-ink-700);
+  --bg-layer-1-hover: var(--wl-ink-600);
+  --bg-layer-1-active: var(--wl-ink-600);
+  --bg-layer-1-selected: var(--wl-ink-600);
+  --bg-layer-2: var(--wl-ink-700);
+  --bg-layer-2-hover: var(--wl-ink-600);
+  --bg-layer-2-active: var(--wl-ink-600);
+  --bg-layer-2-selected: var(--wl-ink-600);
+  --bg-layer-3: var(--wl-ink-600);
+  --bg-layer-3-hover: var(--wl-ink-500);
+  --bg-layer-3-active: var(--wl-ink-500);
+  --bg-layer-3-selected: var(--wl-ink-500);
+  --bg-layer-transparent: transparent;
+  --bg-layer-transparent-hover: var(--wl-ink-700);
+  --bg-layer-transparent-active: var(--wl-ink-600);
+  --bg-layer-transparent-selected: var(--wl-ink-600);
+  --bg-accent-primary: var(--wl-ink-accent);
+  --bg-accent-primary-hover: var(--wl-ink-accent-text);
+  --bg-accent-primary-active: var(--wl-ink-accent-text);
+  --bg-accent-subtle: var(--wl-ink-700);
+  --bg-accent-subtle-hover: var(--wl-ink-600);
+  --bg-accent-subtle-active: var(--wl-ink-600);
+  --border-subtle: var(--wl-ink-500);
+  --border-subtle-1: var(--wl-ink-500);
+  --border-strong: var(--wl-ink-400);
+  --border-strong-1: var(--wl-ink-400);
+  --border-accent-strong: var(--wl-ink-accent);
+  --border-accent-subtle: var(--wl-ink-500);
+  --txt-primary: var(--wl-ink-text);
+  --txt-secondary: var(--wl-ink-text-muted);
+  --txt-tertiary: var(--wl-ink-text-muted);
+  --txt-placeholder: var(--wl-ink-text-faint);
+  --txt-accent-primary: var(--wl-ink-accent-text);
+  --txt-accent-secondary: var(--wl-ink-accent-text);
+  --txt-link-primary: var(--wl-ink-accent-text);
+  --txt-link-primary-hover: var(--wl-ink-accent-text);
+  --txt-link-secondary: var(--wl-ink-text-muted);
+  --txt-on-color: var(--wl-ink-900);
+  --txt-icon-primary: var(--wl-ink-text);
+  --txt-icon-secondary: var(--wl-ink-text-muted);
+  --txt-icon-tertiary: var(--wl-ink-text-muted);
+  --txt-icon-placeholder: var(--wl-ink-text-faint);
+  --txt-icon-accent-primary: var(--wl-ink-accent-text);
+  --txt-icon-on-color: var(--wl-ink-900);
+  --wl-logo-route: var(--wl-ink-accent);
+  color: var(--wl-ink-text);
+}
+
+/* ---------- Unlayered rules: these beat every Tailwind layer without !important ---------- */
+
+/* JetBrains Mono for uppercase labels, keys and code. */
+.uppercase,
+kbd,
+code,
+pre,
+samp {
+  font-family: var(--font-code);
+}
+.uppercase {
+  letter-spacing: 0.06em;
+}
+
+/*
+ * Upstream's editor names Inter directly, and the Inter import is gone (patches/01-fonts.patch). Its
+ * rules are also unlayered and come later in the bundle, so this needs the extra specificity of html.
+ */
+html .editor-container,
+html .editor-container.sans-serif {
+  --font-style: var(--font-body);
+}
+
+/* On an accent background the route segment has to follow the text. */
+.text-on-color {
+  --wl-logo-route: currentColor;
+}
+
+::selection {
+  background-color: var(--bg-accent-subtle-active);
+}
+
+/*
+ * The one focus rule: a magenta outline everywhere upstream's outline-none would hide it. Skips the
+ * rich-text surface and programmatic-focus containers, where a caret or the dialog itself shows focus.
+ */
+:focus-visible:where(:not(.ProseMirror, [contenteditable="true"], [tabindex="-1"])) {
+  outline: 2px solid var(--bg-accent-primary);
+  outline-offset: 1px;
+}

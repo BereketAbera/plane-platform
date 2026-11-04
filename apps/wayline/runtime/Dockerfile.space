@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1.7
+# Copyright (c) 2026 Bereket Abera
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Keeps upstream's Linux node_modules and swaps only the app bundle. macOS node_modules must never
+# enter an image; the JS bundle is portable, and the lockfile matches so its 38 runtime imports
+# resolve to the same versions. Context: .build/wayline-dist/space.
+# Index digest from 'docker buildx imagetools inspect makeplane/plane-space:v1.4.3', 2026-11-04.
+FROM makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+
+ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
+ARG WAYLINE_SOURCE_REF=main
+
+LABEL org.opencontainers.image.title="wayline-space" \
+      org.opencontainers.image.description="Customized Plane Community Edition public pages" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
+      org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
+
+RUN rm -rf /app/apps/space/build
+COPY build/ /app/apps/space/build/
+
+# Same UID as the hardening patch. Upstream's image runs as root.
+USER 1000
