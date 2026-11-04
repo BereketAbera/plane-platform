@@ -370,6 +370,47 @@ rollback_leaves_other_staged_files_alone() {
   rm -f "$CLONE/docs/staged-by-someone.txt"
 }
 
+# ---- publish
+publish_warns_when_ahead_of_origin() {
+  local status=0
+  git -C "$CLONE" update-ref refs/remotes/origin/main "$BASE"
+  promote_dev "$DIGEST_A" || status=$?
+  expect "it publishes anyway" [ "$status" -eq 0 ]
+  expect "the warning" said "not on origin/main"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+publish_quiet_when_level_with_origin() {
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  git -C "$CLONE" update-ref refs/remotes/origin/main "$(head_commit)"
+  in_clone git commit --quiet --allow-empty -m 'another commit'
+  git -C "$CLONE" update-ref refs/remotes/origin/main "$(head_commit)"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "no warning" not_said "not on origin/main"
+}
+publish_says_when_origin_is_unknown() {
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "it says it cannot tell" said "origin/main is unknown"
+}
+publish_still_backs_up_prod_sim_change() {
+  # The flow a merged pull request takes: no SKIP_BACKUP, so the publish takes the dump.
+  local status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes COMMIT=no ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A" || status=$?
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -m 'promote(dev): by hand'
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim || status=$?
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -m 'promote(prod-sim): by hand'
+  expect "the setup works" [ "$status" -eq 0 ]
+  # The stub kubectl answers no statefulset question, so gitops-publish falls through to the backup.
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "the publish works" [ "$status" -eq 0 ]
+  expect "it took the dump" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+}
+
 # ---- the failed-deploy drill, with Traefik stubbed too
 drill_runs_to_a_pass() {
   local status=0
@@ -413,6 +454,10 @@ scenario rollback-prod-sim-names-the-older-dump rollback_prod_sim_names_the_olde
 scenario rollback-prod-sim-skip-backup rollback_prod_sim_skip_backup
 scenario rollback-dev-takes-no-dump rollback_dev_takes_no_dump
 scenario rollback-leaves-other-staged-files-alone rollback_leaves_other_staged_files_alone
+scenario publish-warns-when-ahead-of-origin publish_warns_when_ahead_of_origin
+scenario publish-quiet-when-level-with-origin publish_quiet_when_level_with_origin
+scenario publish-says-when-origin-is-unknown publish_says_when_origin_is_unknown
+scenario publish-still-backs-up-prod-sim-change publish_still_backs_up_prod_sim_change
 scenario drill-runs-to-a-pass drill_runs_to_a_pass
 scenario drill-failed-promotion-reverts-nothing-else drill_failed_promotion_reverts_nothing_else
 

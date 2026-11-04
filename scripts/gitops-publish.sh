@@ -45,6 +45,19 @@ if [[ -n "$old" && "${SKIP_BACKUP:-}" != yes ]] && git cat-file -e "$old" 2>/dev
   fi
 fi
 
+# ADR 0011: Argo CD reads this repository, not GitHub, so nothing below stops a commit that CI and
+# review never saw. This flow works with no GitHub at all, so it warns and goes on. It compares with
+# origin/main as last fetched, so a stale ref can only overstate the gap.
+if git rev-parse -q --verify refs/remotes/origin/main >/dev/null; then
+  ahead="$(git rev-list --count refs/remotes/origin/main..refs/heads/main)"
+  if [[ "$ahead" -gt 0 ]]; then
+    warn "publishing $ahead commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:"
+    git log --format='       %h %s' -n 5 refs/remotes/origin/main..refs/heads/main >&2
+  fi
+else
+  warn "origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits"
+fi
+
 # Plain push on purpose: a non-fast-forward means history was rewritten, and Argo CD would then
 # follow that rewrite with no record of it. Reverts are the way back.
 git push --quiet "$BARE" refs/heads/main:refs/heads/main ||
