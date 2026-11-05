@@ -2,20 +2,22 @@
 
 Secret store for both Plane environments. Infisical Community Edition v0.167.6 runs in the `infisical` namespace with its own Postgres and Redis, and two namespace-scoped operators copy values into each Plane namespace.
 
-**Status: run on the real cluster on 2026-11-04, except `scripts/rotate.sh`.** [Measured](#measured) says what ran and what it showed. [Not yet proven](#not-yet-proven) lists the rest.
+**Status: run on the real cluster on 2026-11-04 and 2026-11-05, except `scripts/rotate.sh` and the destroying end of [Clean restore](#clean-restore).** [Measured](#measured) says what ran and what it showed. [Not yet proven](#not-yet-proven) lists the rest.
 
 | Path | What it is |
 |---|---|
 | `manifests/` | Postgres, Redis, IngressRoute, the server's ServiceAccount, the token-review binding. A path source of the `infisical` Application |
-| `terraform/` | Projects, the environment, machine identities, Kubernetes Auth. Separate root, state in `.local/terraform/infisical/` |
+| `terraform/` | Projects, the environment, machine identities, Kubernetes Auth. Separate root, state in `.local/terraform/infisical/`, which `make destroy` keeps and each backup copies |
 | `lib/api.sh` | Shared by the scripts below |
+| `lib/recovery.sh` | The recovery set each backup carries for [Clean restore](#clean-restore) |
 | `tests/isolation.sh` | Real logins and reads: each reader against its own project and the other one, from the host and from inside each namespace |
 | `tests/rendered-secrets.sh` | The six Secrets in each namespace against contract section 8, without printing a value |
 | `../helm/values/infisical*.yaml` | Server chart and the two operator releases |
 | `../scripts/secret-zero.sh` | Creates what must exist before Infisical does |
-| `../scripts/infisical-bootstrap.sh` | First admin, Terraform, seed, identity ids |
+| `../scripts/infisical-bootstrap.sh` | First admin, Terraform, seed, identity ids. `INFISICAL_RESTORED=yes` is restored mode |
 | `../scripts/infisical-seed.sh` | Plane secret values, first time only |
 | `../scripts/rotate.sh` | The rotation demo |
+| `../scripts/restore.sh clean` | `make restore-clean`. Brings the whole platform back, this first |
 
 ## Bootstrap order
 
@@ -50,7 +52,9 @@ Everything Infisical needs before it can answer lives in `.local/secret-zero/` (
 
 `secret-zero.sh` reuses existing files and restores a missing one from the cluster if it can. It refuses to replace a differing `ENCRYPTION_KEY` in the cluster without `CONFIRM=yes`, and replaces the whole set only with `REGENERATE=yes CONFIRM=yes`, which archives the old files first. Regenerating is meant for an empty database: Postgres keeps its old password until its volume is recreated.
 
-The contract's six Plane Secrets contain no secret zero. Their values live only in Infisical. The seed generates them in memory, sends them, and keeps no copy, so Infisical plus `ENCRYPTION_KEY` is the whole recovery set for them.
+The contract's six Plane Secrets contain no secret zero. Their values live only in Infisical. The seed generates them in memory, sends them, and keeps no copy, so an Infisical dump plus `ENCRYPTION_KEY` is the only way back to them.
+
+No backup copies these files. A backup records their sha256, and a restore finds them by that, in `.local/secret-zero/` or in any `archive-*` inside it. So this directory and `.local/backups/` have to be kept, and kept apart.
 
 Identity ids are not credentials, since login also needs a token for the ServiceAccount. They still sit in a Secret, `plane-infisical-identity`, because the CRD accepts only a Secret reference, and they change on every re-bootstrap, so they cannot be rendered into Git. Bootstrap applies them out of band, so the rendered manifests stay free of `kind: Secret`.
 
@@ -104,24 +108,81 @@ The ServiceMonitor stays off. Scraping needs a binding for Prometheus to the met
 
 If it stops partway it prints what Infisical, the Secret and Postgres each hold. `RESUME=yes` finishes and `ROLLBACK=yes` undoes. Both run the same steps against real state, so running either twice is safe. Changing `PG_PASSWORD` by hand in the UI does not change the role, and the next time Plane restarts it will fail.
 
+A finished rotation takes an Infisical backup, because an older dump holds the old `PG_PASSWORD`. If that backup fails, the rotation stands and the script exits 3. Restoring an older dump in place is refused for the same reason, unless `ALLOW_STALE_PLANE_SECRETS=yes`. A clean restore does not care: Plane's Postgres initializes with whatever Infisical says, and a dump carries no role password.
+
 ## Recovery
 
 | Situation | Result | Do this |
 |---|---|---|
 | `ENCRYPTION_KEY` lost locally, cluster alive | Recoverable | `scripts/secret-zero.sh` restores it from the cluster |
 | `ENCRYPTION_KEY` lost everywhere | **Secrets are gone**, even with the database | New instance, reseed. Plane's config rows are bound to the old `SECRET_KEY`, so also restore Plane from a backup that matches, or start Plane empty |
-| Postgres lost, key kept | All secrets gone unless a dump exists | Restore the dump, start on the same or newer image with the same key, rerun bootstrap |
-| Redis lost | Pending jobs and locks only | Nothing |
-| Cluster recreated | New CA stored in Kubernetes Auth | Rerun bootstrap, which passes the new CA to Terraform |
-| Fresh instance over old local state | State and credentials point at nothing | Bootstrap detects `initialized=false` and moves the old files aside |
+| Postgres lost, key kept | All secrets gone unless a dump exists | `make restore ENV=infisical BACKUP=<id> CONFIRM=yes`, on the same or a newer image with the same key, then `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh` |
+| Redis lost | Queued jobs, schedules and caches | Nothing |
+| Cluster and everything in it gone | | `make restore-clean BACKUP=latest`. See [Clean restore](#clean-restore) |
+| Cluster recreated with `make up`, data not wanted back | New instance, new secrets | Bootstrap detects `initialized=false` and moves the old files aside, never deleting them |
+| Fresh instance over old local state | State and credentials point at nothing | Bootstrap detects `initialized=false` and moves the old files aside. A clean restore can still find them by checksum |
 | `infisical-admin.json` lost, instance initialized | Bootstrap works once, so it refuses | Sign in at `http://infisical.localhost` as `admin@wayline.localhost` with `infisical-admin-password`, create a Token Auth token for "Instance Admin Identity", and recreate the file from the archive shape with that token |
 | Admin token expired | It carries a 90-day cap. Scripts warn in the last 7 days and then refuse | Same as above |
-| Terraform state lost, instance alive | Terraform would try to create what exists | Import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days, so `destroy` then `apply` on a live instance probably conflicts |
+| Terraform state lost, instance alive | Terraform would try to create what exists | Copy `recovery/terraform.tfstate` from the newest Infisical backup. With no backup: import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days, so `destroy` then `apply` on a live instance probably conflicts |
 | Rotation stopped partway | Plane may be failing | `RESUME=yes` or `ROLLBACK=yes` |
 
 Back up `ENCRYPTION_KEY` separately from the database dump. A restored Plane database with freshly generated Infisical secrets breaks instance configuration silently, so restore the two as a matched set.
 
 Infisical's migrations run forward only: an older image refuses to start on a newer schema, so a Helm rollback alone does not restore it.
+
+## Clean restore
+
+For when the cluster and everything in it are gone. Infisical comes first, because it is the source of truth for every Plane secret, and Plane's volumes and encrypted rows only work with the values it had.
+
+```bash
+make restore-clean BACKUP=latest                 # or an Infisical backup id. Resumes if run again
+make restore-clean BACKUP=latest PLAN_ONLY=yes   # checks everything, changes nothing, works on a live cluster
+make drill-clean-restore CONFIRM=yes             # a fresh backup, then deletes the cluster and does the above
+```
+
+What a backup holds beyond the dump. `recovery/set.json` is the last thing written, and an Infisical backup without a whole one cannot serve a clean restore:
+
+| What | Where | Why |
+|---|---|---|
+| Terraform state of `infisical/terraform` | Copied to `recovery/terraform.tfstate` | State and database are a pair. State from any other moment plans to create or delete |
+| Secret zero, admin credentials | sha256 in `recovery/set.json`. The files stay in `.local/secret-zero/` | Without `ENCRYPTION_KEY` the dump is unreadable. Without `AUTH_SECRET` and `infisical-admin.json` nothing can log in |
+| Project and identity ids | `recovery/set.json` | |
+| Each Plane secret: truncated hash, version and id | `recovery/set.json` | Read back from the API at backup time. Proves which `SECRET_KEY` this dump can render, before anything is deleted or created |
+| Test accounts and sentinel | `recovery/` of each Plane backup, that environment's lines only | They are rows in that dump. A later `make test-e2e` signs in with them |
+
+The sequence, all of it in `scripts/restore.sh`:
+
+1. **Check, with nothing touched.** Every checksum, the secret zero the set names, and that each Plane backup was taken with the `SECRET_KEY` this Infisical backup holds. Refuses a cluster that holds data.
+2. **`make up` as far as Traefik.** Plane stays at wave -2, because it has no identity Secret yet, so nothing can read or render a value.
+3. **Wait for the fresh server to finish its migrations, then replace its database.** This pauses auto-sync on `infisical` only, stops the server, restores into a second database, checks the row counts, renames it into place, flushes Redis and starts the server. Root is left alone: its sync is waiting for Plane, and terminating it would stop Argo CD retrying that revision.
+4. **`make up` from there, with bootstrap in restored mode.** Same credentials. Terraform updates the CA in Kubernetes Auth and nothing else; there is no stored token reviewer to refresh, because the login token reviews itself. Identity Secrets are published and no value is written. The operators render the old values, Plane's data services initialize with them, and it waits for all Applications.
+5. **Restore each Plane environment,** as `make restore` does, then check it all again from outside.
+
+Restored mode refuses rather than repairs. A fresh instance, a token the server rejects, Terraform wanting to create or delete anything, or a missing secret each mean the database and the local files are not a pair, and generating anything would only hide that.
+
+While a clean restore is under way, `.local/restore-clean.state` records it. A plain `make up` then refuses to bootstrap a fresh instance, which would create new secrets, and `make destroy` clears the file.
+
+Why these details:
+
+- **A second database and a rename, not one transaction.** 3,000 partition indexes need more locks in one transaction than this server has (`max_connections=30`, `out of shared memory`, measured). So until the rename the live database is untouched, a bad dump costs nothing, and a server that starts during the restore cannot see half of it.
+- **Redis is flushed.** The server caches secrets, permissions, identity revocation versions, KMS material and admin config there, and keeps its queues and schedules there. All of that describes the database that was just replaced.
+
+## Measured clean restore
+
+Real runs on 2026-11-05. Raw output is in `.local/evidence-raw/`.
+
+| What | Result | Evidence |
+|---|---|---|
+| `make backup ENV=all` | 42s. Infisical 4.4 MB dump, 785 tables counted from a scratch restore. dev and prod-sim 110 tables. On the host the files belong to the Docker Desktop user at mode 0600 | `dr-backup-3.txt`, `dr-backup-4.txt` |
+| Recovery set against the Plane manifests | `SECRET_KEY` hash read back from Infisical equals `secret_key_fp` in both Plane manifests | `dr-backup-4.txt` |
+| Plan and refusals on the live cluster | `PLAN_ONLY=yes` passes and changes nothing. A real run refuses a cluster holding data, a backup with no recovery set, and an unknown id | `dr-plan-refusals-1.txt` |
+| In-place restore from a backup taken moments before | 48s, 28s of it with the server down. Before and after: every Plane pod uid and restart count, workload generation and Secret resourceVersion identical. 116 isolation and rendered-Secret checks PASS after it | `dr-inplace-restore-1.txt` |
+| Restored mode on the live instance | Terraform "No changes", seed writes nothing, identity Secrets unchanged | `dr-restored-bootstrap-1.txt` |
+| A brand-new server in a throwaway namespace, on an empty database | Fresh first: `initialized=false`, 602 migrations. Then the exact restore Job, a flush and a restart: `initialized=true`, the old admin token accepted, all 18 Plane secrets decrypt to the recorded hash, version and id | `dr-fresh-instance-rehearsal-2.txt` |
+| Terraform with the backup's state against that instance | No changes, and identities log in. With a stored CA that differs: 2 updates and 8 no-ops, applied as a saved plan, and both identities log in. The API refuses a CA that cannot verify the API server, so a wrong one cannot be stored by request | `dr-fresh-instance-rehearsal-1.txt`, `-2.txt` |
+| The exact Plane restore Job, into a scratch database and bucket | Postgres gates pass, objects sync and check by download through the read-only mount, Content-Type put back on 14 of 22 objects, because VirtioFS keeps no xattrs and rclone guessed `text/plain; charset=utf-8` | `dr-plane-restore-rehearsal-1.txt` |
+| Whether root undoes a paused child | No. Root stayed Synced through a hard refresh, and `kubectl apply` of the child's manifest keeps `enabled: false` | `dr-child-pause-1.txt` |
+| Order, resume and every refusal of `make restore-clean`, restored mode and the drill | 117 checks PASS, with stubbed kubectl, kind, Terraform, `up.sh`, smoke test and API. The scripts and the files on disk are real. This shows the logic, not the platform | `dr-harness-stubbed-1.txt` |
 
 ## Free-tier limits and what they forced
 
@@ -176,6 +237,7 @@ Real runs on this cluster on 2026-11-04: Kubernetes 1.36, arm64, default-deny on
 
 In the order that blocks the most:
 
-1. Everything in `rotate.sh` against real Postgres: socket trust, 127.0.0.1 trust versus pod-IP password checks, the probe route, the error window.
+1. **The destroying run: `make drill-clean-restore CONFIRM=yes`.** Everything above stops short of deleting the cluster. Nothing has yet shown the sequence on a real new cluster with a new CA, Plane's data services initializing with the old values, or `make restore` of a Plane environment against its real database and bucket.
+1. Everything in `rotate.sh` against real Postgres: socket trust, 127.0.0.1 trust versus pod-IP password checks, the probe route, the error window, and the Infisical backup it now takes at the end.
 2. Argo CD and the operator's template annotations during a rotation (critique gate 8). The first sync is covered: `postgres-exporter` was patched once when `plane-pgdb` appeared and not again, and `monitoring-extras` stayed Synced. `rotate.sh` restarts by hand if the annotation is missing and reports a generation change as FAIL.
 3. A clean install through the real waves. Here bootstrap ran with the operators already up, and the prod-sim ServiceAccounts and CRs were applied by hand ahead of wave 0, 19 minutes before `plane-prod-sim` existed. Argo CD then adopted them with the same UIDs, generation still 1 (`infisical-prod-sim-crs-1.txt`).

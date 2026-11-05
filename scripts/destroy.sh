@@ -32,6 +32,9 @@ fi
 # Infisical database, which a backup can bring back. On a truly fresh instance, bootstrap moves it aside.
 rm -rf "$LOCAL_DIR/terraform/local"
 
+# A clean restore that was under way was restoring into the cluster that just went away.
+rm -f "$LOCAL_DIR/restore-clean.state"
+
 if [[ "${PURGE:-}" == "yes" ]]; then
   log "PURGE=yes: removing local services and their volumes"
   docker compose -f "$ROOT/infrastructure/local-services/compose.yaml" down --volumes 2>&1 | tail -2
