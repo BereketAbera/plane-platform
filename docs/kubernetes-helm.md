@@ -5,7 +5,7 @@ change it safely. Wayline is a customized Plane Community Edition v1.4.3 deploym
 is upstream's `plane-ce` 1.8.6, unmodified.
 
 **Status of this page.** It describes configuration in the code, and says so where a real run has settled something. On
-2026-11-05 Plane runs in both namespaces, `plane-dev` on the branded images and `plane-prod-sim` on upstream's. What nothing has
+2026-11-05 Plane runs in both namespaces, on the final branded images from `ec45e21`. What nothing has
 measured yet carries a `VERIFY` or `MEASURE` marker. This is local and production-inspired, and not a claim of production readiness.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one
@@ -63,8 +63,8 @@ Everything is in `helm/plane/components/hardening/kustomization.yaml`, with one 
 | Remove `tty` and `stdin` | Deployments, StatefulSets | A TTY makes app tools emit colour and CRLF into logs Loki ingests |
 | Add security contexts | All workloads | See below |
 | Add sync-wave annotations | ConfigMaps, Services, StatefulSets, Deployments, routes | See [argocd.md](argocd.md#inside-a-plane-application) |
-| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout, and the failed-deploy drill waits this long plus 120s |
-| Add `preStop: {sleep: {seconds: 5}}` | web, admin, space, live, api | A pod gets SIGTERM as its endpoint starts to go, and Traefik reacts about 2s later, so with no pause a rollout dropped requests: 10 failed of 2,757 samples ([before](evidence/runs/plane-dev-rollout-availability-1.txt)), and 0 of 5,902 across two rollouts with it ([after](evidence/runs/plane-dev-rollout-availability-2.txt)). Sleep needs no shell. Worker and beat have no Service, so they do not need it |
+| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot, an event read live and not in a saved file. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout, and the failed-deploy drill waits this long plus 120s |
+| Add `preStop: {sleep: {seconds: 5}}` | web, admin, space, live, api | A pod gets SIGTERM as its endpoint starts to go, and Traefik can still send it requests for a moment, so with no pause a rollout dropped requests: 10 failed of 2,757 samples ([before](evidence/runs/plane-dev-rollout-availability-1.txt)), and 0 of 5,902 across two rollouts with it ([after](evidence/runs/plane-dev-rollout-availability-2.txt)). Sleep needs no shell. Worker and beat have no Service, so they do not need it |
 | Set `MINIO_PROMETHEUS_AUTH_TYPE=public` | Silo | The ServiceMonitor scrapes without credentials, and the default `jwt` answers 403. The ingress routes only `/uploads` to Silo, and a NetworkPolicy limits who reaches port 9000 |
 | Make the migrator a `Sync` hook at wave 2 | Job `plane-api-migrate-1` | Postgres is applied in the Sync phase and `wait_for_db` does not wait, so `PreSync` deadlocks a fresh install |
 | Set `activeDeadlineSeconds: 900` | Migrator | A bad image never fails the Job on its own |
@@ -95,8 +95,9 @@ temp paths. Python workloads get `HOME=/tmp`.
 `restricted`. Contract section 2 keeps prod-sim on `baseline` until a per-workload non-root test passes.
 
 That test passed on 2026-11-04, on upstream images. Each container with a shell reported the UID above with `id`, and Silo, which has
-no shell, and the finished migrator were read from their pod specs. A server-side dry run of `enforce=restricted` gave no warnings
-in either namespace ([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). The label
+no shell, was read from its pod spec. A server-side dry run of `enforce=restricted` gave no warnings in either namespace
+([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). The finished migrator was read from
+its pod spec too, in dev that day and in prod-sim on 2026-11-05 ([cluster-readings-1.txt](evidence/runs/cluster-readings-1.txt)). The label
 has not moved, and nobody has repeated the dry run on the branded images. They were each started under the chart's UID, memory, CPU and
 security settings before promotion ([smoke.txt](evidence/branding/smoke.txt)).
 
@@ -153,9 +154,9 @@ competes. Limits are the same.
 Two settings keep memory on budget. `GUNICORN_WORKERS=1`, and `CELERY_WORKER_CONCURRENCY=2`: the entrypoint passes no
 `-c`, and Celery otherwise forks per CPU the node reports.
 
-The limits sum to about 107 percent of the Docker VM across the whole platform, which is deliberate overcommit (estimate,
-research critique section 4, arithmetic over configured limits plus estimates for the control plane, before later raises to some
-platform limits). Bring the two environments up serially, because simultaneous first boots are the worst case.
+On 2026-11-05 the memory limits of the 56 running pods summed to 15,812 MiB, 113% of the 13.63 GiB the Docker VM reports. etcd, the API
+server and the other control plane containers have no limit, and come on top ([cluster-readings-1.txt](evidence/runs/cluster-readings-1.txt)). This
+is deliberate overcommit. Bring the two environments up serially, because simultaneous first boots are the worst case.
 
 Real use has stayed inside that so far, with 0 OOM kills in any Plane container. Read after both smokes ran at once on 2026-11-04, no Plane
 container was above 66% of its memory limit, and the worker was highest at 426 of 768 MiB. The VM peaked at 10.49 GiB of 13.63 across all the tests
@@ -163,8 +164,10 @@ container was above 66% of its memory limit, and the worker was highest at 426 o
 limit, in dev earlier that day ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Those are cgroup peaks, which include page cache.
 The load test has not run. [[MEASURE: actual RSS per Plane workload at idle and under load]]
 
-In dev, the pods from the first boot read 0 OOM kills and 0 restarts ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Prod-sim's
-were replaced before anyone read their counters. [[VERIFY: no OOMKilled pods during first boot of both environments]]
+In dev, the pods from the first boot read 0 OOM kills and 0 restarts ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). In prod-sim,
+six of the eleven workloads were read on their first-boot pods with 0 OOM kills and 0 restarts: worker, beat, Postgres, Valkey, RabbitMQ and Silo
+([snapshot](evidence/runs/plane-prod-sim-snapshot-after-concurrent-1.txt)). The other five, api, web, admin, space and live, were replaced at 22:51
+before a read ([first boot](evidence/runs/plane-prod-sim-firstboot-1.txt)). [[VERIFY: no OOMKilled pods during first boot of both environments]]
 
 RabbitMQ applies the absolute watermark through `conf.d`: smoke step `broker-memory` reads `{absolute,"256Mi"}` with no alarms, in both environments
 ([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)).
@@ -264,7 +267,7 @@ because `export_task.py` hardcodes that path. Each environment has its own Silo,
 `copy_object` and OAuth avatars. The CoreDNS rewrite from Terraform sends both hostnames to
 `traefik.traefik.svc.cluster.local`.
 
-All of this ran through Traefik in both environments, on the branded images in dev and upstream's in prod-sim
+All of this ran through Traefik in both environments, on the branded images from `1563cbf` in dev and upstream's in prod-sim
 ([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). Steps `frontends` and
 `routes` cover the prefixes, `asset-duplicate` covers `copy_object` through the CoreDNS rewrite with a valid signature, `realtime-*` covers
 the `/live` WebSocket through the buffering middleware, and `attachment-upload` and `object-in-silo` cover presigned uploads with the bucket Job
