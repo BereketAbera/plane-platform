@@ -12,6 +12,10 @@
 #                                   which must work while dev is broken, and has no other caller
 #   no cluster in reach             the check is skipped, and this says so
 # Both reasons go in .local/evidence-raw/promotion-overrides.log.
+#
+# Promotion covers image lines only. Any other change to prod-sim's rendered manifests gets a warning and
+# is published: helm/plane/components/hardening and the chart are shared, so they reach both environments
+# in one push.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=lib/dev-check.sh
@@ -21,6 +25,7 @@ guard_disk 1
 cd "$ROOT"
 
 BARE="$LOCAL_DIR/git/plane-platform.git"
+DEV_MANIFESTS=gitops/environments/dev/manifests.yaml
 PROD_SIM_MANIFESTS=gitops/environments/prod-sim/manifests.yaml
 
 new="$(git rev-parse -q --verify refs/heads/main || true)"
@@ -78,6 +83,21 @@ if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null &&
     else
       log "This publish changes a prod-sim image, but prod-sim has no database yet, so nothing to back up"
     fi
+  fi
+fi
+
+# Everything above asks about image lines, because those are what make promote moves. Any other line in
+# the rendered prod-sim file goes straight to prod-sim with this push: no plane-dev check, no dump, and
+# when it comes from what the overlays share, no time in dev first. That is how those paths work, so this
+# says so and goes on. It reads the render and not the paths, so a comment in the component stays quiet.
+if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null; then
+  beyond_images="$(git diff -U0 "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+]' | grep -vE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ' || true)"
+  if [[ -n "$beyond_images" ]]; then
+    reach=prod-sim
+    git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS" || reach="dev and prod-sim together"
+    warn "publishing $(wc -l <<<"$beyond_images" | tr -d ' ') changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them: they reach $reach with this push, with no plane-dev check and no dump. Changed under helm/plane:"
+    # sed reads to the end, for the same reason as the grep above.
+    git diff --name-only "$old" "$new" -- helm/plane | sed -n '1,10s/^/       /p' >&2
   fi
 fi
 

@@ -4,8 +4,13 @@
 # a cluster or the real Git remote: KUBECONFIG, the bare repository and every tool on PATH belong to
 # the clone. It runs what is on disk, so it tests a change before it is committed.
 #
-#   scripts/ci/test-promotion-flows.sh           every scenario, a minute or two
+#   scripts/ci/test-promotion-flows.sh           every scenario, about three minutes
 #   scripts/ci/test-promotion-flows.sh rollback  only the scenarios whose name contains "rollback"
+#
+# The repository's overlays are no input here. make promote changes them for real, and prod-sim level
+# with dev and prod-sim behind it are both normal, so a result must not depend on which one the checkout
+# is in. The clone gets both states of its own, at digests no registry has, and a scenario names the one
+# it starts from. Its history stays, and no scenario reaches past the state it starts from.
 #
 # It says nothing about a real cluster. It proves the scripts do what they say given these answers.
 # shellcheck source=../lib/common.sh
@@ -46,7 +51,7 @@ cat >"$CLONE/.tools/bin/kubectl" <<'STUB_KUBECTL'
 args=" $* "
 echo "$*" >>"$STUB/kubectl-calls"
 [[ "$(cat "$STUB/cluster")" == up ]] || exit 1
-current_web_image() { grep -m1 -E 'image: .*plane-frontend' "$CLONE/gitops/environments/dev/manifests.yaml" | sed 's/.*image: //'; }
+current_web_image() { yq -N -r 'select(.kind == "Deployment" and .metadata.name == "plane-web-wl") | .spec.template.spec.containers[0].image' "$CLONE/gitops/environments/dev/manifests.yaml"; }
 web_is_bad() { current_web_image | grep -qF "@$BAD_DIGEST"; }
 case "$args" in
   *" get --raw /readyz "*) exit 0 ;;
@@ -74,6 +79,7 @@ chmod +x "$CLONE/.tools/bin/kubectl"
 cat >"$CLONE/scripts/backup.sh" <<'STUB_BACKUP'
 #!/usr/bin/env bash
 echo "$*" >>"$STUB/backup-calls"
+git -C "$CLONE" status --porcelain -- helm gitops >>"$STUB/backup-saw-changes"
 case "$(cat "$STUB/backup-mode")" in
   ok)
     id="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -93,11 +99,49 @@ DIGEST_B="sha256:$(printf 'b%.0s' {1..64})"
 BARE="$CLONE/.local/git/plane-platform.git"
 DEV_OVERLAY=helm/plane/overlays/dev/kustomization.yaml
 PROD_SIM_OVERLAY=helm/plane/overlays/prod-sim/kustomization.yaml
+PROD_SIM_RENDERED=gitops/environments/prod-sim/manifests.yaml
 OUT="$WORK/output"
+FAILURES="$WORK/scenario-failures"
 
 git -C "$CLONE" add -A -- scripts tests/drills >/dev/null
 git -C "$CLONE" commit --quiet --allow-empty -m 'scripts under test'
-BASE="$(git -C "$CLONE" rev-parse HEAD)"
+
+# ---- The states a scenario starts from.
+#   BASE        prod-sim level with dev
+#   BASE_AHEAD  dev ahead of prod-sim by four images, from another repository and with no tag. That is
+#               the plan the first promotion of the branded images makes.
+made_up_digest() { printf 'sha256:%s%063x' "$1" "$2"; } # made_up_digest <first hex digit> <number>
+set_image() { (cd "$CLONE/helm/plane/overlays/$1" && kustomize edit set image "$2=$3"); } # set_image <env> <image name> <reference>
+fixture_commit() {
+  (cd "$CLONE" && ./scripts/render.sh) >/dev/null
+  git -C "$CLONE" add -A -- helm gitops
+  git -C "$CLONE" commit --quiet -m "$1"
+  git -C "$CLONE" rev-parse HEAD
+}
+
+image_number=0
+AHEAD_NAMES=()
+AHEAD_REPOS=()
+AHEAD_DIGESTS=()
+while read -r image_name; do
+  image_number=$((image_number + 1))
+  short_name="${image_name##*/}"
+  set_image dev "$image_name" "docker.io/fixture/$short_name:v0@$(made_up_digest 1 "$image_number")"
+  set_image prod-sim "$image_name" "docker.io/fixture/$short_name:v0@$(made_up_digest 1 "$image_number")"
+  case "$short_name" in
+    plane-admin | plane-backend | plane-frontend | plane-space)
+      AHEAD_NAMES+=("$image_name")
+      AHEAD_REPOS+=("localhost:5001/fixture/$short_name")
+      AHEAD_DIGESTS+=("$(made_up_digest 2 "$image_number")")
+      ;;
+  esac
+done < <(yq -r '.images[].name' "$CLONE/$DEV_OVERLAY")
+[[ ${#AHEAD_NAMES[@]} -eq 4 ]] || die "the fixture wants four images to move and found ${#AHEAD_NAMES[@]} in $DEV_OVERLAY"
+BASE="$(fixture_commit 'fixture: prod-sim level with dev')"
+for index in 0 1 2 3; do
+  set_image dev "${AHEAD_NAMES[$index]}" "${AHEAD_REPOS[$index]}@${AHEAD_DIGESTS[$index]}"
+done
+BASE_AHEAD="$(fixture_commit 'fixture: dev ahead of prod-sim by four images')"
 
 admin_digest() { yq -r '.images[] | select(.name | test("plane-admin$")) | .digest' "$CLONE/$PROD_SIM_OVERLAY"; }
 web_digest_in() { yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' "$CLONE/$1"; }
@@ -108,11 +152,38 @@ web_image() { # A pod list with one ready container running this digest of web, 
 JSON
 }
 
-reset_clone() {
-  git -C "$CLONE" reset --quiet --hard "$BASE"
+images_of() { yq -r '.images[] | .name + " " + (.newName // "-") + " " + (.newTag // "-") + " " + .digest' "$CLONE/$1"; }
+dev_runs_its_overlay() { # dev_runs_its_overlay [<digest left out>] [<digest not ready>]: a ready container for every other image
+  local left_out="${1:-}" not_ready="${2:-}" comma="" name repo digest ready
+  {
+    printf '{"items":['
+    while read -r name repo digest; do
+      [[ "$digest" != "$left_out" ]] || continue
+      ready=true
+      [[ "$digest" != "$not_ready" ]] || ready=false
+      printf '%s{"metadata":{"name":"%s"},"status":{"phase":"Running","containerStatuses":[{"name":"main","ready":%s}]},' "$comma" "${name##*/}" "$ready"
+      printf '"spec":{"containers":[{"name":"main","image":"%s@%s"}]}}' "$repo" "$digest"
+      comma=,
+    done < <(yq -r '.images[] | .name + " " + .newName + " " + .digest' "$CLONE/$DEV_OVERLAY")
+    printf ']}\n'
+  } >"$STUB/pods.json"
+}
+registry_lacks() { # registry_lacks [<digest>]: a local registry that has every other digest, and notes what it was asked
+  printf '%s\n' "${1:-}" >"$STUB/registry-lacks"
+  cat >"$CLONE/.tools/bin/curl" <<'STUB_CURL'
+#!/usr/bin/env bash
+echo "$*" >>"$STUB/curl-calls"
+lacks="$(cat "$STUB/registry-lacks")"
+if [[ -n "$lacks" && "$*" == *"$lacks"* ]]; then exit 22; fi
+STUB_CURL
+  chmod +x "$CLONE/.tools/bin/curl"
+}
+
+reset_clone() { # reset_clone <commit to start from>
+  git -C "$CLONE" reset --quiet --hard "$1"
   git -C "$CLONE" update-ref -d refs/remotes/origin/main 2>/dev/null || true
   git -C "$CLONE" clean --quiet -fd -- helm gitops
-  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls" "$STUB/kubectl-calls"
+  rm -rf "$CLONE/.local/git" "$CLONE/.local/backups" "$CLONE/.local/evidence-raw" "$CLONE/.build" "$STUB/backup-calls" "$STUB/backup-saw-changes" "$STUB/kubectl-calls" "$STUB/curl-calls"
   echo statefulset.apps/plane-pgdb-wl >"$STUB/prod-sim-database"
   rm -f "$CLONE/.tools/bin/curl"
   touch "$CLONE/.local/kubeconfig"
@@ -122,7 +193,7 @@ reset_clone() {
   web_image "$DIGEST_A" true
   : >"$OUT"
   # A published main to start from, as a running platform has. Quiet about origin, which a clone lacks.
-  (cd "$CLONE" && ./scripts/gitops-publish.sh) >/dev/null 2>&1
+  (cd "$CLONE" && ./scripts/gitops-publish.sh) >/dev/null 2>&1 || die "the starting state could not be published"
 }
 
 in_clone() { (cd "$CLONE" && "$@") >"$OUT" 2>&1; }
@@ -144,24 +215,36 @@ reverts_on_main() { git -C "$CLONE" log --format=%B "$BASE..HEAD" | grep -c '^Th
 backup_calls() { if [[ -e "$STUB/backup-calls" ]]; then wc -l <"$STUB/backup-calls" | tr -d ' '; else echo 0; fi; }
 OVERRIDE_LOG="$CLONE/.local/evidence-raw/promotion-overrides.log"
 
-scenario_failures=0
 expect() { # expect <description> <command...>: one assertion inside a scenario
   local what="$1"
   shift
   if "$@"; then return 0; fi
   warn "  expected: $what"
-  scenario_failures=$((scenario_failures + 1))
+  printf '%s\n' "$what" >>"$FAILURES"
 }
 said() { grep -qF -- "$1" "$OUT"; }
 not_said() { ! grep -qF -- "$1" "$OUT"; }
 equal() { [[ "$1" == "$2" ]]; }
 
-scenario() { # scenario <name> <function>
+scenario() { # scenario <name> <function> [<commit to start from, BASE by default>]
   [[ -z "$FILTER" || "$1" == *"$FILTER"* ]] || return 0
-  reset_clone
-  scenario_failures=0
-  "$2"
-  if [[ "$scenario_failures" -eq 0 ]]; then
+  local stopped=0
+  reset_clone "${3:-$BASE}"
+  : >"$FAILURES"
+  # A command that fails in a scenario's own setup ends that scenario and not the run, or every scenario
+  # after it goes unread. Not under `if`, which would switch errexit off inside the function.
+  set +e
+  (
+    set -e
+    "$2"
+  )
+  stopped=$?
+  set -e
+  if [[ "$stopped" -ne 0 ]]; then
+    warn "  a command in the scenario itself failed, with status $stopped"
+    printf 'stopped\n' >>"$FAILURES"
+  fi
+  if [[ ! -s "$FAILURES" ]]; then
     ok "$1"
     passed=$((passed + 1))
   else
@@ -320,7 +403,7 @@ rollback_prod_sim_with_broken_backup() {
   expect "the rollback works anyway" [ "$status" -eq 0 ]
   expect "it says the dump failed" said "best-effort dump failed"
   expect "it says how it published" said "Publishing with SKIP_BACKUP=yes"
-  expect "only its own attempt, no second from the publish" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+  expect "only its own attempt, no second from the publish" equal "$(backup_calls)" 1
   expect "published" equal "$(published)" "$(head_commit)"
   expect "prod-sim is back" not_equal_digest "$promoted"
 }
@@ -342,7 +425,7 @@ rollback_prod_sim_names_the_older_dump() {
   echo '{}' >"$CLONE/.local/backups/prod-sim/$older/manifest.json"
   rollback prod-sim || status=$?
   expect "the rollback works" [ "$status" -eq 0 ]
-  expect "it took a dump of its own" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+  expect "it took a dump of its own" equal "$(backup_calls)" 1
   expect "it names the dump to restore from" said "BACKUP=$older"
   expect "and warns about latest" said "BACKUP=latest may name the dump taken just now"
 }
@@ -413,7 +496,69 @@ publish_still_backs_up_prod_sim_change() {
   expect "the setup works" [ "$status" -eq 0 ]
   in_clone ./scripts/gitops-publish.sh || status=$?
   expect "the publish works" [ "$status" -eq 0 ]
-  expect "it took the dump" equal "$(wc -l <"$STUB/backup-calls" | tr -d ' ')" 1
+  expect "it took the dump" equal "$(backup_calls)" 1
+}
+publish_warns_when_a_shared_change_reaches_prod_sim() {
+  local status=0
+  cat >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml" <<'YAML'
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flow-test
+automountServiceAccountToken: false
+YAML
+  commit_a_change_to_helm 'a change to the hardening component'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes anyway" [ "$status" -eq 0 ]
+  expect "the warning" said "that are not images"
+  expect "it says who gets it" said "they reach dev and prod-sim together"
+  expect "it names the source" said "helm/plane/components/hardening/serviceaccounts.yaml"
+  expect "published" equal "$(published)" "$(head_commit)"
+  expect "no dump" equal "$(backup_calls)" 0
+  expect "it asked the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+}
+publish_warns_when_the_chart_reaches_prod_sim() {
+  local status=0 template
+  template="$(cd "$CLONE" && find helm/plane/vendor -type f -path '*/templates/*.yaml' | LC_ALL=C sort | head -n 1)"
+  printf '\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: flow-test\n' >>"$CLONE/$template"
+  commit_a_change_to_helm 'a change to the vendored chart'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes anyway" [ "$status" -eq 0 ]
+  expect "the warning" said "they reach dev and prod-sim together"
+  expect "it names the source" said "$template"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+publish_warns_when_only_prod_sim_changes() {
+  local status=0
+  printf 'commonAnnotations:\n  flow-test: "yes"\n' >>"$CLONE/$PROD_SIM_OVERLAY"
+  commit_a_change_to_helm 'a change to the prod-sim overlay alone'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes anyway" [ "$status" -eq 0 ]
+  expect "the warning" said "that are not images"
+  expect "dev is not in it" said "they reach prod-sim with this push"
+}
+publish_quiet_when_a_shared_change_renders_to_nothing() {
+  local status=0
+  printf '# only a comment\n' >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml"
+  commit_a_change_to_helm 'a comment in the hardening component'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "no warning" not_said "that are not images"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+publish_quiet_when_only_dev_changes() {
+  local status=0
+  printf 'commonAnnotations:\n  flow-test: "yes"\n' >>"$CLONE/$DEV_OVERLAY"
+  commit_a_change_to_helm 'a change to the dev overlay alone'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "no warning" not_said "that are not images"
+}
+commit_a_change_to_helm() { # commit_a_change_to_helm <subject>: renders what is on disk and commits it, as a person would
+  in_clone ./scripts/render.sh
+  git -C "$CLONE" add -A -- helm gitops
+  git -C "$CLONE" commit --quiet -m "$1"
 }
 
 # ---- publish: a promotion merged on GitHub has to prove itself on plane-dev here
@@ -610,6 +755,182 @@ make_passes_the_documented_options() {
   expect "published" equal "$(published)" "$(head_commit)"
 }
 
+# ---- prod-sim level with dev: nothing to do, and nothing asked of anyone
+level_has_nothing_to_promote() {
+  local status=0 before
+  before="$(head_commit)"
+  in_clone make promote ENV=prod-sim CONFIRM=yes || status=$?
+  expect "it succeeds" [ "$status" -eq 0 ]
+  expect "it says so" said "prod-sim already runs these digests"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "no message for the workflow to find" [ ! -e "$CLONE/.build/promote-message.txt" ]
+  expect "no dump" equal "$(backup_calls)" 0
+  expect "it asked the cluster nothing" [ ! -s "$STUB/kubectl-calls" ]
+}
+
+# ---- prod-sim behind dev by four images: one plan, one dump, one commit, and each digest checked
+changes_nothing_since() { # changes_nothing_since <commit>
+  [[ "$(head_commit)" == "$1" && "$(published)" == "$1" && -z "$(git -C "$CLONE" status --porcelain -- helm gitops)" ]]
+}
+four_images_through_make() {
+  local status=0 before index digest
+  before="$(head_commit)"
+  dev_runs_its_overlay
+  registry_lacks
+  # Other work goes on in this checkout, so what someone else has staged must stay out of the commit.
+  echo staged >"$CLONE/docs/staged-by-someone.txt"
+  git -C "$CLONE" add docs/staged-by-someone.txt
+  in_clone make promote ENV=prod-sim CONFIRM=yes || status=$?
+  expect "the promotion works" [ "$status" -eq 0 ]
+  expect "the staged file is still staged" equal "$(git -C "$CLONE" diff --cached --name-only)" docs/staged-by-someone.txt
+  git -C "$CLONE" reset --quiet
+  rm -f "$CLONE/docs/staged-by-someone.txt"
+  for index in 0 1 2 3; do
+    digest="${AHEAD_DIGESTS[$index]}"
+    expect "the plan names $digest" said "${AHEAD_NAMES[$index]##*/} -> ${AHEAD_REPOS[$index]}@$digest"
+    expect "the registry was asked for $digest" grep -qF "/manifests/$digest" "$STUB/curl-calls"
+    expect "the commit records $digest" grep -qxF "Promote-Image: ${AHEAD_NAMES[$index]##*/}=${AHEAD_REPOS[$index]}@$digest" <(git -C "$CLONE" log -1 --format=%B)
+  done
+  expect "each digest was checked against dev's history" equal "$(grep -c 'recorded for dev under the same name' "$OUT")" 4
+  expect "prod-sim's images are dev's, with no tag left on the four" equal "$(images_of "$PROD_SIM_OVERLAY")" "$(images_of "$DEV_OVERLAY")"
+  expect "one commit" equal "$(git -C "$CLONE" rev-list --count "$before..HEAD")" 1
+  expect "of the overlay and its render only" equal "$(git -C "$CLONE" show --name-only --format= HEAD | LC_ALL=C sort | tr '\n' ' ')" "$PROD_SIM_RENDERED $PROD_SIM_OVERLAY "
+  expect "only image lines changed in the render" equal "$(git -C "$CLONE" diff -U0 "$before" HEAD -- "$PROD_SIM_RENDERED" | grep -E '^[-+]' | grep -vcE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ')" 0
+  expect "no warning about anything but images" not_said "that are not images"
+  expect "a recorded pass" grep -q '^Promote-Dev-Check: passed' <(git -C "$CLONE" log -1 --format=%B)
+  expect "dev was asked by the promotion and again by the publish" equal "$(grep -c 'get pods -o json' "$STUB/kubectl-calls")" 2
+  expect "one dump" equal "$(backup_calls)" 1
+  expect "the dump came before any change" [ ! -s "$STUB/backup-saw-changes" ]
+  expect "published" equal "$(published)" "$(head_commit)"
+  in_clone ./scripts/ci/check-promoted-digests.sh || status=$?
+  expect "the invariant CI checks holds" [ "$status" -eq 0 ]
+  in_clone ./scripts/render.sh --check || status=$?
+  expect "the render is current" [ "$status" -eq 0 ]
+  in_clone make promote ENV=prod-sim CONFIRM=yes || status=$?
+  expect "a second run has nothing to do" said "prod-sim already runs these digests"
+  expect "and takes no second dump" equal "$(backup_calls)" 1
+}
+four_images_one_at_a_time() {
+  # The workflow's image and digest inputs. The digest's repository travels with it, and the other three stay.
+  local status=0 before
+  before="$(images_of "$PROD_SIM_OVERLAY")"
+  dev_runs_its_overlay "${AHEAD_DIGESTS[0]}"
+  promote_prod_sim COMMIT=no IMAGE=web DIGEST="$(web_digest_in "$DEV_OVERLAY")" || status=$?
+  expect "it goes ahead, whatever dev runs of the other three" [ "$status" -eq 0 ]
+  expect "one image in the plan" equal "$(grep -c 'recorded for dev under the same name' "$OUT")" 1
+  expect "web moved with its repository" equal "$(grep -c 'plane-frontend localhost:5001/fixture/plane-frontend - ' <<<"$(images_of "$PROD_SIM_OVERLAY")")" 1
+  expect "and nothing else" equal "$(diff <(cat <<<"$before") <(images_of "$PROD_SIM_OVERLAY") | grep -c '^>')" 1
+}
+four_images_each_must_run_in_dev() {
+  local status before digest
+  before="$(head_commit)"
+  for digest in "${AHEAD_DIGESTS[@]}"; do
+    dev_runs_its_overlay "$digest"
+    status=0
+    in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+    expect "a refusal when no pod runs $digest" [ "$status" -ne 0 ]
+    expect "it names $digest" said "no ready container in namespace plane-dev runs $digest"
+    expect "and no other" equal "$(grep -c 'no ready container' "$OUT")" 1
+    dev_runs_its_overlay "" "$digest"
+    status=0
+    in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+    expect "a refusal when $digest is not ready" [ "$status" -ne 0 ]
+    expect "it names $digest" said "no ready container in namespace plane-dev runs $digest"
+  done
+  dev_runs_its_overlay "${AHEAD_DIGESTS[0]}" "${AHEAD_DIGESTS[3]}"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "a refusal for two at once" [ "$status" -ne 0 ]
+  expect "it names both" equal "$(grep -c 'no ready container' "$OUT")" 2
+  expect "nothing moved" changes_nothing_since "$before"
+  expect "a refused promotion takes no dump" equal "$(backup_calls)" 0
+}
+four_images_each_must_be_recorded() {
+  # Digests in dev's overlay on disk that no commit holds. The plan runs in overlay order, so the count
+  # of passes before the refusal shows the loop reached that image and read the rest of the plan intact.
+  local status before index digest
+  before="$(head_commit)"
+  dev_runs_its_overlay
+  for index in 0 1 2 3; do
+    digest="$(made_up_digest 3 "$index")"
+    set_image dev "${AHEAD_NAMES[$index]}" "${AHEAD_REPOS[$index]}@$digest"
+    status=0
+    promote_prod_sim || status=$?
+    expect "a refusal for $digest" [ "$status" -ne 0 ]
+    expect "it says why" said "$digest was never recorded for dev"
+    expect "the plan's earlier images passed first" equal "$(grep -c 'recorded for dev under the same name' "$OUT")" "$index"
+    git -C "$CLONE" restore -- "$DEV_OVERLAY"
+  done
+  expect "nothing moved" changes_nothing_since "$before"
+}
+four_images_each_must_be_in_the_registry() {
+  local status before digest
+  before="$(head_commit)"
+  dev_runs_its_overlay
+  for digest in "${AHEAD_DIGESTS[@]}"; do
+    registry_lacks "$digest"
+    status=0
+    in_clone env SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+    expect "a refusal for $digest" [ "$status" -ne 0 ]
+    expect "it says why" said "$digest is not in the local registry"
+  done
+  expect "nothing moved" changes_nothing_since "$before"
+}
+four_images_override_names_them_all() {
+  local status=0 digest
+  printf '{"items":[]}\n' >"$STUB/pods.json"
+  promote_prod_sim OVERRIDE_DEV_CHECK="dev is down for maintenance" || status=$?
+  expect "the promotion goes ahead" [ "$status" -eq 0 ]
+  for digest in "${AHEAD_DIGESTS[@]}"; do
+    expect "the log keeps $digest" grep -q "promote.sh.overridden.*$digest" "$OVERRIDE_LOG"
+    expect "and the publish's check of it" grep -q "gitops-publish.sh.overridden.*$digest" "$OVERRIDE_LOG"
+  done
+  expect "prod-sim's images are dev's" equal "$(images_of "$PROD_SIM_OVERLAY")" "$(images_of "$DEV_OVERLAY")"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+four_images_merged_checks_each() {
+  # What the promotion workflow leaves: the commit made where no cluster was in reach, not yet published.
+  local status=0 digest
+  echo down >"$STUB/cluster"
+  promote_prod_sim COMMIT=no || status=$?
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  echo up >"$STUB/cluster"
+  expect "the setup works" [ "$status" -eq 0 ]
+  expect "the commit says the check was skipped" grep -q '^Promote-Dev-Check: skipped' <(git -C "$CLONE" log -1 --format=%B)
+  PUBLISHED_BEFORE="$(published)"
+  rm -f "$STUB/kubectl-calls"
+  for digest in "${AHEAD_DIGESTS[@]}"; do
+    dev_runs_its_overlay "$digest"
+    status=0
+    in_clone ./scripts/gitops-publish.sh || status=$?
+    expect_refused "$status" "no ready container in namespace plane-dev runs $digest"
+  done
+  dev_runs_its_overlay
+  status=0
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "it publishes once dev runs all four" [ "$status" -eq 0 ]
+  expect "it took the dump" equal "$(backup_calls)" 1
+  expect "published" equal "$(published)" "$(head_commit)"
+}
+four_images_roll_back_together() {
+  local status=0 before promoted
+  before="$(head_commit)"
+  dev_runs_its_overlay
+  promote_prod_sim || status=$?
+  expect "the setup works" [ "$status" -eq 0 ]
+  promoted="$(head_commit)"
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "one revert" equal "$(reverts_on_main)" 1
+  expect "of that promotion" grep -qF "This reverts commit $promoted" <(git -C "$CLONE" log -1 --format=%B)
+  expect "the overlay and its render are as they were" equal "$(git -C "$CLONE" diff "$before" HEAD -- "$PROD_SIM_OVERLAY" "$PROD_SIM_RENDERED")" ""
+  expect "published" equal "$(published)" "$(head_commit)"
+  promote_prod_sim || status=$?
+  expect "the same promotion can be made again" [ "$status" -eq 0 ]
+  expect "prod-sim's images are dev's again" equal "$(images_of "$PROD_SIM_OVERLAY")" "$(images_of "$DEV_OVERLAY")"
+}
+
 # ---- the failed-deploy drill, with Traefik stubbed too
 drill_runs_to_a_pass() {
   local status=0
@@ -657,6 +978,11 @@ scenario publish-warns-when-ahead-of-origin publish_warns_when_ahead_of_origin
 scenario publish-quiet-when-level-with-origin publish_quiet_when_level_with_origin
 scenario publish-says-when-origin-is-unknown publish_says_when_origin_is_unknown
 scenario publish-still-backs-up-prod-sim-change publish_still_backs_up_prod_sim_change
+scenario publish-warns-when-a-shared-change-reaches-prod-sim publish_warns_when_a_shared_change_reaches_prod_sim
+scenario publish-warns-when-the-chart-reaches-prod-sim publish_warns_when_the_chart_reaches_prod_sim
+scenario publish-warns-when-only-prod-sim-changes publish_warns_when_only_prod_sim_changes
+scenario publish-quiet-when-a-shared-change-renders-to-nothing publish_quiet_when_a_shared_change_renders_to_nothing
+scenario publish-quiet-when-only-dev-changes publish_quiet_when_only_dev_changes
 scenario publish-merged-promotion-dev-proven merged_dev_proven
 scenario publish-merged-promotion-dev-out-of-sync merged_dev_out_of_sync
 scenario publish-merged-promotion-dev-degraded merged_dev_degraded
@@ -674,6 +1000,15 @@ scenario promote-override-reaches-the-publish promote_override_reaches_the_publi
 scenario rollback-prod-sim-with-unhealthy-dev rollback_prod_sim_with_unhealthy_dev
 scenario rollback-prod-sim-rerun-with-unhealthy-dev rollback_prod_sim_rerun_with_unhealthy_dev
 scenario make-passes-the-documented-options make_passes_the_documented_options
+scenario promote-level-has-nothing-to-do level_has_nothing_to_promote
+scenario promote-four-images-through-make four_images_through_make "$BASE_AHEAD"
+scenario promote-four-images-one-at-a-time four_images_one_at_a_time "$BASE_AHEAD"
+scenario promote-four-images-each-must-run-in-dev four_images_each_must_run_in_dev "$BASE_AHEAD"
+scenario promote-four-images-each-must-be-recorded four_images_each_must_be_recorded "$BASE_AHEAD"
+scenario promote-four-images-each-must-be-in-the-registry four_images_each_must_be_in_the_registry "$BASE_AHEAD"
+scenario promote-four-images-override-names-them-all four_images_override_names_them_all "$BASE_AHEAD"
+scenario publish-merged-four-images-checks-each four_images_merged_checks_each "$BASE_AHEAD"
+scenario rollback-four-images-together four_images_roll_back_together "$BASE_AHEAD"
 scenario drill-runs-to-a-pass drill_runs_to_a_pass
 scenario drill-failed-promotion-reverts-nothing-else drill_failed_promotion_reverts_nothing_else
 
