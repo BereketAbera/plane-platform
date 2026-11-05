@@ -5,7 +5,7 @@ kind node.
 
 **Status.** These runbooks were written from the code, the contract and recorded research, then corrected against what ran on the
 cluster on 2026-11-04 and 2026-11-05. A result links its file under [`docs/evidence/runs/`](../evidence/README.md). These repair paths have been followed from start to finish on the final images: the failed-deploy drill, a failing migrator and a rollback in dev, and
-a secret rotation, an in-place restore of Plane, the pod restart drill and the alert test in each environment. A rollback of prod-sim and the undo of a rotation were not tested in Pass 1. A clean rebuild and a full restore into a new cluster are in progress as this is written,
+a secret rotation, an in-place restore of Plane, the pod restart drill and the alert test in each environment. Infisical's in-place restore ran earlier ([`infisical/README.md`](../../infisical/README.md)). A rollback of prod-sim and the undo of a rotation were not tested in Pass 1. A clean rebuild and a full restore into a new cluster are in progress as this is written,
 through `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes`, and their results are not yet recorded. Anything else with no result beside it is design intent. A successful drill, not this page, is what would show a runbook works.
 
 ## Find the right runbook
