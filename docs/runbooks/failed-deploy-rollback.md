@@ -2,7 +2,7 @@
 
 A bad image or a bad migration reached an environment through a promotion.
 
-The drills and the rollback below ran in dev on 2026-11-05, starting from the final images built from `84b63d9`. A rollback of prod-sim was not tested in Pass 1.
+The drills and the rollback below ran in dev on 2026-11-05, starting from the final images built from `84b63d9`, on the cluster the rebuild later deleted. They have not been repeated on the restored one, where the final `make test` passed ([log](../evidence/runs/MAKE-TEST-20261105T083455Z.txt)). A rollback of prod-sim was not tested in Pass 1.
 
 Preamble for raw commands:
 
@@ -108,7 +108,7 @@ ls -1 .local/backups/prod-sim/
 make restore ENV=prod-sim BACKUP=<id-from-before-the-promotion> CONFIRM=yes
 ```
 
-`make restore` has run in place in both environments, on 2026-11-05, with result PASS and `make test-e2e` passing after ([restore-dev-20261105T074337Z.json](../evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](../evidence/runs/restore-prod-sim-20261105T073438Z.json)). Each used a backup taken under a minute before, with no migration between. Going back past a migration, after a rollback, was not tested in Pass 1. See [Backup and restore](backup-restore.md).
+`make restore` has run in place in both environments, on 2026-11-05, with result PASS and `make test-e2e` passing after ([restore-dev-20261105T074337Z.json](../evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](../evidence/runs/restore-prod-sim-20261105T073438Z.json)). Each used a backup taken under a minute before, with no migration between. Each ran again into a new cluster in the rebuild, on an empty target, from a backup about 35 minutes old, with every step PASS and again no migration between ([dev](../evidence/runs/restore-dev-20261105T082337Z.json), [prod-sim](../evidence/runs/restore-prod-sim-20261105T082657Z.json)). Going back past a migration, after a rollback, was not tested in Pass 1. See [Backup and restore](backup-restore.md).
 
 Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. A prod-sim rollback prints what to do, and read it before you restore:
 
