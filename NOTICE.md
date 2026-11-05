@@ -21,7 +21,8 @@ project management software by Plane Software, Inc. and contributors, licensed u
 ## What changed from upstream
 
 All changes live in [`apps/wayline/`](apps/wayline/) and are applied to the pinned upstream source at
-build time. Application functionality is unchanged except where listed.
+build time. Application functionality is unchanged except where listed, here in short and in full in
+[`apps/wayline/MODIFICATIONS.md`](apps/wayline/MODIFICATIONS.md).
 
 | Change | Where |
 |---|---|
@@ -35,7 +36,7 @@ build time. Application functionality is unchanged except where listed.
 | `plane/utils/email.py` replaced with upstream's later AGPL-3.0-only version, unchanged, and the backend image flattened, so none of its layers holds the original | `backend/vendor/email.py`, `runtime/Dockerfile.backend` |
 | Dependencies with known critical vulnerabilities replaced or removed: PyJWT, proxy-addr, storybook, tinypool | `backend/pyjwt-requirements.txt`, `runtime/space-deps.mjs` |
 | Billing settings refused for every role, and the page for a paid feature (active cycles across projects) replaced with a plain statement | `patches/30-surfaces.patch` |
-| Email templates and subjects, seed data, bot name, default sender and API metadata rebranded | `backend/`, `runtime/Dockerfile.backend` |
+| Email templates and subjects, seed data, bot name, the sender mail falls back to and API metadata rebranded | `backend/`, `runtime/Dockerfile.backend` |
 | Container images: thin runtime images instead of upstream's Dockerfiles, fitted to non-root UIDs. Web and admin tell browsers to revalidate everything without a content hash in its name, and every error. They serve no byte ranges | `runtime/` |
 
 ## What is preserved

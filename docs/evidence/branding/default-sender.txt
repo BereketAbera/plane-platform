@@ -1,0 +1,62 @@
+# What sender the mail tasks use, behind the row on the sender in apps/wayline/MODIFICATIONS.md. Recorded Thu Nov  5 08:09:55 EAT 2026.
+# Each case reads get_email_configuration(), which every mail task calls, and the from_email Django gives a message built with what it returns. A scratch Postgres on an internal Docker network, removed afterwards, and nothing was sent. The image's own api entrypoint runs configure_instance at every start, and SKIP_ENV_VAR defaults to 1 in plane/settings/common.py. checks/backend-db.sh runs with SKIP_ENV_VAR=0, so its 'default sender' PASS is case 2. A workspace's mail on the platform this repository deploys is case 4 or a sender set in god-mode, because no manifest here sets EMAIL_FROM or SKIP_ENV_VAR.
+
+# ---- this image: localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+$ manage.py migrate, on a scratch database
+# exit 0
+
+# 1. No stored row, upstream's default SKIP_ENV_VAR, no EMAIL_FROM
+SKIP_ENV_VAR=True stored row=None get_email_configuration='Wayline <noreply@wayline.invalid>' the message is sent from='Wayline <noreply@wayline.invalid>'
+# exit 0
+# 2. No stored row, SKIP_ENV_VAR=0, no EMAIL_FROM: how checks/backend-db.sh runs
+SKIP_ENV_VAR=False stored row=None get_email_configuration='Wayline <noreply@wayline.invalid>' the message is sent from='Wayline <noreply@wayline.invalid>'
+# exit 0
+# 3. SKIP_ENV_VAR=0, EMAIL_FROM set
+SKIP_ENV_VAR=False stored row=None get_email_configuration='Ops <ops@x.test>' the message is sent from='Ops <ops@x.test>'
+# exit 0
+
+$ manage.py configure_instance, as bin/docker-entrypoint-api.sh runs it on every start, with no EMAIL_FROM
+# exit 0
+# 4. After that, upstream's default SKIP_ENV_VAR, no EMAIL_FROM
+SKIP_ENV_VAR=True stored row='' get_email_configuration='' the message is sent from='webmaster@localhost'
+# exit 0
+# 5. After that, upstream's default SKIP_ENV_VAR, EMAIL_FROM set only now
+SKIP_ENV_VAR=True stored row='' get_email_configuration='' the message is sent from='webmaster@localhost'
+# exit 0
+
+$ manage.py configure_instance on another scratch database, with EMAIL_FROM set from its first start
+# exit 0
+# 6. After that, upstream's default SKIP_ENV_VAR, EMAIL_FROM still set
+SKIP_ENV_VAR=True stored row='Ops <ops@x.test>' get_email_configuration='Ops <ops@x.test>' the message is sent from='Ops <ops@x.test>'
+# exit 0
+# default-sender.sh exit 0
+
+# ---- upstream's image, the same cases: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+$ manage.py migrate, on a scratch database
+# exit 0
+
+# 1. No stored row, upstream's default SKIP_ENV_VAR, no EMAIL_FROM
+SKIP_ENV_VAR=True stored row=None get_email_configuration='Team Plane <team@mailer.plane.so>' the message is sent from='Team Plane <team@mailer.plane.so>'
+# exit 0
+# 2. No stored row, SKIP_ENV_VAR=0, no EMAIL_FROM: how checks/backend-db.sh runs
+SKIP_ENV_VAR=False stored row=None get_email_configuration='Team Plane <team@mailer.plane.so>' the message is sent from='Team Plane <team@mailer.plane.so>'
+# exit 0
+# 3. SKIP_ENV_VAR=0, EMAIL_FROM set
+SKIP_ENV_VAR=False stored row=None get_email_configuration='Ops <ops@x.test>' the message is sent from='Ops <ops@x.test>'
+# exit 0
+
+$ manage.py configure_instance, as bin/docker-entrypoint-api.sh runs it on every start, with no EMAIL_FROM
+# exit 0
+# 4. After that, upstream's default SKIP_ENV_VAR, no EMAIL_FROM
+SKIP_ENV_VAR=True stored row='' get_email_configuration='' the message is sent from='webmaster@localhost'
+# exit 0
+# 5. After that, upstream's default SKIP_ENV_VAR, EMAIL_FROM set only now
+SKIP_ENV_VAR=True stored row='' get_email_configuration='' the message is sent from='webmaster@localhost'
+# exit 0
+
+$ manage.py configure_instance on another scratch database, with EMAIL_FROM set from its first start
+# exit 0
+# 6. After that, upstream's default SKIP_ENV_VAR, EMAIL_FROM still set
+SKIP_ENV_VAR=True stored row='Ops <ops@x.test>' get_email_configuration='Ops <ops@x.test>' the message is sent from='Ops <ops@x.test>'
+# exit 0
+# default-sender.sh exit 0

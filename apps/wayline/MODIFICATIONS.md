@@ -26,11 +26,11 @@ Most of this is appearance and text. These are the changes that alter what the s
 
 | Change | Where |
 |---|---|
-| Telemetry starts off for a new instance: the god-mode setup form starts unticked, instance registration writes `is_telemetry_enabled=False`, and the setup endpoint falls back to false when the field is missing. The setting stays available. The model default is unchanged, because changing it would call for a migration. **An instance registered earlier by upstream's image keeps its stored setting, which is on unless someone turned it off, after moving to this image.** The worker's metrics task then exports to upstream's default, `telemetry.plane.so:443`. On this platform, `tests/network-policy-matrix.yaml` expects the api and worker pods to be denied that host and port in both environments, and the recorded runs saw them time out, so the export fails there. An instance on this image without that NetworkPolicy would send it. That comes from reading the code: no such instance has been run | `patches/40-admin.patch`, `backend/edit_strings.py` |
+| Telemetry starts off for a new instance: the god-mode setup form starts unticked, instance registration writes `is_telemetry_enabled=False`, and the setup endpoint falls back to false when the field is missing. The setting stays available. The model default is unchanged, because changing it would call for a migration. **An instance registered earlier by upstream's image keeps its stored setting, which is on unless someone turned it off, after moving to this image.** The worker's metrics task then exports to upstream's default, `telemetry.plane.so:443`. On the platform this repository deploys, `tests/network-policy-matrix.yaml` expects the api and worker pods to be denied that host and port in both environments, and the runs recorded in `docs/evidence/runs/` saw them time out, so the export fails there. An instance on this image without that NetworkPolicy would send it. An agent read that from the code, and no such instance has been run | `patches/40-admin.patch`, `backend/edit_strings.py` |
 | Telemetry consent text says the data goes to the upstream project, whose endpoint is still the default | `patches/40-admin.patch` |
 | Billing settings are refused for every role (`access: []`): hidden from navigation and search, and a direct URL shows the not-authorized view. Upstream's page behind it is unchanged and never mounts | `patches/30-surfaces.patch` |
 | The upgrade badge and the bulk operations banner render nothing, and the edition badge component no longer opens a paid-plan modal. License gates are not changed: nothing paid is unlocked | `patches/30-surfaces.patch` |
-| The workspace "Active cycles" menu item is gone. Its route, which in Community Edition only ever held an upsell, now says plainly that the feature is not part of this edition | `patches/30-surfaces.patch` |
+| The workspace sidebar's "Cycles" item, which opened the active cycles route, is gone. That route, which in Community Edition only ever held an upsell, now says plainly that the feature is not part of this edition | `patches/30-surfaces.patch` |
 | "Star us on GitHub" and the edition badge footer are no longer rendered in the shell | `patches/10-shell.patch` |
 | The backend image sets `INSTANCE_CHANGELOG_URL` empty, so "What's new" shows the local fallback rather than upstream's page. The setting still works for an operator who sets it | `runtime/Dockerfile.backend`, `patches/30-surfaces.patch` (fallback wording) |
 | `source` is a reserved workspace slug, because the web image answers that path itself. (Upstream already reserves `licenses`, the other path it answers.) A workspace that already uses it keeps working, except that the exact URL `/source` goes to nginx | `patches/30-surfaces.patch`, `backend/edit_strings.py` |
@@ -41,14 +41,14 @@ Most of this is appearance and text. These are the changes that alter what the s
 | The sign-up consent label and terms text name the instance administrator, not upstream | `patches/20-auth.patch`, `patches/50-space.patch` |
 | Marketing, legal, support and community links go to `/source` or are removed | `codemod/rebrand.mjs`, `patches/` |
 | Seed data for new workspaces is reworded, and 7 images hotlinked from upstream's CDN are gone | `backend/edit_strings.py` |
-| Default sender is `Wayline <noreply@wayline.invalid>`. `EMAIL_FROM` still takes precedence | `backend/edit_strings.py` |
+| The sender upstream's code falls back to, `Team Plane <team@mailer.plane.so>`, is `Wayline <noreply@wayline.invalid>`. That fallback is used only while no sender is stored and `EMAIL_FROM` is unset. The image's api entrypoint, `bin/docker-entrypoint-api.sh`, runs `configure_instance` at every start, which stores `EMAIL_FROM` the first time, empty if it is unset, and the stored value wins. So an instance started with no `EMAIL_FROM` sends from Django's `webmaster@localhost` until someone sets a sender in god-mode, and setting the variable later changes nothing. With `SKIP_ENV_VAR=0`, which is not upstream's default, only the variable and the fallback are read. Upstream's image does the same, with its own fallback: `docs/evidence/branding/default-sender.txt` | `backend/edit_strings.py` |
 | Web and admin run nginx as UID 101, space and backend as UID 1000. Web answers `/source` with a 302 to this repository at the commit that built the image, and serves the licence texts at `/licenses/` | `runtime/` |
 | Onboarding's `has_marketing_email_consent` starts false. Upstream's starts true, and is sent even when the checkbox is hidden | `patches/20-auth.patch` |
 | The plain-text part of mail decodes HTML character references, and style blocks are stripped in linear time, because `plane/utils/email.py` is upstream's later version. See the D12 section below | `backend/vendor/email.py` |
 | The workspace and project invitation tasks also store that helper's result in the invitation's `message` column, which the API serves. So that field now holds decoded raw markup where it held escaped text: a workspace named `<b>x</b>` is stored as `<b>x</b>`, not `&lt;b&gt;x&lt;/b&gt;`. No frontend reads it | `backend/vendor/email.py`, proved by `backend/check_db.py` |
-| Web and admin tell browsers what they may keep: a year and `immutable` on a success for the bundler's hashed files, and `Cache-Control: no-cache` on every error, on HTML and on everything else without a content hash in its name, so a browser holding HTML from these images sees a promotion or a rollback at the next request. Upstream's config sends no `Cache-Control`, so a browser reuses HTML unasked for about a tenth of the file's age. That is the limit on the above: a browser still holding HTML from an image without the header reuses it unasked until that time runs out, which for upstream's `index.html` was about 17.5 h at the time of writing, on 2026-11-05 (`docs/evidence/branding/upstream-html-age.txt`), and grows with the file's age. A rollback to any digest built before `e885fc0` brings back the header-less HTML | `runtime/nginx-web.conf`, `runtime/nginx-admin.conf` |
+| Web and admin tell browsers what they may keep: a year and `immutable` on a success for the bundler's hashed files, and `Cache-Control: no-cache` on every error, on HTML and on everything else without a content hash in its name, so a browser holding HTML from these images sees a promotion or a rollback at the next request. Upstream's config sends no `Cache-Control`, so a browser may reuse HTML unasked for a fraction of the file's age. RFC 9111 gives a tenth as typical, and a tenth is assumed here: Chromium was seen not asking again (`docs/evidence/branding/cache-browser.txt`), and nobody timed for how long. That is the limit on the above: a browser still holding HTML from an image without the header reuses it unasked until that time runs out, which at a tenth was about 17.5 h for upstream's `index.html`, at the time of writing, on 2026-11-05 (`docs/evidence/branding/upstream-html-age.txt`), and grows with the file's age. A rollback to any digest built before `e885fc0` brings back the header-less HTML | `runtime/nginx-web.conf`, `runtime/nginx-admin.conf` |
 | Web and admin ignore a `Range` header and answer with the whole file, because nginx sends its 416 with what it had already set for a 200. No file they serve needs part of a file. Their redirects for a directory asked for without its slash are relative, because an absolute one names port 3000, which the ingress does not serve | `runtime/nginx-web.conf`, `runtime/nginx-admin.conf` |
-| The backend image has PyJWT 2.14.0 in place of 2.13.0. The space image has proxy-addr 2.0.8 in place of 2.0.7, and does not have storybook or tinypool. See the dependency section below | `backend/pyjwt-requirements.txt`, `runtime/space-deps.mjs` |
+| The backend image has PyJWT 2.14.0 in place of 2.13.0. The space image's filesystem has proxy-addr 2.0.8 in place of 2.0.7, and no storybook or tinypool, though their old bytes stay in its `FROM` layers. See the dependency section below | `backend/pyjwt-requirements.txt`, `runtime/space-deps.mjs` |
 
 ## Files, by group
 
@@ -69,13 +69,13 @@ headers or `PlaneLogo`-style component names.
 | Brand CSS, new | `packages/tailwind-config/brand.css`, `brand/{tokens,shell,auth,admin,space}.css` |
 | Fonts, new | `packages/tailwind-config/fonts/`: Instrument Sans and JetBrains Mono, SIL OFL 1.1, licenses and checksums alongside |
 | Logo components, replaced artwork at upstream's names | `packages/propel/src/icons/brand/plane-{logo,lockup,wordmark}.tsx`, `sub-brand/plane-icon.tsx`, `packages/propel/public/plane-lockup-light.svg` |
-| Images, replaced at upstream's names and dimensions: 143 favicons, PWA icons, spinners, marks, empty states, tour art | `apps/{web,admin,space}/app/assets/**`, `apps/{web,admin,space}/public/**`. Generated by `assets/generate.mjs` |
+| Images, replaced at upstream's names: 143 favicons, PWA icons, spinners, marks, empty states, tour art. They keep upstream's dimensions, except the 6 spinners, which are 88x88 where upstream's are 553x306 and 552x308, because their slot sets only the height, and `apps/web/app/assets/auth/unauthorized.svg`, which is 264.935x151.935 where upstream's has only a viewBox of 281.415x172.368 | `apps/{web,admin,space}/app/assets/**`, `apps/{web,admin,space}/public/**`. Generated by `assets/generate.mjs` |
 | Manifests, 7 | `apps/web/manifest.json`, `apps/{web,admin,space}/public/**`, `apps/space/app/assets/favicon/site.webmanifest` |
 | Sign-in chart, new. One sheet, three generated copies, from `assets/generate-contours.mjs` | `apps/web/core/components/auth-screens/wayline-{chart,split}.tsx`, `apps/admin/app/(all)/(home)/{wayline-chart,auth-split}.tsx`, `apps/space/components/views/{wayline-chart,route-chart}.tsx` |
 | Empty states, replaced registry: every `assetKey` draws a flat chart symbol, not upstream's isometric illustrations. Generated by `assets/generate-empty-states.mjs` | `packages/propel/src/empty-state/assets/asset-registry.tsx` |
 
 Upstream images kept unchanged, with reasons in `assets/README.md`: file-type icons, stock cover photos,
-third-party sign-in logos, the fallback avatar.
+third-party sign-in and integration logos, the fallback avatar, a decorative underline.
 
 ### Patches (`patches/`)
 
@@ -88,7 +88,7 @@ Measured with `git apply --numstat` on 2026-11-05: 86 files, +311 -500, 140 hunk
 | `10-shell` | 20 | +43 -32 | `apps/web`: full-bleed content (`workspace/content-wrapper.tsx`, `(projects)/layout.tsx`, `settings/profile/layout.tsx`), shell attributes (`navigation/top-navigation-root.tsx`, `sidebar/*`, the three settings sidebars), active item hooks, section label classes, metadata hooks |
 | `20-auth` | 18 | +92 -156 | `apps/web`: split sign-in (`auth-screens/*`, `account/auth-forms/*`, `accounts/*/page.tsx`, `instance/not-ready-view.tsx`, `onboarding/*`, `create-workspace`, `invitations`), customer logos removed, terms text, marketing consent starts false |
 | `30-surfaces` | 21 | +74 -178 | `apps/web`, `packages/constants`: help menu, error and maintenance pages, product updates, badges, active cycles, billing, theme swatches, reserved slugs, chart colours |
-| `40-admin` | 13 | +49 -42 | `apps/admin`: split sign-in, shell, help section, setup and general forms, failure view |
+| `40-admin` | 13 | +49 -42 | `apps/admin`: split sign-in, shell, help section, setup and general forms, the AI form's contact note removed, failure view |
 | `50-space` | 10 | +49 -61 | `apps/space`: split sign-in, ink band, source badge, terms text, error and failure views |
 
 ### Backend image (`backend/`, `runtime/Dockerfile.backend`)
@@ -101,7 +101,7 @@ Derived from `makeplane/plane-backend:v1.4.3` by digest, then flattened, and sha
 | Scripted string edits, each with an exact match count: email subjects, bot name, activity text, default instance name, telemetry defaults, default sender, API error text, OpenAPI metadata, admin titles, seed data, the PyJWT line in `requirements/base.txt` | `backend/edit_strings.py`, which holds the full list |
 | Replaced, unchanged from upstream's `preview`: `plane/utils/email.py` | `backend/vendor/email.py`, with its commit and sha256 in `backend/vendor/email.py.pin` |
 | Logo | `plane/static/logos/Logo.png`, from `backend/assets/Logo.png` |
-| Flattened: the derived filesystem is copied into an empty image, and the base image's config is restated by hand | `runtime/Dockerfile.backend`, checked by `checks/flatten-config.py` |
+| Flattened: the derived filesystem is copied into an empty image, and the last stage states the base image's config again, because it does not inherit it | `runtime/Dockerfile.backend`, checked by `checks/flatten-config.py` |
 
 The Docker context holds only these templates, `wayline/` and the licence texts. Upstream's other templates come from the base image, through that copy.
 
@@ -119,6 +119,8 @@ The backend image is flattened, so PyJWT 2.13.0 is in none of its layers. The sp
 
 The space image has other HIGH findings. An agent left these. The owner has not reviewed that. Some are in packages its server loads from `node_modules`: axios, body-parser, compression, follow-redirects and react-router. Others are in code the bundler inlined into `build/server/index.js`, where nothing imports it, so `runtime/space-deps.mjs` cannot see it: markdown-it 14.2.0, nanoid 3.3.8, prosemirror-view 1.40.0 and source-map-js 1.2.1, with a MEDIUM in @tiptap/core 2.26.3. `checks/space-regions.mjs` lists what was inlined. The rest are in the development packages above, which the server does not load: vite 8.0.16, brace-expansion 5.0.7, toml 4.3.0 and webpack-dev-middleware 6.1.3. The web and admin client bundles hold some of these libraries too, and no image scan can see them there. Nobody has checked whether the findings in the packages the server loads or inlines can be reached in a way that matters, or the same for those libraries in the client bundles.
 
+The backend image has HIGH findings too, in Django 5.2.15 and djangorestframework 3.17.2, and MEDIUM and LOW ones. An agent left these. The owner has not reviewed that. This repository records no check of whether they can be reached in a way that matters.
+
 An agent left these on purpose, and the owner has not reviewed that: the `plane` module and `X-Plane-*` headers, the "New at Plane" choice label in
 `db/models/workspace.py`, because changing it would call for a migration, and the GitHub releases check in
 `register_instance.py`. Databases that already exist keep their stored instance name, bot name, telemetry flag,
@@ -127,7 +129,7 @@ demo content and activity rows.
 ### Runtime and build (`runtime/`, `scripts/`, `checks/`)
 
 New files, not derived from upstream except as stated: thin Dockerfiles, `runtime/nginx-{web,admin}.conf` (modified
-from `apps/{web,admin}/nginx/nginx.conf`: pid on `/run`, two workers, no rate-limit zone, `Cache-Control` by status and file name, no byte ranges, relative redirects, `/source` on web), the build
+from `apps/{web,admin}/nginx/nginx.conf`: pid on `/run`, two workers, no rate-limit zone, `Cache-Control` by status and file name, no byte ranges, relative redirects, `/source` and `/licenses/` on web), the build
 and authoring scripts, and the checks. Upstream's own Dockerfiles are not used.
 
 ## Preserved
@@ -166,8 +168,8 @@ any of this, so this section records what was done and is not a legal claim eith
 - `runtime/Dockerfile.backend` copies it over the original in its first stage. `backend/check_image.py --build-time` then stops the image
   build if any file in that stage's filesystem holds the identifier, or if this file is not that AGPL-3.0-only version.
 - The last stage is `FROM scratch` and copies that filesystem, so the published image has one layer holding it, and an empty
-  layer BuildKit adds for `WORKDIR`. `checks/flatten-compare.py` compared this copy with the unflattened image, path by path.
-- `checks/layer-check.py` reads every layer of each image we build as a registry serves it, opening archives by their first
+  layer BuildKit adds for `WORKDIR`. An agent ran `checks/flatten-compare.py`, which no build runs, on an earlier build, and it compared this copy with the unflattened image path by path: `docs/evidence/branding/flatten-compare-final.txt`.
+- `checks/layer-check.py` reads every layer of each image this repository builds as a registry serves it, opening archives by their first
   bytes, and fails if any holds the identifier in any case or in UTF-16, the original's sha256, or bytecode at its path.
   `scripts/ci/build-images.sh` runs it in a throwaway registry before publishing anything, and again on what it published, and
   records no digest for an image that fails.
@@ -176,8 +178,8 @@ any of this, so this section records what was done and is not a legal claim eith
   than that, and does not say anything is legally cleared.
 - `backend/email-py-decision.txt` names this decision. `scripts/publish-gate.sh` then allows only the local registry and
   `ghcr.io/bereketabera/wayline`, and fails for anything else. A new value there, or another registry, needs a change to that script.
-- The `live` service keeps upstream's image, unmodified. Its layers hold no such identifier, read with the current check at the digest this
-  platform pins: `docs/evidence/branding/layer-check-live.txt`.
+- The `live` service keeps upstream's image, unmodified. Its layers hold no such identifier, read with the current check at the digest the
+  platform this repository deploys pins: `docs/evidence/branding/layer-check-live.txt`.
 
 Moving to an upstream release that carries the AGPL header would end the need for the replacement and the flattening.
 
