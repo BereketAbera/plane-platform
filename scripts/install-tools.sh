@@ -29,7 +29,8 @@ while IFS=$'\t' read -r name version platform url want member; do
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
   file="$tmp/download"
   echo "fetching $name $version"
-  curl -fsSL --retry 3 --retry-delay 2 -o "$file" "$url"
+  # A gateway error can outlast a few seconds: run 42044273346 lost a job to four 504s in 6 s, before any check ran.
+  curl -fsSL --retry 5 --retry-delay 5 --retry-connrefused -o "$file" "$url"
   got="$(sha256 "$file")"
   if [[ "$got" != "$want" ]]; then
     echo "CHECKSUM MISMATCH for $name $version: want $want got $got" >&2; exit 1
