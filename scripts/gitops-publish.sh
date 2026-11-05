@@ -8,14 +8,17 @@
 # A publish that brings prod-sim a digest must have plane-dev Synced and Healthy with that digest in a
 # ready container, as in promote.sh. SKIP_BACKUP does not change that. Three ways past it:
 #   OVERRIDE_DEV_CHECK="<reason>"   runs the check and goes ahead if it fails, logging the reason
-#   SKIP_DEV_CHECK="<reason>"       does not ask the cluster at all, and logs the reason. For rollback,
-#                                   which must work while dev is broken, and has no other caller
+#   SKIP_DEV_CHECK="<reason>"       does not ask the cluster at all, and logs the reason. For a rollback
+#                                   of prod-sim, which must work while dev is broken, and has no other caller
 #   no cluster in reach             the check is skipped, and this says so
 # Both reasons go in .local/evidence-raw/promotion-overrides.log.
 #
+# A publish is all of main, up to the commit it found when it started. So a dev change waits behind a
+# prod-sim digest that is refused, and leaves with it, and a refusal names what it is waiting behind.
+#
 # Promotion covers image lines only. Any other change to prod-sim's rendered manifests gets a warning and
 # is published: helm/plane/components/hardening and the chart are shared, so they reach both environments
-# in one push.
+# in one push. A digest changed by hand also gets a warning if make promote would have refused it.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=lib/dev-check.sh
@@ -26,7 +29,7 @@ cd "$ROOT"
 
 BARE="$LOCAL_DIR/git/plane-platform.git"
 DEV_MANIFESTS=gitops/environments/dev/manifests.yaml
-PROD_SIM_MANIFESTS=gitops/environments/prod-sim/manifests.yaml
+PROD_SIM_OVERLAY=helm/plane/overlays/prod-sim/kustomization.yaml
 
 new="$(git rev-parse -q --verify refs/heads/main || true)"
 [[ -n "$new" ]] || die "no main branch to publish: commit first"
@@ -47,14 +50,26 @@ fi
 # A promotion merged on GitHub reaches the cluster here, not in the workflow, which cannot talk to
 # the cluster. So this is where such a promotion must prove itself on plane-dev and take the dump the
 # contract requires, in that order, so a refused publish costs no dump.
-# grep reads to the end, not -q. With -q it stops at the first match, git dies of SIGPIPE on a large
-# diff, and under pipefail the pipeline reads as no match, which would skip both.
-if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null &&
-  git diff "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+].*@sha256:' >/dev/null; then
-  # The digests on added lines. An image that was only removed brings nothing to prove.
+if prod_sim_digests_move "$old" "$new"; then
+  moving="$(commits_moving_prod_sim "$old" "$new")"
+  log "This publish moves prod-sim's images, through:"
+  sed 's/^/       /' <<<"$moving"
   added=()
-  while read -r digest; do added+=("$digest"); done < <(git diff "$old" "$new" -- "$PROD_SIM_MANIFESTS" |
-    sed -n 's/^+.*@\(sha256:[a-f0-9]\{64\}\).*/\1/p' | sort -u)
+  while read -r digest; do added+=("$digest"); done < <(prod_sim_digests_added "$old" "$new")
+
+  # make promote ties each digest to its image through what dev recorded. A change by hand never met
+  # that, and the plane-dev check below is content with a digest that runs anywhere in dev, under any
+  # image. CI has this check too and cannot block a merge. Only a warning: rollback uses this path.
+  pairs=()
+  while read -r name digest; do
+    for added_digest in ${added[@]+"${added[@]}"}; do
+      if [[ "$digest" == "$added_digest" ]]; then pairs+=("$name=$digest"); fi
+    done
+  done < <(git show "$new:$PROD_SIM_OVERLAY" | yq -r '.images[] | .name + " " + .digest')
+  if [[ ${#pairs[@]} -gt 0 ]] && ! invariant="$("$ROOT/scripts/ci/check-promoted-digests.sh" "${pairs[@]}" 2>&1 >/dev/null)"; then
+    warn "this publish moves a prod-sim image in a way make promote would refuse, so look at where that change came from:"
+    sed 's/^/       /' <<<"$invariant" >&2
+  fi
 
   # A cluster with no prod-sim database has nothing running to protect or to dump, which is what make
   # up meets after make destroy. If kubectl cannot tell, go on, and the backup fails and stops this
@@ -72,7 +87,12 @@ if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null &&
       log "This publish changes a prod-sim image, but prod-sim has no database yet, so there is nothing running for the plane-dev check to protect"
     else
       log "This publish changes a prod-sim image, so plane-dev must have proven it"
-      check_dev_proven "${added[@]}" || refuse_unproven_dev "Nothing was published."
+      if ! check_dev_proven "${added[@]}"; then
+        if ! git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS"; then
+          warn "A publish is all of main, so the change to dev in this push is held behind what moves prod-sim: ${moving//$'\n'/; }. make rollback ENV=prod-sim withdraws the newest promotion of prod-sim and publishes the rest."
+        fi
+        refuse_unproven_dev "Nothing was published."
+      fi
     fi
   fi
 
@@ -90,14 +110,25 @@ fi
 # the rendered prod-sim file goes straight to prod-sim with this push, unchecked on plane-dev, and when it
 # comes from what the overlays share, with no time in dev first. That is how those paths work, so this
 # says so and goes on. It reads the render and not the paths, so a comment in the component stays quiet.
+beyond_images() { # beyond_images <render>: the lines this push changes in it that are not an image
+  git diff -U0 "$old" "$new" -- "$1" | grep -E '^[-+]' | grep -vE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ' || true
+}
 if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null; then
-  beyond_images="$(git diff -U0 "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+]' | grep -vE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ' || true)"
-  if [[ -n "$beyond_images" ]]; then
+  prod_sim_lines="$(beyond_images "$PROD_SIM_MANIFESTS")"
+  if [[ -n "$prod_sim_lines" ]]; then
     reach=prod-sim
-    git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS" || reach="dev and prod-sim together"
-    warn "publishing $(wc -l <<<"$beyond_images" | tr -d ' ') changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach $reach with this push. Changed under helm/plane:"
-    # sed reads to the end, for the same reason as the grep above.
-    git diff --name-only "$old" "$new" -- helm/plane | sed -n '1,10s/^/       /p' >&2
+    if [[ -n "$(beyond_images "$DEV_MANIFESTS")" ]]; then reach="dev and prod-sim together"; fi
+    sources="$(git diff --name-only "$old" "$new" -- helm/plane)"
+    what_changed="Changed under helm/plane:"
+    if [[ -z "$sources" ]]; then
+      what_changed="The render changed with no source change under helm/plane, so the next make render undoes this."
+    fi
+    warn "publishing $(wc -l <<<"$prod_sim_lines" | tr -d ' ') changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach $reach with this push. $what_changed"
+    if [[ -n "$sources" ]]; then
+      sed -n '1,10s/^/       /p' <<<"$sources" >&2
+      source_count="$(wc -l <<<"$sources" | tr -d ' ')"
+      if [[ "$source_count" -gt 10 ]]; then printf '       and %d more\n' "$((source_count - 10))" >&2; fi
+    fi
   fi
 fi
 
@@ -115,8 +146,9 @@ else
 fi
 
 # Plain push on purpose: a non-fast-forward means history was rewritten, and Argo CD would then
-# follow that rewrite with no record of it. Reverts are the way back.
-git push --quiet "$BARE" refs/heads/main:refs/heads/main ||
+# follow that rewrite with no record of it. Reverts are the way back. It pushes the commit everything
+# above looked at, because other work commits in this checkout, and a dump takes minutes.
+git push --quiet "$BARE" "$new:refs/heads/main" ||
   die "push refused. If main was rewritten, restore it or delete $BARE to republish from scratch."
 ok "published main ${new:0:12} to $BARE"
 
