@@ -108,7 +108,7 @@ ls -1 .local/backups/prod-sim/
 make restore ENV=prod-sim BACKUP=<id-from-before-the-promotion> CONFIRM=yes
 ```
 
-`make restore` has run in place in both environments, on 2026-11-05, with result PASS and `make test-e2e` passing after ([restore-dev-20261105T074337Z.json](../evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](../evidence/runs/restore-prod-sim-20261105T073438Z.json)). Each used a backup taken minutes before, with no migration between. Going back past a migration, after a rollback, was not tested in Pass 1. See [Backup and restore](backup-restore.md).
+`make restore` has run in place in both environments, on 2026-11-05, with result PASS and `make test-e2e` passing after ([restore-dev-20261105T074337Z.json](../evidence/runs/restore-dev-20261105T074337Z.json), [restore-prod-sim-20261105T073438Z.json](../evidence/runs/restore-prod-sim-20261105T073438Z.json)). Each used a backup taken under a minute before, with no migration between. Going back past a migration, after a rollback, was not tested in Pass 1. See [Backup and restore](backup-restore.md).
 
 Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. A prod-sim rollback prints what to do, and read it before you restore:
 
