@@ -31,7 +31,7 @@ Two details exist because the obvious check would pass falsely:
 | Obvious check | Why it proves nothing | What the script uses |
 |---|---|---|
 | Login over `127.0.0.1` | The image's `pg_hba.conf` trusts it, so any password passes | Login over the pod IP, which reaches `scram-sha-256` |
-| `GET /api/instances/` | Cached in Valkey for two hours, answers 200 with Postgres down. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]] | `/api/public/anchor/__probe__/settings/`, where a 404 with "does not exist" needs the database |
+| `GET /api/instances/` | Cached in Valkey for two hours, answers 200 with Postgres down. It stayed 200 through each Postgres round of the pod restart drill on 2026-11-04, each under a minute ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)). | `/api/public/anchor/__probe__/settings/`, where a 404 with "does not exist" needs the database |
 
 The script compares `SECRET_KEY` before and after, and records whether it moved.
 
