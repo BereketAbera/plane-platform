@@ -1,0 +1,122 @@
+# Read-only readings of the running cluster, taken to settle statements in the docs. Started 2026-11-05T02:08:49Z.
+# kubectl get, kubectl auth can-i and GET on Prometheus's query API, context kind-plane-platform. Nothing here changes the cluster.
+# Working repo main: 83ba5d28327f. Published main: adffb3cf7b8e.
+
+## Applications
+$ kubectl -n argocd get applications, with sync, health and revision
+count 14
+alloy                          Synced   Healthy  adffb3cf7b8e
+backup-storage                 Synced   Healthy  adffb3cf7b8e
+infisical                      Synced   Healthy  adffb3cf7b8e
+infisical-operator-dev         Synced   Healthy  adffb3cf7b8e
+infisical-operator-prod-sim    Synced   Healthy  adffb3cf7b8e
+kube-prometheus-stack          Synced   Healthy  adffb3cf7b8e
+loki                           Synced   Healthy  adffb3cf7b8e
+metrics-server                 Synced   Healthy  adffb3cf7b8e
+monitoring-extras              Synced   Healthy  adffb3cf7b8e
+network-policies               Synced   Healthy  adffb3cf7b8e
+plane-dev                      Synced   Healthy  adffb3cf7b8e
+plane-prod-sim                 Synced   Healthy  adffb3cf7b8e
+root                           Synced   Healthy  adffb3cf7b8e
+traefik                        Synced   Healthy  adffb3cf7b8e
+
+## Images the Plane pods run, by namespace
+$ kubectl get pods, phase Running and Succeeded, first container image
+plane-dev        plane-admin-wl-6fdbdb8cc-sx6lg                   Running    localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+plane-dev        plane-api-migrate-1-qcmqk                        Succeeded  localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+plane-dev        plane-api-wl-648bc8f87c-6m7p6                    Running    localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+plane-dev        plane-beat-worker-wl-657897986c-mv2kk            Running    localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+plane-dev        plane-live-wl-5744d85f8b-qdb9d                   Running    docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+plane-dev        plane-space-wl-7fcd9ddf68-wzbtl                  Running    localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+plane-dev        plane-web-wl-864665b66c-7rsk9                    Running    localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+plane-dev        plane-worker-wl-68ff64dd8b-rclhs                 Running    localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+plane-prod-sim   plane-admin-wl-5d6489d557-vr62j                  Running    docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+plane-prod-sim   plane-api-migrate-1-65669                        Succeeded  docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+plane-prod-sim   plane-api-wl-8566bcd789-lc7df                    Running    docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+plane-prod-sim   plane-beat-worker-wl-5c8845c7d5-cqhpz            Running    docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+plane-prod-sim   plane-live-wl-5d5fd749c6-szdzq                   Running    docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+plane-prod-sim   plane-space-wl-54c66d4dcb-zz2nn                  Running    docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+plane-prod-sim   plane-web-wl-8fb59c6c9-b4nq8                     Running    docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+plane-prod-sim   plane-worker-wl-667f56c7f8-t9g6g                 Running    docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+
+## The finished migrator in plane-prod-sim, from its pod spec
+$ kubectl -n plane-prod-sim get pod plane-api-migrate-1-65669 -o json, image, phase, pod and container securityContext
+image docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+phase Succeeded
+started 2026-11-04T22:51:07Z
+pod securityContext {"runAsGroup": 1000, "runAsNonRoot": true, "runAsUser": 1000, "seccompProfile": {"type": "RuntimeDefault"}}
+container securityContext {"allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"]}}
+
+## Grafana's account
+kubectl auth can-i list secrets -n monitoring --as=system:serviceaccount:monitoring:kps-grafana -> yes
+kubectl auth can-i get secret/kps-grafana -n monitoring --as=system:serviceaccount:monitoring:kps-grafana -> yes
+kubectl auth can-i get secret/alertmanager-kps-alertmanager -n monitoring --as=system:serviceaccount:monitoring:kps-grafana -> yes
+kubectl auth can-i list configmaps -n monitoring --as=system:serviceaccount:monitoring:kps-grafana -> yes
+kubectl auth can-i list configmaps -n plane-dev --as=system:serviceaccount:monitoring:kps-grafana -> no
+kubectl auth can-i list secrets -n plane-dev --as=system:serviceaccount:monitoring:kps-grafana -> no
+kubectl auth can-i list secrets -n plane-prod-sim --as=system:serviceaccount:monitoring:kps-grafana -> no
+kubectl auth can-i list secrets --all-namespaces --as=system:serviceaccount:monitoring:kps-grafana -> no
+$ kubectl -n monitoring get role kps-grafana, rules
+[""] ["configmaps","secrets"] ["get","watch","list"]
+$ ClusterRoles and ClusterRoleBindings naming grafana
+(no ClusterRole)
+(no ClusterRoleBinding)
+$ kubectl -n monitoring get secrets, names only
+secret/alertmanager-kps-alertmanager
+secret/alertmanager-kps-alertmanager-cluster-tls-config
+secret/alertmanager-kps-alertmanager-generated
+secret/alertmanager-kps-alertmanager-tls-assets-0
+secret/alertmanager-kps-alertmanager-web-config
+secret/kps-grafana
+secret/kps-prometheus-token
+secret/prometheus-kps-prometheus
+secret/prometheus-kps-prometheus-thanos-prometheus-http-client-file
+secret/prometheus-kps-prometheus-tls-assets-0
+secret/prometheus-kps-prometheus-web-config
+
+## The operators, cluster-wide
+kubectl auth can-i create tokenreviews.authentication.k8s.io --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> yes
+kubectl auth can-i create subjectaccessreviews.authorization.k8s.io --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> yes
+kubectl auth can-i get /metrics --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> no
+kubectl auth can-i create tokenreviews.authentication.k8s.io --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> yes
+kubectl auth can-i create subjectaccessreviews.authorization.k8s.io --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> yes
+kubectl auth can-i get /metrics --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+$ the ClusterRoles the chart renders in scoped mode
+iso-dev-metrics-auth-role: ["authentication.k8s.io"] ["tokenreviews"]  ["create"]; ["authorization.k8s.io"] ["subjectaccessreviews"]  ["create"]; 
+iso-dev-metrics-reader:   ["/metrics"] ["get"]; 
+iso-prod-sim-metrics-auth-role: ["authentication.k8s.io"] ["tokenreviews"]  ["create"]; ["authorization.k8s.io"] ["subjectaccessreviews"]  ["create"]; 
+iso-prod-sim-metrics-reader:   ["/metrics"] ["get"]; 
+$ every ClusterRoleBinding and RoleBinding that names an iso-* ClusterRole
+ClusterRoleBinding iso-dev-metrics-auth-rolebinding -> ClusterRole iso-dev-metrics-auth-role subjects [('plane-dev', 'iso-dev-controller-manager')]
+ClusterRoleBinding iso-prod-sim-metrics-auth-rolebinding -> ClusterRole iso-prod-sim-metrics-auth-role subjects [('plane-prod-sim', 'iso-prod-sim-controller-manager')]
+RoleBindings naming an iso-* ClusterRole: 0
+
+## Memory limits of all running pods, summed
+$ kubectl get pods -A -o json, containers (not init containers), phase Running or Pending, resources.limits.memory
+pods 56
+argocd                 1792 MiB
+infisical              1376 MiB
+kube-system             468 MiB
+monitoring             3136 MiB
+monitoring-agents        48 MiB
+plane-dev              4400 MiB
+plane-prod-sim         4400 MiB
+traefik                 192 MiB
+sum                   15812 MiB
+containers with no memory limit, not in that sum:
+  kube-system/etcd-plane-platform-control-plane/etcd
+  kube-system/kindnet-gqcpb/kindnet-cni
+  kube-system/kube-apiserver-plane-platform-control-plane/kube-apiserver
+  kube-system/kube-controller-manager-plane-platform-control-plane/kube-controller-manager
+  kube-system/kube-proxy-ns4th/kube-proxy
+  kube-system/kube-scheduler-plane-platform-control-plane/kube-scheduler
+  local-path-storage/local-path-provisioner-56c4685b7c-8m876/local-path-provisioner
+$ node capacity, memory
+14294756Ki
+
+## Infisical's first pod, from kube-state-metrics in Prometheus, as of 2026-11-04T21:25:00Z
+kube_pod_created 1793826349 2026-11-04T21:05:49Z
+kube_pod_container_state_started 1793826639 2026-11-04T21:10:39Z
+kube_pod_status_ready_time 1793826660 2026-11-04T21:11:00Z
+
+# Finished 2026-11-05T02:08:51Z.
