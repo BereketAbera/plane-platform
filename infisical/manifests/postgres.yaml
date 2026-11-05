@@ -55,11 +55,18 @@ spec:
         - name: postgres
           image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
           # Infisical's pool defaults to 10 connections, so 30 is room to spare at a 256Mi limit.
+          # The lock table holds max_locks_per_transaction x MaxBackends, and MaxBackends is 52 here: max_connections
+          # plus 22 of the server's own. A backup's scratch restore held 3422 locks at once, one statement alone
+          # 3384, which at the default of 64 and its 3328 slots ran on spare shared memory, and the partitions behind
+          # that only grow. Running out fails the backup or the restore, so 128 gives 6656. Measured cost: see
+          # .local/evidence-raw/dr-locks-*.txt, and one Postgres restart.
           args:
             - -c
             - shared_buffers=32MB
             - -c
             - max_connections=30
+            - -c
+            - max_locks_per_transaction=128
           env:
             # A subdirectory, because initdb must own and chmod its directory and non-root cannot
             # do that to a volume root.
