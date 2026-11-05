@@ -37,7 +37,7 @@ source "$ROOT/infisical/lib/api.sh"
 source "$ROOT/infisical/lib/recovery.sh"
 
 BACKUP="${BACKUP:-latest}"
-accept_args CONFIRM BACKUP SKIP_BACKUP PLAN_ONLY SKIP_E2E LOSE_CLUSTER ALLOW_LOW_DISK -- "$@"
+accept_args CONFIRM BACKUP SKIP_BACKUP PLAN_ONLY SKIP_E2E LOSE_CLUSTER ALLOW_LOW_DISK CLEAN_INSTALL_FIRST -- "$@"
 if [[ "${CONFIRM:-}" != yes && "${PLAN_ONLY:-}" != yes ]]; then
   die "this deletes the cluster and everything in it, then restores them. Run: make drill-clean-restore CONFIRM=yes. To check everything up to that point: make drill-clean-restore PLAN_ONLY=yes"
 fi
@@ -224,6 +224,19 @@ if [[ "$(free_disk_gib)" -lt "$UP_NEW_CLUSTER_GIB" && -z "${ALLOW_LOW_DISK:-}" ]
   ALLOW_LOW_DISK="the drill's check counted on about $AFTER_DELETE_GIB GiB after the delete, and $(kib_as_gib "$(free_disk_kib)") GiB is free now"
   export ALLOW_LOW_DISK
   warn "$ALLOW_LOW_DISK. Passing that to scripts/up.sh as the reason to go on."
+fi
+
+# CLEAN_INSTALL_FIRST=yes runs a clean install from a fresh clone in this gap and deletes it again, so one delete
+# proves the install and the restoration. Its secrets and databases are new, and nothing here depends on them.
+if [[ "${CLEAN_INSTALL_FIRST:-}" == yes ]]; then
+  stage "4b. Clean install from a fresh clone, then delete it"
+  INSTALL_STARTED=$SECONDS
+  if "$ROOT/tests/drills/clean-install.sh"; then
+    pass "clean install from a fresh clone, tested and deleted, in $((SECONDS - INSTALL_STARTED))s"
+  else
+    fail "the clean install reported a failure, after $((SECONDS - INSTALL_STARTED))s. See .local/evidence-raw/clean-install-*/summary.txt"
+  fi
+  if cluster_exists; then abort "the clean install left a cluster behind, so the restore cannot start"; fi
 fi
 
 stage "5. Restore into the clean environment"
