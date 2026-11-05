@@ -95,7 +95,7 @@ in-place-ignores-a-dangling-row	scripts/restore.sh	R22	s/^  if \[\[ "\$missing" 
 manifest-does-not-record-it	scripts/backup.sh	R22	s/^ *"uploaded_objects": \$UPLOADED,\n//m
 comparison-failure-costs-the-backup	scripts/backup.sh	R22	s/^( *)echo "objects: could not compare[^\n]*\n/$1exit 1\n/m
 comparison-the-wrong-way-round	scripts/backup.sh	R22	s/LC_ALL=C comm -23 "\$D\/postgres\/uploaded-keys.txt"/LC_ALL=C comm -13 "\$D\/postgres\/uploaded-keys.txt"/
-stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$evidence\.log" 2>&1\n)/  trap '' HUP INT TERM\n$1/m
+stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  client_probe\n)/  trap '' HUP INT TERM\n$1/m
 stop-says-nothing-on-a-dead-client	scripts/restore.sh	V1	s/^  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$evidence\.log" 2>&1\n//m
 clean-stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$CLEAN_EVIDENCE\.log" 2>&1\n)/$1/m
 drill-stop-dies-on-a-dead-client	tests/drills/clean-restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n//m
