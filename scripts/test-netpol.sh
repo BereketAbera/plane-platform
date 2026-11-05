@@ -36,7 +36,8 @@
 # Exit status, as in scripts/test.sh: 0 every row passed, 1 a row failed or the sentinel did, 2 nothing failed but a row
 # was INCONCLUSIVE. Except that a target outside the cluster proves nothing offline, and must not make an offline run
 # non-zero. Such a row still reads INCONCLUSIVE, and the summary counts it apart. It is free only while the node's own
-# reading shows the same lack of internet: if the node reached the name, or could not be asked, the row counts.
+# readings show the same lack of internet: if the node reached the name in either of its two readings, or could not be
+# asked, the row counts.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 
@@ -365,6 +366,10 @@ load_cases() {
 # scope_of <host>: cluster for a Service name, outside for what is not this platform's and may not be there at all
 # (a public name or address, or Docker Desktop's own host address), and local for the rest (the node, the Git remote,
 # and the .localhost hosts, which CoreDNS rewrites to Traefik).
+#
+# A row to a .svc or .localhost name cannot pass yet. Only .cluster.local names get an address in witness_targets, and a name in
+# ready_of, so the node is asked for a name it cannot resolve, and a deny row ends INCONCLUSIVE and counted on a healthy policy.
+# That fails safe, and no row in the matrix has one: name a Service in full, as <name>.<namespace>.svc.cluster.local.
 scope_of() {
   case "$1" in
     *.cluster.local | *.svc) echo cluster ;;
@@ -437,7 +442,8 @@ R$number-last $POD_REFERENCE_HOST 53"
 #   NO_READING  it was asked and a reading is missing, because the witness failed. That is not the same as not asked,
 #               and it is not the same as a target that stayed silent, which on a row outside the cluster costs nothing.
 #   ANSWERED    the target answered both before and after the probes, so it was up across them.
-#   otherwise   the first reading that was not ANSWERED: SILENT or UNRESOLVED.
+#   ANSWERED_ONCE  it answered one of those and not the other. So the node reached it, and it was not up across them.
+#   otherwise   neither reading was an answer, and this is the first of them: SILENT or UNRESOLVED.
 witness_of() {
   local asked before after
   asked="$(awk -v id="$2" '$1 == id { print $1; exit }' "$WORK/witness-rows-$1" 2>/dev/null || true)"
@@ -448,8 +454,9 @@ witness_of() {
   before="$(awk -v id="$2" '$1 == id { print $2 }' "$WORK/witness-$1-before" 2>/dev/null || true)"
   after="$(awk -v id="$2" '$1 == id { print $2 }' "$WORK/witness-$1-after" 2>/dev/null || true)"
   if [[ -z "$before" || -z "$after" ]]; then echo NO_READING
-  elif [[ "$before" != ANSWERED ]]; then echo "$before"
-  else echo "$after"
+  elif [[ "$before" == ANSWERED && "$after" == ANSWERED ]]; then echo ANSWERED
+  elif [[ "$before" == ANSWERED || "$after" == ANSWERED ]]; then echo ANSWERED_ONCE
+  else echo "$before"
   fi
 }
 
@@ -494,12 +501,13 @@ decide() {
   local outside="nothing outside the cluster answered the node at this moment, so this proves nothing. Not counted against the run"
   local down="the target did not answer the node either, so this proves nothing about a policy"
   local no_reading="the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target"
+  local once="the target answered the node in only one of its two readings, so it was not up across this attempt, and this proves nothing about a policy"
   case "$class" in
     NOT_RUN) echo "INCONCLUSIVE|counts|the probe gave no result" ;;
     OTHER:*) echo "FAIL|counts|curl failed in a way that says nothing about the path" ;;
     DNS)
-      if [[ "$scope" == outside && "$witness" == ANSWERED ]]; then
-        echo "INCONCLUSIVE|counts|the node reached this name at the same moment, so this run had internet DNS and this pod's lookup is what failed"
+      if [[ "$scope" == outside && ("$witness" == ANSWERED || "$witness" == ANSWERED_ONCE) ]]; then
+        echo "INCONCLUSIVE|counts|the node reached this name in at least one of its two readings, so this run had internet DNS and this pod's lookup is what failed"
       elif [[ "$scope" == outside && ("$witness" == UNRESOLVED || "$witness" == SILENT) ]]; then
         echo "INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run"
       else
@@ -529,6 +537,7 @@ decide() {
           echo "FAIL|counts|no reference for the target, so this may be the target and not the path"
         fi
       elif [[ "$witness" == NO_READING ]]; then echo "INCONCLUSIVE|counts|$no_reading"
+      elif [[ "$witness" == ANSWERED_ONCE ]]; then echo "INCONCLUSIVE|counts|$once"
       elif [[ "$scope" == outside ]]; then echo "INCONCLUSIVE|free|$outside"
       else echo "INCONCLUSIVE|counts|$down"
       fi
@@ -614,15 +623,18 @@ deny TIMEOUT cluster 1 ANSWERED yes PASS|counts
 deny TIMEOUT cluster 1 NONE yes PASS|counts
 deny TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
 deny TIMEOUT cluster 1 NO_READING yes INCONCLUSIVE|counts
+deny TIMEOUT cluster 1 ANSWERED_ONCE yes INCONCLUSIVE|counts
 deny TIMEOUT cluster 0 ANSWERED yes INCONCLUSIVE|counts
 deny TIMEOUT cluster 1 ANSWERED no INCONCLUSIVE|counts
 deny TIMEOUT outside - ANSWERED yes PASS|counts
 deny TIMEOUT outside - SILENT yes INCONCLUSIVE|free
 deny TIMEOUT outside - UNRESOLVED yes INCONCLUSIVE|free
 deny TIMEOUT outside - NO_READING yes INCONCLUSIVE|counts
+deny TIMEOUT outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 deny DNS outside - UNRESOLVED yes INCONCLUSIVE|free
 deny DNS outside - SILENT yes INCONCLUSIVE|free
 deny DNS outside - ANSWERED yes INCONCLUSIVE|counts
+deny DNS outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 deny DNS outside - NO_READING yes INCONCLUSIVE|counts
 deny DNS cluster - NONE yes INCONCLUSIVE|counts
 deny CONNECTED cluster 1 ANSWERED yes FAIL|counts
@@ -637,19 +649,24 @@ allow TIMEOUT cluster 1 NONE yes FAIL|counts
 allow TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
 allow TIMEOUT cluster 1 NO_READING yes INCONCLUSIVE|counts
 allow TIMEOUT outside - SILENT yes INCONCLUSIVE|free
+allow TIMEOUT outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 allow DNS outside - UNRESOLVED yes INCONCLUSIVE|free
 allow DNS outside - ANSWERED yes INCONCLUSIVE|counts
+allow DNS outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 allow NOT_RUN cluster 1 NONE yes INCONCLUSIVE|counts
 allow OTHER:35 cluster 1 ANSWERED yes FAIL|counts
 TABLE
-  # wanted witness, whether the row was asked, and the readings before and after. A dash is no reading.
-  while read -r want asked before after; do
+  readings() { # readings <whether the row was asked> <before> <after>. A dash is no reading.
     : >"$WORK/witness-rows-0"
     : >"$WORK/witness-0-before"
     : >"$WORK/witness-0-after"
-    [[ "$asked" == no ]] || echo "7 198.51.100.1 80" >"$WORK/witness-rows-0"
-    [[ "$before" == - ]] || echo "7 $before" >"$WORK/witness-0-before"
-    [[ "$after" == - ]] || echo "7 $after" >"$WORK/witness-0-after"
+    [[ "$1" == no ]] || echo "7 198.51.100.1 80" >"$WORK/witness-rows-0"
+    [[ "$2" == - ]] || echo "7 $2" >"$WORK/witness-0-before"
+    [[ "$3" == - ]] || echo "7 $3" >"$WORK/witness-0-after"
+  }
+  # wanted witness, whether the row was asked, and the readings before and after.
+  while read -r want asked before after; do
+    readings "$asked" "$before" "$after"
     got="$(witness_of 0 7)"
     if [[ "$got" != "$want" ]]; then
       printf 'FAIL witness_of asked=%s before=%s after=%s: got %s, want %s\n' "$asked" "$before" "$after" "$got" "$want"
@@ -661,9 +678,34 @@ NO_READING yes - -
 NO_READING yes ANSWERED -
 NO_READING yes - ANSWERED
 ANSWERED yes ANSWERED ANSWERED
-SILENT yes ANSWERED SILENT
-SILENT yes SILENT ANSWERED
+ANSWERED_ONCE yes ANSWERED SILENT
+ANSWERED_ONCE yes SILENT ANSWERED
+ANSWERED_ONCE yes UNRESOLVED ANSWERED
+ANSWERED_ONCE yes ANSWERED UNRESOLVED
+SILENT yes SILENT SILENT
+SILENT yes SILENT UNRESOLVED
+UNRESOLVED yes UNRESOLVED SILENT
 UNRESOLVED yes UNRESOLVED UNRESOLVED
+TABLE
+  # A failed lookup on an outside row, from the node's two readings to the verdict: free only if neither reached the name.
+  while read -r before after want; do
+    readings yes "$before" "$after"
+    got="$(decide deny DNS tcp outside - "$(witness_of 0 7)" yes)"
+    got="${got%%|*}|$(cut -d'|' -f2 <<<"$got")"
+    if [[ "$got" != "$want" ]]; then
+      printf 'FAIL a failed lookup with the node reading before=%s after=%s: got %s, want %s\n' "$before" "$after" "$got" "$want"
+      failures=$((failures + 1))
+    fi
+  done <<'TABLE'
+ANSWERED ANSWERED INCONCLUSIVE|counts
+ANSWERED SILENT INCONCLUSIVE|counts
+SILENT ANSWERED INCONCLUSIVE|counts
+UNRESOLVED ANSWERED INCONCLUSIVE|counts
+ANSWERED UNRESOLVED INCONCLUSIVE|counts
+SILENT SILENT INCONCLUSIVE|free
+UNRESOLVED UNRESOLVED INCONCLUSIVE|free
+SILENT UNRESOLVED INCONCLUSIVE|free
+UNRESOLVED SILENT INCONCLUSIVE|free
 TABLE
   [[ "$(scope_of telemetry.plane.so)" == outside && "$(scope_of 1.1.1.1)" == outside && "$(scope_of 192.168.65.254)" == outside ]] || { echo "FAIL scope_of outside"; failures=$((failures + 1)); }
   [[ "$(scope_of plane-git)" == local && "$(scope_of 172.24.0.2)" == local && "$(scope_of 10.96.0.1)" == local && "$(scope_of plane.dev.localhost)" == local ]] || { echo "FAIL scope_of local"; failures=$((failures + 1)); }
