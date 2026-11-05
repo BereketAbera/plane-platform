@@ -77,7 +77,7 @@ drill-failed-deploy: ## A bad image reaches dev through Git, the rollout refuses
 drill-pod-restart: ## Restart each StatefulSet pod and prove the data survives: make drill-pod-restart ENV=dev
 	@./tests/drills/pod-restart-persistence.sh "$(ENV)"
 
-drill-clean-restore: ## Back up, DELETE THE CLUSTER, restore everything and prove it: make drill-clean-restore CONFIRM=yes [BACKUP=<id|latest> SKIP_BACKUP=yes] [PLAN_ONLY=yes] [SKIP_E2E=yes] [LOSE_CLUSTER=yes] [ALLOW_LOW_DISK="<reason>"]
+drill-clean-restore: ## Back up, DELETE THE CLUSTER, restore everything and prove it: make drill-clean-restore CONFIRM=yes [BACKUP=<id|latest> SKIP_BACKUP=yes] [PLAN_ONLY=yes] [SKIP_E2E=yes] [CLEAN_INSTALL_FIRST=yes COLD_INSTALL=yes] [LOSE_CLUSTER=yes] [ALLOW_LOW_DISK="<reason>"]
 	@./tests/drills/clean-restore.sh
 
 drill-clean-restore-harness: ## The order and refusals of a clean restore, with kubectl, kind, docker, Terraform and the API stubbed. Touches no cluster, and proves no platform: [ONLY="S1 S20"]

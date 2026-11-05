@@ -8,14 +8,22 @@
 # are new, and its databases start empty. tests/drills/clean-restore.sh runs this between its delete and its restore,
 # with CLEAN_INSTALL_FIRST=yes, so one delete proves the install and the restoration.
 #
-# What this is not. It keeps the local registry and the pull-through caches, so nothing is rebuilt and nothing is pulled
-# from the internet: a new machine also needs make images and make promote, and pulls about 2.6 GiB more. .tools is copied
-# from this checkout, because GitHub downloads run at about 170 KB/s here, so make setup only checks it. A truly clean
-# machine is what the first bootstrap of this project was, and that run was done stage by stage.
+# What this is not. .tools is copied from this checkout, because GitHub downloads run at about 170 KB/s here, so make setup
+# only checks it. Plain: it keeps the local registry and the pull-through caches, so nothing is rebuilt and nothing is
+# pulled from the internet.
+#
+# COLD_INSTALL=yes is the closest this gets to a new machine: the local services and their volumes are gone already, as
+# make destroy PURGE=yes leaves them. So make up builds the images and stops because the digests in Git do not exist here,
+# then this promotes what was built, as a new machine would have to, and make up pulls everything through empty caches.
+# At the end it puts back .local/registry-snapshot.tar, if one exists, because the checkout it came from names those digests.
 #
 # The clone's evidence goes to .local/evidence-raw/clean-install-<UTC time>/ in this checkout.
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"
+
+COLD_INSTALL="${COLD_INSTALL:-no}"
+# A drill runs this with its own options in the environment. make obeys those, so nothing inherited may reach the clone.
+unset CONFIRM PURGE SKIP_BACKUP BACKUP PLAN_ONLY SKIP_E2E LOSE_CLUSTER CLEAN_INSTALL_FIRST
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 CLONE="$(dirname "$ROOT")/plane-platform-clean-install"
@@ -54,8 +62,23 @@ trap cleanup_clone EXIT
 
 step make-setup make setup || die "make setup failed. The clone is left at $CLONE"
 up_started=$SECONDS
-step make-up make up || die "make up failed after $((SECONDS - up_started))s. The cluster and the clone are left as they are, for reading"
-say "one make up from nothing took $((SECONDS - up_started))s"
+if [[ "$COLD_INSTALL" == yes ]]; then
+  # No registry, so the digests Git names exist nowhere. make up must build and then stop, saying what to do.
+  step make-up-stops-on-new-digests bash -c '! make up' || die "make up should have stopped after building, and did not"
+  say "make up created the cluster and local services, built the images, and stopped in $((SECONDS - up_started))s"
+  [[ -s "$CLONE/.build/digests.tsv" ]] || die "make up stopped with no .build/digests.tsv"
+  step make-promote-dev make promote ENV=dev || die "make promote ENV=dev failed"
+  # Nothing runs yet, so plane-dev cannot have proven these digests. The check names this override for that reason.
+  step make-promote-prod-sim env OVERRIDE_DEV_CHECK="first install on a new machine: nothing is running yet" CONFIRM=yes SKIP_BACKUP=yes make promote ENV=prod-sim \
+    || die "make promote ENV=prod-sim failed"
+  # The build's own files are not part of the platform, and this host is short of disk.
+  rm -rf "$CLONE/.build/plane-src" "$CLONE/.build/pnpm-store" "$CLONE/.build/home"
+  docker builder prune -af >"$EVIDENCE/builder-prune.txt" 2>&1 || true
+  say "removed the build's source tree, package store and Docker's build cache. Host disk: $(free_disk_gib) GiB free"
+fi
+pull_started=$SECONDS
+step make-up make up || die "make up failed after $((SECONDS - pull_started))s. The cluster and the clone are left as they are, for reading"
+say "make up took $((SECONDS - pull_started))s. From the start of the first make up: $((SECONDS - up_started))s"
 
 step make-status make status || true
 step apps-after-up "$ROOT/.tools/bin/kubectl" --kubeconfig "$CLONE/.local/kubeconfig" --context "kind-$CLUSTER_NAME" -n argocd get applications || true
@@ -84,7 +107,10 @@ step terraform-plan-local env KUBECONFIG="$CLONE/.local/kubeconfig" "$ROOT/.tool
 
 # BKP-5: a backup from the other install holds another SECRET_KEY, so a restore must refuse it. If it did not refuse,
 # only this throwaway install would lose anything.
-foreign="$(ls -1t "$ROOT/.local/backups/dev" 2>/dev/null | grep -E '^[0-9]{8}T[0-9]{6}Z$' | head -1 || true)"
+foreign=""
+for candidate in "$ROOT"/.local/backups/dev/[0-9]*Z; do
+  [[ -d "$candidate" ]] && foreign="$(basename "$candidate")"
+done
 if [[ -n "$foreign" ]]; then
   mkdir -p "$CLONE/.local/backups/dev"
   cp -R "$ROOT/.local/backups/dev/$foreign" "$CLONE/.local/backups/dev/"
@@ -99,5 +125,12 @@ step destroy make destroy CONFIRM=yes SKIP_BACKUP=yes
 cleanup_clone
 trap - EXIT
 rm -rf "$CLONE"
+snapshot="$ROOT/.local/registry-snapshot.tar"
+if [[ "$COLD_INSTALL" == yes && -f "$snapshot" ]]; then
+  docker exec -i plane-registry tar -C /var/lib/registry -xf - <"$snapshot" || die "putting the registry snapshot back failed"
+  docker restart plane-registry >/dev/null || die "restarting plane-registry failed"
+  say "registry snapshot put back, so this checkout's digests are served again"
+  rm -f "$snapshot"
+fi
 say "clone removed. Host disk: $(free_disk_gib) GiB free. Steps that failed: $failures"
 [[ "$failures" -eq 0 ]]

@@ -14,6 +14,10 @@
 # LOSE_CLUSTER=yes   delete the cluster with kind and nothing else, as a disaster would, which leaves
 #                    .local/terraform/local behind. The restore then has to move it aside
 # ALLOW_LOW_DISK="<reason>"  go on although the check before the delete says up.sh would refuse. Logged
+# CLEAN_INSTALL_FIRST=yes    run tests/drills/clean-install.sh between the delete and the restore
+# COLD_INSTALL=yes   with that, also remove the local services and their volumes, so the clean install builds its images
+#                    and pulls through empty caches. The registry goes to .local/registry-snapshot.tar first and comes
+#                    back afterwards, because this checkout's digests are only there
 #
 # It stops at once if a clean restore is still marked as under way, because a plan would then check that one's backups
 # and not the fresh set. Before the delete it checks what scripts/up.sh would stop on, with the same code: uncommitted
@@ -37,7 +41,7 @@ source "$ROOT/infisical/lib/api.sh"
 source "$ROOT/infisical/lib/recovery.sh"
 
 BACKUP="${BACKUP:-latest}"
-accept_args CONFIRM BACKUP SKIP_BACKUP PLAN_ONLY SKIP_E2E LOSE_CLUSTER ALLOW_LOW_DISK CLEAN_INSTALL_FIRST -- "$@"
+accept_args CONFIRM BACKUP SKIP_BACKUP PLAN_ONLY SKIP_E2E LOSE_CLUSTER ALLOW_LOW_DISK CLEAN_INSTALL_FIRST COLD_INSTALL -- "$@"
 if [[ "${CONFIRM:-}" != yes && "${PLAN_ONLY:-}" != yes ]]; then
   die "this deletes the cluster and everything in it, then restores them. Run: make drill-clean-restore CONFIRM=yes. To check everything up to that point: make drill-clean-restore PLAN_ONLY=yes"
 fi
@@ -190,6 +194,12 @@ if [[ "${PLAN_ONLY:-}" == yes ]]; then
 fi
 
 stage "4. Delete the cluster"
+if [[ "${COLD_INSTALL:-}" == yes ]]; then
+  [[ "${CLEAN_INSTALL_FIRST:-}" == yes ]] || abort "COLD_INSTALL=yes goes with CLEAN_INSTALL_FIRST=yes"
+  docker exec plane-registry tar -C /var/lib/registry -cf - . >"$LOCAL_DIR/registry-snapshot.tar" || abort "the registry snapshot failed, so nothing was deleted"
+  pass "registry saved to .local/registry-snapshot.tar, $(du -sh "$LOCAL_DIR/registry-snapshot.tar" | cut -f1)"
+  export PURGE=yes
+fi
 DELETED=started
 STARTED=$SECONDS
 FREE_BEFORE_DELETE="$(free_disk_kib)"
@@ -200,6 +210,7 @@ else
   CONFIRM=yes SKIP_BACKUP=yes "$ROOT/scripts/destroy.sh" || abort "scripts/destroy.sh failed"
 fi
 DELETED=yes
+unset PURGE
 if cluster_exists; then fail "the cluster still exists"; else pass "cluster gone"; fi
 if [[ "${LOSE_CLUSTER:-}" == yes ]]; then
   if [[ -f "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then pass "the local Terraform state was left behind, as a disaster leaves it"; else fail "the local Terraform state is gone, so this did not test a disaster"; fi
