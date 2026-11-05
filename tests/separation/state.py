@@ -19,17 +19,13 @@ import subprocess
 import sys
 from urllib.parse import parse_qs, urlsplit
 
-from common import ENVS, OTHER, ROOT, SECRET_NAMES, Blocked, Report, kubectl, must, now, read_secrets, require_environments
+from common import ENVS, NOT_CREDENTIALS as SAME_BY_DESIGN, OTHER, ROOT, SECRET_NAMES, Blocked, Report, kubectl, must, now, read_secrets, require_environments
 
 sys.path.insert(0, str(ROOT / "tests" / "e2e"))
 import smoke  # noqa: E402  the project's own client: real HTTP through Traefik, no new protocol code
 
 ACCOUNTS = ROOT / ".local" / "test-accounts.env"
 HOSTS = smoke.HOSTS
-# Not secrets, and the contract fixes them or they are harmless to share.
-SAME_BY_DESIGN = {("plane-doc-store", "USE_MINIO"), ("plane-doc-store", "AWS_S3_BUCKET_NAME"), ("plane-doc-store", "AWS_S3_ENDPOINT_URL"),
-                  ("plane-doc-store", "FILE_SIZE_LIMIT"), ("plane-pgdb", "POSTGRES_USER"), ("plane-pgdb", "POSTGRES_DB"),
-                  ("plane-rabbitmq", "RABBITMQ_DEFAULT_USER")}
 
 report = Report()
 say = report.say

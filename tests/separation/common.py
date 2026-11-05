@@ -18,8 +18,9 @@ ENVS = {"dev": "plane-dev", "prod-sim": "plane-prod-sim"}
 OTHER = {"dev": "prod-sim", "prod-sim": "dev"}
 SECRET_NAMES = ["plane-app-env", "plane-app-keys", "plane-live-env", "plane-doc-store", "plane-pgdb", "plane-rabbitmq",
                 "plane-infisical-identity"]
-# A Secret value this short also appears in ordinary text, and none of these keys holds a credential.
+# A Secret value shorter than this also appears in ordinary text.
 SHORTEST_SCANNED_VALUE = 6
+# The contract fixes these or they are harmless to share, so both environments may hold the same value.
 NOT_CREDENTIALS = {("plane-doc-store", "USE_MINIO"), ("plane-doc-store", "AWS_S3_BUCKET_NAME"),
                    ("plane-doc-store", "AWS_S3_ENDPOINT_URL"), ("plane-doc-store", "FILE_SIZE_LIMIT"),
                    ("plane-pgdb", "POSTGRES_USER"), ("plane-pgdb", "POSTGRES_DB"), ("plane-rabbitmq", "RABBITMQ_DEFAULT_USER")}
