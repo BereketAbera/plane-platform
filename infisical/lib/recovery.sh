@@ -53,6 +53,23 @@ plane-app-keys LIVE_SERVER_SECRET_KEY LIVE_SERVER_SECRET_KEY
 
 recovery_sha256() { shasum -a 256 "$1" | cut -d' ' -f1; }
 
+# The node's container id names a cluster. It outlives a stop and a restart of Docker, and make up makes a new one with
+# a new cluster. Prints nothing if Docker will not say.
+recovery_cluster_id() { docker inspect -f '{{.Id}}' "$NODE_CONTAINER" 2>/dev/null || true; }
+
+# True if the cluster the marker's lines were written on is no longer here, with no cluster at all or another of the
+# same name, as a plain make up leaves after a loss. What that restore finished went with it. A marker that names no
+# cluster, or a Docker that will not say, cannot tell, and then the lines stand: nothing is replaced on their word, and
+# whatever is not done still has the guard in front of it.
+recovery_marker_cluster_gone() {
+  local was now
+  cluster_exists || return 0
+  was="$(sed -n 's/^cluster=//p' "$RESTORE_CLEAN_MARKER")"
+  [[ -n "$was" ]] || return 1
+  now="$(recovery_cluster_id)"
+  [[ -n "$now" && "$now" != "$was" ]]
+}
+
 # The same hash the backup Jobs put in a manifest. Value on stdin, never in argv.
 recovery_fp() { shasum -a 256 | cut -c1-16; }
 
