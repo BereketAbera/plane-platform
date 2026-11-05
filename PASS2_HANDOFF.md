@@ -41,7 +41,7 @@ Only the owner can settle these. The first three come before the repository goes
 
 1. **D12, the `email.py` header.** Upstream's v1.4.3 tag heads this one file with a commercial licence. AI agents replaced it in the backend image with upstream's own later AGPL-3.0-only version and flattened the image. The agent coordinating the work also removed the requirement that the repository be private. The owner was told and has not reviewed any of this, and no legal review has happened ([details](docs/agpl-compliance.md#the-commercial-header-in-emailpy)).
 2. **D16, the licence for platform code.** The root `LICENSE` is upstream's AGPL-3.0 text, unchanged, and new files under `apps/wayline/` carry `AGPL-3.0-only`. Nearly all the scripts and manifests around them carry no header, and `LICENSE` does not say "only". No decision is recorded.
-3. **D17, two GitHub Apps that appear to have access to the repository.** `netlify` and `builder-io-integration` left check suites on pushed commits. As GitHub describes those Apps, netlify can have `contents` read, and Builder.io `contents`, `administration` and `workflows` write. What each installation really covers was not read, because the token gets 403 ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). So nothing shows that only the owner can read this repository.
+3. **D17, two GitHub Apps that appear to have access to the repository.** `netlify` and `builder-io-integration` left check suites on pushed commits. As GitHub describes those Apps, netlify can have `contents` read, and Builder.io `contents`, `administration` and `workflows` write. What each installation really covers was not read, because the local token gets 403 ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). So nothing shows that only the owner can read this repository.
 4. **`/source` needs a public repository (D10).** AGPL section 13 applies once anyone else uses an instance over a network. `/source` answers 302 to `84b63d9`, and that target answers 404 to outsiders while the repository is private ([record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). That row reads FAIL until the source is public. See [section 9](#9-agpl-section-13).
 
 ### First steps
@@ -96,6 +96,7 @@ Every row is one laptop, one kind node and test data, run on 2026-11-05 on the f
 
 | Area | What happened | Evidence | What it does not prove |
 |---|---|---|---|
+| Platform state | All 14 Argo CD Applications read Synced and Healthy at 07:10Z, with both environments on the final images | [state](docs/evidence/runs/plane-dev-final-state-20261105T070735Z.txt) | That one `make up` reaches this state, because it came up stage by stage |
 | End to end | `make test-e2e`: dev 45 PASS, 1 SKIP, and prod-sim 44 PASS, 1 SKIP, and the same counts after the restores. The skip needs a clean database | [dev](docs/evidence/runs/smoke-dev-20261105T070735Z-94252.json), [prod-sim](docs/evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json), after restore [dev](docs/evidence/runs/smoke-dev-20261105T074635Z-6532.json), [prod-sim](docs/evidence/runs/smoke-prod-sim-20261105T073741Z-73161.json) | A public host, TLS, Cloudflare, or real email |
 | Secret rotation | First real runs. `make rotate ENV=dev` passed. A signed-in watcher got 500 on 38 requests, 07:23:51Z to 07:24:29Z, about 38 s, and one earlier sample, at 07:23:31Z, before the rotation began, got no answer. The script's own anonymous probe printed 60 s, which probably reads high, because Plane's anonymous rate limit also counts as a failure ([why](docs/runbooks/secret-rotation.md)). Prod-sim passed. A rotation killed with SIGKILL 4 seconds in was finished by `RESUME=yes`, and Postgres refused the old passwords. No sync loop in 14 minutes on dev. `SECRET_KEY` untouched | [dev](docs/evidence/runs/SEC-2-20261105T072331Z.txt), [watcher](docs/evidence/runs/SEC-2-20261105T072331Z-watch.txt), [prod-sim](docs/evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), [kill and resume](docs/evidence/runs/SEC-4-20261105T073843Z.txt), [sync](docs/evidence/runs/SEC-6-20261105T072331Z-application-watch.txt) | Undo, which was not run. Rotating `SECRET_KEY`, which contract section 8 forbids. Any error window under real traffic |
 | Failed deploy | `make drill-failed-deploy` passed on dev. Bad web digest at 06:23:45Z, `ErrImagePull` 25 s later, `ProgressDeadlineExceeded` at 10m24s, revert published at 10m32s, Synced and Healthy at 11m51s. The old web pod kept serving: 913 signed-in samples, 0 failures. Nothing fired, because the revert came first. `ArgoAppOutOfSync`, `ArgoSyncFailed`, `KubeContainerWaiting`, `KubePodNotReady`, `ArgoAppStuckProgressing`, `KubeDeploymentRolloutStuck` and `ArgoAppDegraded` went pending only | [drill](docs/evidence/runs/drill-failed-deploy-20261105T062343Z.log), [alerts](docs/evidence/runs/drill-failed-deploy-20261105T062343Z-alerts.tsv), [timeline](docs/evidence/runs/DEP-1-20261105T062323Z-timeline.txt) | A crash loop or bad config. "Nothing fired" holds only for a revert within about 10.5 minutes, and no run shows what fires later |
@@ -124,7 +125,7 @@ Left on GitHub for the owner: branch `promote/prod-sim`, and run 41976206674, he
 - Legal questions. No legal review has happened.
 - Not tested in Pass 1: Safari and Firefox, a chart or Plane upgrade, the rotation's undo, stopping kindnet, and `make up` on a machine with no local registry.
 
-Runs also found defects that were fixed, and limits that stay: see [what real runs found](docs/known-limitations.md#what-real-runs-found). The working backlog, `.local/hardening-backlog.md`, is on the owner's laptop and not in Git. It still lists some fixed items as open, so check each item against the code.
+Read [`docs/validation.md`](docs/validation.md) before relying on any row of section 3. Runs also found defects that were fixed, and limits that stay: see [what real runs found](docs/known-limitations.md#what-real-runs-found). The working backlog, `.local/hardening-backlog.md`, is on the owner's laptop and not in Git. It still lists some fixed items as open, so check each item against the code.
 
 ### Still in progress
 
@@ -135,8 +136,7 @@ Only that run can answer these markers. A marker still here means no result has 
 - [[MEASURE: time of one make up from a clean cluster]]
 - [[MEASURE: disk growth of a first install]]
 - [[MEASURE: Docker.raw size after a cluster delete]]
-- [[VERIFY: data across the rebuild: a backup restored into a newly created cluster passes tests/e2e/smoke.py]]
-- [[MEASURE: restore duration to a fresh cluster, as the RTO input]]
+- [[VERIFY: data across the rebuild: a backup restored into a newly created cluster passes tests/e2e/smoke.py, and how long that restore took, as the RTO input]]
 
 ## 2. Target topology and how to choose
 
@@ -383,7 +383,7 @@ Pass 1 writes to `.local/backups` on the laptop through `/backups`, a static hos
 | Recovery set | `infisical/lib/recovery.sh`. Each Infisical backup holds its Terraform state and hashes of secret zero, and each Plane backup holds its test accounts and sentinel. Secret zero is never copied into a backup. Decide what of this belongs off-host, and keep test accounts out of real backups |
 | Restore | `scripts/restore.sh` uses local paths, and `infisical/lib/api.sh` defaults to `http://infisical.localhost`. Rewrite both. `make restore-clean` is the order to keep: Infisical first, then Plane. On kind, in-place restores have run for real: Infisical ([JSON](docs/evidence/runs/restore-infisical-20261105T001834Z.json)), dev ([JSON](docs/evidence/runs/restore-dev-20261105T074337Z.json)) and prod-sim ([JSON](docs/evidence/runs/restore-prod-sim-20261105T073438Z.json)). The clean restore is [in progress](#still-in-progress) |
 
-On kind, with test data, a backup took 11 to 31 seconds per environment, and `make backup ENV=all` took 42 seconds. A Postgres dump was 0.7 to 4.4 MB ([run](docs/evidence/runs/dr-backup-retention-1.txt), [resource-utilization.md](docs/resource-utilization.md#persistent-storage)). An in-place restore took about 3 minutes to the start of its verify (section 1). Real data will not look like this, so measure again. The restore into a new cluster, and its time as the RTO input, are markers under [Still in progress](#still-in-progress).
+On kind, with test data, a backup took 11 to 31 seconds per environment, and `make backup ENV=all` took 42 seconds. A Postgres dump was 0.7 to 4.4 MB ([run](docs/evidence/runs/dr-backup-retention-1.txt), [resource-utilization.md](docs/resource-utilization.md#persistent-storage)). An in-place restore took about 3 minutes to the start of its verify (section 1). Real data will not look like this, so measure again. The restore into a new cluster, and its time as the RTO input, are the last marker under [Still in progress](#still-in-progress).
 
 ### 4.8 Infisical hosting and secret zero
 
