@@ -21,7 +21,7 @@ How it has run so far, with both environments up, on 2026-11-04 and 2026-11-05. 
 | Drills and broker restarts | 9.59 GiB | 9.90 GiB |
 | Whole window, just after the Argo CD pods were replaced | 9.56 GiB | 10.49 GiB |
 
-Swap reached 0.60 GiB, and memory pressure (PSI) stayed at or under 0.18. One laptop on one night does not predict another machine, and the load test has not run.
+Swap reached 0.60 GiB, and memory pressure (PSI) stayed at or under 0.18. One laptop on one night does not predict another machine, and the load test has not run. On the final images on 2026-11-05, VM used read 9.94 to 9.97 GiB through the failed-deploy drill and 9.71 to 9.98 GiB through the failing-migrator drill, and the node's `oom_kill` count stayed at 62 through both (`.local/evidence-raw/DEP-1-20261105T062323Z-timeline.txt`, `.local/evidence-raw/DEP-3-20261105T064517Z-timeline.txt`, not yet published). That count is since the node started on 2026-11-04, so it does not say which containers those kills were.
 
 Simultaneous first boots are expected to be the worst case, and have not been measured, so the contract says to bring environments up serially. Root's waves do that: `plane-dev`'s operation closed at 21:46:40Z and `plane-prod-sim`'s first sync began at 21:46:41Z. The measured serial first boots stayed below the later steady use in the table above: VM used topped 8.62 GiB in the first and 9.23 GiB in the second, whose images were already on the node ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt), [plane-prod-sim-memory-history-1.txt](../evidence/runs/plane-prod-sim-memory-history-1.txt)).
 
@@ -72,7 +72,13 @@ curl -s -G http://prometheus.localhost/api/v1/query \
   | jq -r '.data.result[] | "\(.metric.namespace)/\(.metric.pod) \(.metric.container) \(.value[1])"'
 ```
 
-Prometheus, Loki and Infisical Postgres all touched their limits on 2026-11-04 with 0 OOM kills. Loki's and Postgres's peaks were file cache ([limits-breakdown-1.txt](../evidence/runs/limits-breakdown-1.txt)). Prometheus's was not, and its limit moved. See the table below.
+Prometheus, Loki and Infisical Postgres all touched their limits on 2026-11-04 with 0 OOM kills ([limits-breakdown-1.txt](../evidence/runs/limits-breakdown-1.txt)). They were three different cases, so read each one, as `monitoring/README.md` does:
+
+- **Prometheus's was anon,** and its limit moved. See the table below.
+- **Loki's was anon too, under a stress test:** 553 MiB, with file down to 13 MiB at the tightest. Real anon has stayed at 53% of the limit or under, so its limit stayed (`.local/evidence-raw/alert-text-figures-1.txt`, not yet published).
+- **Infisical Postgres's was mostly file,** with anon under 65 MiB. Its `file` includes 41.7 MiB of shmem, and reclaim cannot drop that here, because the container's `memory.swap.max` is 0. So read shmem beside anon for Postgres (`.local/evidence-raw/limits-pod-cgroup-1.txt`, not yet published).
+
+Read `memory.events` at the pod cgroup as well, when one container carries the pod's whole limit: Loki's pod read `max` 58931 and Infisical Postgres's 4227 and then 5066, with 0 at each container. Those count reclaim. An OOM kill is a separate counter, and it read 0 for the whole of each pod.
 
 Grafana's Platform overview shows "VM memory used" and "Memory by namespace". `kubectl top` needs metrics-server, which is synced at wave -8.
 
@@ -120,7 +126,7 @@ What has really happened to limits on this platform:
 | Prometheus | 1 GiB, was 768 MiB | Anon reached 652 MiB at a head compaction, with 241k head series ([limits-breakdown-1.txt](../evidence/runs/limits-breakdown-1.txt)). No OOM kill |
 | Argo CD controller | 1 GiB, was 768 MiB | `memory.peak` 731 MiB with Plane running ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt), [argo-controller-limit-1.txt](../evidence/runs/argo-controller-limit-1.txt)). No OOM kill. One would stall every sync |
 | Argo CD repo-server | 512 MiB | Peak 247 MiB in the test with all 8 chart Applications hard-refreshed at once ([argocd-render-load-1.txt](../evidence/runs/argocd-render-load-1.txt)). The highest read on that pod was 269 MiB ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt), [monitoring-memory-1.txt](../evidence/runs/monitoring-memory-1.txt)) |
-| Loki | 640 MiB | Below the chart's example of 2 to 4 GiB, and it held: 553 MiB of anon at its worst under 3.5 MB/s of pushes, with no OOM kill ([monitoring-loki-limit-2.txt](../evidence/runs/monitoring-loki-limit-2.txt)). Raise this first if that changes |
+| Loki | 640 MiB | Below the chart's example of 2 to 4 GiB, and it held: 553 MiB of anon at its worst under 3.5 MB/s of pushes, with no OOM kill ([monitoring-loki-limit-2.txt](../evidence/runs/monitoring-loki-limit-2.txt)). Real anon peaked at 341 MiB (`.local/evidence-raw/alert-text-figures-1.txt`). Raise this first if that changes |
 | `plane-registry` | 512 MiB, was 128 MiB | A push fills the limit with dirty page cache, and the kernel then killed a registry with almost no memory of its own ([registry-memory-1.txt](../evidence/runs/registry-memory-1.txt)) |
 | Plane workloads | Contract section 10 | Through smoke, soak and matrices in both environments, no container passed 66% of its limit by `memory.peak`, and 0 were OOM-killed ([plane-prod-sim-memory-1.txt](../evidence/runs/plane-prod-sim-memory-1.txt)). `live` reached 309 of 384 MiB on an earlier pod, after three smoke runs and the start of a soak ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt)) |
 
@@ -143,7 +149,7 @@ docker stats --no-stream
 | `kubectl scale` or `kubectl set resources` to relieve pressure | Self-heal reverts them in seconds |
 | Remove limits | The VM would run out sooner, and the kernel would pick the victim |
 | Raise limits with no measurement | Contract section 10. Limits already exceed the VM |
-| Raise a limit because `memory.peak` touched it | Read anon first. Loki's and Infisical Postgres's peaks were page cache |
+| Raise a limit because `memory.peak` touched it | Read anon first, and shmem beside it for Postgres. Infisical Postgres's peak was mostly file, and Loki's real anon stayed at 53% of its limit |
 | Raise `vm_memory_high_watermark` to or above the container limit | RabbitMQ then gets OOM killed instead of applying back-pressure |
 | Raise `CELERY_WORKER_CONCURRENCY` to clear a backlog on a tight VM | Each fork costs memory. The chart default of 12 is what the contract's budget replaced |
 | Start both environments' first boots at the same time | It is expected to be the worst case. It has not been measured |
