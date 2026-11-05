@@ -1,0 +1,99 @@
+# 2026-11-05T20:20:39Z what the Mac's sleep did to the local cluster on 2026-11-05. Read-only.
+
+## pmset -g log, Sleep and Wake lines since 15:00Z (times are +0300)
+2026-11-05 18:49:10 +0300 Sleep               	Entering Sleep state due to 'Clamshell Sleep':TCPKeepAlive=acti
+2026-11-05 18:49:11 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=5660 wakeA
+2026-11-05 18:49:37 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 18:50:22 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 18:50:23 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 19:05:50 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 19:06:50 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 19:06:52 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6424 wakeA
+2026-11-05 19:22:18 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 19:23:03 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 19:23:05 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 19:38:33 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 19:39:18 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 19:39:19 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 19:54:46 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 19:55:31 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 19:55:32 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 20:10:59 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 20:12:29 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 20:12:31 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6398 wakeA
+2026-11-05 20:12:32 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 20:13:17 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 20:13:19 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 20:28:45 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 20:29:31 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 20:29:32 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 20:44:58 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 20:45:44 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 20:45:45 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 20:50:05 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to NUB.SPMI0Sw3IRQ nub-spm
+2026-11-05 20:50:50 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 20:50:52 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6440 wakeA
+2026-11-05 21:06:18 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 21:07:03 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 21:07:04 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 21:22:31 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 21:24:01 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 21:24:03 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6397 wakeA
+2026-11-05 21:39:16 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to NUB.SPMI0Sw3IRQ nub-spm
+2026-11-05 21:40:47 +0300 Sleep               	Entering Sleep state due to 'Sleep Service Back to Sleep':TCPKe
+2026-11-05 21:40:49 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6397 wakeA
+2026-11-05 21:51:05 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to NUB.SPMI0Sw3IRQ nub-spm
+2026-11-05 21:52:36 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 21:52:38 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6398 wakeA
+2026-11-05 22:08:04 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 22:08:49 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 22:08:50 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6439 wakeA
+2026-11-05 22:24:17 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 22:25:02 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 22:25:03 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6440 wakeA
+2026-11-05 22:40:30 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 22:41:15 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 22:41:16 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6440 wakeA
+2026-11-05 22:52:05 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to NUB.SPMI0Sw3IRQ nub-spm
+2026-11-05 22:52:50 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 22:52:51 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6440 wakeA
+2026-11-05 23:08:19 +0300 DarkWake            	DarkWake from Deep Idle [CDNP] : due to smc.sysState.Wake(0x700
+2026-11-05 23:09:04 +0300 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=ac
+2026-11-05 23:09:05 +0300 Wake Requests       	[process=mDNSResponder request=Maintenance deltaSecs=6440 wakeA
+2026-11-05 23:19:38 +0300 Wake                	Wake from Deep Idle [CDNVA] : due to smc.sysState.Wake(0x700700
+
+## node_load1 in Prometheus, one sample every 15 minutes from 13:00Z. A missing time is a hole in the data
+13:20Z 2.5
+13:35Z 2.5
+13:50Z 1.5
+14:05Z 2.1
+14:20Z 1.3
+14:35Z 3.3
+14:50Z 1.0
+15:05Z 0.9
+15:20Z 1.1
+15:35Z 3.0
+15:50Z 3.7
+17:50Z 7.6
+20:20Z 11.3
+
+## Containers that have restarted since the restore, read after the sleeps
+2026-11-05T18:40:00Z monitoring-agents kps-node-exporter-vmqmf node-exporter restarts=1 Error exit=143
+2026-11-05T18:40:02Z monitoring kps-kube-state-metrics-58c95899dd-rhgwt kube-state-metrics restarts=1 Error exit=2
+2026-11-05T18:52:28Z argocd argocd-repo-server-8464d9c6cc-h6fcq repo-server restarts=2 Completed exit=0
+2026-11-05T18:52:58Z kube-system kube-controller-manager-plane-platform-control-plane kube-controller-manager restarts=2 Error exit=1
+2026-11-05T18:52:58Z plane-prod-sim iso-prod-sim-controller-manager-5cc86cc76-j4kqk manager restarts=2 Error exit=1
+2026-11-05T18:52:59Z kube-system kube-scheduler-plane-platform-control-plane kube-scheduler restarts=2 Error exit=1
+2026-11-05T18:52:59Z plane-dev iso-dev-controller-manager-85dbfbcb5b-jqc4w manager restarts=2 Error exit=1
+2026-11-05T19:08:42Z kube-system metrics-server-8f755d95b-h5fst metrics-server restarts=3 Completed exit=0
+8 containers
+
+## Readings taken during the sleeps, copied by hand from the session's output
+18:51:28Z top of the Docker container: plane-platform-control-plane 822.60% CPU, 8.01GiB / 13.63GiB
+18:51:58Z argocd applications: infisical, kube-prometheus-stack, loki, network-policies and plane-prod-sim read sync Unknown, health Healthy. metrics-server and root read Synced, Progressing. The other 7 read Synced, Healthy
+18:52:28Z top in the node: load average 72.64, 41.51, 20.14. %Cpu 54.2 us, 28.6 sy, 14.8 id, 0.8 wa. Busiest: the Infisical server, kubelet, containerd, Argo CD's application controller
+18:52:2xZ /proc/pressure/cpu: some avg10=83.77. /proc/pressure/memory: some avg10=0.46. /proc/pressure/io: some avg10=2.72
+19:08:26Z /proc/pressure/cpu: some avg10=84.10
+19:08:47Z argocd applications: 14 Synced, Healthy
+20:20:05Z lid open, load 18.83, /proc/pressure/cpu some avg10=5.82, on battery at 79%
+20:31:19Z load 2.09, /proc/pressure/cpu some avg10=0.82, after a whole make test
