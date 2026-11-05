@@ -1410,13 +1410,13 @@ rollback_holds_the_commit_lock_for_its_commit() {
 someone_commits_until_this_waits() { # Someone else's commit holds the lock, and ends once the script says it waits.
   mkdir "$CLONE/.git/agent-commit.lockdir"
   (
-    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-      if grep -qF 'Waiting for .git/agent-commit.lockdir' "$OUT"; then
-        rmdir "$CLONE/.git/agent-commit.lockdir"
-        exit 0
-      fi
+    waited=0
+    until grep -qF 'Waiting for .git/agent-commit.lockdir' "$OUT"; do
+      [[ "$waited" -lt 120 ]] || exit 0
       sleep 1
+      waited=$((waited + 1))
     done
+    rmdir "$CLONE/.git/agent-commit.lockdir"
   ) >/dev/null 2>&1 &
   SOMEONE=$!
 }
