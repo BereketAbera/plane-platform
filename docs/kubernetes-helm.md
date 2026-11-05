@@ -5,10 +5,9 @@ change it safely. Wayline is a customized Plane Community Edition v1.4.3 deploym
 is upstream's `plane-ce` 1.8.6, unmodified.
 
 **Status of this page.** It describes configuration in the code, and says so where a real run has settled something. On
-2026-11-05 Plane runs in both namespaces, on the final branded images from `84b63d9`. What nothing has
-measured yet carries a `VERIFY` or `MEASURE` marker. A path under `.local/evidence-raw/` is raw output from a real run that is not published
-yet, and `make publish-evidence` copies it to `evidence/runs/` under the same name. This is local and production-inspired, and not a claim of
-production readiness.
+2026-11-05 Plane ran in both namespaces on the final branded images from `84b63d9`, and the runs below on those images say so. When this
+was written a drill had deleted the cluster and was rebuilding it, so `make drill-clean-restore` has no result here. This is a local and
+production-inspired platform.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one
 node, one API server, one etcd, one CoreDNS, one Traefik, one Infisical server and one Docker VM disk. Failure of any of
@@ -65,7 +64,7 @@ Everything is in `helm/plane/components/hardening/kustomization.yaml`, with one 
 | Remove `tty` and `stdin` | Deployments, StatefulSets | A TTY makes app tools emit colour and CRLF into logs Loki ingests |
 | Add security contexts | All workloads | See below |
 | Add sync-wave annotations | ConfigMaps, Services, StatefulSets, Deployments, routes | See [argocd.md](argocd.md#inside-a-plane-application) |
-| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot, an event read live and not in a saved file. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout: on the failed-deploy drill's first real run, `plane-dev` read Degraded 629s after the publish (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`). The drill waits this long plus 120s |
+| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot, an event read live and not in a saved file. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout: on the failed-deploy drill's first real run, `plane-dev` read Degraded 629s after the publish ([drill-failed-deploy-20261105T062343Z.log](evidence/runs/drill-failed-deploy-20261105T062343Z.log)). The drill waits this long plus 120s |
 | Add `preStop: {sleep: {seconds: 5}}` | web, admin, space, live, api | A pod gets SIGTERM as its endpoint starts to go, and Traefik can still send it requests for a moment, so with no pause a rollout dropped requests: 10 failed of 2,757 samples ([before](evidence/runs/plane-dev-rollout-availability-1.txt)), and 0 of 5,902 across two rollouts with it ([after](evidence/runs/plane-dev-rollout-availability-2.txt)). Sleep needs no shell. Worker and beat have no Service, so they do not need it |
 | Set `MINIO_PROMETHEUS_AUTH_TYPE=public` | Silo | The ServiceMonitor scrapes without credentials, and the default `jwt` answers 403. The ingress routes only `/uploads` to Silo, and a NetworkPolicy limits who reaches port 9000 |
 | Make the migrator a `Sync` hook at wave 2 | Job `plane-api-migrate-1` | Postgres is applied in the Sync phase and `wait_for_db` does not wait, so `PreSync` deadlocks a fresh install |
@@ -164,12 +163,19 @@ Real use has stayed inside that so far, with 0 OOM kills in any Plane container.
 container was above 66% of its memory limit, and the worker was highest at 426 of 768 MiB. The VM peaked at 10.49 GiB of 13.63 across all the tests
 ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)). The closest any reading came was `live` at 309 of 384 MiB, 80% of its
 limit, in dev earlier that day ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Those are cgroup peaks, which include page cache.
-The load test has not run. [[MEASURE: actual RSS per Plane workload at idle and under load]]
+
+`make test-load ENV=dev` then ran on the final images on 2026-11-05 at 07:32 UTC and passed its thresholds at 5, 10 and 20 virtual users, with
+2,883 requests and 0 failed ([results.json](evidence/runs/load-20261105T073241Z/results.json)). Peak working set by pod, in MiB: worker 269, api 172, RabbitMQ 158,
+live 154, beat 149, Silo 137, space 94, Postgres 63, Valkey 13, web and admin 3. The highest share of a limit was beat, at 58%. No pod restarted, and
+`container_oom_events_total` rose for none ([windows](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). Averages in the quietest window found, 03:40 to 04:10 UTC, in `plane-dev`
+and on the build before the final one: worker 278, api 157, beat 148, live 145, RabbitMQ 129, Silo 115, space 96, Postgres 65, Valkey 4, web and admin 3
+([how it was picked](evidence/runs/LOAD-3-20261105T074543Z-quiet-window.txt)). These are working set from Prometheus, and RSS itself was not read. Prod-sim was being rotated and restored during the
+load, so this is not a quiet machine, and it says nothing about a server. See [resource-utilization.md](resource-utilization.md).
 
 In dev, the pods from the first boot read 0 OOM kills and 0 restarts ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). In prod-sim,
 six of the eleven workloads were read on their first-boot pods with 0 OOM kills and 0 restarts: worker, beat, Postgres, Valkey, RabbitMQ and Silo
 ([snapshot](evidence/runs/plane-prod-sim-snapshot-after-concurrent-1.txt)). The other five, api, web, admin, space and live, were replaced at 22:51
-before a read ([first boot](evidence/runs/plane-prod-sim-firstboot-1.txt)). [[VERIFY: no OOMKilled pods during first boot of both environments]]
+before a read ([first boot](evidence/runs/plane-prod-sim-firstboot-1.txt)), so their first boot has no reading. The clean install running when this was written has recorded none yet.
 
 RabbitMQ applies the absolute watermark through `conf.d`: smoke step `broker-memory` reads `{absolute,"256Mi"}` with no alarms, in both environments
 ([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)).
@@ -203,8 +209,7 @@ largest budgeted container is 768Mi, so going above 1Gi needs a contract change 
 All seven Plane Deployments surging at once reached 21 of 24 pods, 2412Mi of 2732Mi requests and 6960Mi of 7984Mi limits, with no
 `FailedCreate` ([plane-dev-rollout-quota-1.txt](evidence/runs/plane-dev-rollout-quota-1.txt)). The quota does not cover every Deployment
 surging, exporters included, with the migrator, a backup and an ad-hoc pod: that is 26 pods, 2760Mi and 8064Mi
-([quota-budget-1.txt](evidence/runs/quota-budget-1.txt), from renders, not a run). A real rollout during a backup has not been run.
-[[VERIFY: a rollout during a backup in one namespace is not rejected by the pods quota]]
+([quota-budget-1.txt](evidence/runs/quota-budget-1.txt), from renders, not a run). Whether a real rollout during a backup is rejected: not tested in Pass 1.
 
 ## Storage
 
@@ -228,9 +233,9 @@ surging, exporters included, with the migrator, a backup and an ad-hoc pod: that
 
 - **Requested size is not enforced.** local-path ignores it. A claim can grow until the host runs out. Measured on Loki's claim of 2Gi on 2026-11-04: its `wal` directory alone reached 2.2G with no error ([monitoring-loki-replay-1.txt](evidence/runs/monitoring-loki-replay-1.txt)). No Plane claim has been pushed past its size.
 - **The VM cannot see the real disk limit.** Its filesystem reports hundreds of free GiB while the host has far less. kind also sets `evictionHard` to `0%`, so a full disk means write errors, not pod eviction. `guard_disk` is the actual protection.
-- **Volumes survive `make down`,** because the node container is only stopped. [[VERIFY: data survives make down and make up]]
+- **Volumes survive `make down`,** because the node container is only stopped. That comes from how kind works. `make down` then `make up` on real data: not tested in Pass 1.
 - **Volumes do not survive `make destroy`.** Deleting the node deletes its volume.
-- **Deleting a pod keeps its PVC.** `tests/drills/pod-restart-persistence.sh` checks this with a data sentinel. On 2026-11-04 it ended PASS in dev, on upstream images ([dev](evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)). In prod-sim its [first run](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log) ended FAIL on the job probe after the RabbitMQ and Valkey restarts, with the sentinel row and attachment intact in every round. The smoke's worker control had left that worker unable to resume after a broker restart, which `0bba707` fixed in the test. The [second run](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), on a clean worker, ended PASS. On 2026-11-05 it ended PASS again in dev on the final images, while the API answered 500 to 7 signed-in requests in a row, for about 6s, as Postgres restarted (`.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log`, `.local/evidence-raw/PERS-1-20261105T070358Z-timeline.txt`), and in prod-sim on the final images (`.local/evidence-raw/drill-pod-restart-prod-sim-20261105T072331Z.log`).
+- **Deleting a pod keeps its PVC.** `tests/drills/pod-restart-persistence.sh` checks this with a data sentinel. On 2026-11-04 it ended PASS in dev, on upstream images ([dev](evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)). In prod-sim its [first run](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log) ended FAIL on the job probe after the RabbitMQ and Valkey restarts, with the sentinel row and attachment intact in every round. The smoke's worker control had left that worker unable to resume after a broker restart, which `0bba707` fixed in the test. The [second run](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), on a clean worker, ended PASS. On 2026-11-05 it ended PASS again in dev on the final images, while the API answered 500 to 7 signed-in requests in a row, for about 6s, as Postgres restarted ([drill-pod-restart-dev-20261105T070414Z.log](evidence/runs/drill-pod-restart-dev-20261105T070414Z.log), [PERS-1-20261105T070358Z-timeline.txt](evidence/runs/PERS-1-20261105T070358Z-timeline.txt)), and in prod-sim on the final images ([drill-pod-restart-prod-sim-20261105T072331Z.log](evidence/runs/drill-pod-restart-prod-sim-20261105T072331Z.log)).
 - **Deleting a StatefulSet or Application keeps its PVCs.** No retention policy is set, and Argo CD does not track `volumeClaimTemplates` claims.
 - **Deleting a namespace or a PVC deletes the data,** because the reclaim policy is `Delete`.
 - **`storageClass` and claim sizes are immutable** in an existing StatefulSet. A change fails at sync. See [how to change a value](#how-to-change-a-value-safely).
@@ -242,6 +247,8 @@ a PVC named `backups` in each namespace. `/backups` on the node is `.local/backu
 cluster. Pods mount a PVC rather than `hostPath`, so they stay PSA-compatible. See [data-operations.md](data-operations.md).
 UID 70 writes `/backups/<env>` through the VirtioFS mount: `make backup` completed in dev and prod-sim on 2026-11-04
 ([dev](evidence/runs/dr-backup-dev-1.txt), [prod-sim](evidence/runs/dr-backup-prod-sim-1.txt)). rclone logs that the mount has no xattrs, and goes on.
+On 2026-11-05, on the final images, a backup taken minutes earlier was restored in place in each environment with result PASS, and `make test-e2e` passed after it
+([dev](evidence/runs/BKP-2-20261105T074322Z.txt), [prod-sim](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). That restores over the same volumes, so it does not show a restore into a new cluster.
 
 ## Ingress and hostnames
 
@@ -270,11 +277,12 @@ because `export_task.py` hardcodes that path. Each environment has its own Silo,
 `traefik.traefik.svc.cluster.local`.
 
 All of this ran through Traefik in both environments, on the final images from `84b63d9`
-(`.local/evidence-raw/smoke-dev-20261105T070735Z-94252.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`). Steps `frontends` and
+([smoke-dev-20261105T070735Z-94252.json](evidence/runs/smoke-dev-20261105T070735Z-94252.json), [smoke-prod-sim-20261105T053533Z-8468.json](evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json)). Steps `frontends` and
 `routes` cover the prefixes, `asset-duplicate` covers `copy_object` through the CoreDNS rewrite with a valid signature, `realtime-*` covers
 the `/live` WebSocket through the buffering middleware, and `attachment-upload` and `object-in-silo` cover presigned uploads with the bucket Job
-deleted. The smoke drives HTTP and WebSocket with its own client. A real browser session is recorded in
-[live-dev](evidence/branding/live-dev/README.md), for dev only, on the build from `1563cbf`.
+deleted. The smoke drives HTTP and WebSocket with its own client. A full real browser session is recorded in
+[live-dev](evidence/branding/live-dev/README.md), for dev only, on the build from `1563cbf`. On the final images, in dev and in Chromium only, two real tabs synced one page through
+`/live` for about 5 minutes, and text typed during a restart of `live` reached the other tab after it reconnected, and survived a reload ([RT-2b-RT-3](evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)).
 
 ## How to change a value safely
 
@@ -325,7 +333,7 @@ planned migration with a backup. The migrator Job's template is also immutable, 
 recreates it on each sync, so that one is handled.
 
 **Secrets rollouts.** api, worker, beat and live carry `secrets.infisical.com/auto-reload: "true"`, so the operator restarts them
-when a referenced Secret changes. postgres-exporter carries it too, from `monitoring/manifests`. `make rotate ENV=dev` on 2026-11-05 rolled api, worker, beat and postgres-exporter, and left live and Postgres alone. `plane-dev` stayed Synced with no new sync operation, so auto-reload and self-heal did not fight in that run (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`, `.local/evidence-raw/SEC-6-20261105T072331Z-application-watch.txt`).
+when a referenced Secret changes. postgres-exporter carries it too, from `monitoring/manifests`. `make rotate ENV=dev` on 2026-11-05 rolled api, worker, beat and postgres-exporter, and left live and Postgres alone. `plane-dev` stayed Synced with no new sync operation, so auto-reload and self-heal did not fight in that run ([rotate-dev-20261105T072345Z.log](evidence/runs/rotate-dev-20261105T072345Z.log), [SEC-6-20261105T072331Z-application-watch.txt](evidence/runs/SEC-6-20261105T072331Z-application-watch.txt)). `make rotate ENV=prod-sim` rolled api, worker and beat, and left Postgres alone ([SEC-3-BKP-3](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)).
 
 ## How the determinism check works
 
@@ -385,7 +393,7 @@ The chart and the app version move together: chart 1.8.6 is appVersion 1.4.3.
 6. Update digests through `make promote`, dev first. Update the contract.
 7. `make ci`, commit, publish, and run `make test-e2e ENV=dev` before promoting.
 
-No upgrade has been performed on this platform. [[VERIFY: a chart upgrade works by this procedure]]
+No upgrade has been performed on this platform. This procedure is untried: not tested in Pass 1.
 
 ### Plane version and data services
 
