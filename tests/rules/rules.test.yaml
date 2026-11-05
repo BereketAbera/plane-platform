@@ -377,7 +377,7 @@ tests:
           - exp_labels: { alertname: ArgoAppStuckProgressing, name: kube-prometheus-stack, dest_namespace: monitoring, severity: warning, component: argocd }
             exp_annotations:
               summary: Application kube-prometheus-stack has read Progressing for 30m
-              description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. The root sync waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
+              description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. A root sync that reaches its wave waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
       - eval_time: 32m
         alertname: ArgoSyncFailed
         exp_alerts: []

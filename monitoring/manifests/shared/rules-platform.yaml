@@ -88,7 +88,9 @@ spec:
         # OutOfSync (controller/appcontroller.go:2432), so no operation opens, nothing retries, and the running state
         # silently stays on the old commit with none of the other rules here matching. Measured on a throwaway with
         # a path that does not exist: Unknown, Healthy, no operation, condition ComparisonError. max_over_time rides
-        # out a controller restart, as for ArgoSyncFailed below.
+        # out a controller restart, as for ArgoSyncFailed below. On an Application that was rendering, the controller
+        # ignores the failure for 180s (--repo-error-grace-period-seconds) and looks every 120s (--app-resync): a real
+        # commit read Unknown 5m57s after it, with its object still there, so this fires about 21m after the commit.
         - alert: ArgoAppSyncUnknown
           expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{sync_status="Unknown"}[2m])) == 1
           for: 15m
@@ -143,7 +145,7 @@ spec:
           labels: { severity: warning, component: argocd }
           annotations:
             summary: Application {{ $labels.name }} has read Progressing for 30m
-            description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. The root sync waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
+            description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. A root sync that reaches its wave waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
         # Root's operation walks every wave, so it stays open while its children come up: 41m measured on a
         # first boot, and scripts/up.sh allows 50m. What fires sooner depends on the child it is waiting on:
         # - Operation still open, as for a Plane Application in wave 3 or a retry loop: ArgoSyncFailed at 15m.
