@@ -2,7 +2,7 @@
 
 What fails, what survives, how to recover, and how to restore the whole platform into a clean environment.
 
-**Status, 2026-11-05.** The pod restart drill has run, backups have run, and Infisical has been restored in place. The destroying run has not: `make drill-clean-restore CONFIRM=yes` has never deleted a cluster, and no Plane environment has been restored into its real database and bucket. `make restore-clean` has run only as far as its plan on the live cluster, and against stubs. So the [clean restore](#full-restoration-into-a-clean-environment) is read from the scripts, backed by rehearsals on throwaway copies. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. This platform is local and single-node, and nothing here is a claim about any other environment.
+**Status, 2026-11-05.** The pod restart drill has run, backups have run, and Infisical has been restored in place. The destroying run has not: `make drill-clean-restore CONFIRM=yes` has never deleted a cluster, and no Plane environment has been restored into its real database and bucket. `make restore-clean` has run only as far as its plan on the live cluster, and against stubs. So the [clean restore](#full-restoration-into-a-clean-environment) is read from the scripts, backed by rehearsals on throwaway copies. A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. This platform is local, production-inspired and single-node, and nothing here is a claim about any other environment.
 
 ## Principles
 
@@ -170,7 +170,7 @@ Registry contents live in Docker named volumes: `registry-data` and three mirror
 | Pull-through caches | Images already on the node keep working. New pulls fetch from upstream through the mirror again | Nothing. `scripts/cluster-up.sh` restarts them. Watch Docker Hub limits |
 | `localhost:5001/wayline/*` | Running pods keep running from containerd's store. New pulls of those digests fail | Below |
 
-Both overlays reference `localhost:5001/wayline` digests for web, admin, space and backend. No backup holds them, because saving them would cost about 900 MB a set, and this disk cannot pay that. The volume survives `make destroy` and a lost cluster. It does not survive `make destroy PURGE=yes`, a new machine or a lost `Docker.raw`. `make up`, a plan and `make restore-clean` all list each digest the registry cannot serve, and stop before they touch anything.
+Both overlays reference `localhost:5001/wayline` digests for web, admin, space and backend. No backup holds them, because saving them would cost about 900 MB a set, and this disk cannot pay that. The volume survives `make destroy` and a lost cluster. It does not survive `make destroy PURGE=yes`, a new machine or a lost `Docker.raw`. `make restore-clean` and its plan list each digest the registry cannot serve, and refuse before they touch anything. `make up` lists them, tries a rebuild, and stops before it publishes.
 
 ```bash
 # make up UP_STOP_AFTER=cluster starts the registry and publishes nothing. Then, either:
@@ -183,6 +183,9 @@ make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="restor
 # Or copy, which keeps a digest, if GHCR has that digest. Needs docker login ghcr.io with read:packages.
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline prod-sim
+
+# Then, either way, if a clean restore brought you here:
+make restore-clean BACKUP=<id>
 ```
 
 A rebuild does not reproduce the digest. Prod-sim accepts only a digest recorded for dev, so a rebuild must pass through dev again.
