@@ -54,7 +54,8 @@ no-warning-of-newer-plane	scripts/restore.sh	R3	s/^    clean_warn_newer_plane "\
 exit-leaves-the-job-running	scripts/restore.sh	R4	s/^  stop_this_runs_jobs\n//m
 exit-starts-with-job-left	scripts/restore.sh	R4	s/if \[\[ -n "\$JOBS_LEFT_RUNNING" \]\]; then\n    warn "COULD NOT REMOVE/if false; then\n    warn "COULD NOT REMOVE/
 exit-does-not-flush-redis	scripts/restore.sh	R4	s/if \[\[ "\$INFISICAL_REDIS_STALE" == yes \]\]; then/if false; then/
-repair-only-by-label	scripts/restore.sh	R4	s/kc -n "\$ns" get jobs -o json 2>\/dev\/null \| jq -r '\.items\[\]/kc -n "\$ns" get jobs -l app.kubernetes.io\/name=plane-restore -o json 2>\/dev\/null | jq -r '.items[]/
+repair-only-by-label	scripts/restore.sh	R4	s/jobs_json="\$\(kc -n "\$ns" get jobs -o json 2>\/dev\/null\)"/jobs_json="\$(kc -n "\$ns" get jobs -l app.kubernetes.io\/name=plane-restore -o json 2>\/dev\/null)"/
+repair-reads-an-error-as-no-jobs	scripts/restore.sh	R4	s/(jobs_json="\$\(kc -n "\$ns" get jobs -o json 2>\/dev\/null\)") \|\| die [^\n]*\n/$1 || jobs_json='{"items":[]}'\n/
 pvc-error-reads-as-none	scripts/restore.sh	R5	s/if ! listed="\$\(kc -n "\$ns" get pvc -o name --ignore-not-found 2>\/dev\/null\)"; then/if ! listed="\$(kc -n "\$ns" get pvc -o name --ignore-not-found 2>\/dev\/null || true)"; then/
 infisical-pvc-error-reads-as-none	scripts/restore.sh	R5	s/if ! database="\$\(kc -n infisical get pvc data-infisical-postgres-0 -o name --ignore-not-found 2>\/dev\/null\)"; then/if ! database="\$(kc -n infisical get pvc data-infisical-postgres-0 -o name --ignore-not-found 2>\/dev\/null || true)"; then/
 retention-counts-empty-backups	scripts/backup.sh	R6	s/if \[ "\$old" = "\$HOLDS_USERS" \]; then/if false; then/
@@ -70,7 +71,7 @@ drill-marker-not-checked	tests/drills/clean-restore.sh	R8d@the marker	s/if \[\[ 
 drill-apps-not-checked	tests/drills/clean-restore.sh	R8d@an Application	s/^if apps_all_ok; then pass/if true; then pass/m
 drill-stale-state-not-checked	tests/drills/clean-restore.sh	R8d@lost cluster	s/if \[\[ "\$\(stale_local_states\)" -gt "\$STALE_BEFORE" \]\]; then/if true; then/
 drill-restored-plan-not-checked	tests/drills/clean-restore.sh	R8d@still has changes	s/if grep -F 'Terraform has nothing to change' "\$BOOTSTRAP_LOG" >\/dev\/null; then/if true; then/
-drill-plain-bootstrap-not-checked	tests/drills/clean-restore.sh	R8d@plain bootstrap	s/if grep -F 'all secrets already exist, nothing written' "\$BOOTSTRAP_LOG" >\/dev\/null; then/if true; then/
+drill-plain-bootstrap-not-checked	tests/drills/clean-restore.sh	R8d@plain bootstrap	s/if \[\[ -z "\$WROTE" \]\]; then pass/if true; then pass/
 drill-delete-not-checked	tests/drills/clean-restore.sh	R8d@leaves the cluster	s/^if cluster_exists; then fail "the cluster still exists"/if false; then fail "the cluster still exists"/m
 first-install-not-counted	scripts/lib/up-checks.sh	R9	s/^  if up_local_volumes_present; then\n    printf '%s' "\$UP_NEW_CLUSTER_GIB"/  if true; then\n    printf '%s' "\$UP_NEW_CLUSTER_GIB"/m
 empty-cluster-creates-nothing	scripts/restore.sh	S28	s/^    disk="\$\(up_disk_problem_empty_cluster\)"\n/    disk=""\n/m
@@ -92,6 +93,7 @@ plan-advice-without-skip-backup	scripts/restore.sh	S34	s/warn "a real run would 
 plan-ignores-a-dangling-row	scripts/restore.sh	R22	s/^    if \[\[ "\$missing" != unknown && "\$missing" != 0 \]\]; then\n      clean_add_problem/    if false; then\n      clean_add_problem/m
 in-place-ignores-a-dangling-row	scripts/restore.sh	R22	s/^  if \[\[ "\$missing" != unknown && "\$missing" != 0 \]\]; then\n    die "backup \$BACKUP_ID/  if false; then\n    die "backup \$BACKUP_ID/m
 manifest-does-not-record-it	scripts/backup.sh	R22	s/^ *"uploaded_objects": \$UPLOADED,\n//m
+comparison-failure-costs-the-backup	scripts/backup.sh	R22	s/^( *)echo "objects: could not compare[^\n]*\n/$1exit 1\n/m
 comparison-the-wrong-way-round	scripts/backup.sh	R22	s/LC_ALL=C comm -23 "\$D\/postgres\/uploaded-keys.txt"/LC_ALL=C comm -13 "\$D\/postgres\/uploaded-keys.txt"/
 TABLE
 }

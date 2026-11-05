@@ -69,7 +69,7 @@ job_state() { # namespace job. Prints ok, failed or running.
 # For a Job that may never have been created: prints nothing if it is not there. Non-zero only if kubectl could
 # not say, which is not the same as no such Job.
 job_state_if_any() { # namespace job
-  kc -n "$1" get job "$2" --ignore-not-found -o json | jq -r "$JOB_STATE_JQ"
+  kc --request-timeout=30s -n "$1" get job "$2" --ignore-not-found -o json | jq -r "$JOB_STATE_JQ"
 }
 
 # run_job <namespace> <job> <timeout-seconds>, with the manifest on stdin. A Job and not kubectl
