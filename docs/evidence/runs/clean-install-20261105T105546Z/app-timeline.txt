@@ -1,0 +1,14 @@
+2026-11-05T11:17:47Z 2026-11-05T12:37:10Z root - Succeeded
+2026-11-05T11:17:48Z 2026-11-05T11:17:48Z backup-storage -10 Succeeded
+2026-11-05T11:17:48Z 2026-11-05T11:17:48Z network-policies -10 Succeeded
+2026-11-05T11:17:55Z 2026-11-05T11:17:56Z traefik -9 Succeeded
+2026-11-05T11:18:33Z 2026-11-05T11:18:33Z metrics-server -8 Succeeded
+2026-11-05T11:36:01Z 2026-11-05T11:36:05Z kube-prometheus-stack -7 Succeeded
+2026-11-05T11:42:03Z 2026-11-05T11:42:04Z alloy -6 Succeeded
+2026-11-05T11:42:05Z 2026-11-05T11:42:05Z loki -6 Succeeded
+2026-11-05T11:44:20Z 2026-11-05T11:44:22Z monitoring-extras -5 Succeeded
+2026-11-05T11:45:01Z 2026-11-05T11:50:58Z infisical -4 Succeeded
+2026-11-05T11:50:59Z 2026-11-05T11:51:00Z infisical-operator-prod-sim -3 Succeeded
+2026-11-05T11:51:00Z 2026-11-05T11:51:01Z infisical-operator-dev -3 Succeeded
+2026-11-05T12:31:17Z 2026-11-05T12:32:35Z plane-dev -1 Succeeded
+2026-11-05T12:37:10Z 2026-11-05T12:40:23Z plane-prod-sim 0 Succeeded

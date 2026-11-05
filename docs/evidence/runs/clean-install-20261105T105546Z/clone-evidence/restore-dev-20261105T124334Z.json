@@ -1,0 +1,19 @@
+{
+  "environment": "dev",
+  "backup": "20261105T105422Z",
+  "started_at": "20261105T124334Z",
+  "result": "FAIL",
+  "steps": [
+    {
+      "step": "checksums",
+      "status": "PASS",
+      "detail": "129 files match"
+    },
+    {
+      "step": "version",
+      "status": "PASS",
+      "detail": "backup 1.4.3, running 1.4.3"
+    }
+  ],
+  "not_run": []
+}

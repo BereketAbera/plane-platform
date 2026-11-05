@@ -1,0 +1,12 @@
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    12Gi    13Gi    47%    459k  139M    0%   /
+40060992	/Users/bek/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          31        26        17.91GB   1.987GB (11%)
+Containers      30        23        5.788MB   114.7kB (1%)
+Local Volumes   32        18        16.72GB   1.414GB (8%)
+Build Cache     86        0         2.665GB   2.613GB
+plane-platform-local_mirror-docker-data plane-platform-local_mirror-docker-data                            1         1.992GB
+plane-platform-local_mirror-k8s-data plane-platform-local_mirror-k8s-data                               1         37.64MB
+plane-platform-local_mirror-quay-data plane-platform-local_mirror-quay-data                              1         447.5MB
+plane-platform-local_registry-data plane-platform-local_registry-data                                 1         552.7MB

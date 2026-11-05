@@ -1,0 +1,1728 @@
+# 2026-11-05T10:53:46Z commit 18af97a command: make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes COLD_INSTALL=yes. Deletes the cluster and the local services with their volumes, runs a cold install from a fresh clone, deletes that, puts the registry back, and restores from backup. The owner approved this in chat.
+drill clean-restore started 2026-11-05T10:53:47Z by: ./tests/drills/clean-restore.sh
+
+--- 0. Preflight
+PASS  every Application is Synced and Healthy
+PASS  sentinels and test accounts exist for: dev prod-sim
+PASS  no uncommitted changes under the paths Argo CD reads
+host disk: 17.25 GiB free, kind volume 10.51 GiB, about 27.03 GiB after a delete at 93%, up.sh asks for 25 GiB
+PASS  disk: about 27.0 GiB free after the delete clears the 25 GiB that up.sh asks for
+
+--- 1. Baseline
+PASS  38 rendered Secret keys hashed, cluster CA d97253e23c37a11f, 0 secret-zero archives
+
+--- 2. Backups
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T105359Z
+[pod/plane-backup-20261105t105359z-dd6r4/postgres] postgres: 20261105T105359Z complete, 785 tables counted from a scratch restore
+backup 20261105T105359Z: postgres/infisical.dump 4402921 B, postgres/infisical.toc.txt 935890 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m retention: removed 20261105T020938Z, past the newest 5 complete sets
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T105359Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261105T105422Z
+[pod/plane-backup-20261105t105422z-mdvmb/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t105422z-mdvmb/objects] 2026/11/05 10:54:30 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105422z-mdvmb/objects] 2026/11/05 10:54:31 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105422z-mdvmb/objects] 2026/11/05 10:54:32 NOTICE: Local file system at /backups/20261105T105422Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t105422z-mdvmb/objects] 2026/11/05 10:54:32 NOTICE: Local file system at /backups/20261105T105422Z.partial/objects: 113 matching files
+[pod/plane-backup-20261105t105422z-mdvmb/objects] 2026/11/05 10:54:32 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105422z-mdvmb/objects] objects: 113 checked
+[pod/plane-backup-20261105t105422z-mdvmb/objects] 2026/11/05 10:54:32 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105422z-mdvmb/objects] GATE2: 72 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t105422z-mdvmb/finalize] retention: removed 20261105T062141Z
+[pod/plane-backup-20261105t105422z-mdvmb/finalize] finalize: 20261105T105422Z complete
+backup 20261105T105422Z: postgres/plane.dump 1332864 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2133 B, postgres/content.tsv 127 B, objects.lsjson 45465 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261105T105422Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261105T105443Z
+[pod/plane-backup-20261105t105443z-7b89p/objects] 2026/11/05 10:54:50 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105443z-7b89p/objects] 2026/11/05 10:54:51 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105443z-7b89p/objects] 2026/11/05 10:54:51 NOTICE: Local file system at /backups/20261105T105443Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t105443z-7b89p/objects] 2026/11/05 10:54:51 NOTICE: Local file system at /backups/20261105T105443Z.partial/objects: 82 matching files
+[pod/plane-backup-20261105t105443z-7b89p/objects] 2026/11/05 10:54:51 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105443z-7b89p/objects] objects: 82 checked
+[pod/plane-backup-20261105t105443z-7b89p/objects] 2026/11/05 10:54:52 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t105443z-7b89p/objects] GATE2: 53 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t105443z-7b89p/finalize] retention: removed 20261105T000627Z
+[pod/plane-backup-20261105t105443z-7b89p/finalize] finalize: 20261105T105443Z complete
+[pod/plane-backup-20261105t105443z-7b89p/postgres] postgres: 110 tables counted from a scratch restore
+backup 20261105T105443Z: postgres/plane.dump 855827 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2118 B, postgres/content.tsv 127 B, objects.lsjson 33082 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261105T105443Z
+[1;32m ok[0m all environments backed up
+PASS  scripts/backup.sh all
+
+--- 3. Plan
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T105359Z, Terraform state serial 15 with 5 resources, identities dev and prod-sim, 1 users, 6 projects, 18 secrets, server v0.167.6
+    dev        20261105T105422Z, SECRET_KEY 4ceb3f709b196ae0, 58 users, 36 workspaces, 70 projects, 1372 work items, 113 file rows, 113 objects, sentinel sentinel-f10a5851, uploaded rows with no object: 0
+    prod-sim   20261105T105443Z, SECRET_KEY 77d617b20fb32955, 38 users, 22 workspaces, 44 projects, 198 work items, 82 file rows, 82 objects, sentinel sentinel-5bf39257, uploaded rows with no object: 0
+    admin      the file this backup names, ending 2027-02-02T21:25:32Z
+    images     4 localhost:5001 digests in Git
+    disk       17.17 GiB free, kind volume 10.51 GiB, about 26.95 GiB after a delete at 93%, up.sh asks for 25 GiB
+[1;33mwarn[0m a real run would refuse right now: cluster plane-platform already holds Plane volumes. To replace it: make destroy CONFIRM=yes SKIP_BACKUP=yes, then make restore-clean BACKUP=20261105T105359Z. Without SKIP_BACKUP=yes, make destroy backs up what is there now, and BACKUP=latest would then name that set. To restore one environment in place: make restore.
+[1;32m ok[0m PLAN_ONLY=yes: nothing was changed
+
+
+PASS  the plan passed: the recovery set checks out, and nothing up.sh would stop on was found
+
+--- 4. Delete the cluster
+PASS  registry saved to .local/registry-snapshot.tar, 1.1G
+[1;33mwarn[0m SKIP_BACKUP=yes: deleting with no new backup
+[1;34m==>[0m Deleting kind cluster plane-platform
+Deleting cluster "plane-platform" ...
+Deleted nodes: ["plane-platform-control-plane"]
+[1;34m==>[0m PURGE=yes: removing local services and their volumes
+ Volume plane-platform-local_mirror-quay-data Removed 
+ Volume plane-platform-local_mirror-docker-data Removed 
+[1;33mwarn[0m Git deploys images from the local registry, which is gone now. make restore-clean PLAN_ONLY=yes names them and the ways to bring them back.
+[1;32m ok[0m cluster deleted. Next: 'make restore-clean BACKUP=latest' to bring everything back, or 'make up' for an empty platform.
+PASS  cluster gone
+PASS  local Terraform state removed
+PASS  Infisical Terraform state kept
+PASS  secret zero unchanged
+host disk after the delete: 31.7 GiB free, 15.6 GiB came back, the check counted on about 27.0 GiB free
+
+--- 4b. Clean install from a fresh clone, then delete it
+10:55:46Z clean install of 18af97a into /Users/bek/dev/pr/plane-platform-clean-install. Host disk: 31 GiB free
+10:55:48Z the clone holds no .local and no .build. .tools was copied, so make setup checks it and does not download it
+10:55:51Z make-setup: exit 0 in 3s: make setup
+11:12:39Z make-up-stops-on-new-digests: exit 0 in 1008s: bash -c ! make up
+11:12:39Z make up created the cluster and local services, built the images, and stopped in 1008s
+11:12:49Z make-promote-dev: exit 0 in 10s: make promote ENV=dev
+11:12:52Z make-promote-prod-sim: exit 0 in 3s: env OVERRIDE_DEV_CHECK=first install on a new machine: nothing is running yet CONFIRM=yes SKIP_BACKUP=yes make promote ENV=prod-sim
+11:13:10Z removed the build's source tree, package store and Docker's build cache. Host disk: 29 GiB free
+12:40:28Z make-up: exit 0 in 5238s: make up
+12:40:28Z make up took 5238s. From the start of the first make up: 6277s
+12:40:30Z make-status: exit 0 in 2s: make status
+12:40:30Z app-timeline: exit 0 in 0s: bash -c "$0" --kubeconfig "$1" --context "kind-$2" -n argocd get applications -o json | python3 -I -c "
+import json,sys
+rows=[]
+for a in json.load(sys.stdin)[\"items\"]:
+    s=a.get(\"status\",{}); h=s.get(\"history\") or [{}]; op=s.get(\"operationState\") or {}
+    rows.append((h[0].get(\"deployStartedAt\",\"-\"),h[0].get(\"deployedAt\",\"-\"),a[\"metadata\"][\"name\"],a[\"metadata\"].get(\"annotations\",{}).get(\"argocd.argoproj.io/sync-wave\",\"-\"),op.get(\"phase\",\"-\")))
+for r in sorted(rows): print(*r)
+" /Users/bek/dev/pr/plane-platform/.tools/bin/kubectl /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig plane-platform
+12:40:48Z disk-after-install: exit 0 in 18s: bash -c df -h /; du -sk "$HOME/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw"; docker system df; for v in $(docker volume ls -q | grep plane-platform-local); do printf "%s " "$v"; docker system df -v 2>/dev/null | grep -F "$v" | head -1; done
+12:40:48Z apps-after-up: exit 0 in 0s: /Users/bek/dev/pr/plane-platform/.tools/bin/kubectl --kubeconfig /Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig --context kind-plane-platform -n argocd get applications
+12:42:37Z e2e-dev-first: exit 0 in 109s: make test-e2e ENV=dev
+12:42:59Z e2e-prod-sim-first: exit 0 in 22s: make test-e2e ENV=prod-sim
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+RESULT  PASS
+PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+RESULT  PASS
+12:43:14Z test-infisical: exit 0 in 15s: make test-infisical
+12:43:30Z make-up-again: exit 0 in 16s: make up
+12:43:30Z second make up took 16s. Pod uid hash before a3a48562c7b32c98, after a3a48562c7b32c98
+12:43:33Z terraform-plan-local: exit 0 in 3s: env KUBECONFIG=/Users/bek/dev/pr/plane-platform-clean-install/.local/kubeconfig /Users/bek/dev/pr/plane-platform/.tools/bin/terraform -chdir=/Users/bek/dev/pr/plane-platform-clean-install/infrastructure/terraform/environments/local plan -lock=false -detailed-exitcode -input=false
+12:43:34Z restore-foreign-key-refused: exit 0 in 1s: bash -c ! make restore ENV=dev BACKUP=20261105T105422Z CONFIRM=yes
+12:44:46Z destroy-refused: exit 1 in 72s: env -u CONFIRM bash -c ! make destroy
+12:44:46Z destroy: exit 0 in 0s: make destroy CONFIRM=yes SKIP_BACKUP=yes
+12:44:47Z clone evidence copied to /Users/bek/dev/pr/plane-platform/.local/evidence-raw/clean-install-20261105T105546Z/clone-evidence
+12:45:17Z registry snapshot put back, so this checkout's digests are served again
+12:45:17Z clone removed. Host disk: 26 GiB free. Steps that failed: 1
+FAIL  the clean install reported a failure, after 6571s. See .local/evidence-raw/clean-install-*/summary.txt
+
+--- 5. Restore into the clean environment
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T105359Z, Terraform state serial 15 with 5 resources, identities dev and prod-sim, 1 users, 6 projects, 18 secrets, server v0.167.6
+    dev        20261105T105422Z, SECRET_KEY 4ceb3f709b196ae0, 58 users, 36 workspaces, 70 projects, 1372 work items, 113 file rows, 113 objects, sentinel sentinel-f10a5851, uploaded rows with no object: 0
+    prod-sim   20261105T105443Z, SECRET_KEY 77d617b20fb32955, 38 users, 22 workspaces, 44 projects, 198 work items, 82 file rows, 82 objects, sentinel sentinel-5bf39257, uploaded rows with no object: 0
+    admin      the file this backup names, ending 2027-02-02T21:25:32Z
+    images     4 localhost:5001 digests in Git
+    disk       26.61 GiB free, no cluster to delete, up.sh asks for 25 GiB
+[1;32m ok[0m plan: Infisical 20261105T105359Z; dev 20261105T105422Z; prod-sim 20261105T105443Z; checksums and keys check out
+[1;34m==>[0m make up as far as Traefik. Plane waits for an identity Secret that does not exist yet.
+[1;34m==>[0m Cluster: kind, local services, kubeconfig
+[1;34m==>[0m Creating kind cluster plane-platform
+Creating cluster "plane-platform" ...
+ • Ensuring node image (kindest/node:v1.36.4) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.36.4) 🖼️
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Waiting ≤ 2m0s for control-plane = Ready ⏳  ...
+ ✓ Waiting ≤ 2m0s for control-plane = Ready ⏳
+ • Ready after 15s 💚
+Set kubectl context to "kind-plane-platform"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-plane-platform --kubeconfig /Users/bek/dev/pr/plane-platform/.local/kubeconfig
+
+Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
+[1;32m ok[0m kind network 172.24.0.0/16 is inside 172.16.0.0/12
+[1;34m==>[0m Starting local services (registry, pull-through caches, Git remote)
+ Container plane-registry Running 
+ Container plane-mirror-docker Running 
+ Container plane-mirror-quay Running 
+ Container plane-mirror-k8s Running 
+ Container plane-git Recreate 
+ Container plane-git Recreated 
+ Container plane-git Starting 
+ Container plane-git Started 
+[1;32m ok[0m cluster ready: context kind-plane-platform, kubeconfig /Users/bek/dev/pr/plane-platform/.local/kubeconfig
+[1;32m ok[0m cluster step finished in 28s
+[1;34m==>[0m Publish: local image digests, then main to the bare repo Argo CD reads
+[1;33mwarn[0m publishing 281 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       6f5a426 fix(images): make a build context readable, so a restrictive umask cannot ship images their own user cannot read
+       a1836ee docs(handoff): say the real restore ran on the script from before the recovery fixes
+       406a2ee docs(case-study): say the real restore ran on the script from before the recovery fixes
+       5ac25d8 docs(install): say the real restore ran on the script from before the recovery fixes
+       b30bcdd docs(readme): say the real restore ran on the script from before the recovery fixes
+[1;32m ok[0m published main 6f5a42653a64 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+[1;32m ok[0m publish step finished in 1s
+[1;34m==>[0m Terraform: namespaces, quotas, CoreDNS, Argo CD, projects, root Application
+[0m[1mInitializing the backend...[0m
+
+[0m[1mInitializing modules...[0m
+
+[0m[1mInitializing provider plugins...[0m
+- Reusing version 3.3.0 of hashicorp/helm from the dependency lock file
+- Reusing version 3.4.0 of hashicorp/kubernetes from the dependency lock file
+- Using previously-installed hashicorp/helm v3.3.0
+- Using previously-installed hashicorp/kubernetes v3.4.0
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # module.argocd.helm_release.argocd[0m will be created
+[0m  [32m+[0m[0m resource "helm_release" "argocd" {
+      [32m+[0m[0m atomic                     = false
+      [32m+[0m[0m chart                      = "argo-cd"
+      [32m+[0m[0m cleanup_on_fail            = false
+      [32m+[0m[0m create_namespace           = false
+      [32m+[0m[0m dependency_update          = false
+      [32m+[0m[0m disable_crd_hooks          = false
+      [32m+[0m[0m disable_openapi_validation = false
+      [32m+[0m[0m disable_webhooks           = false
+      [32m+[0m[0m force_update               = false
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m lint                       = false
+      [32m+[0m[0m max_history                = 3
+      [32m+[0m[0m metadata                   = (known after apply)
+      [32m+[0m[0m name                       = "argocd"
+      [32m+[0m[0m namespace                  = "argocd"
+      [32m+[0m[0m pass_credentials           = false
+      [32m+[0m[0m recreate_pods              = false
+      [32m+[0m[0m render_subchart_notes      = true
+      [32m+[0m[0m replace                    = false
+      [32m+[0m[0m repository                 = "https://argoproj.github.io/argo-helm"
+      [32m+[0m[0m reset_values               = false
+      [32m+[0m[0m reuse_values               = false
+      [32m+[0m[0m set_wo                     = (write-only attribute)
+      [32m+[0m[0m skip_crds                  = false
+      [32m+[0m[0m status                     = "deployed"
+      [32m+[0m[0m take_ownership             = false
+      [32m+[0m[0m timeout                    = 600
+      [32m+[0m[0m upgrade_install            = false
+      [32m+[0m[0m values                     = [
+          [32m+[0m[0m <<-EOT
+                # argo-cd chart 10.11.7. Applied only by infrastructure/terraform/modules/argocd.
+                # Lean by design: one replica of each component, no Dex, notifications or ApplicationSet.
+                # The admin password is not here. argocd-server generates argocd-initial-admin-secret at first start.
+                
+                global:
+                  domain: argocd.localhost
+                  image:
+                    repository: quay.io/argoproj/argocd
+                    tag: v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+                  # The chart defaults this on. Every NetworkPolicy belongs to the platform project (contract
+                  # section 7), so the argocd rules live with the rest in gitops/platform/network-policies.
+                  networkPolicy:
+                    create: false
+                
+                configs:
+                  cm:
+                    # The chart would default to https://, and nothing terminates TLS locally (contract section 3).
+                    url: http://argocd.localhost
+                
+                    # Argo CD removed this check in 1.8, so without it a child reports no health and the root's
+                    # waves pass straight through. Base text from docs/operator-manual/health.md at v3.5.7.
+                    # A non-hook task waits on anything except Healthy and Degraded (sync_context.go), so Missing
+                    # and Progressing hold the wave, while Degraded fails the root sync and the root's retry reruns it.
+                    #
+                    # The base text alone does not gate. controller/health.go skips hooks and resources not created
+                    # yet, so a child reads Healthy between its own waves and through its migrator. Healthy also needs:
+                    # - No .operation. It clears only when an operation completes (setOperationState), so this covers
+                    #   requested, running, retrying and terminating. With retry limit -1 a failing child never ends.
+                    # - Synced. status.health is only as new as the last refresh. A one-wave child's sync succeeds on
+                    #   apply, so at that moment it can still show a Healthy computed with objects absent, and that
+                    #   same refresh recorded OutOfSync. The post-sync refresh then corrects both.
+                    # Cost: a child that stays OutOfSync holds every later wave. `make up` needs all 14 Synced anyway.
+                    resource.customizations.health.argoproj.io_Application: |
+                      hs = {}
+                      hs.status = "Progressing"
+                      hs.message = ""
+                      if obj.status ~= nil then
+                        if obj.status.health ~= nil and obj.status.health.status ~= nil then
+                          hs.status = obj.status.health.status
+                          if obj.status.health.message ~= nil then
+                            hs.message = obj.status.health.message
+                          end
+                        end
+                        if hs.status == "Healthy" then
+                          if obj.operation ~= nil then
+                            hs.status = "Progressing"
+                            hs.message = "Holding the wave: child sync has not finished"
+                          elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+                            hs.status = "Progressing"
+                            hs.message = "Holding the wave: child is Healthy but not Synced"
+                          end
+                        end
+                      end
+                      return hs
+                
+                    # Argo CD's built-in check (resource_customizations/monitoring.coreos.com/Prometheus/health.lua at v3.5.7)
+                    # reads NoPodReady as Degraded, and that is every Prometheus start: while its image pulls through the
+                    # mirror and through each restart's WAL replay. On the first boot measured, a Degraded child failed the
+                    # root sync at once, and the root's retry backoff then outlasted the image pull. So not-ready pods read
+                    # as Progressing, and the wave simply waits. Reconciled False stays Degraded: the operator could not
+                    # build the pods, so waiting will not help.
+                    # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Before this, root retried
+                    # and re-read the newest commit each time. Now it waits with no retry, so a fix to
+                    # gitops/applications/kube-prometheus-stack.yaml needs root's operation terminated by hand, as
+                    # infrastructure/terraform/README.md says under "After a stuck first sync". No alert says so either: with
+                    # Prometheus down, nothing evaluates ArgoRootSyncStuck, and the only sign is Watchdog no longer reaching the sink.
+                    resource.customizations.health.monitoring.coreos.com_Prometheus: |
+                      local hs = {status = "Progressing", message = "Waiting for initialization"}
+                      if obj.status == nil or obj.status.conditions == nil then
+                        return hs
+                      end
+                      local available = nil
+                      local reconcile_failure = nil
+                      for _, c in ipairs(obj.status.conditions) do
+                        if c.type == "Available" then
+                          available = c
+                        elseif c.type == "Reconciled" and c.status == "False" then
+                          reconcile_failure = c
+                        end
+                      end
+                      if available == nil then
+                        return hs
+                      end
+                      if available.status == "True" then
+                        hs.status = "Healthy"
+                        hs.message = "All instances are available"
+                      elseif reconcile_failure ~= nil then
+                        hs.status = "Degraded"
+                        hs.message = reconcile_failure.message or reconcile_failure.reason
+                      elseif available.reason == "NoPodReady" or available.reason == "SomePodsNotReady" then
+                        hs.message = available.reason .. ": " .. (available.message or "")
+                      else
+                        hs.status = "Degraded"
+                        hs.message = available.message or available.reason
+                      end
+                      return hs
+                
+                    # Field semantics from infisical-k8-operator/v0.11.16. The operator's own comment says to trust
+                    # status.error only once observedGeneration matches, so a stale false must not read as Healthy.
+                    resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.observedGeneration ~= nil
+                         and obj.status.observedGeneration == obj.metadata.generation then
+                        if obj.status.error == true then
+                          hs.status = "Degraded"
+                          hs.message = "Reconcile failed, see the LastReconcileStatus condition"
+                        else
+                          hs.status = "Healthy"
+                          hs.message = "Secrets synced"
+                        end
+                      end
+                      return hs
+                
+                    # These two carry no status.observedGeneration and no status.error, only this condition.
+                    resource.customizations.health.secrets.infisical.com_InfisicalAuth: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.conditions ~= nil then
+                        for _, c in ipairs(obj.status.conditions) do
+                          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                            hs.message = c.message
+                            if c.status == "True" then
+                              hs.status = "Healthy"
+                            else
+                              hs.status = "Degraded"
+                            end
+                          end
+                        end
+                      end
+                      return hs
+                
+                    resource.customizations.health.secrets.infisical.com_InfisicalConnection: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.conditions ~= nil then
+                        for _, c in ipairs(obj.status.conditions) do
+                          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                            hs.message = c.message
+                            if c.status == "True" then
+                              hs.status = "Healthy"
+                            else
+                              hs.status = "Degraded"
+                            end
+                          end
+                        end
+                      end
+                      return hs
+                
+                  params:
+                    # Traefik reaches the server over plain HTTP. The CLI needs --grpc-web --plaintext.
+                    server.insecure: true
+                    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 512Mi limit.
+                    reposerver.parallelism.limit: 2
+                
+                dex:
+                  enabled: false
+                
+                notifications:
+                  enabled: false
+                
+                # The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing, so this limit costs
+                # nothing. It was never measured: it exists so the Deployment still names one, as policy/charts.rego asks.
+                applicationSet:
+                  replicas: 0
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 32Mi
+                    limits:
+                      memory: 128Mi
+                
+                # Memory below totals 360Mi requests and 1792Mi limits for the four running pods. Peaks measured on the
+                # first real run, with monitoring and Infisical synced and no Plane workloads yet: controller 517Mi,
+                # repo-server 247Mi, server 83Mi, redis 25Mi.
+                # No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
+                controller:
+                  replicas: 1
+                  # A Service only. tests/network-policy-matrix.yaml dials it, and the ServiceMonitor that selects it
+                  # lives in monitoring/manifests/shared, so the chart's own serviceMonitor stays off.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 100m
+                      memory: 192Mi
+                    # 768Mi left 37Mi of room: cgroup memory.peak reached 731Mi with Plane running (2026-11-04), and an OOM kill
+                    # here stalls every sync. 1024Mi is that peak plus 40%. It only moves the ceiling: no GOMEMLIMIT is set, so
+                    # the heap sizes itself the same way, and the namespace has no ResourceQuota to fit.
+                    limits:
+                      memory: 1024Mi
+                  # Upstream ships this off because restarting an overloaded controller makes things worse
+                  # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
+                  # thresholds slack enough (5 min) that first-sync load alone should not trip it.
+                  livenessProbe:
+                    enabled: true
+                    initialDelaySeconds: 60
+                    periodSeconds: 30
+                    timeoutSeconds: 5
+                    failureThreshold: 10
+                
+                repoServer:
+                  replicas: 1
+                  # Upstream's own manifest at v3.5.7 sets false. The chart defaults to true.
+                  automountServiceAccountToken: false
+                  serviceAccount:
+                    automountServiceAccountToken: false
+                  # A Service only, as for the controller.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 50m
+                      memory: 96Mi
+                    # Peak 247Mi (cgroup memory.peak) with all 8 chart Applications hard-refreshed at once and
+                    # reposerver.parallelism.limit at 2, so this has room.
+                    limits:
+                      memory: 512Mi
+                
+                server:
+                  replicas: 1
+                  # A Service only, as for the controller.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 25m
+                      memory: 48Mi
+                    limits:
+                      memory: 192Mi
+                
+                redis:
+                  image:
+                    # The chart defaults to ecr-public.aws.com. Same index digest on docker.io, which the node
+                    # pulls through the pull-through cache (contract section 5).
+                    repository: docker.io/library/redis
+                    tag: 8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+                  automountServiceAccountToken: false
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 24Mi
+                    limits:
+                      memory: 64Mi
+                  # The chart ships both off.
+                  readinessProbe:
+                    enabled: true
+                    initialDelaySeconds: 5
+                    periodSeconds: 10
+                    timeoutSeconds: 5
+                  livenessProbe:
+                    enabled: true
+                    initialDelaySeconds: 30
+                    periodSeconds: 15
+                    timeoutSeconds: 5
+                
+                # Helm hook that generates the Redis password into Secret argocd-redis at install time.
+                redisSecretInit:
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 32Mi
+                    limits:
+                      memory: 192Mi
+            EOT,
+        ]
+      [32m+[0m[0m verify                     = false
+      [32m+[0m[0m version                    = "10.11.7"
+      [32m+[0m[0m wait                       = true
+      [32m+[0m[0m wait_for_jobs              = true
+    }
+
+[1m  # module.argocd.helm_release.bootstrap[0m will be created
+[0m  [32m+[0m[0m resource "helm_release" "bootstrap" {
+      [32m+[0m[0m atomic                     = false
+      [32m+[0m[0m chart                      = "./../../../../gitops/bootstrap/chart"
+      [32m+[0m[0m cleanup_on_fail            = false
+      [32m+[0m[0m create_namespace           = false
+      [32m+[0m[0m dependency_update          = false
+      [32m+[0m[0m disable_crd_hooks          = false
+      [32m+[0m[0m disable_openapi_validation = false
+      [32m+[0m[0m disable_webhooks           = false
+      [32m+[0m[0m force_update               = false
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m lint                       = false
+      [32m+[0m[0m max_history                = 3
+      [32m+[0m[0m metadata                   = (known after apply)
+      [32m+[0m[0m name                       = "argocd-bootstrap"
+      [32m+[0m[0m namespace                  = "argocd"
+      [32m+[0m[0m pass_credentials           = false
+      [32m+[0m[0m recreate_pods              = false
+      [32m+[0m[0m render_subchart_notes      = true
+      [32m+[0m[0m replace                    = false
+      [32m+[0m[0m reset_values               = false
+      [32m+[0m[0m reuse_values               = false
+      [32m+[0m[0m set_wo                     = (write-only attribute)
+      [32m+[0m[0m skip_crds                  = false
+      [32m+[0m[0m status                     = "deployed"
+      [32m+[0m[0m take_ownership             = false
+      [32m+[0m[0m timeout                    = 300
+      [32m+[0m[0m upgrade_install            = false
+      [32m+[0m[0m values                     = [
+          [32m+[0m[0m <<-EOT
+                "chartHash": "e7c24bd0958989925006e9d11ec153fa16fd081087fc114142b1cf30aebc7e74"
+                "gitRepoURL": "git://plane-git/plane-platform.git"
+                "targetRevision": "main"
+            EOT,
+        ]
+      [32m+[0m[0m verify                     = false
+      [32m+[0m[0m version                    = "0.1.0"
+      [32m+[0m[0m wait                       = true
+      [32m+[0m[0m wait_for_jobs              = false
+    }
+
+[1m  # module.foundation.kubernetes_config_map_v1_data.coredns[0][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_config_map_v1_data" "coredns" {
+      [32m+[0m[0m data          = {
+          [32m+[0m[0m "Corefile" = <<-EOT
+                .:53 {
+                    errors
+                    health {
+                       lameduck 5s
+                    }
+                    ready
+                    rewrite name exact plane.dev.localhost traefik.traefik.svc.cluster.local
+                    rewrite name exact plane.prod-sim.localhost traefik.traefik.svc.cluster.local
+                    kubernetes cluster.local in-addr.arpa ip6.arpa {
+                       pods insecure
+                       fallthrough in-addr.arpa ip6.arpa
+                       ttl 30
+                    }
+                    prometheus :9153
+                    forward . /etc/resolv.conf {
+                       max_concurrent 1000
+                    }
+                    cache 30 {
+                       disable success cluster.local
+                       disable denial cluster.local
+                    }
+                    loop
+                    reload
+                    loadbalance
+                }
+            EOT
+        }
+      [32m+[0m[0m field_manager = "terraform-plane-platform"
+      [32m+[0m[0m force         = true
+      [32m+[0m[0m id            = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m name      = "coredns"
+          [32m+[0m[0m namespace = "kube-system"
+        }
+    }
+
+[1m  # module.foundation.kubernetes_limit_range_v1.plane["plane-dev"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_limit_range_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-defaults"
+          [32m+[0m[0m namespace        = "plane-dev"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m limit {
+              [32m+[0m[0m default         = {
+                  [32m+[0m[0m "memory" = "256Mi"
+                }
+              [32m+[0m[0m default_request = {
+                  [32m+[0m[0m "memory" = "64Mi"
+                }
+              [32m+[0m[0m max             = {
+                  [32m+[0m[0m "memory" = "1Gi"
+                }
+              [32m+[0m[0m type            = "Container"
+            }
+        }
+    }
+
+[1m  # module.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_limit_range_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-defaults"
+          [32m+[0m[0m namespace        = "plane-prod-sim"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m limit {
+              [32m+[0m[0m default         = {
+                  [32m+[0m[0m "memory" = "256Mi"
+                }
+              [32m+[0m[0m default_request = {
+                  [32m+[0m[0m "memory" = "64Mi"
+                }
+              [32m+[0m[0m max             = {
+                  [32m+[0m[0m "memory" = "1Gi"
+                }
+              [32m+[0m[0m type            = "Container"
+            }
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["argocd"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "argocd"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["infisical"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "infisical"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["monitoring"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "monitoring"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["monitoring-agents"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "privileged"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "monitoring-agents"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["plane-dev"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/environment"         = "dev"
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "plane-dev"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["plane-prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/environment"         = "prod-sim"
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "plane-prod-sim"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_namespace_v1.this["traefik"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_namespace_v1" "this" {
+      [32m+[0m[0m id                               = (known after apply)
+      [32m+[0m[0m wait_for_default_service_account = false
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "plane-platform/managed-by"          = "terraform"
+              [32m+[0m[0m "pod-security.kubernetes.io/audit"   = "restricted"
+              [32m+[0m[0m "pod-security.kubernetes.io/enforce" = "baseline"
+              [32m+[0m[0m "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          [32m+[0m[0m name             = "traefik"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # module.foundation.kubernetes_resource_quota_v1.plane["plane-dev"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_resource_quota_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-budget"
+          [32m+[0m[0m namespace        = "plane-dev"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m hard = {
+              [32m+[0m[0m "limits.memory"          = "7984Mi"
+              [32m+[0m[0m "persistentvolumeclaims" = "6"
+              [32m+[0m[0m "pods"                   = "24"
+              [32m+[0m[0m "requests.memory"        = "2732Mi"
+            }
+        }
+    }
+
+[1m  # module.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"][0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_resource_quota_v1" "plane" {
+      [32m+[0m[0m id = (known after apply)
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m name             = "plane-budget"
+          [32m+[0m[0m namespace        = "plane-prod-sim"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+
+      [32m+[0m[0m spec {
+          [32m+[0m[0m hard = {
+              [32m+[0m[0m "limits.memory"          = "7984Mi"
+              [32m+[0m[0m "persistentvolumeclaims" = "6"
+              [32m+[0m[0m "pods"                   = "24"
+              [32m+[0m[0m "requests.memory"        = "2732Mi"
+            }
+        }
+    }
+
+[1mPlan:[0m [0m14 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m argocd_url = "http://argocd.localhost"
+  [32m+[0m[0m namespaces = [
+      [32m+[0m[0m "argocd",
+      [32m+[0m[0m "infisical",
+      [32m+[0m[0m "monitoring",
+      [32m+[0m[0m "monitoring-agents",
+      [32m+[0m[0m "plane-dev",
+      [32m+[0m[0m "plane-prod-sim",
+      [32m+[0m[0m "traefik",
+    ]
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Creation complete after 0s [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Creation complete after 0s [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Creation complete after 0s [id=plane-prod-sim][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Creation complete after 0s [id=plane-dev][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Creation complete after 0s [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Creation complete after 0s [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Creation complete after 0s [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Creation complete after 0s [id=kube-system/coredns][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Creating...[0m[0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Creation complete after 0s [id=plane-dev/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Creation complete after 0s [id=plane-prod-sim/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Creation complete after 0s [id=plane-prod-sim/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Creation complete after 1s [id=plane-dev/plane-budget][0m
+[0m[1mmodule.argocd.helm_release.argocd: Creating...[0m[0m
+[0m[1mmodule.argocd.helm_release.argocd: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.argocd.helm_release.argocd: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.argocd.helm_release.argocd: Creation complete after 25s [id=argocd][0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Creating...[0m[0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Creation complete after 0s [id=argocd-bootstrap][0m
+[0m[1m[32m
+Apply complete! Resources: 14 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0margocd_url = "http://argocd.localhost"
+namespaces = tolist([
+  "argocd",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-dev",
+  "plane-prod-sim",
+  "traefik",
+])
+[1;32m ok[0m terraform step finished in 32s
+[1;34m==>[0m Secret zero
+[1;32m ok[0m applied Secret infisical/infisical-db
+[1;32m ok[0m applied Secret infisical/infisical-redis
+[1;32m ok[0m applied Secret infisical/infisical-secrets
+[1;32m ok[0m secret zero in place. Back up /Users/bek/dev/pr/plane-platform/.local/secret-zero/ENCRYPTION_KEY outside this machine: nothing can recreate it.
+[1;32m ok[0m secret-zero step finished in 1s
+[1;34m==>[0m Traefik: the Application, then a real request through it
+[1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 900s)
+[1;32m ok[0m Application traefik Synced and Healthy, after 21s
+[1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 300s)
+[1;32m ok[0m Traefik answering at http://argocd.localhost/, after 3s
+[1;32m ok[0m traefik step finished in 24s
+[1;32m ok[0m Stopped after traefik, as UP_STOP_AFTER asked. Run 'make up' to go on: finished steps are safe to repeat.
+[1;32m ok[0m up-to-traefik: cluster, Terraform, secret zero, Traefik
+[1;34m==>[0m Waiting for the Infisical server: on a fresh one, its migrations run before it answers (up to 2400s)
+    62s. Application infisical: not there yet
+    123s. Application infisical: /
+[1;32m ok[0m Infisical answers, after 184s
+[1;34m==>[0m Verifying 20261105T105359Z
+[1;32m ok[0m checksums: 7 files match
+[1;32m ok[0m key-fingerprint: ENCRYPTION_KEY matches the backup
+[1;32m ok[0m version: backup v0.167.6, running v0.167.6
+[1;32m ok[0m overwrite-guard: target is empty
+[1;34m==>[0m Pausing auto-sync: infisical
+[1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] NOTICE:  database "infisical_restoring" does not exist, skipping
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] vacuumdb: vacuuming database "infisical_restoring"
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] GATE1 ok: 785 tables equal the backup
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] NOTICE:  database "infisical_replaced" does not exist, skipping
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] ALTER DATABASE
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] ALTER DATABASE
+[pod/plane-restore-20261105t124950z-mzzc9/postgres] swapped in: infisical is now the restored database
+[1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+[1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+[1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+[1;32m ok[0m server-downtime: told to stop at 2026-11-05T12:49:59Z, answering by 2026-11-05T12:50:34Z, 35s
+[1;32m ok[0m proof-initialized: the server reads the restored admin config
+[1;32m ok[0m admin-token: the file this backup names, and the server accepts it
+[1;32m ok[0m proof-values: every Plane secret decrypts to the value, version and id the backup recorded
+
+
+[1;32m ok[0m auto-sync restored on infisical
+[1;32m ok[0m restore of 20261105T105359Z into infisical complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-infisical-20261105T124950Z.json
+[1;32m ok[0m restore-infisical: 20261105T105359Z, see restore-infisical-*.json
+[1;32m ok[0m admin-token: see admin-token in restore-infisical-*.json
+[1;34m==>[0m make up from there, with bootstrap in restored mode
+[1;34m==>[0m Cluster: kind, local services, kubeconfig
+[1;32m ok[0m cluster plane-platform already running
+[1;32m ok[0m kind network 172.24.0.0/16 is inside 172.16.0.0/12
+[1;34m==>[0m Starting local services (registry, pull-through caches, Git remote)
+#8 resolving provenance for metadata file
+#8 DONE 0.0s
+ Image plane-platform-local-git Built 
+ Container plane-registry Running 
+ Container plane-mirror-docker Running 
+ Container plane-mirror-quay Running 
+ Container plane-mirror-k8s Running 
+ Container plane-git Running 
+[1;32m ok[0m cluster ready: context kind-plane-platform, kubeconfig /Users/bek/dev/pr/plane-platform/.local/kubeconfig
+[1;32m ok[0m cluster step finished in 2s
+[1;34m==>[0m Publish: local image digests, then main to the bare repo Argo CD reads
+[1;32m ok[0m main is already published at 6f5a42653a64
+[1;32m ok[0m publish step finished in 0s
+[1;34m==>[0m Terraform: namespaces, quotas, CoreDNS, Argo CD, projects, root Application
+[0m[1mInitializing the backend...[0m
+
+[0m[1mInitializing modules...[0m
+
+[0m[1mInitializing provider plugins...[0m
+- Reusing version 3.4.0 of hashicorp/kubernetes from the dependency lock file
+- Reusing version 3.3.0 of hashicorp/helm from the dependency lock file
+- Using previously-installed hashicorp/kubernetes v3.4.0
+- Using previously-installed hashicorp/helm v3.3.0
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Refreshing state... [id=plane-dev][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Refreshing state... [id=kube-system/coredns][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-budget][0m
+[0m[1mmodule.argocd.helm_release.argocd: Refreshing state... [id=argocd][0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Refreshing state... [id=argocd-bootstrap][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0margocd_url = "http://argocd.localhost"
+namespaces = tolist([
+  "argocd",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-dev",
+  "plane-prod-sim",
+  "traefik",
+])
+[1;32m ok[0m terraform step finished in 15s
+[1;34m==>[0m Secret zero
+[1;32m ok[0m applied Secret infisical/infisical-db
+[1;32m ok[0m applied Secret infisical/infisical-redis
+[1;32m ok[0m applied Secret infisical/infisical-secrets
+[1;32m ok[0m secret zero in place. Back up /Users/bek/dev/pr/plane-platform/.local/secret-zero/ENCRYPTION_KEY outside this machine: nothing can recreate it.
+[1;32m ok[0m secret-zero step finished in 0s
+[1;34m==>[0m Traefik: the Application, then a real request through it
+[1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 900s)
+[1;32m ok[0m Application traefik Synced and Healthy, after 0s
+[1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 300s)
+[1;32m ok[0m Traefik answering at http://argocd.localhost/, after 0s
+[1;32m ok[0m traefik step finished in 0s
+[1;34m==>[0m Infisical: wait for it, then first admin, projects, identities, seeded values
+[1;34m==>[0m Waiting for Infisical answering at http://infisical.localhost/api/status (up to 2400s)
+[1;32m ok[0m Infisical answering at http://infisical.localhost/api/status, after 1s
+[1;34m==>[0m Waiting for http://infisical.localhost (first boot runs about 600 migrations)
+[1;32m ok[0m Infisical already bootstrapped
+[1;32m ok[0m the restored instance accepts the admin token
+[1;34m==>[0m Applying infisical/terraform
+[0m[1minfisical_identity.reader["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Refreshing state... [id=2505453a-9dc6-447a-9668-9684689aa795][0m
+[0m[1minfisical_project_environment.prod["dev"]: Refreshing state... [id=73729bc5-949d-4bda-83d8-35c1ec3db976][0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Refreshing state...[0m
+[0m[1minfisical_project_identity.reader["dev"]: Refreshing state...[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Refreshing state... [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Refreshing state... [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [33m~[0m update in-place[0m
+
+Terraform will perform the following actions:
+
+[1m  # infisical_identity_kubernetes_auth.reader["dev"][0m will be updated in-place
+[0m  [33m~[0m[0m resource "infisical_identity_kubernetes_auth" "reader" {
+      [33m~[0m[0m access_token_num_uses_limit             = 0 -> (known after apply)
+      [33m~[0m[0m access_token_trusted_ips                = [
+          [31m-[0m[0m {
+              [31m-[0m[0m ip_address = "0.0.0.0/0" [90m-> null[0m[0m
+            },
+          [31m-[0m[0m {
+              [31m-[0m[0m ip_address = "::/0" [90m-> null[0m[0m
+            },
+        ] -> (known after apply)
+      [33m~[0m[0m allowed_audience                        = [90mnull[0m[0m -> (known after apply)
+      [33m~[0m[0m has_template_sourced_token_reviewer_jwt = false -> (known after apply)
+        id                                      = "731edc0c-4e36-4fb9-973b-3cb12c4121a3"
+      [33m~[0m[0m kubernetes_ca_certificate               = <<-EOT
+            -----BEGIN CERTIFICATE-----
+          [31m-[0m[0m MIIDBTCCAe2gAwIBAgIIH/B9sf+Tq9kwDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+          [32m+[0m[0m MIIDBTCCAe2gAwIBAgIIPPcuQE4iR40wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+          [31m-[0m[0m AxMKa3ViZXJuZXRlczAeFw0yNjExMDUwODA1MjNaFw0zNjExMDIwODEwMjNaMBUx
+          [32m+[0m[0m AxMKa3ViZXJuZXRlczAeFw0yNjExMDUxMjQwMjNaFw0zNjExMDIxMjQ1MjNaMBUx
+            EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+          [31m-[0m[0m AoIBAQDQT7fjltU+VFRyYRl362sD8AH6w6TiCInuuzcne8crm9Zo3L5a7sH3m3/L
+          [32m+[0m[0m AoIBAQC8Wsm9BFqaeK63oVnb6FMJFxNqyhhALql9IaxeUwMZJ8haG9L+1j1sP48k
+          [31m-[0m[0m /RyNzm5laeVdZI4HrehMgzKDEc9TwGckcna4hPPRQ/BsM5fEga/9mlpV//N6Yc5N
+          [32m+[0m[0m 8dtsX+fMGKxu0sX9iTrdOi/OpQQ/VYXqkiYao+1YNxhK7q/3HwxWbVyfXA5Gvddq
+          [31m-[0m[0m dXvXW4klsQBrBCCYam704K9uatlbhQ4cfre0Z6Zj4R+v0uq3ZvqEcVUUqXgoAd2g
+          [32m+[0m[0m gzPkT00Vv7J8i4KmEFdZBEMoT8Z2cC35Xj+7f4TZzHAzqdzEa375HFJGvuEXrOes
+          [31m-[0m[0m zXEAlvgnKqcSaJZHSFlPteC0fzA9xid4wSN9gt5dU7Dpj4RvuR2c/vFBp7Tf7mQ3
+          [32m+[0m[0m 617gCmoXYxZORlDOi4C9HCg9bH7o+T9Ar0GZlNdTqqiOQ5e/WTlnm8OhRUZfOyTJ
+          [31m-[0m[0m +mun1Bwe3ZsjzMk0IHFhW0KMXPZvuGGNqT0HBDduBD3WI/ELpYlabSDACJQ3QfaK
+          [32m+[0m[0m /Wr2k074rQj5ALSQOhZIry4PDRzE/A8uFvIUjuz3wl4qtqovfjnCXRc37NhNbAMx
+          [31m-[0m[0m yhdkimYEFpc7axaoa5oecrhP0xmJAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+          [32m+[0m[0m Qnc4V9pe5sBgE39a2Mxudawd1Z1jAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+          [31m-[0m[0m BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRASGGJ/K9E0TVbcu07IHwcMHyVuzAV
+          [32m+[0m[0m BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBSntGFJxLnNQowCIyEOlHUeIxg74TAV
+          [31m-[0m[0m BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQByVItaThJz
+          [32m+[0m[0m BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQC0dfF0V6P8
+          [31m-[0m[0m rP2K5ueTdzabFhNXpMqIX704o31PBn8TFhJuorPvURdUppNxZ/bz+a8zJk9SIch/
+          [32m+[0m[0m l6qHtefuuIAHP/uOYF7yseqxcn1EyyFBLEhxQwNKTBrKLdmQE6QtsGcw6WlsOXFz
+          [31m-[0m[0m OJ9sptuSTsvm6CAl7bPxFBWudKH6qLxbfswGMy73ugzznsXmyN2yPos5B5E2LsQv
+          [32m+[0m[0m LZtcuQfRhYPKEhlEdADLX8a2f1z2ySQt8mzi6ynaxtNPF02kne6T8dmQxf2Ncn2w
+          [31m-[0m[0m AGUGzd6TgBbLRzTX8cBy6NQ5gpsIQu678sv9pLmDaesaWxFHUevl1GfKUDapWWBP
+          [32m+[0m[0m qSTwrIm8tJXx2cfntlJ53a9UiwN99yZlvsieG4Xza/pDTSC2x/WWY7ay/4VglxMw
+          [31m-[0m[0m gB+qbx30LsUSOwGiiYM7OS1ipEIW4o86wlMmAFzFYcdHk7QOaNC+6iqL25ySZHkG
+          [32m+[0m[0m /yv1qfa2gO3YgKuF19QD04u4+ZwctMYgeq4/GipTpu1ZsQIBDtSpo0xm7rQk5x0r
+          [31m-[0m[0m LADYX6f6t57S5OXh6x7H4laONi/NbzYLUl0kNhSbO4HCwrEd5cfyTDvicudg0OxR
+          [32m+[0m[0m wX0pClg2dhy9EWePcAirUiYR0mhXBeXedo/fPGZ5xhROiI8XUQsmzS4XXcBkgUOU
+          [31m-[0m[0m c13zuDDNKNxr
+          [32m+[0m[0m 4VkZm8nB+8yV
+            -----END CERTIFICATE-----
+        EOT
+        [90m# (7 unchanged attributes hidden)[0m[0m
+    }
+
+[1m  # infisical_identity_kubernetes_auth.reader["prod-sim"][0m will be updated in-place
+[0m  [33m~[0m[0m resource "infisical_identity_kubernetes_auth" "reader" {
+      [33m~[0m[0m access_token_num_uses_limit             = 0 -> (known after apply)
+      [33m~[0m[0m access_token_trusted_ips                = [
+          [31m-[0m[0m {
+              [31m-[0m[0m ip_address = "0.0.0.0/0" [90m-> null[0m[0m
+            },
+          [31m-[0m[0m {
+              [31m-[0m[0m ip_address = "::/0" [90m-> null[0m[0m
+            },
+        ] -> (known after apply)
+      [33m~[0m[0m allowed_audience                        = [90mnull[0m[0m -> (known after apply)
+      [33m~[0m[0m has_template_sourced_token_reviewer_jwt = false -> (known after apply)
+        id                                      = "8454aefa-8da8-4256-8af3-d8644f4c1327"
+      [33m~[0m[0m kubernetes_ca_certificate               = <<-EOT
+            -----BEGIN CERTIFICATE-----
+          [31m-[0m[0m MIIDBTCCAe2gAwIBAgIIH/B9sf+Tq9kwDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+          [32m+[0m[0m MIIDBTCCAe2gAwIBAgIIPPcuQE4iR40wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+          [31m-[0m[0m AxMKa3ViZXJuZXRlczAeFw0yNjExMDUwODA1MjNaFw0zNjExMDIwODEwMjNaMBUx
+          [32m+[0m[0m AxMKa3ViZXJuZXRlczAeFw0yNjExMDUxMjQwMjNaFw0zNjExMDIxMjQ1MjNaMBUx
+            EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+          [31m-[0m[0m AoIBAQDQT7fjltU+VFRyYRl362sD8AH6w6TiCInuuzcne8crm9Zo3L5a7sH3m3/L
+          [32m+[0m[0m AoIBAQC8Wsm9BFqaeK63oVnb6FMJFxNqyhhALql9IaxeUwMZJ8haG9L+1j1sP48k
+          [31m-[0m[0m /RyNzm5laeVdZI4HrehMgzKDEc9TwGckcna4hPPRQ/BsM5fEga/9mlpV//N6Yc5N
+          [32m+[0m[0m 8dtsX+fMGKxu0sX9iTrdOi/OpQQ/VYXqkiYao+1YNxhK7q/3HwxWbVyfXA5Gvddq
+          [31m-[0m[0m dXvXW4klsQBrBCCYam704K9uatlbhQ4cfre0Z6Zj4R+v0uq3ZvqEcVUUqXgoAd2g
+          [32m+[0m[0m gzPkT00Vv7J8i4KmEFdZBEMoT8Z2cC35Xj+7f4TZzHAzqdzEa375HFJGvuEXrOes
+          [31m-[0m[0m zXEAlvgnKqcSaJZHSFlPteC0fzA9xid4wSN9gt5dU7Dpj4RvuR2c/vFBp7Tf7mQ3
+          [32m+[0m[0m 617gCmoXYxZORlDOi4C9HCg9bH7o+T9Ar0GZlNdTqqiOQ5e/WTlnm8OhRUZfOyTJ
+          [31m-[0m[0m +mun1Bwe3ZsjzMk0IHFhW0KMXPZvuGGNqT0HBDduBD3WI/ELpYlabSDACJQ3QfaK
+          [32m+[0m[0m /Wr2k074rQj5ALSQOhZIry4PDRzE/A8uFvIUjuz3wl4qtqovfjnCXRc37NhNbAMx
+          [31m-[0m[0m yhdkimYEFpc7axaoa5oecrhP0xmJAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+          [32m+[0m[0m Qnc4V9pe5sBgE39a2Mxudawd1Z1jAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+          [31m-[0m[0m BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRASGGJ/K9E0TVbcu07IHwcMHyVuzAV
+          [32m+[0m[0m BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBSntGFJxLnNQowCIyEOlHUeIxg74TAV
+          [31m-[0m[0m BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQByVItaThJz
+          [32m+[0m[0m BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQC0dfF0V6P8
+          [31m-[0m[0m rP2K5ueTdzabFhNXpMqIX704o31PBn8TFhJuorPvURdUppNxZ/bz+a8zJk9SIch/
+          [32m+[0m[0m l6qHtefuuIAHP/uOYF7yseqxcn1EyyFBLEhxQwNKTBrKLdmQE6QtsGcw6WlsOXFz
+          [31m-[0m[0m OJ9sptuSTsvm6CAl7bPxFBWudKH6qLxbfswGMy73ugzznsXmyN2yPos5B5E2LsQv
+          [32m+[0m[0m LZtcuQfRhYPKEhlEdADLX8a2f1z2ySQt8mzi6ynaxtNPF02kne6T8dmQxf2Ncn2w
+          [31m-[0m[0m AGUGzd6TgBbLRzTX8cBy6NQ5gpsIQu678sv9pLmDaesaWxFHUevl1GfKUDapWWBP
+          [32m+[0m[0m qSTwrIm8tJXx2cfntlJ53a9UiwN99yZlvsieG4Xza/pDTSC2x/WWY7ay/4VglxMw
+          [31m-[0m[0m gB+qbx30LsUSOwGiiYM7OS1ipEIW4o86wlMmAFzFYcdHk7QOaNC+6iqL25ySZHkG
+          [32m+[0m[0m /yv1qfa2gO3YgKuF19QD04u4+ZwctMYgeq4/GipTpu1ZsQIBDtSpo0xm7rQk5x0r
+          [31m-[0m[0m LADYX6f6t57S5OXh6x7H4laONi/NbzYLUl0kNhSbO4HCwrEd5cfyTDvicudg0OxR
+          [32m+[0m[0m wX0pClg2dhy9EWePcAirUiYR0mhXBeXedo/fPGZ5xhROiI8XUQsmzS4XXcBkgUOU
+          [31m-[0m[0m c13zuDDNKNxr
+          [32m+[0m[0m 4VkZm8nB+8yV
+            -----END CERTIFICATE-----
+        EOT
+        [90m# (7 unchanged attributes hidden)[0m[0m
+    }
+
+[1mPlan:[0m [0m0 to add, 2 to change, 0 to destroy.
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Modifying... [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Modifying... [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Modifications complete after 0s [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Modifications complete after 0s [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m
+[0m[1m[32m
+Apply complete! Resources: 0 added, 2 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0menvironment_slug = "prod"
+identity_ids = {
+  "dev" = "<redacted>"
+  "prod-sim" = "<redacted>"
+}
+project_ids = {
+  "dev" = "<redacted>"
+  "prod-sim" = "<redacted>"
+}
+project_slugs = {
+  "dev" = "plane-dev"
+  "prod-sim" = "plane-prod-sim"
+}
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform/.local/secret-zero/infisical-machine.json
+[1;32m ok[0m dev: all secrets already exist, nothing written
+[1;32m ok[0m prod-sim: all secrets already exist, nothing written
+[1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+[1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+[1;32m ok[0m infisical step finished in 2s
+[1;34m==>[0m Applications: all 14 Synced and Healthy
+[1;34m==>[0m A child in backoff after the Infisical step can take up to 5 minutes to retry. That is normal.
+[1;34m==>[0m Waiting for all 14 Applications Synced and Healthy (up to 3000s)
+    62s. Applications: 13 of 14 exist, waiting on: plane-dev=OutOfSync/Progressing root=OutOfSync/Progressing
+    124s. Applications: 13 of 14 exist, waiting on: plane-dev=OutOfSync/Healthy root=OutOfSync/Progressing
+    186s. Applications: 13 of 14 exist, waiting on: plane-dev=OutOfSync/Progressing root=OutOfSync/Progressing
+    248s. Applications: 14 of 14 exist, waiting on: plane-prod-sim=OutOfSync/Progressing root=Synced/Progressing
+    310s. Applications: 14 of 14 exist, waiting on: plane-prod-sim=OutOfSync/Healthy root=Synced/Progressing
+    372s. Applications: 14 of 14 exist, waiting on: plane-prod-sim=OutOfSync/Progressing root=Synced/Progressing
+[1;32m ok[0m all 14 Applications Synced and Healthy, after 384s
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 6f5a4265)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      6f5a4265
+    backup-storage                 Synced     Healthy      6f5a4265
+    infisical                      Synced     Healthy      6f5a4265
+    infisical-operator-dev         Synced     Healthy      6f5a4265
+    infisical-operator-prod-sim    Synced     Healthy      6f5a4265
+    kube-prometheus-stack          Synced     Healthy      6f5a4265
+    loki                           Synced     Healthy      6f5a4265
+    metrics-server                 Synced     Healthy      6f5a4265
+    monitoring-extras              Synced     Healthy      6f5a4265
+    network-policies               Synced     Healthy      6f5a4265
+    plane-dev                      Synced     Healthy      6f5a4265
+    plane-prod-sim                 Synced     Healthy      6f5a4265
+    root                           Synced     Healthy      6f5a4265
+    traefik                        Synced     Healthy      6f5a4265
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         404
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 8.364GiB / 13.63GiB, CPU 77.68%
+    argocd                    574 MiB
+    infisical                 722 MiB
+    kube-system              1554 MiB
+    local-path-storage         16 MiB
+    monitoring                846 MiB
+    monitoring-agents          19 MiB
+    plane-dev                1117 MiB
+    plane-prod-sim            921 MiB
+    traefik                    39 MiB
+    Host disk free: 14 GiB
+[1;32m ok[0m All 14 Applications are Synced and Healthy. That does not prove Plane works: run make test.
+[1;32m ok[0m up-to-all-applications: bootstrap in restored mode, all Applications Synced and Healthy
+[1;34m==>[0m Verifying 20261105T105422Z
+[1;32m ok[0m checksums: 129 files match
+[1;32m ok[0m version: backup 1.4.3, running 1.4.3
+[1;32m ok[0m key-fingerprint: SECRET_KEY matches the backup
+[1;34m==>[0m Waiting for the data services
+[1;32m ok[0m overwrite-guard: target is empty
+[1;34m==>[0m Pausing auto-sync: root
+[1;34m==>[0m Pausing auto-sync: plane-dev
+[1;34m==>[0m Stopping the apps
+[1;32m ok[0m apps-stopped: api, worker, beat and live at zero with auto-sync paused
+[1;34m==>[0m Restoring Postgres and objects from 20261105T105422Z
+[pod/plane-restore-20261105t125720z-hrgwv/postgres] vacuumdb: vacuuming database "plane"
+[pod/plane-restore-20261105t125720z-hrgwv/postgres] GATE1 ok: 110 tables equal the backup
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:08 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:09 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:09 NOTICE: S3 bucket uploads: 0 differences found
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:09 NOTICE: S3 bucket uploads: 113 matching files
+[pod/plane-restore-20261105t125720z-hrgwv/objects] objects: sync and downloading check ok
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:09 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:10 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:11 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:12 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:13 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:14 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:15 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:16 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:16 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] 2026/11/05 12:58:16 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/objects] objects: Content-Type put back on 71 of 113 objects
+[pod/plane-restore-20261105t125720z-hrgwv/gate] 2026/11/05 12:58:17 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t125720z-hrgwv/gate] GATE2 ok: 72 uploaded assets all have an object
+[1;32m ok[0m postgres: dump restored in one transaction, row counts and content hashes equal the backup
+[1;32m ok[0m objects: synced and checked by download, every uploaded asset has its object
+[1;32m ok[0m valkey: flushed
+[1;32m ok[0m rabbitmq: queue celery purged
+[1;34m==>[0m Running the migrator
+[pod/plane-restore-migrate-20261105t125720z-x98ln/plane-api-migrate] Waiting for database...
+[pod/plane-restore-migrate-20261105t125720z-x98ln/plane-api-migrate] Database available!
+[pod/plane-restore-migrate-20261105t125720z-x98ln/plane-api-migrate] Operations to perform:
+[pod/plane-restore-migrate-20261105t125720z-x98ln/plane-api-migrate]   Apply all migrations: auth, contenttypes, db, django_celery_beat, license, sessions
+[pod/plane-restore-migrate-20261105t125720z-x98ln/plane-api-migrate] Running migrations:
+[pod/plane-restore-migrate-20261105t125720z-x98ln/plane-api-migrate]   No migrations to apply.
+[1;32m ok[0m migrator: completed
+[1;34m==>[0m Starting the apps
+[1;32m ok[0m apps-started: api, worker, beat and live are ready
+[1;34m==>[0m Proving the restore
+[1;32m ok[0m proof-encrypted-sentinel: sentinel row decrypts to its seeded value
+[1;32m ok[0m proof-no-empty-decrypt: 1 encrypted rows all decrypt
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-smoke-dev-20261105T125720Z.json
+RESULT  PASS
+[1;32m ok[0m proof-sentinel: work item read through the API, attachment checksum matches, a worker ran a new job
+[1;32m ok[0m proof-probes: API and database probes are green
+
+
+[1;32m ok[0m auto-sync restored on plane-dev
+[1;32m ok[0m auto-sync restored on root
+[1;32m ok[0m restore of 20261105T105422Z into dev complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-dev-20261105T125720Z.json
+[1;32m ok[0m restore-dev: 20261105T105422Z, see restore-dev-*.json
+[1;34m==>[0m Verifying 20261105T105443Z
+[1;32m ok[0m checksums: 98 files match
+[1;32m ok[0m version: backup 1.4.3, running 1.4.3
+[1;32m ok[0m key-fingerprint: SECRET_KEY matches the backup
+[1;34m==>[0m Waiting for the data services
+[1;32m ok[0m overwrite-guard: target is empty
+[1;34m==>[0m Pausing auto-sync: root
+[1;34m==>[0m Pausing auto-sync: plane-prod-sim
+[1;34m==>[0m Stopping the apps
+[1;32m ok[0m apps-stopped: api, worker, beat and live at zero with auto-sync paused
+[1;34m==>[0m Restoring Postgres and objects from 20261105T105443Z
+[pod/plane-restore-20261105t130009z-zpgwt/postgres] vacuumdb: vacuuming database "plane"
+[pod/plane-restore-20261105t130009z-zpgwt/postgres] GATE1 ok: 110 tables equal the backup
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:00:59 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:00 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: S3 bucket uploads: 0 differences found
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: S3 bucket uploads: 82 matching files
+[pod/plane-restore-20261105t130009z-zpgwt/objects] objects: sync and downloading check ok
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:01 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:02 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:03 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:04 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:05 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:06 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:06 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:06 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] 2026/11/05 13:01:06 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/objects] objects: Content-Type put back on 52 of 82 objects
+[pod/plane-restore-20261105t130009z-zpgwt/gate] 2026/11/05 13:01:07 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t130009z-zpgwt/gate] GATE2 ok: 53 uploaded assets all have an object
+[1;32m ok[0m postgres: dump restored in one transaction, row counts and content hashes equal the backup
+[1;32m ok[0m objects: synced and checked by download, every uploaded asset has its object
+[1;32m ok[0m valkey: flushed
+[1;32m ok[0m rabbitmq: queue celery purged
+[1;34m==>[0m Running the migrator
+[pod/plane-restore-migrate-20261105t130009z-dhcpj/plane-api-migrate] Waiting for database...
+[pod/plane-restore-migrate-20261105t130009z-dhcpj/plane-api-migrate] Database available!
+[pod/plane-restore-migrate-20261105t130009z-dhcpj/plane-api-migrate] Operations to perform:
+[pod/plane-restore-migrate-20261105t130009z-dhcpj/plane-api-migrate]   Apply all migrations: auth, contenttypes, db, django_celery_beat, license, sessions
+[pod/plane-restore-migrate-20261105t130009z-dhcpj/plane-api-migrate] Running migrations:
+[pod/plane-restore-migrate-20261105t130009z-dhcpj/plane-api-migrate]   No migrations to apply.
+[1;32m ok[0m migrator: completed
+[1;34m==>[0m Starting the apps
+[1;32m ok[0m apps-started: api, worker, beat and live are ready
+[1;34m==>[0m Proving the restore
+[1;32m ok[0m proof-encrypted-sentinel: sentinel row decrypts to its seeded value
+[1;32m ok[0m proof-no-empty-decrypt: 1 encrypted rows all decrypt
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-smoke-prod-sim-20261105T130009Z.json
+RESULT  PASS
+[1;32m ok[0m proof-sentinel: work item read through the API, attachment checksum matches, a worker ran a new job
+[1;32m ok[0m proof-probes: API and database probes are green
+
+
+[1;32m ok[0m auto-sync restored on plane-prod-sim
+[1;32m ok[0m auto-sync restored on root
+[1;32m ok[0m restore of 20261105T105443Z into prod-sim complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-prod-sim-20261105T130009Z.json
+[1;32m ok[0m restore-prod-sim: 20261105T105443Z, see restore-prod-sim-*.json
+[1;32m ok[0m verify-infisical-values: every Plane secret has the value, version and id the backup recorded
+[1;32m ok[0m verify-rendered-dev: the operators rendered the backed-up values
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-clean-smoke-dev-20261105T124518Z.json
+RESULT  PASS
+[1;32m ok[0m verify-sentinel-dev: the restored accounts file reads the sentinel work item and its attachment
+[1;32m ok[0m verify-rendered-prod-sim: the operators rendered the backed-up values
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-clean-smoke-prod-sim-20261105T124518Z.json
+RESULT  PASS
+[1;32m ok[0m verify-sentinel-prod-sim: the restored accounts file reads the sentinel work item and its attachment
+[1;34m==>[0m Waiting for every Application to settle after the restores
+[1;32m ok[0m verify-applications: 14 Applications Synced and Healthy, none paused
+
+
+[1;32m ok[0m clean restore from Infisical backup 20261105T105359Z complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-clean-20261105T124518Z.json
+PASS  scripts/restore.sh clean 20261105T105359Z finished in 7663s, counting from the delete
+
+--- 6. Same data and secrets, new cluster
+PASS  the cluster CA is new (543dc727be4fbafe), so this really is another cluster
+PASS  organization, project and identity ids are the old ones
+PASS  secret zero and the admin password are the old ones
+PASS  the admin token file is the old one
+PASS  nothing was archived, so bootstrap never treated this as a fresh instance
+PASS  all 38 rendered Secret keys hold the old values
+PASS  the restore is no longer marked as under way
+PASS  restore-clean-20261105T124518Z.json: every step PASS
+PASS  restore-infisical-20261105T124950Z.json: every step PASS
+PASS  restore-dev-20261105T125720Z.json: every step PASS
+PASS  restore-prod-sim-20261105T130009Z.json: every step PASS
+PASS  every Application is Synced and Healthy
+
+--- 7. A second run changes nothing
+PASS  bootstrap in restored mode: Terraform has nothing to change
+PASS  plain bootstrap, as make up runs it: nothing written
+
+--- 8. The tests a platform has to pass anyway
+[1;34m==>[0m Infisical: isolation
+[1;34m==>[0m Logins, through http://infisical.localhost
+PASS     plane-dev SA logs in as the dev reader                         expected=200      got=200  
+PASS     plane-prod-sim SA logs in as the prod-sim reader               expected=200      got=200  
+PASS     plane-dev SA refused as the prod-sim reader                    expected=401|403  got=401  Access denied: K8s namespace not allowed.
+PASS     plane-prod-sim SA refused as the dev reader                    expected=401|403  got=401  Access denied: K8s namespace not allowed.
+PASS     plane-dev/default SA refused as the dev reader                 expected=401|403  got=401  tokenreviews.authentication.k8s.io is forbidden: User "system:serviceaccount:plane-dev:default" cannot create resource "tokenreviews" in API group "authentication.k8s.io" at the cluster scope
+PASS     plane-dev/iso-dev-controller-manager SA refused as the dev reader expected=401|403  got=401  Access denied: K8s name not allowed.
+PASS     a forged token is refused                                      expected=401|403  got=401  Unauthorized
+[1;34m==>[0m Reads: each reader against its own project, then the other one
+PASS     dev reader lists plane-dev                                     expected=200      got=200  9 keys
+PASS     prod-sim reader lists plane-prod-sim                           expected=200      got=200  9 keys
+PASS     dev reader lists plane-prod-sim                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader reads plane-prod-sim <redacted>                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader resolves slug plane-prod-sim (operator's first call) expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader lists plane-dev                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader reads plane-dev <redacted>                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader resolves slug plane-dev                        expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+[1;34m==>[0m Role limits on the reader's own project and organization
+PASS     dev reader cannot write to its own project                     expected=403      got=403  You are not allowed to create on secrets
+PASS     dev reader cannot list the organization's identities           expected=403      got=403  You are not allowed to read on identity
+PASS     no token at all                                                expected=401      got=401  Token missing
+[1;34m==>[0m The same checks from inside each namespace, over the Service, with a pod-mounted token
+PASS     dev, in-cluster: login-own-identity                            expected=200      got=200  
+PASS     dev, in-cluster: list-own-project                              expected=200      got=200  
+PASS     dev, in-cluster: list-other-project                            expected=403      got=403  
+PASS     dev, in-cluster: read-other-secret                             expected=403      got=403  
+PASS     dev, in-cluster: other-project-slug                            expected=403      got=403  
+PASS     prod-sim, in-cluster: login-own-identity                       expected=200      got=200  
+PASS     prod-sim, in-cluster: list-own-project                         expected=200      got=200  
+PASS     prod-sim, in-cluster: list-other-project                       expected=403      got=403  
+PASS     prod-sim, in-cluster: read-other-secret                        expected=403      got=403  
+PASS     prod-sim, in-cluster: other-project-slug                       expected=403      got=403  
+[1;32m ok[0m isolation: every row passed
+[1;34m==>[0m Infisical: rendered-secrets
+[1;34m==>[0m dev
+PASS     plane-dev/plane-app-env holds exactly the contract's keys          AMQP_URL,DATABASE_URL,REDIS_URL
+PASS     plane-dev/plane-app-env has no empty or '<no value>' value         
+PASS     plane-dev/plane-app-env is owned by its InfisicalStaticSecret      
+PASS     plane-dev/plane-app-env carries no Argo CD tracking data           
+PASS     plane-dev InfisicalStaticSecret/plane-app-env reconciled at this generation 
+PASS     plane-dev/plane-app-keys holds exactly the contract's keys         LIVE_SERVER_SECRET_KEY,SECRET_KEY
+PASS     plane-dev/plane-app-keys has no empty or '<no value>' value        
+PASS     plane-dev/plane-app-keys is owned by its InfisicalStaticSecret     
+PASS     plane-dev/plane-app-keys carries no Argo CD tracking data          
+PASS     plane-dev InfisicalStaticSecret/plane-app-keys reconciled at this generation 
+PASS     plane-dev/plane-live-env holds exactly the contract's keys         REDIS_URL
+PASS     plane-dev/plane-live-env has no empty or '<no value>' value        
+PASS     plane-dev/plane-live-env is owned by its InfisicalStaticSecret     
+PASS     plane-dev/plane-live-env carries no Argo CD tracking data          
+PASS     plane-dev InfisicalStaticSecret/plane-live-env reconciled at this generation 
+PASS     plane-dev/plane-doc-store holds exactly the contract's keys        AWS_ACCESS_KEY_ID,AWS_S3_BUCKET_NAME,AWS_S3_ENDPOINT_URL,AWS_SECRET_ACCESS_KEY,FILE_SIZE_LIMIT,MINIO_ROOT_PASSWORD,MINIO_ROOT_USER,USE_MINIO
+PASS     plane-dev/plane-doc-store has no empty or '<no value>' value       
+PASS     plane-dev/plane-doc-store is owned by its InfisicalStaticSecret    
+PASS     plane-dev/plane-doc-store carries no Argo CD tracking data         
+PASS     plane-dev InfisicalStaticSecret/plane-doc-store reconciled at this generation 
+PASS     plane-dev/plane-pgdb holds exactly the contract's keys             POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER
+PASS     plane-dev/plane-pgdb has no empty or '<no value>' value            
+PASS     plane-dev/plane-pgdb is owned by its InfisicalStaticSecret         
+PASS     plane-dev/plane-pgdb carries no Argo CD tracking data              
+PASS     plane-dev InfisicalStaticSecret/plane-pgdb reconciled at this generation 
+PASS     plane-dev/plane-rabbitmq holds exactly the contract's keys         RABBITMQ_DEFAULT_PASS,RABBITMQ_DEFAULT_USER
+PASS     plane-dev/plane-rabbitmq has no empty or '<no value>' value        
+PASS     plane-dev/plane-rabbitmq is owned by its InfisicalStaticSecret     
+PASS     plane-dev/plane-rabbitmq carries no Argo CD tracking data          
+PASS     plane-dev InfisicalStaticSecret/plane-rabbitmq reconciled at this generation 
+PASS     plane-dev plane-doc-store USE_MINIO=1                              
+PASS     plane-dev plane-doc-store AWS_S3_BUCKET_NAME=uploads               
+PASS     plane-dev plane-doc-store AWS_S3_ENDPOINT_URL=http://plane-minio:9000 
+PASS     plane-dev plane-doc-store FILE_SIZE_LIMIT=5242880, in bytes        
+PASS     plane-dev generated values are all hex                             
+PASS     plane-dev DATABASE_URL matches plane-pgdb and names its own namespace 
+PASS     plane-dev AMQP_URL matches plane-rabbitmq and names its own namespace 
+PASS     plane-dev Silo user is also the S3 access key                      
+PASS     plane-dev Silo password is also the S3 secret key                  
+PASS     plane-dev REDIS_URL names its own namespace                        
+PASS     plane-dev REDIS_URL agrees in plane-app-env and plane-live-env     
+[1;34m==>[0m prod-sim
+PASS     plane-prod-sim/plane-app-env holds exactly the contract's keys     AMQP_URL,DATABASE_URL,REDIS_URL
+PASS     plane-prod-sim/plane-app-env has no empty or '<no value>' value    
+PASS     plane-prod-sim/plane-app-env is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-app-env carries no Argo CD tracking data      
+PASS     plane-prod-sim InfisicalStaticSecret/plane-app-env reconciled at this generation 
+PASS     plane-prod-sim/plane-app-keys holds exactly the contract's keys    LIVE_SERVER_SECRET_KEY,SECRET_KEY
+PASS     plane-prod-sim/plane-app-keys has no empty or '<no value>' value   
+PASS     plane-prod-sim/plane-app-keys is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-app-keys carries no Argo CD tracking data     
+PASS     plane-prod-sim InfisicalStaticSecret/plane-app-keys reconciled at this generation 
+PASS     plane-prod-sim/plane-live-env holds exactly the contract's keys    REDIS_URL
+PASS     plane-prod-sim/plane-live-env has no empty or '<no value>' value   
+PASS     plane-prod-sim/plane-live-env is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-live-env carries no Argo CD tracking data     
+PASS     plane-prod-sim InfisicalStaticSecret/plane-live-env reconciled at this generation 
+PASS     plane-prod-sim/plane-doc-store holds exactly the contract's keys   AWS_ACCESS_KEY_ID,AWS_S3_BUCKET_NAME,AWS_S3_ENDPOINT_URL,AWS_SECRET_ACCESS_KEY,FILE_SIZE_LIMIT,MINIO_ROOT_PASSWORD,MINIO_ROOT_USER,USE_MINIO
+PASS     plane-prod-sim/plane-doc-store has no empty or '<no value>' value  
+PASS     plane-prod-sim/plane-doc-store is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-doc-store carries no Argo CD tracking data    
+PASS     plane-prod-sim InfisicalStaticSecret/plane-doc-store reconciled at this generation 
+PASS     plane-prod-sim/plane-pgdb holds exactly the contract's keys        POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER
+PASS     plane-prod-sim/plane-pgdb has no empty or '<no value>' value       
+PASS     plane-prod-sim/plane-pgdb is owned by its InfisicalStaticSecret    
+PASS     plane-prod-sim/plane-pgdb carries no Argo CD tracking data         
+PASS     plane-prod-sim InfisicalStaticSecret/plane-pgdb reconciled at this generation 
+PASS     plane-prod-sim/plane-rabbitmq holds exactly the contract's keys    RABBITMQ_DEFAULT_PASS,RABBITMQ_DEFAULT_USER
+PASS     plane-prod-sim/plane-rabbitmq has no empty or '<no value>' value   
+PASS     plane-prod-sim/plane-rabbitmq is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-rabbitmq carries no Argo CD tracking data     
+PASS     plane-prod-sim InfisicalStaticSecret/plane-rabbitmq reconciled at this generation 
+PASS     plane-prod-sim plane-doc-store USE_MINIO=1                         
+PASS     plane-prod-sim plane-doc-store AWS_S3_BUCKET_NAME=uploads          
+PASS     plane-prod-sim plane-doc-store AWS_S3_ENDPOINT_URL=http://plane-minio:9000 
+PASS     plane-prod-sim plane-doc-store FILE_SIZE_LIMIT=5242880, in bytes   
+PASS     plane-prod-sim generated values are all hex                        
+PASS     plane-prod-sim DATABASE_URL matches plane-pgdb and names its own namespace 
+PASS     plane-prod-sim AMQP_URL matches plane-rabbitmq and names its own namespace 
+PASS     plane-prod-sim Silo user is also the S3 access key                 
+PASS     plane-prod-sim Silo password is also the S3 secret key             
+PASS     plane-prod-sim REDIS_URL names its own namespace                   
+PASS     plane-prod-sim REDIS_URL agrees in plane-app-env and plane-live-env 
+[1;34m==>[0m Across environments
+PASS     dev and prod-sim differ in POSTGRES_PASSWORD                       
+PASS     dev and prod-sim differ in RABBITMQ_DEFAULT_PASS                   
+PASS     dev and prod-sim differ in MINIO_ROOT_USER                         
+PASS     dev and prod-sim differ in MINIO_ROOT_PASSWORD                     
+PASS     dev and prod-sim differ in SECRET_KEY                              
+PASS     dev and prod-sim differ in LIVE_SERVER_SECRET_KEY                  
+[1;32m ok[0m rendered secrets: every row passed
+[1;34m==>[0m Summary, also in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/test-20261105T130310Z-90699.txt
+    PASS     infisical isolation        evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/infisical-isolation-20261105T130310Z-90699.txt
+    PASS     infisical rendered-secrets evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/infisical-rendered-secrets-20261105T130310Z-90699.txt
+[1;32m ok[0m all passed
+PASS  Infisical isolation and rendered Secrets, so Kubernetes Auth works with the new CA
+[1;34m==>[0m End-to-end smoke test in dev
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=full
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    frontends  web, admin and space pages and the assets they name are served
+PASS    routes  bare paths redirect, deep links reach admin, /live/health answers
+PASS    workloads-ready  11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0
+PASS    instance-setup  already set up, reusing stored admin
+PASS    csrf-enforced  sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)
+PASS    sign-in  session established, anonymous request refused
+PASS    workspace  smoke-27f23f85
+PASS    api-token  token works on /api/v1, refused without it
+PASS    project  2b7045f5-ca4d-465e-9e54-59b653475470
+PASS    work-item  1427713e-2048-4347-aa71-86a3c9ab504c
+PASS    background-job  issue_activity task ran in 3.1s
+PASS    work-item-list  new work item is among 1 listed
+PASS    read-back  workspace, project and work item P82F99C-1 all match, by key and by session
+PASS    workspace-seed  seed project present after 0.1s
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+PASS    branding-web  title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294... (not followed: the repository is private for now), /licenses/ lists 6 files and serves the AGPL
+PASS    branding-admin  /god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page
+PASS    branding-space  /spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page
+PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+PASS    branding-seed  the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    app-shell  all 15 requests answered 200
+PASS    admin-sign-in  37 config rows read, 8 of them encrypted, refused with no session (401)
+PASS    second-user  sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    broker-memory  watermark {absolute,"256Mi"} = 268435456 bytes, no alarms
+PASS    worker-negative-control  With 0 consumers: 4 messages parked, no activity after 15s. Asked the consumer back: activity within 16.6s. Worker pod replaced, so no emptied queue selection is left behind
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+PASS    attachment-upload  1047 bytes stored
+PASS    attachment-download  sha256 d6b26d1f7616ae79... matches
+PASS    object-in-silo  1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']
+PASS    uploads-private  refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}
+PASS    large-upload  4718592 bytes up and back through Traefik, sha256 matches
+PASS    oversize-refused  5 MiB + 1 byte refused by the storage policy with 400
+PASS    asset-duplicate  copy_object through the public host worked: bb745756-f156-4297-970f-1f7001c4745e holds the same bytes
+PASS    avatar  avatar stored and read back anonymously through its signed redirect
+PASS    export  export completed, its link downloads, and the 535 byte zip holds the work item
+PASS    public-board  published: api and space serve it anonymously. Unpublished: 404
+PASS    realtime-page  3db7c16a-5b75-49d6-8513-19b063b585b5
+PASS    realtime-auth  Authenticated (read-write): traefik upgrade, live -> api session check
+PASS    realtime-denied  mismatched user refused: PermissionDenied
+PASS    realtime-sync  both clients synced, and an update reached the other client in 1 ms
+PASS    realtime-persist  stored as HTML and binary in 2.1s, and a new connection gets it back from the database
+PASS    sentinel-create  reusing existing sentinel test-sentinel-dev.json
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-dev-20261105T130318Z-97151.json
+RESULT  PASS
+[1;34m==>[0m Summary, also in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/test-20261105T130318Z-97151.txt
+    PASS     e2e dev                    evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-dev-20261105T130318Z-97151.json
+[1;32m ok[0m all passed
+PASS  full smoke test in dev, signing in with the restored accounts
+[1;34m==>[0m End-to-end smoke test in prod-sim
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=full
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    frontends  web, admin and space pages and the assets they name are served
+PASS    routes  bare paths redirect, deep links reach admin, /live/health answers
+PASS    workloads-ready  11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0
+PASS    instance-setup  already set up, reusing stored admin
+PASS    csrf-enforced  sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)
+PASS    sign-in  session established, anonymous request refused
+PASS    workspace  smoke-df379d66
+PASS    api-token  token works on /api/v1, refused without it
+PASS    project  840f5bce-b28c-4099-8a2b-677c27535074
+PASS    work-item  392bc0f2-65de-4d13-85b2-2a44315edf3e
+PASS    background-job  issue_activity task ran in 3.1s
+PASS    work-item-list  new work item is among 1 listed
+PASS    read-back  workspace, project and work item PCEB435-1 all match, by key and by session
+PASS    workspace-seed  seed project present after 0.0s
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every rollout finished
+PASS    branding-web  title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294... (not followed: the repository is private for now), /licenses/ lists 6 files and serves the AGPL
+PASS    branding-admin  /god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page
+PASS    branding-space  /spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page
+PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+PASS    branding-seed  the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    app-shell  all 15 requests answered 200
+PASS    admin-sign-in  37 config rows read, 8 of them encrypted, refused with no session (401)
+PASS    second-user  sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    broker-memory  watermark {absolute,"256Mi"} = 268435456 bytes, no alarms
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+PASS    attachment-upload  1047 bytes stored
+PASS    attachment-download  sha256 c2588491b4319f3c... matches
+PASS    object-in-silo  1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']
+PASS    uploads-private  refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}
+PASS    large-upload  4718592 bytes up and back through Traefik, sha256 matches
+PASS    oversize-refused  5 MiB + 1 byte refused by the storage policy with 400
+PASS    asset-duplicate  copy_object through the public host worked: f727e27d-f610-42ea-9e96-34a58c942fe9 holds the same bytes
+PASS    avatar  avatar stored and read back anonymously through its signed redirect
+PASS    export  export completed, its link downloads, and the 494 byte zip holds the work item
+PASS    public-board  published: api and space serve it anonymously. Unpublished: 404
+PASS    realtime-page  4bbb80e5-b24b-48bd-a3b2-4662ec79fe76
+PASS    realtime-auth  Authenticated (read-write): traefik upgrade, live -> api session check
+PASS    realtime-denied  mismatched user refused: PermissionDenied
+PASS    realtime-sync  both clients synced, and an update reached the other client in 2 ms
+PASS    realtime-persist  stored as HTML and binary in 2.2s, and a new connection gets it back from the database
+PASS    sentinel-create  reusing existing sentinel test-sentinel-prod-sim.json
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T130503Z-95847.json
+RESULT  PASS
+[1;34m==>[0m Summary, also in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/test-20261105T130503Z-95847.txt
+    PASS     e2e prod-sim               evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T130503Z-95847.json
+[1;32m ok[0m all passed
+PASS  full smoke test in prod-sim, signing in with the restored accounts
+
+RESULT FAIL   1 failure(s). evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-clean-restore-20261105T105347Z.log
+
+
+make: *** [drill-clean-restore] Error 1
+make exit=2

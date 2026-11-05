@@ -1,0 +1,8 @@
+[1;34m==>[0m Verifying 20261105T105422Z
+[1;32m ok[0m checksums: 129 files match
+[1;32m ok[0m version: backup 1.4.3, running 1.4.3
+[1;31mfail[0m SECRET_KEY differs from the one this backup was taken with (live cc1b8a23cbce83fd, backup 4ceb3f709b196ae0). Encrypted data would decrypt silently to nothing. Restore the right key, or pass ALLOW_SECRET_KEY_MISMATCH=yes to accept the loss.
+
+
+[1;33mwarn[0m restore of 20261105T105422Z into dev refused, as said above. Nothing was changed. Evidence: /Users/bek/dev/pr/plane-platform-clean-install/.local/evidence-raw/restore-dev-20261105T124334Z.json
+make[1]: *** [restore] Error 1

@@ -1,0 +1,15 @@
+NAME                          SYNC STATUS   HEALTH STATUS
+alloy                         Synced        Healthy
+backup-storage                Synced        Healthy
+infisical                     Synced        Healthy
+infisical-operator-dev        Synced        Healthy
+infisical-operator-prod-sim   Synced        Healthy
+kube-prometheus-stack         Synced        Healthy
+loki                          Synced        Healthy
+metrics-server                Synced        Healthy
+monitoring-extras             Synced        Healthy
+network-policies              Synced        Healthy
+plane-dev                     Synced        Healthy
+plane-prod-sim                Synced        Healthy
+root                          Synced        Healthy
+traefik                       Synced        Healthy

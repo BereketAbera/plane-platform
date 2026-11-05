@@ -1,0 +1,36 @@
+[1;34m==>[0m render is up to date
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m helm lint: bootstrap chart
+[1;32m ok[0m helm lint: bootstrap chart
+[1;34m==>[0m kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: rendered Plane
+[1;34m==>[0m kubeconform: platform manifests
+Summary: 135 resources found in 7 files - Valid: 135, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: platform manifests
+[1;34m==>[0m conftest: rendered Plane
+
+1850 tests, 1850 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: rendered Plane
+[1;34m==>[0m conftest: platform manifests
+
+2835 tests, 2835 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform manifests
+[1;34m==>[0m promotion invariant
+[1;32m ok[0m 9 image(s) were recorded for dev under the same name
+[1;32m ok[0m promotion invariant
+[1;34m==>[0m promtool: platform rules
+[1;32m ok[0m 2 rule file(s) valid
+[1;32m ok[0m promtool: platform rules
+[1;34m==>[0m promtool: rule unit tests
+  SUCCESS
+
+  SUCCESS
+
+  SUCCESS
+
+[1;32m ok[0m promtool: rule unit tests
+[1;33mwarn[0m SKIP_CHARTS=yes: third-party platform charts were not rendered
+[1;32m ok[0m manifests valid

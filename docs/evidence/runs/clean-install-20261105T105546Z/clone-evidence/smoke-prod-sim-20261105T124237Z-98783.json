@@ -1,0 +1,519 @@
+{
+  "counts": {
+    "BLOCKED": 0,
+    "FAIL": 0,
+    "PASS": 45,
+    "SKIP": 0
+  },
+  "environment": "prod-sim",
+  "finished_at": "2026-11-05T12:42:59Z",
+  "host": "plane.prod-sim.localhost",
+  "mode": "full",
+  "result": "PASS",
+  "run_id": "bd716083",
+  "started_at": "2026-11-05T12:42:37Z",
+  "steps": [
+    {
+      "data": {
+        "instances_status": 200,
+        "web_status": 200
+      },
+      "detail": "web 200, /api/instances/ 200 via plane.prod-sim.localhost",
+      "duration_ms": 36,
+      "name": "reachable",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "admin": 15,
+        "space": 16,
+        "web": 35
+      },
+      "detail": "web, admin and space pages and the assets they name are served",
+      "duration_ms": 148,
+      "name": "frontends",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "live_health": {
+          "status": "OK",
+          "timestamp": "2026-11-05T12:42:37.957Z",
+          "version": "1.0.0"
+        }
+      },
+      "detail": "bare paths redirect, deep links reach admin, /live/health answers",
+      "duration_ms": 15,
+      "name": "routes",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "application": "Synced/Healthy",
+        "restarts": {}
+      },
+      "detail": "11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0",
+      "duration_ms": 207,
+      "name": "workloads-ready",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "is_telemetry_enabled": false,
+        "was_setup_done": false
+      },
+      "detail": "admin created, telemetry off",
+      "duration_ms": 338,
+      "name": "instance-setup",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "status": 200
+      },
+      "detail": "sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)",
+      "duration_ms": 17,
+      "name": "csrf-enforced",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_me_status": 401,
+        "user_id": "78bf3885-b197-4473-9912-5dbc19f32a21"
+      },
+      "detail": "session established, anonymous request refused",
+      "duration_ms": 210,
+      "name": "sign-in",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "slug": "smoke-bd716083"
+      },
+      "detail": "smoke-bd716083",
+      "duration_ms": 73,
+      "name": "workspace",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_status": 401
+      },
+      "detail": "token works on /api/v1, refused without it",
+      "duration_ms": 64,
+      "name": "api-token",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "project_id": "939ae744-292f-4431-83da-3c73ab6a2c10"
+      },
+      "detail": "939ae744-292f-4431-83da-3c73ab6a2c10",
+      "duration_ms": 70,
+      "name": "project",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "work_item_id": "cec8219e-264c-4342-a9db-ddaa9f06e465"
+      },
+      "detail": "cec8219e-264c-4342-a9db-ddaa9f06e465",
+      "duration_ms": 72,
+      "name": "work-item",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_activity": 3.1
+      },
+      "detail": "issue_activity task ran in 3.1s",
+      "duration_ms": 3070,
+      "name": "background-job",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "listed": 1
+      },
+      "detail": "new work item is among 1 listed",
+      "duration_ms": 191,
+      "name": "work-item-list",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "sequence_id": 1,
+        "state": "b901880d-8c34-43f5-9595-914a9ffe8277"
+      },
+      "detail": "workspace, project and work item PD2BE1F-1 all match, by key and by session",
+      "duration_ms": 146,
+      "name": "read-back",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_seeded": 0.0
+      },
+      "detail": "seed project present after 0.0s",
+      "duration_ms": 24,
+      "name": "workspace-seed",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "branded": {
+          "admin": "sha256:067643f7750ca8edc4c30fcd9ec11759e88380b75d8ff89cc007c6a3482e73bb",
+          "backend": "sha256:ba128fd2f1e3d7ef24a85c8de4feaa12ac482123ccea29c0da815c0405b5d1a4",
+          "space": "sha256:a6b485254830662269310d77f05fb4b6b71d2e56a364343c956cd5574ebc03e2",
+          "web": "sha256:63f30455f8061abc41b295a82e7721f0295f8d9d04043d15dd8fb7b517f08aa9"
+        },
+        "plane-admin-wl": [
+          "localhost:5001/wayline/admin@sha256:067643f7750ca8edc4c30fcd9ec11759e88380b75d8ff89cc007c6a3482e73bb"
+        ],
+        "plane-api-wl": [
+          "localhost:5001/wayline/backend@sha256:ba128fd2f1e3d7ef24a85c8de4feaa12ac482123ccea29c0da815c0405b5d1a4"
+        ],
+        "plane-beat-worker-wl": [
+          "localhost:5001/wayline/backend@sha256:ba128fd2f1e3d7ef24a85c8de4feaa12ac482123ccea29c0da815c0405b5d1a4"
+        ],
+        "plane-space-wl": [
+          "localhost:5001/wayline/space@sha256:a6b485254830662269310d77f05fb4b6b71d2e56a364343c956cd5574ebc03e2"
+        ],
+        "plane-web-wl": [
+          "localhost:5001/wayline/web@sha256:63f30455f8061abc41b295a82e7721f0295f8d9d04043d15dd8fb7b517f08aa9"
+        ],
+        "plane-worker-wl": [
+          "localhost:5001/wayline/backend@sha256:ba128fd2f1e3d7ef24a85c8de4feaa12ac482123ccea29c0da815c0405b5d1a4"
+        ]
+      },
+      "detail": "admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every rollout finished",
+      "duration_ms": 47,
+      "name": "branding-overlay",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "license_status": 200,
+        "licenses_status": 200,
+        "source_commit_in_this_repository": true,
+        "source_location": "https://github.com/BereketAbera/plane-platform/tree/87700970a1900e5a3a2dcb24d4b0463cb5b9e94f",
+        "source_status": 302,
+        "title": "Wayline | Simple, extensible, open-source project management tool."
+      },
+      "detail": "title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/87700970a190... (not followed: the repository is private for now), /licenses/ lists 6 files and serves the AGPL",
+      "duration_ms": 32,
+      "name": "branding-web",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "title": "Wayline | Simple, extensible, open-source project management tool."
+      },
+      "detail": "/god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page",
+      "duration_ms": 2,
+      "name": "branding-admin",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "title": "Wayline Publish | Make your Wayline boards public with one-click"
+      },
+      "detail": "/spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page",
+      "duration_ms": 7,
+      "name": "branding-space",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "instance_changelog_url": ""
+      },
+      "detail": "instance_changelog_url is '', so \"What's new\" shows the local fallback",
+      "duration_ms": 16,
+      "name": "branding-backend",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "bots": [
+          [
+            "Wayline",
+            "Wayline"
+          ]
+        ],
+        "plane_words": 0,
+        "seed_work_items": 7,
+        "wayline_words": 10
+      },
+      "detail": "the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0",
+      "duration_ms": 561,
+      "name": "branding-seed",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "found_name": "Wayline",
+        "found_setup_done": false,
+        "found_telemetry": false,
+        "registered_at": "2026-11-05T12:40:06.658065Z"
+      },
+      "detail": "before setup, the instance this image registered is named Wayline, with telemetry off",
+      "duration_ms": 208,
+      "name": "branding-fresh-install",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "checked": 15
+      },
+      "detail": "all 15 requests answered 200",
+      "duration_ms": 458,
+      "name": "app-shell",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_status": 401,
+        "encrypted_rows": 7,
+        "rows": 36
+      },
+      "detail": "36 config rows read, 7 of them encrypted, refused with no session (401)",
+      "duration_ms": 210,
+      "name": "admin-sign-in",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "statuses": {
+          "work_item": 403,
+          "workspace": 404
+        }
+      },
+      "detail": "sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}",
+      "duration_ms": 303,
+      "name": "second-user",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "celery_consumers": 1,
+        "celery_messages": 0,
+        "queues": [
+          "celery",
+          "celery@plane-worker-wl-dffb8f749-zlj8p.celery.pidbox",
+          "celeryev.86ea69d6-777b-4c97-945b-009a6aa376a6"
+        ]
+      },
+      "detail": "queue celery has 1 consumer, 0 waiting",
+      "duration_ms": 1454,
+      "name": "celery-consumers",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "alarms": "Node rabbit@plane-rabbitmq-wl-0 reported no alarms, local or clusterwide",
+        "limit_bytes": 268435456,
+        "watermark": "{absolute,\"256Mi\"}"
+      },
+      "detail": "watermark {absolute,\"256Mi\"} = 268435456 bytes, no alarms",
+      "duration_ms": 3877,
+      "name": "broker-memory",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "canceling_queue_lines": 0
+      },
+      "detail": "no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect",
+      "duration_ms": 44,
+      "name": "worker-clean",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "5cdc702e-9c83-4d3b-9167-72c7a3de40a9",
+        "sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193",
+        "size": 1047
+      },
+      "detail": "1047 bytes stored",
+      "duration_ms": 157,
+      "name": "attachment-upload",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193",
+        "expected_sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193"
+      },
+      "detail": "sha256 1beb102e71dc0ae3... matches",
+      "duration_ms": 34,
+      "name": "attachment-download",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "all_buckets": [
+          "uploads"
+        ],
+        "bucket": "uploads",
+        "expected_sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193",
+        "key": "3d75d320-ef4f-441f-957d-389e78e458ee/80d5d990f6b4496b95598045628daa74-smoke.txt",
+        "sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193",
+        "size": 1047
+      },
+      "detail": "1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']",
+      "duration_ms": 827,
+      "name": "object-in-silo",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "statuses": {
+          "list": 403,
+          "object": 403,
+          "tampered_signature": 403
+        }
+      },
+      "detail": "refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}",
+      "duration_ms": 46,
+      "name": "uploads-private",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "matches": true,
+        "size": 4718592
+      },
+      "detail": "4718592 bytes up and back through Traefik, sha256 matches",
+      "duration_ms": 253,
+      "name": "large-upload",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "storage_status": 400
+      },
+      "detail": "5 MiB + 1 byte refused by the storage policy with 400",
+      "duration_ms": 122,
+      "name": "oversize-refused",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193",
+        "asset_id": "e80ab870-9987-40d5-82c1-71c03b934e07",
+        "expected_sha256": "1beb102e71dc0ae382b1bfeb0a40b269c3ca9724f457996c20893ea2ea99f193"
+      },
+      "detail": "copy_object through the public host worked: e80ab870-9987-40d5-82c1-71c03b934e07 holds the same bytes",
+      "duration_ms": 88,
+      "name": "asset-duplicate",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "84b4996c-38d5-45fe-800d-a9a195a8e894"
+      },
+      "detail": "avatar stored and read back anonymously through its signed redirect",
+      "duration_ms": 89,
+      "name": "avatar",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "files": 1,
+        "status": "completed",
+        "zip_bytes": 491
+      },
+      "detail": "export completed, its link downloads, and the 491 byte zip holds the work item",
+      "duration_ms": 3102,
+      "name": "export",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "after_unpublish": 404,
+        "page_bytes": 8123,
+        "settings_project": "939ae744-292f-4431-83da-3c73ab6a2c10"
+      },
+      "detail": "published: api and space serve it anonymously. Unpublished: 404",
+      "duration_ms": 1986,
+      "name": "public-board",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "page_id": "d3171cba-d28f-46f5-85d5-58c91fed88b7"
+      },
+      "detail": "d3171cba-d28f-46f5-85d5-58c91fed88b7",
+      "duration_ms": 48,
+      "name": "realtime-page",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "reason": "read-write",
+        "verdict": "Authenticated"
+      },
+      "detail": "Authenticated (read-write): traefik upgrade, live -> api session check",
+      "duration_ms": 151,
+      "name": "realtime-auth",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "verdict": "PermissionDenied"
+      },
+      "detail": "mismatched user refused: PermissionDenied",
+      "duration_ms": 98,
+      "name": "realtime-denied",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "delivery_ms": 2,
+        "first_sync_bytes": 108
+      },
+      "detail": "both clients synced, and an update reached the other client in 2 ms",
+      "duration_ms": 242,
+      "name": "realtime-sync",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "binary_bytes": 184,
+        "seconds_until_stored": 2.1
+      },
+      "detail": "stored as HTML and binary in 2.1s, and a new connection gets it back from the database",
+      "duration_ms": 2187,
+      "name": "realtime-persist",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "0ece488b-6d91-424d-bd7e-18a254257bfe",
+        "created_at": "2026-11-05T12:42:59Z",
+        "environment": "prod-sim",
+        "name": "persistence-sentinel-prod-sim-069c6924-72f8-43df-ad50-daf28968982a",
+        "project_id": "8dd6bdd5-73f3-4d0c-b7e7-d275ea4d3aaf",
+        "sha256": "69d9ec7e0f6c6f40dcc9395aec7ec60e6bd7c012fb07a754c2a7335239b53cb6",
+        "slug": "sentinel-bd716083",
+        "work_item_id": "c5c8a667-d7da-4ab7-b90e-4776f4004e8b"
+      },
+      "detail": "Created c5c8a667-d7da-4ab7-b90e-4776f4004e8b",
+      "duration_ms": 199,
+      "name": "sentinel-create",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "69d9ec7e0f6c6f40dcc9395aec7ec60e6bd7c012fb07a754c2a7335239b53cb6",
+        "expected_sha256": "69d9ec7e0f6c6f40dcc9395aec7ec60e6bd7c012fb07a754c2a7335239b53cb6",
+        "work_item_id": "c5c8a667-d7da-4ab7-b90e-4776f4004e8b"
+      },
+      "detail": "sentinel row and attachment intact",
+      "duration_ms": 59,
+      "name": "sentinel-reread",
+      "status": "PASS"
+    }
+  ],
+  "tool": "tests/e2e/smoke.py"
+}

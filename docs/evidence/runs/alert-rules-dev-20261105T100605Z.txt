@@ -1,0 +1,20 @@
+# 2026-11-05T10:06:05Z commit 613c2a0 tests/drills/alert-rules.sh ENV=dev ROWS=PlaneRabbitmqDown PlaneMinioDown
+[1;34m==>[0m Pausing auto-sync: root
+[1;34m==>[0m Pausing auto-sync: plane-dev
+[1;34m==>[0m PlaneRabbitmqDown: scaling plane-dev/statefulset/plane-rabbitmq-wl to 0
+10:06:11Z +0s PlaneRabbitmqDown state none
+--- at the deadline, what Prometheus holds for this target
+{"service":"plane-minio","path":"/minio/v2/metrics/cluster","value":"1"}
+{"service":"plane-minio","path":"/minio/v2/metrics/bucket","value":"1"}
+[1;34m==>[0m putting statefulset/plane-rabbitmq-wl back
+FAIL  PlaneRabbitmqDown did not reach the sink within 270s of statefulset/plane-rabbitmq-wl at 0
+[1;34m==>[0m PlaneMinioDown: scaling plane-dev/statefulset/plane-minio-wl to 0
+10:11:06Z +0s PlaneMinioDown state none
+--- at the deadline, what Prometheus holds for this target
+{"service":"plane-rabbitmq-metrics","path":"/metrics/detailed","value":"1"}
+{"service":"plane-rabbitmq-metrics","path":"/metrics","value":"1"}
+[1;34m==>[0m putting statefulset/plane-minio-wl back
+FAIL  PlaneMinioDown did not reach the sink within 270s of statefulset/plane-minio-wl at 0
+[1;32m ok[0m auto-sync restored on plane-dev
+[1;32m ok[0m auto-sync restored on root
+RESULT failures=2  evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/alert-rules-dev-20261105T100605Z.txt

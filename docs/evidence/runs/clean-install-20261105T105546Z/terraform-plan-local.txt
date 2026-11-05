@@ -1,0 +1,19 @@
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["plane-dev"]: Refreshing state... [id=plane-dev][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring][0m
+[0m[1mmodule.foundation.kubernetes_config_map_v1_data.coredns[0]: Refreshing state... [id=kube-system/coredns][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents][0m
+[0m[1mmodule.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-defaults][0m
+[0m[1mmodule.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-budget][0m
+[0m[1mmodule.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-defaults][0m
+[0m[1mmodule.argocd.helm_release.argocd: Refreshing state... [id=argocd][0m
+[0m[1mmodule.argocd.helm_release.bootstrap: Refreshing state... [id=argocd-bootstrap][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
