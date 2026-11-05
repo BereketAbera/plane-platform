@@ -10,7 +10,7 @@ The [repository README](../README.md) has the overview, status table, and quick 
 
 1. [platform-contract.md](platform-contract.md) is binding for names, ownership, and ordering. If code and the contract disagree, one of them is a bug.
 2. The code decides what actually happens.
-3. [evidence/](evidence/README.md) decides what actually happened. A claim about runtime behaviour needs a capture there, with its date and command. A plain path under `.local/evidence-raw/` names a run that has not been published yet, and by [the evidence rules](evidence/README.md#rules) it becomes a result only once `make publish-evidence` copies it.
+3. [evidence/](evidence/README.md) decides what actually happened. A claim about runtime behaviour needs a capture there, with its date and command. By [the evidence rules](evidence/README.md#rules), a run still under `.local/evidence-raw/` has no result until `make publish-evidence` copies it.
 
 **Result labels**, from [contract section 12](platform-contract.md#12-evidence-rule), as [validation.md](validation.md#status-values) defines them:
 
@@ -21,7 +21,7 @@ The [repository README](../README.md) has the overview, status table, and quick 
 | BLOCKED | The test could not run or finish because something it depends on failed or is missing. This says nothing about the system under test |
 | NOT RUN | The test was not attempted, or it was attempted and no evidence was captured |
 
-**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 the markers still open in the front documents are what has not run yet: a clean install, teardown and recreation, a full restore into a clean cluster, in-place Plane restores, secret rotation, and the load test.
+**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is in progress, with no results recorded yet. The markers left wait on that run alone: the time of one `make up`, disk growth of a first install, `Docker.raw` after a delete, and data across the rebuild.
 
 | Marker | Meaning |
 |---|---|
@@ -34,7 +34,7 @@ To list what is still open:
 git grep -n -E '\[\[(VERIFY|MEASURE):' -- '*.md'
 ```
 
-Questions about Hetzner, Cloudflare and what Pass 2 will decide cannot be answered in Pass 1. In [PASS2_HANDOFF.md](../PASS2_HANDOFF.md) and [future-hetzner.md](future-hetzner.md) they read as plain sentences that start with "Unverified:" or "Not measured:", to check at the start of Pass 2. List them with `git grep -n -E '(Unverified|Not measured):' -- PASS2_HANDOFF.md docs/future-hetzner.md`.
+Two plain sentences replace markers that Pass 1 will not answer. "Not tested in Pass 1" marks something this pass never ran, such as Safari or stopping and resuming the cluster. "Unverified" or "Not measured" marks a question about Hetzner, Cloudflare or what Pass 2 will decide, to check at the start of Pass 2. List them with `git grep -n -E 'Not tested in Pass 1|Unverified|Not measured' -- '*.md'`.
 
 A number with no measurement behind it says "estimate" and how it was derived. Present-tense descriptions such as "the policy allows X" describe configuration. They do not say the behaviour has been observed.
 
@@ -109,7 +109,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | [helm/plane/vendor/plane-ce-1.8.6/VENDOR.md](../helm/plane/vendor/plane-ce-1.8.6/VENDOR.md) | Provenance of the vendored upstream chart |
 | [infisical/README.md](../infisical/README.md) | Infisical layer |
 | [monitoring/README.md](../monitoring/README.md) | Monitoring layout and Grafana access |
-| [tests/load/README.md](../tests/load/README.md) | The k6 load test, which has not run |
+| [tests/load/README.md](../tests/load/README.md) | The k6 load test and what it captures. Results are in [resource-utilization.md](resource-utilization.md) |
 | [.github/workflows/README.md](../.github/workflows/README.md) | Workflows, and what GitHub Free does not enforce |
 | [apps/wayline/README.md](../apps/wayline/README.md) | How the branded images are built from the pinned upstream source |
 | [apps/wayline/MODIFICATIONS.md](../apps/wayline/MODIFICATIONS.md) | The dated record of what changed from upstream |
