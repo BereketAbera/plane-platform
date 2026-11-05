@@ -1,0 +1,22 @@
+2026-11-05T06:40:32Z
+# AUTH-6, the rollback half. Real browser pane (Chromium), plain navigation with no hard reload and no cache setting. plane.dev.localhost through Traefik. Commit b7d1bfa when this started.
+# Each reading: navigate tab-30 to http://plane.dev.localhost/sign-in/, then in the page fetch('/sign-in/',{cache:'only-if-cached',mode:'same-origin'}) and performance.getEntriesByType('navigation')[0].
+# This browser is signed in on dev, so the page then moves on by itself to /smoke-f10a5851/. The cached entry read is still that of /sign-in/.
+
+# Before the rollback, 2026-11-05T06:40:19Z. Dev runs the final images from 84b63d9.
+cached entry after the navigation: status 200, etag "6aebef83-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 02:52:51 GMT
+navigation: type navigate, responseStatus 200, transferSize 300, decodedBodySize 6385   (300 bytes over the network: the browser asked and got 304, because it already held this file)
+server at that moment, 06:40:14Z: curl -I /sign-in/ gave etag "6aebef83-18f1", cache-control no-cache
+
+# After make rollback ENV=dev published 91ef477 at 06:40:59Z (images from ec45e21). Application Synced and Healthy at 06:42:04Z. Navigation at 06:42:15.242Z, a plain one in the same tab.
+cached entry after the navigation: status 200, etag "6aebdc6c-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 01:31:24 GMT
+navigation: type navigate, responseStatus 200, transferSize 6685, decodedBodySize 6385   (a full body came over the network, so the browser asked and got the rolled-back file)
+page: stayed on /sign-in/ when read, 67 ms after navigation started, title "Wayline | Simple, extensible, open-source project management tool."
+server at that moment, 06:42:15Z: curl -I /sign-in/ gave etag "6aebdc6c-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 01:31:24 GMT
+
+# After make promote ENV=dev published 29316f2 at 06:42:44Z (images from 84b63d9 again). Application Synced and Healthy at 06:43:45Z. Navigation at 06:43:54.499Z, a plain one in the same tab.
+cached entry after the navigation: status 200, etag "6aebef83-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 02:52:51 GMT
+navigation: type navigate, responseStatus 200, transferSize 6685, decodedBodySize 6385   (a full body came over the network, so the browser asked and got the promoted file)
+server at that moment, 06:43:54Z: curl -I /sign-in/ gave etag "6aebef83-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 02:52:51 GMT
+
+Limits: dev only, Chromium only, one rollback and one promotion, read by etag on one route, /sign-in/. The page's scripts were not checked at the rollback reading. A browser left open across a rollback was not tested: each reading follows a navigation.

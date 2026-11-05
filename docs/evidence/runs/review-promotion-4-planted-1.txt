@@ -1,0 +1,44 @@
+# date 2026-11-05T06:05:39Z, command: /bin/bash sample-plants.sh, in a scratch clone of e88f217
+dev-check counts terminating and non-Running pods: planted, flows promote-refuses-a-terminating-pod: exit 1; warn promote-refuses-a-terminating-pod FAILED. Its last command printed:;fail 1 of 1 promotion flow scenarios failed;
+rollback of dev no longer stops: planted, flows rollback-dev-stops-before-moving-prod-sim: exit 1; warn rollback-dev-stops-before-moving-prod-sim FAILED. Its last command printed:;fail 1 of 1 promotion flow scenarios failed;
+empty plan does not publish: planted, flows promote-again-publishes-after-a-refused-check: exit 1; warn promote-again-publishes-after-a-refused-check FAILED. Its last command printed:;fail 1 of 1 promotion flow scenarios failed;
+dev promotion publishes with SKIP_BACKUP: planted, flows promote-dev-takes-the-dump: exit 1; warn promote-dev-takes-the-dump-a-carried-prod-sim-change-needs FAILED. Its last command printed:;fail 1 of 1 promotion flow scenarios failed;
+stopping uses git revert --abort: planted, flows rollback-conflict-keeps-someones-staged-work: exit 1; warn rollback-conflict-keeps-someones-staged-work FAILED. Its last command printed:;fail 1 of 1 promotion flow scenarios failed;
+a failed dump does not stop a promotion: planted, flows promote-stops-when-the-dump-fails: exit 1; warn promote-stops-when-the-dump-fails FAILED. Its last command printed:;fail 1 of 1 promotion flow scenarios failed;
+
+=== sample-plants.sh
+#!/bin/bash
+# Six defects, one at a time, in the scratch clone, each against the scenario named for it. plant.py replaces exactly one occurrence.
+R=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-promotion-4
+sample() { # sample <label> <scenario filter> <file> <old> <new>
+  local label="$1" filter="$2" file="$3" old="$4" new="$5" rc=0
+  python3 -I "$R/plant.py" "$file" "$old" "$new" || { echo "$label: COULD NOT PLANT"; return; }
+  /bin/bash scripts/ci/test-promotion-flows.sh "$filter" >"$R/p.txt" 2>&1 || rc=$?
+  git checkout --quiet -- "$file"
+  printf '%s: planted, flows %s: exit %s; %s\n' "$label" "$filter" "$rc" "$(perl -pe 's/\e\[[0-9;]*m//g' "$R/p.txt" | grep -E '^(warn|fail|.ok) .*(scenarios|FAILED)' | tail -2 | cut -c1-110 | tr '\n' ';')"
+}
+sample "dev-check counts terminating and non-Running pods" promote-refuses-a-terminating-pod scripts/lib/dev-check.sh 'select(.metadata.deletionTimestamp == null and .status.phase == "Running")' 'select(true)'
+sample "rollback of dev no longer stops" rollback-dev-stops-before-moving-prod-sim scripts/rollback.sh 'if [[ "$ENV" == dev ]] && prod_sim_digests_move "$published" HEAD; then' 'if false; then'
+sample "empty plan does not publish" promote-again-publishes-after-a-refused-check scripts/promote.sh 'if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then' 'if [[ ! -s "$PLAN" ]]; then
+  if false; then'
+sample "dev promotion publishes with SKIP_BACKUP" promote-dev-takes-the-dump scripts/promote.sh 'else
+  "$ROOT/scripts/gitops-publish.sh" || publish_status=$?' 'else
+  SKIP_BACKUP=yes "$ROOT/scripts/gitops-publish.sh" || publish_status=$?'
+sample "stopping uses git revert --abort" rollback-conflict-keeps-someones-staged-work scripts/rollback.sh '  restore_from_head "${revert_paths[@]}" || return 1
+  # Not when the revert never started, because --quit forgets any git operation under way.
+  if [[ -e "$REVERT_HEAD_FILE" ]]; then git revert --quit || return 1; fi
+  reverting=no' '  git revert --abort || true
+  reverting=no'
+sample "a failed dump does not stop a promotion" promote-stops-when-the-dump-fails scripts/promote.sh '"$ROOT/scripts/backup.sh" prod-sim || die "backup failed, nothing was promoted. SKIP_BACKUP=yes overrides."' '"$ROOT/scripts/backup.sh" prod-sim || true'
+
+=== plant.py
+#!/usr/bin/env python3
+# plant.py <file> <old> <new>: replaces exactly one occurrence, or fails.
+import sys
+p, old, new = sys.argv[1:4]
+s = open(p).read()
+n = s.count(old)
+if n != 1:
+    sys.exit("matches: %d for %r" % (n, old[:60]))
+open(p, "w").write(s.replace(old, new))

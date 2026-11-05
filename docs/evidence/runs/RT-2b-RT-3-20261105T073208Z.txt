@@ -1,0 +1,12 @@
+# Real browser pane (Chromium), two tabs of one signed-in session, plane.dev.localhost through Traefik. Commit 4aa0640, images from 84b63d9. By hand from the coordinating session, 2026-11-05. A k6 load test was running on dev for the whole of this, so this was not a quiet environment.
+# Page /smoke-f10a5851/projects/cbde58ea-.../pages/05c06945-.../. Read in each tab with document.querySelectorAll('[contenteditable=true]') after typing through real key events.
+07:32:08Z first tab loaded the page. Second tab opened just after.
+07:33:21Z typed " Second tab text at start of hold." in the second tab. First tab, 2s later, shows it.
+07:33:23Z typed " First tab reply." in the first tab. Second tab, 2s later, shows it.
+07:38:02Z after holding both tabs open with no reload, typed " After five minutes held." in the second tab. First tab, 2s later, shows it. So the connections carried edits 5m54s after the page opened, and 4m41s after the first typed edit.
+RT-3:
+07:38:02Z deleted the live pod: kubectl -n plane-dev delete pod -l app.kubernetes.io/component=live --wait=false
+07:38:15Z typed " Typed during the live restart." in the second tab while the new pod was not ready.
+07:38:17Z second tab shows the text. First tab does not, as expected with the server gone.
+07:39:55Z both tabs show the text, so the second tab re-sent it after reconnecting, with no reload and no action by the person. The text is not lost.
+07:41:19Z second tab reloaded with a plain navigation: the page text ends '... After five minutes held. Typed during the live restart.', so the edit was stored by the server.

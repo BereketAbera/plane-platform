@@ -1,0 +1,4 @@
+# date: 2026-11-05T06:54:26Z
+# command: scripts/ci/ownership.sh at 06274c2
+[1;32m ok[0m 205 Argo CD objects and 7 Terraform objects, no resource has two owners
+exit 0

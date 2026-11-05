@@ -1,0 +1,106 @@
+# PERS-2 side watcher, date_utc 2026-11-05T06:19:12Z, commit 0dde813, command: python3 -B /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prodsim/watch.py .local/evidence-raw/PERS-2-20261105T061912Z-watch.txt /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prodsim/stop-pers 1500
+{"t": "2026-11-05T06:19:12.305Z", "src": "web", "status": 200, "ms": 11}
+{"t": "2026-11-05T06:19:12.306Z", "src": "prom", "query": "pg_up", "result": [{"instance": "10.244.0.82:9187", "job": "postgres-exporter", "v": "1"}]}
+{"t": "2026-11-05T06:19:12.308Z", "src": "prom", "query": "alerts", "result": []}
+{"t": "2026-11-05T06:19:12.311Z", "src": "prom", "query": "probe", "result": [{"instance": "http://traefik.traefik.svc.cluster.local/", "job": "plane-http", "v": "1"}, {"instance": "http://traefik.traefik.svc.cluster.local/api/instances/", "job": "plane-http", "v": "1"}, {"instance": "http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/", "job": "plane-http", "v": "1"}, {"instance": "http://traefik.traefik.svc.cluster.local/god-mode/", "job": "plane-http", "v": "1"}, {"instance": "http://traefik.traefik.svc.cluster.local/live/health", "job": "plane-http", "v": "1"}, {"instance": "http://traefik.traefik.svc.cluster.local/spaces/", "job": "plane-http", "v": "1"}]}
+{"t": "2026-11-05T06:19:12.312Z", "src": "prom", "query": "alerts_dev", "result": []}
+{"t": "2026-11-05T06:19:12.373Z", "src": "node", "used_gib": 9.81, "oom_kill": 62}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "iso-prod-sim-controller-manager-5cc86cc76-4r45n", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:0edfbde22637"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-admin-wl-64b68f786-lxtxv", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:ce7adc37b1a7"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-api-migrate-1-8cm79", "phase": "Succeeded", "ready": [false], "restarts": [0], "reason": [["terminated", null]], "deleting": null, "image": ["sha256:8c04bd18bb08"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-api-wl-c4f9658c9-5k6hn", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:8c04bd18bb08"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-beat-worker-wl-f44b9b987-mdv9p", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:8c04bd18bb08"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-live-wl-5d5fd749c6-szdzq", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:30741b6d6552"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-minio-wl-0", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:e6544a902f42"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-pgdb-wl-0", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:54e0dd8e8cdd"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-rabbitmq-wl-0", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:606d8c0d6b3c"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-redis-wl-0", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:f8c1a646f4b3"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-space-wl-6c6c7c76c6-z4jwz", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:5f0119ff2266"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-web-wl-545ff57fd4-fksxq", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:3d7575a1b934"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "plane-worker-wl-cd696f548-7tmq2", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:8c04bd18bb08"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "postgres-exporter-b6f657c47-p65fl", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:ac5ec343104f"]}
+{"t": "2026-11-05T06:19:12.482Z", "src": "pod", "name": "redis-exporter-5b59d6cb7c-xsw9t", "phase": "Running", "ready": [true], "restarts": [0], "reason": [["running", null]], "deleting": null, "image": ["sha256:3d57b9eb142a"]}
+{"t": "2026-11-05T06:19:12.503Z", "src": "sign-in", "status": 302, "session": true}
+{"t": "2026-11-05T06:19:12.533Z", "src": "me", "status": 200, "ok": true, "ms": 239}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/iso-prod-sim-controller-manager", "spec_replicas": 1, "generation": 1, "observed": 1, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-admin-wl", "spec_replicas": 1, "generation": 5, "observed": 5, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-api-wl", "spec_replicas": 1, "generation": 5, "observed": 5, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-beat-worker-wl", "spec_replicas": 1, "generation": 4, "observed": 4, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-live-wl", "spec_replicas": 1, "generation": 3, "observed": 3, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-space-wl", "spec_replicas": 1, "generation": 5, "observed": 5, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-web-wl", "spec_replicas": 1, "generation": 5, "observed": 5, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/plane-worker-wl", "spec_replicas": 1, "generation": 4, "observed": 4, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/postgres-exporter", "spec_replicas": 1, "generation": 3, "observed": 3, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "Deployment/redis-exporter", "spec_replicas": 1, "generation": 1, "observed": 1, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "StatefulSet/plane-minio-wl", "spec_replicas": 1, "generation": 1, "observed": 1, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "StatefulSet/plane-pgdb-wl", "spec_replicas": 1, "generation": 1, "observed": 1, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "StatefulSet/plane-rabbitmq-wl", "spec_replicas": 1, "generation": 1, "observed": 1, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.536Z", "src": "workload", "name": "StatefulSet/plane-redis-wl", "spec_replicas": 1, "generation": 1, "observed": 1, "ready": 1, "updated": 1, "unavailable": null}
+{"t": "2026-11-05T06:19:12.587Z", "src": "argo", "name": "root", "sync": "Synced", "health": "Healthy", "op": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "op_finished": "2026-11-05T00:34:05Z", "op_message": "successfully synced (all tasks run)", "revision": "", "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:19:12.587Z", "src": "argo", "name": "plane-prod-sim", "sync": "Synced", "health": "Healthy", "op": "Succeeded", "op_started": "2026-11-05T05:34:07Z", "op_finished": "2026-11-05T05:35:07Z", "op_message": "successfully synced (all tasks run)", "revision": "9c8e0982", "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:19:12.587Z", "src": "argo", "name": "monitoring-extras", "sync": "Synced", "health": "Healthy", "op": "Succeeded", "op_started": "2026-11-05T02:26:45Z", "op_finished": "2026-11-05T02:26:47Z", "op_message": "successfully synced (all tasks run)", "revision": "9c8e0982", "automated": {"prune": true, "selfHeal": true}}
+{"t": "2026-11-05T06:19:13.317Z", "src": "me", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:19:14.326Z", "src": "me", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:19:15.332Z", "src": "me", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:19:16.341Z", "src": "me", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:19:17.300Z", "src": "web", "status": 200, "ms": 2}
+{"t": "2026-11-05T06:19:17.332Z", "src": "me", "status": 200, "ok": true, "ms": 15}
+{"t": "2026-11-05T06:19:18.344Z", "src": "me", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:19:19.345Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:19:20.350Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:19:21.364Z", "src": "me", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:19:22.307Z", "src": "web", "status": 200, "ms": 2}
+{"t": "2026-11-05T06:19:22.361Z", "src": "me", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:19:23.358Z", "src": "me", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:19:24.373Z", "src": "me", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:19:25.371Z", "src": "me", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:19:26.374Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:19:27.314Z", "src": "web", "status": 200, "ms": 1}
+{"t": "2026-11-05T06:19:27.378Z", "src": "me", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:19:28.382Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:19:29.384Z", "src": "me", "status": 200, "ok": true, "ms": 15}
+{"t": "2026-11-05T06:19:30.388Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:19:31.392Z", "src": "me", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:19:32.315Z", "src": "web", "status": 200, "ms": 1}
+{"t": "2026-11-05T06:19:32.407Z", "src": "me", "status": 200, "ok": true, "ms": 31}
+{"t": "2026-11-05T06:19:33.411Z", "src": "me", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:19:34.411Z", "src": "me", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:19:35.410Z", "src": "me", "status": 200, "ok": true, "ms": 16}
+{"t": "2026-11-05T06:19:36.417Z", "src": "me", "status": 200, "ok": true, "ms": 24}
+{"t": "2026-11-05T06:19:37.318Z", "src": "web", "status": 200, "ms": 2}
+{"t": "2026-11-05T06:19:37.413Z", "src": "me", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:19:38.427Z", "src": "me", "status": 200, "ok": true, "ms": 27}
+{"t": "2026-11-05T06:19:39.430Z", "src": "me", "status": 200, "ok": true, "ms": 29}
+{"t": "2026-11-05T06:19:40.422Z", "src": "me", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:19:41.426Z", "src": "me", "status": 200, "ok": true, "ms": 16}
+{"t": "2026-11-05T06:19:42.320Z", "src": "web", "status": 200, "ms": 2}
+{"t": "2026-11-05T06:19:42.365Z", "src": "node", "used_gib": 9.85, "oom_kill": 62}
+{"t": "2026-11-05T06:19:42.453Z", "src": "me", "status": 200, "ok": true, "ms": 33}
+{"t": "2026-11-05T06:19:43.443Z", "src": "me", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:19:44.448Z", "src": "me", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:19:45.450Z", "src": "me", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:19:46.456Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:19:47.328Z", "src": "web", "status": 200, "ms": 1}
+{"t": "2026-11-05T06:19:47.454Z", "src": "me", "status": 200, "ok": true, "ms": 16}
+{"t": "2026-11-05T06:19:48.458Z", "src": "me", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:19:49.461Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:19:50.467Z", "src": "me", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:19:51.473Z", "src": "me", "status": 200, "ok": true, "ms": 26}
+{"t": "2026-11-05T06:19:52.328Z", "src": "web", "status": 200, "ms": 1}
+{"t": "2026-11-05T06:19:52.468Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:19:53.478Z", "src": "me", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:19:54.484Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:19:55.484Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:19:56.487Z", "src": "me", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:19:57.340Z", "src": "web", "status": 200, "ms": 6}
+{"t": "2026-11-05T06:19:57.500Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:19:58.497Z", "src": "me", "status": 200, "ok": true, "ms": 17}
+{"t": "2026-11-05T06:19:59.503Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:20:00.508Z", "src": "me", "status": 200, "ok": true, "ms": 22}
+{"t": "2026-11-05T06:20:01.509Z", "src": "me", "status": 200, "ok": true, "ms": 19}
+{"t": "2026-11-05T06:20:02.342Z", "src": "web", "status": 200, "ms": 2}
+{"t": "2026-11-05T06:20:02.515Z", "src": "me", "status": 200, "ok": true, "ms": 23}
+{"t": "2026-11-05T06:20:03.520Z", "src": "me", "status": 200, "ok": true, "ms": 25}
+{"t": "2026-11-05T06:20:04.517Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:20:05.519Z", "src": "me", "status": 200, "ok": true, "ms": 21}
+{"t": "2026-11-05T06:20:12.322Z", "src": "watch", "stopped": true, "reason": "stop-file"}

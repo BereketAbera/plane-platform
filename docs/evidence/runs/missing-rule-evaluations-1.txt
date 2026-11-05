@@ -50,7 +50,21 @@ time=2026-11-05T00:34:56.104Z group=k8s.rules.container_cpu_usage_seconds_total 
 time=2026-11-05T00:34:56.107Z group=k8s.rules.container_cpu_usage_seconds_total name=node_namespace_pod_container:contai
 time=2026-11-05T00:35:15.378Z group=k8s.rules.container_memory_working_set_bytes name=node_namespace_pod_container:conta
 
-## REALTIME minus MONOTONIC on the node (clock.pl: clock_gettime via syscall, bracketed by two monotonic reads, once a second; prints moves over 50us), 00:20:55Z to 00:46:04Z
+## REALTIME minus MONOTONIC on the node (clock.pl: clock_gettime by syscall, bracketed by two monotonic reads, once a second; prints moves over 50us)
+### Steps over 1 ms, from both runs
+00:34:17 step_us=-6963.0 rel_us=798.5 bracket_ns=666
+00:34:47 step_us=-5319.5 rel_us=-4521.0 bracket_ns=792
+00:50:18 step_us=+12811.5 rel_us=17322.5 bracket_ns=666
+00:50:47 step_us=+10540.5 rel_us=27862.9 bracket_ns=666
+00:51:17 step_us=+1661.9 rel_us=29524.8 bracket_ns=1041
+01:01:47 step_us=-3982.3 rel_us=32284.5 bracket_ns=834
+01:02:17 step_us=+4775.9 rel_us=37060.5 bracket_ns=708
+01:06:18 step_us=+15138.7 rel_us=54512.1 bracket_ns=1084
+01:06:48 step_us=+3635.8 rel_us=58147.9 bracket_ns=833
+01:07:18 step_us=+1075.8 rel_us=59223.6 bracket_ns=666
+01:22:18 step_us=+9366.4 rel_us=79987.6 bracket_ns=666
+01:22:48 step_us=+3054.7 rel_us=83042.3 bracket_ns=667
+### Run 1, 00:20:55Z to 00:46:04Z. rel_us is relative to its first reading
 00:21:17 step_us=+66.9 rel_us=66.9 bracket_ns=750
 00:21:47 step_us=+349.3 rel_us=416.2 bracket_ns=708
 00:22:17 step_us=+129.2 rel_us=545.4 bracket_ns=916
@@ -104,8 +118,7 @@ time=2026-11-05T00:35:15.378Z group=k8s.rules.container_memory_working_set_bytes
 00:45:47 step_us=+106.9 rel_us=-67.4 bracket_ns=875
 00:46:03 range_us=[-5169.6,7761.7] rel_us=-67.3
 00:46:04 end range_us=[-5169.6,7761.7]
-
-## Still sampling from 00:41:55Z
+### Run 2, from 00:41:55Z until it was stopped at the end of this work. rel_us is relative to its first reading
 00:42:17 step_us=+419.7 rel_us=419.8 bracket_ns=1291
 00:42:47 step_us=-192.3 rel_us=227.4 bracket_ns=667
 00:43:17 step_us=+550.9 rel_us=778.4 bracket_ns=667
@@ -118,3 +131,108 @@ time=2026-11-05T00:35:15.378Z group=k8s.rules.container_memory_working_set_bytes
 00:46:48 step_us=+443.8 rel_us=3008.9 bracket_ns=1125
 00:47:08 range_us=[0.0,3009.1] rel_us=3008.9
 00:47:18 step_us=+231.4 rel_us=3240.2 bracket_ns=1459
+00:47:48 step_us=+123.1 rel_us=3363.3 bracket_ns=666
+00:48:18 step_us=+194.8 rel_us=3558.0 bracket_ns=916
+00:48:48 step_us=+352.5 rel_us=3910.6 bracket_ns=750
+00:49:18 step_us=+163.7 rel_us=4074.3 bracket_ns=833
+00:49:48 step_us=+436.7 rel_us=4511.0 bracket_ns=875
+00:50:18 step_us=+12811.5 rel_us=17322.5 bracket_ns=666
+00:50:47 step_us=+10540.5 rel_us=27862.9 bracket_ns=666
+00:51:17 step_us=+1661.9 rel_us=29524.8 bracket_ns=1041
+00:51:47 step_us=+713.5 rel_us=30238.4 bracket_ns=666
+00:52:08 range_us=[0.0,30238.4] rel_us=30238.4
+00:52:17 step_us=+307.3 rel_us=30545.8 bracket_ns=667
+00:52:47 step_us=+252.6 rel_us=30798.3 bracket_ns=667
+00:53:17 step_us=+346.9 rel_us=31145.2 bracket_ns=750
+00:53:47 step_us=+269.1 rel_us=31414.4 bracket_ns=708
+00:54:18 step_us=+244.3 rel_us=31658.6 bracket_ns=834
+00:54:48 step_us=+520.7 rel_us=32179.3 bracket_ns=666
+00:55:18 step_us=+346.8 rel_us=32526.2 bracket_ns=958
+00:55:48 step_us=+202.5 rel_us=32728.7 bracket_ns=792
+00:56:18 step_us=+126.3 rel_us=32855.0 bracket_ns=916
+00:56:48 step_us=+151.8 rel_us=33006.9 bracket_ns=1125
+00:57:09 range_us=[0.0,33006.9] rel_us=33006.8
+00:57:18 step_us=+570.4 rel_us=33577.3 bracket_ns=666
+00:57:48 step_us=+527.1 rel_us=34104.4 bracket_ns=583
+00:58:48 step_us=+765.4 rel_us=34894.8 bracket_ns=667
+00:59:18 step_us=+169.5 rel_us=35064.3 bracket_ns=1250
+00:59:48 step_us=+341.0 rel_us=35405.3 bracket_ns=750
+01:00:18 step_us=+248.8 rel_us=35654.1 bracket_ns=958
+01:00:48 step_us=+456.5 rel_us=36110.5 bracket_ns=875
+01:01:18 step_us=+156.4 rel_us=36266.9 bracket_ns=708
+01:01:47 step_us=-3982.3 rel_us=32284.5 bracket_ns=834
+01:02:09 range_us=[0.0,36266.9] rel_us=32284.6
+01:02:17 step_us=+4775.9 rel_us=37060.5 bracket_ns=708
+01:02:47 step_us=+221.7 rel_us=37282.1 bracket_ns=917
+01:03:17 step_us=+412.2 rel_us=37694.4 bracket_ns=750
+01:03:47 step_us=+307.8 rel_us=38002.2 bracket_ns=875
+01:04:17 step_us=+489.0 rel_us=38491.2 bracket_ns=709
+01:04:47 step_us=+145.5 rel_us=38636.7 bracket_ns=833
+01:05:18 step_us=+370.3 rel_us=39007.0 bracket_ns=667
+01:05:48 step_us=+366.4 rel_us=39373.4 bracket_ns=1000
+01:06:18 step_us=+15138.7 rel_us=54512.1 bracket_ns=1084
+01:06:48 step_us=+3635.8 rel_us=58147.9 bracket_ns=833
+01:07:10 range_us=[0.0,58147.9] rel_us=58147.9
+01:07:18 step_us=+1075.8 rel_us=59223.6 bracket_ns=666
+01:07:48 step_us=-93.1 rel_us=59130.5 bracket_ns=666
+01:08:18 step_us=+851.5 rel_us=59982.0 bracket_ns=1125
+01:08:48 step_us=+527.9 rel_us=60510.0 bracket_ns=666
+01:09:18 step_us=+401.6 rel_us=60911.5 bracket_ns=833
+01:09:48 step_us=+280.8 rel_us=61192.4 bracket_ns=666
+01:10:18 step_us=-173.9 rel_us=61018.5 bracket_ns=917
+01:10:48 step_us=+937.0 rel_us=61955.5 bracket_ns=708
+01:11:18 step_us=+466.6 rel_us=62422.1 bracket_ns=667
+01:11:48 step_us=+375.6 rel_us=62797.7 bracket_ns=750
+01:12:10 range_us=[0.0,62797.7] rel_us=62797.6
+01:12:18 step_us=+514.8 rel_us=63312.5 bracket_ns=791
+01:12:48 step_us=+193.0 rel_us=63505.5 bracket_ns=833
+01:13:18 step_us=+459.8 rel_us=63965.3 bracket_ns=917
+01:13:48 step_us=+446.2 rel_us=64411.5 bracket_ns=1042
+01:14:17 step_us=+460.4 rel_us=64871.9 bracket_ns=708
+01:14:47 step_us=+162.9 rel_us=65034.8 bracket_ns=666
+01:15:17 step_us=+477.8 rel_us=65512.5 bracket_ns=708
+01:15:47 step_us=+341.3 rel_us=65853.8 bracket_ns=583
+01:16:17 step_us=+282.5 rel_us=66136.4 bracket_ns=584
+01:16:48 step_us=+617.9 rel_us=66754.3 bracket_ns=667
+01:17:11 range_us=[0.0,66754.3] rel_us=66754.3
+01:17:18 step_us=+321.4 rel_us=67075.7 bracket_ns=917
+01:17:48 step_us=+414.8 rel_us=67490.5 bracket_ns=625
+01:18:18 step_us=+205.3 rel_us=67695.8 bracket_ns=958
+01:18:48 step_us=+587.6 rel_us=68283.3 bracket_ns=792
+01:19:18 step_us=+281.6 rel_us=68564.9 bracket_ns=667
+01:19:48 step_us=+363.2 rel_us=68928.1 bracket_ns=666
+01:20:18 step_us=+507.1 rel_us=69435.2 bracket_ns=750
+01:20:48 step_us=+115.3 rel_us=69550.9 bracket_ns=667
+01:21:18 step_us=+675.1 rel_us=70226.0 bracket_ns=666
+01:21:48 step_us=+395.2 rel_us=70621.1 bracket_ns=1208
+01:22:11 range_us=[0.0,70621.2] rel_us=70621.1
+01:22:18 step_us=+9366.4 rel_us=79987.6 bracket_ns=666
+01:22:48 step_us=+3054.7 rel_us=83042.3 bracket_ns=667
+01:23:18 step_us=+732.5 rel_us=83774.8 bracket_ns=708
+01:23:48 step_us=+623.0 rel_us=84397.8 bracket_ns=917
+01:24:18 step_us=+282.7 rel_us=84680.5 bracket_ns=666
+01:24:48 step_us=+263.5 rel_us=84944.0 bracket_ns=667
+01:25:18 step_us=+655.3 rel_us=85599.3 bracket_ns=1000
+01:25:48 step_us=+542.5 rel_us=86141.8 bracket_ns=959
+01:26:18 step_us=+201.2 rel_us=86343.0 bracket_ns=1250
+01:26:48 step_us=+648.6 rel_us=86991.6 bracket_ns=625
+01:27:11 range_us=[0.0,86991.8] rel_us=86991.6
+01:27:47 step_us=+860.8 rel_us=87863.9 bracket_ns=667
+01:28:18 step_us=+317.8 rel_us=88181.7 bracket_ns=792
+01:28:48 step_us=+342.7 rel_us=88524.4 bracket_ns=1083
+
+## What followed the steps: the same 5 groups log duplicates right after the step back at 00:34, and every group misses exactly once right after the steps forward at 00:50
+23:57 2 groups 2.0 missed; kubelet.rules,kubernetes-apps
+00:00 1 groups 1.0 missed; kube-prometheus-general.rules
+00:02 1 groups 1.0 missed; prometheus
+00:19 31 groups 31.0 missed; alertmanager.rules,config-reloaders,general.rules,k8s.rules.container_cpu_usage_seconds_total,k8s.rules.container_memory_
+00:50 31 groups 31.0 missed; alertmanager.rules,config-reloaders,general.rules,k8s.rules.container_cpu_usage_seconds_total,k8s.rules.container_memory_
+time=2026-11-05T00:34:48.468Z group=k8s.rules.container_memory_cache name=node_namespace_pod_container:contain
+time=2026-11-05T00:34:51.743Z group=k8s.rules.container_memory_rss name=node_namespace_pod_container:container
+time=2026-11-05T00:34:56.104Z group=k8s.rules.container_cpu_usage_seconds_total name=node_namespace_pod_contai
+time=2026-11-05T00:34:56.107Z group=k8s.rules.container_cpu_usage_seconds_total name=node_namespace_pod_contai
+time=2026-11-05T00:35:15.378Z group=k8s.rules.container_memory_working_set_bytes name=node_namespace_pod_conta
+
+## ALERTS history for PrometheusMissingRuleEvaluations: samples of it firing, then pending, since 20:57Z
+firing 0 samples at 30s
+pending 90 samples at 30s

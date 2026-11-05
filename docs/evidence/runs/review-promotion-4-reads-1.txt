@@ -1,0 +1,52 @@
+# date 2026-11-05T06:07:43Z, command: /bin/bash real-reads.sh, read only; the script follows the output
+HEAD 0bd3e2d, published 9c8e098, origin/main 9c8e098
+0bd3e2d test(drills): let a stop reach the client under nohup too, and give it a limit
+9c8e098 promote(prod-sim): plane-admin ce7adc37b1a7, plane-backend 8c04bd18bb08, plane-frontend 3d7575a1b934, 
+Promote-Env: prod-sim
+Promote-Dev-Check: passed: plane-dev was Synced and Healthy and running every digest here
+commit 9c8e098 at 20261105T053406Z
+finished 20261104T231335Z
+finished 20261105T000523Z
+finished 20261105T000627Z
+finished 20261105T022025Z
+finished 20261105T053351Z
+dev_problems on the four prod-sim digests: []
+dev_problems on a made-up digest: [no ready container in namespace plane-dev runs sha256:0123456789012345678901234567890123456789012345678901234567890123]
+plants 81 distinct changes 75 the same change more than once [['a1', 'a2'], ['b1', 'b2', 'b3'], ['d1', 'd2', 'd3'], ['e3', 'm2']]
+7ca9ace^ scenarios: 58
+7ca9ace scenarios: 128
+a286e52 scenarios: 132
+evidence files naming 530s: 0, promotion or make-ci files naming 360s: 0
+
+=== real-reads.sh
+#!/bin/bash
+# Read only, on the real repository and cluster: git, and dev_problems from scripts/lib/dev-check.sh, which runs kubectl get on plane-dev only.
+cd /Users/bek/dev/pr/plane-platform || exit 99
+echo "HEAD $(git rev-parse --short HEAD), published $(git --git-dir=.local/git/plane-platform.git rev-parse --short refs/heads/main), origin/main $(git rev-parse --short origin/main)"
+git log --format='%h %s' -n 2 | cut -c1-110
+git log -1 --format=%B 9c8e098 | grep -E '^Promote-(Env|Dev-Check)'
+TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format='commit %h at %cd' 9c8e098
+for d in .local/backups/prod-sim/*; do
+  if [ -f "$d/manifest.json" ]; then echo "finished ${d##*/}"; else echo "unfinished ${d##*/}"; fi
+done
+set -uo pipefail
+# shellcheck source=/dev/null
+source scripts/lib/common.sh
+# shellcheck source=/dev/null
+source scripts/lib/dev-check.sh
+digests=$(yq -r '.images[] | select(.name | test("plane-(admin|backend|frontend|space)$")) | .digest' helm/plane/overlays/prod-sim/kustomization.yaml)
+echo "dev_problems on the four prod-sim digests: [$(dev_problems $digests)]"
+echo "dev_problems on a made-up digest: [$(dev_problems sha256:0123456789012345678901234567890123456789012345678901234567890123)]"
+python3 -I - <<'PY'
+s=open('.local/evidence-raw/promotion-flows-planted-1.txt').read()
+src=s[s.index('=== plant.py\n')+len('=== plant.py\n'):s.index('=== plant-one.sh')].replace('\nmain()\n','\n')
+ns={}
+exec(compile(src,'plant','exec'),ns)
+D=ns['DEFECTS']
+seen={}
+for d in D:
+    seen.setdefault((d[3],d[4],d[5]),[]).append(d[0])
+print('plants',len(D),'distinct changes',len(seen),'the same change more than once',[v for v in seen.values() if len(v)>1])
+PY
+for c in '7ca9ace^' 7ca9ace a286e52; do printf '%s scenarios: ' "$c"; git show "$c:scripts/ci/test-promotion-flows.sh" | grep -c '^scenario '; done
+echo "evidence files naming 530s: $(grep -l '530s\|in 530' .local/evidence-raw/* 2>/dev/null | grep -vc review-promotion-4), promotion or make-ci files naming 360s: $(grep -l '360s\|in 360' .local/evidence-raw/promotion* .local/evidence-raw/make-ci* 2>/dev/null | wc -l | tr -d ' ')"

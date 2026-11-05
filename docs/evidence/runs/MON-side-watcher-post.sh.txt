@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Read-only capture after a run. post.sh <row> <env> <TS> <suffix>
+set -u
+row="$1" env="$2" TS="$3" suffix="${4:-}"
+R=/Users/bek/dev/pr/plane-platform
+M=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/mon
+cd "$R"
+case "$env" in dev) NS=plane-dev OTHER=plane-prod-sim ;; prod-sim) NS=plane-prod-sim OTHER=plane-dev ;; esac
+K() { KUBECONFIG="$R/.local/kubeconfig" "$R/.tools/bin/kubectl" --context kind-plane-platform "$@"; }
+SINCE="$(printf '%s' "$TS" | sed -E 's/^(....)(..)(..)T(..)(..)(..)Z$/\1-\2-\3T\4:\5:\6Z/')"
+NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+stamp() { printf '# %s %s\n# date_utc: %s\n# commit: %s\n# command: %s\n' "$row" "$1" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD)" "$2"; }
+"$M/snap.sh" ".local/evidence-raw/$row-$TS-after$suffix.txt" "$row" "after$suffix"
+sink=".local/evidence-raw/$row-$TS-sink$suffix.txt"
+stamp "everything the sink received since the snapshot before the run, unfiltered" "kubectl -n monitoring logs deploy/alert-sink --since-time=$SINCE --timestamps" >"$sink"
+K -n monitoring logs deploy/alert-sink --since-time="$SINCE" --timestamps >>"$sink" 2>&1
+echo "# kubectl exit $?" >>"$sink"
+K -n monitoring get pods -l app.kubernetes.io/name=alert-sink -o wide >>"$sink" 2>&1
+prom=".local/evidence-raw/$row-$TS-prom$suffix.txt"
+stamp "Prometheus range reads over the run, step 15s, start $SINCE end $NOW" "curl -G http://prometheus.localhost/api/v1/query_range with each query below" >"$prom"
+for q in 'ALERTS{namespace="plane-dev"}' 'ALERTS{namespace="plane-prod-sim"}' 'ALERTS{dest_namespace=~"plane-dev|plane-prod-sim"}' 'ALERTS{namespace!~"plane-dev|plane-prod-sim",dest_namespace!~"plane-dev|plane-prod-sim",alertname!="Watchdog"}' 'probe_success{namespace="plane-dev"}' 'probe_success{namespace="plane-prod-sim"}'; do
+  printf '\n## %s\n' "$q" >>"$prom"
+  curl -sS -m 20 -G 'http://prometheus.localhost/api/v1/query_range' --data-urlencode "query=$q" --data-urlencode "start=$SINCE" --data-urlencode "end=$NOW" --data-urlencode 'step=15s' >>"$prom" 2>&1
+  printf ' [curl exit %s]\n' "$?" >>"$prom"
+done
+ev=".local/evidence-raw/$row-$TS-events$suffix.txt"
+stamp "Kubernetes events for the api Deployment and its ReplicaSets and pods" "kubectl -n $NS get events --sort-by=.lastTimestamp -o custom-columns=..." >"$ev"
+K -n "$NS" get events --sort-by=.lastTimestamp -o custom-columns='LAST:.lastTimestamp,FIRST:.firstTimestamp,EVENTTIME:.eventTime,COUNT:.count,TYPE:.type,REASON:.reason,OBJECT:.involvedObject.name,MESSAGE:.message' >>"$ev" 2>&1
+printf '\n# other environment %s\n' "$OTHER" >>"$ev"
+K -n "$OTHER" get events --sort-by=.lastTimestamp -o custom-columns='LAST:.lastTimestamp,FIRST:.firstTimestamp,EVENTTIME:.eventTime,COUNT:.count,TYPE:.type,REASON:.reason,OBJECT:.involvedObject.name,MESSAGE:.message' >>"$ev" 2>&1
+echo "$sink $prom $ev"

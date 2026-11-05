@@ -1,0 +1,7 @@
+# Real browser pane (Chromium), 2026-11-05T04:16Z, images from ec45e21 in both environments.
+# Seeds the browser's HTTP cache for the promotion test (AUTH-6): the next promotion should show new HTML at the next plain navigation, with no hard reload.
+# Read with: fetch('/sign-in/',{cache:'only-if-cached',mode:'same-origin'}) in each origin, after a plain navigation to /sign-in/.
+plane.dev.localhost      cached /sign-in/: status 200, etag "6aebdc6c-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 01:31:24 GMT
+                         navigating to /sign-in/ with the session from earlier landed on /smoke-f10a5851/ (signed in)
+plane.prod-sim.localhost cached /sign-in/: status 200, etag "6aebdc6c-18f1", cache-control no-cache, last-modified Thu, 05 Nov 2026 01:31:24 GMT
+                         navigating to /sign-in/ in the same browser landed on the signed-out sign-in page at /: the dev session does not carry to the prod-sim host

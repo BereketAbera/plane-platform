@@ -1,0 +1,30 @@
+# max_locks_per_transaction=128 through Git and Argo CD. 2026-11-05T02:25:26Z
+before: 64|30|0. Pod: {"uid":"b316f1c1-c87d-446e-a049-aa9750664410","started":"2026-11-04T21:43:27Z"}
+VM before: 10023 MiB used of 13959
+committed 7a3b783 fix(infisical): double the Postgres lock table, because a backup's scratch restore held 3422 locks on a table of 3328
+[1;33mwarn[0m publishing 157 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       7a3b783 fix(infisical): double the Postgres lock table, because a backup's scratch restore held 3422 locks on a table of 3328
+       1fb4707 fix(recovery): stop a restore depending on a token that ends, check what make up stops on before a delete, resume after a hard stop, and keep the backups that can serve a clean restore
+       b8e6c65 fix(test): name each run's evidence with its process id, so runs started in the same second keep their own summaries
+       afb4331 fix(separation): report a target with no result as BLOCKED, stop the shell probe if mktemp fails, give every source a positive control in its own batch, and know every secret before the first section prints
+       62300a7 fix(netpol): read a witness that failed as NO_READING, prove the witness in the sentinel, need both readings for ANSWERED, count a DNS failure the node did not share, and print the two references line only when it is true
+[1;32m ok[0m published main 7a3b78347284 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+commit and publish exit=0
+7a3b783 fix(infisical): double the Postgres lock table, because a backup's scratch restore held 3422 locks on a table of 3328
+application.argoproj.io/infisical annotated
+Postgres took the change 15s after the refresh
+probe of /api/status, one a second: 39 samples, 0 not 200, first none, last none
+after: 128|30|0. Pod: {"uid":"29b67aa8-052b-422d-9139-723583940239","started":"2026-11-05T02:25:36Z","restarts":0}
+server pod: [{"name":"infisical-567944c58f-qhwlw","restarts":0,"started":"2026-11-05T00:19:02Z"}]
+lines that differ in Plane pod uids and restart counts, workload generations, Secret resourceVersions: 0
+InfisicalStaticSecret errors: plane-dev=0 plane-prod-sim=0 
+Application infisical: Synced/Healthy
+VM after: 9858 MiB used of 13959
+# After the change. 2026-11-05T02:26:07Z
+max_locks_per_transaction, max_connections, max_prepared_transactions: 128|30|0
+lock tables and all shared memory, KiB:
+LOCK hash 2.8750000000000000
+PREDICATELOCK hash 2.8750000000000000
+PROCLOCK hash 2.8750000000000000
+39736.000000000000
+{"uid":"29b67aa8-052b-422d-9139-723583940239","restarts":0,"started":"2026-11-05T02:25:36Z"}

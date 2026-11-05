@@ -43,7 +43,7 @@ GET kubernetes auth -> 200
 GET folders at / -> 200
 {"folders":[]}
 GET secret names at / -> 200
-["LIVE_SERVER_SECRET_KEY","PG_DB","PG_PASSWORD","PG_USER","RABBITMQ_PASSWORD","RABBITMQ_USER","SECRET_KEY","SILO_ACCESS_KEY","SILO_SECRET_KEY"]
+["LIVE_SERVER_SECRET_KEY","PG_DB","<redacted>","PG_USER","RABBITMQ_PASSWORD","RABBITMQ_USER","SECRET_KEY","SILO_ACCESS_KEY","SILO_SECRET_KEY"]
 
 == prod-sim, project id <redacted>
 GET project -> 200
@@ -77,7 +77,7 @@ GET kubernetes auth -> 200
 GET folders at / -> 200
 {"folders":[]}
 GET secret names at / -> 200
-["LIVE_SERVER_SECRET_KEY","PG_DB","PG_PASSWORD","PG_USER","RABBITMQ_PASSWORD","RABBITMQ_USER","SECRET_KEY","SILO_ACCESS_KEY","SILO_SECRET_KEY"]
+["LIVE_SERVER_SECRET_KEY","PG_DB","<redacted>","PG_USER","RABBITMQ_PASSWORD","RABBITMQ_USER","SECRET_KEY","SILO_ACCESS_KEY","SILO_SECRET_KEY"]
 
 == Second POST /api/v1/admin/bootstrap, unauthenticated, must be refused
 status 400, message: Instance has already been set up

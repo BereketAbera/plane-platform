@@ -1,0 +1,24 @@
+{
+  "environment": "prod-sim",
+  "backup": "20261105T073411Z",
+  "started_at": "20261105T073428Z",
+  "result": "FAIL",
+  "steps": [
+    {
+      "step": "checksums",
+      "status": "PASS",
+      "detail": "82 files match"
+    },
+    {
+      "step": "version",
+      "status": "PASS",
+      "detail": "backup 1.4.3, running 1.4.3"
+    },
+    {
+      "step": "key-fingerprint",
+      "status": "PASS",
+      "detail": "SECRET_KEY matches the backup"
+    }
+  ],
+  "not_run": []
+}

@@ -1,0 +1,245 @@
+# 2026-11-05T06:49:40Z tests/drills/failed-migrator.sh. utc, state, alert, severity, active since, labels. Also: utc, none or no-reading, and utc, application, sync/health/operation phase.
+2026-11-05T06:49:40Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:49:40Z	application	Synced/Healthy/Succeeded
+2026-11-05T06:49:55Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:49:55Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:50:10Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:50:10Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:50:25Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:50:25Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:50:40Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:50:40Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:50:40Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:50:40Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:50:55Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:50:55Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:50:55Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:50:55Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:51:10Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:51:10Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:51:10Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:51:10Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:51:25Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:51:25Z	pending	KubeJobFailed	warning	2026-11-05T06:50:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:51:25Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:51:25Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:51:25Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:51:40Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:51:40Z	pending	KubeJobFailed	warning	2026-11-05T06:50:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:51:40Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:51:40Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:51:40Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:51:56Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:51:56Z	pending	KubeJobFailed	warning	2026-11-05T06:50:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:51:56Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:51:56Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:51:56Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:52:11Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:52:11Z	pending	KubeJobFailed	warning	2026-11-05T06:50:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:52:11Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:52:11Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:52:11Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:52:26Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:52:26Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:52:26Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:52:26Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:52:26Z	pending	KubeJobFailed	warning	2026-11-05T06:50:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:52:26Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:52:41Z	pending	KubeJobFailed	warning	2026-11-05T06:50:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:52:41Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:52:41Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:52:41Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:52:41Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:52:41Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:52:56Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:52:56Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:52:56Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:52:56Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:52:56Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:53:11Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:53:11Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:53:11Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:53:11Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:53:11Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:53:26Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:53:26Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:53:26Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:53:26Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:53:26Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:53:26Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:53:41Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:53:41Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:53:41Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:53:41Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:53:41Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:53:41Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:53:56Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:53:56Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:53:56Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:53:56Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:53:56Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:53:56Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:54:11Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:54:11Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:54:11Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:54:11Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:54:11Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:54:11Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:54:26Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:54:26Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:54:26Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:54:26Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:54:26Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:54:26Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:54:41Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:54:41Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:54:41Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:54:41Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:54:41Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:54:41Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:54:56Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:54:56Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:54:56Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:54:56Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:54:56Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:54:56Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:55:12Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:55:12Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:55:12Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:55:12Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:55:12Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:55:12Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:55:27Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:55:27Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:55:27Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:55:27Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:55:27Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:55:27Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:55:42Z	pending	KubeJobFailed	warning	2026-11-05T06:52:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:55:42Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:55:42Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:55:42Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:55:42Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:55:42Z	application	OutOfSync/Healthy/Running
+2026-11-05T06:55:57Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:55:57Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:55:57Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:55:57Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:55:57Z	application	Synced/Healthy/Running
+2026-11-05T06:56:12Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:56:12Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:56:12Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:56:12Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:56:12Z	application	Synced/Healthy/Running
+2026-11-05T06:56:27Z	pending	ArgoAppOutOfSync	warning	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev
+2026-11-05T06:56:27Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:56:27Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:56:27Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:56:27Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:56:27Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:56:27Z	application	Synced/Healthy/Running
+2026-11-05T06:56:42Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:56:42Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:56:42Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:56:42Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:51:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+2026-11-05T06:56:42Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:56:42Z	application	Synced/Healthy/Running
+2026-11-05T06:56:57Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:56:57Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:56:57Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:56:57Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:56:57Z	application	Synced/Healthy/Running
+2026-11-05T06:57:12Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:57:12Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:57:12Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:57:12Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:57:12Z	application	Synced/Healthy/Running
+2026-11-05T06:57:27Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:57:27Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:57:27Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:57:27Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:57:27Z	application	Synced/Healthy/Running
+2026-11-05T06:57:42Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:57:42Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:57:42Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:57:42Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:57:42Z	application	Synced/Healthy/Running
+2026-11-05T06:57:57Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:57:57Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:57:57Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:57:57Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:57:57Z	application	Synced/Healthy/Running
+2026-11-05T06:58:13Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:58:13Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:58:13Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:58:13Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:58:13Z	application	Synced/Healthy/Running
+2026-11-05T06:58:28Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:58:28Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:58:28Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:58:28Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:58:28Z	application	Synced/Healthy/Running
+2026-11-05T06:58:43Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:58:43Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:58:43Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:58:43Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:58:43Z	application	Synced/Healthy/Running
+2026-11-05T06:58:58Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:58:58Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:58:58Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:58:58Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:58:58Z	application	Synced/Healthy/Running
+2026-11-05T06:59:13Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:59:13Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:59:13Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:59:13Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:59:13Z	application	Synced/Healthy/Running
+2026-11-05T06:59:28Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:59:28Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:59:28Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:59:28Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:59:28Z	application	Synced/Healthy/Running
+2026-11-05T06:59:43Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:59:43Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:59:43Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:59:43Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:59:43Z	application	Synced/Healthy/Running
+2026-11-05T06:59:58Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T06:59:58Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T06:59:58Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T06:59:58Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T06:59:58Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:00:13Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:00:13Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:00:13Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T07:00:13Z	pending	KubeJobFailed	warning	2026-11-05T06:55:52.109597967Z	condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+2026-11-05T07:00:13Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:00:28Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:00:28Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T07:00:28Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:00:28Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:00:43Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:00:43Z	pending	PrometheusMissingRuleEvaluations	warning	2026-11-05T06:55:48.555583222Z	container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+2026-11-05T07:00:43Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:00:43Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:00:58Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:00:58Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:00:58Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:01:13Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:01:13Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:01:13Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:01:28Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:01:28Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:01:28Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:01:44Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:01:44Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:01:44Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:01:59Z	pending	ArgoSyncFailed	critical	2026-11-05T06:50:02.417343552Z	component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+2026-11-05T07:01:59Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:01:59Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:02:14Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:02:14Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:02:29Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:02:29Z	application	Synced/Healthy/Succeeded
+2026-11-05T07:02:44Z	firing	Watchdog	none	2026-11-05T00:34:26.617154565Z	
+2026-11-05T07:02:44Z	application	Synced/Healthy/Succeeded

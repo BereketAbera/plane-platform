@@ -1,0 +1,76 @@
+# 2026-11-05T06:22:19Z commit 0dde813
+# command: scratchpad/plane-dev/sec-state.sh before-rotation (copy: .local/evidence-raw/SEC-2-20261105T062211Z-sec-state-source.txt)
+===== before-rotation 2026-11-05T06:22:19Z commit 0dde813
+--- Deployments: generation, observedGeneration, revision, image digest, template annotations
+iso-dev-controller-manager	1	1	1	0edfbde22637	{"kubectl.kubernetes.io/default-container":"manager"}
+plane-admin-wl	10	10	9	ce7adc37b1a7	{}
+plane-api-wl	12	12	9	8c04bd18bb08	{}
+plane-beat-worker-wl	9	9	8	8c04bd18bb08	{}
+plane-live-wl	7	7	6	30741b6d6552	{}
+plane-space-wl	10	10	9	5f0119ff2266	{}
+plane-web-wl	10	10	9	3d7575a1b934	{}
+plane-worker-wl	9	9	8	8c04bd18bb08	{}
+postgres-exporter	3	3	3	ac5ec343104f	{"secrets.infisical.com/managed-secret.d0bb965f2f7d03613c7ead00e29fc9b4":"W/\\"secrets-244-544C0B45\\""}
+redis-exporter	1	1	1	3d57b9eb142a	{}
+--- ReplicaSets per owner
+iso-dev-controller-manager 1
+plane-admin-wl 7
+plane-api-wl 7
+plane-beat-worker-wl 6
+plane-live-wl 4
+plane-space-wl 7
+plane-web-wl 7
+plane-worker-wl 6
+postgres-exporter 3
+redis-exporter 1
+--- Pods: name, uid, start, restarts, phase
+iso-dev-controller-manager-85dbfbcb5b-vswbn	ad45e6e0	2026-11-04T21:11:03Z	0	Running
+plane-admin-wl-545f5b8fcd-97kwj	c352b645	2026-11-05T05:30:17Z	0	Running
+plane-api-wl-d7d5dcb7f-hs2gn	fb649c47	2026-11-05T05:52:07Z	0	Running
+plane-beat-worker-wl-645c56988f-mltb7	0a6f1794	2026-11-05T05:30:17Z	0	Running
+plane-live-wl-5744d85f8b-qdb9d	4b8adf33	2026-11-04T22:54:48Z	0	Running
+plane-minio-wl-0	2792dd06	2026-11-04T22:44:25Z	0	Running
+plane-pgdb-wl-0	c387d195	2026-11-04T22:44:36Z	0	Running
+plane-rabbitmq-wl-0	4f622751	2026-11-04T22:44:45Z	0	Running
+plane-redis-wl-0	d7a8cef8	2026-11-04T22:45:16Z	0	Running
+plane-space-wl-847f88bc46-h6vmn	e08acdf2	2026-11-05T05:30:17Z	0	Running
+plane-web-wl-748764649d-q72kc	dda78f72	2026-11-05T05:30:17Z	0	Running
+plane-worker-wl-7f4494fd56-tlbbf	35a0a98e	2026-11-05T06:00:38Z	0	Running
+postgres-exporter-79f8bbdffd-p5q9g	4604d538	2026-11-04T21:56:42Z	0	Running
+redis-exporter-5b59d6cb7c-rp2rd	f9d9f1ca	2026-11-04T21:03:37Z	0	Running
+--- Secret versions and resourceVersions in plane-dev
+plane-app-env	22620	W/"secrets-979-7A034C1E"
+plane-app-keys	22624	W/"secrets-451-1016E086"
+plane-doc-store	22614	W/"secrets-678-AB90B2EA"
+plane-infisical-identity	21729	-
+plane-live-env	22618	W/"secrets-207-275FF22A"
+plane-pgdb	22600	W/"secrets-244-544C0B45"
+plane-rabbitmq	22622	W/"secrets-225-C6A23CB2"
+--- Truncated sha256, the form backup.sh records
+SECRET_KEY (plane-app-keys)            4ceb3f709b196ae0
+LIVE_SERVER_SECRET_KEY (plane-app-keys) e32a98802bbfdb27
+POSTGRES_PASSWORD (plane-pgdb)         bff104dc1fd82597
+DATABASE_URL (plane-app-env)           f0b5084c07dbe897
+RABBITMQ_DEFAULT_PASS (plane-rabbitmq) 45755d126de39f8a
+--- Infisical: every secret of the dev project, key and version only, viewSecretValue=false
+LIVE_SERVER_SECRET_KEY	1
+PG_DB	1
+<redacted>	1
+PG_USER	1
+RABBITMQ_PASSWORD	1
+RABBITMQ_USER	1
+SECRET_KEY	1
+SILO_ACCESS_KEY	1
+SILO_SECRET_KEY	1
+--- Encrypted config rows, read in the api pod. Counts and key names only
+ENCRYPTED_ROWS=8 WITH_A_STORED_VALUE=1
+DECRYPT_TO_EMPTY=[]
+--- Applications
+plane-dev	Synced	Healthy	Succeeded	2026-11-05T05:29:48Z	6	9c8e09828be3
+monitoring-extras	Synced	Healthy	Succeeded	2026-11-05T02:26:45Z	10	9c8e09828be3
+root	Synced	Healthy	Succeeded	2026-11-05T00:34:05Z	4	
+--- Argo CD counters, from Prometheus: argocd_app_sync_total for plane-dev
+["Succeeded","plane-dev","2"]
+--- pg_up
+["plane-dev","1"]
+["plane-prod-sim","1"]

@@ -1,0 +1,490 @@
+# date: 2026-11-05T05:09:07Z
+# Independent check of the alerts track (platform-hardening-3, second fix round), repo HEAD c51c130. Scratch clones under the session scratchpad, removed afterwards. Read only against the cluster. Nothing applied.
+
+## 1. PATH=/bin:$PATH /bin/bash scripts/ci/negative-controls.sh, scratch clone
+# date: 2026-11-05T04:45:46Z
+# command: PATH=/bin:$PATH /bin/bash scripts/ci/negative-controls.sh, scratch clone at a2e6c1a, GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+ ok lint.sh passes on a2e6c1a239bf8082b60d4d2cbe96db6220d9e432
+ ok validate-manifests.sh passes on a2e6c1a239bf8082b60d4d2cbe96db6220d9e432
+ ok ownership.sh passes on a2e6c1a239bf8082b60d4d2cbe96db6220d9e432
+ ok security.sh passes on a2e6c1a239bf8082b60d4d2cbe96db6220d9e432
+ ok 45 of 45 planted defects were caught, on a2e6c1a239bf8082b60d4d2cbe96db6220d9e432
+# end: 2026-11-05T05:01:37Z, negative-controls exit=0
+controls with an exit line: 45
+An earlier attempt of mine stopped at the baseline: I had set TMPDIR to the 105-byte scratch path, and tflint's plugin socket does not fit. TMPDIR=<that path> tflint exit=1, without it exit=0. Not a defect in the repo. Its 'exit=0' line was also my wrapper reading date's status, so it is not repeated here.
+
+## 2. Planted documents, SKIP_CHARTS=yes SKIP_FLOWS=yes ./scripts/ci/validate-manifests.sh, on /bin/bash 3.2, plants as in the scripts at the end
+at 010cdd5:
+IngressRoute namespace: "" to loki                     exit=1 route "Host(`logs.localhost`)" ... must name the middleware
+IngressRoute namespace: (blank) to loki                exit=1 same
+IngressRoute namespace: ~ to loki                      exit=1 same
+IngressRoute namespace: null to loki                   exit=1 same
+TCP namespace: "" to loki                              exit=1 IngressRouteTCP is not allowed
+TCP namespace: (blank) to loki                         exit=1 same
+List, gitops/platform/network-policies                 exit=1 kind List wraps other objects
+List, gitops/applications                              exit=1 kind List wraps other objects
+List, gitops/bootstrap/argocd-route                    exit=1 kind List wraps other objects
+List, infisical/manifests                              exit=1 kind List wraps other objects
+ConfigMapList with items                               exit=1 kubeconform: platform manifests FAILED
+IngressRouteList with items                            exit=1 kubeconform: platform manifests FAILED
+kind: list, lower case, with items                     exit=1 kind list wraps other objects
+List in .yml in a plain directory                      exit=1 Argo CD would read these and no check here does
+List in .json in a plain directory                     exit=1 Argo CD would read these and no check here does
+List as the second document of a file                  exit=1 kind List wraps other objects
+List listed in a kustomization (backup-storage)        exit=1 plane - IngressRoute monitoring/planted
+List listed in monitoring/manifests/shared             exit=1 plane - IngressRoute monitoring/planted
+route file with no trailing newline                    exit=1 kubeconform: platform manifests FAILED
+route beside manifests.yaml in environments/dev        exit=0
+List beside manifests.yaml in environments/dev         exit=0
+second doc after "--- # a comment"                     exit=0
+second doc after "--- " (trailing space)               exit=0
+second doc inline after "--- {"                        exit=0 (inert: apimachinery drops the rest of that line)
+with ownership.sh as well, at 010cdd5:
+route, separator "--- # a comment"                     validate=0 ownership=0
+route, separator "---\r"                               validate=0 ownership=0
+Secret, separator "--- # a comment"                    validate=0 ownership=0
+Application in project default, "--- # a comment"      validate=0 ownership=0
+List wrapping a route, "--- # a comment"               validate=0 ownership=0
+Namespace, "--- # a comment"                           validate=0 ownership=1 (ownership.sh reads with yq)
+at c51c130:
+no plant                                               exit=0
+route after "--- # a comment"                          exit=0
+Secret after "--- # a comment"                         exit=0
+dev route on the prod-sim host, in a sibling .yaml     exit=0
+candidate fix at 010cdd5, in collect: sed -E 's/^---.*$/---/' "$file" in place of cat "$file":
+no plant                                               exit=0
+route after "--- # a comment"                          exit=1 plane - IngressRoute monitoring/planted
+route after "--- "                                     exit=1 plane - IngressRoute monitoring/planted
+route after "---\r"                                    exit=1 plane - IngressRoute monitoring/planted
+Secret after "--- # a comment"                         exit=1 gitops - Secret monitoring/planted
+List after "--- # a comment"                           exit=1 gitops - kind List wraps other objects
+
+How each reads a separator, on one file with a ConfigMap, a separator, then a route or Secret (conftest 0.71.1):
+plain "---"          conftest exit=1, conftest parse kinds 3 (ConfigMap, IngressRoute, the route's Rule), kubeconform 2 resources, yq ConfigMap IngressRoute
+"--- # a comment"    conftest exit=0, conftest parse kinds 1, kubeconform 2 resources, yq ConfigMap IngressRoute
+"--- "               conftest exit=0, conftest parse kinds 1, kubeconform 2 resources, yq ConfigMap IngressRoute
+"---\r"              conftest exit=0, conftest parse kinds 1, kubeconform 2 resources, yq ConfigMap IngressRoute
+Secret after comment conftest exit=0, conftest parse kinds 1, kubeconform 2 resources, yq ConfigMap Secret
+Real manifests with such a separator: git grep -cE '^---[[:space:]]*[^[:space:]]|^---[[:space:]]+$' HEAD -- gitops infisical/manifests monitoring/manifests: 0 files
+Upstream: conftest v0.71.1 parser/yaml/yaml.go splits with bytes.Split on linebreak+"---"+linebreak. argo-cd v3.5.7 gitops-engine/pkg/utils/kube/kube.go:366 SplitYAMLToString uses kubeyaml.NewYAMLOrJSONDecoder, and apimachinery pkg/util/yaml/decoder.go:207 yamlSeparator = "\n---", :227 drops the rest of that line. By reading: none of these was applied to the cluster.
+
+## 3. Charts at c51c130: render_platform_charts, then conftest as validate-manifests.sh runs it
+9 platform charts rendered. Documents with a kind ending in List or a top-level items array: none
+conftest charts,plane on real renders: exit=0, 3298 passed
+conftest gitops on real renders: exit=1, 4 failures, all kind Secret, so that namespace cannot run there as it stands
+SKIP_FLOWS=yes ./scripts/ci/validate-manifests.sh, traefik extraObjects with a plain route to kps-prometheus in monitoring: exit=1, plane - IngressRoute monitoring/planted
+SKIP_FLOWS=yes ./scripts/ci/validate-manifests.sh, traefik extraObjects with the same route inside kind: List: exit=0, 3315 passed, manifests valid
+candidate: the wrapper deny added to a copy of policy/charts.rego: conftest verify 102 of 102; real renders exit=0, 3492 passed; the wrapped route exit=1, kind List wraps other objects. Policy at HEAD on that document: exit=0
+
+## 4. promtool 3.15.1, my own prediction written before running, gen.py at the end: all 18 cases exit=0
+ArgoSyncFailed firing at 15m iff the last open sample is after 13m, for first Degraded 10m, 10m30s, 11m, 12m. ArgoAppDegraded firing at first Degraded + 5m iff a Degraded sample stands there.
+PodRestarting, each of 6 namespace terms dropped from each side, and plane-.* narrowed to either environment on each side: all exit=1, unmutated exit=0. ArgoSyncFailed for: 14m and 16m: rules.test.yaml exit=1
+The brief's set form in a copy of the policy: conftest verify exit=1, 100 of 102
+Parsed 9e86372 against HEAD (yq -o=json): rules-platform.yaml, loki.yaml, kube-prometheus-stack.yaml, alloy.yaml, argocd.yaml identical
+
+## 5. Prometheus, read only: q3.py
+count rate by route
+   loki_api_v1_index_stats [('21:40:00Z', 0.295), ('21:41:00Z', 0.238), ('21:42:00Z', 0.267), ('21:43:00Z', 0.114), ('21:44:00Z', 0.038), ('21:45:00Z', 1.143), ('21:46:00Z', 6.64), ('21:47:00Z', 6.571), ('21:48:00Z', 4.857), ('21:49:00Z', 3.314), ('21:50:00Z', 2.524), ('21:51:00Z', 1.404), ('21:52:00Z', 0.022), ('21:57:00Z', 1.869), ('21:58:00Z', 2.886), ('21:59:00Z', 0.649), ('22:00:00Z', 0.018),
+   loki_api_v1_labels []
+   loki_api_v1_query [('22:00:00Z', 0.018), ('22:01:00Z', 0.051)]
+   loki_api_v1_query_range [('21:40:00Z', 0.438), ('21:41:00Z', 0.4), ('21:42:00Z', 0.543), ('21:43:00Z', 0.343), ('21:44:00Z', 0.114), ('21:45:00Z', 0.962), ('21:46:00Z', 7.583), ('21:47:00Z', 9.581), ('21:48:00Z', 8.733), ('21:49:00Z', 7.6), ('21:50:00Z', 7.114), ('21:51:00Z', 3.688), ('21:57:00Z', 2.714), ('21:58:00Z', 3.982), ('21:59:00Z', 1.212), ('22:02:00Z', 0.137)]
+sum rate by route
+   loki_api_v1_index_stats [('21:40:00Z', 0.0), ('21:41:00Z', 0.0), ('21:42:00Z', 0.0), ('21:43:00Z', 0.0), ('21:44:00Z', 0.0), ('21:45:00Z', 0.001), ('21:46:00Z', 0.003), ('21:47:00Z', 0.002), ('21:48:00Z', 0.002), ('21:49:00Z', 0.001), ('21:50:00Z', 0.0), ('21:51:00Z', 0.0), ('21:52:00Z', 0.0), ('21:57:00Z', 0.0), ('21:58:00Z', 0.001), ('21:59:00Z', 0.0), ('22:00:00Z', 0.0), ('22:01:00Z', 0.0), 
+   loki_api_v1_labels []
+   loki_api_v1_query [('21:52:00Z', 0.003), ('22:00:00Z', 0.084), ('22:01:00Z', 0.278)]
+   loki_api_v1_query_range [('21:40:00Z', 0.004), ('21:41:00Z', 0.007), ('21:42:00Z', 0.008), ('21:43:00Z', 0.005), ('21:44:00Z', 0.001), ('21:45:00Z', 0.132), ('21:46:00Z', 4.652), ('21:47:00Z', 9.249), ('21:48:00Z', 9.052), ('21:49:00Z', 12.288), ('21:50:00Z', 16.041), ('21:51:00Z', 7.0), ('21:57:00Z', 4.46), ('21:58:00Z', 8.4), ('21:59:00Z', 4.41), ('22:02:00Z', 0.006)]
+all routes, whichever, at the test phase 21:55-21:58
+   /frontendv2pb.FrontendForQuerier/QueryResult [4.392, 5.725]
+   /grpc.Compactor/GetCacheGenNumbers [0.0, 0.01]
+   /grpc.Compactor/GetDeleteRequests [0.0, 0.01]
+   /grpc.health.v1.Health/Check [0.19, 0.267]
+   /logproto.Pusher/Push [4.714, 4.724]
+   /logproto.Querier/Query [0.175, 0.228]
+   /logproto.Querier/QuerySample [1.123, 1.443]
+   /logproto.StreamData/GetStreamRates [0.876, 0.886]
+   /schedulerpb.SchedulerForQuerier/QuerierLoop [0.0]
+   loki_api_v1_index_stats [1.869, 2.726]
+   loki_api_v1_push [4.705, 4.714]
+   loki_api_v1_query_range [2.714, 3.208]
+   loki_api_v1_status_buildinfo [0.029, 0.029]
+   metrics [0.067, 0.067]
+   ready [0.105, 0.105]
+ingest during it
+   [('21:52:00Z', 2), ('21:53:00Z', 3), ('21:53:30Z', 2), ('21:54:00Z', 1340), ('21:54:30Z', 3394), ('21:55:00Z', 3498), ('21:55:30Z', 3502), ('21:56:00Z', 3502), ('21:56:30Z', 3505), ('21:57:00Z', 3519), ('21:57:30Z', 3512), ('21:58:00Z', 3508), ('21:58:30Z', 1169)]
+what made the real queries at 22:19-22:24: by route, and status
+   {'route': 'loki_api_v1_index_stats', 'status_code': '200'} [0.952]
+   {'route': 'loki_api_v1_labels', 'status_code': '200'} [0.0]
+   {'route': 'loki_api_v1_query', 'status_code': '200'} [0.0]
+   {'route': 'loki_api_v1_query_range', 'status_code': '200'} [1.029]
+identity secret, plane-dev
+root and plane-dev Degraded ArgoAppDegraded pending state detail 21:16-21:26
+   {'alertstate': 'firing', 'name': 'plane-dev'} ['21:17:30Z', '21:18:00Z'] ... 9
+   {'alertstate': 'firing', 'name': 'root'} ['21:24:00Z', '21:24:30Z'] ... 5
+   {'alertstate': 'pending', 'name': 'plane-dev'} ['21:16:00Z', '21:16:30Z'] ... 13
+   {'alertstate': 'pending', 'name': 'root'} ['21:16:00Z', '21:16:30Z'] ... 16
+  up argocd-application-controller-metrics argocd-application-controller-0 [] n 18
+  up argocd-application-controller-metrics argocd-application-controller-0 [] n 7
+Same-counter comparison: real peak 1.98 req/s at 22:22:30Z (1.029 query_range, 0.952 index_stats) and 0.044 in flight. Test's query phase at 21:58:00Z: 6.868 req/s (3.982 query_range, 2.886 index_stats) and 8.4 in flight. The README's 0.33 is the load generator's q_ok of 40 in 120s.
+
+## 6. First boot of plane-dev, from published evidence
+plane-dev-firstboot-1.txt:76 opStart=2026-11-04T21:11:33Z opEnd=2026-11-04T21:46:40Z (35m07s). infisical-bootstrap-1.txt:1 started 21:25:31Z, :261 finished 21:25:44Z, so the wait ended 14m11s after the operation opened. StatefulSet pods created 21:29:03Z, Deployments 21:35:15Z, last Ready 21:42:43Z, migrate 21:46:29Z.
+ALERTS by 30s query_range: ArgoAppDegraded firing plane-dev 21:17:30Z to 21:19:00Z and 21:24:00Z to 21:26:00Z, pending 21:19:00Z to 21:23:30Z between them.
+
+## 7. Postgres pod cgroup, read at about 05:01Z, docker exec plane-platform-control-plane, read only
+pod 29b67aa8: low 0 high 0 max 876 oom 0 oom_kill 0; anon 8810496 file 71450624 shmem 43679744; postgres container max 2, limit 268435456, swap.max 0; pause container max 0, swap.max max
+
+## The scripts
+--- plant.sh
+#!/bin/bash
+# plant.sh <label> <function>: plant in the scratch clone, run the real checks, report, reset.
+R=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4
+cd "$R/p" || exit 9
+export PATH=/bin:/Users/bek/dev/pr/plane-platform/.tools/bin:$PATH
+route_body='apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+  namespace: monitoring
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`prometheus.localhost`)
+      kind: Rule
+      services:
+        - { name: kps-prometheus, port: 9090 }'
+indent() { sed 's/^/  /'; }
+as_list() { printf 'apiVersion: v1\nkind: List\nitems:\n'; printf '%s\n' "$route_body" | sed '1s/^/- /; 2,$s/^/  /' ; }
+as_list_ns() { printf 'apiVersion: v1\nkind: %s\nmetadata: {}\nitems:\n' "$1"; printf '%s\n' "$route_body" | sed '1s/^/- /; 2,$s/^/  /' ; }
+run() {
+  local label="$1"; shift
+  git checkout -q . ; git clean -fdq -e .tools -e .local
+  "$@" || { echo "$label: PLANT FAILED"; return; }
+  local s=0
+  SKIP_CHARTS=yes SKIP_FLOWS=yes ./scripts/ci/validate-manifests.sh > "$R/o.out" 2>&1 || s=$?
+  local why
+  why="$(grep -E 'FAIL - |FAILED|would read these|wraps other|Error|error:' "$R/o.out" | sed 's/\x1b\[[0-9;]*m//g' | cut -c1-170 | head -3 | tr '\n' ';')"
+  printf '%-58s validate exit=%s  %s\n' "$label" "$s" "$why"
+  git checkout -q . ; git clean -fdq -e .tools -e .local
+}
+--- cases1.sh
+#!/bin/bash
+source /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4/plant.sh
+D=gitops/platform/network-policies
+blank_route() { printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: planted\n  namespace: %s\nspec:\n  entryPoints: [web]\n  routes:\n    - match: Host(`logs.localhost`)\n      kind: Rule\n      services:\n        - { name: loki, port: 3100 }\n' "$1"; }
+tcp_route() { printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRouteTCP\nmetadata:\n  name: planted\n  namespace: %s\nspec:\n  entryPoints: [web]\n  routes:\n    - match: HostSNI(`*`)\n      services:\n        - { name: loki, port: 3100 }\n' "$1"; }
+c1() { blank_route '""' > $D/planted.yaml; }
+c2() { blank_route '' > $D/planted.yaml; }
+c3() { blank_route '~' > $D/planted.yaml; }
+c4() { blank_route 'null' > $D/planted.yaml; }
+c5() { tcp_route '""' > $D/planted.yaml; }
+c6() { tcp_route '' > $D/planted.yaml; }
+c7() { blank_route 'monitoring' > $D/planted.yaml; }   # control: named namespace
+c8() { blank_route 'plane-dev' > $D/planted.yaml; }    # control: a Plane namespace and an ordinary backend name should not need the allow list
+run 'IngressRoute namespace: "" to loki' c1
+run 'IngressRoute namespace: (blank) to loki' c2
+run 'IngressRoute namespace: ~ to loki' c3
+run 'IngressRoute namespace: null to loki' c4
+run 'TCP namespace: "" to loki' c5
+run 'TCP namespace: (blank) to loki' c6
+run 'IngressRoute namespace: monitoring to loki' c7
+run 'IngressRoute namespace: plane-dev, loki backend, other host' c8
+--- cases2.sh
+#!/bin/bash
+source /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4/plant.sh
+list_file() { as_list > "$1"; }
+c_np() { list_file gitops/platform/network-policies/planted.yaml; }
+c_apps() { list_file gitops/applications/planted.yaml; }
+c_route() { list_file gitops/bootstrap/argocd-route/planted.yaml; }
+c_inf() { list_file infisical/manifests/planted.yaml; }
+c_cml() { as_list_ns ConfigMapList > gitops/platform/network-policies/planted.yaml; }
+c_irl() { as_list_ns IngressRouteList > gitops/platform/network-policies/planted.yaml; }
+c_lower() { as_list_ns list > gitops/platform/network-policies/planted.yaml; }
+c_yml() { as_list > gitops/platform/network-policies/planted.yml; }
+c_json() { printf '{"apiVersion":"v1","kind":"List","items":[]}\n' > gitops/platform/network-policies/planted.json; }
+c_second_doc() { { printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n---\n'; as_list; } > gitops/platform/network-policies/planted.yaml; }
+# backup-storage is a kustomize root: listed in it
+c_kust() { as_list > gitops/platform/backup-storage/planted.yaml; printf 'resources:\n  - planted.yaml\n' >> gitops/platform/backup-storage/kustomization.yaml; }
+# monitoring/manifests/shared is listed by its own kustomization
+c_mon() { as_list > monitoring/manifests/shared/planted.yaml; python3 -B - <<'PY'
+import re
+p='monitoring/manifests/shared/kustomization.yaml'
+s=open(p).read()
+s2=re.sub(r'(?m)^resources:\n', 'resources:\n  - planted.yaml\n', s, count=1)
+assert s!=s2
+open(p,'w').write(s2)
+PY
+}
+# Beside the rendered manifests, which CI reads by name
+c_env_route() { printf '%s\n' "$route_body" > gitops/environments/dev/planted.yaml; }
+c_env_list() { as_list > gitops/environments/dev/planted.yaml; }
+# conftest's own document splitter: a separator that is not exactly ---
+c_sep_comment() { { printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n--- # a comment\n'; printf '%s\n' "$route_body"; } > gitops/platform/network-policies/planted.yaml; }
+c_sep_space() { { printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n--- \n'; printf '%s\n' "$route_body"; } > gitops/platform/network-policies/planted.yaml; }
+c_sep_inline() { { printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n--- {apiVersion: traefik.io/v1alpha1, kind: IngressRoute, metadata: {name: planted2, namespace: monitoring}, spec: {entryPoints: [web], routes: [{match: "Host(`prometheus.localhost`)", kind: Rule, services: [{name: kps-prometheus, port: 9090}]}]}}\n'; } > gitops/platform/network-policies/planted.yaml; }
+run 'List, gitops/platform/network-policies' c_np
+run 'List, gitops/applications' c_apps
+run 'List, gitops/bootstrap/argocd-route' c_route
+run 'List, infisical/manifests' c_inf
+run 'ConfigMapList with items' c_cml
+run 'IngressRouteList with items' c_irl
+run 'kind: list, lower case, with items' c_lower
+run 'List in .yml in a plain directory' c_yml
+run 'List in .json in a plain directory' c_json
+run 'List as the second document of a file' c_second_doc
+run 'List listed in a kustomization (backup-storage)' c_kust
+run 'List listed in monitoring/manifests/shared' c_mon
+run 'route beside manifests.yaml in environments/dev' c_env_route
+run 'List beside manifests.yaml in environments/dev' c_env_list
+run 'second doc after "--- # a comment"' c_sep_comment
+run 'second doc after "--- " (trailing space)' c_sep_space
+run 'second doc inline after "--- {"' c_sep_inline
+--- cases3.sh
+#!/bin/bash
+source /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4/plant.sh
+D=gitops/platform/network-policies
+cm='apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: planted
+  namespace: monitoring'
+sec='apiVersion: v1
+kind: Secret
+metadata:
+  name: planted
+  namespace: monitoring
+stringData:
+  note: planted'
+app='apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: planted
+  namespace: argocd
+spec:
+  project: default
+  destination: { server: https://kubernetes.default.svc, namespace: plane-dev }
+  source: { repoURL: git://plane-git/plane-platform.git, targetRevision: main, path: gitops/environments/dev }'
+ns='apiVersion: v1
+kind: Namespace
+metadata:
+  name: planted'
+run2() { # run2 <label> <fn>: both validate and ownership
+  local label="$1"; shift
+  git checkout -q . ; git clean -fdq -e .tools -e .local
+  "$@" || { echo "$label: PLANT FAILED"; return; }
+  local s=0 o=0
+  SKIP_CHARTS=yes SKIP_FLOWS=yes ./scripts/ci/validate-manifests.sh > "$R/o.out" 2>&1 || s=$?
+  ./scripts/ci/ownership.sh > "$R/o2.out" 2>&1 || o=$?
+  printf '%-52s validate=%s ownership=%s  %s\n' "$label" "$s" "$o" "$(cat "$R/o.out" "$R/o2.out" | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'FAIL - |FAILED|refuse|would read|is owned' | cut -c1-150 | head -2 | tr '\n' ';')"
+  git checkout -q . ; git clean -fdq -e .tools -e .local
+}
+c_route() { printf '%s\n--- # a comment\n%s\n' "$cm" "$route_body" > $D/planted.yaml; }
+c_cr() { printf '%s\n---\r\n%s\n' "$cm" "$route_body" > $D/planted.yaml; }
+c_secret() { printf '%s\n--- # a comment\n%s\n' "$cm" "$sec" > $D/planted.yaml; }
+c_app() { printf '%s\n--- # a comment\n%s\n' "$cm" "$app" > gitops/applications/planted.yaml; }
+c_list() { { printf '%s\n--- # a comment\n' "$cm"; as_list; } > $D/planted.yaml; }
+c_ns() { printf '%s\n--- # a comment\n%s\n' "$cm" "$ns" > $D/planted.yaml; }
+run2 'route, separator "--- # a comment"' c_route
+run2 'route, separator "---\r"' c_cr
+run2 'Secret, separator "--- # a comment"' c_secret
+run2 'Application in project default, "--- # a comment"' c_app
+run2 'List wrapping a route, "--- # a comment"' c_list
+run2 'Namespace, "--- # a comment"' c_ns
+--- cases4.sh
+#!/bin/bash
+source /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4/plant.sh
+D=gitops/platform/network-policies
+cm='apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: planted
+  namespace: monitoring'
+sec='apiVersion: v1
+kind: Secret
+metadata:
+  name: planted
+  namespace: monitoring
+stringData:
+  note: planted'
+fix() { python3 -B - <<'PY'
+p='scripts/ci/lib-manifests.sh'
+s=open(p).read()
+old='''      cat "$file"\n'''
+assert old in s
+open(p,'w').write(s.replace(old,'''      sed -E 's/^---.*$/---/' "$file"\n'''))
+PY
+}
+c_base() { fix; }
+c_route() { fix; printf '%s\n--- # a comment\n%s\n' "$cm" "$route_body" > $D/planted.yaml; }
+c_space() { fix; printf '%s\n--- \n%s\n' "$cm" "$route_body" > $D/planted.yaml; }
+c_cr() { fix; printf '%s\n---\r\n%s\n' "$cm" "$route_body" > $D/planted.yaml; }
+c_secret() { fix; printf '%s\n--- # a comment\n%s\n' "$cm" "$sec" > $D/planted.yaml; }
+c_list() { fix; { printf '%s\n--- # a comment\n' "$cm"; as_list; } > $D/planted.yaml; }
+run 'candidate fix, no plant (must stay green)' c_base
+run 'candidate fix, route after "--- # a comment"' c_route
+run 'candidate fix, route after "--- "' c_space
+run 'candidate fix, route after "---\r"' c_cr
+run 'candidate fix, Secret after "--- # a comment"' c_secret
+run 'candidate fix, List after "--- # a comment"' c_list
+--- cases6.sh
+#!/bin/bash
+source /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4/plant.sh
+export PATH=/Users/bek/dev/pr/plane-platform/.tools/bin:$PATH
+python3 -B - <<'PY'
+PY
+wrap_values() { cat >> helm/values/traefik.yaml <<'YAML'
+
+extraObjects:
+  - apiVersion: v1
+    kind: List
+    items:
+      - apiVersion: traefik.io/v1alpha1
+        kind: IngressRoute
+        metadata:
+          name: planted
+          namespace: monitoring
+        spec:
+          entryPoints: [web]
+          routes:
+            - match: Host(`prometheus.localhost`)
+              kind: Rule
+              services:
+                - { name: kps-prometheus, port: 9090 }
+YAML
+}
+plain_values() { cat >> helm/values/traefik.yaml <<'YAML'
+
+extraObjects:
+  - apiVersion: traefik.io/v1alpha1
+    kind: IngressRoute
+    metadata:
+      name: planted
+      namespace: monitoring
+    spec:
+      entryPoints: [web]
+      routes:
+        - match: Host(`prometheus.localhost`)
+          kind: Rule
+          services:
+            - { name: kps-prometheus, port: 9090 }
+YAML
+}
+git checkout -q .; git clean -fdq -e .tools -e .local
+yq -e 'has("extraObjects")' helm/values/traefik.yaml >/dev/null 2>&1 && echo "traefik values already set extraObjects"
+for c in plain_values wrap_values; do
+  git checkout -q .; git clean -fdq -e .tools -e .local
+  $c
+  s=0; SKIP_FLOWS=yes ./scripts/ci/validate-manifests.sh > "$R/o.out" 2>&1 || s=$?
+  printf '%-14s full validate (charts, no flows) exit=%s  ' "$c" "$s"
+  sed 's/\x1b\[[0-9;]*m//g' "$R/o.out" | grep -E 'FAIL - |FAILED|wraps other' | sed -E 's#/var/folders/[^ ]*/charts/##' | cut -c1-170 | head -2 | tr '\n' ';'; echo
+  if [ "$c" = wrap_values ]; then sed 's/\x1b\[[0-9;]*m//g' "$R/o.out" | grep -E 'kubeconform: platform charts|conftest: platform charts|tests,|manifests valid|manifest check' | cut -c1-110 | tail -5; fi
+done
+git checkout -q .; git clean -fdq -e .tools -e .local
+--- cases7.sh
+#!/bin/bash
+source /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4/plant.sh
+D=gitops/platform/network-policies
+cm='apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: planted
+  namespace: monitoring'
+sec='apiVersion: v1
+kind: Secret
+metadata:
+  name: planted
+  namespace: monitoring
+stringData:
+  note: planted'
+c_base() { :; }
+c_route() { printf '%s\n--- # a comment\n%s\n' "$cm" "$route_body" > $D/planted.yaml; }
+c_secret() { printf '%s\n--- # a comment\n%s\n' "$cm" "$sec" > $D/planted.yaml; }
+c_env() { printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: planted\n  namespace: plane-dev\nspec:\n  entryPoints: [web]\n  routes:\n    - match: Host(`plane.prod-sim.localhost`)\n      kind: Rule\n      services:\n        - { name: plane-api, port: 8000 }\n' > gitops/environments/dev/planted.yaml; }
+run 'HEAD, no plant' c_base
+run 'HEAD, route after "--- # a comment"' c_route
+run 'HEAD, Secret after "--- # a comment"' c_secret
+run 'HEAD, dev route on the prod-sim host, in a sibling .yaml' c_env
+--- charts.sh
+#!/bin/bash
+R=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-alerts-4
+cd "$R/p" || exit 9
+source scripts/lib/common.sh
+source scripts/ci/lib-manifests.sh
+OUT="$R/charts"; mkdir -p "$OUT"
+s=0; render_platform_charts "$OUT" || s=$?; echo "render exit=$s"
+ls "$OUT"/*.yaml | wc -l
+echo "--- kinds ending in List, or documents with a top-level items array, in real renders"
+yq -N -r 'select((.kind // "" | test("List$")) or (.items | type == "!!seq")) | filename + " " + .kind' "$OUT"/*.yaml | sed "s#$OUT/##" | sort | uniq -c | head -20
+s=0; conftest test --policy policy --no-color --namespace charts --namespace plane "$OUT"/*.yaml > "$R/c1.out" 2>&1 || s=$?; echo "conftest charts,plane on real renders exit=$s: $(tail -1 "$R/c1.out" | cut -c1-90)"
+s=0; conftest test --policy policy --no-color --namespace gitops "$OUT"/*.yaml > "$R/c2.out" 2>&1 || s=$?; echo "conftest gitops on real renders exit=$s: $(tail -1 "$R/c2.out" | cut -c1-90)"
+grep -E '^FAIL' "$R/c2.out" | sed "s#$OUT/##" | cut -c1-170 | sort | uniq -c | sort -rn | head -12
+--- gen.py
+# My own prediction, written before running: on a 30s series whose operation opens at 0,
+# ArgoSyncFailed is firing at 15m exactly when the last open sample is after 13m, whatever the first Degraded.
+# ArgoAppDegraded is firing at first Degraded + 5m exactly when a Degraded sample exists at that moment.
+out=["rule_files:\n  - rules-platform.yaml\nevaluation_interval: 15s\ntests:\n"]
+for D in (10.0,10.5,11.0,12.0):
+  for L in (12.5,13.0,13.5,14.0):
+    if L<D: continue
+    n=f"d{int(D*2)}-l{int(L*2)}"
+    p=int(D*2); last=int(L*2)
+    fires = L>13.0
+    exp = f"          - labels: 'ALERTS{{alertname=\"ArgoSyncFailed\",alertstate=\"firing\",component=\"argocd\",dest_namespace=\"plane-dev\",name=\"{n}\",phase=\"Running\",severity=\"critical\"}}'\n            value: 1\n" if fires else ""
+    out.append(f"""  - name: {n}
+    interval: 30s
+    input_series:
+      - series: 'argocd_app_info{{name="{n}",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}}'
+        values: '1x{p-1} stale'
+      - series: 'argocd_app_info{{name="{n}",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}}'
+        values: '_x{p} 1x{last-p} stale'
+    promql_expr_test:
+      - expr: ALERTS{{alertname="ArgoSyncFailed",alertstate="firing",name="{n}"}}
+        eval_time: 15m
+        exp_samples:{(chr(10)+exp) if fires else " []"+chr(10)}""")
+for lastoff,fires in ((4.5,False),(5.0,True)):
+    D=10.0; n=f"deg-{int(lastoff*2)}"; p=int(D*2); k=int(lastoff*2)
+    exp = f"          - labels: 'ALERTS{{alertname=\"ArgoAppDegraded\",alertstate=\"firing\",component=\"argocd\",dest_namespace=\"plane-dev\",health_status=\"Degraded\",name=\"{n}\",severity=\"critical\"}}'\n            value: 1\n" if fires else ""
+    out.append(f"""  - name: {n}
+    interval: 30s
+    input_series:
+      - series: 'argocd_app_info{{name="{n}",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}}'
+        values: '_x{p} 1x{k} stale'
+    promql_expr_test:
+      - expr: ALERTS{{alertname="ArgoAppDegraded",alertstate="firing",name="{n}"}}
+        eval_time: 15m
+        exp_samples:{(chr(10)+exp) if fires else " []"+chr(10)}""")
+print("".join(out),end="")
+--- q3.py
+import json,urllib.request,urllib.parse,calendar,time,datetime as dt
+P="http://prometheus.localhost/api/v1"
+def qr(expr,start,end,step):
+    u=P+"/query_range?"+urllib.parse.urlencode(dict(query=expr,start=start,end=end,step=step))
+    d=json.load(urllib.request.urlopen(u,timeout=90)); return d["data"]["result"]
+ts=lambda s:calendar.timegm(time.strptime(s,"%Y-%m-%dT%H:%M:%SZ"))
+z=lambda t:dt.datetime.fromtimestamp(t,dt.timezone.utc).strftime("%H:%M:%SZ")
+R='route=~"loki_api_v1_(query|query_range|index_stats|series|labels|index_volume.*)"'
+A=ts("2026-11-04T21:40:00Z");B=ts("2026-11-04T22:02:00Z")
+for label,expr in (("count rate by route",'sum by (route) (rate(loki_request_duration_seconds_count{%s}[2m]))'%R),("sum rate by route",'sum by (route) (rate(loki_request_duration_seconds_sum{%s}[2m]))'%R)):
+    print(label)
+    for s in qr(expr,A,B,60):
+        v=[(float(a),float(b)) for a,b in s["values"] if float(b)>0]
+        print("  ",s["metric"].get("route"),[(z(t),round(x,3)) for t,x in v])
+print("all routes, whichever, at the test phase 21:55-21:58")
+for s in qr('sum by (route) (rate(loki_request_duration_seconds_count[2m]))',ts("2026-11-04T21:57:00Z"),ts("2026-11-04T21:57:30Z"),30):
+    print("  ",s["metric"].get("route"),[round(float(b),3) for a,b in s["values"]])
+print("ingest during it");
+for s in qr('sum(rate(loki_distributor_bytes_received_total[1m]))',ts("2026-11-04T21:52:00Z"),ts("2026-11-04T21:58:30Z"),30):
+    print("  ",[(z(float(a)),int(float(b)/1000)) for a,b in s["values"]])
+print("what made the real queries at 22:19-22:24: by route, and status")
+for s in qr('sum by (route,status_code) (rate(loki_request_duration_seconds_count{%s}[2m]))'%R,ts("2026-11-04T22:22:30Z"),ts("2026-11-04T22:22:30Z"),30):
+    print("  ",s["metric"],[round(float(b),3) for a,b in s["values"]])
+print("identity secret, plane-dev")
+for s in qr('kube_secret_created{secret="plane-infisical-identity",namespace="plane-dev"}',ts("2026-11-04T21:00:00Z"),ts("2026-11-04T22:00:00Z"),60):
+    vs=sorted(set(b for a,b in s["values"])); print("  created",[z(float(x)) for x in vs], "first seen",z(float(s["values"][0][0])))
+for name in ("plane-pgdb","plane-app-env"):
+  for s in qr('kube_secret_created{secret="%s",namespace="plane-dev"}'%name,ts("2026-11-04T21:00:00Z"),ts("2026-11-04T22:00:00Z"),60):
+    vs=sorted(set(b for a,b in s["values"])); print(" ",name,"created",[z(float(x)) for x in vs], "first seen",z(float(s["values"][0][0])))
+print("root and plane-dev Degraded ArgoAppDegraded pending state detail 21:16-21:26")
+for s in qr('max by (alertstate,name) (ALERTS{alertname="ArgoAppDegraded",name=~"plane-dev|root"})',ts("2026-11-04T21:16:00Z"),ts("2026-11-04T21:26:30Z"),30):
+    print("  ",s["metric"],[z(float(a)) for a,b in s["values"]][:2],"...",len(s["values"]))
+for s in qr('up{job=~".*argocd.*metrics.*|.*application-controller.*"}',ts("2026-11-04T21:15:00Z"),ts("2026-11-04T21:27:00Z"),30):
+    print("  up",s["metric"].get("job"),s["metric"].get("pod"),[z(float(a)) for a,b in s["values"] if b=="0"][:6], "n",len(s["values"]))

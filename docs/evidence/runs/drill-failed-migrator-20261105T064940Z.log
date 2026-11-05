@@ -1,0 +1,97 @@
+drill failed-migrator started 2026-11-05T06:49:40Z by: tests/drills/failed-migrator.sh
+
+--- 0. Preflight
+PASS  plane-dev is Synced and Healthy, its backend is localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+BEFORE  deployment	plane-admin-wl	12	localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+BEFORE  deployment	plane-api-wl	14	localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+BEFORE  deployment	plane-beat-worker-wl	11	localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+BEFORE  deployment	plane-live-wl	7	docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+BEFORE  deployment	plane-space-wl	12	localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+BEFORE  deployment	plane-web-wl	14	localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+BEFORE  deployment	plane-worker-wl	11	localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+BEFORE  pod	plane-admin-wl-545f5b8fcd-8prz5	72dbb7a0-6c12-4c06-aaa7-4a8f3b9f369c
+BEFORE  pod	plane-api-wl-d7d5dcb7f-7xq5z	6d62f9b8-61a3-41e1-a1c7-d7a8c5558562
+BEFORE  pod	plane-beat-worker-wl-645c56988f-bwtg8	f780710f-66c7-4909-b791-00c607e59560
+BEFORE  pod	plane-live-wl-5744d85f8b-qdb9d	4b8adf33-d9f9-4b7c-abec-15b88812c6bb
+BEFORE  pod	plane-space-wl-847f88bc46-pchg4	439442e5-0e29-46e7-a69c-df2ef68899c9
+BEFORE  pod	plane-web-wl-748764649d-5swbd	085a3194-c2df-4152-9f58-3b565f5f6753
+BEFORE  pod	plane-worker-wl-7f4494fd56-q4gs2	7a42e003-e945-44ec-b9da-35d282b52a96
+
+--- 1. Build a backend whose migrator exits 1
+sha256:05f9e462d19518b76d9069c330c9d5257f96b46cf3b3ac06d52e6bc308102c91
+PASS  pushed localhost:5001/throwaway/backend-failing-migrator:dep3, sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+
+--- 2. Promote it through the real path
+[1;34m==>[0m Promotion plan for dev
+    plane-backend -> localhost:5001/throwaway/backend-failing-migrator@sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 91391ab: promote(dev): plane-backend abb6d359d8ab
+[1;33mwarn[0m publishing 7 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       91391ab promote(dev): plane-backend abb6d359d8ab
+       1c6adbe test(drills): add a drill for a migrator that fails, because DEP-3 had no way to run
+       29316f2 promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08
+       91ef477 Revert "promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08"
+       b7d1bfa Revert "promote(dev): plane-frontend 000000000000"
+[1;32m ok[0m published main 91391ab845cd to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+AT    2026-11-05T06:49:43Z +0s  promotion published
+PASS  promotion committed and published as 91391ab845cd
+
+--- 3. Argo CD runs the hook with the bad image
+AT    2026-11-05T06:49:59Z +16s  the migrator Job names the bad digest
+PASS  the migrator Job runs the bad digest
+
+--- 4. The hook fails, and nothing in wave 3 moves
+MIGRATOR LOG  tests/drills/failed-migrator.sh: this migrator exits 1 on purpose, and changed nothing
+AT    2026-11-05T06:50:41Z +58s  the Job failed: BackoffLimitExceeded, Job has reached the specified backoff limit
+AT    2026-11-05T06:50:41Z +58s  the Application reports it: OutOfSync/Healthy/Running: one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 6:51AM.
+AT    2026-11-05T06:55:43Z +360s  stopped holding: OutOfSync/Healthy/Running: one or more synchronization tasks completed unsuccessfully. Retrying attempt #3 at 6:57AM.
+{"status":{"active":null,"failed":1,"succeeded":null,"conditions":[{"type":"FailureTarget","reason":"BackoffLimitExceeded"},{"type":"Failed","reason":"BackoffLimitExceeded"}]},"image":"localhost:5001/throwaway/backend-failing-migrator@sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c"}
+PASS  the migrator Job failed
+PASS  the Application reports the failure
+PASS  wave 3 did not move: Deployment generations, images and pods equal the start on all 67 samples
+PASS  plane.dev.localhost answered 200 on all 67 samples
+
+--- 5. git revert restores
+[1;34m==>[0m Rolling back: 91391ab promote(dev): plane-backend abb6d359d8ab
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 9891630: Revert "promote(dev): plane-backend abb6d359d8ab"
+[1;33mwarn[0m publishing 9 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       9891630 Revert "promote(dev): plane-backend abb6d359d8ab"
+       06274c2 docs(infisical): record the final harness, the mutants, the stop sweep and the first real Job with the new lines
+       91391ab promote(dev): plane-backend abb6d359d8ab
+       1c6adbe test(drills): add a drill for a migrator that fails, because DEP-3 had no way to run
+       29316f2 promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08
+[1;32m ok[0m published main 9891630da5ea to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+AT    2026-11-05T06:55:45Z +362s  revert published
+PASS  main reverts 91391ab845cd
+PASS  rendered dev manifests no longer name the bad digest
+AT    2026-11-05T06:59:56Z +613s  plane-dev is Synced and Healthy with no operation open
+PASS  plane-dev is Synced and Healthy again
+PASS  the migrator Job ran again on the old image and succeeded
+PASS  the failure and the recovery changed no Deployment and replaced no pod
+PASS  plane.dev.localhost answers 200
+PASS  prod-sim's manifests did not move
+
+--- 6. What fired, as Prometheus itself reported it
+Prometheus http://prometheus.localhost/api/v1/alerts, every 15s since 2026-11-05T06:49:40Z. Raw: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-failed-migrator-20261105T064940Z-alerts.tsv
+AT START      severity= first_pending=- first_firing=- last_seen=# 2026-11-05T06:49:40Z tests/drills/failed-migrator.sh. utc, state, alert, severity, active since, labels. Also: utc, none or no-reading, and utc, application, sync/health/operation phase. 
+FIRED        Watchdog severity=none first_pending=- first_firing=2026-11-05T06:49:40Z last_seen=2026-11-05T07:02:44Z 
+PENDING ONLY ArgoAppOutOfSync severity=warning first_pending=2026-11-05T06:50:40Z first_firing=- last_seen=2026-11-05T06:56:27Z component=argocd,dest_namespace=plane-dev,name=plane-dev
+PENDING ONLY ArgoSyncFailed severity=critical first_pending=2026-11-05T06:50:40Z first_firing=- last_seen=2026-11-05T07:01:59Z component=argocd,dest_namespace=plane-dev,name=plane-dev,phase=Running
+PENDING ONLY KubeJobFailed severity=warning first_pending=2026-11-05T06:51:25Z first_firing=- last_seen=2026-11-05T07:00:13Z condition=true,container=kube-state-metrics,endpoint=http,instance=10.244.0.41:8080,job=kube-state-metrics,job_name=plane-api-migrate-1,namespace=plane-dev,pod=kps-kube-state-metrics-58c95899dd-s8bb4,service=kps-kube-state-metrics
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:52:26Z first_firing=- last_seen=2026-11-05T06:56:42Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-kube-prometheus-general.rules-b7e0511c-ff93-47fe-8be7-570b95ff659f.yaml;kube-prometheus-general.rules,service=kps-prometheus
+PENDING ONLY PrometheusMissingRuleEvaluations severity=warning first_pending=2026-11-05T06:56:27Z first_firing=- last_seen=2026-11-05T07:00:43Z container=prometheus,endpoint=http-web,instance=10.244.0.129:9090,job=kps-prometheus,namespace=monitoring,pod=prometheus-kps-prometheus-0,rule_group=/etc/prometheus/rules/prometheus-kps-prometheus-rulefiles-0/monitoring-kps-k8s.rules.container-cpu-usage-seconds-total-4525d31d-a033-4ab7-b35d-6fced37e9d3d.yaml;k8s.rules.container_cpu_usage_seconds_total,service=kps-prometheus
+APP   2026-11-05T06:49:40Z  Synced/Healthy/Succeeded
+APP   2026-11-05T06:49:55Z  OutOfSync/Healthy/Running
+APP   2026-11-05T06:55:57Z  Synced/Healthy/Running
+APP   2026-11-05T06:59:58Z  Synced/Healthy/Succeeded
+SINK  nothing but Watchdog since 2026-11-05T06:49:40Z
+
+--- 7. Remove the throwaway image
+registry DELETE of the throwaway manifest: HTTP 202
+tags left in localhost:5001/throwaway/backend-failing-migrator: {"name":"throwaway/backend-failing-migrator","tags":[]}
+PASS  the throwaway image is not on the node
+
+RESULT PASS   evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log

@@ -1,0 +1,55 @@
+# In-place restore with another token in place and the file this backup names in an archive. 2026-11-05T02:30:21Z, backup 20261105T022627Z, code at 218f423
+VM before: 10084 MiB used of 13959
+Plane lines compared: 81
+[1;34m==>[0m Verifying 20261105T022627Z
+[1;32m ok[0m checksums: 7 files match
+[1;32m ok[0m key-fingerprint: ENCRYPTION_KEY matches the backup
+[1;32m ok[0m version: backup v0.167.6, running v0.167.6
+[1;32m ok[0m overwrite-guard: target holds 1 users and 0 objects, overwriting on CONFIRM=yes
+[1;34m==>[0m Pausing auto-sync: infisical
+[1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] NOTICE:  database "infisical_restoring" does not exist, skipping
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] vacuumdb: vacuuming database "infisical_restoring"
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] GATE1 ok: 785 tables equal the backup
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] NOTICE:  database "infisical_replaced" does not exist, skipping
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] ALTER DATABASE
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] ALTER DATABASE
+[pod/plane-restore-20261105t023024z-w5jx6/postgres] swapped in: infisical is now the restored database
+[1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+[1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+[1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+[1;32m ok[0m server-downtime: told to stop at 2026-11-05T02:30:35Z, answering by 2026-11-05T02:31:32Z, 57s
+[1;32m ok[0m proof-initialized: the server reads the restored admin config
+[1;32m ok[0m put back infisical-admin.json from archive-test-20261105T023021Z/infisical-admin.json
+[1;32m ok[0m admin-token: the file this backup names, and the server accepts it
+[1;32m ok[0m proof-values: every Plane secret decrypts to the value, version and id the backup recorded
+[1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+[1;32m ok[0m auto-sync restored on infisical
+[1;32m ok[0m restore of 20261105T022627Z into infisical complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-infisical-20261105T023024Z.json
+make restore exit=0, took 69s
+probe of /api/status, one a second: 70 samples, 50 not 200, first 02:30:35, last 02:31:26
+02:30:35 503
+02:30:39 503
+02:30:44 503
+02:30:49 503
+02:30:55 503
+02:31:00 503
+02:31:05 503
+02:31:10 503
+02:31:16 503
+02:31:21 503
+02:31:26 503
+evidence: restore-infisical-20261105T023024Z.json
+{"result":"PASS","not_run":[],"steps":["checksums=PASS","key-fingerprint=PASS","version=PASS","overwrite-guard=PASS","app-stopped=PASS","postgres=PASS","redis=PASS","proof-status=PASS","server-downtime=PASS","proof-initialized=PASS","admin-token=PASS","proof-values=PASS"]}
+server-downtime: told to stop at 2026-11-05T02:30:35Z, answering by 2026-11-05T02:31:32Z, 57s
+admin-token: the file this backup names, and the server accepts it
+lines that differ in Plane pod uids and restart counts, workload generations, Secret resourceVersions: 0
+VM after: 10052 MiB used of 13959
+OOM kills in the node's kernel log since boot: 0
+Applications not Synced and Healthy: 
+auto-sync paused on: 
+
+# After it. 2026-11-05T02:31:37Z
+the file is the old one again: yes
+the password is the old one: yes
+tokens on the identity: [{"name":"Instance Admin Token","revoked":false}]

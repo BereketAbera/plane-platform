@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""Item 4 and 9: tests/separation/network.py with kubectl stubbed, so nothing reaches a pod. Each case is run in a new process,
+because the module holds one report."""
+import json, subprocess, sys
+CASES = sys.argv[1:] 
+sys.path.insert(0, "/Users/bek/dev/pr/plane-platform/tests/separation")
+if len(sys.argv) == 2 and sys.argv[1].startswith("case="):
+    case = sys.argv[1][5:]
+    import network as N
+    from types import SimpleNamespace as R
+    pods = {"items": []}
+    for ns in ("plane-dev", "plane-prod-sim"):
+        pass
+    def pod_list(ns):
+        names = ["plane-api-wl-x", "plane-worker-wl-x", "plane-beat-worker-wl-x", "plane-live-wl-x", "plane-space-wl-x", "plane-web-wl-x", "plane-admin-wl-x",
+                 "plane-pgdb-wl-0", "plane-redis-wl-0", "plane-rabbitmq-wl-0", "plane-minio-wl-0"]
+        return {"items": [{"metadata": {"name": n}, "status": {"phase": "Running", "podIP": f"10.244.{1 if ns == 'plane-dev' else 2}.{i+1}"}, "spec": {}} for i, n in enumerate(names)]}
+    def verdicts(targets, ns, pod):
+        out = []
+        for t in targets:
+            control = t["name"] == "dns-tcp"
+            own = t["host"].startswith(f"10.244.{1 if ns == 'plane-dev' else 2}.") or f".{ns}." in t["host"]
+            if control:
+                verdict = "TIMEOUT" if case == "dead-control" and pod.startswith("plane-worker") else "CONNECTED"
+            elif own and t["name"] in N.OWN_ALLOWED:
+                verdict = "CONNECTED"
+            else:
+                verdict = "TIMEOUT"
+            out.append({**t, "ip": "10.244.9.9", "verdict": verdict, "seconds": 5})
+        return out
+    def kubectl(*args, stdin=None, timeout=120):
+        args = list(args)
+        if args[:1] == ["-n"] and args[2:4] == ["get", "pods"]:
+            return R(returncode=0, stdout=json.dumps(pod_list(args[1])), stderr="")
+        assert args[2] == "exec", args
+        ns = args[1]
+        pod = args[4] if args[3] == "-i" else args[3]
+        rest = args[args.index("--") + 1:]
+        if rest[0] == "python" and rest[2] == N.PY_PROBE or rest[0] == "node":
+            return R(returncode=0, stdout=json.dumps(verdicts(json.loads(stdin), ns, pod)), stderr="")
+        if rest[0] == "sh" and rest[2] == N.SH_PROBE:
+            lines = [dict(zip(("name", "host", "port", "via"), l.split())) for l in stdin.splitlines()]
+            for l in lines:
+                l["port"] = int(l["port"])
+            rows = verdicts(lines, ns, pod)
+            text = []
+            for r in rows:
+                if r["verdict"] == "CONNECTED":
+                    text.append(f"{r['name']} {r['host']} {r['port']} {r['via']} 0 0 ")
+                else:
+                    text.append(f"{r['name']} {r['host']} {r['port']} {r['via']} 1 5 nc:_timed_out")
+            if case == "shell-empty":
+                # The reviewer's case: the exec exits 0 and prints nothing, as SH_PROBE did on a read-only root.
+                return R(returncode=0, stdout="", stderr="mktemp: failed to create directory")
+            if case == "shell-partial" and pod == "plane-web-wl-x":
+                return R(returncode=0, stdout="\n".join(text[:5]) + "\ngarbage line\n", stderr="")
+            if case == "shell-exit125":
+                # What the new SH_PROBE does on that root: it stops, and the exec says so.
+                return R(returncode=125, stdout="", stderr="mktemp: failed to create directory")
+            return R(returncode=0, stdout="\n".join(text) + "\n", stderr="")
+        if rest[0] == "python" and rest[2] == N.REAL_CLIENTS:
+            target = rest[3]
+            own = target == ns
+            lines = []
+            for client in ("psycopg", "redis-py", "amqp", "boto3"):
+                lines.append(json.dumps({"client": client, "target_namespace": target, "verdict": "CONNECTED" if own else "TimeoutError", "seconds": 0.1 if own else 5, "detail": "ok" if own else "timed out"}))
+            return R(returncode=0, stdout="\n".join(lines) + "\n", stderr="")
+        if rest[0] == "sh" and "pg_isready" in rest[2]:
+            return R(returncode=0, stdout="no response\npg_isready rc=2 seconds=5\n", stderr="")
+        if rest[0] == "sh" and "valkey-cli" in rest[2]:
+            return R(returncode=0, stdout="valkey-cli rc=124 seconds=5\n", stderr="")
+        raise AssertionError(args)
+    N.kubectl = kubectl
+    N.require_environments = lambda: None
+    N.read_secrets = lambda: {}
+    original = N.report.say
+    shown = {"BLOCKED": 0, "FAIL": 0}
+    counted = {"BLOCKED": 0, "FAIL": 0, "PASS": 0}
+    def say(text=""):
+        word = text.split(" ", 1)[0]
+        if word in counted:
+            counted[word] += 1
+        if word in shown and shown[word] < 2:
+            shown[word] += 1
+            original(text[:300])
+        elif "RESULT" in text:
+            original(text.strip())
+    N.report.say = say
+    code = N.main()
+    print(f"lines: {counted}, exit {code}")
+    sys.exit(code)
+
+for case, want in (("normal", 0), ("shell-empty", 2), ("shell-exit125", 2), ("shell-partial", 2), ("dead-control", 1)):
+    print(f"== {case}, want exit {want}", flush=True)
+    done = subprocess.run([sys.executable, "-B", __file__, f"case={case}"], capture_output=True, text=True)
+    print(done.stdout + done.stderr[-2000:], flush=True)
+    assert done.returncode == want, case
+print("all as wanted")

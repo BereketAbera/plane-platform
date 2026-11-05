@@ -1,0 +1,4 @@
+# 2026-11-05T04:53:05Z
+# GATE2 comparison on the newest real backups, read only, with a local pg_restore -a -t file_assets, the same conditions as the Job: is_uploaded AND NOT is_deleted AND deleted_at IS NULL, against the files under objects/
+dev 20261105T000616Z rows 34 marked uploaded 23 with no object 0
+prod-sim 20261105T022025Z rows 41 marked uploaded 28 with no object 0

@@ -1,0 +1,19 @@
+# 2026-11-05T02:39:58Z, commit 053ebf2, scripts/test-netpol.sh last changed in 62300a7. Command: /bin/bash scripts/test-netpol.sh --selftest. bash 3.2.57(1)-release. No cluster.
+ ok selftest passed
+# exit status of the same command, run again unpiped: 0
+#
+# This file first held the line below with no date or command, written 2026-11-05T01:02:42Z by its mtime, which is the moment of commit 01ab74c and a smaller table.
+#    ok selftest passed
+#
+# The same selftest against scope_of, witness_of and decide from the commit before 62300a7, in a copy in a scratch directory, to show it can fail:
+#   FAIL decide deny TIMEOUT outside ready=- witness=NO_READING reference=yes: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+#   FAIL decide deny DNS outside ready=- witness=ANSWERED reference=yes: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+#   FAIL decide deny DNS outside ready=- witness=NO_READING reference=yes: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+#   FAIL decide allow DNS outside ready=- witness=ANSWERED reference=yes: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+#   FAIL witness_of asked=yes before=- after=-: got NONE, want NO_READING
+#   FAIL witness_of asked=yes before=ANSWERED after=-: got SILENT, want NO_READING
+#   FAIL witness_of asked=yes before=- after=ANSWERED: got ANSWERED, want NO_READING
+#   FAIL scope_of local
+#   FAIL scope_of cluster
+#   fail selftest: 9 failed
+#   exit 1

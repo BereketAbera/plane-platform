@@ -1,0 +1,62 @@
+# MON-2 side watcher, read-only
+# date_utc: 2026-11-05T06:06:53Z
+# commit: 0bd3e2d
+# command: python3 -B /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/mon/watch.py prod-sim .local/evidence-raw/MON-2-20261105T060633Z-watch.txt /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/mon/MON-2.stop 1500
+{"t": "2026-11-05T06:06:53.317Z", "src": "prometheus", "alerts": [{"labels": {"alertname": "Watchdog", "severity": "none"}, "state": "firing", "activeAt": "2026-11-05T00:34:26.617154565Z"}]}
+{"t": "2026-11-05T06:06:53.330Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 32}
+{"t": "2026-11-05T06:06:53.332Z", "src": "alertmanager", "alerts": [{"fingerprint": "d68248beabce3f14", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-prometheus", "severity": "none"}, "state": "active", "inhibitedBy": [], "silencedBy": [], "startsAt": "2026-11-04T21:35:26.617Z"}]}
+{"t": "2026-11-05T06:06:53.372Z", "src": "deployment", "spec_replicas": 1, "status": {"replicas": 1, "readyReplicas": 1, "availableReplicas": 1, "unavailableReplicas": null, "updatedReplicas": 1}}
+{"t": "2026-11-05T06:06:53.388Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 90}
+{"t": "2026-11-05T06:06:53.399Z", "src": "node", "used_gib": 9.78, "avail_gib": 3.85, "oom_kill": 62, "node_minus_host_s": 0.038}
+{"t": "2026-11-05T06:06:53.415Z", "src": "pods", "pods": [{"name": "plane-api-wl-c4f9658c9-5k6hn", "phase": "Running", "deleting": null, "conditions": {"PodReadyToStartContainers": ["True", "2026-11-05T05:34:31Z"], "Initialized": ["True", "2026-11-05T05:34:30Z"], "Ready": ["True", "2026-11-05T05:35:06Z"], "ContainersReady": ["True", "2026-11-05T05:35:06Z"], "PodScheduled": ["True", "2026-11-05T05:34:30Z"]}, "restarts": [0]}]}
+{"t": "2026-11-05T06:06:53.453Z", "src": "endpoints", "endpoints": [{"addresses": ["10.244.0.247"], "conditions": {"ready": true, "serving": true, "terminating": false}}]}
+{"t": "2026-11-05T06:06:53.518Z", "src": "argo", "apps": [{"name": "root", "sync": "Synced", "health": "Healthy", "op": "Succeeded", "op_started": "2026-11-05T00:34:05Z", "automated": {"prune": true, "selfHeal": true}}, {"name": "plane-dev", "sync": "Synced", "health": "Healthy", "op": "Succeeded", "op_started": "2026-11-05T05:29:48Z", "automated": {"prune": true, "selfHeal": true}}, {"name": "plane-prod-sim", "sync": "Synced", "health": "Healthy", "op": "Succeeded", "op_started": "2026-11-05T05:34:07Z", "automated": {"prune": true, "selfHeal": true}}]}
+{"t": "2026-11-05T06:06:56.313Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:06:59.314Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:02.323Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 10}
+{"t": "2026-11-05T06:07:03.319Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:07:05.324Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 4}
+{"t": "2026-11-05T06:07:08.330Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 10}
+{"t": "2026-11-05T06:07:11.338Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 16}
+{"t": "2026-11-05T06:07:13.322Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 13}
+{"t": "2026-11-05T06:07:14.330Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:07:17.334Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:20.335Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:07:23.325Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 7}
+{"t": "2026-11-05T06:07:23.359Z", "src": "node", "used_gib": 9.71, "avail_gib": 3.92, "oom_kill": 62, "node_minus_host_s": 0.017}
+{"t": "2026-11-05T06:07:23.382Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 49}
+{"t": "2026-11-05T06:07:26.340Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 7}
+{"t": "2026-11-05T06:07:29.343Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:32.357Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 12}
+{"t": "2026-11-05T06:07:33.334Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 7}
+{"t": "2026-11-05T06:07:35.356Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:07:38.367Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:41.370Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 7}
+{"t": "2026-11-05T06:07:43.333Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:44.374Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:47.382Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:07:50.393Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 12}
+{"t": "2026-11-05T06:07:53.339Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:53.368Z", "src": "node", "used_gib": 9.84, "avail_gib": 3.8, "oom_kill": 62, "node_minus_host_s": 0.018}
+{"t": "2026-11-05T06:07:53.395Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:56.397Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:07:59.401Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 7}
+{"t": "2026-11-05T06:08:02.402Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:08:03.356Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 14}
+{"t": "2026-11-05T06:08:05.417Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 12}
+{"t": "2026-11-05T06:08:08.415Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:08:11.423Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 7}
+{"t": "2026-11-05T06:08:13.356Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:08:14.426Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 9}
+{"t": "2026-11-05T06:08:17.423Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 6}
+{"t": "2026-11-05T06:08:20.437Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 12}
+{"t": "2026-11-05T06:08:23.370Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 11}
+{"t": "2026-11-05T06:08:23.389Z", "src": "node", "used_gib": 9.85, "avail_gib": 3.78, "oom_kill": 62, "node_minus_host_s": 0.022}
+{"t": "2026-11-05T06:08:23.450Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 18}
+{"t": "2026-11-05T06:08:26.446Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 10}
+{"t": "2026-11-05T06:08:29.461Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 13}
+{"t": "2026-11-05T06:08:32.467Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 8}
+{"t": "2026-11-05T06:08:33.387Z", "src": "api", "env": "dev", "name": "other", "status": 200, "ok": true, "ms": 20}
+{"t": "2026-11-05T06:08:35.475Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 5}
+{"t": "2026-11-05T06:08:38.481Z", "src": "api", "env": "prod-sim", "name": "target", "status": 200, "ok": true, "ms": 8}
+{"t": "2026-11-05T06:08:53.351Z", "src": "watch", "stopped": true, "reason": "stop-file"}

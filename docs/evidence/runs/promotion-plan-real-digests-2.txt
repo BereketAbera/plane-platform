@@ -1,0 +1,108 @@
+# date 2026-11-05T02:34:51Z, clean clone of c32d27c, bash 3.2.57(1)-release
+# The real promotion 0af8956 is already in this history, so prod-sim starts level with dev. It is reverted here first, in this clone only.
+# make rollback ENV=prod-sim exit 0: Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-fro
+# digests prod-sim is behind on: 4
+
+=== 1. plane-dev Synced/Progressing: make promote ENV=prod-sim CONFIRM=yes
+warn Application plane-dev is Synced/Progressing, not Synced/Healthy
+fail plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK="<reason>", which is logged. Nothing changed.
+make: *** [promote] Error 1
+    exit 2
+    commit moved: no, changed paths: 0
+
+=== 2. each digest missing from plane-dev in turn
+    without sha256:c24ead5a02a1: exit 2; 1 problem, naming this digest: yes
+    without sha256:9c7130942d90: exit 2; 1 problem, naming this digest: yes
+    without sha256:96841278d02a: exit 2; 1 problem, naming this digest: yes
+    without sha256:0a4ca742292d: exit 2; 1 problem, naming this digest: yes
+    commit moved: no, changed paths: 0
+
+=== 3. all four proven, real registry lookups: make promote ENV=prod-sim CONFIRM=yes
+==> Promotion plan for prod-sim
+    plane-admin -> localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+    plane-backend -> localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+    plane-frontend -> localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+    plane-space -> localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok 1 image(s) were recorded for dev under the same name
+ ok passed: plane-dev was Synced and Healthy and running every digest here
+==> Backing up prod-sim first, because rolling back an image does not roll back a migration
+stub backup prod-sim, changed paths under helm and gitops at this moment: 0
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 2d5ee3e: promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+==> This publish changes a prod-sim image, so plane-dev must have proven it
+ ok passed: plane-dev was Synced and Healthy and running every digest here
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main 2d5ee3e8d104 to /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-3/real-plan/.local/git/plane-platform.git
+=== exit 0
+=== commit
+2d5ee3e promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+Promote-Env: prod-sim
+Promote-Image: plane-admin=localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+Promote-Image: plane-backend=localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+Promote-Image: plane-frontend=localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+Promote-Image: plane-space=localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+Promote-Dev-Check: passed: plane-dev was Synced and Healthy and running every digest here
+
+ gitops/environments/prod-sim/manifests.yaml     | 14 +++++++-------
+ helm/plane/overlays/prod-sim/kustomization.yaml | 20 ++++++++------------
+ 2 files changed, 15 insertions(+), 19 deletions(-)
+=== rendered prod-sim diff, changed lines
+--- a/gitops/environments/prod-sim/manifests.yaml
++++ b/gitops/environments/prod-sim/manifests.yaml
+-      - image: docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
++      - image: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+-      - image: docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
++      - image: localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+-      - image: docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
++      - image: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
++        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+=== changed lines that are not images: 0
+=== files changed for dev: 0
+=== plane-dev pods read, by the refusals above plus this promotion and its publish: 7 times
+
+=== 4. SKIP_CHARTS=yes scripts/ci/validate-manifests.sh on the promoted state
+ ok render is up to date
+ ok kubeconform: rendered Plane
+ ok kubeconform: platform manifests
+ ok conftest: rendered Plane
+ ok conftest: platform manifests
+ ok 9 image(s) were recorded for dev under the same name
+ ok promotion invariant
+ ok 2 rule file(s) valid
+ ok promtool: platform rules
+ ok promtool: rule unit tests
+warn SKIP_CHARTS=yes: third-party platform charts were not rendered
+ ok manifests valid
+=== exit 0
+
+=== 5. make promote again
+ ok prod-sim already runs these digests, nothing to promote
+=== exit 0
+
+=== 6. make rollback ENV=prod-sim CONFIRM=yes
+==> Rolling back: 2d5ee3e promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d
+==> Taking a best-effort dump of prod-sim first, limited to 300s. A failure here does not stop the rollback.
+stub backup prod-sim, changed paths under helm and gitops at this moment: 0
+ ok best-effort dump taken: 
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 9f90f5c: Revert "promote(prod-sim): plane-admin c24ead5a02a1, plane-backend 9c7130942d90, plane-frontend 96841278d02a, plane-space 0a4ca742292d"
+==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+warn plane-dev check not run for this publish: rollback of 2d5ee3e8d104: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main 9f90f5cebe85 to /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-3/real-plan/.local/git/plane-platform.git
+warn Images are back, the schema is not, and no finished dump from before this rollback exists in .local/backups/prod-sim.
+=== exit 0
+=== difference from before the promotion, prod-sim overlay and render: 0 lines
+=== bare repository at HEAD: yes

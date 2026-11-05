@@ -1,0 +1,10 @@
+# 2026-11-05T02:39:58Z, commit 053ebf2. Command: python3 -B .local/evidence-raw/harness-accounts-race-script-1.py.txt /Users/bek/dev/pr/plane-platform
+# Two smoke runs that both read the accounts file before either writes it, on a temp file with fake values. 'Before' is Accounts from Git at 0bba707~1, 'after' is the working tree.
+before the fix dev token kept: False prod-sim token kept: True
+after the fix dev token kept: True prod-sim token kept: True
+# exit 0
+#
+# This file first held the two lines below with no date, command or script, written 2026-11-05T01:05:31Z by its mtime, at or just after 0bba707. That script was not kept, so the run above replaces them as the evidence. The result is the same.
+#   before the fix dev token kept: False prod-sim token kept: True
+#   after the fix dev token kept: True prod-sim token kept: True
+# What this does not show: tokens compared by md5 against each run's own token row in a real concurrent smoke run. That comparison is in harness-e2e-final-summary.txt.

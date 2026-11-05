@@ -1,0 +1,371 @@
+# 2026-11-05T07:25:41Z commit 3227c91. Self-heal test in plane-dev: change the replica count of plane-admin-wl by hand and read how long Argo CD takes to put it back. The owner approved this in chat.
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+before: replicas , app , generation 
+07:25:41Z kubectl scale deployment/plane-admin-wl --replicas=3
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:41Z +0s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:44Z +3s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:47Z +6s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:50Z +9s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:53Z +12s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:56Z +15s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:25:59Z +18s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:02Z +21s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:05Z +24s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:08Z +27s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:11Z +30s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:14Z +33s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:17Z +36s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:20Z +39s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:23Z +42s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:26Z +45s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:29Z +48s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:32Z +51s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:35Z +54s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:38Z +57s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:41Z +60s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:44Z +63s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:47Z +66s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:50Z +69s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:53Z +72s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:26:56Z +75s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:00Z +79s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:03Z +82s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:06Z +85s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:09Z +88s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:12Z +91s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:15Z +94s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:18Z +97s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:21Z +100s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:24Z +103s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:27Z +106s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:30Z +109s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:33Z +112s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:36Z +115s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:39Z +118s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:42Z +121s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:45Z +124s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:48Z +127s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:51Z +130s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:54Z +133s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:27:57Z +136s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:00Z +139s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:03Z +142s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:06Z +145s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:09Z +148s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:12Z +151s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:15Z +154s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:18Z +157s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:21Z +160s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:24Z +163s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:27Z +166s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:30Z +169s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:33Z +172s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:36Z +175s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:39Z +178s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:42Z +181s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:45Z +184s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:48Z +187s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:51Z +190s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:54Z +193s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:28:57Z +196s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:00Z +199s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:03Z +202s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:06Z +205s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:09Z +208s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:12Z +211s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:15Z +214s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:18Z +217s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:21Z +220s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:24Z +223s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:27Z +226s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:30Z +229s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:33Z +232s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:36Z +235s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:39Z +238s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:42Z +241s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:45Z +244s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:48Z +247s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:51Z +250s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:54Z +253s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:29:57Z +256s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:00Z +259s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:03Z +262s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:06Z +265s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:09Z +268s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:12Z +271s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:15Z +274s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:19Z +278s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:22Z +281s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:25Z +284s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:28Z +287s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:31Z +290s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:34Z +293s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:37Z +296s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:40Z +299s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:43Z +302s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:46Z +305s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:49Z +308s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:52Z +311s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:55Z +314s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:30:58Z +317s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:01Z +320s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:04Z +323s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:07Z +326s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:10Z +329s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:13Z +332s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:16Z +335s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:19Z +338s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:22Z +341s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:25Z +344s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:28Z +347s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:31Z +350s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:34Z +353s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:37Z +356s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+07:31:40Z +359s replicas= app=
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+(eval):1: command not found: kubectl --context kind-plane-platform
+after: replicas , app , generation 

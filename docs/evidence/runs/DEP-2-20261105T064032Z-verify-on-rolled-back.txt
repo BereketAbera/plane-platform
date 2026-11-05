@@ -1,0 +1,9 @@
+# 2026-11-05T06:42:29Z commit 91ef477
+# command: python3 -B tests/e2e/smoke.py --env dev --mode verify --job-probe --evidence .local/evidence-raw/DEP-2-20261105T064032Z-verify-on-rolled-back.json
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: .local/evidence-raw/DEP-2-20261105T064032Z-verify-on-rolled-back.json
+RESULT  PASS
+# exit code: 0

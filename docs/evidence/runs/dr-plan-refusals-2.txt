@@ -1,0 +1,19 @@
+# Real plans on the live cluster, changing nothing. 2026-11-05T02:35:12Z, code at c32d27c
+
+$ make restore-clean BACKUP=latest PLAN_ONLY=yes 
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T022627Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim, 1 users, 6 projects, 18 secrets, server v0.167.6
+    dev        20261105T000616Z, SECRET_KEY 4ceb3f709b196ae0, 23 users, 16 workspaces, 31 projects, 132 work items, 34 file rows, 34 objects, sentinel sentinel-f10a5851
+    prod-sim   20261105T022025Z, SECRET_KEY 77d617b20fb32955, 21 users, 13 workspaces, 26 projects, 120 work items, 41 file rows, 41 objects, sentinel sentinel-5bf39257
+    admin      the file this backup names, ending 2027-02-02T21:25:32Z
+    images     4 localhost:5001 digests in Git
+    disk       14.6 GiB free, kind volume 11.9 GiB, about 25.7 GiB after a delete at 93%, up.sh asks for 25 GiB
+[1;33mwarn[0m uncommitted changes under paths Argo CD reads, and scripts/up.sh refuses to run with them. Commit or stash them, and keep those paths still until this finishes:
+[1;33mwarn[0m      M infisical/README.md
+[1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+make: *** [restore-clean] Error 1
+exit=2
+
+# secret zero, Terraform state and the marker unchanged: yes
+# git status of what up.sh refuses, as of now:
+ M infisical/README.md

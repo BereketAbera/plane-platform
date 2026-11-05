@@ -1,0 +1,16 @@
+# 2026-11-05T04:19:07Z /bin/bash scripts/test-netpol.sh --selftest at 8a10acd, then the same selftest with witness_of put back as it was at 1936016, in a scratch copy
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+[1;32m ok[0m selftest passed
+exit 0
+
+## witness_of as at 1936016:
+FAIL witness_of asked=yes before=ANSWERED after=SILENT: got SILENT, want ANSWERED_ONCE
+FAIL witness_of asked=yes before=SILENT after=ANSWERED: got SILENT, want ANSWERED_ONCE
+FAIL witness_of asked=yes before=UNRESOLVED after=ANSWERED: got UNRESOLVED, want ANSWERED_ONCE
+FAIL witness_of asked=yes before=ANSWERED after=UNRESOLVED: got UNRESOLVED, want ANSWERED_ONCE
+FAIL a failed lookup with the node reading before=ANSWERED after=SILENT: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+FAIL a failed lookup with the node reading before=SILENT after=ANSWERED: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+FAIL a failed lookup with the node reading before=UNRESOLVED after=ANSWERED: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+FAIL a failed lookup with the node reading before=ANSWERED after=UNRESOLVED: got INCONCLUSIVE|free, want INCONCLUSIVE|counts
+[1;31mfail[0m selftest: 8 failed
+exit 1

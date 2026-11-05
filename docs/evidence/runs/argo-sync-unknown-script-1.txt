@@ -1,0 +1,55 @@
+# How argo-sync-unknown-2.txt was made, and the watcher it uses
+#!/bin/bash
+# A real commit that cannot render, on an Application that was rendering and has a live object: the throwaway that reads
+# the fixture. How long until Unknown, what else it reads, and that nothing is pruned. No hard refresh until the end.
+set -u
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/alert-truth
+COMMIT=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/scripts/commit-locked.sh
+ROOT=/Users/bek/dev/pr/plane-platform
+K="$ROOT/.tools/bin/kubectl --context kind-plane-platform"
+export KUBECONFIG=$ROOT/.local/kubeconfig PATH=$ROOT/.tools/bin:$PATH
+APP=alert-truth-stuck-progressing
+BROKEN=tests/rules/fixtures/stuck-progressing/cannot-render.yaml
+say() { printf '[%s] %s\n' "$(date -u +%H:%M:%SZ)" "$*"; }
+cd "$ROOT" || exit 1
+echo "# date: $(date -u +%FT%TZ)"
+# Argo CD ignores a file it cannot parse unless the text holds apiVersion:, kind: and metadata:. The first attempt, with no
+# metadata:, read Synced at the new revision with no condition.
+printf 'apiVersion: v1\nkind: [this, does, not, close\nmetadata:\n  name: cannot-render\n' > "$BROKEN"
+say "committing a file that cannot be parsed into the directory $APP reads"
+"$COMMIT" --publish "test(alerts): make that manifest look like one, since Argo CD ignores an unparsable file that does not" "$BROKEN" 2>&1 | tail -1 | cut -c1-150
+T0=$SECONDS
+say "published, watching with no refresh asked for"
+bash "$S/watch-app.sh" "$APP" 480 'sync=Unknown'
+say "seconds from publish to this point: $((SECONDS - T0))"
+say "the Service it had deployed: $($K -n monitoring get svc alert-truth-stuck-progressing -o name 2>&1)"
+sleep 45
+say "metric: $(python3 "$S/pq.py" "argocd_app_info{name=\"$APP\"}" | cut -c1-220)"
+say "ALERTS_FOR_STATE: $(python3 "$S/pq.py" 'ALERTS_FOR_STATE{alertname="ArgoAppSyncUnknown"}' | cut -c1-150)"
+say "ALERTS: $(python3 "$S/pq.py" 'ALERTS{alertname=~"ArgoAppSyncUnknown|ArgoAppOutOfSync|ArgoAppDegraded|ArgoSyncFailed"}' | tr '\n' ';' | cut -c1-300)"
+say "taking the file back out"
+rm -f "$BROKEN"
+"$COMMIT" --publish "test(alerts): remove the manifest that could not render" "$BROKEN" 2>&1 | tail -1 | cut -c1-150
+$K -n argocd annotate application "$APP" argocd.argoproj.io/refresh=hard --overwrite >/dev/null
+bash "$S/watch-app.sh" "$APP" 120 'sync=Synced'
+say "the Service: $($K -n monitoring get svc alert-truth-stuck-progressing -o name 2>&1)"
+echo "# done"
+
+## watch-app.sh
+#!/bin/bash
+# watch-app.sh <application> <seconds> <stop state regex>: one line whenever the state changes.
+APP="$1" LIMIT="$2" STOP="$3"
+K="/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl --context kind-plane-platform"
+export KUBECONFIG=/Users/bek/dev/pr/plane-platform/.local/kubeconfig
+last=""; start=$SECONDS
+while [ $((SECONDS - start)) -lt "$LIMIT" ]; do
+  now="$($K -n argocd get application "$APP" -o json | python3 -c '
+import json,sys
+a=json.load(sys.stdin); st=a.get("status",{})
+c=[(x["type"],x["message"][:90]) for x in st.get("conditions",[])]
+print("sync=%s health=%s operation_open=%s last_op=%s rev=%s conditions=%s" % (st.get("sync",{}).get("status"),st.get("health",{}).get("status"),"operation" in a,(st.get("operationState") or {}).get("phase"),(st.get("sync",{}).get("revision") or "")[:8],c))')"
+  if [ "$now" != "$last" ]; then printf '[%s +%ss] %s\n' "$(date -u +%H:%M:%SZ)" "$((SECONDS - start))" "$now"; last="$now"; fi
+  case "$now" in *$STOP*) exit 0 ;; esac
+  sleep 3
+done
+printf '[%s] stopped after %ss\n' "$(date -u +%H:%M:%SZ)" "$LIMIT"

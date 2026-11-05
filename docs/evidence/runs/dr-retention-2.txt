@@ -1,0 +1,12 @@
+# recovery_prune_infisical on real folders, as the reviewer did for the old lines. 2026-11-05T02:44:13Z
+one complete, then five with no set: 20261105T000000Z 20261105T000001Z 20261105T000002Z 20261105T000003Z 20261105T000004Z 20261105T000005Z 
+The old lines removed 20261105T000000Z here. Retention does not even run after a backup with no set, and a call at KEEP=5 keeps all:
+left: 20261105T000000Z 20261105T000001Z 20261105T000002Z 20261105T000003Z 20261105T000004Z 20261105T000005Z 
+a complete one arrives, KEEP=1:
+[1;32m ok[0m retention: removed 20261105T000005Z, which has no complete recovery set and is older than every set kept
+[1;32m ok[0m retention: removed 20261105T000004Z, which has no complete recovery set and is older than every set kept
+[1;32m ok[0m retention: removed 20261105T000003Z, which has no complete recovery set and is older than every set kept
+[1;32m ok[0m retention: removed 20261105T000002Z, which has no complete recovery set and is older than every set kept
+[1;32m ok[0m retention: removed 20261105T000001Z, which has no complete recovery set and is older than every set kept
+[1;32m ok[0m retention: removed 20261105T000000Z, past the newest 1 complete sets
+left: 20261105T000006Z 

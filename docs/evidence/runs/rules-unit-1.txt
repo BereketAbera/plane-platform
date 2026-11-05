@@ -1,0 +1,31 @@
+# date: 2026-11-05T01:11:34Z
+# promtool test rules tests/rules/rules.test.yaml, run as validate-manifests.sh runs it, against the rules before this work (git show 23e3fe2) and after.
+## against the rules before: exit 1. Which evaluations failed:
+    name: kindnet's fail-open line fires at once, and clears within 5m of that pod being gone,
+    alertname: KindnetSkippedNetworkPolicies, time: 14m, 
+    name: kindnet's count going stale does not resolve the alert for 3d, and a gone pod still does,
+    alertname: KindnetSkippedNetworkPolicies, time: 3h, 
+    name: kindnet's count going stale does not resolve the alert for 3d, and a gone pod still does,
+    alertname: KindnetSkippedNetworkPolicies, time: 3d, 
+    name: kindnet's alert rides out a kube-state-metrics restart, and sticks after kindnet's container restarts,
+    alertname: KindnetSkippedNetworkPolicies, time: 6m, 
+    name: PodRestarting stays quiet on one restart, and fires on two,
+    alertname: PodRestarting, time: 10m45s, 
+    name: PodRestarting stays quiet on one restart, and fires on two,
+    alertname: PodRestarting, time: 20m15s, 
+    name: a commit that cannot render fires ArgoAppSyncUnknown at 15m, and no other Argo rule,
+    alertname: ArgoAppSyncUnknown, time: 17m, 
+    name: a child Progressing with its operation closed fires ArgoAppStuckProgressing at 30m, and root does not,
+    alertname: ArgoAppStuckProgressing, time: 32m, 
+## against the rules now: exit 0
+  SUCCESS: 12 rules found
+  SUCCESS
+## scripts/ci/validate-manifests.sh with charts, SKIP_FLOWS=yes, on the values and rules of this work, exit 0:
+1628 tests, 1628 passed, 0 warnings, 0 failures, 0 exceptions
+2430 tests, 2430 passed, 0 warnings, 0 failures, 0 exceptions
+ ok 2 rule file(s) valid
+2910 tests, 2910 passed, 0 warnings, 0 failures, 0 exceptions
+ ok 26 rule file(s) valid
+ ok manifests valid
+## conftest verify --policy policy
+89 tests, 89 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped

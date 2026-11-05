@@ -1,0 +1,18 @@
+{
+  "alert": "PlaneApiDown",
+  "namespace": "plane-prod-sim",
+  "other_namespace": "plane-dev",
+  "started_at": "20261105T072541Z",
+  "result": "PASS",
+  "failed_stage": null,
+  "isolation": "PASS",
+  "seconds_after_injection": {
+    "pending": 24,
+    "firing": 83,
+    "alertmanager": 83,
+    "sink_firing": 83
+  },
+  "seconds_after_recovery": {
+    "sink_resolved": 61
+  }
+}

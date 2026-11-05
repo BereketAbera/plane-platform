@@ -1,0 +1,10 @@
+verdict	expect	observed	from	labels	to	port	note
+PASS	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	plane-pgdb.plane-dev.svc.cluster.local	5432	fixture: blocked, target up; reference: the target answered the node and this pod's DNS answered, at the same moment
+FAIL	allow	TIMEOUT	plane-dev	{"probe":"unlabelled"}	plane-pgdb.plane-dev.svc.cluster.local	5432	fixture: an allow row the policy blocks; the target answered the node at the same moment, so the path to it is blocked
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	10.255.255.1	80	fixture: nothing there, and not outside; the target did not answer the node either, so this proves nothing about a policy
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	192.0.2.1	443	fixture: outside, nothing answers; nothing outside the cluster answered the node at this moment, so this proves nothing. Not counted against the run
+INCONCLUSIVE	allow	TIMEOUT	plane-dev	{"probe":"unlabelled"}	192.0.2.1	443	fixture: outside, nothing answers; nothing outside the cluster answered the node at this moment, so this proves nothing. Not counted against the run
+INCONCLUSIVE	deny	DNS	plane-dev	{"probe":"unlabelled"}	offline-check.invalid	443	fixture: an internet name with no DNS answer; this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run
+INCONCLUSIVE	allow	TIMEOUT	plane-dev	{"probe":"unlabelled"}	argocd-applicationset-controller.argocd.svc.cluster.local	7000	fixture: no ready endpoint, egress blocked; the Service had no ready endpoint, so this came from the Service and proves nothing about a policy
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	argocd-applicationset-controller.argocd.svc.cluster.local	7000	fixture: no ready endpoint, egress blocked; the Service had no ready endpoint, so this came from the Service and proves nothing about a policy
+INCONCLUSIVE	allow	REFUSED	kube-system	{"probe":"unlabelled"}	argocd-applicationset-controller.argocd.svc.cluster.local	7000	fixture: no ready endpoint, no egress policy; the Service had no ready endpoint, so this came from the Service and proves nothing about a policy

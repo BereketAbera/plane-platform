@@ -1,0 +1,26 @@
+# make backup ENV=infisical, with who holds the most locks sampled from another session. 2026-11-05T02:26:27Z
+lock table: max_locks_per_transaction, max_connections, max_prepared_transactions = 128|30|0
+autovacuum_max_workers 3
+max_wal_senders 10
+max_wal_size 1024
+max_worker_processes 8
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T022627Z
+[pod/plane-backup-20261105t022627z-npxtl/postgres] postgres: 20261105T022627Z complete, 785 tables counted from a scratch restore
+backup 20261105T022627Z: postgres/infisical.dump 4407389 B, postgres/infisical.toc.txt 942298 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m retention: removed 20261105T000452Z, past the newest 5 complete sets
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T022627Z
+make backup exit=0
+samples: 374
+# the highest totals, and who held the most at that moment: total held client database statement
+3437 3428 pg_restore scratch_20261105t022627z ALTER TABLE ONLY public.resource_metadata     ADD 
+3421 3337 pg_restore scratch_20261105t022627z ALTER TABLE public.certificate_requests     ADD CO
+2780 2742 pg_restore scratch_20261105t022627z ALTER TABLE public.certificate_requests     ADD CO
+2672 2644 psql scratch_20261105t022627z SELECT 'certificate_requests' AS t, count(*) AS c 
+2583 2418 pg_restore scratch_20261105t022627z ALTER TABLE public.certificate_requests     ADD CO
+2475 2303 pg_restore scratch_20261105t022627z ALTER TABLE public.certificate_requests     ADD CO
+2366 2333 pg_restore scratch_20261105t022627z ALTER TABLE public.certificate_requests     ADD CO
+2293 2272 psql scratch_20261105t022627z SELECT 'certificate_requests' AS t, count(*) AS c 
+# the highest for each client
+3437 3428 pg_restore scratch_20261105t022627z ALTER TABLE ONLY public.resource_metadata     ADD 
+2672 2644 psql scratch_20261105t022627z SELECT 'certificate_requests' AS t, count(*) AS c 
+958 949 pg_dump infisical SELECT last_value, is_called FROM public.infisical

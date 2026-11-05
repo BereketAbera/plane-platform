@@ -1,0 +1,54 @@
+# Offline checks of committed code, 2026-11-05T02:02:49Z, HEAD ec45e21. kubectl and HTTP stubbed where a line says so
+
+== python3 -B stubs.py: overlay step on a rollout in flight, the fresh install step, the control when add_consumer fails
+A. rollout in flight (updatedReplicas 0, the old pod still ready): PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml
+B1 new branded instance -> PASS    branding-fresh-install  before setup, the instance this image registered is named Wayline, with telemetry off
+B2 name wrong -> FAIL    branding-fresh-install  a new instance is named 'Plane Community Edition', want 'Wayline'
+B3 telemetry on -> FAIL    branding-fresh-install  a new instance has telemetry True, want False
+B4 registered by upstream before promotion -> SKIP    branding-fresh-install  needs a clean database. This instance was registered at 2026-11-04T21:35:32.993358+00:00, before the Wayline backend reached the overlay at 2026-11-05T00:09:57+00:00, so upstream's image registered 
+B5 no instance row yet -> FAIL    branding-fresh-install  ValueError: Invalid isoformat string: ''
+B overall FAIL
+C. FAIL    worker-negative-control  kubectl exec exited 1
+  calls [('control', 'cancel_consumer', 'celery'), ('control', 'add_consumer', 'celery'), ('kubectl', 'delete', 'pod', '-l'), ('kubectl', 'rollout', 'status', 'deployment/plane-worker-wl')]
+D. SIGTERM handler installed by smoke.py main(): False
+E. dev {'admin': 'sha256:279dfd7', 'backend': 'sha256:4add277', 'web': 'sha256:73a48d6', 'space': 'sha256:a8c4915'} entries 9
+E. prod-sim {} entries 13
+F1. ["/ carries the upstream brand 1 time(s), first: '//plane.so/x</p>'"]
+F2. ["/ carries the upstream brand 1 time(s), first: '<title>Wayline</title><p>plane.so</p>'"]
+F3 title across a lowercase word: []
+
+== python3 -B stub_network.py: a shell probe whose exec exits 0 with nothing on stdout. The report's run had 364 PASS lines
+exit 0 | RESULT checks passed=244 failed=0 blocked=0 2026-11-05T02:02:49Z
+rows from web/admin/pgdb/redis/rabbitmq: 0
+FAIL lines: 0 BLOCKED lines: 0
+
+== SH_PROBE from tests/separation/network.py on a read-only root: docker run --rm -i --read-only --network none --tmpfs /run --entrypoint sh redis:8 -c "$SH_PROBE"
+exec exit status: 0
+stdout bytes: 0
+mktemp: failed to create directory via template '/tmp/tmp.XXXXXXXXXX': Read-only file system
+sh: 11: cannot create /2: Read-only file system
+sh: 11: cannot create /1: Read-only file system
+cat: /bin: Is a directory
+cat: /boot: Is a directory
+
+== decide and scope_of, extracted from scripts/test-netpol.sh
+decide deny DNS tcp outside - ANSWERED yes: INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run
+scope_of plane.dev.localhost: outside
+scope_of kubernetes.default.svc: outside
+
+== witness_of, extracted from scripts/test-netpol.sh
+no before reading, after ANSWERED -> ANSWERED
+empty before reading, after ANSWERED -> ANSWERED
+
+== tests/separation/common.py Report: a line printed before its value is added
+section 1 prints a line holding FAKE-VALUE-12345
+
+RESULT checks passed=0 failed=0 blocked=0 2026-11-05T02:02:49Z
+Scanned this output for 1 secret values: 0 found and replaced.
+exit 0
+
+== python3 -B race.py: two processes writing different environments with the committed Accounts class, on a temp file
+writers exit [0, 0]
+dev keys kept 150 of 150
+prod-sim keys kept 150 of 150
+mode 0o600

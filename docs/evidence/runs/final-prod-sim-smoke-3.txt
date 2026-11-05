@@ -1,0 +1,53 @@
+[1;34m==>[0m End-to-end smoke test in prod-sim
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=full
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    frontends  web, admin and space pages and the assets they name are served
+PASS    routes  bare paths redirect, deep links reach admin, /live/health answers
+PASS    workloads-ready  11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0
+PASS    instance-setup  already set up, reusing stored admin
+PASS    csrf-enforced  sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)
+PASS    sign-in  session established, anonymous request refused
+PASS    workspace  smoke-706652d0
+PASS    api-token  token works on /api/v1, refused without it
+PASS    project  e22f7e50-fb7d-4916-90ac-9fde103655c7
+PASS    work-item  1dcf2141-57e9-4d04-8bae-6ebfa227f6b5
+PASS    background-job  issue_activity task ran in 3.1s
+PASS    work-item-list  new work item is among 1 listed
+PASS    read-back  workspace, project and work item P8BB471-1 all match, by key and by session
+PASS    workspace-seed  seed project present after 0.0s
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every rollout finished
+PASS    branding-web  title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294... (not followed: the repository is private for now), /licenses/ lists 6 files and serves the AGPL
+PASS    branding-admin  /god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page
+PASS    branding-space  /spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page
+PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+PASS    branding-seed  the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    app-shell  all 15 requests answered 200
+PASS    admin-sign-in  37 config rows read, 8 of them encrypted, refused with no session (401)
+PASS    second-user  sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    broker-memory  watermark {absolute,"256Mi"} = 268435456 bytes, no alarms
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+PASS    attachment-upload  1047 bytes stored
+PASS    attachment-download  sha256 8bbf7ae59176d400... matches
+PASS    object-in-silo  1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']
+PASS    uploads-private  refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}
+PASS    large-upload  4718592 bytes up and back through Traefik, sha256 matches
+PASS    oversize-refused  5 MiB + 1 byte refused by the storage policy with 400
+PASS    asset-duplicate  copy_object through the public host worked: d1de4c83-4a15-4492-a3cd-195aa6741aa8 holds the same bytes
+PASS    avatar  avatar stored and read back anonymously through its signed redirect
+PASS    export  export completed, its link downloads, and the 492 byte zip holds the work item
+PASS    public-board  published: api and space serve it anonymously. Unpublished: 404
+PASS    realtime-page  9b90b4be-e429-4948-a4a8-1f280d286d35
+PASS    realtime-auth  Authenticated (read-write): traefik upgrade, live -> api session check
+PASS    realtime-denied  mismatched user refused: PermissionDenied
+PASS    realtime-sync  both clients synced, and an update reached the other client in 1 ms
+PASS    realtime-persist  stored as HTML and binary in 2.1s, and a new connection gets it back from the database
+PASS    sentinel-create  reusing existing sentinel test-sentinel-prod-sim.json
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json
+RESULT  PASS
+[1;34m==>[0m Summary, also in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/test-20261105T053533Z-8468.txt
+    PASS     e2e prod-sim               evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json
+[1;32m ok[0m all passed
+e2e exit=0

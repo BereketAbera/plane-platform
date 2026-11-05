@@ -1,0 +1,282 @@
+# date: 2026-11-05T02:18:42Z
+# Memory events read at the pod cgroup and at each container cgroup, on the node, read only.
+# Command: cg-pod.sh and cg-all.sh below (docker exec on the kind node, cat of memory.max, memory.peak, memory.current, memory.events, memory.events.local, memory.stat), hist-final.py for Prometheus history.
+# memory.events is hierarchical and memory.events.local is not, so the pod's count includes containers that are gone.
+
+## Reading at 2026-11-05T02:06:47Z: Infisical Postgres max 4227, Loki max 58931 (the first read of this run)
+
+## Reading now
+### monitoring/prometheus-kps-prometheus-0 uid=dc5714c3-4abd-4562-adb5-5c1a209145ac qos=burstable
+status: config-reloader id=containerd://5f15cde3a6280487bfd88316fe2e1a9074183087676d6baa00eba11e683e1458 restarts=0 started=2026-11-05T00:34:11Z lastExit=  lastFinished=
+status: prometheus id=containerd://3421d0ce7fad117dd74da91c9f1b60594efbfffb00fb1541f648d2199ac523d3 restarts=0 started=2026-11-05T00:34:11Z lastExit=  lastFinished=
+limit: prometheus 1Gi
+limit: config-reloader 48Mi
+init limit: init-config-reloader 48Mi
+-- pod cgroup kubelet-kubepods-burstable-poddc5714c3_4abd_4562_adb5_5c1a209145ac.slice
+memory.max 1124073472
+memory.peak 976756736
+memory.current 575328256
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=464330752 file=61399040 kernel=4771840 shmem=81920 slab=2040968 workingset_refault_file=57317 pgscan=97905 pgsteal=85033
+-- container cgroup cri-containerd-3421d0ce7fad117dd74da91c9f1b60594efbfffb00fb1541f648d2199ac523d3.scope
+memory.max 1073741824
+memory.peak 943382528
+memory.current 552927232
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=448962560 file=59744256 kernel=3760128 shmem=0 slab=1673600 workingset_refault_file=57210 pgscan=93099 pgsteal=81653
+-- container cgroup cri-containerd-5f15cde3a6280487bfd88316fe2e1a9074183087676d6baa00eba11e683e1458.scope
+memory.max 50331648
+memory.peak 27504640
+memory.current 22085632
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=15327232 file=1654784 kernel=737280 shmem=81920 slab=230224 workingset_refault_file=107 pgscan=771 pgsteal=565
+-- container cgroup cri-containerd-7580c132b0b551b31d53c3c0c3371068b4ed15c2e090189f258df2e57a7efa0d.scope
+memory.max max
+memory.peak 8458240
+memory.current 204800
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=40960 file=0 kernel=163840 shmem=0 slab=92752 workingset_refault_file=0 pgscan=0 pgsteal=0
+### monitoring/loki-0 uid=78fea61b-bd12-4194-b552-bddc23a87cbe qos=burstable
+status: loki id=containerd://673718be0e00bce46ead5f083b09e4f7212e242bb311c47e786c23221cb95575 restarts=1 started=2026-11-04T21:58:06Z lastExit=137 Error lastFinished=2026-11-04T21:58:05Z
+limit: loki 640Mi
+-- pod cgroup kubelet-kubepods-burstable-pod78fea61b_bd12_4194_b552_bddc23a87cbe.slice
+memory.max 671088640
+memory.peak 672206848
+memory.current 369688576
+memory.events: low=0 high=0 max=58931 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=279678976 file=12697600 kernel=7196672 shmem=0 slab=4560096 workingset_refault_file=2523335 pgscan=3747830 pgsteal=3741691
+-- container cgroup cri-containerd-673718be0e00bce46ead5f083b09e4f7212e242bb311c47e786c23221cb95575.scope
+memory.max 671088640
+memory.peak 671072256
+memory.current 369111040
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=279642112 file=12697600 kernel=6656000 shmem=0 slab=4134896 workingset_refault_file=412633 pgscan=918277 pgsteal=915180
+-- container cgroup cri-containerd-99f0d278d5cd3e39b1841b0bd2a0a187562f32728c01d5e2a07e4575a0ddfff5.scope
+memory.max max
+memory.peak 7958528
+memory.current 200704
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=36864 file=0 kernel=163840 shmem=0 slab=92752 workingset_refault_file=0 pgscan=11 pgsteal=2
+### infisical/infisical-postgres-0 uid=b316f1c1-c87d-446e-a049-aa9750664410 qos=burstable
+status: postgres id=containerd://61805842cf3ebe04a200389b197e94259f5c01556c1861d7ff4bea2b0bf470e7 restarts=0 started=2026-11-04T21:43:28Z lastExit=  lastFinished=
+limit: postgres 256Mi
+-- pod cgroup kubelet-kubepods-burstable-podb316f1c1_c87d_446e_a049_aa9750664410.slice
+memory.max 268435456
+memory.peak 268439552
+memory.current 169345024
+memory.events: low=0 high=0 max=5066 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=12963840 file=142123008 kernel=14258176 shmem=43700224 slab=12669288 workingset_refault_file=167307 pgscan=423717 pgsteal=419956
+-- container cgroup cri-containerd-61805842cf3ebe04a200389b197e94259f5c01556c1861d7ff4bea2b0bf470e7.scope
+memory.max 268435456
+memory.peak 268435456
+memory.current 169078784
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=12922880 file=142110720 kernel=14045184 shmem=43700224 slab=12570024 workingset_refault_file=167307 pgscan=423717 pgsteal=419956
+-- container cgroup cri-containerd-9277700a1a4f1e5d2e1adfe65ec445dad9e4efda34dc036426fc928d2ebc6a58.scope
+memory.max max
+memory.peak 4939776
+memory.current 217088
+memory.events: low=0 high=0 max=0 oom=0 oom_kill=0 oom_group_kill=0
+memory.stat: anon=40960 file=12288 kernel=163840 shmem=0 slab=93088 workingset_refault_file=0 pgscan=0 pgsteal=0
+
+## memory.events.local and direct against kswapd reclaim
+pod 78fea61b_bd12_4194_b552_bddc23a87cbe events.local: low 0 high 0 max 58271 oom 0 oom_kill 0 oom_group_kill 0 
+pod 78fea61b_bd12_4194_b552_bddc23a87cbe reclaim: workingset_refault_file 2523335 pgsteal_kswapd 71345 pgsteal_direct 3669970 
+pod b316f1c1_c87d_446e_a049_aa9750664410 events.local: low 0 high 0 max 5066 oom 0 oom_kill 0 oom_group_kill 0 
+pod b316f1c1_c87d_446e_a049_aa9750664410 reclaim: workingset_refault_file 167307 pgsteal_kswapd 92491 pgsteal_direct 326923 
+loki current container reclaim: workingset_refault_file 412633 pgsteal_kswapd 61489 pgsteal_direct 853315 
+
+## Every platform pod, pod cgroup against container cgroups
+namespace/pod | pod memory.max MiB | pod max (local) | pod oom_kill | pod peak MiB | pod anon MiB | container: limit MiB, max, peak MiB ...
+monitoring/alert-sink-78dcd6dbb4-fxfst | 48 | 0 (0) | 0 | 14 | 10 | 48,0,14
+monitoring/alertmanager-kps-alertmanager-0 | 144 | 0 (0) | 0 | 61 | 38 | 96,0,32 48,0,31
+monitoring/alloy-68d8ccc746-n2tbr | 256 | 0 (0) | 0 | 216 | 66 | 256,0,90
+monitoring/blackbox-854dd6b7dc-bprdb | 48 | 0 (0) | 0 | 30 | 17 | 48,0,29
+monitoring/kps-grafana-77cb96fc89-v8g6n | 704 | 0 (0) | 0 | 505 | 402 | 160,0,105 384,0,345 160,0,106
+monitoring/kps-kube-state-metrics-58c95899dd-s8bb4 | 96 | 0 (0) | 0 | 34 | 20 | 96,0,34
+monitoring/kps-operator-85894ccc7f-4q9vw | 128 | 0 (0) | 0 | 66 | 22 | 128,0,66
+monitoring/loki-0 | 640 | 58931 (58271) | 0 | 641 | 267 | 640,0,640
+monitoring/prometheus-kps-prometheus-0 | 1072 | 0 (0) | 0 | 932 | 443 | 1024,0,900 48,0,26
+monitoring-agents/kps-node-exporter-rtskt | 48 | 0 (0) | 0 | 25 | 12 | 48,0,25
+argocd/argocd-application-controller-0 | 1024 | 0 (0) | 0 | 480 | 308 | 1024,0,480
+argocd/argocd-redis-ff6755697-jcd8p | 64 | 0 (0) | 0 | 39 | 27 | 64,0,39
+argocd/argocd-repo-server-8464d9c6cc-ssf2f | 512 | 0 (0) | 0 | 372 | 42 | 512,0,332
+argocd/argocd-server-5bcf485686-5vhnh | 192 | 0 (0) | 0 | 83 | 29 | 192,0,83
+traefik/traefik-6955f98f54-7z9wr | 192 | 0 (0) | 0 | 83 | 51 | 192,0,82
+infisical/infisical-567944c58f-qhwlw | 1024 | 0 (0) | 0 | 842 | 639 | 1024,0,841
+infisical/infisical-postgres-0 | 256 | 5066 (5066) | 0 | 256 | 12 | 256,0,256
+infisical/infisical-redis-0 | 96 | 0 (0) | 0 | 21 | 8 | 96,0,21
+
+## Prometheus history
+# Loki pod 78fea61b, started 21:51:56Z. Container 94be141b ran the stress test and was killed by the test's kill -9 at 21:58:05Z. Container 673718be started 21:58:06Z, replayed the WAL, and is still running.
+## Pod cgroup usage, sampled every 15s since the second container started (query: container_memory_usage_bytes{pod=loki-0,container="",image=""})
+usage >= 620 MiB: 1 samples, last 11-04T21:58:25Z
+usage >= 560 MiB: 4 samples, last 11-04T21:59:25Z
+usage >= 500 MiB: 19 samples, last 11-04T22:03:25Z
+usage >= 450 MiB: 83 samples, last 11-04T22:25:55Z
+usage >= 400 MiB: 112 samples, last 11-04T22:25:55Z
+highest since 22:30Z: 374.6 MiB at 11-04T22:30:10Z
+## Anon by container, every 30s (container_memory_rss). 553 is from the 5s cgroup samples in monitoring-loki-limit-2.txt
+1d93a631f9c47928d8a92 first 11-04T21:51:00Z last 11-04T21:52:00Z max 522.0 at 11-04T21:51:30Z
+f521cf8f838323bfeffa4 first 11-04T21:03:00Z last 11-04T21:50:30Z max 531.6 at 11-04T21:48:00Z
+1c47e786c23221cb95575 first 11-04T21:58:30Z last 11-05T02:18:30Z max 479.5 at 11-04T22:00:00Z
+854ffbd6e9d3fe2e306b6 first 11-04T21:52:00Z last 11-04T21:58:00Z max 533.4 at 11-04T21:53:30Z
+highest anon since 22:00Z: 479.5 MiB at 11-04T22:00:00Z
+highest anon since 22:30Z: 304.3 MiB at 11-04T23:50:00Z
+## Ingest (sum(rate(loki_distributor_bytes_received_total[5m])), every 30s)
+stress runs: highest 3517355 B/s at 11-04T21:47:30Z
+since 22:10Z, n=498: mean 7157 B/s, median 2220, p95 53842, highest 86874 at 11-04T23:11:00Z
+3.5 MB/s against that: 489 times the mean, 1577 times the median, 40 times the highest 5m
+last hour: 1645 B/s
+anon within 15m of the highest 5m: max 244.4 MiB at 11-04T22:58:00Z
+go_gc_gomemlimit_bytes{pod=loki-0}: 560 MiB
+## Infisical Postgres, anon and cache (container_memory_rss, container_memory_cache, 30s)
+anon 8f11450ad44043154fdef first 11-04T21:06:00Z max 59.5 at 11-04T21:26:00Z last 16.7
+anon 861d7ff4bea2b0bf470e7 first 11-04T21:43:30Z max 64.4 at 11-04T23:15:00Z last 7.9
+cache 8f11450ad44043154fdef first 11-04T21:06:00Z max 170.2 at 11-04T21:26:30Z last 113.4
+cache 861d7ff4bea2b0bf470e7 first 11-04T21:43:30Z max 210.0 at 11-05T00:18:30Z last 135.5
+## Prometheus, the current container since 00:34:11Z with limit 1024Mi
+anon 6025dc4cbd5d208caed7d max 488.4 at 11-05T00:34:00Z last 488.4
+anon b1541f648d2199ac523d3 max 565.9 at 11-05T00:35:30Z last 428.2
+
+## The scripts
+--- cg-pod.sh
+#!/bin/bash
+# Reads memory cgroup files on the node for a pod's cgroup and each of its containers' cgroups. Read only.
+export KUBECONFIG=/Users/bek/dev/pr/plane-platform/.local/kubeconfig
+KC=/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl
+NODE=plane-platform-control-plane
+for spec in "$@"; do
+  ns=${spec%/*}; pod=${spec#*/}
+  uid=$("$KC" --context kind-plane-platform -n "$ns" get pod "$pod" -o jsonpath='{.metadata.uid}')
+  u=$(printf '%s' "$uid" | tr '-' '_')
+  qos=$("$KC" --context kind-plane-platform -n "$ns" get pod "$pod" -o jsonpath='{.status.qosClass}' | tr 'A-Z' 'a-z')
+  dir="/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-${qos}.slice/kubelet-kubepods-${qos}-pod${u}.slice"
+  echo "### $spec uid=$uid qos=$qos"
+  "$KC" --context kind-plane-platform -n "$ns" get pod "$pod" -o jsonpath='{range .status.containerStatuses[*]}{"status: "}{.name}{" id="}{.containerID}{" restarts="}{.restartCount}{" started="}{.state.running.startedAt}{" lastExit="}{.lastState.terminated.exitCode}{" "}{.lastState.terminated.reason}{" lastFinished="}{.lastState.terminated.finishedAt}{"\n"}{end}'
+  "$KC" --context kind-plane-platform -n "$ns" get pod "$pod" -o jsonpath='{range .spec.containers[*]}{"limit: "}{.name}{" "}{.resources.limits.memory}{"\n"}{end}{range .spec.initContainers[*]}{"init limit: "}{.name}{" "}{.resources.limits.memory}{"\n"}{end}'
+  docker exec "$NODE" sh -c '
+    d="$1"
+    show() { # label dir
+      lbl="$1"; c="$2"
+      printf -- "-- %s\n" "$lbl"
+      printf "memory.max %s\n" "$(cat "$c/memory.max")"
+      printf "memory.peak %s\n" "$(cat "$c/memory.peak" 2>/dev/null)"
+      printf "memory.current %s\n" "$(cat "$c/memory.current")"
+      printf "memory.events:"; while read -r k v; do printf " %s=%s" "$k" "$v"; done <"$c/memory.events"; printf "\n"
+      printf "memory.stat:"; grep -E "^(anon|file|kernel|slab|shmem|pgscan|pgsteal|workingset_refault_file) " "$c/memory.stat" | while read -r k v; do printf " %s=%s" "$k" "$v"; done; printf "\n"
+    }
+    show "pod cgroup $(basename "$d")" "$d"
+    for c in "$d"/*/; do
+      [ -f "$c/memory.max" ] || continue
+      show "container cgroup $(basename "$c")" "$c"
+    done
+  ' sh "$dir"
+done
+--- cg-all.sh
+#!/bin/bash
+# One line per pod, read only, on the node: the pod cgroup's and each limited container's memory.events max, peak and anon.
+export KUBECONFIG=/Users/bek/dev/pr/plane-platform/.local/kubeconfig
+KC=/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl
+NODE=plane-platform-control-plane
+printf 'namespace/pod | pod memory.max MiB | pod max (local) | pod oom_kill | pod peak MiB | pod anon MiB | container: limit MiB, max, peak MiB ...\n'
+for ns in "$@"; do
+  "$KC" --context kind-plane-platform -n "$ns" get pods --field-selector=status.phase=Running -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.uid}{" "}{.status.qosClass}{"\n"}{end}' |
+  while read -r pod uid qos; do
+    u=$(printf '%s' "$uid" | tr '-' '_'); q=$(printf '%s' "$qos" | tr 'A-Z' 'a-z')
+    if [ "$q" = guaranteed ]; then dir="/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-pod${u}.slice"; else dir="/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-${q}.slice/kubelet-kubepods-${q}-pod${u}.slice"; fi
+    docker exec "$NODE" sh -c '
+      d="$1"; pp="$2"
+      mi() { [ "$1" = max ] && { printf max; return; }; awk -v v="$1" "BEGIN{printf \"%.0f\", v/1048576}"; }
+      ev() { awk -v k="$2" "\$1==k{print \$2}" "$1"; }
+      st() { awk -v k="$2" "\$1==k{print \$2}" "$1"; }
+      printf "%s | %s | %s (%s) | %s | %s | %s |" "$pp" "$(mi "$(cat "$d/memory.max")")" "$(ev "$d/memory.events" max)" "$(ev "$d/memory.events.local" max)" "$(ev "$d/memory.events" oom_kill)" "$(mi "$(cat "$d/memory.peak")")" "$(mi "$(st "$d/memory.stat" anon)")"
+      for c in "$d"/*/; do
+        [ -f "$c/memory.max" ] || continue
+        m="$(cat "$c/memory.max")"; [ "$m" = max ] && continue
+        printf " %s,%s,%s" "$(mi "$m")" "$(ev "$c/memory.events" max)" "$(mi "$(cat "$c/memory.peak")")"
+      done
+      printf "\n"
+    ' sh "$dir" "$ns/$pod"
+  done
+done
+--- q.sh
+#!/bin/bash
+# q.sh <promql> [start end step]: instant or range query against Prometheus through the host route. Read only.
+P=http://prometheus.localhost/api/v1
+if [ $# -ge 4 ]; then
+  curl -sS -m 60 -G "$P/query_range" --data-urlencode "query=$1" --data-urlencode "start=$2" --data-urlencode "end=$3" --data-urlencode "step=$4"
+else
+  curl -sS -m 60 -G "$P/query" --data-urlencode "query=$1"
+fi
+--- hist-final.py
+# Query_range reads behind limits-pod-cgroup-1.txt. Prometheus at http://prometheus.localhost, retention from 2026-11-04T21:00Z.
+import json, subprocess, time, datetime as dt, calendar
+def q(expr, start=None, end=None, step=None):
+    args = ["/bin/bash", "./q.sh", expr]
+    if start is not None:
+        args += [str(start), str(end), str(step)]
+    d = json.loads(subprocess.run(args, capture_output=True, text=True, check=True).stdout)
+    assert d["status"] == "success", d
+    return d["data"]["result"]
+def z(t): return dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%m-%dT%H:%M:%SZ")
+def ts(s): return calendar.timegm(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ"))
+MI = 1048576.0
+now = time.time()
+print("# Loki pod 78fea61b, started 21:51:56Z. Container 94be141b ran the stress test and was killed by the test's kill -9 at 21:58:05Z. Container 673718be started 21:58:06Z, replayed the WAL, and is still running.")
+print("## Pod cgroup usage, sampled every 15s since the second container started (query: container_memory_usage_bytes{pod=loki-0,container=\"\",image=\"\"})")
+u = q('container_memory_usage_bytes{pod="loki-0",namespace="monitoring",container="",image=""}', ts("2026-11-04T21:58:10Z"), now, 15)
+uv = [(float(t), float(x)/MI) for t,x in u[0]["values"]]
+for th in (620, 560, 500, 450, 400):
+    n=[a for a,b in uv if b>=th]
+    print("usage >= %d MiB: %d samples, last %s" % (th, len(n), z(n[-1]) if n else "-"))
+t2=[(a,b) for a,b in uv if a>=ts("2026-11-04T22:30:00Z")]
+print("highest since 22:30Z: %.1f MiB at %s" % (max(b for _,b in t2), z(max(t2,key=lambda x:x[1])[0])))
+print("## Anon by container, every 30s (container_memory_rss). 553 is from the 5s cgroup samples in monitoring-loki-limit-2.txt")
+for s in q('container_memory_rss{pod="loki-0",namespace="monitoring",container="loki"}', ts("2026-11-04T21:00:00Z"), now, 30):
+    v=[(float(t), float(x)/MI) for t,x in s["values"]]
+    print("%s first %s last %s max %.1f at %s" % (s["metric"]["id"][-27:-6], z(v[0][0]), z(v[-1][0]), max(b for _,b in v), z(max(v,key=lambda x:x[1])[0])))
+r = q('sum(container_memory_rss{pod="loki-0",namespace="monitoring",container="loki"})', ts("2026-11-04T22:00:00Z"), now, 30)
+v=[(float(t), float(x)/MI) for t,x in r[0]["values"]]
+print("highest anon since 22:00Z: %.1f MiB at %s" % (max(b for _,b in v), z(max(v,key=lambda x:x[1])[0])))
+v2=[(a,b) for a,b in v if a>=ts("2026-11-04T22:30:00Z")]
+print("highest anon since 22:30Z: %.1f MiB at %s" % (max(b for _,b in v2), z(max(v2,key=lambda x:x[1])[0])))
+print("## Ingest (sum(rate(loki_distributor_bytes_received_total[5m])), every 30s)")
+res = q('sum(rate(loki_distributor_bytes_received_total[5m]))', ts("2026-11-04T21:00:00Z"), now, 30)
+ri = [(float(t), float(x)) for t, x in res[0]["values"]]
+out = [(t,x) for t,x in ri if t >= ts("2026-11-04T22:10:00Z")]
+xs = sorted(x for _,x in out)
+m = sum(xs)/len(xs)
+print("stress runs: highest %.0f B/s at %s" % (max(x for _,x in ri), z(max(ri,key=lambda a:a[1])[0])))
+print("since 22:10Z, n=%d: mean %.0f B/s, median %.0f, p95 %.0f, highest %.0f at %s" % (len(out), m, xs[len(xs)//2], xs[int(len(xs)*.95)], xs[-1], z(max(out,key=lambda a:a[1])[0])))
+print("3.5 MB/s against that: %.0f times the mean, %.0f times the median, %.0f times the highest 5m" % (3.5e6/m, 3.5e6/xs[len(xs)//2], 3.5e6/xs[-1]))
+print("last hour: %.0f B/s" % float(q('sum(rate(loki_distributor_bytes_received_total[1h]))')[0]["value"][1]))
+bt = max(out,key=lambda a:a[1])[0]
+w=[(t,x) for t,x in v if abs(t-bt)<=900]
+print("anon within 15m of the highest 5m: max %.1f MiB at %s" % (max(x for _,x in w), z(max(w,key=lambda a:a[1])[0])))
+print("go_gc_gomemlimit_bytes{pod=loki-0}: %.0f MiB" % (float(q('go_gc_gomemlimit_bytes{pod="loki-0"}')[0]["value"][1])/MI))
+print("## Infisical Postgres, anon and cache (container_memory_rss, container_memory_cache, 30s)")
+for s in q('container_memory_rss{pod="infisical-postgres-0",namespace="infisical",container="postgres"}', ts("2026-11-04T21:00:00Z"), now, 30):
+    v=[(float(t), float(x)/MI) for t,x in s["values"]]
+    print("anon %s first %s max %.1f at %s last %.1f" % (s["metric"]["id"][-27:-6], z(v[0][0]), max(b for _,b in v), z(max(v,key=lambda x:x[1])[0]), v[-1][1]))
+for s in q('container_memory_cache{pod="infisical-postgres-0",namespace="infisical",container="postgres"}', ts("2026-11-04T21:00:00Z"), now, 30):
+    v=[(float(t), float(x)/MI) for t,x in s["values"]]
+    print("cache %s first %s max %.1f at %s last %.1f" % (s["metric"]["id"][-27:-6], z(v[0][0]), max(b for _,b in v), z(max(v,key=lambda x:x[1])[0]), v[-1][1]))
+print("## Prometheus, the current container since 00:34:11Z with limit 1024Mi")
+for s in q('container_memory_rss{pod="prometheus-kps-prometheus-0",namespace="monitoring",container="prometheus"}', ts("2026-11-05T00:34:00Z"), now, 30):
+    v=[(float(t), float(x)/MI) for t,x in s["values"]]
+    print("anon %s max %.1f at %s last %.1f" % (s["metric"]["id"][-27:-6], max(b for _,b in v), z(max(v,key=lambda x:x[1])[0]), v[-1][1]))
+
+## Reading at 2026-11-05T02:47:47Z, to see whether the counts moved
+pod 78fea61b_bd12_4194_b552_bddc23a87cbe events: low 0 high 0 max 58931 oom 0 oom_kill 0 oom_group_kill 0  current=370761728
+pod b316f1c1_c87d_446e_a049_aa9750664410: gone. Infisical Postgres was replaced after the 02:18Z reading, so 5066 is that pod's last reading here.
+
+## The Infisical Postgres pod that replaced it
+### infisical/infisical-postgres-0 uid=29b67aa8-052b-422d-9139-723583940239 qos=burstable
+status: postgres id=containerd://0936504965cf558fffa4504398d32e18d91aae705faab9b091bc708acddfb572 restarts=0 started=2026-11-05T02:25:37Z lastExit=  lastFinished=
+limit: postgres 256Mi
+-- pod cgroup kubelet-kubepods-burstable-pod29b67aa8_052b_422d_9139_723583940239.slice
+memory.max 268435456
+memory.peak 268435456
+memory.current 141017088
+memory.events: low=0 high=0 max=876 oom=0 oom_kill=0 oom_group_kill=0

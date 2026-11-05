@@ -1,0 +1,37 @@
+# 2026-11-05T07:44:40Z command: kubectl exec <pod> -c <container> -- df -k <mount>, for each pod with a PVC. Node volumes share one filesystem, so df shows that filesystem; per-volume use is du in the host file.
+--- infisical/infisical-postgres-0 container=postgres pvc=data-infisical-postgres-0 mount=/var/lib/postgresql/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- infisical/infisical-redis-0 container=redis pvc=data-infisical-redis-0 mount=/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- monitoring/loki-0 container=loki pvc=storage-loki-0 mount=/var/loki
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- monitoring/prometheus-kps-prometheus-0 container=prometheus pvc=prometheus-kps-prometheus-db-prometheus-kps-prometheus-0 mount=/prometheus
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-dev/plane-minio-wl-0 container=plane-minio pvc=pvc-plane-minio-vol-plane-minio-wl-0 mount=/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-dev/plane-pgdb-wl-0 container=plane-pgdb pvc=pvc-plane-pgdb-vol-plane-pgdb-wl-0 mount=/var/lib/postgresql/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-dev/plane-rabbitmq-wl-0 container=plane-rabbitmq pvc=pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 mount=/var/lib/rabbitmq
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-dev/plane-redis-wl-0 container=plane-redis pvc=pvc-plane-redis-vol-plane-redis-wl-0 mount=/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-prod-sim/plane-minio-wl-0 container=plane-minio pvc=pvc-plane-minio-vol-plane-minio-wl-0 mount=/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-prod-sim/plane-pgdb-wl-0 container=plane-pgdb pvc=pvc-plane-pgdb-vol-plane-pgdb-wl-0 mount=/var/lib/postgresql/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-prod-sim/plane-rabbitmq-wl-0 container=plane-rabbitmq pvc=pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0 mount=/var/lib/rabbitmq
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]
+--- plane-prod-sim/plane-redis-wl-0 container=plane-redis pvc=pvc-plane-redis-vol-plane-redis-wl-0 mount=/data
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/load3/pvdf.sh: line 9: timeout: command not found
+[could not read: exit 127]

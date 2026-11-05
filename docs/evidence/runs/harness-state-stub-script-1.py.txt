@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Item 8: a line printed in section 1 that holds a credential, with kubectl stubbed and every section after it empty. The scan's
+last line must count it, because the values are known before section 1 prints. Fake values only; no Secret is read.
+
+usage: state_stub.py <directory holding state.py and common.py>"""
+import sys, tempfile
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+sys.path.insert(1, "/Users/bek/dev/pr/plane-platform/tests/e2e")
+import common
+import state
+FAKE = "fake-credential-value-12345"
+stores = {env: {name: {} for name in common.SECRET_NAMES} for env in common.ENVS}
+stores["dev"]["plane-pgdb"]["POSTGRES_PASSWORD"] = FAKE
+state.require_environments = lambda: None
+state.read_secrets = lambda: stores
+def section_one():
+    state.say(f"section 1 prints a line holding {FAKE}")
+state.identity = section_one
+for name in ("connected", "credentials", "data", "infisical", "known_gap"):
+    setattr(state, name, lambda: None)
+with tempfile.TemporaryDirectory() as directory:
+    state.ACCOUNTS = Path(directory) / "accounts.env"
+    print("exit", state.main())

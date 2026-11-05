@@ -1,0 +1,8 @@
+# 2026-11-05T07:32:40Z commit 4aa0640. Self-heal test in plane-dev: change the replica count of plane-admin-wl by hand and read how long Argo CD takes to put it back. The owner approved this in chat.
+before: replicas 1, app Synced Healthy
+07:32:40Z kubectl scale deployment/plane-admin-wl --replicas=2
+deployment.apps/plane-admin-wl scaled
+07:32:40Z +0s replicas=2 app=Synced/Healthy/Succeeded
+07:32:43Z +3s replicas=1 app=Synced/Healthy/Succeeded
+reverted by Argo CD after 3s; nobody ran a second kubectl command
+after: replicas 1, app Synced Healthy

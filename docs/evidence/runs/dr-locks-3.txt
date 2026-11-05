@@ -1,0 +1,8 @@
+# Before the change. 2026-11-05T02:10:47Z
+max_locks_per_transaction, max_connections, max_prepared_transactions: 64|30|0
+lock tables and all shared memory, KiB:
+LOCK hash 2.8750000000000000
+PREDICATELOCK hash 2.8750000000000000
+PROCLOCK hash 2.8750000000000000
+38464.000000000000
+{"uid":"b316f1c1-c87d-446e-a049-aa9750664410","restarts":0,"started":"2026-11-04T21:43:27Z"}

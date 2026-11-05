@@ -1,0 +1,31 @@
+drill clean-restore started 2026-11-05T03:01:30Z by: ./tests/drills/clean-restore.sh
+
+--- 0. Preflight
+PASS  every Application is Synced and Healthy
+PASS  sentinels and test accounts exist for: dev prod-sim
+PASS  no uncommitted changes under the paths Argo CD reads
+host disk: 13.6 GiB free, kind volume 12.0 GiB, about 24.8 GiB after a delete at 93%, up.sh asks for 25 GiB
+[1;33mwarn[0m about 24.8 GiB would be free after the delete: 13.6 GiB now plus 93% of the 12.0 GiB kind volume. up.sh asks for 25 GiB to create a cluster
+PASS  disk: below the check, going on with the reason given in ALLOW_LOW_DISK
+
+--- 1. Baseline
+PASS  38 rendered Secret keys hashed, cluster CA 50ec4e2a8d91d32d, 0 secret-zero archives
+
+--- 2. Backups
+PASS  SKIP_BACKUP=yes: using what is on disk, BACKUP=latest
+
+--- 3. Plan
+[1;33mwarn[0m about 24.8 GiB would be free after the delete: 13.6 GiB now plus 93% of the 12.0 GiB kind volume. up.sh asks for 25 GiB to create a cluster. ALLOW_LOW_DISK says to go on anyway: the plan is all this run does, and nothing is deleted
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T022627Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim, 1 users, 6 projects, 18 secrets, server v0.167.6
+    dev        20261105T000616Z, SECRET_KEY 4ceb3f709b196ae0, 23 users, 16 workspaces, 31 projects, 132 work items, 34 file rows, 34 objects, sentinel sentinel-f10a5851
+    prod-sim   20261105T022025Z, SECRET_KEY 77d617b20fb32955, 21 users, 13 workspaces, 26 projects, 120 work items, 41 file rows, 41 objects, sentinel sentinel-5bf39257
+    admin      the file this backup names, ending 2027-02-02T21:25:32Z
+    images     4 localhost:5001 digests in Git
+    disk       13.6 GiB free, kind volume 12.0 GiB, about 24.8 GiB after a delete at 93%, up.sh asks for 25 GiB
+[1;33mwarn[0m a real run would refuse right now: cluster plane-platform already holds Plane volumes. Run make destroy first.
+[1;32m ok[0m PLAN_ONLY=yes: nothing was changed
+PASS  the recovery set checks out
+PASS  PLAN_ONLY=yes: stopping before the delete
+
+RESULT PASS   evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-clean-restore-20261105T030130Z.log

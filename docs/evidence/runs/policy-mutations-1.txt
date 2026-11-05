@@ -1,0 +1,35 @@
+# date: 2026-11-05T02:33:18Z
+# command: mutate.sh, shown at the end. Each clause of the new rules taken out in a scratch copy of policy/: conftest verify must fail. Base 218f423 plus the working tree.
+
+no namespace clause                                  verify exit=1  98 tests, 96 passed, 0 warnings, 2 failures, 0 exceptions, 0 skipped
+no missing-namespace clause                          verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+no Service clause                                    verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+no host clause                                       verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+one Service missing from the list                    verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+one namespace missing from the list                  verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+TCP in those namespaces allowed                      verify exit=1  98 tests, 96 passed, 0 warnings, 2 failures, 0 exceptions, 0 skipped
+TCP to those Services allowed                        verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+baseImage not read                                   verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+image not read                                       verify exit=1  98 tests, 97 passed, 0 warnings, 1 failure, 0 exceptions, 0 skipped
+
+## The script
+#!/bin/bash
+# Each clause of the new rules, taken out in a scratch copy: conftest verify must fail.
+R=/Users/bek/dev/pr/plane-platform; W=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/alerts-work
+d="$(mktemp -d "$W/m.XXXXXX")"; trap 'rm -rf "$d"' EXIT
+mut() { # mut <label> <file> <python regex> <replacement>
+  rm -rf "$d/policy"; cp -R "$R/policy" "$d/policy"
+  python3 -I -c 'import re,sys; p,r,n=sys.argv[1:4]; s=open(p).read(); t,c=re.subn(r,n,s,count=1,flags=re.S); assert c==1,"no match"; open(p,"w").write(t)' "$d/policy/$2" "$3" "$4" || { echo "$1: could not plant"; return; }
+  "$R/.tools/bin/conftest" verify --policy "$d/policy" --no-color >"$d/out" 2>&1; st=$?
+  printf '%-52s verify exit=%s  %s\n' "$1" "$st" "$(tail -1 "$d/out")"
+}
+mut "no namespace clause" plane.rego 'needs_allow_list\(_\) if beside_internal_ui\n' ''
+mut "no missing-namespace clause" plane.rego 'beside_internal_ui if not input.metadata.namespace\n' ''
+mut "no Service clause" plane.rego 'needs_allow_list\(route\) if names_internal_service\(route\)\n' ''
+mut "no host clause" plane.rego '# Traefik matches hosts in any case, and a HostRegexp would escape the dots\.\nneeds_allow_list\(route\) if \{.*?\n\}\n' ''
+mut "one Service missing from the list" plane.rego '"kps-alertmanager", ' ''
+mut "one namespace missing from the list" plane.rego '"argocd", "monitoring", "infisical"' '"argocd", "monitoring"'
+mut "TCP in those namespaces allowed" plane.rego 'input.kind in \{"IngressRouteTCP", "IngressRouteUDP"\}\n\tbeside_internal_ui' 'input.kind in {"Planted"}\n\tbeside_internal_ui'
+mut "TCP to those Services allowed" plane.rego 'input.kind in \{"IngressRouteTCP", "IngressRouteUDP"\}\n\tnot beside_internal_ui' 'input.kind in {"Planted"}\n\tnot beside_internal_ui'
+mut "baseImage not read" charts.rego '\["image", "baseImage"\]' '["image"]'
+mut "image not read" charts.rego '\["image", "baseImage"\]' '["baseImage"]'

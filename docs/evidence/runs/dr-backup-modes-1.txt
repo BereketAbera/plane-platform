@@ -1,0 +1,89 @@
+# Modes of a backup on the host. 2026-11-05T02:02:13Z. The newest of each.
+
+$ ls -ld .local/backups .local/backups/infisical .local/backups/infisical/20261105T001814Z
+drwx------@ 5 bek  staff  160 Nov  5 01:59 ../backups
+drwxrwxrwx@ 6 bek  staff  192 Nov  5 03:18 ../backups/infisical
+drwx------  6 bek  staff  192 Nov  5 03:18 ../backups/infisical/20261105T001814Z
+$ ls -l .local/backups/infisical/20261105T001814Z .local/backups/infisical/20261105T001814Z/postgres .local/backups/infisical/20261105T001814Z/recovery
+../backups/infisical/20261105T001814Z:
+total 16
+-rw-------@ 1 bek  staff  632 Nov  5 03:18 SHA256SUMS
+-rw-------  1 bek  staff  912 Nov  5 03:18 manifest.json
+drwx------  6 bek  staff  192 Nov  5 03:18 postgres
+drwx------@ 4 bek  staff  128 Nov  5 03:18 recovery
+
+../backups/infisical/20261105T001814Z/postgres:
+total 12280
+-rw-------  1 bek  staff  4407329 Nov  5 03:18 infisical.dump
+-rw-------  1 bek  staff   942298 Nov  5 03:18 infisical.toc.txt
+-rw-------  1 bek  staff      153 Nov  5 03:18 rowcounts.sql
+-rw-------  1 bek  staff    24975 Nov  5 03:18 rowcounts.tsv
+
+../backups/infisical/20261105T001814Z/recovery:
+total 48
+-rw-------@ 1 bek  staff   4289 Nov  5 03:18 set.json
+-rw-------@ 1 bek  staff  13041 Nov  5 03:18 terraform.tfstate
+
+$ ls -ld .local/backups .local/backups/dev .local/backups/dev/20261105T000616Z
+drwx------@ 5 bek  staff  160 Nov  5 01:59 ../backups
+drwxrwxrwx@ 5 bek  staff  160 Nov  5 03:06 ../backups/dev
+drwx------  9 bek  staff  288 Nov  5 03:06 ../backups/dev/20261105T000616Z
+$ ls -l .local/backups/dev/20261105T000616Z .local/backups/dev/20261105T000616Z/postgres .local/backups/dev/20261105T000616Z/recovery
+../backups/dev/20261105T000616Z:
+total 64
+-rw-------@  1 bek  staff   6349 Nov  5 03:06 SHA256SUMS
+-rw-------   1 bek  staff   1690 Nov  5 03:06 manifest.json
+drwx------  18 bek  staff    576 Nov  5 03:06 objects
+-rw-------   1 bek  staff   2568 Nov  5 03:06 objects.check
+-rw-------   1 bek  staff  12983 Nov  5 03:06 objects.lsjson
+drwx------  10 bek  staff    320 Nov  5 03:06 postgres
+drwx------@  5 bek  staff    160 Nov  5 03:06 recovery
+
+../backups/dev/20261105T000616Z/postgres:
+total 1960
+-rw-------  1 bek  staff     381 Nov  5 03:06 content.sql
+-rw-------  1 bek  staff     127 Nov  5 03:06 content.tsv
+-rw-------  1 bek  staff      27 Nov  5 03:06 pg_dump_version.txt
+-rw-------  1 bek  staff  811511 Nov  5 03:06 plane.dump
+-rw-------  1 bek  staff  123539 Nov  5 03:06 plane.toc.txt
+-rw-------  1 bek  staff     217 Nov  5 03:06 rowcounts.sql
+-rw-------  1 bek  staff    2114 Nov  5 03:06 rowcounts.tsv
+-rw-------  1 bek  staff       6 Nov  5 03:06 server_version.txt
+
+../backups/dev/20261105T000616Z/recovery:
+total 24
+-rw-------@ 1 bek  staff  2898 Nov  5 03:06 objects.types.tsv
+-rw-------@ 1 bek  staff   184 Nov  5 03:06 test-accounts.env
+-rw-------@ 1 bek  staff   421 Nov  5 03:06 test-sentinel.json
+
+$ ls -ld .local/backups .local/backups/prod-sim .local/backups/prod-sim/20261105T000627Z
+drwx------@ 5 bek  staff  160 Nov  5 01:59 ../backups
+drwxrwxrwx@ 5 bek  staff  160 Nov  5 03:06 ../backups/prod-sim
+drwx------  9 bek  staff  288 Nov  5 03:06 ../backups/prod-sim/20261105T000627Z
+$ ls -l .local/backups/prod-sim/20261105T000627Z .local/backups/prod-sim/20261105T000627Z/postgres .local/backups/prod-sim/20261105T000627Z/recovery
+../backups/prod-sim/20261105T000627Z:
+total 56
+-rw-------@  1 bek  staff  4705 Nov  5 03:06 SHA256SUMS
+-rw-------   1 bek  staff  1704 Nov  5 03:06 manifest.json
+drwx------  13 bek  staff   416 Nov  5 03:06 objects
+-rw-------   1 bek  staff  1738 Nov  5 03:06 objects.check
+-rw-------   1 bek  staff  8825 Nov  5 03:06 objects.lsjson
+drwx------  10 bek  staff   320 Nov  5 03:06 postgres
+drwx------@  5 bek  staff   160 Nov  5 03:06 recovery
+
+../backups/prod-sim/20261105T000627Z/postgres:
+total 1704
+-rw-------  1 bek  staff     381 Nov  5 03:06 content.sql
+-rw-------  1 bek  staff     127 Nov  5 03:06 content.tsv
+-rw-------  1 bek  staff      27 Nov  5 03:06 pg_dump_version.txt
+-rw-------  1 bek  staff  714884 Nov  5 03:06 plane.dump
+-rw-------  1 bek  staff  123539 Nov  5 03:06 plane.toc.txt
+-rw-------  1 bek  staff     217 Nov  5 03:06 rowcounts.sql
+-rw-------  1 bek  staff    2103 Nov  5 03:06 rowcounts.tsv
+-rw-------  1 bek  staff       6 Nov  5 03:06 server_version.txt
+
+../backups/prod-sim/20261105T000627Z/recovery:
+total 24
+-rw-------@ 1 bek  staff  1961 Nov  5 03:06 objects.types.tsv
+-rw-------@ 1 bek  staff   199 Nov  5 03:06 test-accounts.env
+-rw-------@ 1 bek  staff   431 Nov  5 03:06 test-sentinel.json

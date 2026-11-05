@@ -1,0 +1,6643 @@
+{
+  "captured_at": "2026-11-05T07:45:44Z",
+  "command": "curl -G http://prometheus.localhost/api/v1/query per entry (query and time in each entry)",
+  "windows": {
+    "quiet": {
+      "start": "2026-11-05T03:40:00Z",
+      "end": "2026-11-05T04:10:00Z"
+    },
+    "load": {
+      "start": "2026-11-05T07:33:48Z",
+      "end": "2026-11-05T07:42:51Z"
+    }
+  },
+  "entries": [
+    {
+      "name": "ctr_mem_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum by (namespace,container)(container_memory_working_set_bytes{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "25902592"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "26604032"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "3289088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "3399782.4"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "177152409.6"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "164156040.53333333"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "157361049.6"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "155191159.46666667"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "152352290.13333333"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "158218001.06666666"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "120157013.33333333"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "101487342.93333334"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "66540305.06666667"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "68596462.93333334"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "134949102.93333334"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "140376132.26666668"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "4389853.866666666"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "5273531.733333333"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "100097672.53333333"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "95782195.2"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "3321719.466666667"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "3325815.466666667"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "291611067.73333335"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "298438792.53333336"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "26297856"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "16603101.866666667"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "19782041.6"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "12989917.866666667"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_mem_max",
+      "window": "quiet",
+      "query": "max_over_time(sum by (namespace,container)(container_memory_working_set_bytes{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "26320896"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "26845184"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "3289088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "3403776"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "177475584"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "164196352"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "158310400"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "155279360"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "156856320"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "163131392"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "120389632"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "102289408"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "67059712"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "69623808"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "189718528"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "191459328"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "4628480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "7028736"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "100638720"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "96149504"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "3325952"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "3325952"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "318472192"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "310284288"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "27729920"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "18554880"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "20779008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "14143488"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum by (namespace,container)(rate(container_cpu_usage_seconds_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0017402185961031837"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0019136666644204564"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.00006417585063129195"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.00006270232408028032"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.00422898648379628"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0038560661441754984"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.002774749780525866"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.002776037755137121"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.000933747662400031"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0013392384249144912"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0012630778985132786"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0014251004055719704"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0065341941028815515"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.006366734231477706"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.014750305886600356"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.014169753792366709"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.002660872792131042"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0027772138153638985"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.001746898843106752"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.001785509225566504"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.00006625367509336258"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.00006543486091346176"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0065093811821183515"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.006441916970514783"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0013028049177830272"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.001388804266142604"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0006045614319214658"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0004739725863080503"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_max",
+      "window": "quiet",
+      "query": "max_over_time(sum by (namespace,container)(rate(container_cpu_usage_seconds_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.002447810331875137"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0028715113106979884"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.00009779179810725495"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.00014998662847562106"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.006743141153081706"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.005654971801721649"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.003989805032131571"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.004264743385400051"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0017294978551601994"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.01944115351993217"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0025767425569176734"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.003974621085942732"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.009619177591838543"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.009911022724111564"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.032577913249418625"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.03281355013550169"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0033876992247167687"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0036587082950719214"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.005397354329038772"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.004841689382698995"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0001373801916932913"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.00011869217102379007"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.023762493941899266"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.020316295757071612"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0024969373155683287"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.0026686370733884092"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.001243931818181791"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.000812256932970691"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pod_ctr_mem_max",
+      "window": "quiet",
+      "query": "max_over_time(sum by (namespace,pod,container)(container_memory_working_set_bytes{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev",
+            "pod": "iso-dev-controller-manager-85dbfbcb5b-vswbn"
+          },
+          "value": [
+            1793851800,
+            "26320896"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim",
+            "pod": "iso-prod-sim-controller-manager-5cc86cc76-4r45n"
+          },
+          "value": [
+            1793851800,
+            "26845184"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-admin-wl-7cf74f754d-pr952"
+          },
+          "value": [
+            1793851800,
+            "3289088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev",
+            "pod": "plane-admin-wl-5df5d7f9f6-szn25"
+          },
+          "value": [
+            1793851800,
+            "3403776"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-7675d8b644-flq5c"
+          },
+          "value": [
+            1793851800,
+            "177475584"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev",
+            "pod": "plane-api-wl-596749bb8-nbfk5"
+          },
+          "value": [
+            1793851800,
+            "164196352"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-68db6c7f9d-4pz2w"
+          },
+          "value": [
+            1793851800,
+            "158310400"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-beat-worker-wl-b64f64d68-zk56x"
+          },
+          "value": [
+            1793851800,
+            "155279360"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-qdb9d"
+          },
+          "value": [
+            1793851800,
+            "156856320"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-szdzq"
+          },
+          "value": [
+            1793851800,
+            "163131392"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793851800,
+            "120389632"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793851800,
+            "102289408"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793851800,
+            "67059712"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793851800,
+            "69623808"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793851800,
+            "189718528"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793851800,
+            "191459328"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793851800,
+            "4628480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793851800,
+            "7028736"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev",
+            "pod": "plane-space-wl-6b65f54cf5-kjk4d"
+          },
+          "value": [
+            1793851800,
+            "100638720"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-space-wl-57b7996fc-sbxpp"
+          },
+          "value": [
+            1793851800,
+            "96149504"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev",
+            "pod": "plane-web-wl-7f547975-2q7fx"
+          },
+          "value": [
+            1793851800,
+            "3325952"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-web-wl-5f74d4447c-phknn"
+          },
+          "value": [
+            1793851800,
+            "3325952"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-worker-wl-8c8968995-jhbzj"
+          },
+          "value": [
+            1793851800,
+            "318472192"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-5596b5864c-8s4wc"
+          },
+          "value": [
+            1793851800,
+            "310284288"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev",
+            "pod": "postgres-exporter-79f8bbdffd-p5q9g"
+          },
+          "value": [
+            1793851800,
+            "27729920"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-b6f657c47-p65fl"
+          },
+          "value": [
+            1793851800,
+            "18554880"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "redis-exporter-5b59d6cb7c-xsw9t"
+          },
+          "value": [
+            1793851800,
+            "20779008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev",
+            "pod": "redis-exporter-5b59d6cb7c-rp2rd"
+          },
+          "value": [
+            1793851800,
+            "14143488"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pod_ctr_cpu_max",
+      "window": "quiet",
+      "query": "max_over_time(sum by (namespace,pod,container)(rate(container_cpu_usage_seconds_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev",
+            "pod": "iso-dev-controller-manager-85dbfbcb5b-vswbn"
+          },
+          "value": [
+            1793851800,
+            "0.002447810331875137"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim",
+            "pod": "iso-prod-sim-controller-manager-5cc86cc76-4r45n"
+          },
+          "value": [
+            1793851800,
+            "0.0028715113106979884"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-admin-wl-7cf74f754d-pr952"
+          },
+          "value": [
+            1793851800,
+            "0.00009779179810725495"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev",
+            "pod": "plane-admin-wl-5df5d7f9f6-szn25"
+          },
+          "value": [
+            1793851800,
+            "0.00014998662847562106"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-7675d8b644-flq5c"
+          },
+          "value": [
+            1793851800,
+            "0.006743141153081706"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev",
+            "pod": "plane-api-wl-596749bb8-nbfk5"
+          },
+          "value": [
+            1793851800,
+            "0.005654971801721649"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-68db6c7f9d-4pz2w"
+          },
+          "value": [
+            1793851800,
+            "0.003989805032131571"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-beat-worker-wl-b64f64d68-zk56x"
+          },
+          "value": [
+            1793851800,
+            "0.004264743385400051"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-qdb9d"
+          },
+          "value": [
+            1793851800,
+            "0.0017294978551601994"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-szdzq"
+          },
+          "value": [
+            1793851800,
+            "0.01944115351993217"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.0025767425569176734"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.003974621085942732"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.009619177591838543"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.009911022724111564"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.032577913249418625"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.03281355013550169"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.0033876992247167687"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793851800,
+            "0.0036587082950719214"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev",
+            "pod": "plane-space-wl-6b65f54cf5-kjk4d"
+          },
+          "value": [
+            1793851800,
+            "0.005397354329038772"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-space-wl-57b7996fc-sbxpp"
+          },
+          "value": [
+            1793851800,
+            "0.004841689382698995"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev",
+            "pod": "plane-web-wl-7f547975-2q7fx"
+          },
+          "value": [
+            1793851800,
+            "0.0001373801916932913"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-web-wl-5f74d4447c-phknn"
+          },
+          "value": [
+            1793851800,
+            "0.00011869217102379007"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-worker-wl-8c8968995-jhbzj"
+          },
+          "value": [
+            1793851800,
+            "0.023762493941899266"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-5596b5864c-8s4wc"
+          },
+          "value": [
+            1793851800,
+            "0.020316295757071612"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev",
+            "pod": "postgres-exporter-79f8bbdffd-p5q9g"
+          },
+          "value": [
+            1793851800,
+            "0.0024969373155683287"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-b6f657c47-p65fl"
+          },
+          "value": [
+            1793851800,
+            "0.0026686370733884092"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "redis-exporter-5b59d6cb7c-xsw9t"
+          },
+          "value": [
+            1793851800,
+            "0.001243931818181791"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev",
+            "pod": "redis-exporter-5b59d6cb7c-rp2rd"
+          },
+          "value": [
+            1793851800,
+            "0.000812256932970691"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_mem_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum by (namespace)(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793851800,
+            "1644667221.3333333"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793851800,
+            "494688631.46666664"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793851800,
+            "1667563690.6666667"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793851800,
+            "768391782.4"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793851800,
+            "15771716.266666668"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "1263412531.2"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "1270233838.9333334"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793851800,
+            "20530176"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793851800,
+            "64411067.733333334"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_mem_max",
+      "window": "quiet",
+      "query": "max_over_time(sum by (namespace)(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793851800,
+            "1656881152"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793851800,
+            "622534656"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793851800,
+            "1691283456"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793851800,
+            "805376000"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793851800,
+            "16175104"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "1317969920"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "1315041280"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793851800,
+            "21667840"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793851800,
+            "66568192"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_cpu_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum by (namespace)(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793851800,
+            "0.04829618412324047"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793851800,
+            "0.026671652074687392"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793851800,
+            "0.10751056375119247"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793851800,
+            "0.020521545271609643"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793851800,
+            "0.00026949448860046917"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.04450907449502804"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.045513306075531335"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793851800,
+            "0.0015408051534543062"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793851800,
+            "0.002211217873787289"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_cpu_max",
+      "window": "quiet",
+      "query": "max_over_time(sum by (namespace)(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793851800,
+            "0.06490477121474367"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793851800,
+            "0.08132597261411362"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793851800,
+            "0.1473370696281516"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793851800,
+            "0.05797813174370002"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793851800,
+            "0.0008300647137282195"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.07052276218025241"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.07454944693783395"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793851800,
+            "0.0029121804284498675"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793851800,
+            "0.0033865265595085835"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_mem_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793851800,
+            "7209670656"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_mem_max",
+      "window": "quiet",
+      "query": "max_over_time(sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793851800,
+            "7375421440"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_cpu_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793851800,
+            "0.2970438433071314"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_cpu_max",
+      "window": "quiet",
+      "query": "max_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793851800,
+            "0.39793654780649734"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "node_root_mem_avg",
+      "window": "quiet",
+      "query": "avg_over_time(container_memory_working_set_bytes{id=\"/\"}[1800s])",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "node_root_mem_max",
+      "window": "quiet",
+      "query": "max_over_time(container_memory_working_set_bytes{id=\"/\"}[1800s])",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "node_root_cpu_avg",
+      "window": "quiet",
+      "query": "avg_over_time(rate(container_cpu_usage_seconds_total{id=\"/\"}[1m])[1800s:15s])",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "node_root_cpu_max",
+      "window": "quiet",
+      "query": "max_over_time(rate(container_cpu_usage_seconds_total{id=\"/\"}[1m])[1800s:15s])",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "vm_used_avg",
+      "window": "quiet",
+      "query": "avg_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793851800,
+            "10747871982.933332"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_used_max",
+      "window": "quiet",
+      "query": "max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793851800,
+            "11425443840"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_avg",
+      "window": "quiet",
+      "query": "avg_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793851800,
+            "0.9139385803136943"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_max",
+      "window": "quiet",
+      "query": "max_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793851800,
+            "1.8800626687556348"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_swap_used_max",
+      "window": "quiet",
+      "query": "max_over_time((node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes)[1800s:15s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793851800,
+            "835207168"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "alerts_firing",
+      "window": "quiet",
+      "query": "max_over_time(ALERTS{alertstate=\"firing\"}[1800s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "alertname": "Watchdog",
+            "alertstate": "firing",
+            "severity": "none"
+          },
+          "value": [
+            1793851800,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "argocd_not_synced",
+      "window": "quiet",
+      "query": "max_over_time(argocd_app_info{sync_status!=\"Synced\"}[1800s])",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "argocd_not_healthy",
+      "window": "quiet",
+      "query": "max_over_time(argocd_app_info{health_status!=\"Healthy\"}[1800s])",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "argocd_sync_ops",
+      "window": "quiet",
+      "query": "sum by (name)(increase(argocd_app_sync_total[1800s])) > 0",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "pods_created_in_window",
+      "window": "quiet",
+      "query": "max_over_time(kube_pod_created[1800s]) >= 1793850000",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "traefik_requests_by_service",
+      "window": "quiet",
+      "query": "sum by (service)(increase(traefik_service_requests_total[1800s])) > 0",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-1449d306fb3abd2de80f@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "monitoring-prometheus-fee5881c234c340f00a9@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "35.593300775820964"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "240.00054237410706"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-05ef5287dfff9a9888ac@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-3de9b3a1ef2bf77f889f@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-64a8b812e8ac7ded3f3b@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "240.00054237410706"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-9e9aaf0e93d4b21151aa@kubernetescrd"
+          },
+          "value": [
+            1793851800,
+            "120.00027118705353"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restarts_by_pod",
+      "window": "quiet",
+      "query": "sum by (namespace,pod)(increase(kube_pod_container_status_restarts_total[1800s])) > 0",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "oom_events",
+      "window": "quiet",
+      "query": "sum by (namespace,pod,container)(increase(container_oom_events_total[1800s])) > 0",
+      "time": 1793851800,
+      "result": []
+    },
+    {
+      "name": "throttled_share_by_ctr",
+      "window": "quiet",
+      "query": "sum by (namespace,container)(increase(container_cpu_cfs_throttled_periods_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1800s])) / sum by (namespace,container)(increase(container_cpu_cfs_periods_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1800s]))",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.012172284644194755"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.015356820234869017"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.02871410736579276"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.001364256480218281"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.008953168044077135"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.03270042194092827"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.014613778705636744"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.04461301105682695"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.03431982094006466"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.04477987421383648"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.044099223252317715"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.016129032258064516"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.015873015873015872"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.047743966421825816"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.09390178089584457"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793851800,
+            "0.13647642679900743"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793851800,
+            "0.0825"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_ready_peak",
+      "window": "quiet",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_ready{namespace=~\"plane-dev|plane-prod-sim\",queue=\"celery\"}[1800s])",
+      "time": 1793851800,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.127:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.223:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793851800,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_mem_avg",
+      "window": "load",
+      "query": "avg_over_time(sum by (namespace,container)(container_memory_working_set_bytes{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "19468743.111111112"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "14203448.888888888"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "28786915.555555556"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "27670528"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "155768393.14285713"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "152276650.66666666"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "3276686.222222222"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "96135281.77777778"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "3316280.888888889"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "3369870.222222222"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "95180458.66666667"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "3321969.777777778"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "130459192.8888889"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "47299015.11111111"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "129324373.33333333"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "11243747.555555556"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "118656000"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "61173987.55555555"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "171178552.8888889"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "154591345.7777778"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "264101432.8888889"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "17142784"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "135800263.1111111"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "6691840"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "167736909.57575756"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "155482574.4516129"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "258441984"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "10798421.333333334"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "18855708.444444444"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api-migrate",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "7622656"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_mem_max",
+      "window": "load",
+      "query": "max_over_time(sum by (namespace,container)(container_memory_working_set_bytes{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "20164608"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "14475264"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "29257728"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "27983872"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "167809024"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "161710080"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "3276800"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "96575488"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "3317760"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "3371008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "96276480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "3334144"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "143114240"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "66183168"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "165543936"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "11497472"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "124788736"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "67690496"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "180441088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "154689536"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "281718784"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "18214912"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "187494400"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "6868992"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "332898304"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "309641216"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "534728704"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "12996608"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "22695936"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api-migrate",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "7622656"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_avg",
+      "window": "load",
+      "query": "avg_over_time(sum by (namespace,container)(rate(container_cpu_usage_seconds_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0008735512486521035"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0006730225777999932"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0028805410951556897"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.003209771475962625"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.017627987066855297"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.011416098671084689"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.00012997001263893024"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.04214381569417563"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.004407797571020975"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.00011915243871682944"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.04601689089014323"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.00023776724097342457"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.00709126341072599"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0003398403640732809"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0021303378589912067"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.19938909326805004"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.02336546895591335"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.00363806478958513"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0036503249049697406"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.01879119286057415"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.18973267917590017"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.00445823684105121"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.06669647419275192"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0019624507347545247"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.02950792793526212"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0035107362586891257"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.1083692126493204"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0017633296426204116"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.012007007994891529"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_max",
+      "window": "load",
+      "query": "max_over_time(sum by (namespace,container)(rate(container_cpu_usage_seconds_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0013438055364184565"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0011115203158096616"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.005186572989851513"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0065327339719972915"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.12947890589337532"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.10263914897796503"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.00028880218843894354"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.1961133733755661"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0076911736136594105"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0002144667906033457"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.26635078408547574"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0005693064500469259"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.013452143906362997"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0008273515530677192"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.005743931244486199"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.37744538048509546"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.03207140921409212"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.004554615597168783"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.013081474235587394"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.07264897096312646"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.3887035852734403"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.007370488454157121"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.1155563099471926"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.0036611533203343865"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.09780413424124519"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0043782522257757835"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.3771532309526774"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0035628522590778885"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.016675152395691856"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pod_ctr_mem_max",
+      "window": "load",
+      "query": "max_over_time(sum by (namespace,pod,container)(container_memory_working_set_bytes{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "redis-exporter-5b59d6cb7c-xsw9t"
+          },
+          "value": [
+            1793864571,
+            "20164608"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev",
+            "pod": "redis-exporter-5b59d6cb7c-rp2rd"
+          },
+          "value": [
+            1793864571,
+            "14475264"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev",
+            "pod": "iso-dev-controller-manager-85dbfbcb5b-vswbn"
+          },
+          "value": [
+            1793864571,
+            "29257728"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim",
+            "pod": "iso-prod-sim-controller-manager-5cc86cc76-4r45n"
+          },
+          "value": [
+            1793864571,
+            "27983872"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-szdzq"
+          },
+          "value": [
+            1793864571,
+            "163803136"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-qdb9d"
+          },
+          "value": [
+            1793864571,
+            "161710080"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-admin-wl-64b68f786-lxtxv"
+          },
+          "value": [
+            1793864571,
+            "3276800"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-space-wl-6c6c7c76c6-z4jwz"
+          },
+          "value": [
+            1793864571,
+            "96575488"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-web-wl-545ff57fd4-fksxq"
+          },
+          "value": [
+            1793864571,
+            "3317760"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev",
+            "pod": "plane-admin-wl-545f5b8fcd-8prz5"
+          },
+          "value": [
+            1793864571,
+            "3371008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev",
+            "pod": "plane-space-wl-847f88bc46-pchg4"
+          },
+          "value": [
+            1793864571,
+            "96276480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev",
+            "pod": "plane-web-wl-748764649d-5swbd"
+          },
+          "value": [
+            1793864571,
+            "3334144"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793864571,
+            "143114240"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793864571,
+            "66183168"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793864571,
+            "165543936"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793864571,
+            "11497472"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793864571,
+            "124788736"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793864571,
+            "67690496"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev",
+            "pod": "plane-api-wl-847cc45c84-bdkcb"
+          },
+          "value": [
+            1793864571,
+            "180441088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-beat-worker-wl-7cd7fd4f44-fnkxm"
+          },
+          "value": [
+            1793864571,
+            "154689536"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-worker-wl-66794994cc-jdvpd"
+          },
+          "value": [
+            1793864571,
+            "281718784"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev",
+            "pod": "postgres-exporter-76cb56b89b-c5kbh"
+          },
+          "value": [
+            1793864571,
+            "18214912"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793864571,
+            "187494400"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793864571,
+            "6868992"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-647644f85-p8xr9"
+          },
+          "value": [
+            1793864571,
+            "155820032"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-786dbdf7b7-d7n7d"
+          },
+          "value": [
+            1793864571,
+            "155877376"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-789cc9ffd6-f65zx"
+          },
+          "value": [
+            1793864571,
+            "248090624"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-5bf8b8f988-2qpjs"
+          },
+          "value": [
+            1793864571,
+            "12591104"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev",
+            "pod": "k6-20261105t073241z-5gplh"
+          },
+          "value": [
+            1793864571,
+            "22695936"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api-migrate",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-migrate-20261105t073438z-lqmvx"
+          },
+          "value": [
+            1793864571,
+            "7622656"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-647644f85-j2kwf"
+          },
+          "value": [
+            1793864571,
+            "174313472"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-789cc9ffd6-6g2zv"
+          },
+          "value": [
+            1793864571,
+            "292884480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-786dbdf7b7-xj2kn"
+          },
+          "value": [
+            1793864571,
+            "155258880"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-76v9l"
+          },
+          "value": [
+            1793864571,
+            "167809024"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-mkgv6"
+          },
+          "value": [
+            1793864571,
+            "159449088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-76f9dccd47-vdmqm"
+          },
+          "value": [
+            1793864571,
+            "159522816"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-7c85f5dd7c-5wgc2"
+          },
+          "value": [
+            1793864571,
+            "154660864"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-5795f875bd-rgk8h"
+          },
+          "value": [
+            1793864571,
+            "246726656"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-7fd68c6cdf-vv8zh"
+          },
+          "value": [
+            1793864571,
+            "12996608"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pod_ctr_cpu_max",
+      "window": "load",
+      "query": "max_over_time(sum by (namespace,pod,container)(rate(container_cpu_usage_seconds_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "redis-exporter-5b59d6cb7c-xsw9t"
+          },
+          "value": [
+            1793864571,
+            "0.0013438055364184565"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev",
+            "pod": "redis-exporter-5b59d6cb7c-rp2rd"
+          },
+          "value": [
+            1793864571,
+            "0.0011115203158096616"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev",
+            "pod": "iso-dev-controller-manager-85dbfbcb5b-vswbn"
+          },
+          "value": [
+            1793864571,
+            "0.005186572989851513"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim",
+            "pod": "iso-prod-sim-controller-manager-5cc86cc76-4r45n"
+          },
+          "value": [
+            1793864571,
+            "0.0065327339719972915"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-szdzq"
+          },
+          "value": [
+            1793864571,
+            "0.010090000304775847"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-qdb9d"
+          },
+          "value": [
+            1793864571,
+            "0.007225351525013517"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-admin-wl-64b68f786-lxtxv"
+          },
+          "value": [
+            1793864571,
+            "0.00028880218843894354"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-f44b9b987-mdv9p"
+          },
+          "value": [
+            1793864571,
+            "0.0025665582276848454"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-space-wl-6c6c7c76c6-z4jwz"
+          },
+          "value": [
+            1793864571,
+            "0.0076911736136594105"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-web-wl-545ff57fd4-fksxq"
+          },
+          "value": [
+            1793864571,
+            "0.0002144667906033457"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-cd696f548-7tmq2"
+          },
+          "value": [
+            1793864571,
+            "0.0020574920695164757"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev",
+            "pod": "plane-admin-wl-545f5b8fcd-8prz5"
+          },
+          "value": [
+            1793864571,
+            "0.0005693064500469259"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev",
+            "pod": "plane-space-wl-847f88bc46-pchg4"
+          },
+          "value": [
+            1793864571,
+            "0.013452143906362997"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev",
+            "pod": "plane-web-wl-748764649d-5swbd"
+          },
+          "value": [
+            1793864571,
+            "0.0008273515530677192"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.005743931244486199"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.37744538048509546"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.03207140921409212"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.004554615597168783"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-minio-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.013081474235587394"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-pgdb-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.07264897096312646"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev",
+            "pod": "plane-api-wl-847cc45c84-bdkcb"
+          },
+          "value": [
+            1793864571,
+            "0.3887035852734403"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-beat-worker-wl-7cd7fd4f44-fnkxm"
+          },
+          "value": [
+            1793864571,
+            "0.007370488454157121"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev",
+            "pod": "plane-worker-wl-66794994cc-jdvpd"
+          },
+          "value": [
+            1793864571,
+            "0.1155563099471926"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-dev",
+            "pod": "postgres-exporter-76cb56b89b-c5kbh"
+          },
+          "value": [
+            1793864571,
+            "0.0036611533203343865"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-rabbitmq-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.09780413424124519"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-redis-wl-0"
+          },
+          "value": [
+            1793864571,
+            "0.0043782522257757835"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-c4f9658c9-xvwp9"
+          },
+          "value": [
+            1793864571,
+            "0.00762684382673679"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-647644f85-p8xr9"
+          },
+          "value": [
+            1793864571,
+            "0.24821136363636362"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-786dbdf7b7-d7n7d"
+          },
+          "value": [
+            1793864571,
+            "0.11791126769896845"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-789cc9ffd6-f65zx"
+          },
+          "value": [
+            1793864571,
+            "0.020805228987541682"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-5bf8b8f988-2qpjs"
+          },
+          "value": [
+            1793864571,
+            "0.0028526262541101093"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev",
+            "pod": "k6-20261105t073241z-5gplh"
+          },
+          "value": [
+            1793864571,
+            "0.016675152395691856"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-647644f85-j2kwf"
+          },
+          "value": [
+            1793864571,
+            "0.3705468997911356"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-789cc9ffd6-6g2zv"
+          },
+          "value": [
+            1793864571,
+            "0.24548386179324036"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-786dbdf7b7-xj2kn"
+          },
+          "value": [
+            1793864571,
+            "0.16132648841123676"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-76v9l"
+          },
+          "value": [
+            1793864571,
+            "0.12947890589337532"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-mkgv6"
+          },
+          "value": [
+            1793864571,
+            "0.1006475920139609"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-76f9dccd47-vdmqm"
+          },
+          "value": [
+            1793864571,
+            "0.35407441853027777"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-7c85f5dd7c-5wgc2"
+          },
+          "value": [
+            1793864571,
+            "0.18926658282131795"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-5795f875bd-rgk8h"
+          },
+          "value": [
+            1793864571,
+            "0.24558393779345628"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-7fd68c6cdf-vv8zh"
+          },
+          "value": [
+            1793864571,
+            "0.0035628522590778885"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_mem_avg",
+      "window": "load",
+      "query": "avg_over_time(sum by (namespace)(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793864571,
+            "1763990755.5555556"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793864571,
+            "1722813098.6666667"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793864571,
+            "16060757.333333334"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793864571,
+            "550032725.3333334"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793864571,
+            "73720263.1111111"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "1121725781.3333333"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "1241335466.6666667"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793864571,
+            "21198279.111111112"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793864571,
+            "790560654.2222222"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_mem_max",
+      "window": "load",
+      "query": "max_over_time(sum by (namespace)(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793864571,
+            "1793581056"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793864571,
+            "1745825792"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793864571,
+            "16424960"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793864571,
+            "675725312"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793864571,
+            "77262848"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "1804259328"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "1288871936"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793864571,
+            "22818816"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793864571,
+            "815415296"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_cpu_avg",
+      "window": "load",
+      "query": "avg_over_time(sum by (namespace)(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793864571,
+            "0.2734804509179292"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793864571,
+            "0.0906565841059495"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793864571,
+            "0.0004749348313561014"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793864571,
+            "0.06421265329616162"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793864571,
+            "0.016155276411212373"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.2598268369208305"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.5260183471717021"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793864571,
+            "0.002288624209298955"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793864571,
+            "0.0497818368835385"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ns_cpu_max",
+      "window": "load",
+      "query": "max_over_time(sum by (namespace)(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "namespace": "kube-system"
+          },
+          "value": [
+            1793864571,
+            "0.3978024316842392"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring"
+          },
+          "value": [
+            1793864571,
+            "0.12307253393605753"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "local-path-storage"
+          },
+          "value": [
+            1793864571,
+            "0.0013240466917210365"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "argocd"
+          },
+          "value": [
+            1793864571,
+            "0.1300540508095085"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "traefik"
+          },
+          "value": [
+            1793864571,
+            "0.027095651001021768"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.8226753589870011"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.9153697541433135"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "monitoring-agents"
+          },
+          "value": [
+            1793864571,
+            "0.004441242703163818"
+          ]
+        },
+        {
+          "metric": {
+            "namespace": "infisical"
+          },
+          "value": [
+            1793864571,
+            "0.2656438510788541"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_mem_avg",
+      "window": "load",
+      "query": "avg_over_time(sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864571,
+            "7301437781.333333"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_mem_max",
+      "window": "load",
+      "query": "max_over_time(sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864571,
+            "7937753088"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_cpu_avg",
+      "window": "load",
+      "query": "avg_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864571,
+            "1.2828955447479788"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pods_total_cpu_max",
+      "window": "load",
+      "query": "max_over_time(sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864571,
+            "2.0222926548335436"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "node_root_mem_avg",
+      "window": "load",
+      "query": "avg_over_time(container_memory_working_set_bytes{id=\"/\"}[543s])",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "node_root_mem_max",
+      "window": "load",
+      "query": "max_over_time(container_memory_working_set_bytes{id=\"/\"}[543s])",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "node_root_cpu_avg",
+      "window": "load",
+      "query": "avg_over_time(rate(container_cpu_usage_seconds_total{id=\"/\"}[1m])[543s:15s])",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "node_root_cpu_max",
+      "window": "load",
+      "query": "max_over_time(rate(container_cpu_usage_seconds_total{id=\"/\"}[1m])[543s:15s])",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "vm_used_avg",
+      "window": "load",
+      "query": "avg_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864571,
+            "10471823587.555555"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_used_max",
+      "window": "load",
+      "query": "max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864571,
+            "11090395136"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_avg",
+      "window": "load",
+      "query": "avg_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864571,
+            "2.0312683493306816"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_max",
+      "window": "load",
+      "query": "max_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864571,
+            "3.079564014532808"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_swap_used_max",
+      "window": "load",
+      "query": "max_over_time((node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes)[543s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864571,
+            "820916224"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "alerts_firing",
+      "window": "load",
+      "query": "max_over_time(ALERTS{alertstate=\"firing\"}[543s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "alertname": "Watchdog",
+            "alertstate": "firing",
+            "severity": "none"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "alertname": "InfoInhibitor",
+            "alertstate": "firing",
+            "namespace": "plane-dev",
+            "severity": "none"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "alertname": "InfoInhibitor",
+            "alertstate": "firing",
+            "namespace": "plane-prod-sim",
+            "severity": "none"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "alertname": "PlaneApiDown",
+            "alertstate": "firing",
+            "component": "api",
+            "env": "prod-sim",
+            "instance": "http://traefik.traefik.svc.cluster.local/api/instances/",
+            "job": "plane-http",
+            "namespace": "plane-prod-sim",
+            "probe": "api-instance",
+            "severity": "critical"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "alertname": "PlaneApiDatabaseProbeFailing",
+            "alertstate": "firing",
+            "component": "api-db",
+            "env": "prod-sim",
+            "instance": "http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/",
+            "job": "plane-http",
+            "namespace": "plane-prod-sim",
+            "probe": "api-db",
+            "severity": "critical"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "alertname": "PlaneFrontendDown",
+            "alertstate": "firing",
+            "component": "frontend",
+            "env": "prod-sim",
+            "instance": "http://traefik.traefik.svc.cluster.local/live/health",
+            "job": "plane-http",
+            "namespace": "plane-prod-sim",
+            "probe": "live",
+            "severity": "warning"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "argocd_not_synced",
+      "window": "load",
+      "query": "max_over_time(argocd_app_info{sync_status!=\"Synced\"}[543s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "autosync_enabled": "false",
+            "container": "application-controller",
+            "dest_namespace": "plane-prod-sim",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Healthy",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "plane-prod-sim",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "plane-prod-sim",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "OutOfSync"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "autosync_enabled": "false",
+            "container": "application-controller",
+            "dest_namespace": "plane-prod-sim",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Progressing",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "plane-prod-sim",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "plane-prod-sim",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "OutOfSync"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "argocd_not_healthy",
+      "window": "load",
+      "query": "max_over_time(argocd_app_info{health_status!=\"Healthy\"}[543s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "autosync_enabled": "true",
+            "container": "application-controller",
+            "dest_namespace": "argocd",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Progressing",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "root",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "platform",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "Synced"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "autosync_enabled": "true",
+            "container": "application-controller",
+            "dest_namespace": "plane-prod-sim",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Progressing",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "plane-prod-sim",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "plane-prod-sim",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "Synced"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "autosync_enabled": "false",
+            "container": "application-controller",
+            "dest_namespace": "argocd",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Progressing",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "root",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "platform",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "Synced"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "autosync_enabled": "false",
+            "container": "application-controller",
+            "dest_namespace": "plane-prod-sim",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Progressing",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "plane-prod-sim",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "plane-prod-sim",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "Synced"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        },
+        {
+          "metric": {
+            "autosync_enabled": "false",
+            "container": "application-controller",
+            "dest_namespace": "plane-prod-sim",
+            "dest_server": "https://kubernetes.default.svc",
+            "endpoint": "http-metrics",
+            "exported_namespace": "argocd",
+            "health_status": "Progressing",
+            "instance": "10.244.0.131:8082",
+            "job": "argocd-application-controller-metrics",
+            "name": "plane-prod-sim",
+            "namespace": "argocd",
+            "pod": "argocd-application-controller-0",
+            "project": "plane-prod-sim",
+            "repo": "git://plane-git/plane-platform",
+            "service": "argocd-application-controller-metrics",
+            "sync_status": "OutOfSync"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "argocd_sync_ops",
+      "window": "load",
+      "query": "sum by (name)(increase(argocd_app_sync_total[543s])) > 0",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "pods_created_in_window",
+      "window": "load",
+      "query": "max_over_time(kube_pod_created[543s]) >= 1793864028",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-backup-20261105t073411z-sgdwv",
+            "service": "kps-kube-state-metrics",
+            "uid": "2aafa91e-f2f8-40a7-b7c8-4c5c3351af92"
+          },
+          "value": [
+            1793864571,
+            "1793864054"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-guard-objects-20261105t073428z-2fqqp",
+            "service": "kps-kube-state-metrics",
+            "uid": "8d218970-ccc5-48da-8067-a5775cf6cb31"
+          },
+          "value": [
+            1793864571,
+            "1793864074"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-guard-20261105t073438z-5g4wk",
+            "service": "kps-kube-state-metrics",
+            "uid": "bf4296df-7b7a-481f-9c8c-b1b60d0d0bc5"
+          },
+          "value": [
+            1793864571,
+            "1793864078"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-guard-objects-20261105t073438z-647tx",
+            "service": "kps-kube-state-metrics",
+            "uid": "cbe573cc-6d61-4436-b68b-ed93386101a0"
+          },
+          "value": [
+            1793864571,
+            "1793864082"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-guard-20261105t073428z-8lrc7",
+            "service": "kps-kube-state-metrics",
+            "uid": "5f78acfe-d29a-4feb-8d56-5735040277f8"
+          },
+          "value": [
+            1793864571,
+            "1793864068"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-20261105t073438z-zpwzh",
+            "service": "kps-kube-state-metrics",
+            "uid": "c83ffa19-fcea-44e7-8479-037c5a7c6572"
+          },
+          "value": [
+            1793864571,
+            "1793864124"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-restore-migrate-20261105t073438z-lqmvx",
+            "service": "kps-kube-state-metrics",
+            "uid": "98972dac-2f1e-4571-89f9-15d06863de12"
+          },
+          "value": [
+            1793864571,
+            "1793864140"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-647644f85-j2kwf",
+            "service": "kps-kube-state-metrics",
+            "uid": "216ba441-960b-4a55-893e-9d6cee33dd7f"
+          },
+          "value": [
+            1793864571,
+            "1793864152"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-789cc9ffd6-6g2zv",
+            "service": "kps-kube-state-metrics",
+            "uid": "09fd618c-2d5e-4253-8733-0a6b0cd6cdbd"
+          },
+          "value": [
+            1793864571,
+            "1793864188"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-786dbdf7b7-xj2kn",
+            "service": "kps-kube-state-metrics",
+            "uid": "f293a392-f1c4-4966-be6d-731909772ff1"
+          },
+          "value": [
+            1793864571,
+            "1793864198"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-live-wl-5d5fd749c6-76v9l",
+            "service": "kps-kube-state-metrics",
+            "uid": "8724c526-2aaa-462e-a1af-cd1aee1e6563"
+          },
+          "value": [
+            1793864571,
+            "1793864229"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-dev",
+            "pod": "plane-live-wl-5744d85f8b-mkgv6",
+            "service": "kps-kube-state-metrics",
+            "uid": "b854e91a-c89b-427c-88c0-72d1fcee0b1d"
+          },
+          "value": [
+            1793864571,
+            "1793864282"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-worker-wl-5795f875bd-rgk8h",
+            "service": "kps-kube-state-metrics",
+            "uid": "4af9e678-a563-4246-8931-6d62104aaef4"
+          },
+          "value": [
+            1793864571,
+            "1793864324"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-api-wl-76f9dccd47-vdmqm",
+            "service": "kps-kube-state-metrics",
+            "uid": "bbe650e2-5405-4ea6-8c95-0287ee40d5f3"
+          },
+          "value": [
+            1793864571,
+            "1793864324"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-beat-worker-wl-7c85f5dd7c-5wgc2",
+            "service": "kps-kube-state-metrics",
+            "uid": "ea1f1518-4a61-4460-913a-fd98699ad6b6"
+          },
+          "value": [
+            1793864571,
+            "1793864324"
+          ]
+        },
+        {
+          "metric": {
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "instance": "10.244.0.41:8080",
+            "job": "kube-state-metrics",
+            "namespace": "plane-prod-sim",
+            "pod": "postgres-exporter-7fd68c6cdf-vv8zh",
+            "service": "kps-kube-state-metrics",
+            "uid": "c568ba62-da5c-4701-92ec-538b3459da0e"
+          },
+          "value": [
+            1793864571,
+            "1793864324"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_requests_by_service",
+      "window": "load",
+      "query": "sum by (service)(increase(traefik_service_requests_total[543s])) > 0",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "service": "infisical-infisical-e12518909886a5f29cb8@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "7.038888888888889"
+          ]
+        },
+        {
+          "metric": {
+            "service": "monitoring-alertmanager-66302ee9e27175082b99@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "78.43333333333334"
+          ]
+        },
+        {
+          "metric": {
+            "service": "monitoring-prometheus-fee5881c234c340f00a9@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "134.74444444444444"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "232.28333333333333"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "431.3833333333333"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "37.205555555555556"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "3433.972222222222"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "232.28333333333333"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-05ef5287dfff9a9888ac@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "88.4888888888889"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-1449d306fb3abd2de80f@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "31.172222222222224"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-3de9b3a1ef2bf77f889f@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "45.25"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-64a8b812e8ac7ded3f3b@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "442.44444444444446"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-9e9aaf0e93d4b21151aa@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "45.25"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "1.0055555555555555"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-8d37bae94b8675684b07@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "6.033333333333333"
+          ]
+        },
+        {
+          "metric": {
+            "service": "plane-prod-sim-plane-ingress-b1af0143c11c483363ef@kubernetescrd"
+          },
+          "value": [
+            1793864571,
+            "15.083333333333332"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restarts_by_pod",
+      "window": "load",
+      "query": "sum by (namespace,pod)(increase(kube_pod_container_status_restarts_total[543s])) > 0",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "oom_events",
+      "window": "load",
+      "query": "sum by (namespace,pod,container)(increase(container_oom_events_total[543s])) > 0",
+      "time": 1793864571,
+      "result": []
+    },
+    {
+      "name": "throttled_share_by_ctr",
+      "window": "load",
+      "query": "sum by (namespace,container)(increase(container_cpu_cfs_throttled_periods_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[543s])) / sum by (namespace,container)(increase(container_cpu_cfs_periods_total{namespace=~\"plane-dev|plane-prod-sim\",container!=\"\",container!=\"POD\"}[543s]))",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.1643835616438356"
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis-exporter",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.11594202898550725"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.0008045052292839903"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.5159774320208085"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.2904049225137004"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.12218649517684889"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.04951856946354883"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.007736943907156673"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.2767587648014859"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.028781947962238087"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.04694533762057878"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.020484171322160148"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.04557179707652623"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.05590740336317974"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.07027027027027027"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0.03983353151010702"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.07862759113652609"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.053786270346779894"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.22219928208966777"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.5845016710320577"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker",
+            "namespace": "plane-prod-sim"
+          },
+          "value": [
+            1793864571,
+            "0.33739917249673784"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6",
+            "namespace": "plane-dev"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_ready_peak",
+      "window": "load",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_ready{namespace=~\"plane-dev|plane-prod-sim\",queue=\"celery\"}[543s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864571,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.44:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-prod-sim",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864571,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_used_max_whole_retention",
+      "window": "all",
+      "query": "max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[25671s:15s])",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864571,
+            "11740893184"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prometheus_head_series",
+      "window": "now",
+      "query": "prometheus_tsdb_head_series",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "__name__": "prometheus_tsdb_head_series",
+            "container": "prometheus",
+            "endpoint": "http-web",
+            "instance": "10.244.0.129:9090",
+            "job": "kps-prometheus",
+            "namespace": "monitoring",
+            "pod": "prometheus-kps-prometheus-0",
+            "service": "kps-prometheus"
+          },
+          "value": [
+            1793864571,
+            "86558"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prometheus_storage_bytes",
+      "window": "now",
+      "query": "prometheus_tsdb_storage_blocks_bytes",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "__name__": "prometheus_tsdb_storage_blocks_bytes",
+            "container": "prometheus",
+            "endpoint": "http-web",
+            "instance": "10.244.0.129:9090",
+            "job": "kps-prometheus",
+            "namespace": "monitoring",
+            "pod": "prometheus-kps-prometheus-0",
+            "service": "kps-prometheus"
+          },
+          "value": [
+            1793864571,
+            "242268517"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prometheus_wal_bytes",
+      "window": "now",
+      "query": "prometheus_tsdb_wal_storage_size_bytes",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "__name__": "prometheus_tsdb_wal_storage_size_bytes",
+            "app_instance": "loki",
+            "container": "loki",
+            "endpoint": "http-metrics",
+            "instance": "10.244.0.71:3100",
+            "job": "monitoring/loki",
+            "namespace": "monitoring",
+            "pod": "loki-0",
+            "service": "loki"
+          },
+          "value": [
+            1793864571,
+            "8328469"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "prometheus_tsdb_wal_storage_size_bytes",
+            "container": "prometheus",
+            "endpoint": "http-web",
+            "instance": "10.244.0.129:9090",
+            "job": "kps-prometheus",
+            "namespace": "monitoring",
+            "pod": "prometheus-kps-prometheus-0",
+            "service": "kps-prometheus"
+          },
+          "value": [
+            1793864571,
+            "384309036"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scrape_interval_kubelet",
+      "window": "now",
+      "query": "scrape_samples_scraped{job=\"kubelet\",metrics_path=\"/metrics/cadvisor\"}",
+      "time": 1793864571,
+      "result": [
+        {
+          "metric": {
+            "__name__": "scrape_samples_scraped",
+            "endpoint": "https-metrics",
+            "instance": "172.24.0.2:10250",
+            "job": "kubelet",
+            "metrics_path": "/metrics/cadvisor",
+            "namespace": "kube-system",
+            "node": "plane-platform-control-plane",
+            "service": "kps-kubelet"
+          },
+          "value": [
+            1793864571,
+            "14432"
+          ]
+        }
+      ]
+    }
+  ]
+}

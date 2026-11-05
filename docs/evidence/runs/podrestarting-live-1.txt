@@ -1,0 +1,150 @@
+# date: 2026-11-05T02:44:23Z
+# PodRestarting proved live on the published rule (commit 70cb6b0), from two scratch pods with real restart counters. Created 2026-11-05T02:27:55Z, deleted at the end of this file.
+# command: kubectl apply -f scratch-pods.yaml, live-watch.sh sampling every 15s, then kubectl logs deploy/alert-sink. Both are shown below.
+
+## Pods before deleting
+Note: the kubectl command meant for this section did not run, because the shell expanded its argument, and the pods are gone. This is the same reading taken earlier in the run, at about 02:32Z:
+podrestarting-once    1/1   Running   1 (3m17s ago)   4m2s
+podrestarting-twice   1/1   Running   2 (2m31s ago)   4m2s
+
+## The rule as loaded
+platform.workloads inactive ok max_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m]) - min_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m]) >= 2
+
+## Offset of the group's evaluation from the scrape, read at 02:36:50Z
+last KSM sample 02:36:46.275, group platform.workloads last evaluated 02:36:21.345, interval 30s: 5.1s past the scrape
+increase on a two-sample series would read 1.17 at that offset. The query below at 02:29:03Z fell later than that, which is how it read 1.58. So on this install the old rule would not have fired on that restart. Another phase would.
+
+## Samples. new is max_over_time - min_over_time over 15m, old is increase over 15m, both as instant queries
+02:28:03Z count: - | new: - | old increase: - | ALERTS: -
+02:28:18Z count: once=0.0 twice=0.0 | new: once=0.0 twice=0.0 | old increase: - | ALERTS: -
+02:28:33Z count: once=0.0 twice=0.0 | new: once=0.0 twice=0.0 | old increase: - | ALERTS: -
+02:28:48Z count: once=1.0 twice=1.0 | new: once=1.0 twice=1.0 | old increase: once=1.08 twice=1.08 | ALERTS: -
+02:29:03Z count: once=1.0 twice=1.0 | new: once=1.0 twice=1.0 | old increase: once=1.58 twice=1.58 | ALERTS: -
+02:29:18Z count: once=1.0 twice=1.0 | new: once=1.0 twice=1.0 | old increase: once=1.04 twice=1.04 | ALERTS: -
+02:29:33Z count: once=1.0 twice=1.0 | new: once=1.0 twice=1.0 | old increase: once=1.29 twice=1.29 | ALERTS: -
+02:29:48Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.06 | ALERTS: -
+02:30:04Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.2 twice=2.4 | ALERTS: twice:firing
+02:30:19Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.05 | ALERTS: twice:firing
+02:30:34Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.15 twice=2.3 | ALERTS: twice:firing
+02:30:49Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:31:04Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.12 twice=2.24 | ALERTS: twice:firing
+02:31:19Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:31:34Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.11 twice=2.23 | ALERTS: twice:firing
+02:31:52Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.06 | ALERTS: twice:firing
+02:32:07Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.1 twice=2.2 | ALERTS: twice:firing
+02:32:22Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.05 | ALERTS: twice:firing
+02:32:37Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.09 twice=2.18 | ALERTS: twice:firing
+02:32:52Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.05 | ALERTS: twice:firing
+02:33:07Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.08 twice=2.16 | ALERTS: twice:firing
+02:33:22Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:33:37Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.07 twice=2.14 | ALERTS: twice:firing
+02:33:52Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:34:08Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.07 twice=2.13 | ALERTS: twice:firing
+02:34:23Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:34:38Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.06 twice=2.12 | ALERTS: twice:firing
+02:34:53Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:35:08Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.06 twice=2.11 | ALERTS: twice:firing
+02:35:23Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.04 | ALERTS: twice:firing
+02:35:38Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.05 twice=2.11 | ALERTS: twice:firing
+02:35:53Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.03 | ALERTS: twice:firing
+02:36:08Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.05 twice=2.1 | ALERTS: twice:firing
+02:36:23Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.03 | ALERTS: twice:firing
+02:36:39Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.05 twice=2.1 | ALERTS: twice:firing
+02:36:54Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.03 | ALERTS: twice:firing
+02:37:09Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.05 twice=2.09 | ALERTS: twice:firing
+02:37:24Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.02 twice=2.03 | ALERTS: twice:firing
+02:37:39Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.04 twice=2.09 | ALERTS: twice:firing
+02:37:54Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:38:09Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.04 twice=2.08 | ALERTS: twice:firing
+02:38:24Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:38:39Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.04 twice=2.08 | ALERTS: twice:firing
+02:38:54Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:39:10Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.04 twice=2.08 | ALERTS: twice:firing
+02:39:25Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:39:40Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.04 twice=2.07 | ALERTS: twice:firing
+02:39:55Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:40:10Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.04 twice=2.07 | ALERTS: twice:firing
+02:40:25Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:40:40Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.07 | ALERTS: twice:firing
+02:40:55Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.03 | ALERTS: twice:firing
+02:41:10Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.07 | ALERTS: twice:firing
+02:41:25Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.02 | ALERTS: twice:firing
+02:41:41Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.06 | ALERTS: twice:firing
+02:41:56Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.02 | ALERTS: twice:firing
+02:42:11Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.06 | ALERTS: twice:firing
+02:42:26Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.02 | ALERTS: twice:firing
+02:42:41Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.06 | ALERTS: twice:firing
+02:42:56Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.01 twice=2.02 | ALERTS: twice:firing
+02:43:11Z count: once=1.0 twice=2.0 | new: once=1.0 twice=2.0 | old increase: once=1.03 twice=2.06 | ALERTS: twice:firing
+02:43:26Z count: once=1.0 twice=2.0 | new: once=0.0 twice=1.0 | old increase: once=0.0 twice=1.03 | ALERTS: twice:firing
+02:43:41Z count: once=1.0 twice=2.0 | new: once=0.0 twice=1.0 | old increase: once=0.0 twice=1.03 | ALERTS: twice:firing
+02:43:56Z count: once=1.0 twice=2.0 | new: once=0.0 twice=1.0 | old increase: once=0.0 twice=1.03 | ALERTS: -
+
+## What the sink received for these pods
+2026-11-05T02:30:01.366420+00:00 firing [('PodRestarting', 'podrestarting-twice', 'firing', '2026-11-05T02:29:51.341Z', '0001-01-01T00:00:00Z')]
+2026-11-05T02:44:01.373142+00:00 resolved [('PodRestarting', 'podrestarting-twice', 'resolved', '2026-11-05T02:29:51.341Z', '2026-11-05T02:43:21.341Z')]
+
+## Deleting
+pod "podrestarting-once" deleted from monitoring namespace
+pod "podrestarting-twice" deleted from monitoring namespace
+delete exit=0
+No resources found in monitoring namespace.
+
+## The scripts
+--- scratch-pods.yaml
+# Two scratch pods to prove PodRestarting live, from a real restart counter. Not in Git as a manifest, deleted afterwards.
+# Each exits with status 1 after 45s, so kube-state-metrics has seen its count at 0 first, as many times as its limit says, then sleeps.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podrestarting-once
+  namespace: monitoring
+  labels: { scratch: podrestarting }
+spec:
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 0
+  automountServiceAccountToken: false
+  securityContext: { runAsNonRoot: true, runAsUser: 65534, runAsGroup: 65534, seccompProfile: { type: RuntimeDefault } }
+  containers:
+    - name: c
+      image: docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+      imagePullPolicy: Never
+      command: ["sh", "-c", 'n=$(cat /d/n 2>/dev/null || echo 0); echo $((n+1)) >/d/n; if [ "$n" -lt 1 ]; then sleep 45; exit 1; fi; exec sleep 3600']
+      volumeMounts: [{ name: d, mountPath: /d }]
+      resources: { requests: { cpu: 1m, memory: 8Mi }, limits: { memory: 16Mi } }
+      securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+  volumes: [{ name: d, emptyDir: { sizeLimit: 1Mi } }]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podrestarting-twice
+  namespace: monitoring
+  labels: { scratch: podrestarting }
+spec:
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 0
+  automountServiceAccountToken: false
+  securityContext: { runAsNonRoot: true, runAsUser: 65534, runAsGroup: 65534, seccompProfile: { type: RuntimeDefault } }
+  containers:
+    - name: c
+      image: docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+      imagePullPolicy: Never
+      command: ["sh", "-c", 'n=$(cat /d/n 2>/dev/null || echo 0); echo $((n+1)) >/d/n; if [ "$n" -lt 2 ]; then sleep 45; exit 1; fi; exec sleep 3600']
+      volumeMounts: [{ name: d, mountPath: /d }]
+      resources: { requests: { cpu: 1m, memory: 8Mi }, limits: { memory: 16Mi } }
+      securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+  volumes: [{ name: d, emptyDir: { sizeLimit: 1Mi } }]
+--- live-watch.sh
+#!/bin/bash
+# Samples what Prometheus reads for the two scratch pods. Read only. Stops by itself.
+W=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/alerts-work
+cd "$W" || exit 9
+sel='kube_pod_container_status_restarts_total{namespace="monitoring",pod=~"podrestarting-.*"}'
+val() { /bin/bash ./q.sh "$1" | python3 -I -c 'import json,sys; r=json.load(sys.stdin)["data"]["result"]; print(" ".join("%s=%s" % (x["metric"].get("pod","?").replace("podrestarting-",""), round(float(x["value"][1]),2)) for x in sorted(r,key=lambda y:y["metric"].get("pod",""))) or "-")'; }
+alerts() { /bin/bash ./q.sh 'ALERTS{alertname="PodRestarting",pod=~"podrestarting-.*"}' | python3 -I -c 'import json,sys; r=json.load(sys.stdin)["data"]["result"]; print(" ".join("%s:%s" % (x["metric"].get("pod","?").replace("podrestarting-",""), x["metric"].get("alertstate")) for x in r) or "-")'; }
+end=$(( $(date +%s) + ${1:-1200} ))
+while [ "$(date +%s)" -lt "$end" ]; do
+  printf '%s count: %s | new: %s | old increase: %s | ALERTS: %s\n' "$(date -u +%H:%M:%SZ)" "$(val "$sel")" "$(val "max_over_time($sel[15m]) - min_over_time($sel[15m])")" "$(val "increase($sel[15m])")" "$(alerts)"
+  /bin/sleep 15
+done

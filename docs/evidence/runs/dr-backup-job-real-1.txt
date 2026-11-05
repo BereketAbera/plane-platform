@@ -1,0 +1,14 @@
+# date: 2026-11-05T05:41:07Z
+# What the first real Plane backup Job with the new lines left. It was not run for this evidence: make promote ENV=prod-sim took it at 05:33 UTC, in the main session, at code with scripts/backup.sh of e88f217. Read only, with these commands:
+# jq on its manifest, wc on its lists, shasum -c on its SHA256SUMS, kubectl logs on its Job
+{"id":"20261105T053351Z","uploaded_objects":{"rows":40,"missing":0},"objects":{"count":61,"bytes":51935206},"secret_key_fp":"77d617b20fb32955"}
+      40 .local/backups/prod-sim/20261105T053351Z/postgres/uploaded-keys.txt
+       0 .local/backups/prod-sim/20261105T053351Z/postgres/uploaded-missing.txt
+checksums rc=0
+backups of prod-sim now: 5, KEEP=5, so its retention lines had nothing to remove
+[postgres] postgres: 110 tables counted from a scratch restore
+[objects] 2026/11/05 05:33:58 NOTICE: Local file system at /backups/20261105T053351Z.partial/objects: 0 differences found
+[objects] 2026/11/05 05:33:58 NOTICE: Local file system at /backups/20261105T053351Z.partial/objects: 61 matching files
+[objects] objects: 61 checked
+[objects] GATE2: 40 rows marked uploaded, 0 with no object in this backup
+[finalize] finalize: 20261105T053351Z complete

@@ -2,15 +2,16 @@
   "counts": {
     "BLOCKED": 0,
     "FAIL": 0,
-    "PASS": 3
+    "PASS": 3,
+    "SKIP": 0
   },
   "environment": "dev",
-  "finished_at": "2026-11-04T22:44:35Z",
+  "finished_at": "2026-11-05T07:04:25Z",
   "host": "plane.dev.localhost",
   "mode": "verify",
   "result": "PASS",
-  "run_id": "5fd8cd25",
-  "started_at": "2026-11-04T22:44:31Z",
+  "run_id": "400905f6",
+  "started_at": "2026-11-05T07:04:22Z",
   "steps": [
     {
       "data": {
@@ -18,7 +19,7 @@
         "web_status": 200
       },
       "detail": "web 200, /api/instances/ 200 via plane.dev.localhost",
-      "duration_ms": 21,
+      "duration_ms": 28,
       "name": "reachable",
       "status": "PASS"
     },
@@ -29,7 +30,7 @@
         "work_item_id": "9732dde3-786e-4fa1-b6af-0b5e791f2314"
       },
       "detail": "sentinel row and attachment intact",
-      "duration_ms": 97,
+      "duration_ms": 134,
       "name": "sentinel-reread",
       "status": "PASS"
     },
@@ -38,7 +39,7 @@
         "seconds_until_activity": 3.1
       },
       "detail": "new work item got its activity in 3.1s",
-      "duration_ms": 3126,
+      "duration_ms": 3186,
       "name": "job-probe",
       "status": "PASS"
     }

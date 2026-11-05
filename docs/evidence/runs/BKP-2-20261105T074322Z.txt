@@ -1,0 +1,123 @@
+# 2026-11-05T07:43:22Z commit fde3c90 commands: make backup ENV=dev, make restore ENV=dev BACKUP=latest CONFIRM=yes, make test-e2e ENV=dev. The owner approved this in chat.
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261105T074322Z
+[pod/plane-backup-20261105t074322z-c9tcp/objects] 2026/11/05 07:43:28 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t074322z-c9tcp/objects] 2026/11/05 07:43:29 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t074322z-c9tcp/objects] 2026/11/05 07:43:29 NOTICE: Local file system at /backups/20261105T074322Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t074322z-c9tcp/objects] 2026/11/05 07:43:29 NOTICE: Local file system at /backups/20261105T074322Z.partial/objects: 97 matching files
+[pod/plane-backup-20261105t074322z-c9tcp/objects] 2026/11/05 07:43:30 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t074322z-c9tcp/objects] objects: 97 checked
+[pod/plane-backup-20261105t074322z-c9tcp/objects] 2026/11/05 07:43:30 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t074322z-c9tcp/objects] GATE2: 62 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t074322z-c9tcp/finalize] retention: removed 20261105T000512Z
+[pod/plane-backup-20261105t074322z-c9tcp/finalize] finalize: 20261105T074322Z complete
+[pod/plane-backup-20261105t074322z-c9tcp/postgres] postgres: 110 tables counted from a scratch restore
+backup 20261105T074322Z: postgres/plane.dump 1055696 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2123 B, postgres/content.tsv 127 B, objects.lsjson 36339 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261105T074322Z
+backup exit=0
+[1;34m==>[0m Verifying 20261105T074322Z
+[1;32m ok[0m checksums: 113 files match
+[1;32m ok[0m version: backup 1.4.3, running 1.4.3
+[1;32m ok[0m key-fingerprint: SECRET_KEY matches the backup
+[1;34m==>[0m Waiting for the data services
+[1;32m ok[0m overwrite-guard: target holds 51 users and 97 objects, overwriting on CONFIRM=yes with a backup that holds 51 users
+[1;34m==>[0m Pausing auto-sync: root
+[1;34m==>[0m Pausing auto-sync: plane-dev
+[1;34m==>[0m Stopping the apps
+[1;32m ok[0m apps-stopped: api, worker, beat and live at zero with auto-sync paused
+[1;34m==>[0m Restoring Postgres and objects from 20261105T074322Z
+[pod/plane-restore-20261105t074337z-6rmxf/objects] 2026/11/05 07:44:28 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t074337z-6rmxf/objects] 2026/11/05 07:44:28 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t074337z-6rmxf/objects] 2026/11/05 07:44:29 NOTICE: S3 bucket uploads: 0 differences found
+[pod/plane-restore-20261105t074337z-6rmxf/objects] 2026/11/05 07:44:29 NOTICE: S3 bucket uploads: 97 matching files
+[pod/plane-restore-20261105t074337z-6rmxf/objects] objects: sync and downloading check ok
+[pod/plane-restore-20261105t074337z-6rmxf/objects] 2026/11/05 07:44:29 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t074337z-6rmxf/objects] 2026/11/05 07:44:29 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t074337z-6rmxf/objects] objects: Content-Type put back on 0 of 97 objects
+[pod/plane-restore-20261105t074337z-6rmxf/gate] 2026/11/05 07:44:30 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-20261105t074337z-6rmxf/gate] GATE2 ok: 62 uploaded assets all have an object
+[pod/plane-restore-20261105t074337z-6rmxf/postgres] vacuumdb: vacuuming database "plane"
+[pod/plane-restore-20261105t074337z-6rmxf/postgres] GATE1 ok: 110 tables equal the backup
+[1;32m ok[0m postgres: dump restored in one transaction, row counts and content hashes equal the backup
+[1;32m ok[0m objects: synced and checked by download, every uploaded asset has its object
+[1;32m ok[0m valkey: flushed
+[1;32m ok[0m rabbitmq: queue celery purged
+[1;34m==>[0m Running the migrator
+[pod/plane-restore-migrate-20261105t074337z-gfj7w/plane-api-migrate] Waiting for database...
+[pod/plane-restore-migrate-20261105t074337z-gfj7w/plane-api-migrate] Database available!
+[pod/plane-restore-migrate-20261105t074337z-gfj7w/plane-api-migrate] Operations to perform:
+[pod/plane-restore-migrate-20261105t074337z-gfj7w/plane-api-migrate]   Apply all migrations: auth, contenttypes, db, django_celery_beat, license, sessions
+[pod/plane-restore-migrate-20261105t074337z-gfj7w/plane-api-migrate] Running migrations:
+[pod/plane-restore-migrate-20261105t074337z-gfj7w/plane-api-migrate]   No migrations to apply.
+[1;32m ok[0m migrator: completed
+[1;34m==>[0m Starting the apps
+[1;32m ok[0m apps-started: api, worker, beat and live are ready
+[1;34m==>[0m Proving the restore
+[1;32m ok[0m proof-encrypted-sentinel: sentinel row decrypts to its seeded value
+[1;32m ok[0m proof-no-empty-decrypt: 1 encrypted rows all decrypt
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-smoke-dev-20261105T074337Z.json
+RESULT  PASS
+[1;32m ok[0m proof-sentinel: work item read through the API, attachment checksum matches, a worker ran a new job
+[1;32m ok[0m proof-probes: API and database probes are green
+[1;32m ok[0m auto-sync restored on plane-dev
+[1;32m ok[0m auto-sync restored on root
+[1;32m ok[0m restore of 20261105T074322Z into dev complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-dev-20261105T074337Z.json
+restore exit=0
+[1;34m==>[0m End-to-end smoke test in dev
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=full
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    frontends  web, admin and space pages and the assets they name are served
+PASS    routes  bare paths redirect, deep links reach admin, /live/health answers
+PASS    workloads-ready  11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0
+PASS    instance-setup  already set up, reusing stored admin
+PASS    csrf-enforced  sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)
+PASS    sign-in  session established, anonymous request refused
+PASS    workspace  smoke-61ecc3fe
+PASS    api-token  token works on /api/v1, refused without it
+PASS    project  821fedb6-8da0-44e3-b361-6f0d900e2c1f
+PASS    work-item  7e3e0d73-c16c-4ec4-ba1e-c104e63c0321
+PASS    background-job  issue_activity task ran in 3.4s
+PASS    work-item-list  new work item is among 1 listed
+PASS    read-back  workspace, project and work item P481AEB-1 all match, by key and by session
+PASS    workspace-seed  seed project present after 0.1s
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+PASS    branding-web  title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/84b63d9b6294... (not followed: the repository is private for now), /licenses/ lists 6 files and serves the AGPL
+PASS    branding-admin  /god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page
+PASS    branding-space  /spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page
+PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+PASS    branding-seed  the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    app-shell  all 15 requests answered 200
+PASS    admin-sign-in  37 config rows read, 8 of them encrypted, refused with no session (401)
+PASS    second-user  sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    broker-memory  watermark {absolute,"256Mi"} = 268435456 bytes, no alarms
+PASS    worker-negative-control  With 0 consumers: 8 messages parked, no activity after 15s. Asked the consumer back: activity within 16.6s. Worker pod replaced, so no emptied queue selection is left behind
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+PASS    attachment-upload  1047 bytes stored
+PASS    attachment-download  sha256 69cabe40677abd40... matches
+PASS    object-in-silo  1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']
+PASS    uploads-private  refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}
+PASS    large-upload  4718592 bytes up and back through Traefik, sha256 matches
+PASS    oversize-refused  5 MiB + 1 byte refused by the storage policy with 400
+PASS    asset-duplicate  copy_object through the public host worked: 2fad8c01-4bb6-4312-b095-a62f9f387704 holds the same bytes
+PASS    avatar  avatar stored and read back anonymously through its signed redirect
+PASS    export  export completed, its link downloads, and the 535 byte zip holds the work item
+PASS    public-board  published: api and space serve it anonymously. Unpublished: 404
+PASS    realtime-page  d520ec81-dbbd-4534-ae42-dc8aef0908ba
+PASS    realtime-auth  Authenticated (read-write): traefik upgrade, live -> api session check
+PASS    realtime-denied  mismatched user refused: PermissionDenied
+PASS    realtime-sync  both clients synced, and an update reached the other client in 1 ms
+PASS    realtime-persist  stored as HTML and binary in 2.1s, and a new connection gets it back from the database
+PASS    sentinel-create  reusing existing sentinel test-sentinel-dev.json
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-dev-20261105T074635Z-6532.json
+RESULT  PASS
+[1;34m==>[0m Summary, also in /Users/bek/dev/pr/plane-platform/.local/evidence-raw/test-20261105T074635Z-6532.txt
+    PASS     e2e dev                    evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/smoke-dev-20261105T074635Z-6532.json
+[1;32m ok[0m all passed
+e2e exit=0

@@ -1,0 +1,479 @@
+# date 2026-11-05T06:04:14Z, candidate fixes tried in a scratch clone of e88f217 and undone, nothing committed. Commands: python3 -I candidate-fix.py <clone>, then the whole flows with /bin/bash scripts/ci/test-promotion-flows.sh; then candidate-fix-2.py and candidate-fix-3.py on top, batches mine7.sh and mine6.sh m6-retried, then test-promotion-flows.sh rollback
+
+=== first set (candidate-fix.py): whole flows
+ ok 132 of 132 promotion flow scenarios passed, with a stub cluster
+flows with the candidate fixes: exit 0 in 418s
+
+=== first set: what batch mine6.sh saw, at that time
+withdrawal:
+ ok 8dd2d94 never reached Argo CD, so prod-sim's images and schema did not move. There is nothing to restore.
+retried:
+warn Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=20261105T055204Z, the newest finished dump older than ab9c98d from 2026-11-05T08:52:05+03:00. A promotion published after its commit, merged on GitHub or sent by a later run after a refusal, took its dump at that publish, so for one of those the right dump is the one from just before it. Finished since the commit: 20261105T055208Z. BACKUP=latest may name the dump taken just now, which holds the newer schema.
+race: exit 0
+ ok another publish already sent 741c77d83915: Argo CD reads 07f5b02c310c, which holds it
+overlay moved, render not: exit 1
+fail prod-sim's overlay holds these digests, but its render does not match it, and Argo CD reads the render. Run make render, look at what moves, and commit it.
+
+=== all three sets: batch mine7.sh
+Argo reads prod-sim web before: sha256:aaaaaaaaaaaaa
+make rollback ENV=prod-sim: exit 0
+--- rollback output
+==> Rolling back: a9f311b promote(prod-sim): plane-frontend bbbbbbbbbbbb
+==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+ ok best-effort dump taken: 20261105T055954Z
+ ok rendered gitops/environments/dev/manifests.yaml
+ ok rendered gitops/environments/prod-sim/manifests.yaml
+ ok committed 8847e2f: Revert "promote(prod-sim): plane-frontend bbbbbbbbbbbb"
+==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main 8847e2f2303a to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.ltaW30P8Q3/repo/.local/git/plane-platform.git
+ ok a9f311b never reached Argo CD, so prod-sim's images and schema did not move. There is nothing to restore.
+state: HEAD=8847e2f Revert "promote(prod-sim): plane-frontend bbbbbbbbbbbb" published=8847e2f REVERT_HEAD=no lock=free
+status: 
+Argo reads prod-sim web after: sha256:aaaaaaaaaaaaa
+rollback, a file the promotion changed was removed later: exit 1
+fail the revert conflicts with a later change to docs/x.txt. Nothing changed. Resolve it by hand: git revert 060a8b7579c2, fix the conflict, then run this again, which publishes that revert.
+state: HEAD=af036bc that file goes published=060a8b7 REVERT_HEAD=no lock=free
+status: 
+
+=== all three sets: batch mine6.sh, m6-retried
+retried:
+warn Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=20261105T060013Z, the newest finished dump older than 1be6535 from 2026-11-05T09:00:10+03:00. A promotion published after its commit, merged on GitHub or sent by a later run after a refusal, took its dump at that publish, so for one of those the right dump is the one from just before it. Finished since the commit: 20261105T060013Z. BACKUP=latest may name the dump taken just now, which holds the newer schema.
+
+=== all three sets: flows, filter rollback
+ ok 45 of 45 promotion flow scenarios passed, with a stub cluster
+
+=== the combined diff
+diff --git a/scripts/ci/lib-manifests.sh b/scripts/ci/lib-manifests.sh
+index a20c933..ee884e5 100644
+--- a/scripts/ci/lib-manifests.sh
++++ b/scripts/ci/lib-manifests.sh
+@@ -37,6 +37,8 @@ collect_in_repo() { # collect_in_repo <directory>: one file per source, everythi
+   # Their manifests.yaml is read by name, and Argo CD reads the whole directory.
+   for environment_dir in gitops/environments/*/; do
+     refuse_files_only_argocd_reads "${environment_dir%/}"
++    stray="$(find "${environment_dir%/}" -type f -name '*.yaml' ! -name manifests.yaml | LC_ALL=C sort)"
++    [[ -z "$stray" ]] || die "Argo CD reads the whole directory and every check reads only manifests.yaml, so these would reach the cluster unchecked: ${stray//$'\n'/, }"
+   done
+   collect gitops/applications "$out/applications.yaml"
+   for platform_dir in gitops/platform/*/; do
+diff --git a/scripts/gitops-publish.sh b/scripts/gitops-publish.sh
+index 318b005..d2250cf 100755
+--- a/scripts/gitops-publish.sh
++++ b/scripts/gitops-publish.sh
+@@ -89,7 +89,7 @@ if prod_sim_digests_move "$old" "$new"; then
+       log "This publish changes a prod-sim image, so plane-dev must have proven it"
+       if ! check_dev_proven "${added[@]}"; then
+         if ! git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS"; then
+-          warn "A publish is all of main, so the change to dev in this push is held behind what moves prod-sim: ${moving//$'\n'/; }. make rollback ENV=prod-sim withdraws the newest promotion of prod-sim and publishes the rest."
++          warn "A publish is all of main, so the change to dev in this push is held behind what moves prod-sim: ${moving//$'\n'/; }. If that is a promotion, make rollback ENV=prod-sim withdraws it and publishes the rest. If not, git revert it."
+         fi
+         refuse_unproven_dev "Nothing was published."
+       fi
+@@ -148,9 +148,17 @@ fi
+ # Plain push on purpose: a non-fast-forward means history was rewritten, and Argo CD would then
+ # follow that rewrite with no record of it. Reverts are the way back. It pushes the commit everything
+ # above looked at, because other work commits in this checkout, and a dump takes minutes.
+-git push --quiet "$BARE" "$new:refs/heads/main" ||
++if ! git push --quiet "$BARE" "$new:refs/heads/main"; then
++  now="$(git --git-dir="$BARE" rev-parse -q --verify refs/heads/main || true)"
++  if [[ -n "$now" ]] && git merge-base --is-ancestor "$new" "$now" 2>/dev/null; then
++    ok "another publish already sent ${new:0:12}: Argo CD reads ${now:0:12}, which holds it"
++    exit 0
++  fi
+   die "push refused. If main was rewritten, restore it or delete $BARE to republish from scratch."
++fi
+ ok "published main ${new:0:12} to $BARE"
++mkdir -p "$LOCAL_DIR/evidence-raw"
++printf '%s %s\n' "$(date -u +%Y%m%dT%H%M%SZ)" "$new" >>"$LOCAL_DIR/evidence-raw/publishes.log"
+ 
+ current="$(git symbolic-ref --quiet --short HEAD || true)"
+ [[ "$current" == main ]] || warn "HEAD is on ${current:-a detached commit}: main was published, not this checkout"
+diff --git a/scripts/lib/commit-lock.sh b/scripts/lib/commit-lock.sh
+index aef2578..32a0a99 100644
+--- a/scripts/lib/commit-lock.sh
++++ b/scripts/lib/commit-lock.sh
+@@ -76,7 +76,13 @@ restore_from_head() { # restore_from_head <path...>
+   local path status=0
+   for path in "$@"; do
+     if [[ -n "$(git status --porcelain -- "$path")" ]]; then
+-      git_when_index_free restore --source=HEAD --staged --worktree -- "$path" || status=1
++      if git cat-file -e "HEAD:$path" 2>/dev/null; then
++        git_when_index_free restore --source=HEAD --staged --worktree -- "$path" || status=1
++      else
++        # HEAD has no such file, and git restore calls an unmerged entry for it an error.
++        git_when_index_free rm --force --quiet --cached -- "$path" || status=1
++        rm -f -- "$path"
++      fi
+     fi
+   done
+   return "$status"
+diff --git a/scripts/promote.sh b/scripts/promote.sh
+index 4781d01..b45c56c 100755
+--- a/scripts/promote.sh
++++ b/scripts/promote.sh
+@@ -169,6 +169,7 @@ fi
+ # A publish that failed or was refused leaves its promotion on main, and that is one way to an empty
+ # plan. So this publishes before it says anything, and that does nothing if main is published already.
+ if [[ ! -s "$PLAN" ]]; then
++  "$ROOT/scripts/render.sh" --check >/dev/null || die "$ENV's overlay holds these digests, but its render does not match it, and Argo CD reads the render. Run make render, look at what moves, and commit it."
+   if [[ "$COMMIT" == yes ]]; then
+     "$ROOT/scripts/gitops-publish.sh" ||
+       die "$ENV's overlay already holds these digests, but main could not be published, so Argo CD has not read them. They leave with the next publish of any kind. Fix the cause and run this again, or withdraw them with make rollback ENV=$ENV."
+diff --git a/scripts/rollback.sh b/scripts/rollback.sh
+index 6b926c9..a44846e 100755
+--- a/scripts/rollback.sh
++++ b/scripts/rollback.sh
+@@ -117,6 +117,8 @@ fi
+ if [[ -n "$published" ]] && git cat-file -e "$published" 2>/dev/null; then
+   while read -r commit; do
+     [[ -n "$commit" ]] || continue
++    # A promotion newer than such a revert is what a rollback means now, and publishing would send it.
++    if grep -qxF "$commit" <<<"$promotions"; then break; fi
+     reverted="$(reverted_by "$commit")"
+     if [[ -n "$reverted" ]] && grep -qxF "$reverted" <<<"$promotions"; then
+       log "$(git log -1 --format='%h %s' "$commit") is on main but was never published. Publishing it, and reverting nothing else."
+@@ -162,9 +164,19 @@ fi
+ 
+ # Names are UTC timestamps, so they sort by time, and a dump's name is when it started. A dump from the
+ # same second as the commit cannot hold what that commit did, because Argo CD had not read it yet.
+-newest_dump() { # newest_dump [<commit>]: the newest finished backup, from no later than that commit
++published_at() { # published_at <commit>: when the first publish holding it went out, if that was recorded
++  local at sha log="$LOCAL_DIR/evidence-raw/publishes.log"
++  [[ -f "$log" ]] || return 0
++  while read -r at sha; do
++    if git merge-base --is-ancestor "$1" "$sha" 2>/dev/null; then printf '%s' "$at"; return 0; fi
++  done <"$log"
++}
++newest_dump() { # newest_dump [<commit>]: the newest finished backup, from no later than that commit reached Argo CD
+   local dir name latest="99999999T999999Z" newest=""
+-  if [[ $# -gt 0 ]]; then latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"; fi
++  if [[ $# -gt 0 ]]; then
++    latest="$(published_at "$1")"
++    [[ -n "$latest" ]] || latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"
++  fi
+   for dir in "$BACKUPS"/*; do
+     name="$(basename "$dir")"
+     if [[ -f "$dir/manifest.json" && "$name" =~ ^[0-9]{8}T[0-9]{6}Z$ && ! "$name" > "$latest" ]]; then newest="$name"; fi
+@@ -172,6 +184,16 @@ newest_dump() { # newest_dump [<commit>]: the newest finished backup, from no la
+   printf '%s' "$newest"
+ }
+ 
++dumps_after() { # dumps_after <commit>: finished backups from later than that commit, on one line
++  local dir name latest names=""
++  latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"
++  for dir in "$BACKUPS"/*; do
++    name="$(basename "$dir")"
++    if [[ -f "$dir/manifest.json" && "$name" =~ ^[0-9]{8}T[0-9]{6}Z$ && "$name" > "$latest" ]]; then names+="${names:+ }$name"; fi
++  done
++  printf '%s' "$names"
++}
++
+ run_with_limit() { # run_with_limit <seconds> <command...>: fails if the command fails or outlives the limit
+   local limit="$1" pid waited=0
+   shift
+@@ -193,8 +215,14 @@ run_with_limit() { # run_with_limit <seconds> <command...>: fails if the command
+ # Only prod-sim, as with every other dump the contract requires. It runs before the revert, so it
+ # holds what the bad promotion left, for looking at later. The dump to restore from is an older one.
+ restore_from=""
++later_dumps=""
++target_reached_argo=yes
++if [[ -n "$published" ]] && git cat-file -e "$published" 2>/dev/null && ! git merge-base --is-ancestor "$target" "$published"; then
++  target_reached_argo=no
++fi
+ if [[ "$ENV" == prod-sim ]]; then
+   restore_from="$(newest_dump "$target")"
++  later_dumps="$(dumps_after "$target")"
+   if [[ "${SKIP_BACKUP:-}" == yes ]]; then
+     warn "SKIP_BACKUP=yes: no dump taken before this rollback"
+   else
+@@ -259,7 +287,7 @@ if ! revert_errors="$(git revert --no-commit "$target" 2>&1 >/dev/null)"; then
+     stop_revert "git could not start the revert of ${target:0:12}." "Run this again once the cause above is gone."
+   elif [[ -n "$conflicts" ]]; then
+     printf '%s\n' "$revert_errors" >&2
+-    stop_revert "the revert conflicts with a later change to ${conflicts//$'\n'/, }." "Resolve it by hand: git revert ${target:0:12}, fix the conflict, then make gitops-publish."
++    stop_revert "the revert conflicts with a later change to ${conflicts//$'\n'/, }." "Resolve it by hand: git revert ${target:0:12}, fix the conflict, then run this again, which publishes that revert."
+   fi
+   log "The revert conflicts only in $RENDERED, which is generated, so rendering replaces it"
+ fi
+@@ -294,7 +322,7 @@ fi
+ if git diff --cached --quiet -- "${to_commit[@]}"; then
+   undo_revert || stop_revert "reverting ${target:0:12} would change nothing." "Run this again."
+   release_commit_lock
+-  ok "$(git log -1 --format='%h %s' "$target") is already undone: reverting it would change nothing, so there is no new commit. To step back further, revert the promotion before it by hand with git revert, then make gitops-publish."
++  ok "$(git log -1 --format='%h %s' "$target") is already undone: reverting it would change nothing, so there is no new commit. To step back further, revert the promotion before it by hand with git revert, then run this again, which publishes that revert."
+   # It may have been put back by a commit nobody has published.
+   publish "$target"
+   exit 0
+@@ -312,10 +340,12 @@ ok "committed $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
+ 
+ publish "$target"
+ 
+-if [[ "$ENV" == prod-sim ]]; then
++if [[ "$ENV" == prod-sim && "$target_reached_argo" == no ]]; then
++  ok "$(git log -1 --format=%h "$target") never reached Argo CD, so prod-sim's images and schema did not move. There is nothing to restore."
++elif [[ "$ENV" == prod-sim ]]; then
+   promoted_at="$(git log -1 --format='%h from %cI' "$target")"
+   # A promotion merged on GitHub took its dump at the publish, which is later than its commit.
+-  merged_note="A promotion merged on GitHub took its dump when it was published, so for one of those the right dump can be the first one after that time."
++  merged_note="A promotion published after its commit, merged on GitHub or sent by a later run after a refusal, took its dump at that publish, so for one of those the right dump is the one from just before it.${later_dumps:+ Finished since the commit: $later_dumps.}"
+   if [[ -n "$restore_from" ]]; then
+     warn "Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=$restore_from, the newest finished dump older than $promoted_at. $merged_note BACKUP=latest may name the dump taken just now, which holds the newer schema."
+   else
+
+=== mine6.sh
+R=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-promotion-4
+seen() { printf '%s\n' "$*" >>"$R/seen6.txt"; }
+out_clean() { perl -pe 's/\e\[[0-9;]*m//g' "$OUT" | tr -d '\r' | cut -c1-520; }
+lastwarn() { seen "$(out_clean | tail -1)"; }
+s_withdraw() {
+  local status=0
+  promote_dev "$DIGEST_A"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  echo ok >"$STUB/backup-mode"; sleep 1
+  rollback prod-sim
+  seen "withdrawal:"; lastwarn
+}
+s_retried() {
+  local status=0
+  promote_dev "$DIGEST_A"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  sleep 2
+  echo ok >"$STUB/backup-mode"; echo Synced/Healthy >"$STUB/app-status"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim
+  sleep 2
+  rollback prod-sim
+  seen "retried:"; lastwarn
+}
+s_race() {
+  local status=0
+  merged_prod_sim_promotion
+  cat >"$CLONE/scripts/backup.sh" <<'B'
+#!/usr/bin/env bash
+echo "$*" >>"$STUB/backup-calls"
+git -C "$CLONE" commit --quiet --allow-empty -m 'committed and published during the dump'
+(cd "$CLONE" && SKIP_BACKUP=yes ./scripts/gitops-publish.sh) >/dev/null 2>&1
+B
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  seen "race: exit $status"; lastwarn
+}
+s_overlay_only() {
+  local status=0
+  promote_dev "$DIGEST_A"
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_A"
+  git -C "$CLONE" add -- "$PROD_SIM_OVERLAY"
+  git -C "$CLONE" commit --quiet -m 'prod-sim overlay edited by hand, not rendered'
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  seen "overlay moved, render not: exit $status"; lastwarn
+}
+scenario m6-withdraw s_withdraw
+scenario m6-retried s_retried
+scenario m6-race s_race
+scenario m6-overlay-only s_overlay_only
+
+=== mine7.sh
+R=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-promotion-4
+seen() { printf '%s\n' "$*" >>"$R/seen7.txt"; }
+out_clean() { perl -pe 's/\e\[[0-9;]*m//g' "$OUT" | tr -d '\r' | cut -c1-360; }
+show() { seen "--- $1"; out_clean >>"$R/seen7.txt"; }
+state() { seen "state: HEAD=$(git -C "$CLONE" log -1 --format='%h %s' | cut -c1-80) published=$(git --git-dir="$BARE" log -1 --format=%h refs/heads/main) REVERT_HEAD=$([ -e "$CLONE/.git/REVERT_HEAD" ] && echo yes || echo no) lock=$([ -d "$CLONE/.git/agent-commit.lockdir" ] && echo held || echo free)"; seen "status: $(git -C "$CLONE" status --porcelain | tr '\n' ';')"; }
+s_unpublished_revert_then_new_promotion() {
+  local status=0
+  promote_prod_sim_committed
+  promote_dev "$DIGEST_B"
+  web_image "$DIGEST_B" true
+  failing_hook "$BARE/hooks/pre-receive"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  status=0; rollback prod-sim || status=$?
+  rm -f "$BARE/hooks/pre-receive"
+  echo dev-goes-bad >"$STUB/backup-mode"
+  status=0; in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  echo ok >"$STUB/backup-mode"
+  seen "Argo reads prod-sim web before: $(argo_reads_web prod-sim | cut -c1-20)"
+  status=0; rollback prod-sim || status=$?
+  seen "make rollback ENV=prod-sim: exit $status"; show "rollback output"; state
+  seen "Argo reads prod-sim web after: $(argo_reads_web prod-sim | cut -c1-20)"
+}
+s_way_out() {
+  local status=0
+  echo base >"$CLONE/docs/x.txt"
+  git -C "$CLONE" add docs/x.txt; git -C "$CLONE" commit --quiet -m 'a file'
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh
+  promote_dev "$DIGEST_A"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim
+  echo changed >"$CLONE/docs/x.txt"
+  git -C "$CLONE" add -- helm gitops docs/x.txt
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh
+  git -C "$CLONE" rm --quiet docs/x.txt; git -C "$CLONE" commit --quiet -m 'that file goes'
+  rollback prod-sim || status=$?
+  seen "rollback, a file the promotion changed was removed later: exit $status"; seen "$(out_clean | tail -1)"; state
+}
+scenario m7-unpublished-revert s_unpublished_revert_then_new_promotion
+scenario m7-way-out s_way_out
+
+=== candidate-fix.py
+#!/usr/bin/env python3
+# Candidate fixes, tried in the scratch clone only.
+import sys
+root = sys.argv[1]
+def sub(path, old, new):
+    p = root + '/' + path
+    s = open(p).read()
+    assert s.count(old) == 1, (path, old[:50], s.count(old))
+    open(p, 'w').write(s.replace(old, new))
+
+# rollback.sh: say when the promotion never reached Argo CD, and name dumps newer than its commit.
+sub('scripts/rollback.sh',
+    '''restore_from=""
+if [[ "$ENV" == prod-sim ]]; then
+  restore_from="$(newest_dump "$target")"
+''',
+    '''restore_from=""
+later_dumps=""
+target_reached_argo=yes
+if [[ -n "$published" ]] && git cat-file -e "$published" 2>/dev/null && ! git merge-base --is-ancestor "$target" "$published"; then
+  target_reached_argo=no
+fi
+if [[ "$ENV" == prod-sim ]]; then
+  restore_from="$(newest_dump "$target")"
+  later_dumps="$(dumps_after "$target")"
+''')
+sub('scripts/rollback.sh',
+    '''run_with_limit() { # run_with_limit''',
+    '''dumps_after() { # dumps_after <commit>: finished backups from later than that commit, on one line
+  local dir name latest names=""
+  latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"
+  for dir in "$BACKUPS"/*; do
+    name="$(basename "$dir")"
+    if [[ -f "$dir/manifest.json" && "$name" =~ ^[0-9]{8}T[0-9]{6}Z$ && "$name" > "$latest" ]]; then names+="${names:+ }$name"; fi
+  done
+  printf '%s' "$names"
+}
+
+run_with_limit() { # run_with_limit''')
+sub('scripts/rollback.sh',
+    '''if [[ "$ENV" == prod-sim ]]; then
+  promoted_at="$(git log -1 --format='%h from %cI' "$target")"
+''',
+    '''if [[ "$ENV" == prod-sim && "$target_reached_argo" == no ]]; then
+  ok "$(git log -1 --format=%h "$target") never reached Argo CD, so prod-sim's images and schema did not move. There is nothing to restore."
+elif [[ "$ENV" == prod-sim ]]; then
+  promoted_at="$(git log -1 --format='%h from %cI' "$target")"
+''')
+sub('scripts/rollback.sh',
+    '''merged_note="A promotion merged on GitHub took its dump when it was published, so for one of those the right dump can be the first one after that time."''',
+    '''merged_note="A promotion published after its commit, merged on GitHub or sent by a later run after a refusal, took its dump at that publish, so for one of those the right dump is the one from just before it.${later_dumps:+ Finished since the commit: $later_dumps.}"''')
+# rollback.sh: both messages that send a person to make gitops-publish.
+sub('scripts/rollback.sh',
+    '''"Resolve it by hand: git revert ${target:0:12}, fix the conflict, then make gitops-publish."''',
+    '''"Resolve it by hand: git revert ${target:0:12}, fix the conflict, then run this again, which publishes that revert."''')
+sub('scripts/rollback.sh',
+    '''To step back further, revert the promotion before it by hand with git revert, then make gitops-publish."''',
+    '''To step back further, revert the promotion before it by hand with git revert, then run this again, which publishes that revert."''')
+# gitops-publish.sh: another publish got there first.
+sub('scripts/gitops-publish.sh',
+    '''git push --quiet "$BARE" "$new:refs/heads/main" ||
+  die "push refused. If main was rewritten, restore it or delete $BARE to republish from scratch."
+''',
+    '''if ! git push --quiet "$BARE" "$new:refs/heads/main"; then
+  now="$(git --git-dir="$BARE" rev-parse -q --verify refs/heads/main || true)"
+  if [[ -n "$now" ]] && git merge-base --is-ancestor "$new" "$now" 2>/dev/null; then
+    ok "another publish already sent ${new:0:12}: Argo CD reads ${now:0:12}, which holds it"
+    exit 0
+  fi
+  die "push refused. If main was rewritten, restore it or delete $BARE to republish from scratch."
+fi
+''')
+sub('scripts/gitops-publish.sh',
+    '''make rollback ENV=prod-sim withdraws the newest promotion of prod-sim and publishes the rest."''',
+    '''If that is a promotion, make rollback ENV=prod-sim withdraws it and publishes the rest. If not, git revert it."''')
+# promote.sh: an empty plan reads the overlay, and Argo CD reads the render.
+sub('scripts/promote.sh',
+    '''if [[ ! -s "$PLAN" ]]; then
+  if [[ "$COMMIT" == yes ]]; then''',
+    '''if [[ ! -s "$PLAN" ]]; then
+  "$ROOT/scripts/render.sh" --check >/dev/null || die "$ENV's overlay holds these digests, but its render does not match it, and Argo CD reads the render. Run make render, look at what moves, and commit it."
+  if [[ "$COMMIT" == yes ]]; then''')
+# lib-manifests.sh: anything beside the rendered file.
+sub('scripts/ci/lib-manifests.sh',
+    '''    refuse_files_only_argocd_reads "${environment_dir%/}"
+''',
+    '''    refuse_files_only_argocd_reads "${environment_dir%/}"
+    stray="$(find "${environment_dir%/}" -type f -name '*.yaml' ! -name manifests.yaml | LC_ALL=C sort)"
+    [[ -z "$stray" ]] || die "Argo CD reads the whole directory and every check reads only manifests.yaml, so these would reach the cluster unchecked: ${stray//$'\\n'/, }"
+''')
+
+=== candidate-fix-2.py
+#!/usr/bin/env python3
+# Two more candidate fixes, tried in the scratch clone only.
+import sys
+root = sys.argv[1]
+def sub(path, old, new):
+    p = root + '/' + path
+    s = open(p).read()
+    assert s.count(old) == 1, (path, old[:50], s.count(old))
+    open(p, 'w').write(s.replace(old, new))
+sub('scripts/rollback.sh',
+    '''    [[ -n "$commit" ]] || continue
+    reverted="$(reverted_by "$commit")"
+''',
+    '''    [[ -n "$commit" ]] || continue
+    # A promotion newer than such a revert is what a rollback means now, and publishing would send it.
+    if grep -qxF "$commit" <<<"$promotions"; then break; fi
+    reverted="$(reverted_by "$commit")"
+''')
+sub('scripts/lib/commit-lock.sh',
+    '''    if [[ -n "$(git status --porcelain -- "$path")" ]]; then
+      git_when_index_free restore --source=HEAD --staged --worktree -- "$path" || status=1
+    fi
+''',
+    '''    if [[ -n "$(git status --porcelain -- "$path")" ]]; then
+      if git cat-file -e "HEAD:$path" 2>/dev/null; then
+        git_when_index_free restore --source=HEAD --staged --worktree -- "$path" || status=1
+      else
+        # HEAD has no such file, and git restore calls an unmerged entry for it an error.
+        git_when_index_free rm --force --quiet --cached -- "$path" || status=1
+        rm -f -- "$path"
+      fi
+    fi
+''')
+
+=== candidate-fix-3.py
+#!/usr/bin/env python3
+# Root-cause candidate for which dump to name: record each publish, and read when the target first went out.
+import sys
+root = sys.argv[1]
+def sub(path, old, new):
+    p = root + '/' + path
+    s = open(p).read()
+    assert s.count(old) == 1, (path, old[:50], s.count(old))
+    open(p, 'w').write(s.replace(old, new))
+sub('scripts/gitops-publish.sh',
+    '''ok "published main ${new:0:12} to $BARE"
+''',
+    '''ok "published main ${new:0:12} to $BARE"
+mkdir -p "$LOCAL_DIR/evidence-raw"
+printf '%s %s\\n' "$(date -u +%Y%m%dT%H%M%SZ)" "$new" >>"$LOCAL_DIR/evidence-raw/publishes.log"
+''')
+sub('scripts/rollback.sh',
+    '''newest_dump() { # newest_dump [<commit>]: the newest finished backup, from no later than that commit
+  local dir name latest="99999999T999999Z" newest=""
+  if [[ $# -gt 0 ]]; then latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"; fi
+''',
+    '''published_at() { # published_at <commit>: when the first publish holding it went out, if that was recorded
+  local at sha log="$LOCAL_DIR/evidence-raw/publishes.log"
+  [[ -f "$log" ]] || return 0
+  while read -r at sha; do
+    if git merge-base --is-ancestor "$1" "$sha" 2>/dev/null; then printf '%s' "$at"; return 0; fi
+  done <"$log"
+}
+newest_dump() { # newest_dump [<commit>]: the newest finished backup, from no later than that commit reached Argo CD
+  local dir name latest="99999999T999999Z" newest=""
+  if [[ $# -gt 0 ]]; then
+    latest="$(published_at "$1")"
+    [[ -n "$latest" ]] || latest="$(TZ=UTC git log -1 --date='format-local:%Y%m%dT%H%M%SZ' --format=%cd "$1")"
+  fi
+''')

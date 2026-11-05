@@ -1,0 +1,671 @@
+# The same scenarios against the scripts before this work, e21ac51, 2026-11-05T02:43:36Z. Harness and stubs from ac52a14. A FAIL here is what a scenario exists to catch, except where the stricter model alone causes it: the stub does not self-heal after a resume, which is harsher than Argo CD on S8.
+
+=== S0. What the fixture itself can see, so a pass below means something
+PASS  no token: the API refuses a secret read
+PASS  a made-up token: refused
+PASS  the real token: accepted
+PASS  a Plane app's pods are there
+PASS  self-heal reverts a scale while auto-sync is on
+PASS  so the server still answers
+PASS  paused, the scale stands, and nothing answers
+PASS  and the Application is not Synced and Healthy
+PASS  the curl on the path refuses a real host
+PASS  a lost cluster leaves its local state, as a real loss does
+
+=== S1. The happy path: nothing left but the host's files
+PASS  exit 0 (got 0)
+PASS  order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, dev, prod-sim
+PASS  no database or cache was replaced under a running server
+PASS  root was never paused for Infisical
+PASS  no admin bootstrap call
+PASS  no secret written
+PASS  no password login: the token this backup names still works
+PASS  terraform never ran with -auto-approve
+PASS  marker removed
+PASS  secret zero unchanged
+PASS  no archive made
+PASS  evidence says PASS
+PASS  every clean step PASS
+FAIL  the plan named row and object counts
+FAIL  and for Infisical
+
+=== S2. A cluster with data: refuse, change nothing, and say which backup and how to keep it the newest
+PASS  non-zero exit
+PASS  says why
+FAIL  the advice skips a backup, which would take over BACKUP=latest (finding 10)
+FAIL  and names the backup to come back to
+PASS  marker not written
+PASS  nothing ran
+
+=== S3. No Infisical backup at all, Plane backups exist
+PASS  non-zero exit
+PASS  says Infisical is the source of truth
+PASS  nothing ran
+
+=== S4. Plane backup taken with another SECRET_KEY
+PASS  non-zero exit
+PASS  names the mismatch
+PASS  tells what to do
+PASS  nothing ran
+PASS  leaving dev out passes the plan
+
+=== S5. A tampered dump
+PASS  non-zero exit
+PASS  says which
+PASS  nothing ran
+
+=== S6. A key gone: a clear refusal, and only the hint that applies (finding 2)
+PASS  ENCRYPTION_KEY: non-zero exit
+FAIL  ENCRYPTION_KEY: no shell error in the output
+FAIL  ENCRYPTION_KEY: no shell source in the output
+PASS  ENCRYPTION_KEY: says the dump is unreadable
+PASS  ENCRYPTION_KEY: and not the AUTH_SECRET hint
+PASS  ENCRYPTION_KEY: nothing ran
+PASS  AUTH_SECRET: non-zero exit
+FAIL  AUTH_SECRET: no shell error in the output
+FAIL  AUTH_SECRET: no shell source in the output
+FAIL  AUTH_SECRET: its own hint
+FAIL  AUTH_SECRET: and not the ENCRYPTION_KEY hint
+PASS  AUTH_SECRET: nothing ran
+FAIL  no script in the source has a case inside a command substitution
+
+=== S7. A plain make up came first, which archived the credentials. Restore finds them by checksum
+PASS  exit 0 (got 0)
+PASS  credentials are the backup's again
+PASS  what it replaced is kept
+PASS  Terraform state is the backup's
+PASS  the state it replaced is kept
+
+=== S8. Fails partway, then resumes
+PASS  first run fails at dev
+PASS  marker stays
+PASS  Infisical marked done
+FAIL  the wait for all Applications is marked done
+PASS  says to run it again
+FAIL  second run exit 0 (got 1)
+    | [1;32m ok[0m dev: all secrets already exist, nothing written
+    | [1;32m ok[0m prod-sim: all secrets already exist, nothing written
+    | [1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+    | [1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+    | [1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+    | [1;32m ok[0m infisical step finished in 0s
+    | [1;34m==>[0m Applications: all 14 Synced and Healthy
+    | [1;34m==>[0m A child in backoff after the Infisical step can take up to 5 minutes to retry. That is normal.
+    | [1;34m==>[0m Waiting for all 14 Applications Synced and Healthy (up to 15s)
+    | [1;33mwarn[0m Applications: 14 of 14 exist, waiting on: plane-dev=OutOfSync/Progressing
+    | [1;31mfail[0m timed out after 15s waiting for all 14 Applications Synced and Healthy. Check the Applications named above: kubectl -n argocd describe application <name>
+    | [1;33mwarn[0m clean restore from Infisical backup 20261105T024515Z stopped. Fix the cause and run the same command: it resumes. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-20261105T024531Z.json
+PASS  Infisical not restored twice
+FAIL  dev restored this time
+FAIL  marker removed
+FAIL  says it did not wait for everything again until the end
+
+=== S9. Under way, a plain make up on the fresh instance, and another backup id
+PASS  first run stops at the Infisical restore
+PASS  marker there
+PASS  plain up refuses to bootstrap a fresh instance while a restore is under way
+PASS  and says so
+PASS  no bootstrap call
+PASS  another backup id refused while one is under way
+PASS  the same id resumes, exit 0 (got 0)
+
+=== S10. Restored mode refuses instead of repairing
+PASS  create: non-zero
+PASS  create: names the resource
+PASS  create: nothing applied
+PASS  replace: non-zero
+PASS  replace: names the resource
+PASS  replace: nothing applied
+PASS  no changes: exit 0 (got 0)
+PASS  no changes: says so
+PASS  no changes: identities still published
+PASS  no changes: no write
+PASS  fresh instance: refuses
+PASS  fresh instance: says the restore did not take
+PASS  fresh instance: no bootstrap call
+PASS  fresh instance: nothing archived
+PASS  rejected token: refuses
+PASS  rejected token: says so
+PASS  rejected token: does not mint its way past it
+PASS  missing secret: refuses
+PASS  missing secret: names it, generates nothing
+PASS  missing secret: no write
+PASS  no state: refuses before planning
+PASS  no state: no plan
+
+=== S11. Plain make up on a fresh instance works as before, including over old state
+PASS  exit 0 (got 0)
+PASS  bootstrap call
+PASS  old credentials moved to an archive
+PASS  old Terraform state moved aside
+PASS  terraform ran with -auto-approve
+PASS  secrets seeded in both projects
+PASS  identity published
+
+=== S12. destroy.sh keeps what a restore needs
+PASS  exit 0 (got 0)
+PASS  cluster deleted
+PASS  local state removed
+PASS  Infisical state kept, byte for byte
+PASS  secret zero kept
+PASS  points at restore-clean
+FAIL  with its own backup: warns that latest now names it (finding 10)
+FAIL  PURGE=yes: says the registry held images (finding 5)
+
+=== S13. The drill, start to finish
+PASS  PLAN_ONLY: exit 0 (got 0)
+PASS  PLAN_ONLY: deleted nothing
+PASS  no CONFIRM: refuses
+PASS  drill exit 0 (got 0)
+PASS  drill deleted the cluster
+PASS  RESULT PASS
+PASS  LOSE_CLUSTER=yes: the disaster path, exit 0 (got 0)
+FAIL  LOSE_CLUSTER=yes: the state stayed behind for the restore to deal with
+FAIL  LOSE_CLUSTER=yes: and it moved it aside
+PASS  LOSE_CLUSTER=yes: Terraform never applied over it
+PASS  LOSE_CLUSTER=yes: RESULT PASS
+
+=== S14. Rotation guard on an in-place restore
+PASS  refuses
+PASS  says a rotation happened
+PASS  names the keys
+PASS  nothing stopped
+PASS  the override goes on
+
+=== S15. A restore under way, and the cluster it was working on goes away
+PASS  fails at dev, Infisical marked done
+PASS  run again with the cluster gone: exit 0 (got 0)
+PASS  Infisical restored again, because the new cluster has none
+PASS  fails at dev, marker there
+PASS  destroy clears the marker
+
+=== S16. PLAN_ONLY changes nothing, on a live cluster or with a restore under way
+PASS  PLAN_ONLY exit 0 (got 0)
+PASS  not one file under .local changed
+FAIL  the disk line is in the plan (finding 4)
+PASS  with a marker and no cluster: exit 0 (got 0)
+FAIL  with a marker and no cluster: not one file changed
+FAIL  with a marker and no cluster: still says done
+FAIL  the plan says the stale state would move, and moves nothing (finding 6)
+PASS  the state is where it was
+
+=== S17. Infisical cannot be read at backup time: the backup says so, and a clean restore passes over it
+PASS  backup exits non-zero (got 1)
+PASS  and says why
+PASS  the dump is kept
+PASS  a newer backup exists
+PASS  latest passes over it, exit 0 (got 0)
+PASS  and names it
+PASS  and uses the good one
+PASS  naming it directly is refused
+PASS  with the reason
+
+=== S18. An older Infisical backup pairs with the Plane backups of its own run
+PASS  two distinct sets
+PASS  older Infisical id takes the dev backup of its own run
+PASS  latest takes the newest
+PASS  BACKUP_DEV overrides
+
+=== S19. Plane restore puts back the accounts and sentinel of its dump, and leaves the other environment's alone
+PASS  exit 0 (got 0)
+PASS  dev token is the dump's
+PASS  prod-sim token untouched
+PASS  file stays 0600
+PASS  sentinel is the dump's
+
+=== S20. Finding 1: the token a backup names has expired, and the password is here. A password login mints another
+FAIL  the plan goes through, exit 0 (got 1)
+    | [1;33mwarn[0m the admin token recorded with this backup has expired, so nothing could log in after the restore. See infisical/README.md, section Recovery.
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+FAIL  and warns
+FAIL  and says what happens
+FAIL  the restore goes through, exit 0 (got 1)
+    | [1;33mwarn[0m the admin token recorded with this backup has expired, so nothing could log in after the restore. See infisical/README.md, section Recovery.
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+  no 'kc scale deployment/infisical --replicas=1 ns=infisical' after line 0
+FAIL  the login comes after the database is back, and before anything reads a value
+ls: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-*.json: No such file or directory
+jq: error: Could not open file : No such file or directory
+FAIL  evidence says PASS
+ls: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/restore-infisical-*.json: No such file or directory
+jq: error: Could not open file : No such file or directory
+FAIL  the Infisical restore records that it was replaced
+FAIL  the file now holds another token
+FAIL  and it has not expired
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-admin-replaced.log: No such file or directory
+FAIL  the ledger links the old file to the new
+FAIL  the set still names the old file, and the archive still holds it
+PASS  marker removed
+
+=== S21. Finding 1: infisical-admin.json is lost altogether, and the keys, password and dump are here
+FAIL  exit 0 (got 1)
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: syntax error near unexpected token `newline'
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: `          ENCRYPTION_KEY'
+    | [1;33mwarn[0m infisical-admin.json with the content this backup needs is not in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/secret-zero or any archive in it.  printf 'Without it the dump is unreadable: restore the file from your off-machine copy.' ;;
+    | [1;33mwarn[0m           AUTH_SECRET) printf 'Without it the admin token in the database cannot be verified. See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m           *) printf 'See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m         esac)
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+FAIL  no shell error
+  no 'kc scale deployment/infisical --replicas=1 ns=infisical' after line 0
+FAIL  minted after the database came back
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-admin.json: No such file or directory
+FAIL  the new file has the old shape, with its organization
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-admin-replaced.log: No such file or directory
+FAIL  the ledger has it, with no old file to name
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-machine.json: No such file or directory
+FAIL  and the machine file came back, from Terraform's own outputs
+PASS  marker removed
+
+=== S22. Finding 1: no token and no password: restore Infisical, stop with steps, resume with the replacement
+FAIL  the plan goes through and warns, exit 0 (got 1)
+FAIL  the plan says it will stop for a sign-in
+FAIL  the run stops with exit 2 (got 1)
+    | [1;33mwarn[0m the admin token recorded with this backup has expired, so nothing could log in after the restore. See infisical/README.md, section Recovery.
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+FAIL  after restoring Infisical
+PASS  and no Plane restore began
+FAIL  the steps name where a sign-in happens
+FAIL  the steps name the file for the token
+FAIL  the steps name the file for a password
+FAIL  the steps name what to run next, with the backup id
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/restore-clean.state: No such file or directory
+FAIL  marker stays, with Infisical done
+ls: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-*.json: No such file or directory
+jq: error: Could not open file : No such file or directory
+FAIL  evidence says BLOCKED
+FAIL  something that is not a token: stops again, exit 2 (got 1)
+FAIL  and says so
+FAIL  a token the server does not know: stops again, exit 2 (got 1)
+FAIL  and says so
+PASS  and it is not moved into place
+PASS  and Infisical was not restored again
+FAIL  with a real replacement, it resumes and finishes, exit 0 (got 1)
+    | [1;33mwarn[0m the admin token recorded with this backup has expired, so nothing could log in after the restore. See infisical/README.md, section Recovery.
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+PASS  Infisical was not restored again
+FAIL  Plane was restored
+FAIL  the token file is the replacement
+FAIL  the file a person left is gone
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-admin-replaced.log: No such file or directory
+FAIL  the ledger says a person did it
+PASS  marker removed
+FAIL  the file lost and no password: the same stop, exit 2 (got 1)
+FAIL  the file lost and no password: Infisical is back
+FAIL  writing the password, as the steps say, lets it go on, exit 0 (got 1)
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: syntax error near unexpected token `newline'
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: `          ENCRYPTION_KEY'
+    | [1;33mwarn[0m infisical-admin.json with the content this backup needs is not in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/secret-zero or any archive in it.  printf 'Without it the dump is unreadable: restore the file from your off-machine copy.' ;;
+    | [1;33mwarn[0m           AUTH_SECRET) printf 'Without it the admin token in the database cannot be verified. See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m           *) printf 'See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m         esac)
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+FAIL  it signed in by itself
+
+=== S23. Finding 1: in place, what stops a restore comes before the server stops
+PASS  expired and no password: refuses
+FAIL  before anything was stopped
+FAIL  and before the database was touched
+FAIL  says what to do while it can
+FAIL  and that a token made now would not help
+FAIL  the override restores it, for an instance with nothing to sign in to
+FAIL  the override then stops, with a blocked exit, not a pass (got 1)
+FAIL  the override: its evidence says BLOCKED
+FAIL  the override: with the steps
+FAIL  expired, password here: goes through and mints, exit 0 (got 1)
+    | [1;32m ok[0m key-fingerprint: ENCRYPTION_KEY matches the backup
+    | [1;32m ok[0m overwrite-guard: target holds 1 users and 0 objects, overwriting on CONFIRM=yes
+    | [1;34m==>[0m Pausing auto-sync: infisical
+    | [1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+    | job logs ok
+    | [1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+    | [1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+    | [1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+    | [1;32m ok[0m proof-initialized: the server reads the restored admin config
+    | [1;31mfail[0m the Infisical admin token has expired. infisical/README.md, section Recovery, says how to replace it.
+    | [1;32m ok[0m auto-sync restored on infisical
+    | [1;33mwarn[0m restore of 20261105T025038Z into infisical FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-infisical-20261105T025042Z.json
+  no 'api POST mint' after line 8
+FAIL  expired, password here: order
+FAIL  expired, password here: proof-values PASS
+FAIL  a token newer than the dump, the old file gone: mints, exit 0 (got 1)
+    | [1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+    | job logs ok
+    | [1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+    | [1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+    | [1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+    | [1;32m ok[0m proof-initialized: the server reads the restored admin config
+    | [1;33mwarn[0m reading the dev secrets from Infisical returned HTTP 401: Token invalid
+    | [1;33mwarn[0m reading the prod-sim secrets from Infisical returned HTTP 401: Token invalid
+    | [1;33mwarn[0m proof-values FAILED: dev: could not read the secrets back;prod-sim: could not read the secrets back
+    | [1;31mfail[0m the restored instance does not hold what the backup recorded
+    | [1;32m ok[0m auto-sync restored on infisical
+    | [1;33mwarn[0m restore of 20261105T025045Z into infisical FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-infisical-20261105T025049Z.json
+  no 'api POST login' after line 8
+FAIL  a token newer than the dump: the server was asked first
+FAIL  a token newer than the dump: proof-values PASS with the token the restored server takes
+FAIL  the named file in an archive: exit 0 (got 1)
+    | [1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+    | job logs ok
+    | [1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+    | [1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+    | [1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+    | [1;32m ok[0m proof-initialized: the server reads the restored admin config
+    | [1;33mwarn[0m reading the dev secrets from Infisical returned HTTP 401: Token invalid
+    | [1;33mwarn[0m reading the prod-sim secrets from Infisical returned HTTP 401: Token invalid
+    | [1;33mwarn[0m proof-values FAILED: dev: could not read the secrets back;prod-sim: could not read the secrets back
+    | [1;31mfail[0m the restored instance does not hold what the backup recorded
+    | [1;32m ok[0m auto-sync restored on infisical
+    | [1;33mwarn[0m restore of 20261105T025052Z into infisical FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-infisical-20261105T025056Z.json
+PASS  the named file in an archive: no login
+FAIL  the named file in an archive: it is back in place
+PASS  a password newer than the dump: exit 0 (got 0)
+FAIL  a password newer than the dump: the one the dump goes with is back
+FAIL  a password newer than the dump: the newer one is kept
+
+=== S24. Finding 1: a warning at backup and plan time when the token ends inside the retention period
+FAIL  10 days left: the backup warns
+FAIL  10 days left: and says the password is what is left
+FAIL  10 days left: the plan warns
+PASS  60 days left: the backup does not
+FAIL  10 days left and no password: the warning says what that costs
+
+=== S25. Finding 1: a token that has ended does not stop backups, and the dump holds the one the set names
+FAIL  the backup succeeds, exit 0 (got 1)
+    | [1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T025126Z
+    | job logs ok
+    | [1;31mfail[0m the Infisical admin token has expired. infisical/README.md, section Recovery, says how to replace it.
+  no 'api POST mint' after line 0
+FAIL  minted before the dump, so the dump holds it
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/backups/infisical/20261105T025126Z/recovery/set.json: No such file or directory
+FAIL  the set is complete
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/backups/infisical/20261105T025126Z/recovery/set.json: No such file or directory
+FAIL  the set names the new file
+FAIL  the new file is not the old one
+FAIL  and a clean restore of it needs no login, exit 0 (got 1)
+    | [1;31mfail[0m Infisical backup 20261105T025126Z cannot serve a clean restore: it has no recovery set, so it holds no Terraform state and names no secret zero. Nothing was changed.
+PASS  no login
+PASS  no password either: the dump is kept and the set is not whole, exit non-zero
+FAIL  no password either: says what to do
+FAIL  no password either: says nothing was pruned
+FAIL  RENEW_ADMIN_TOKEN=yes replaces a token that still works (got 0)
+PASS  and the next bootstrap accepts it (got 0)
+
+=== S26. Finding 1: writing a token over the file does not pass as the file the checksum names
+FAIL  the plan does not call it the file this backup names
+FAIL  the restored server refuses it, and a password login takes over, exit 0 (got 1)
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: syntax error near unexpected token `newline'
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: `          ENCRYPTION_KEY'
+    | [1;33mwarn[0m infisical-admin.json with the content this backup needs is not in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/secret-zero or any archive in it.  printf 'Without it the dump is unreadable: restore the file from your off-machine copy.' ;;
+    | [1;33mwarn[0m           AUTH_SECRET) printf 'Without it the admin token in the database cannot be verified. See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m           *) printf 'See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m         esac)
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+  no 'kc scale deployment/infisical --replicas=1' after line 0
+FAIL  the server was asked
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-admin-replaced.log: No such file or directory
+FAIL  the ledger says why
+FAIL  a token the restored server accepts goes through, exit 0 (got 1)
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: syntax error near unexpected token `newline'
+    | /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/infisical/lib/recovery.sh: command substitution: line 294: `          ENCRYPTION_KEY'
+    | [1;33mwarn[0m infisical-admin.json with the content this backup needs is not in /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/secret-zero or any archive in it.  printf 'Without it the dump is unreadable: restore the file from your off-machine copy.' ;;
+    | [1;33mwarn[0m           AUTH_SECRET) printf 'Without it the admin token in the database cannot be verified. See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m           *) printf 'See infisical/README.md, section Recovery.' ;;
+    | [1;33mwarn[0m         esac)
+    | [1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+PASS  with no login
+jq: error: Could not open file /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/secret-zero/infisical-admin-replaced.log: No such file or directory
+FAIL  and is on record, from the file this backup names to this one
+
+=== S27. Finding 3: uncommitted changes refuse before anything is deleted, as up.sh would
+FAIL  PLAN_ONLY refuses
+FAIL  and names the path
+FAIL  and says why
+PASS  a real run refuses
+FAIL  before the marker
+PASS  before anything ran
+PASS  the drill refuses
+FAIL  the drill deletes nothing
+FAIL  the drill backs up nothing first
+PASS  the drill names the path
+PASS  up.sh itself refuses it, the same way
+
+=== S28. Finding 4: the disk check before a delete, and agreement with up.sh
+PASS  14 GiB + 93% of 11.4: under 25, the drill refuses
+PASS  before the delete
+FAIL  and shows the arithmetic
+FAIL  and how to go on
+PASS  ALLOW_LOW_DISK=yes is refused: it says nothing
+FAIL  before the delete
+FAIL  and it says what it wants
+FAIL  a reason goes past it, exit 0 (got 1)
+    | FAIL  only 14 GiB free on the host. scripts/up.sh refuses to create a cluster below 25 GiB, so the drill would stop right after the delete. Deleting returns some of it only if Docker trims its disk, which is unmeasured here. Free space, or pass ALLOW_LOW_DISK=yes to accept that risk.
+    | RESULT FAIL   aborted, 1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/drill-clean-restore-20261105T025212Z.log
+FAIL  deleted and restored
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/low-disk-overrides.log: No such file or directory
+FAIL  the drill logged it
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/low-disk-overrides.log: No such file or directory
+FAIL  up.sh logged it
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/low-disk-overrides.log: No such file or directory
+tests/drills/clean-restore-harness.sh: line 55: test: : integer expression expected
+FAIL  cluster-up.sh did not need to: 24 GiB clears its 15
+FAIL  15 GiB + 93% of 11.4: 25.6 clears 25, and the run goes through, exit 0 (got 1)
+PASS  with no override
+FAIL  passes the check, and only 60% comes back: it does not stop at up.sh, exit 0 (got 1)
+    | FAIL  only 15 GiB free on the host. scripts/up.sh refuses to create a cluster below 25 GiB, so the drill would stop right after the delete. Deleting returns some of it only if Docker trims its disk, which is unmeasured here. Free space, or pass ALLOW_LOW_DISK=yes to accept that risk.
+    | RESULT FAIL   aborted, 1 failure(s). evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/drill-clean-restore-20261105T025215Z.log
+FAIL  the run says what happened
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/low-disk-overrides.log: No such file or directory
+FAIL  and up.sh logs it, with that reason
+PASS  up.sh with no cluster and 12 GiB: refuses
+FAIL  up.sh says how to go on
+PASS  up.sh created nothing
+FAIL  up.sh with a reason goes on (got 1)
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/low-disk-overrides.log: No such file or directory
+FAIL  up.sh logs it
+grep: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T//clean-restore-harness.M8QSLr/.local/evidence-raw/low-disk-overrides.log: No such file or directory
+FAIL  and cluster-up.sh, past its own 15
+PASS  cluster-up.sh alone with no cluster and 12 GiB: refuses
+FAIL  cluster-up.sh alone: says how to go on
+PASS  up.sh on a cluster that exists asks only for the floor, exit 0 (got 0)
+PASS  an empty cluster that stays, 12 GiB: no disk refusal (got 0)
+PASS  restore-clean with no cluster and 20 GiB: refuses
+FAIL  before the marker
+PASS  before anything ran
+FAIL  with a reason it goes through, exit 0 (got 1)
+    | [1;34m==>[0m Resuming the clean restore of Infisical backup 20261105T025234Z
+    | [1;34m==>[0m Clean restore plan
+    |     Infisical  20261105T025234Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim
+    |     dev        20261105T025235Z, SECRET_KEY 83ab19278af8a4ad, 1 objects
+    |     prod-sim   20261105T025236Z, SECRET_KEY b7731980908bcc0e, 1 objects
+    | [1;32m ok[0m the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment
+    | [1;32m ok[0m plan: Infisical 20261105T025234Z; dev 20261105T025235Z; prod-sim 20261105T025236Z; checksums and secret zero check out
+    | [1;34m==>[0m make up as far as Traefik. Plane waits for an identity Secret that does not exist yet.
+    | [1;31mfail[0m only 20 GiB free on the host, need at least 25 GiB. Free space first.
+    | [1;33mwarn[0m clean restore from Infisical backup 20261105T025234Z stopped. Fix the cause and run the same command: it resumes. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-20261105T025241Z.json
+
+=== S29. Finding 5: digests the registry cannot serve are listed before anything is touched
+FAIL  PLAN_ONLY refuses
+FAIL  and lists the digest
+FAIL  and gives the way from GHCR
+FAIL  and the way by rebuilding
+FAIL  and by promoting
+FAIL  and says the data is left alone
+FAIL  and how to get a registry to copy into
+PASS  and rebuilds nothing to find out
+PASS  a real run refuses
+FAIL  before anything ran
+FAIL  before the marker
+PASS  the drill refuses
+FAIL  the drill deletes nothing
+PASS  the registry merely stopped, its volume there: no refusal (got 0)
+FAIL  and it says up.sh will check
+FAIL  the registry and its volume gone, as after PURGE=yes: refuses
+FAIL  and lists what it cannot serve
+
+=== S30. Finding 6: a cluster lost with no make destroy leaves state about it, which must not be applied over
+PASS  exit 0 (got 0)
+FAIL  Terraform did not apply over it
+FAIL  the old state is kept, moved aside
+stat: : stat: No such file or directory
+FAIL  the aside folder is private
+FAIL  the run says so
+FAIL  the evidence says so
+PASS  and the new state is this cluster's
+FAIL  plain make up on a lost cluster too
+PASS  make up with the cluster there keeps its state (got 0)
+FAIL  Docker down: refuses, and does not take that for a lost cluster
+PASS  Docker down: state untouched
+
+=== S31. Finding 7: a hard stop ran no trap. Infisical left at zero with auto-sync paused
+PASS  fixture: nothing answers
+PASS  fixture: the Application reads what a wait cannot get past
+FAIL  the resume finishes, exit 0 (got 1)
+    | [1;32m ok[0m secret-zero step finished in 0s
+    | [1;34m==>[0m Traefik: the Application, then a real request through it
+    | [1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 15s)
+    | [1;32m ok[0m Application traefik Synced and Healthy, after 0s
+    | [1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 15s)
+    | [1;32m ok[0m Traefik answering at http://argocd.localhost/, after 0s
+    | [1;32m ok[0m traefik step finished in 0s
+    | [1;32m ok[0m Stopped after traefik, as UP_STOP_AFTER asked. Run 'make up' to go on: finished steps are safe to repeat.
+    | [1;32m ok[0m up-to-traefik: cluster, Terraform, secret zero, Traefik
+    | [1;34m==>[0m Waiting for the fresh Infisical server: its migrations run before it answers (up to 15s)
+    | [1;31mfail[0m timed out after 15s waiting for Infisical. Check: kubectl -n argocd describe application infisical; kubectl -n infisical get pods
+    | [1;33mwarn[0m clean restore from Infisical backup 20261105T025346Z stopped. Fix the cause and run the same command: it resumes. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-20261105T025357Z.json
+  no 'kc patch application infisical resume' after line 0
+FAIL  auto-sync came back and the server was scaled up, before anything waited
+  no 'kc scale deployment/infisical --replicas=1 ns=infisical' after line 0
+FAIL  then the restore went ahead
+FAIL  the run says what it repaired
+FAIL  marker removed
+
+=== S31b. Finding 7: root and a Plane app left paused, with that app at zero
+FAIL  the resume finishes, exit 0 (got 1)
+    | [1;32m ok[0m dev: all secrets already exist, nothing written
+    | [1;32m ok[0m prod-sim: all secrets already exist, nothing written
+    | [1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+    | [1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+    | [1;32m ok[0m Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later.
+    | [1;32m ok[0m infisical step finished in 0s
+    | [1;34m==>[0m Applications: all 14 Synced and Healthy
+    | [1;34m==>[0m A child in backoff after the Infisical step can take up to 5 minutes to retry. That is normal.
+    | [1;34m==>[0m Waiting for all 14 Applications Synced and Healthy (up to 15s)
+    | [1;33mwarn[0m Applications: 14 of 14 exist, waiting on: plane-dev=OutOfSync/Progressing
+    | [1;31mfail[0m timed out after 15s waiting for all 14 Applications Synced and Healthy. Check the Applications named above: kubectl -n argocd describe application <name>
+    | [1;33mwarn[0m clean restore from Infisical backup 20261105T025415Z stopped. Fix the cause and run the same command: it resumes. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-20261105T025428Z.json
+  no 'kc patch application plane-dev resume' after line 0
+FAIL  root last, as argo_resume does
+  no 'kc scale deployment/plane-api-wl --replicas=1 ns=plane-dev' after line 0
+FAIL  the apps came back to Git's replicas first
+FAIL  none left paused at the end
+
+=== S31c. Finding 7: the real thing. Kill the whole process group with SIGKILL, in the Infisical restore Job
+PASS  fixture: the Job is still there, active, with its client gone
+PASS  fixture: the server is at zero, and paused
+FAIL  the resume finishes, exit 0 (got 1)
+    | [1;32m ok[0m secret-zero step finished in 0s
+    | [1;34m==>[0m Traefik: the Application, then a real request through it
+    | [1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 15s)
+    | [1;32m ok[0m Application traefik Synced and Healthy, after 1s
+    | [1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 15s)
+    | [1;32m ok[0m Traefik answering at http://argocd.localhost/, after 0s
+    | [1;32m ok[0m traefik step finished in 1s
+    | [1;32m ok[0m Stopped after traefik, as UP_STOP_AFTER asked. Run 'make up' to go on: finished steps are safe to repeat.
+    | [1;32m ok[0m up-to-traefik: cluster, Terraform, secret zero, Traefik
+    | [1;34m==>[0m Waiting for the fresh Infisical server: its migrations run before it answers (up to 15s)
+    | [1;31mfail[0m timed out after 15s waiting for Infisical. Check: kubectl -n argocd describe application infisical; kubectl -n infisical get pods
+    | [1;33mwarn[0m clean restore from Infisical backup 20261105T025446Z stopped. Fix the cause and run the same command: it resumes. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-20261105T025456Z.json
+  no 'kc delete job plane-restore ns=infisical' after line 0
+FAIL  the Job with no client was removed first
+PASS  no restore ran with the server up
+FAIL  marker removed
+
+=== S31d. A run that is alive is not a hard stop
+PASS  a second run refuses
+FAIL  and says another is running
+PASS  and repairs nothing under it
+
+=== S31e. Finding 7: a power cut. The same state, and the node stopped too
+PASS  fixture: nothing answers, not even the cluster
+FAIL  the resume finishes, exit 0 (got 1)
+    | [1;32m ok[0m secret-zero step finished in 0s
+    | [1;34m==>[0m Traefik: the Application, then a real request through it
+    | [1;34m==>[0m Waiting for Application traefik Synced and Healthy (up to 15s)
+    | [1;32m ok[0m Application traefik Synced and Healthy, after 0s
+    | [1;34m==>[0m Waiting for Traefik answering at http://argocd.localhost/ (up to 15s)
+    | [1;32m ok[0m Traefik answering at http://argocd.localhost/, after 0s
+    | [1;32m ok[0m traefik step finished in 0s
+    | [1;32m ok[0m Stopped after traefik, as UP_STOP_AFTER asked. Run 'make up' to go on: finished steps are safe to repeat.
+    | [1;32m ok[0m up-to-traefik: cluster, Terraform, secret zero, Traefik
+    | [1;34m==>[0m Waiting for the fresh Infisical server: its migrations run before it answers (up to 15s)
+    | [1;31mfail[0m timed out after 15s waiting for Infisical. Check: kubectl -n argocd describe application infisical; kubectl -n infisical get pods
+    | [1;33mwarn[0m clean restore from Infisical backup 20261105T025540Z stopped. Fix the cause and run the same command: it resumes. Evidence: /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/clean-restore-harness.M8QSLr/.local/evidence-raw/restore-clean-20261105T025548Z.json
+  no 'kc patch application infisical resume' after line 1
+FAIL  the node first, then what it left behind
+FAIL  marker removed
+
+=== S32. Finding 8: retention, on real folders. Five failed Infisical backups keep the last complete one
+FAIL  the last complete one is still there, after 6 that could not finish
+FAIL  and the failures are kept too: nothing pruned
+FAIL  and a clean restore still has it
+PASS  a complete backup with KEEP=1 succeeds, exit 0 (got 0)
+PASS  the newest complete set stays
+PASS  the older complete one goes
+PASS  and the failure older than it
+PASS  KEEP=2 counts complete sets only, exit 0 (got 0)
+FAIL  KEEP=2: two complete, and the failure between them is kept for an in-place restore
+PASS  KEEP=2: the failure is the one kept
+PASS  the Plane Job's own retention lines still run, on real folders (got 0)
+
+=== S33. Finding 9: a proof that could not run is not a pass
+FAIL  exit 2, as scripts/test.sh does (got 0)
+FAIL  the marker stays
+FAIL  it does not say complete
+FAIL  the evidence says NOT RUN
+FAIL  and names the steps
+FAIL  run again with the proof working: exit 0 (got 1)
+PASS  without restoring anything again
+PASS  marker removed
+FAIL  a backup with no sentinel: the plan says what that means
+FAIL  a backup with no sentinel: exit 2 (got 0)
+FAIL  a backup with no sentinel: the option is named
+FAIL  the explicit option accepts it, exit 0 (got 1)
+    | [1;34m==>[0m Clean restore plan
+    |     Infisical  20261105T025708Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim
+    |     dev        20261105T025709Z, SECRET_KEY 379acaead639eef8, 1 objects
+    |     prod-sim   20261105T025709Z, SECRET_KEY d6e3ec18abc4aa94, 1 objects
+    | [1;32m ok[0m the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment
+    | [1;31mfail[0m this is for a clean environment, and cluster plane-platform already runs an initialized Infisical. Nothing was changed. To replace it: make destroy CONFIRM=yes, then run this again. To restore one environment in place: make restore.
+PASS  the option: marker removed
+FAIL  the option: the step still reads NOT RUN
+FAIL  one environment, the proof could not run: exit 2 (got 0)
+FAIL  one environment: the evidence says NOT RUN
+FAIL  one environment: the data is back, and it says so
+
+=== S34. Finding 10: a plan shows what a backup holds, and warns when it looks like the wrong one
+FAIL  0 users: warned
+FAIL  0 users: names the backup that has them
+FAIL  0 users: names the way to it
+FAIL  a sentinel with 0 workspaces in the dump: warned
+
+=== S35. Finding 11: an Infisical backup from a newer server than Git deploys or the cluster runs
+PASS  fixture: the backup is from the newer server
+FAIL  in place: refuses
+FAIL  in place: says why
+FAIL  in place: before anything stopped
+FAIL  in place: and says nothing was changed
+FAIL  in place: the override goes on
+FAIL  clean: the plan refuses, from Git
+FAIL  clean: says why
+FAIL  clean: a real run refuses
+FAIL  clean: before anything ran
+FAIL  clean: the override passes the plan (got 1)
+PASS  a backup from an older server is fine: migrations go forward (got 0)
+
+=== S36. Small ones: the backup folder's mode at creation (finding 14), the lock table (finding 15)
+FAIL  cluster-up.sh makes .local/backups at 0700
+FAIL  the manifest asks for the larger lock table
+
+RESULT 196 passed, 197 failed
+exit status 1

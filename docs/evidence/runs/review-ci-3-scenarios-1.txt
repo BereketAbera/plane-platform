@@ -1,0 +1,731 @@
+# date 2026-11-05T03:37:17Z, reviewer of the CI flows track. Extra scenarios spliced into a scratch copy of scripts/ci/test-promotion-flows.sh at 1936016, with scripts/promote.sh, rollback.sh, gitops-publish.sh and dev-check.sh unchanged
+# command: RV_LOG=<log> ./scripts/ci/test-promotion-flows.sh <filter>, in a scratch clone, /bin/bash 3.2, with the harness's stub kubectl and stub backup
+
+=== results of rv-all.out
+warn   expected: the staged new file survives on disk
+warn   expected: the staged edit survives on disk
+warn rv-conflict-with-staged-work FAILED. Its last command printed:
+warn   expected: Nothing changed, as it says: no revert in progress
+warn   expected: Nothing changed, as it says: helm and gitops clean
+warn rv-conflict-with-partly-staged-file FAILED. Its last command printed:
+warn   expected: the staged file survives
+warn rv-render-fails-after-revert FAILED. Its last command printed:
+warn   expected: nothing left in progress
+warn   expected: helm and gitops clean
+warn   expected: a second run finishes the rollback
+warn rv-commit-fails-after-revert FAILED. Its last command printed:
+warn   expected: nothing left in progress
+warn rv-empty-revert FAILED. Its last command printed:
+warn   expected: the rollback works
+warn rv-promotion-added-a-file FAILED. Its last command printed:
+ ok rv-dev-past-a-later-change
+warn   expected: dev is not in it
+warn rv-warning-reach FAILED. Its last command printed:
+warn   expected: it says the list was cut
+warn rv-warning-list-cut FAILED. Its last command printed:
+ ok rv-warning-render-only
+ ok rv-shared-image-swap
+fail 8 of 11 promotion flow scenarios failed
+=== what each scenario saw, rv.log
+[conflict-staged] before: staged: README.md docs/staged-by-someone.txt 
+[conflict-staged] exit status: 1
+[conflict-staged] --- last output
+    ==> Rolling back: db4a6e4 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T031327Z
+    error: could not revert db4a6e4... promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    hint: after resolving the conflicts, mark the corrected paths
+    hint: with 'git add <paths>' or 'git rm <paths>'
+    hint: Disable this message with "git config set advice.mergeConflict false"
+    fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+[conflict-staged] --- git status --porcelain: 
+[conflict-staged] --- REVERT_HEAD: absent
+[conflict-staged] after: staged: 
+[conflict-staged] after: new file on disk: NO
+[conflict-staged] after: the edit in README.md on disk: 0
+[conflict-partly-staged] exit status: 1
+[conflict-partly-staged] --- last output
+    ==> Rolling back: ce6f5f7 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T031332Z
+    error: could not revert ce6f5f7... promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    hint: after resolving the conflicts, mark the corrected paths
+    hint: with 'git add <paths>' or 'git rm <paths>'
+    hint: Disable this message with "git config set advice.mergeConflict false"
+    error: Entry 'README.md' not uptodate. Cannot merge.
+    fatal: Could not reset index file to revision 'a1dd245e55a3a2946266c3db7ecc1ba6d745d1cb'.
+    fail the revert conflicts with a later change to helm/plane/overlays/prod-sim. Nothing changed. Resolve it by hand.
+[conflict-partly-staged] --- git status --porcelain: MM README.md;UU gitops/environments/prod-sim/manifests.yaml;UU helm/plane/overlays/prod-sim/kustomization.yaml;
+[conflict-partly-staged] --- REVERT_HEAD: present
+[conflict-partly-staged] a second run:
+[conflict-partly-staged] exit status: 1
+[conflict-partly-staged] --- last output
+    fail helm/plane/overlays/prod-sim or gitops/environments/prod-sim/manifests.yaml has uncommitted changes
+[conflict-partly-staged] --- git status --porcelain: MM README.md;UU gitops/environments/prod-sim/manifests.yaml;UU helm/plane/overlays/prod-sim/kustomization.yaml;
+[conflict-partly-staged] --- REVERT_HEAD: present
+[render-fails] exit status: 1
+[render-fails] --- last output
+    ==> Rolling back: 527bca8 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T031337Z
+    stub kustomize: failing as told
+    fail rendering after the revert failed. Nothing changed.
+[render-fails] --- git status --porcelain: 
+[render-fails] --- REVERT_HEAD: absent
+[render-fails] after: new file on disk: NO
+[commit-fails] exit status: 1
+[commit-fails] --- last output
+    ==> Rolling back: e5a7498 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T031342Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    hook: no
+[commit-fails] --- git status --porcelain: M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[commit-fails] --- REVERT_HEAD: present
+[commit-fails] a second run, the hook gone:
+[commit-fails] exit status: 1
+[commit-fails] --- last output
+    fail helm/plane/overlays/prod-sim or gitops/environments/prod-sim/manifests.yaml has uncommitted changes
+[commit-fails] --- git status --porcelain: M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[commit-fails] --- REVERT_HEAD: present
+[empty-revert] exit status: 1
+[empty-revert] --- last output
+    ==> Rolling back: f372357 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T031348Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    On branch main
+    You are currently reverting commit f372357.
+      (all conflicts fixed: run "git revert --continue")
+      (use "git revert --skip" to skip this patch)
+      (use "git revert --abort" to cancel the revert operation)
+    
+    nothing to commit, working tree clean
+[empty-revert] --- git status --porcelain: 
+[empty-revert] --- REVERT_HEAD: present
+[empty-revert] a second run:
+[empty-revert] exit status: 1
+[empty-revert] --- last output
+      (all conflicts fixed: run "git revert --continue")
+      (use "git revert --skip" to skip this patch)
+      (use "git revert --abort" to cancel the revert operation)
+    
+    nothing to commit, working tree clean
+[empty-revert] --- git status --porcelain: 
+[empty-revert] --- REVERT_HEAD: present
+[promotion-added-a-file] exit status: 128
+[promotion-added-a-file] --- last output
+    ==> Rolling back: 7305157 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T031354Z
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+    fatal: pathspec 'docs/added-with-the-promotion.txt' did not match any files
+[promotion-added-a-file] --- git status --porcelain: D  docs/added-with-the-promotion.txt;M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[promotion-added-a-file] --- REVERT_HEAD: present
+[dev-past-later-change] exit status: 0
+[dev-past-later-change] --- last output
+    ==> Rolling back: c6101bf promote(dev): plane-frontend aaaaaaaaaaaa
+    ==> The revert conflicts only in gitops/environments/dev/manifests.yaml, which is generated, so rendering replaces it
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 0a99460: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 0a99460ff292 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.eTpt9K6Ub9/repo/.local/git/plane-platform.git
+[dev-past-later-change] --- git status --porcelain: 
+[dev-past-later-change] --- REVERT_HEAD: absent
+[warning-reach] non-image lines this push changes in dev's render: 0
+[warning-reach] exit status: 0
+[warning-reach] --- last output
+    warn publishing 61 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach dev and prod-sim together with this push. Chan
+           helm/plane/overlays/dev/kustomization.yaml
+           helm/plane/overlays/prod-sim/kustomization.yaml
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main c3e7e4c7d5b0 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.eTpt9K6Ub9/repo/.local/git/plane-platform.git
+[warning-reach] --- git status --porcelain: 
+[warning-reach] --- REVERT_HEAD: absent
+[warning-list] exit status: 0
+[warning-list] --- last output
+    warn publishing 7 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach dev and prod-sim together with this push. Chang
+           helm/plane/components/hardening/serviceaccounts.yaml
+           helm/plane/components/hardening/zz-note-1.txt
+           helm/plane/components/hardening/zz-note-10.txt
+           helm/plane/components/hardening/zz-note-11.txt
+           helm/plane/components/hardening/zz-note-12.txt
+           helm/plane/components/hardening/zz-note-13.txt
+           helm/plane/components/hardening/zz-note-2.txt
+           helm/plane/components/hardening/zz-note-3.txt
+           helm/plane/components/hardening/zz-note-4.txt
+           helm/plane/components/hardening/zz-note-5.txt
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 2349f1c9fd26 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.eTpt9K6Ub9/repo/.local/git/plane-platform.git
+[warning-list] --- git status --porcelain: 
+[warning-list] --- REVERT_HEAD: absent
+[warning-list] paths named: 10 of 14
+[warning-render-only] exit status: 0
+[warning-render-only] --- last output
+    warn publishing 1 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach prod-sim with this push. Changed under helm/pla
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 126234b40731 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.eTpt9K6Ub9/repo/.local/git/plane-platform.git
+[warning-render-only] --- git status --porcelain: 
+[warning-render-only] --- REVERT_HEAD: absent
+[image-swap] exit status: 0
+[image-swap] --- last output
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    ==> This publish changes a prod-sim image, so taking a backup first
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 9d7850692d19 to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.eTpt9K6Ub9/repo/.local/git/plane-platform.git
+[image-swap] --- git status --porcelain: 
+[image-swap] --- REVERT_HEAD: absent
+[image-swap] the warning fired: 0
+[image-swap] check-promoted-digests.sh on the same tree: exit 1
+    warn sha256:1000000000000000000000000000000000000000000000000000000000000001 was recorded for dev under another image, not artifacts.plane.so/makeplane/plane-frontend
+    fail 1 image(s) may not be in prod-sim
+
+=== results of rv2.out
+warn   expected: nothing left in progress
+warn   expected: helm and gitops clean
+warn   expected: a second run finishes the rollback
+warn rv2-rollback-index-lock FAILED. Its last command printed:
+warn   expected: the overlay restored, as the header of cleanup says
+warn rv2-promote-index-lock FAILED. Its last command printed:
+warn   expected: it names the dump from before the promotion
+warn rv2-second-attempt-names-which-dump FAILED. Its last command printed:
+fail 3 of 3 promotion flow scenarios failed
+=== what each scenario saw, rv2.log
+[rollback-index-lock] exit status: 128
+[rollback-index-lock] --- last output
+    Another git process seems to be running in this repository, e.g.
+    an editor opened by 'git commit'. Please make sure all processes
+    are terminated then try again. If it still fails, a git process
+    may have crashed in this repository earlier:
+    remove the file manually to continue.
+[rollback-index-lock] --- git status --porcelain: M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[rollback-index-lock] --- REVERT_HEAD: present
+[rollback-index-lock] a second run, the lock gone:
+[rollback-index-lock] exit status: 1
+[rollback-index-lock] --- last output
+    fail helm/plane/overlays/prod-sim or gitops/environments/prod-sim/manifests.yaml has uncommitted changes
+[rollback-index-lock] --- git status --porcelain: M  gitops/environments/prod-sim/manifests.yaml;M  helm/plane/overlays/prod-sim/kustomization.yaml;
+[rollback-index-lock] --- REVERT_HEAD: present
+[promote-index-lock] dumps taken: 1
+[promote-index-lock] while the lock is held:  M gitops/environments/prod-sim/manifests.yaml; M helm/plane/overlays/prod-sim/kustomization.yaml;
+[promote-index-lock] exit status: 128
+[promote-index-lock] --- last output
+    Another git process seems to be running in this repository, e.g.
+    an editor opened by 'git commit'. Please make sure all processes
+    are terminated then try again. If it still fails, a git process
+    may have crashed in this repository earlier:
+    remove the file manually to continue.
+[promote-index-lock] --- git status --porcelain:  M gitops/environments/prod-sim/manifests.yaml; M helm/plane/overlays/prod-sim/kustomization.yaml;
+[promote-index-lock] --- REVERT_HEAD: absent
+[promote-index-lock] a second run, the lock gone:
+[promote-index-lock] exit status: 1
+[promote-index-lock] --- last output
+    fail helm/plane/overlays/prod-sim or gitops/environments/prod-sim/manifests.yaml has uncommitted changes
+[promote-index-lock] --- git status --porcelain:  M gitops/environments/prod-sim/manifests.yaml; M helm/plane/overlays/prod-sim/kustomization.yaml;
+[promote-index-lock] --- REVERT_HEAD: absent
+[second-attempt-dump] first attempt: exit 1, dumps now: 20260101T000000Z 20261105T032240Z 
+[second-attempt-dump] second attempt: exit 0, dumps now: 20260101T000000Z 20261105T032240Z 20261105T032242Z 
+    ==> Taking a best-effort dump of prod-sim first, limited to 5s. A failure here does not stop the rollback.
+     ok best-effort dump taken: 20261105T032242Z
+    warn Images are back, the schema is not. To restore data use make restore ENV=prod-sim BACKUP=20261105T032240Z, the newest dump from before this rollback. Check that it predates 66afd73 from 2026-11-05T06:22:38+03:00. BACKUP=latest may name the dump taken just now, which holds the newer schema.
+
+=== results of rv4.out
+warn   expected: a dump before prod-sim's image moves, or a refusal to publish
+warn rv4-dev-promotion-carries-prod-sim FAILED. Its last command printed:
+warn   expected: prod-sim does not take the digest dev just rolled back, unchecked
+warn rv4-dev-rollback-carries-prod-sim FAILED. Its last command printed:
+warn   expected: a fix for a broken dev reaches dev (the words of dev_change_needs_no_dev_check)
+warn rv4-dev-fix-blocked FAILED. Its last command printed:
+fail 3 of 3 promotion flow scenarios failed
+=== what each scenario saw, rv4.log
+[dev-promotion-carries-prod-sim] unpublished prod-sim commit: ddba5ba promote(prod-sim): plane-frontend aaaaaaaaaaaa; published prod-sim render has sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 0
+[dev-promotion-carries-prod-sim] exit status: 0
+[dev-promotion-carries-prod-sim] --- last output
+    ==> Promotion plan for dev
+        plane-frontend -> docker.io/fixture/plane-frontend@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 3274245: promote(dev): plane-frontend bbbbbbbbbbbb
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+     ok passed: plane-dev was Synced and Healthy and running every digest here
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 32742450b57b to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.E6kX6DFWjv/repo/.local/git/plane-platform.git
+[dev-promotion-carries-prod-sim] --- git status --porcelain: 
+[dev-promotion-carries-prod-sim] --- REVERT_HEAD: absent
+[dev-promotion-carries-prod-sim] published is HEAD: yes; published prod-sim render now has sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 1; dumps taken: 0
+[dev-promotion-carries-prod-sim] the output mentions a skipped dump: 0
+[dev-rollback-carries-prod-sim] exit status: 0
+[dev-rollback-carries-prod-sim] --- last output
+    ==> Rolling back: 6575304 promote(dev): plane-frontend aaaaaaaaaaaa
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 587b0ed: Revert "promote(dev): plane-frontend aaaaaaaaaaaa"
+    ==> Publishing with SKIP_BACKUP=yes and SKIP_DEV_CHECK: the publish takes no dump and does not ask plane-dev
+    warn plane-dev check not run for this publish: rollback of 6575304886c0: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+    warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+     ok published main 587b0ed6188a to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.E6kX6DFWjv/repo/.local/git/plane-platform.git
+[dev-rollback-carries-prod-sim] --- git status --porcelain: 
+[dev-rollback-carries-prod-sim] --- REVERT_HEAD: absent
+[dev-rollback-carries-prod-sim] dev's digest now: sha256:1000000000000; prod-sim's digest in what Argo CD reads: sha256:aaaaaaaaaaaaa; dumps taken: 0; kubectl calls: 
+[dev-fix-blocked] exit status: 1
+[dev-fix-blocked] --- last output
+     ok rendered gitops/environments/dev/manifests.yaml
+     ok rendered gitops/environments/prod-sim/manifests.yaml
+     ok committed 2782912: promote(dev): plane-frontend bbbbbbbbbbbb
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+    warn Application plane-dev is OutOfSync/Degraded, not Synced/Healthy
+    fail plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK="<reason>", which is logged. Nothing was published.
+[dev-fix-blocked] --- git status --porcelain: 
+[dev-fix-blocked] --- REVERT_HEAD: absent
+[dev-fix-blocked] published is HEAD: no
+
+=== results of rv5.out
+warn   expected: a second run does not exit 0 saying prod-sim runs these digests while Argo CD was never given them
+warn rv5-promote-rerun-after-failed-publish FAILED. Its last command printed:
+warn   expected: a second run does not exit 0 saying prod-sim runs these digests while Argo CD was never given them
+warn rv5-promote-rerun-after-second-check-refused FAILED. Its last command printed:
+fail 2 of 2 promotion flow scenarios failed
+=== what each scenario saw, rv5.log
+[promote-rerun-after-failed-publish] exit status: 1
+[promote-rerun-after-failed-publish] --- last output
+    To /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.hjPwdAFEmG/repo/.local/git/plane-platform.git
+     ! [remote rejected] main -> main (pre-receive hook declined)
+    error: failed to push some refs to '/var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.hjPwdAFEmG/repo/.local/git/plane-platform.git'
+    fail push refused. If main was rewritten, restore it or delete /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.hjPwdAFEmG/repo/.local/git/plane-platform.git to republish from scratch.
+[promote-rerun-after-failed-publish] --- git status --porcelain: 
+[promote-rerun-after-failed-publish] --- REVERT_HEAD: absent
+[promote-rerun-after-failed-publish] a second run, the push working again:
+[promote-rerun-after-failed-publish] exit status: 0
+[promote-rerun-after-failed-publish] --- last output
+     ok prod-sim already runs these digests, nothing to promote
+[promote-rerun-after-failed-publish] --- git status --porcelain: 
+[promote-rerun-after-failed-publish] --- REVERT_HEAD: absent
+[promote-rerun-after-failed-publish] published is HEAD: no; digests of web in what Argo CD reads: docker.io/fixture/plane-frontend@sha256:10000000000000000000
+[promote-rerun-after-refused-publish] exit status: 1
+[promote-rerun-after-refused-publish] --- last output
+     ok committed 2339344: promote(prod-sim): plane-admin 200000000000, plane-backend 200000000000, plane-frontend 200000000000, plane-space 200000000000
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+    warn Application plane-dev is Synced/Progressing, not Synced/Healthy
+    fail plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK="<reason>", which is logged. Nothing was published.
+[promote-rerun-after-refused-publish] --- git status --porcelain:  M scripts/backup.sh;
+[promote-rerun-after-refused-publish] --- REVERT_HEAD: absent
+[promote-rerun-after-refused-publish] a second run, dev healthy again:
+[promote-rerun-after-refused-publish] exit status: 0
+[promote-rerun-after-refused-publish] --- last output
+     ok prod-sim already runs these digests, nothing to promote
+[promote-rerun-after-refused-publish] --- git status --porcelain:  M scripts/backup.sh;
+[promote-rerun-after-refused-publish] --- REVERT_HEAD: absent
+[promote-rerun-after-refused-publish] published is HEAD: no
+
+=== results of rv6.out
+warn   expected: prod-sim does not take the digest dev was just rolled back from
+warn rv6-refused-promotion-then-dev-rollback FAILED. Its last command printed:
+fail 1 of 1 promotion flow scenarios failed
+=== what each scenario saw, rv6.log
+[refused-promotion-then-dev-rollback] 1. make promote ENV=prod-sim: exit 1
+    ==> This publish changes a prod-sim image, so plane-dev must have proven it
+    warn Application plane-dev is Synced/Degraded, not Synced/Healthy
+    fail plane-dev has not proven these digests, so prod-sim may not take them. Fix dev, or set OVERRIDE_DEV_CHECK="<reason>", which is logged. Nothing was published.
+[refused-promotion-then-dev-rollback]    what Argo CD reads for prod-sim's web: sha256:1000000000000
+[refused-promotion-then-dev-rollback] 2. make rollback ENV=dev: exit 0
+    ==> Rolling back: f4dfbdb promote(dev): plane-frontend aaaaaaaaaaaa
+    warn plane-dev check not run for this publish: rollback of f4dfbdb90e6c: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-overrides.log.
+     ok published main 8ee02696054e to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.D042kHg03W/repo/.local/git/plane-platform.git
+[refused-promotion-then-dev-rollback]    what Argo CD reads for dev's web: sha256:1000000000000
+[refused-promotion-then-dev-rollback]    what Argo CD reads for prod-sim's web: sha256:aaaaaaaaaaaaa
+
+=== summary with GITHUB_STEP_SUMMARY set, one scenario: GITHUB_STEP_SUMMARY=<file> ./scripts/ci/test-promotion-flows.sh promote-no-cluster
+**The plane-dev check was skipped.** No cluster is in reach from here, so `make gitops-publish` checks dev after the merge.
+
+=== scenario source
+# Extra scenarios spliced into a scratch copy of test-promotion-flows.sh. Each prints what it saw, and expects what the scripts claim.
+obs() { printf '[%s] %s\n' "${RV_NAME:-?}" "$*" >>"$RV_LOG"; }
+snapshot() {
+  obs "exit status: $1"
+  obs "--- last output"; sed 's/\x1b\[[0-9;]*m//g' "$OUT" | tail -n "${2:-12}" | cut -c1-230 | sed 's/^/    /' >>"$RV_LOG"
+  obs "--- git status --porcelain: $(git -C "$CLONE" status --porcelain | tr '\n' ';' | cut -c1-200)"
+  obs "--- REVERT_HEAD: $([ -e "$CLONE/.git/REVERT_HEAD" ] && echo present || echo absent)"
+}
+fake_kustomize_fails() { # A kustomize that fails once told to: a render that breaks.
+  rm -f "${CLONE:?}/.tools/bin/kustomize"
+  cat >"$CLONE/.tools/bin/kustomize" <<SH
+#!/usr/bin/env bash
+if [[ -e "\$STUB/kustomize-fails" && "\$1" == build ]]; then echo "stub kustomize: failing as told" >&2; exit 1; fi
+exec "$ROOT/.tools/bin/kustomize" "\$@"
+SH
+  chmod +x "$CLONE/.tools/bin/kustomize"
+}
+real_kustomize() { rm -f "${CLONE:?}/.tools/bin/kustomize" "${STUB:?}/kustomize-fails"; ln -s "$ROOT/.tools/bin/kustomize" "$CLONE/.tools/bin/kustomize"; }
+
+# 1. A conflict in the overlay, with someone else's work staged in this checkout.
+rv_conflict_with_staged_work() {
+  local status=0
+  RV_NAME=conflict-staged
+  promote_prod_sim_committed
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
+  commit_a_change_to_helm 'a digest changed by hand, so not a promotion'
+  echo "someone's new file" >"$CLONE/docs/staged-by-someone.txt"
+  echo "someone's edit" >>"$CLONE/README.md"
+  git -C "$CLONE" add docs/staged-by-someone.txt README.md
+  obs "before: staged: $(git -C "$CLONE" diff --cached --name-only | tr '\n' ' ')"
+  rollback prod-sim || status=$?
+  snapshot "$status"
+  obs "after: staged: $(git -C "$CLONE" diff --cached --name-only | tr '\n' ' ')"
+  obs "after: new file on disk: $([ -e "$CLONE/docs/staged-by-someone.txt" ] && echo yes || echo NO)"
+  obs "after: the edit in README.md on disk: $(grep -c "someone's edit" "$CLONE/README.md")"
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the staged new file survives on disk" [ -e "$CLONE/docs/staged-by-someone.txt" ]
+  expect "the staged edit survives on disk" grep -q "someone's edit" "$CLONE/README.md"
+  git -C "$CLONE" reset --quiet --hard HEAD; rm -f "${CLONE:?}/docs/staged-by-someone.txt"
+}
+# 2. The same conflict, with a file that has both a staged and an unstaged edit: reset --merge refuses.
+rv_conflict_with_partly_staged_file() {
+  local status=0
+  RV_NAME=conflict-partly-staged
+  promote_prod_sim_committed
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
+  commit_a_change_to_helm 'a digest changed by hand, so not a promotion'
+  echo "staged edit" >>"$CLONE/README.md"
+  git -C "$CLONE" add README.md
+  echo "unstaged edit" >>"$CLONE/README.md"
+  rollback prod-sim || status=$?
+  snapshot "$status" 14
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "Nothing changed, as it says: no revert in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  expect "Nothing changed, as it says: helm and gitops clean" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+  status=0
+  rollback prod-sim || status=$?
+  obs "a second run:"; snapshot "$status" 6
+  git -C "$CLONE" revert --abort 2>/dev/null || true; git -C "$CLONE" reset --quiet --hard HEAD
+}
+# 3. The render fails after a clean revert, with and without staged work.
+rv_render_fails_after_revert() {
+  local status=0
+  RV_NAME=render-fails
+  promote_prod_sim_committed
+  fake_kustomize_fails
+  touch "$STUB/kustomize-fails"
+  echo "someone's new file" >"$CLONE/docs/staged-by-someone.txt"
+  git -C "$CLONE" add docs/staged-by-someone.txt
+  rollback prod-sim || status=$?
+  snapshot "$status"
+  obs "after: new file on disk: $([ -e "$CLONE/docs/staged-by-someone.txt" ] && echo yes || echo NO)"
+  real_kustomize
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "Nothing changed, as it says: no revert in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  expect "Nothing changed, as it says: helm and gitops clean" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+  expect "the staged file survives" [ -e "$CLONE/docs/staged-by-someone.txt" ]
+  git -C "$CLONE" reset --quiet --hard HEAD; rm -f "${CLONE:?}/docs/staged-by-someone.txt"
+}
+# 4. git commit fails after the revert is staged. rollback.sh:147 says a failure here leaves nothing behind.
+rv_commit_fails_after_revert() {
+  local status=0
+  RV_NAME=commit-fails
+  promote_prod_sim_committed
+  printf '#!/bin/sh\necho "hook: no" >&2\nexit 1\n' >"$CLONE/.git/hooks/pre-commit"
+  chmod +x "$CLONE/.git/hooks/pre-commit"
+  rollback prod-sim || status=$?
+  snapshot "$status"
+  rm -f "${CLONE:?}/.git/hooks/pre-commit"
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "nothing left in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  expect "helm and gitops clean" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+  status=0
+  rollback prod-sim || status=$?
+  obs "a second run, the hook gone:"; snapshot "$status" 4
+  expect "a second run finishes the rollback" [ "$status" -eq 0 ]
+  git -C "$CLONE" revert --abort 2>/dev/null || true; git -C "$CLONE" reset --quiet --hard HEAD
+}
+# 5. The image was put back by hand, so the revert has nothing to do.
+rv_empty_revert() {
+  local status=0 before
+  RV_NAME=empty-revert
+  promote_prod_sim_committed
+  git -C "$CLONE" show "$BASE:$PROD_SIM_OVERLAY" >"$CLONE/$PROD_SIM_OVERLAY"
+  commit_a_change_to_helm 'prod-sim image put back by hand'
+  in_clone ./scripts/gitops-publish.sh || true
+  rollback prod-sim || status=$?
+  snapshot "$status"
+  expect "nothing left in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  status=0
+  rollback prod-sim || status=$?
+  obs "a second run:"; snapshot "$status" 5
+  git -C "$CLONE" revert --abort 2>/dev/null || true; git -C "$CLONE" reset --quiet --hard HEAD
+}
+# 6. A promotion commit that also added a file (a squash merge, or a person's commit). The revert deletes it.
+rv_promotion_added_a_file() {
+  local status=0
+  RV_NAME=promotion-added-a-file
+  promote_dev "$DIGEST_A" || status=$?
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim || status=$?
+  echo note >"$CLONE/docs/added-with-the-promotion.txt"
+  git -C "$CLONE" add -- helm gitops docs/added-with-the-promotion.txt
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  in_clone env SKIP_BACKUP=yes ./scripts/gitops-publish.sh || status=$?
+  status=0
+  rollback prod-sim || status=$?
+  snapshot "$status"
+  expect "the rollback works" [ "$status" -eq 0 ]
+  git -C "$CLONE" revert --abort 2>/dev/null || true; git -C "$CLONE" reset --quiet --hard HEAD
+}
+# 7. dev past a later change beside the image line: the same fix, the other environment.
+rv_dev_past_a_later_change() {
+  local status=0
+  RV_NAME=dev-past-later-change
+  promote_dev "$DIGEST_A" || status=$?
+  sed -i.bak 's/imagePullPolicy, value: IfNotPresent/imagePullPolicy, value: Never/' "$CLONE/helm/plane/components/hardening/kustomization.yaml"
+  rm -f "${CLONE:?}/helm/plane/components/hardening/kustomization.yaml.bak"
+  commit_a_change_to_helm 'a later change beside the image line'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  status=0
+  rollback dev || status=$?
+  snapshot "$status" 8
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "it says why" said "conflicts only in gitops/environments/dev/manifests.yaml"
+  in_clone ./scripts/render.sh --check || status=$?
+  expect "the render is current" [ "$status" -eq 0 ]
+}
+# 8. The warning's "reach": dev moved an image only, prod-sim alone changed. Who gets the non-image lines?
+rv_warning_reach() {
+  local status=0
+  RV_NAME=warning-reach
+  in_clone env SKIP_REGISTRY_CHECK=yes COMMIT=no ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_A" || status=$?
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -F "$CLONE/.build/promote-message.txt"
+  printf 'commonAnnotations:\n  flow-test: "yes"\n' >>"$CLONE/$PROD_SIM_OVERLAY"
+  commit_a_change_to_helm 'a change to the prod-sim overlay alone'
+  obs "non-image lines this push changes in dev's render: $(git -C "$CLONE" diff -U0 "$(published)" HEAD -- gitops/environments/dev/manifests.yaml | grep -E '^[-+]' | grep -vcE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ' || true)"
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  snapshot "$status" 6
+  expect "dev is not in it" said "they reach prod-sim with this push"
+}
+# 9. Eleven or more changed paths under helm/plane: does the list say it was cut?
+rv_warning_list_cut() {
+  local status=0 n
+  RV_NAME=warning-list
+  for n in 1 2 3 4 5 6 7 8 9 10 11 12 13; do printf 'note\n' >"$CLONE/helm/plane/components/hardening/zz-note-$n.txt"; done
+  printf -- '---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: flow-test\nautomountServiceAccountToken: false\n' >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml"
+  commit_a_change_to_helm 'many paths'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  snapshot "$status" 16
+  obs "paths named: $(grep -c '^       helm/plane' "$OUT") of $(git -C "$CLONE" show --name-only --format= HEAD -- helm/plane | wc -l | tr -d ' ')"
+  expect "it says the list was cut" said "more"
+}
+# 10. A render edited by hand: nothing changed under helm/plane, but the warning promises a list.
+rv_warning_render_only() {
+  local status=0
+  RV_NAME=warning-render-only
+  printf '# a hand edit\n' >>"$CLONE/$PROD_SIM_RENDERED"
+  git -C "$CLONE" add -- gitops
+  git -C "$CLONE" commit --quiet -m 'a hand edit of the render'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  snapshot "$status" 5
+}
+# 11. A change that moves an image line only, to a digest dev already runs under another image: neither check says a thing.
+rv_shared_image_swap_is_silent() {
+  local status=0 admin
+  RV_NAME=image-swap
+  admin="$(yq -r '.images[] | select(.name | test("plane-admin$")) | .digest' "$CLONE/$PROD_SIM_OVERLAY")"
+  dev_runs_its_overlay
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-admin:v0@$admin"
+  commit_a_change_to_helm 'by hand, not through promote: web takes the admin digest'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  snapshot "$status" 8
+  obs "the warning fired: $(grep -c 'that are not images' "$OUT")"
+  status=0
+  in_clone ./scripts/ci/check-promoted-digests.sh || status=$?
+  obs "check-promoted-digests.sh on the same tree: exit $status"; sed 's/\x1b\[[0-9;]*m//g' "$OUT" | tail -n 3 | cut -c1-200 | sed 's/^/    /' >>"$RV_LOG"
+}
+scenario rv-conflict-with-staged-work rv_conflict_with_staged_work
+scenario rv-conflict-with-partly-staged-file rv_conflict_with_partly_staged_file
+scenario rv-render-fails-after-revert rv_render_fails_after_revert
+scenario rv-commit-fails-after-revert rv_commit_fails_after_revert
+scenario rv-empty-revert rv_empty_revert
+scenario rv-promotion-added-a-file rv_promotion_added_a_file
+scenario rv-dev-past-a-later-change rv_dev_past_a_later_change
+scenario rv-warning-reach rv_warning_reach
+scenario rv-warning-list-cut rv_warning_list_cut
+scenario rv-warning-render-only rv_warning_render_only
+scenario rv-shared-image-swap rv_shared_image_swap_is_silent
+lock_after_render() { # A kustomize that leaves .git/index.lock behind once told to: another process's git add, held through the next few commands.
+  rm -f "${CLONE:?}/.tools/bin/kustomize"
+  cat >"$CLONE/.tools/bin/kustomize" <<SH
+#!/usr/bin/env bash
+"$ROOT/.tools/bin/kustomize" "\$@"
+status=\$?
+if [[ -e "\$STUB/lock-now" && "\$1" == build ]]; then touch "$CLONE/.git/index.lock"; fi
+exit \$status
+SH
+  chmod +x "$CLONE/.tools/bin/kustomize"
+}
+# A concurrent git add holds the index while rollback goes to stage its revert.
+rv2_rollback_index_lock() {
+  local status=0
+  RV_NAME=rollback-index-lock
+  promote_prod_sim_committed
+  lock_after_render
+  touch "$STUB/lock-now"
+  rollback prod-sim || status=$?
+  rm -f "${CLONE:?}/.git/index.lock" "${STUB:?}/lock-now"
+  real_kustomize
+  snapshot "$status" 5
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "nothing left in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  expect "helm and gitops clean" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+  status=0
+  rollback prod-sim || status=$?
+  obs "a second run, the lock gone:"; snapshot "$status" 4
+  expect "a second run finishes the rollback" [ "$status" -eq 0 ]
+  git -C "$CLONE" revert --abort 2>/dev/null || true; git -C "$CLONE" reset --quiet --hard HEAD
+}
+# The same concurrent git add during a promotion, after its dump. The report says the script restores the overlay.
+rv2_promote_index_lock() {
+  local status=0
+  RV_NAME=promote-index-lock
+  dev_runs_its_overlay
+  lock_after_render
+  touch "$STUB/lock-now"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  obs "dumps taken: $(backup_calls)"
+  obs "while the lock is held: $(git -C "$CLONE" status --porcelain -- helm gitops | tr '\n' ';')"
+  rm -f "${CLONE:?}/.git/index.lock" "${STUB:?}/lock-now"
+  real_kustomize
+  snapshot "$status" 5
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the overlay restored, as the header of cleanup says" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  obs "a second run, the lock gone:"; snapshot "$status" 3
+  git -C "$CLONE" reset --quiet --hard HEAD
+}
+# A second attempt after the first stopped on a conflict: which dump does it say to restore from?
+rv2_second_attempt_names_which_dump() {
+  local status=0 older conflict promoted_at
+  RV_NAME=second-attempt-dump
+  older=20260101T000000Z
+  mkdir -p "$CLONE/.local/backups/prod-sim/$older"
+  echo '{}' >"$CLONE/.local/backups/prod-sim/$older/manifest.json"
+  promote_prod_sim_committed
+  sleep 1
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
+  commit_a_change_to_helm 'a digest changed by hand, so not a promotion'
+  conflict="$(head_commit)"
+  rollback prod-sim || status=$?
+  obs "first attempt: exit $status, dumps now: $(ls "$CLONE/.local/backups/prod-sim" | tr '\n' ' ')"
+  git -C "$CLONE" revert --quiet --no-edit "$conflict"
+  status=0
+  sleep 1
+  rollback prod-sim || status=$?
+  obs "second attempt: exit $status, dumps now: $(ls "$CLONE/.local/backups/prod-sim" | tr '\n' ' ')"
+  sed 's/\x1b\[[0-9;]*m//g' "$OUT" | grep -E 'make restore|best-effort' | cut -c1-330 | sed 's/^/    /' >>"$RV_LOG"
+  expect "it names the dump from before the promotion" said "BACKUP=$older"
+}
+scenario rv2-rollback-index-lock rv2_rollback_index_lock
+scenario rv2-promote-index-lock rv2_promote_index_lock "$BASE_AHEAD"
+scenario rv2-second-attempt-names-which-dump rv2_second_attempt_names_which_dump
+# A prod-sim promotion merged and pulled, not yet published. A dev promotion publishes all of main.
+rv4_dev_promotion_carries_prod_sim() {
+  local status=0
+  RV_NAME=dev-promotion-carries-prod-sim
+  merged_prod_sim_promotion
+  obs "unpublished prod-sim commit: $(git -C "$CLONE" log -1 --format='%h %s' | cut -c1-70); published prod-sim render has $DIGEST_A: $(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_RENDERED" | grep -c "@$DIGEST_A")"
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_B" || status=$?
+  snapshot "$status" 12
+  obs "published is HEAD: $([ "$(published)" == "$(head_commit)" ] && echo yes || echo no); published prod-sim render now has $DIGEST_A: $(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_RENDERED" | grep -c "@$DIGEST_A"); dumps taken: $(backup_calls)"
+  obs "the output mentions a skipped dump: $(grep -ci 'SKIP_BACKUP\|no backup\|no dump' "$OUT" || true)"
+  expect "a dump before prod-sim's image moves, or a refusal to publish" [ "$(backup_calls)" -ge 1 -o "$(published)" != "$(head_commit)" ]
+}
+# The same pending prod-sim promotion, then make rollback ENV=dev: both skips apply to everything in the push.
+rv4_dev_rollback_carries_prod_sim() {
+  local status=0
+  RV_NAME=dev-rollback-carries-prod-sim
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  rollback dev || status=$?
+  snapshot "$status" 8
+  obs "dev's digest now: $(web_digest_in "$DEV_OVERLAY" | cut -c1-20); prod-sim's digest in what Argo CD reads: $(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' | cut -c1-20); dumps taken: $(backup_calls); kubectl calls: $(wc -l <"$STUB/kubectl-calls" 2>/dev/null | tr -d ' ')"
+  expect "prod-sim does not take the digest dev just rolled back, unchecked" [ "$(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest')" != "$DIGEST_A" ]
+}
+# A pending prod-sim commit and a broken dev: the fix for dev cannot reach dev.
+rv4_dev_fix_blocked_by_pending_prod_sim() {
+  local status=0
+  RV_NAME=dev-fix-blocked
+  merged_prod_sim_promotion
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh dev IMAGE=web DIGEST="$DIGEST_B" || status=$?
+  snapshot "$status" 6
+  obs "published is HEAD: $([ "$(published)" == "$(head_commit)" ] && echo yes || echo no)"
+  expect "a fix for a broken dev reaches dev (the words of dev_change_needs_no_dev_check)" [ "$status" -eq 0 ]
+}
+scenario rv4-dev-promotion-carries-prod-sim rv4_dev_promotion_carries_prod_sim
+scenario rv4-dev-rollback-carries-prod-sim rv4_dev_rollback_carries_prod_sim
+scenario rv4-dev-fix-blocked rv4_dev_fix_blocked_by_pending_prod_sim
+# A promotion whose publish failed leaves its commit on main. What does running it again say?
+rv5_promote_rerun_after_failed_publish() {
+  local status=0
+  RV_NAME=promote-rerun-after-failed-publish
+  dev_runs_its_overlay
+  printf '#!/bin/sh\nexit 1\n' >"$BARE/hooks/pre-receive"
+  chmod +x "$BARE/hooks/pre-receive"
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  snapshot "$status" 4
+  rm -f "${BARE:?}/hooks/pre-receive"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  obs "a second run, the push working again:"; snapshot "$status" 3
+  obs "published is HEAD: $([ "$(published)" == "$(head_commit)" ] && echo yes || echo no); digests of web in what Argo CD reads: $(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .newName + "@" + .digest' | cut -c1-60)"
+  expect "a second run does not exit 0 saying prod-sim runs these digests while Argo CD was never given them" [ "$(published)" == "$(head_commit)" -o "$status" -ne 0 ]
+}
+# The same, when dev stops being Synced and Healthy between promote's check and the publish's.
+rv5_promote_rerun_after_second_check_refused() {
+  local status=0
+  RV_NAME=promote-rerun-after-refused-publish
+  dev_runs_its_overlay
+  # A backup that also changes what the stub says, as a rollout starting during the dump would.
+  cat >"$CLONE/scripts/backup.sh" <<'SH'
+#!/usr/bin/env bash
+echo "$*" >>"$STUB/backup-calls"
+echo Synced/Progressing >"$STUB/app-status"
+SH
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  snapshot "$status" 4
+  echo Synced/Healthy >"$STUB/app-status"
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  obs "a second run, dev healthy again:"; snapshot "$status" 3
+  obs "published is HEAD: $([ "$(published)" == "$(head_commit)" ] && echo yes || echo no)"
+  git -C "$CLONE" checkout --quiet -- scripts/backup.sh 2>/dev/null || true
+  expect "a second run does not exit 0 saying prod-sim runs these digests while Argo CD was never given them" [ "$(published)" == "$(head_commit)" -o "$status" -ne 0 ]
+}
+scenario rv5-promote-rerun-after-failed-publish rv5_promote_rerun_after_failed_publish "$BASE_AHEAD"
+scenario rv5-promote-rerun-after-second-check-refused rv5_promote_rerun_after_second_check_refused "$BASE_AHEAD"
+# The chain, each step a normal command: prod-sim promotion refused at its publish because dev went bad during the dump, then dev rolled back.
+rv6_refused_promotion_then_dev_rollback() {
+  local status=0
+  RV_NAME=refused-promotion-then-dev-rollback
+  promote_dev "$DIGEST_A" || status=$?
+  expect "dev promoted" [ "$status" -eq 0 ]
+  cat >"$CLONE/scripts/backup.sh" <<'SH'
+#!/usr/bin/env bash
+echo "$*" >>"$STUB/backup-calls"
+echo Synced/Degraded >"$STUB/app-status"
+SH
+  status=0
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  obs "1. make promote ENV=prod-sim: exit $status"; sed 's/\x1b\[[0-9;]*m//g' "$OUT" | tail -n 3 | cut -c1-190 | sed 's/^/    /' >>"$RV_LOG"
+  obs "   what Argo CD reads for prod-sim's web: $(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' | cut -c1-20)"
+  status=0
+  rollback dev || status=$?
+  obs "2. make rollback ENV=dev: exit $status"; sed 's/\x1b\[[0-9;]*m//g' "$OUT" | grep -E 'Rolling back|not run|published main' | cut -c1-190 | sed 's/^/    /' >>"$RV_LOG"
+  obs "   what Argo CD reads for dev's web: $(git --git-dir="$BARE" show refs/heads/main:"$DEV_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' | cut -c1-20)"
+  obs "   what Argo CD reads for prod-sim's web: $(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest' | cut -c1-20)"
+  git -C "$CLONE" checkout --quiet -- scripts/backup.sh 2>/dev/null || true
+  expect "prod-sim does not take the digest dev was just rolled back from" [ "$(git --git-dir="$BARE" show refs/heads/main:"$PROD_SIM_OVERLAY" | yq -r '.images[] | select(.name | test("plane-frontend$")) | .digest')" != "$DIGEST_A" ]
+}
+scenario rv6-refused-promotion-then-dev-rollback rv6_refused_promotion_then_dev_rollback

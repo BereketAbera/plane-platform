@@ -1,0 +1,41 @@
+UTC date: 2026-11-05T06:05:04Z
+commit: 0bd3e2d
+command: copy-rehearsal.sh, which runs each command shown below after its $ line, in a scratch clone at the pull request's head
+
+$ git fetch --quiet origin
+remote: Repository not found.
+fatal: repository 'https://github.com/BereketAbera/plane-platform/' not found
+[exit 128]
+
+$ git checkout --quiet --detach 33b9109e495cf45e743d691f6a92739cf8d23eee
+[exit 0]
+
+$ git log -1 --format=%h %s
+33b9109 promote(dev): plane-frontend 6c2686f9b850, plane-admin 823620826d9d, plane-space a1585e502352, plane-backend 737fccc5c547
+[exit 0]
+
+$ env -u KUBECONFIG scripts/ci/copy-to-local-registry.sh ghcr.io/BereketAbera/wayline dev
+ERROR: failed to parse source "ghcr.io/BereketAbera/wayline/admin@sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51", valid sources are digests, references and descriptors: invalid reference format: repository name (BereketAbera/wayline/admin@sha256) must be lowercase
+[exit 1]
+
+$ env -u KUBECONFIG scripts/ci/copy-to-local-registry.sh ghcr.io/bereketabera/wayline dev
+ERROR: failed to authorize: failed to fetch anonymous token: unexpected status from GET request to https://ghcr.io/token?scope=repository%3Abereketabera%2Fwayline%2Fadmin%3Apull&service=ghcr.io: 401 Unauthorized
+[exit 1]
+
+=== the local registry afterwards
+
+$ curl -q -sS -o /dev/null -I -m 15 -H Accept: application/vnd.oci.image.manifest.v1+json -w HTTP %{http_code}\n http://localhost:5001/v2/wayline/admin/manifests/sha256:823620826d9d16c53701f94e6b910fd3a9754922c61930c20f4aa9da680f4e51
+HTTP 404
+[exit 0]
+
+$ curl -q -sS -o /dev/null -I -m 15 -H Accept: application/vnd.oci.image.manifest.v1+json -w HTTP %{http_code}\n http://localhost:5001/v2/wayline/backend/manifests/sha256:737fccc5c5473ecbd9402b307f8f57960a81edc03a2f1cbe30a5c7c72b30653e
+HTTP 404
+[exit 0]
+
+$ curl -q -sS -o /dev/null -I -m 15 -H Accept: application/vnd.oci.image.manifest.v1+json -w HTTP %{http_code}\n http://localhost:5001/v2/wayline/space/manifests/sha256:a1585e502352f1e4811c365fd917c997b1603d77295ab419f9107c217443ec43
+HTTP 404
+[exit 0]
+
+$ curl -q -sS -o /dev/null -I -m 15 -H Accept: application/vnd.oci.image.manifest.v1+json -w HTTP %{http_code}\n http://localhost:5001/v2/wayline/web/manifests/sha256:6c2686f9b85057b83dee84ce289094bd69e82755c7a665b3958466028f5d5f67
+HTTP 404
+[exit 0]

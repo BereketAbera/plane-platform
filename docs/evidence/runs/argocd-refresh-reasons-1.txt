@@ -1,0 +1,18 @@
+# date_utc: 2026-11-05T07:15:24Z
+# commit: 7dd6c62
+# command: kubectl -n argocd logs statefulset/argocd-application-controller --since=120m, read-only, then grep -E 'application=plane-(dev|prod-sim) ' | grep -E 'level \(3\)|Initiated automated sync', cut to these times, one line per event
+# What it shows: each real promotion, rollback and drill revert of 2026-11-05 here had a refresh asked for by annotation in the second its sync began. So none of them measures how long a publish waits with no refresh.
+time="2026-11-05T05:29:48Z" level=info msg="Refreshing app status (hard refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T05:29:48Z" level=info msg="Initiated automated sync to '1fc9fbe6eb670ab5ef86c8f1eb0fe2b8f907b8c3'" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T05:34:07Z" level=info msg="Refreshing app status (hard refresh requested), level (3)" app-namespace=argocd application=plane-prod-sim project=plane-prod-sim
+time="2026-11-05T05:34:07Z" level=info msg="Initiated automated sync to '9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6'" app-namespace=argocd application=plane-prod-sim project=plane-prod-sim
+time="2026-11-05T06:23:45Z" level=info msg="Refreshing app status (normal refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:23:45Z" level=info msg="Initiated automated sync to '61570743ba0048423360faa1534cb19225882cae'" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:34:18Z" level=info msg="Refreshing app status (normal refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:41:02Z" level=info msg="Refreshing app status (normal refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:41:03Z" level=info msg="Initiated automated sync to '91ef477e5044eeb74bfec18a0985f85d7dcd0539'" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:42:44Z" level=info msg="Refreshing app status (normal refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:42:44Z" level=info msg="Initiated automated sync to '29316f2bceffb989526b9183ecccf24353ff95c0'" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:49:43Z" level=info msg="Refreshing app status (normal refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:49:44Z" level=info msg="Initiated automated sync to '91391ab845cd39a1ef06ba37388cea38079d2052'" app-namespace=argocd application=plane-dev project=plane-dev
+time="2026-11-05T06:55:45Z" level=info msg="Refreshing app status (normal refresh requested), level (3)" app-namespace=argocd application=plane-dev project=plane-dev

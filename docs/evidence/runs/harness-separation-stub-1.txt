@@ -1,0 +1,168 @@
+# Items 4, 8 and 9, everything short of a real run, because the real run was refused.
+# make test-separation, about 2026-11-05T02:34Z at commit 218f423: refused by the session's permission system as [Remote Shell Writes]. It did not start, and it was not retried or run in pieces, so tests/separation/network.py and state.py have no real run on this code.
+# 2026-11-05T02:45:31Z, commit 9e86372, tests/separation last changed in 053ebf2.
+
+## network.py with kubectl stubbed: python3 -B .local/evidence-raw/harness-network-stub-script-1.py.txt. shell-empty is the reviewer's case.
+== normal, want exit 0
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T02:39:08Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 0, 'FAIL': 0, 'PASS': 384}, exit 0
+
+== shell-empty, want exit 2
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-web-wl-x	10.244.1.6	hostNetwork=false	dns-tcp	kube-dns.kube-system.svc.cluster.local	None	53	service-dns	EXEC-FAILED no result	0	mktemp: failed to create directory
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-web-wl-x	10.244.1.6	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	None	5432	service-dns	EXEC-FAILED no result	0	mktemp: failed to create directory
+RESULT checks passed=254 failed=0 blocked=130 2026-11-05T02:39:08Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 130, 'FAIL': 0, 'PASS': 254}, exit 2
+
+== shell-exit125, want exit 2
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-web-wl-x	10.244.1.6	hostNetwork=false	dns-tcp	kube-dns.kube-system.svc.cluster.local	None	53	service-dns	EXEC-FAILED rc=125	0	mktemp: failed to create directory
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-web-wl-x	10.244.1.6	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	None	5432	service-dns	EXEC-FAILED rc=125	0	mktemp: failed to create directory
+RESULT checks passed=254 failed=0 blocked=130 2026-11-05T02:39:08Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 130, 'FAIL': 0, 'PASS': 254}, exit 2
+
+== shell-partial, want exit 2
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-web-wl-x	10.244.1.6	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	None	5672	service-dns	EXEC-FAILED no result	0	the probe exited 0 and returned nothing for this target
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-web-wl-x	10.244.1.6	hostNetwork=false	rabbitmq-amqp	10.244.2.10	None	5672	pod-ip	EXEC-FAILED no result	0	the probe exited 0 and returned nothing for this target
+RESULT checks passed=368 failed=0 blocked=16 2026-11-05T02:39:08Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 16, 'FAIL': 0, 'PASS': 368}, exit 2
+
+== dead-control, want exit 1
+FAIL 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-worker-wl-x	10.244.1.2	hostNetwork=false	dns-tcp	kube-dns.kube-system.svc.cluster.local	10.244.9.9	53	service-dns	TIMEOUT	5	want=CONNECTED
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-worker-wl-x	10.244.1.2	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.9.9	5432	service-dns	TIMEOUT	5	this pod's own positive control did not connect, so its timeout proves nothing
+BLOCKED 2026-11-05T02:39:08Z	dev->prod-sim	plane-dev/plane-worker-wl-x	10.244.1.2	hostNetwork=false	postgres	10.244.2.8	10.244.9.9	5432	pod-ip	TIMEOUT	5	this pod's own positive control did not connect, so its timeout proves nothing
+FAIL 2026-11-05T02:39:08Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-x	10.244.2.2	hostNetwork=false	dns-tcp	kube-dns.kube-system.svc.cluster.local	10.244.9.9	53	service-dns	TIMEOUT	5	want=CONNECTED
+RESULT checks passed=358 failed=2 blocked=24 2026-11-05T02:39:08Z
+Scanned this output for 0 secret values: 0 found and replaced.
+lines: {'BLOCKED': 24, 'FAIL': 2, 'PASS': 358}, exit 1
+
+all as wanted
+
+## state.py with kubectl stubbed: python3 -B .local/evidence-raw/harness-state-stub-script-1.py.txt <directory>
+== before afb4331, tests/separation/state.py and common.py from Git
+# Separation of plane-dev and plane-prod-sim, state and data. 2026-11-05T02:38:39Z
+# command: tests/separation/state.py
+section 1 prints a line holding fake-credential-value-12345
+
+RESULT checks passed=0 failed=0 blocked=0 2026-11-05T02:38:39Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 0
+
+== now, tests/separation in the working tree
+# Separation of plane-dev and plane-prod-sim, state and data. 2026-11-05T02:38:39Z
+# command: tests/separation/state.py
+section 1 prints a line holding ***
+
+RESULT checks passed=0 failed=0 blocked=0 2026-11-05T02:38:39Z
+Scanned this output for 1 secret values: 1 found and replaced.
+exit 1
+
+# Item 4, the first line of SH_PROBE alone, on a read-only root and on a writable /tmp. busybox already on the host, busybox@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec. 2026-11-05T02:20:32Z
+# The whole SH_PROBE was not run in a container: the session's safety check refused a sh -c holding its rm -rf, so it was not retried another way. Its real run is make test-separation, in the pods.
+# docker run --rm --pull never --network none --read-only [--tmpfs /tmp] --entrypoint sh <image> -c 'tmp=$(mktemp -d) || exit 125; echo reached'
+mktemp: : Read-only file system
+read-only root: exit 125
+reached
+writable /tmp: exit 0
+
+# Item 9, what the shell sources' own nc does with the positive control. Throwaway pods in namespace netpol-sentinel-nc-023549, with the images plane-dev's five shell sources run and no NetworkPolicy, not the running pods. 2026-11-05T02:35:58Z. Each runs SH_PROBE's nc line.
+== plane-web: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f8
+sh: bad option '--version'
+lrwxrwxrwx    1 root     root            12 Oct 21 21:55 /usr/bin/nc -> /bin/busybox
+positive control, TCP 53: rc=0 seconds=0 out=[]
+no such name: rc=1 seconds=0 out=[nc:_bad_address_'server-that-does-not-exist.invalid']
+nothing there: rc=1 seconds=5 out=[]
+DONE
+== plane-admin: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491
+sh: bad option '--version'
+lrwxrwxrwx    1 root     root            12 Oct 21 21:55 /usr/bin/nc -> /bin/busybox
+positive control, TCP 53: rc=0 seconds=0 out=[]
+no such name: rc=1 seconds=0 out=[nc:_bad_address_'server-that-does-not-exist.invalid']
+nothing there: rc=1 seconds=5 out=[]
+DONE
+== plane-pgdb: docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c
+sh: bad option '--version'
+lrwxrwxrwx    1 root     root            12 Oct 21 21:55 /usr/bin/nc -> /bin/busybox
+positive control, TCP 53: rc=0 seconds=0 out=[]
+no such name: rc=1 seconds=0 out=[nc:_bad_address_'server-that-does-not-exist.invalid']
+nothing there: rc=1 seconds=5 out=[]
+DONE
+== plane-redis: docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b97
+sh: bad option '--version'
+lrwxrwxrwx    1 root     root            12 Oct 21 21:55 /usr/bin/nc -> /bin/busybox
+positive control, TCP 53: rc=0 seconds=0 out=[]
+no such name: rc=1 seconds=0 out=[nc:_bad_address_'server-that-does-not-exist.invalid']
+nothing there: rc=1 seconds=5 out=[]
+DONE
+== plane-rabbitmq: docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2
+sh: bad option '--version'
+lrwxrwxrwx    1 root     root            12 Oct  8  2025 /usr/bin/nc -> /bin/busybox
+positive control, TCP 53: rc=0 seconds=0 out=[]
+no such name: rc=1 seconds=0 out=[nc:_bad_address_'server-that-does-not-exist.invalid']
+nothing there: rc=1 seconds=5 out=[]
+DONE
+
+# Item 4 and 9, SH_PROBE from tests/separation/network.py in throwaway pods in namespace netpol-sentinel-sh-024446, with the images plane-dev's five shell sources run, no NetworkPolicy, not the running pods. 2026-11-05T02:44:55Z
+# Without its last rm -rf line, because the session's safety check refused a shell -c holding that removal. Its output goes through network.shell_results, as a real run's would.
+== plane-web: ['SH_PROBE exit 0']
+  dns-tcp         CONNECTED    0s
+  nothing-there   TIMEOUT      5s
+  no-such-name    DNS-FAILED   0s
+  refused         ERROR:       0s
+== plane-admin: ['SH_PROBE exit 0']
+  dns-tcp         CONNECTED    0s
+  nothing-there   TIMEOUT      5s
+  no-such-name    DNS-FAILED   0s
+  refused         ERROR:       0s
+== plane-pgdb: ['SH_PROBE exit 0']
+  dns-tcp         CONNECTED    0s
+  nothing-there   TIMEOUT      5s
+  no-such-name    DNS-FAILED   0s
+  refused         ERROR:       0s
+== plane-redis: ['SH_PROBE exit 0']
+  dns-tcp         CONNECTED    0s
+  nothing-there   TIMEOUT      5s
+  no-such-name    DNS-FAILED   0s
+  refused         ERROR:       0s
+== plane-rabbitmq: ['SH_PROBE exit 0']
+  dns-tcp         CONNECTED    0s
+  nothing-there   TIMEOUT      5s
+  no-such-name    DNS-FAILED   0s
+  refused         ERROR:       0s
+
+# MATRIX=fixture-control-target.yaml /bin/bash scripts/test-netpol.sh, 2026-11-05T02:36:13Z, commit c32d27c. New probe pods with each source's policy labels, no exec into a running pod
+==> Sentinel: is NetworkPolicy really enforced?
+ ok sentinel: no policy, open port -> CONNECTED
+ ok sentinel: no policy, closed port -> REFUSED
+ ok sentinel: name that does not exist -> DNS
+ ok sentinel: default-deny blocks a new connection -> TIMEOUT
+ ok sentinel: allow rule admits only the labelled client -> CONNECTED
+ ok sentinel: the node's witness -> a blocked server answers it on an open and a closed port, and 192.0.2.1 does not
+ ok enforcement is on, and timeouts, refusals and DNS failures are told apart
+==> Running 20 rows from 20 source identities
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"api"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"worker"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"beat"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"live"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"space"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"web"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"admin"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"postgres"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"valkey"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-dev {"app.kubernetes.io/component":"rabbitmq"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"api"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"worker"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"beat"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"live"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"space"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"web"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"admin"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"postgres"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"valkey"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  plane-prod-sim {"app.kubernetes.io/component":"rabbitmq"} -> kube-dns.kube-system.svc.cluster.local:53
+==> PASS 20, FAIL 0, INCONCLUSIVE 0, of which 0 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 0. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261105T023613Z.tsv
+==> A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target.
+ ok network policy matrix passed
+exit 0

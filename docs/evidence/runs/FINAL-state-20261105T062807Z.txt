@@ -1,0 +1,125 @@
+date_utc: 2026-11-05T06:28:07Z
+commit: 4a443c9
+command: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prodsim/final-state.sh
+---
+### .build/digests.tsv
+web	sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+admin	sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+space	sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+backend	sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+
+### running container images and imageIDs in plane-prod-sim, Deployments and StatefulSets of Plane
+iso-prod-sim-controller-manager-5cc86cc76-4r45n	2026-11-04T21:52:23Z	manager	restarts=0	ready=true	sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa
+plane-admin-wl-64b68f786-lxtxv	2026-11-05T05:34:30Z	plane-admin	restarts=0	ready=true	sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+plane-api-wl-c4f9658c9-5k6hn	2026-11-05T05:34:30Z	plane-api	restarts=0	ready=true	sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+plane-beat-worker-wl-f44b9b987-mdv9p	2026-11-05T05:34:30Z	plane-beat-worker	restarts=0	ready=true	sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+plane-live-wl-5d5fd749c6-szdzq	2026-11-04T22:51:16Z	plane-live	restarts=0	ready=true	sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+plane-minio-wl-0	2026-11-04T23:54:03Z	plane-minio	restarts=0	ready=true	sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+plane-pgdb-wl-0	2026-11-04T23:54:12Z	plane-pgdb	restarts=0	ready=true	sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+plane-rabbitmq-wl-0	2026-11-05T00:32:29Z	plane-rabbitmq	restarts=0	ready=true	sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+plane-redis-wl-0	2026-11-04T23:54:52Z	plane-redis	restarts=0	ready=true	sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+plane-space-wl-6c6c7c76c6-z4jwz	2026-11-05T05:34:30Z	plane-space	restarts=0	ready=true	sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+plane-web-wl-545ff57fd4-fksxq	2026-11-05T05:34:30Z	plane-web	restarts=0	ready=true	sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+plane-worker-wl-cd696f548-7tmq2	2026-11-05T05:34:30Z	plane-worker	restarts=0	ready=true	sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+postgres-exporter-b6f657c47-p65fl	2026-11-04T21:56:42Z	postgres-exporter	restarts=0	ready=true	sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+redis-exporter-5b59d6cb7c-xsw9t	2026-11-04T21:03:37Z	redis-exporter	restarts=0	ready=true	sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+
+### spec images on the four branded workload groups
+iso-prod-sim-controller-manager	gen=1	replicas=1	ready=1	docker.io/infisical/kubernetes-operator:v0.11.16@sha256:0edfbde22637d50e52d2539b21fc3da397fc7033eea8d8baa8074f57d3e4b9fa
+plane-admin-wl	gen=5	replicas=1	ready=1	localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
+plane-api-wl	gen=5	replicas=1	ready=1	localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+plane-beat-worker-wl	gen=4	replicas=1	ready=1	localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+plane-live-wl	gen=3	replicas=1	ready=1	docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+plane-space-wl	gen=5	replicas=1	ready=1	localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
+plane-web-wl	gen=5	replicas=1	ready=1	localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+plane-worker-wl	gen=4	replicas=1	ready=1	localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+postgres-exporter	gen=3	replicas=1	ready=1	quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+redis-exporter	gen=1	replicas=1	ready=1	docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+
+### Application plane-prod-sim
+{
+  "sync": "Synced",
+  "health": "Healthy",
+  "revision": "61570743ba0048423360faa1534cb19225882cae",
+  "op": "Succeeded",
+  "op_started": "2026-11-05T05:34:07Z",
+  "op_finished": "2026-11-05T05:35:07Z",
+  "automated": {
+    "prune": true,
+    "selfHeal": true
+  },
+  "reconciledAt": "2026-11-05T06:25:33Z"
+}
+
+### last commit to change prod-sim manifests
+9c8e098 promote(prod-sim): plane-admin ce7adc37b1a7, plane-backend 8c04bd18bb08, plane-frontend 3d7575a1b934, plane-space 5f0119ff2266
+
+### make status (reads only)
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 61570743)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      61570743
+    backup-storage                 Synced     Healthy      61570743
+    infisical                      Synced     Healthy      61570743
+    infisical-operator-dev         Synced     Healthy      61570743
+    infisical-operator-prod-sim    Synced     Healthy      61570743
+    kube-prometheus-stack          Synced     Healthy      61570743
+    loki                           Synced     Healthy      61570743
+    metrics-server                 Synced     Healthy      61570743
+    monitoring-extras              Synced     Healthy      61570743
+    network-policies               Synced     Healthy      61570743
+    plane-dev                      Synced     Progressing  61570743
+    plane-prod-sim                 Synced     Healthy      61570743
+    root                           Synced     Progressing  61570743
+    traefik                        Synced     Healthy      61570743
+[1;34m==>[0m Pods not ready
+    plane-dev/plane-web-wl-95867ffd6-sm2l2 0/1 ImagePullBackOff
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         200
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 8.549GiB / 13.63GiB, CPU 37.83%
+    argocd                    523 MiB
+    infisical                 741 MiB
+    kube-system              1649 MiB
+    local-path-storage         15 MiB
+    monitoring               1608 MiB
+    monitoring-agents          19 MiB
+    plane-dev                1349 MiB
+    plane-prod-sim           1215 MiB
+    traefik                    76 MiB
+    Host disk free: 13 GiB
+make status exit 0
+
+### alerts in plane-prod-sim through Prometheus
+{"status":"success","data":{"resultType":"vector","result":[]}}
+
+### kind node memory, oom_kill
+MemTotal:       14294756 kB
+MemAvailable:    3971308 kB
+oom_kill 62
+
+### last make test-e2e ENV=prod-sim on record, made by an earlier agent
+-rw-r--r--@ 1 bek  staff  15384 Nov  5 08:35 .local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json
+{
+  "result": "PASS",
+  "started": "2026-11-05T05:35:33Z",
+  "finished": "2026-11-05T05:35:52Z",
+  "environment": "prod-sim"
+}
+{
+  "PASS": 44,
+  "SKIP": 1
+}
+background-job	PASS	issue_activity task ran in 3.1s
+branding-overlay	PASS	admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every rollout finished
+realtime-sync	PASS	both clients synced, and an update reached the other client in 1 ms
+---
+finished_utc: 2026-11-05T06:28:09Z
+exit_code: 0

@@ -1,0 +1,5 @@
+# date 2026-11-05T02:35:46Z, at c32d27c, command: source scripts/lib/common.sh scripts/lib/dev-check.sh; dev_problems <digests>
+the four digests of promotion 0af8956:
+  problems: []
+the same four and a digest no pod runs:
+  problems: [no ready container in namespace plane-dev runs sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]

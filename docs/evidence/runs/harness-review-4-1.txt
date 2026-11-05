@@ -1,0 +1,53 @@
+# 2026-11-05T05:13:07Z Independent check of the harness track, ef7a48d to 1578573. Stubs and read-only cluster reads only. No repo file edited.
+$ /usr/bin/python3 -B workloads-case.py tests/e2e   # the current code, kubectl stubbed
+1. the migrator hook fails on every attempt, attempt 9, old pods serve
+   BLOCKED workloads-ready  a rollout is under way, so this says nothing yet, and this run cannot read PASS: Job plane-api-migrate-1 has not succeeded; Application plane-dev is OutOfSync/Healthy
+2. a manifest Argo CD cannot apply, attempt 9
+   BLOCKED workloads-ready  a rollout is under way, so this says nothing yet, and this run cannot read PASS: Application plane-dev is OutOfSync/Healthy
+3. a StatefulSet stuck on a new revision with no pod ready, attempt 9
+   BLOCKED workloads-ready  a rollout is under way, so this says nothing yet, and this run cannot read PASS: plane-pgdb-wl has 0/1 ready; Application plane-dev is Synced/Progressing
+4. a true rollout, first attempt, one surge pod
+   BLOCKED workloads-ready  a rollout is under way, so this says nothing yet, and this run cannot read PASS: plane-web-wl has 2/1 ready; Application plane-dev is Synced/Progressing
+$ /usr/bin/python3 -B workloads-case.py <tests/e2e at 1936016>   # before ef7a48d
+1. the migrator hook fails on every attempt, attempt 9, old pods serve
+   FAIL    workloads-ready  Job plane-api-migrate-1 has not succeeded; Application plane-dev is OutOfSync/Healthy
+2. a manifest Argo CD cannot apply, attempt 9
+   FAIL    workloads-ready  Application plane-dev is OutOfSync/Healthy
+3. a StatefulSet stuck on a new revision with no pod ready, attempt 9
+   FAIL    workloads-ready  plane-pgdb-wl has 0/1 ready; Application plane-dev is Synced/Progressing
+4. a true rollout, first attempt, one surge pod
+   FAIL    workloads-ready  plane-web-wl has 2/1 ready; Application plane-dev is Synced/Progressing
+$ cat workloads-case.py
+"""workloads-ready on stubbed kubectl, new code and the code before ef7a48d. usage: workloads-case.py <dir with smoke.py>"""
+import contextlib, importlib.util, io, json, sys, tempfile
+spec = importlib.util.spec_from_file_location("smoke_under_test", sys.argv[1] + "/smoke.py")
+S = importlib.util.module_from_spec(spec); sys.modules["smoke_under_test"] = S; spec.loader.exec_module(S)
+DONE = {"replicas": 1, "readyReplicas": 1, "conditions": [{"type": "Progressing", "status": "True", "reason": "NewReplicaSetAvailable"}]}
+def run(title, *, web=None, sts=None, job=None, sync="Synced", health="Healthy", operation=None, op_state=None):
+    listed = []
+    for kind, name in S.WORKLOADS:
+        status = dict(DONE)
+        if kind == "StatefulSet":
+            status = {"replicas": 1, "readyReplicas": 1, "currentRevision": "a", "updateRevision": "a"}
+        if name == "plane-web-wl" and web: status.update(web)
+        if name == "plane-pgdb-wl" and sts: status.update(sts)
+        listed.append({"kind": kind, "metadata": {"name": name, "generation": 2}, "spec": {"replicas": 1}, "status": {"observedGeneration": 2, **status}})
+    listed.append({"kind": "Job", "metadata": {"name": S.MIGRATOR_JOB}, "spec": {}, "status": job if job is not None else {"succeeded": 1}})
+    app = {**({"operation": operation} if operation else {}), "status": {"sync": {"status": sync}, "health": {"status": health}, **({"operationState": op_state} if op_state else {})}}
+    with tempfile.TemporaryDirectory() as d:
+        smoke = S.Smoke(S.parse_args(["--accounts", f"{d}/a.env", "--sentinel", f"{d}/s.json"]))
+    smoke.cluster.in_namespace = lambda *a, **k: json.dumps({"items": listed if "deployments,statefulsets,jobs" in a else []})
+    smoke.cluster.run = lambda *a, **k: json.dumps(app)
+    with contextlib.redirect_stdout(io.StringIO()) as out:
+        smoke.run("workloads-ready", smoke.step_workloads)
+    print(f"{title}\n   {out.getvalue().strip()[:230]}")
+retrying = dict(operation={"sync": {}, "retry": {"limit": -1}}, op_state={"phase": "Running", "retryCount": 9, "message": "Retrying attempt #9 at 3:00AM: one or more synchronization tasks completed unsuccessfully"})
+run("1. the migrator hook fails on every attempt, attempt 9, old pods serve", job={"failed": 1, "conditions": [{"type": "Failed", "status": "True", "reason": "BackoffLimitExceeded"}]}, sync="OutOfSync", health="Healthy", **retrying)
+run("2. a manifest Argo CD cannot apply, attempt 9", sync="OutOfSync", health="Healthy", **retrying)
+run("3. a StatefulSet stuck on a new revision with no pod ready, attempt 9", sts={"readyReplicas": 0, "currentRevision": "a", "updateRevision": "b"}, sync="Synced", health="Progressing", **retrying)
+run("4. a true rollout, first attempt, one surge pod", web={"readyReplicas": 2, "conditions": [{"type": "Progressing", "status": "True", "reason": "ReplicaSetUpdated"}]}, sync="Synced", health="Progressing", operation={"sync": {}}, op_state={"phase": "Running"})
+$ drill stub, harness-drill-stub-script-1.sh.txt, on scripts at c51c130: all 8 scenarios, then 4 again
+drill-stub-final.out:=== wrong: 0
+drill-stub.out:=== wrong: 0
+$ scripts/ci/test-promotion-flows.sh drill
+[1;32m ok[0m 3 of 3 promotion flow scenarios passed, with a stub cluster

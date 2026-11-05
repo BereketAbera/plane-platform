@@ -2,7 +2,7 @@
 # command: terraform apply -lock-timeout=10m in infrastructure/terraform/environments/local, started 00:36:20Z, exit 0 at 00:36:49Z
 # plan before: Plan: 0 to add, 1 to change, 0 to destroy. Only module.argocd.helm_release.argocd.
 # plan after: No changes. Your infrastructure matches the configuration.  (terraform plan -detailed-exitcode, exit 0)
-# limit before: controller 768Mi, memory.peak 731.4 MiB in plane-dev-memory-1.txt, 533 MiB on the pod running at 00:16Z. ResourceQuota and LimitRange in argocd: none.
+# limit before: controller 768Mi, memory.peak 731.4 MiB in plane-dev-memory-1.txt, 508.6 MiB (533278720 bytes, anon 285.6 MiB) on the pod running at 00:16Z. ResourceQuota and LimitRange in argocd: none.
 # pods after:
 NAME                                  RESTARTS   CREATED                READY   MEM
 argocd-application-controller-0       0          2026-11-05T00:36:37Z   true    1Gi
@@ -20,3 +20,15 @@ StatefulSet   argocd-application-controller      1          1Gi     4
 # node:
 MemTotal:       14294756 kB
 MemAvailable:    3988268 kB
+
+# date: 2026-11-05T01:05:41Z
+# second apply, for a comment in helm/values/argocd.yaml only: 1 to change, then no changes. Pods before and after, the only difference is the Helm hook's Job pod:
+3a4
+> argocd-redis-secret-init-5m6rw        2026-11-05T01:05:04Z   0
+NAME                                  CREATED                RESTARTS
+argocd-application-controller-0       2026-11-05T00:36:37Z   0
+argocd-redis-ff6755697-jcd8p          2026-11-04T20:51:17Z   0
+argocd-redis-secret-init-5m6rw        2026-11-05T01:05:04Z   0
+argocd-repo-server-8464d9c6cc-ssf2f   2026-11-04T23:23:37Z   0
+argocd-server-5bcf485686-5vhnh        2026-11-04T23:23:37Z   0
+# cgroup at 00:50Z: controller memory.max 1073741824, memory.current 287883264, memory.peak 425242624

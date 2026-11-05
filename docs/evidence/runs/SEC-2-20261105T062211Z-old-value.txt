@@ -1,0 +1,19 @@
+# 2026-11-05T06:22:11Z commit 0dde813
+# command: scratchpad/plane-dev/old-value-proof.sh (copy: .local/evidence-raw/SEC-2-20261105T062211Z-old-value-proof-source.txt). Holds the starting password in memory only. Prints no value.
+2026-11-05T06:22:11Z starting value held in memory, length 48
+===== before rotation 2026-11-05T06:22:21Z, commit 0dde813
+Secret holds the starting value: yes. Length of the current value: 48
+-- the value Plane used before the rotation
+   psql over pod IP:   plane|10.244.0.222 psql exit 0 
+   psycopg over Service: ACCEPTED over plane-pgdb.plane-dev.svc.cluster.local as plane, server 10.244.0.222 
+-- the value in Secret plane-pgdb now
+   psql over pod IP:   plane|10.244.0.222 psql exit 0 
+   psycopg over Service: ACCEPTED over plane-pgdb.plane-dev.svc.cluster.local as plane, server 10.244.0.222 
+-- a random value, the negative control
+   psql over pod IP:   psql: error: connection to server at "10.244.0.222", port 5432 failed: FATAL:  password authentication failed for user "plane" psql exit 2 
+   psycopg over Service: REFUSED over plane-pgdb.plane-dev.svc.cluster.local: connection failed: connection to server at "10.244.0.222", port 5432 failed: FATAL: password authentication failed for user "plane" 
+-- what the running pods hold
+   plane-api-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: yes
+   plane-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: yes
+   plane-beat-worker-wl: DATABASE_URL equals the current Secret: yes; contains the starting value: yes
+2026-11-05T06:23:05Z stopped

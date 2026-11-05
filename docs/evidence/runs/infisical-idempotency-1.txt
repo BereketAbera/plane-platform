@@ -65,7 +65,7 @@ admin.json.sha256-of-file <digest>
 infisical.dev.list.status 200
 infisical.dev.secret LIVE_SERVER_SECRET_KEY id=<redacted> version=1
 infisical.dev.secret PG_DB id=<redacted> version=1
-infisical.dev.secret PG_PASSWORD id=<redacted> version=1
+infisical.dev.secret <redacted> id=7dea2041-73ef-4124-b05f-c7866352c890 version=1
 infisical.dev.secret PG_USER id=<redacted> version=1
 infisical.dev.secret RABBITMQ_PASSWORD id=<redacted> version=1
 infisical.dev.secret RABBITMQ_USER id=<redacted> version=1
@@ -75,7 +75,7 @@ infisical.dev.secret SILO_SECRET_KEY id=<redacted> version=1
 infisical.prod-sim.list.status 200
 infisical.prod-sim.secret LIVE_SERVER_SECRET_KEY id=<redacted> version=1
 infisical.prod-sim.secret PG_DB id=<redacted> version=1
-infisical.prod-sim.secret PG_PASSWORD id=<redacted> version=1
+infisical.prod-sim.secret <redacted> id=<redacted> version=1
 infisical.prod-sim.secret PG_USER id=<redacted> version=1
 infisical.prod-sim.secret RABBITMQ_PASSWORD id=<redacted> version=1
 infisical.prod-sim.secret RABBITMQ_USER id=<redacted> version=1

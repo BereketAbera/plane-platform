@@ -1,0 +1,60 @@
+# Upstream behaviour at v1.4.3, on the branded images in plane-dev. 2026-11-05T01:04:06Z
+Application plane-dev: Synced/Healthy at a9baf8b48c3f
+plane-api-wl localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+plane-worker-wl localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+
+== 1. POST project invitations, a real request through Traefik with the instance admin's session
+workspace sep-dev-0ade695c1e, project 482c5ca3-8910-4f39-90a5-530208b60f3b, the admin's role in it: 200 on members
+control, GET the same path with the same session: HTTP 200, 0 invitations
+POST {"emails":[{"email":"<new address>","role":15}]}: HTTP 500, body '{"error":"Something went wrong please try again later"}'
+rows for that address: before 0, after 0
+workspace invitations, for comparison: not sent here, because that queues a mail. docs/evidence/branding/backend-db.txt shows them answering 200
+api log lines in the last 2 minutes naming the error: 1
+  2026-11-05 01:04:07,350 'SoftDeletionQuerySet' object has no attribute 'role'
+  File "/code/plane/app/views/project/invite.py", line 67, in create
+
+== 2. Page version history
+page_versions rows: 0
+pages with an edit stored by this platform's smoke test: 9
+newest of those: 2026-11-05 00:30:01.70752+00
+in the running worker's log: track_page_version received 2 times, and 2 log the error
+  2026-11-05 00:30:01,726 'Page' object has no attribute 'description'
+  File "/code/plane/bgtasks/page_version_task.py", line 63, in track_page_version
+
+== 3. Upstream's source, read and not patched
+scratchpad/upstream/plane holds only the tag v1.4.3, so preview was read from GitHub at the commit below.
+preview: 618d0eb74658329a6f6e92434ac54231422c5b96
+Page's fields on v1.4.3:
+  models/page.py:32: description_json = models.JSONField(default=dict, blank=True)
+  models/page.py:33: description_binary = models.BinaryField(null=True)
+  models/page.py:34: description_html = models.TextField(blank=True, default="<p></p>")
+  models/page.py:35: description_stripped = models.TextField(blank=True, null=True)
+  models/page.py:163: description_binary = models.BinaryField(null=True)
+  models/page.py:164: description_html = models.TextField(blank=True, default="<p></p>")
+  models/page.py:165: description_stripped = models.TextField(blank=True, null=True)
+  models/page.py:166: description_json = models.JSONField(default=dict, blank=True)
+Page's fields on preview:
+  preview/page.py:32: description_json = models.JSONField(default=dict, blank=True)
+  preview/page.py:33: description_binary = models.BinaryField(null=True)
+  preview/page.py:34: description_html = models.TextField(blank=True, default="<p></p>")
+  preview/page.py:35: description_stripped = models.TextField(blank=True, null=True)
+  preview/page.py:163: description_binary = models.BinaryField(null=True)
+  preview/page.py:164: description_html = models.TextField(blank=True, default="<p></p>")
+  preview/page.py:165: description_stripped = models.TextField(blank=True, null=True)
+  preview/page.py:166: description_json = models.JSONField(default=dict, blank=True)
+page_version_task.py on v1.4.3:
+  bgtasks/page_version_task.py:45: page_version.description_json = page.description
+  bgtasks/page_version_task.py:63: description_json=page.description,
+page_version_task.py on preview:
+  preview/page_version_task.py:45: page_version.description_json = page.description
+  preview/page_version_task.py:63: description_json=page.description,
+project invite view on v1.4.3:
+  project/invite.py:65: workspace_role = WorkspaceMember.objects.filter(
+  project/invite.py:67: ).role
+  project/invite.py:239: workspace_member = WorkspaceMember.objects.filter(workspace__slug=slug, member=user).first()
+project invite view on preview:
+  preview/invite.py:78: workspace_role = WorkspaceMember.objects.filter(
+  preview/invite.py:80: ).role
+  preview/invite.py:249: workspace_member = WorkspaceMember.objects.filter(workspace__slug=slug, member=user).first()
+
+# done 2026-11-05T01:04:10Z

@@ -1,0 +1,17 @@
+# date 2026-11-05T02:49:23Z, clean clone of 10d3ac6, command: scripts/gitops-publish.sh after each change
+
+=== a comment in helm/plane/components/hardening/serviceaccounts.yaml, which renders to nothing
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main 9192c4096513 to .local/git/plane-platform.git
+=== exit 0
+
+=== a ServiceAccount added to helm/plane/components/hardening/serviceaccounts.yaml
+     gitops/environments/dev/manifests.yaml               | 7 +++++++
+     gitops/environments/prod-sim/manifests.yaml          | 7 +++++++
+     helm/plane/components/hardening/serviceaccounts.yaml | 6 ++++++
+     3 files changed, 20 insertions(+)
+warn publishing 7 changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach dev and prod-sim together with this push. Changed under helm/plane:
+       helm/plane/components/hardening/serviceaccounts.yaml
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main 494ab7fb6c2e to .local/git/plane-platform.git
+=== exit 0

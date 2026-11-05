@@ -1,0 +1,120 @@
+# 2026-11-05T04:18:20Z python3 -B separation-stub.py <code> tests/e2e, on tests/separation at 1936016 and at b27813d. kubectl stubbed, fake values, no Secret read, no pod reached. make test-separation itself did not run. Script: harness-separation-stub-script-2.py.txt
+##### NEW CODE, b27813d
+== network normal
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 0
+
+== network clients-noise
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 0
+
+== network clients-empty
+BLOCKED psycopg from plane-dev/plane-api-wl-x to plane-dev: the exec exited 0 and printed no result for it, so it says nothing either way
+BLOCKED redis-py from plane-dev/plane-api-wl-x to plane-dev: the exec exited 0 and printed no result for it, so it says nothing either way
+RESULT checks passed=360 failed=0 blocked=24 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 2
+
+== network clients-one
+BLOCKED redis-py from plane-dev/plane-api-wl-x to plane-dev: the exec exited 0 and printed no result for it, so it says nothing either way
+BLOCKED amqp from plane-dev/plane-api-wl-x to plane-dev: the exec exited 0 and printed no result for it, so it says nothing either way
+RESULT checks passed=366 failed=0 blocked=18 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 2
+
+== network clients-only-noise
+BLOCKED psycopg from plane-dev/plane-api-wl-x to plane-dev: the exec exited 0 and printed no result for it, so it says nothing either way
+BLOCKED redis-py from plane-dev/plane-api-wl-x to plane-dev: the exec exited 0 and printed no result for it, so it says nothing either way
+RESULT checks passed=360 failed=0 blocked=24 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 2
+
+== network pg-fast
+FAIL 2026-11-05T04:18:20Z plane-dev/plane-pgdb-wl-0 -> plane-pgdb.plane-prod-sim.svc.cluster.local: want rc=2, no response, after a hang until the timeout: no response
+pg_isready rc=2 seconds=0 
+FAIL 2026-11-05T04:18:20Z plane-prod-sim/plane-pgdb-wl-0 -> plane-pgdb.plane-dev.svc.cluster.local: want rc=2, no response, after a hang until the timeout: no response
+pg_isready rc=2 seconds=0 
+RESULT checks passed=382 failed=2 blocked=0 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 1
+
+== network pg-exec-failed
+BLOCKED 2026-11-05T04:18:20Z plane-dev/plane-pgdb-wl-0 -> plane-pgdb.plane-prod-sim.svc.cluster.local: want rc=2, no response, after a hang until the timeout:  error: unable to upgrade connection	it printed no time, so it says not
+BLOCKED 2026-11-05T04:18:20Z plane-prod-sim/plane-pgdb-wl-0 -> plane-pgdb.plane-dev.svc.cluster.local: want rc=2, no response, after a hang until the timeout:  error: unable to upgrade connection	it printed no time, so it says not
+RESULT checks passed=382 failed=0 blocked=2 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 2
+
+== network valkey-exec-failed
+BLOCKED 2026-11-05T04:18:20Z plane-dev/plane-redis-wl-0 -> plane-redis.plane-prod-sim.svc.cluster.local: want a hang until the timeout:  error: unable to upgrade connection	it printed no time, so it says nothing either way
+BLOCKED 2026-11-05T04:18:20Z plane-prod-sim/plane-redis-wl-0 -> plane-redis.plane-dev.svc.cluster.local: want a hang until the timeout:  error: unable to upgrade connection	it printed no time, so it says nothing either way
+RESULT checks passed=382 failed=0 blocked=2 2026-11-05T04:18:20Z
+Scanned this output for 0 secret values: 0 found and replaced.
+exit 2
+
+== state normal
+RESULT checks passed=32 failed=0 blocked=0 2026-11-05T04:18:20Z
+Scanned this output for 20 secret values: 0 found and replaced.
+exit 0
+
+== state attempts-empty
+BLOCKED plane-dev: own postgres password: the exec exited 0 and printed no result for it, so it says nothing either way
+BLOCKED plane-dev: other environment's postgres password: the exec exited 0 and printed no result for it, so it says nothing either way
+RESULT checks passed=20 failed=0 blocked=12 2026-11-05T04:18:20Z
+Scanned this output for 20 secret values: 0 found and replaced.
+exit 2
+
+== state attempts-own-only
+BLOCKED plane-dev: other environment's postgres password: the exec exited 0 and printed no result for it, so it says nothing either way
+BLOCKED plane-dev: other environment's rabbitmq password: the exec exited 0 and printed no result for it, so it says nothing either way
+RESULT checks passed=26 failed=0 blocked=6 2026-11-05T04:18:20Z
+Scanned this output for 20 secret values: 0 found and replaced.
+exit 2
+
+== state attempts-only-noise
+BLOCKED plane-dev: own postgres password: the exec exited 0 and printed no result for it, so it says nothing either way
+BLOCKED plane-dev: other environment's postgres password: the exec exited 0 and printed no result for it, so it says nothing either way
+RESULT checks passed=20 failed=0 blocked=12 2026-11-05T04:18:20Z
+Scanned this output for 20 secret values: 0 found and replaced.
+exit 2
+
+
+##### OLD CODE, 1936016
+== network normal
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T04:18:20Z
+exit 0
+== network clients-noise
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+== network clients-empty
+RESULT checks passed=360 failed=0 blocked=0 2026-11-05T04:18:21Z
+exit 0
+== network clients-one
+RESULT checks passed=366 failed=0 blocked=0 2026-11-05T04:18:21Z
+exit 0
+== network clients-only-noise
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+== network pg-fast
+RESULT checks passed=384 failed=0 blocked=0 2026-11-05T04:18:21Z
+exit 0
+== network pg-exec-failed
+RESULT checks passed=382 failed=2 blocked=0 2026-11-05T04:18:21Z
+exit 1
+== network valkey-exec-failed
+RESULT checks passed=382 failed=2 blocked=0 2026-11-05T04:18:21Z
+exit 1
+== state normal
+RESULT checks passed=32 failed=0 blocked=0 2026-11-05T04:18:21Z
+exit 0
+== state attempts-empty
+RESULT checks passed=20 failed=0 blocked=0 2026-11-05T04:18:21Z
+exit 0
+== state attempts-own-only
+RESULT checks passed=26 failed=0 blocked=0 2026-11-05T04:18:21Z
+exit 0
+== state attempts-only-noise
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)

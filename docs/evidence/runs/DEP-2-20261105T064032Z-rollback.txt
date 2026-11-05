@@ -1,0 +1,85 @@
+# 2026-11-05T06:40:57Z commit b7d1bfa
+# command: make rollback ENV=dev, with scratchpad/plane-dev/dep2-read.sh before and after
+
+=== before
+2026-11-05T06:40:57Z HEAD b7d1bfa published b7d1bfa
+-- plane-dev Deployments: name, generation, revision, ready, image digest
+plane-admin-wl	10	9	1	ce7adc37b1a7
+plane-api-wl	12	9	1	8c04bd18bb08
+plane-beat-worker-wl	9	8	1	8c04bd18bb08
+plane-live-wl	7	6	1	30741b6d6552
+plane-space-wl	10	9	1	5f0119ff2266
+plane-web-wl	12	11	1	3d7575a1b934
+plane-worker-wl	9	8	1	8c04bd18bb08
+-- Running pods digests, by container status
+plane-admin-wl-545f5b8fcd-97kwj	true	ce7adc37b1a7
+plane-api-wl-d7d5dcb7f-hs2gn	true	8c04bd18bb08
+plane-beat-worker-wl-645c56988f-mltb7	true	8c04bd18bb08
+plane-live-wl-5744d85f8b-qdb9d	true	30741b6d6552
+plane-space-wl-847f88bc46-h6vmn	true	5f0119ff2266
+plane-web-wl-748764649d-q72kc	true	3d7575a1b934
+plane-worker-wl-7f4494fd56-tlbbf	true	8c04bd18bb08
+-- overlay digests in HEAD, helm/plane/overlays/dev/kustomization.yaml
+artifacts.plane.so/makeplane/plane-admin ce7adc37b1a7
+artifacts.plane.so/makeplane/plane-backend 8c04bd18bb08
+artifacts.plane.so/makeplane/plane-frontend 3d7575a1b934
+artifacts.plane.so/makeplane/plane-space 5f0119ff2266
+-- Application plane-dev
+{"sync":"Synced","health":"Healthy","revision":"b7d1bfab5bbd","op":"Succeeded","started":"2026-11-05T06:23:45Z","finished":"2026-11-05T06:35:36Z","message":"successfully synced (all tasks run)","open":false}
+-- prod-sim: render in HEAD by sha256, overlay digests, Application plane-prod-sim, pods
+cf4b6b402ae0e1b7
+{"sync":"Synced","health":"Healthy","revision":"b7d1bfab5bbd","op":"Succeeded","started":"2026-11-05T05:34:07Z","finished":"2026-11-05T05:35:07Z","history":5,"images":["docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984","docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281","docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e","docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885","docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e","localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796","localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe","localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039","localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747"]}
+a88b51ca0be3795b
+
+=== make rollback ENV=dev
+[1;34m==>[0m Rolling back: 1fc9fbe promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+[1;32m ok[0m committed 91ef477: Revert "promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08"
+[1;33mwarn[0m publishing 4 commit(s) on main that are not on origin/main, so GitHub CI and review have not seen them. Newest:
+       91ef477 Revert "promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08"
+       b7d1bfa Revert "promote(dev): plane-frontend 000000000000"
+       4a443c9 docs(evidence): record the first image build on GitHub, the two pull requests, who can read the packages and /source, and make ci at 9c8e098 and 0dde813
+       6157074 promote(dev): plane-frontend 000000000000
+[1;32m ok[0m published main 91ef477e5044 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+# make rollback exit code: 0, 2026-11-05T06:40:59Z
+
+=== after, Application settled
+2026-11-05T06:42:29Z HEAD 91ef477 published 91ef477
+-- plane-dev Deployments: name, generation, revision, ready, image digest
+plane-admin-wl	11	10	1	c24ead5a02a1
+plane-api-wl	13	10	1	9c7130942d90
+plane-beat-worker-wl	10	9	1	9c7130942d90
+plane-live-wl	7	6	1	30741b6d6552
+plane-space-wl	11	10	1	0a4ca742292d
+plane-web-wl	13	12	1	96841278d02a
+plane-worker-wl	10	9	1	9c7130942d90
+-- Running pods digests, by container status
+plane-admin-wl-5df5d7f9f6-llv2z	true	c24ead5a02a1
+plane-api-wl-596749bb8-2xnp7	true	9c7130942d90
+plane-beat-worker-wl-b64f64d68-mlkrz	true	9c7130942d90
+plane-live-wl-5744d85f8b-qdb9d	true	30741b6d6552
+plane-space-wl-6b65f54cf5-wr6tm	true	0a4ca742292d
+plane-web-wl-7f547975-gpxn7	true	96841278d02a
+plane-worker-wl-8c8968995-qtrlp	true	9c7130942d90
+-- overlay digests in HEAD, helm/plane/overlays/dev/kustomization.yaml
+artifacts.plane.so/makeplane/plane-admin c24ead5a02a1
+artifacts.plane.so/makeplane/plane-backend 9c7130942d90
+artifacts.plane.so/makeplane/plane-frontend 96841278d02a
+artifacts.plane.so/makeplane/plane-space 0a4ca742292d
+-- Application plane-dev
+{"sync":"Synced","health":"Healthy","revision":"91ef477e5044","op":"Succeeded","started":"2026-11-05T06:41:03Z","finished":"2026-11-05T06:42:04Z","message":"successfully synced (all tasks run)","open":false}
+-- prod-sim: render in HEAD by sha256, overlay digests, Application plane-prod-sim, pods
+cf4b6b402ae0e1b7
+{"sync":"Synced","health":"Healthy","revision":"91ef477e5044","op":"Succeeded","started":"2026-11-05T05:34:07Z","finished":"2026-11-05T05:35:07Z","history":5,"images":["docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984","docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281","docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e","docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885","docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e","localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796","localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe","localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039","localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747"]}
+a88b51ca0be3795b
+
+=== git diff of prod-sim's render across the rollback: git diff --stat b7d1bfab5bbd76306144b9b089e1620fb6920aa4 HEAD -- gitops/environments/prod-sim helm/plane/overlays/prod-sim
+(end of diff)
+
+=== what the revert changed: git show --stat HEAD
+91ef477 Revert "promote(dev): plane-frontend 3d7575a1b934, plane-admin ce7adc37b1a7, plane-space 5f0119ff2266, plane-backend 8c04bd18bb08"
+
+ gitops/environments/dev/manifests.yaml     | 14 +++++++-------
+ helm/plane/overlays/dev/kustomization.yaml |  8 ++++----
+ 2 files changed, 11 insertions(+), 11 deletions(-)

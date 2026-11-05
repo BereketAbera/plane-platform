@@ -1,0 +1,4689 @@
+{
+  "captured_at": "2026-11-05T07:45:43Z",
+  "command": "curl -G http://prometheus.localhost/api/v1/query per entry",
+  "steps": {
+    "note": "k6 container ran 07:33:48Z to 07:42:51Z; each step is 3 minutes from about two seconds after it started",
+    "vus_05": "07:33:50Z-07:36:50Z",
+    "vus_10": "07:36:50Z-07:39:50Z",
+    "vus_20": "07:39:50Z-07:42:50Z"
+  },
+  "entries": [
+    {
+      "name": "api_throttled_share",
+      "window": "vus_05",
+      "query": "sum(increase(container_cpu_cfs_throttled_periods_total{namespace=\"plane-dev\",pod=~\"plane-api-wl-.*\",container!=\"\",container!=\"POD\"}[180s])) / sum(increase(container_cpu_cfs_periods_total{namespace=\"plane-dev\",pod=~\"plane-api-wl-.*\",container!=\"\",container!=\"POD\"}[180s]))",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864210,
+            "0.028806584362139915"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_throttled_share",
+      "window": "vus_05",
+      "query": "sum by (container)(increase(container_cpu_cfs_throttled_periods_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[180s])) / sum by (container)(increase(container_cpu_cfs_periods_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[180s]))",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864210,
+            "0.11627906976744186"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864210,
+            "0.005714285714285714"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864210,
+            "0.060377358490566045"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864210,
+            "0.006329113924050634"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864210,
+            "0.0704727921498662"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864210,
+            "0.036881810561609385"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864210,
+            "0.05708245243128964"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864210,
+            "0.028806584362139915"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864210,
+            "0.07547169811320754"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864210,
+            "0.05015673981191223"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_ready_peak",
+      "window": "vus_05",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_ready{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_messages_peak",
+      "window": "vus_05",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_unacked_peak",
+      "window": "vus_05",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_unacked{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_requests",
+      "window": "vus_05",
+      "query": "sum by (service,method,code)(increase(traefik_service_requests_total{service=~\"plane-dev-plane-ingress-.*\"}[180s]))",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "101.99864001813309"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "191.99744003413286"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "11.999840002133304"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "565.1924641004787"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "101.99864001813309"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "11.999840002133304"
+          ]
+        },
+        {
+          "metric": {
+            "code": "403",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "0",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "201",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "47.999360008533216"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "401",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "403",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "PUT",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "DELETE",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "400",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "406",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "401",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "500",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "400",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "OPTIONS",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "304",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "500",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "301",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "429",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_p95_by_method",
+      "window": "vus_05",
+      "query": "histogram_quantile(0.95, sum by (le,method)(increase(traefik_service_request_duration_seconds_bucket{service=~\"plane-dev-plane-ingress-.*\"}[180s])))",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "method": "HEAD"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET"
+          },
+          "value": [
+            1793864210,
+            "0.13400000000000034"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST"
+          },
+          "value": [
+            1793864210,
+            "0.23333333333333328"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PATCH"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PUT"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "DELETE"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "OPTIONS"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_p95_by_service_method",
+      "window": "vus_05",
+      "query": "histogram_quantile(0.95, sum by (le,service,method)(increase(traefik_service_request_duration_seconds_bucket{service=~\"plane-dev-plane-ingress-.*\"}[180s])))",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0.09728915662650603"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PUT",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "DELETE",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "OPTIONS",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0.23333333333333328"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864210,
+            "0.2269696969696971"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_avg",
+      "window": "vus_05",
+      "query": "avg_over_time(sum by (container)(rate(container_cpu_usage_seconds_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864210,
+            "0.0006787456514049714"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864210,
+            "0.0026855233063425394"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864210,
+            "0.003327764639717714"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864210,
+            "0.00021514755052850964"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864210,
+            "0.00914783772398476"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864210,
+            "0.00033903864104961075"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864210,
+            "0.0018951165266919865"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864210,
+            "0.0914287236543571"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864210,
+            "0.02214766237132261"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864210,
+            "0.0037803607916363836"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864210,
+            "0.09203454664941346"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864210,
+            "0.004746023474418265"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864210,
+            "0.03918411535132056"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864210,
+            "0.0022356481281795193"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864210,
+            "0.009143944219029856"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_max",
+      "window": "vus_05",
+      "query": "max_over_time(sum by (container)(rate(container_cpu_usage_seconds_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864210,
+            "0.0009629216269841665"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864210,
+            "0.0039840878175317895"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864210,
+            "0.007225351525013517"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864210,
+            "0.0002814821546220781"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864210,
+            "0.013452143906362997"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864210,
+            "0.00044735470419598664"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864210,
+            "0.002908944607804178"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864210,
+            "0.10718321754233603"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864210,
+            "0.028081641074647615"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864210,
+            "0.004554615597168783"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864210,
+            "0.15326418362927685"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864210,
+            "0.007370488454157121"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864210,
+            "0.05704352495262157"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864210,
+            "0.003383822283200842"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864210,
+            "0.011847685275066624"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_mem_max",
+      "window": "vus_05",
+      "query": "max_over_time(sum by (container)(container_memory_working_set_bytes{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"})[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864210,
+            "14155776"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864210,
+            "28667904"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864210,
+            "161710080"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864210,
+            "3371008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864210,
+            "96276480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864210,
+            "3330048"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864210,
+            "140054528"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864210,
+            "47222784"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864210,
+            "133120000"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864210,
+            "11497472"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864210,
+            "176533504"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864210,
+            "154529792"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864210,
+            "281718784"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864210,
+            "18067456"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864210,
+            "16879616"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_cpu_max",
+      "window": "vus_05",
+      "query": "max_over_time(sum(rate(container_cpu_usage_seconds_total{namespace=\"traefik\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864210,
+            "0.018116779661016765"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_avg",
+      "window": "vus_05",
+      "query": "avg_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864210,
+            "1.8569420362313431"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_max",
+      "window": "vus_05",
+      "query": "max_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864210,
+            "2.0645290313978526"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_used_max",
+      "window": "vus_05",
+      "query": "max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[180s:15s])",
+      "time": 1793864210,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864210,
+            "10556620800"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "api_throttled_share",
+      "window": "vus_10",
+      "query": "sum(increase(container_cpu_cfs_throttled_periods_total{namespace=\"plane-dev\",pod=~\"plane-api-wl-.*\",container!=\"\",container!=\"POD\"}[180s])) / sum(increase(container_cpu_cfs_periods_total{namespace=\"plane-dev\",pod=~\"plane-api-wl-.*\",container!=\"\",container!=\"POD\"}[180s]))",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864390,
+            "0.02126200274348422"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_throttled_share",
+      "window": "vus_10",
+      "query": "sum by (container)(increase(container_cpu_cfs_throttled_periods_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[180s])) / sum by (container)(increase(container_cpu_cfs_periods_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[180s]))",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864390,
+            "0.12"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864390,
+            "0.5873269764201022"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864390,
+            "0.0477815699658703"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864390,
+            "0.19777777777777777"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864390,
+            "0.024350649350649352"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864390,
+            "0.046413502109704644"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864390,
+            "0.02126200274348422"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864390,
+            "0.11016949152542373"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864390,
+            "0.045368620037807186"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_ready_peak",
+      "window": "vus_10",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_ready{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_messages_peak",
+      "window": "vus_10",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_unacked_peak",
+      "window": "vus_10",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_unacked{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_requests",
+      "window": "vus_10",
+      "query": "sum by (service,method,code)(increase(traefik_service_requests_total{service=~\"plane-dev-plane-ingress-.*\"}[180s]))",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "100.79865601791977"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "189.59747203370623"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "10.799856001919975"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "1005.5865921787711"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "100.79865601791977"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "11.999840002133306"
+          ]
+        },
+        {
+          "metric": {
+            "code": "403",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "0",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "2.3999680004266613"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "201",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "86.3988480153598"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "401",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "403",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "PUT",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "DELETE",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "400",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "406",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "401",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "500",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "400",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "OPTIONS",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "15.599792002773299"
+          ]
+        },
+        {
+          "metric": {
+            "code": "304",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "500",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "301",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "429",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_p95_by_method",
+      "window": "vus_10",
+      "query": "histogram_quantile(0.95, sum by (le,method)(increase(traefik_service_request_duration_seconds_bucket{service=~\"plane-dev-plane-ingress-.*\"}[180s])))",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "method": "POST"
+          },
+          "value": [
+            1793864390,
+            "0.2799999999999999"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PATCH"
+          },
+          "value": [
+            1793864390,
+            "0.25666666666666665"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PUT"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "DELETE"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "OPTIONS"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET"
+          },
+          "value": [
+            1793864390,
+            "0.27852941176470575"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_p95_by_service_method",
+      "window": "vus_10",
+      "query": "histogram_quantile(0.95, sum by (le,service,method)(increase(traefik_service_request_duration_seconds_bucket{service=~\"plane-dev-plane-ingress-.*\"}[180s])))",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "method": "DELETE",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PUT",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0.2959523809523809"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0.25666666666666665"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "OPTIONS",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "5"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0.0973170731707317"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "0.2799999999999999"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+          },
+          "value": [
+            1793864390,
+            "NaN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_avg",
+      "window": "vus_10",
+      "query": "avg_over_time(sum by (container)(rate(container_cpu_usage_seconds_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864390,
+            "0.0007502287507006618"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864390,
+            "0.0033728168922414754"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864390,
+            "0.026333698497144495"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864390,
+            "0.00032006030615053417"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864390,
+            "0.007947507203484748"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864390,
+            "0.0005050806182887261"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864390,
+            "0.0022408273592726866"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864390,
+            "0.1835076808019419"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864390,
+            "0.024043977715031223"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864390,
+            "0.003613553633124977"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864390,
+            "0.16867002456791166"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864390,
+            "0.004652054477446043"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864390,
+            "0.06311424242484459"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864390,
+            "0.0020364783485909374"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864390,
+            "0.012663770833982724"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_max",
+      "window": "vus_10",
+      "query": "max_over_time(sum by (container)(rate(container_cpu_usage_seconds_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864390,
+            "0.0011115203158096616"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864390,
+            "0.005186572989851513"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864390,
+            "0.10263914897796503"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864390,
+            "0.0005693064500469259"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864390,
+            "0.009822571139922541"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864390,
+            "0.0008273515530677192"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864390,
+            "0.0030778512065685396"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864390,
+            "0.22134373544480665"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864390,
+            "0.03207140921409212"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864390,
+            "0.00439107288206437"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864390,
+            "0.19967808249622207"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864390,
+            "0.005447060725254614"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864390,
+            "0.09412042944268005"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864390,
+            "0.0036611533203343865"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864390,
+            "0.015068574381851317"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_mem_max",
+      "window": "vus_10",
+      "query": "max_over_time(sum by (container)(container_memory_working_set_bytes{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"})[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864390,
+            "14311424"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864390,
+            "28954624"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864390,
+            "161632256"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864390,
+            "3371008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864390,
+            "96088064"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864390,
+            "3330048"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864390,
+            "143114240"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864390,
+            "53624832"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864390,
+            "131092480"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864390,
+            "11296768"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864390,
+            "166514688"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864390,
+            "154660864"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864390,
+            "269570048"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864390,
+            "18214912"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864390,
+            "18907136"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_cpu_max",
+      "window": "vus_10",
+      "query": "max_over_time(sum(rate(container_cpu_usage_seconds_total{namespace=\"traefik\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864390,
+            "0.027095651001021768"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_avg",
+      "window": "vus_10",
+      "query": "avg_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864390,
+            "2.3157051135332503"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_max",
+      "window": "vus_10",
+      "query": "max_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864390,
+            "3.079564014532808"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_used_max",
+      "window": "vus_10",
+      "query": "max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[180s:15s])",
+      "time": 1793864390,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864390,
+            "11090395136"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "api_throttled_share",
+      "window": "vus_20",
+      "query": "sum(increase(container_cpu_cfs_throttled_periods_total{namespace=\"plane-dev\",pod=~\"plane-api-wl-.*\",container!=\"\",container!=\"POD\"}[180s])) / sum(increase(container_cpu_cfs_periods_total{namespace=\"plane-dev\",pod=~\"plane-api-wl-.*\",container!=\"\",container!=\"POD\"}[180s]))",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864570,
+            "0.10088832487309644"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_throttled_share",
+      "window": "vus_20",
+      "query": "sum by (container)(increase(container_cpu_cfs_throttled_periods_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[180s])) / sum by (container)(increase(container_cpu_cfs_periods_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[180s]))",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864570,
+            "0.09999999999999999"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864570,
+            "0.025423728813559324"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864570,
+            "0.017647058823529415"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864570,
+            "0.5"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864570,
+            "0.024157660521296885"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864570,
+            "0.0412573673870334"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864570,
+            "0.10088832487309644"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864570,
+            "0.03305785123966942"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864570,
+            "0.019202363367799114"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864570,
+            "0.031446540880503145"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_ready_peak",
+      "window": "vus_20",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_ready{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_messages_peak",
+      "window": "vus_20",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864570,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "celery_unacked_peak",
+      "window": "vus_20",
+      "query": "max_over_time(rabbitmq_detailed_queue_messages_unacked{namespace=\"plane-dev\",queue=\"celery\"}[180s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "endpoint": "prometheus",
+            "instance": "10.244.0.32:15692",
+            "job": "plane-rabbitmq-metrics",
+            "metrics_path": "/metrics/detailed",
+            "namespace": "plane-dev",
+            "pod": "plane-rabbitmq-wl-0",
+            "queue": "celery",
+            "service": "plane-rabbitmq-metrics",
+            "vhost": "/"
+          },
+          "value": [
+            1793864570,
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_requests",
+      "window": "vus_20",
+      "query": "sum by (service,method,code)(increase(traefik_service_requests_total{service=~\"plane-dev-plane-ingress-.*\"}[180s]))",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "13.2"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "14.399999999999999"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "12"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "1473.6"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "13.2"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "16.8"
+          ]
+        },
+        {
+          "metric": {
+            "code": "403",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "0",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "1.2"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "201",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "166.79999999999998"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "1.2"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "401",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "404",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "403",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "PUT",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "204",
+            "method": "DELETE",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "400",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "406",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "401",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "500",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "499",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "502",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "400",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "OPTIONS",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "200",
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "304",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "500",
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "302",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "301",
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        },
+        {
+          "metric": {
+            "code": "429",
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_p95_by_method",
+      "window": "vus_20",
+      "query": "histogram_quantile(0.95, sum by (le,method)(increase(traefik_service_request_duration_seconds_bucket{service=~\"plane-dev-plane-ingress-.*\"}[180s])))",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "method": "POST"
+          },
+          "value": [
+            1793864570,
+            "1.227142857142844"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PATCH"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PUT"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "DELETE"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "OPTIONS"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET"
+          },
+          "value": [
+            1793864570,
+            "1.0454716981132068"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_p95_by_service_method",
+      "window": "vus_20",
+      "query": "histogram_quantile(0.95, sum by (le,service,method)(increase(traefik_service_request_duration_seconds_bucket{service=~\"plane-dev-plane-ingress-.*\"}[180s])))",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0.09499999999999999"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "1.0550235849056597"
+          ]
+        },
+        {
+          "metric": {
+            "method": "OPTIONS",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-361e33ca2f5db89112e5@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "1.227142857142844"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-2bc51688c3d59914e7ac@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "HEAD",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PATCH",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "PUT",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-39c827e7c306a9c1a6af@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "DELETE",
+            "service": "plane-dev-plane-ingress-b05dcc8963cb9fad3855@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-b9202a9024e19ca0e43d@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "0.095"
+          ]
+        },
+        {
+          "metric": {
+            "method": "GET",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-dc9d6b1511ee39801970@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        },
+        {
+          "metric": {
+            "method": "POST",
+            "service": "plane-dev-plane-ingress-a35db17735dc584818a9@kubernetescrd"
+          },
+          "value": [
+            1793864570,
+            "NaN"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_avg",
+      "window": "vus_20",
+      "query": "avg_over_time(sum by (container)(rate(container_cpu_usage_seconds_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864570,
+            "0.0005900933312943463"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864570,
+            "0.0025832830868830537"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864570,
+            "0.00017809386624122991"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864570,
+            "0.00417844530470846"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864570,
+            "0.0001754018328815058"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864570,
+            "0.0022550696910089473"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864570,
+            "0.3232308753478511"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864570,
+            "0.023904766781386217"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864570,
+            "0.0035202799439940273"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864570,
+            "0.30849346631037544"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864570,
+            "0.003976632571289322"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864570,
+            "0.0977910648020906"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864570,
+            "0.0016152257274931175"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864570,
+            "0.014213308931662007"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864570,
+            "0.004586832876391861"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_cpu_max",
+      "window": "vus_20",
+      "query": "max_over_time(sum by (container)(rate(container_cpu_usage_seconds_total{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864570,
+            "0.0008285641418004893"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864570,
+            "0.003317029760966048"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864570,
+            "0.00034205563912960435"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864570,
+            "0.006588704103671661"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864570,
+            "0.00029625564093182"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864570,
+            "0.005743931244486199"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864570,
+            "0.37744538048509546"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864570,
+            "0.029661717092776565"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864570,
+            "0.004227110811591405"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864570,
+            "0.3887035852734403"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864570,
+            "0.0053122150391289695"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864570,
+            "0.1155563099471926"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864570,
+            "0.003156487829423234"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864570,
+            "0.016675152395691856"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864570,
+            "0.0070798203247669665"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ctr_mem_max",
+      "window": "vus_20",
+      "query": "max_over_time(sum by (container)(container_memory_working_set_bytes{namespace=\"plane-dev\",container!=\"\",container!=\"POD\"})[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "container": "redis-exporter"
+          },
+          "value": [
+            1793864570,
+            "14475264"
+          ]
+        },
+        {
+          "metric": {
+            "container": "manager"
+          },
+          "value": [
+            1793864570,
+            "29257728"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-admin"
+          },
+          "value": [
+            1793864570,
+            "3371008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-space"
+          },
+          "value": [
+            1793864570,
+            "94429184"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-web"
+          },
+          "value": [
+            1793864570,
+            "3334144"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-minio"
+          },
+          "value": [
+            1793864570,
+            "116899840"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-pgdb"
+          },
+          "value": [
+            1793864570,
+            "66183168"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-rabbitmq"
+          },
+          "value": [
+            1793864570,
+            "165543936"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-redis"
+          },
+          "value": [
+            1793864570,
+            "11309056"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-api"
+          },
+          "value": [
+            1793864570,
+            "180441088"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-beat-worker"
+          },
+          "value": [
+            1793864570,
+            "154689536"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-worker"
+          },
+          "value": [
+            1793864570,
+            "264499200"
+          ]
+        },
+        {
+          "metric": {
+            "container": "postgres-exporter"
+          },
+          "value": [
+            1793864570,
+            "17195008"
+          ]
+        },
+        {
+          "metric": {
+            "container": "k6"
+          },
+          "value": [
+            1793864570,
+            "22695936"
+          ]
+        },
+        {
+          "metric": {
+            "container": "plane-live"
+          },
+          "value": [
+            1793864570,
+            "152838144"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "traefik_cpu_max",
+      "window": "vus_20",
+      "query": "max_over_time(sum(rate(container_cpu_usage_seconds_total{namespace=\"traefik\",container!=\"\",container!=\"POD\"}[1m]))[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864570,
+            "0.02203132243111003"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_avg",
+      "window": "vus_20",
+      "query": "avg_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864570,
+            "1.9211578982274513"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_cpu_busy_max",
+      "window": "vus_20",
+      "query": "max_over_time(sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m]))[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {},
+          "value": [
+            1793864570,
+            "2.1550718357278784"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "vm_used_max",
+      "window": "vus_20",
+      "query": "max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[180s:15s])",
+      "time": 1793864570,
+      "result": [
+        {
+          "metric": {
+            "container": "node-exporter",
+            "endpoint": "http-metrics",
+            "instance": "172.24.0.2:9100",
+            "job": "node-exporter",
+            "namespace": "monitoring-agents",
+            "pod": "kps-node-exporter-rtskt",
+            "service": "kps-node-exporter"
+          },
+          "value": [
+            1793864570,
+            "10606829568"
+          ]
+        }
+      ]
+    }
+  ]
+}

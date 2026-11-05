@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# What DEP-2 reads at each point: what runs in dev, what Git says, prod-sim's render and Application.
+cd /Users/bek/dev/pr/plane-platform; export PATH="$PWD/.tools/bin:$PATH" KUBECONFIG="$PWD/.local/kubeconfig"
+printf '%s HEAD %s published %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD)" "$(git --git-dir=.local/git/plane-platform.git rev-parse --short refs/heads/main)"
+echo '-- plane-dev Deployments: name, generation, revision, ready, image digest'
+kubectl -n plane-dev get deployments -o json | jq -r '.items[] | select(.metadata.name|startswith("plane-")) | [.metadata.name, .metadata.generation, .metadata.annotations["deployment.kubernetes.io/revision"], (.status.readyReplicas//0), (.spec.template.spec.containers[0].image|split("@sha256:")[1][0:12])] | @tsv'
+echo '-- Running pods digests, by container status'
+kubectl -n plane-dev get pods -o json | jq -r '.items[] | select(.status.phase=="Running" and (.metadata.name|startswith("plane-")) and (.metadata.ownerReferences[0].kind=="ReplicaSet")) | [.metadata.name, (.status.containerStatuses[0].ready|tostring), (.status.containerStatuses[0].imageID|split("@sha256:")[1][0:12])] | @tsv'
+echo '-- overlay digests in HEAD, helm/plane/overlays/dev/kustomization.yaml'
+git show HEAD:helm/plane/overlays/dev/kustomization.yaml | .tools/bin/yq -r '.images[] | select(.name|test("plane-(frontend|admin|space|backend)")) | .name + " " + (.digest|sub("sha256:";"")|.[0:12])'
+echo '-- Application plane-dev'
+kubectl -n argocd get application plane-dev -o json | jq -c '{sync:.status.sync.status, health:.status.health.status, revision:.status.sync.revision[0:12], op:.status.operationState.phase, started:.status.operationState.startedAt, finished:.status.operationState.finishedAt, message:.status.operationState.message, open:(.operation!=null)}'
+echo '-- prod-sim: render in HEAD by sha256, overlay digests, Application plane-prod-sim, pods'
+git show HEAD:gitops/environments/prod-sim/manifests.yaml | shasum -a 256 | cut -c1-16
+kubectl -n argocd get application plane-prod-sim -o json | jq -c '{sync:.status.sync.status, health:.status.health.status, revision:.status.sync.revision[0:12], op:.status.operationState.phase, started:.status.operationState.startedAt, finished:.status.operationState.finishedAt, history:(.status.history|length), images:.status.summary.images}'
+kubectl -n plane-prod-sim get pods -o json | jq -r '.items[] | select(.status.phase=="Running") | [.metadata.name,.metadata.uid[0:8],(.status.containerStatuses[0].restartCount|tostring)] | @tsv' | LC_ALL=C sort | shasum -a 256 | cut -c1-16

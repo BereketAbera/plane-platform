@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Reads a watch file from watch.py and prints what it holds, by source. Derived from the raw file, which stays as written.
+  analyze.py <watch-file> [deployment names to show, comma separated]"""
+import json, sys, datetime as dt
+path = sys.argv[1]
+show = set(sys.argv[2].split(",")) if len(sys.argv) > 2 else None
+rows = [json.loads(l) for l in open(path) if l.startswith("{")]
+print("watch file", path)
+print("first line", rows[0]["t"], "last line", rows[-1]["t"], "lines", len(rows))
+def ts(s): return dt.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=dt.timezone.utc)
+s = [r for r in rows if r["src"] == "session" and ("status" in r or "error" in r)]
+bad = [r for r in s if not r.get("ok")]
+print(f"session GET /api/users/me/: {len(s)} samples, {len(bad)} not 200")
+if bad:
+    # Runs of consecutive failures
+    run = []
+    runs = []
+    for r in s:
+        if not r.get("ok"):
+            run.append(r)
+        elif run:
+            runs.append(run); run = []
+    if run: runs.append(run)
+    for run in runs:
+        print(f"  failed run {run[0]['t']} to {run[-1]['t']}: {len(run)} samples, statuses {sorted(set(str(x.get('status', x.get('error'))) for x in run))}")
+if s:
+    ms = sorted(r["ms"] for r in s)
+    print(f"  latency ms median {ms[len(ms)//2]} p99 {ms[int(len(ms)*.99)]} max {ms[-1]}")
+f = [r for r in rows if r["src"] == "front"]
+paths = ["/", "/sign-in/", "/god-mode/", "/spaces/"]
+print(f"front, each of {paths}: {len(f)} cycles")
+for p in paths:
+    vals = {}
+    for r in f:
+        vals[str(r.get(p))] = vals.get(str(r.get(p)), 0) + 1
+    print(f"  {p}: {vals}")
+badf = [r for r in f if any(r.get(p) != 200 for p in paths)]
+for r in badf[:40]:
+    print("  not all 200:", r["t"], {p: r.get(p) for p in paths})
+p = [r for r in rows if r["src"] == "prodsim" and "status" in r]
+pe = [r for r in rows if r["src"] == "prodsim" and "error" in r]
+print(f"prod-sim GET /sign-in/: {len(p)} samples, not 200: {sum(1 for r in p if r['status'] != 200)}, errors: {len(pe)}")
+pods = [r for r in rows if r["src"] == "prodsim" and "pods" in r]
+print(f"prod-sim pod list changes after the first reading: {len(pods) - 1 if pods else 'no reading'}")
+for r in pods[1:]:
+    print("  ", r["t"], [x[0] for x in r["pods"]])
+n = [r for r in rows if r["src"] == "node" and "used_gib" in r]
+if n:
+    print(f"VM memory used GiB: first {n[0]['used_gib']}, max {max(r['used_gib'] for r in n)}, readings {len(n)}. oom_kill first {n[0]['oom_kill']}, last {n[-1]['oom_kill']}. Host free GiB, last {n[-1]['host_free_gib']}")
+print("--- Application changes")
+for r in rows:
+    if r["src"] == "app" and r["name"] in ("plane-dev", "plane-prod-sim", "root"):
+        print(" ", r["t"], r["name"], f"{r['sync']}/{r['health']} op={r['op_phase']} in_flight={r['in_flight']} started={r['op_started']} finished={r['op_finished']} retry={r['op_retry']} rev={r['revision']} history={r['history']} msg={r['op_message'][:110]!r}")
+print("--- Deployment changes" + (f" for {sorted(show)}" if show else ""))
+for r in rows:
+    if r["src"] == "deploy" and (show is None or r["name"] in show):
+        print(" ", r["t"], r["name"], f"gen={r['gen']} obs={r['observed']} rev={r['revision']} rep={r['replicas']} ready={r['ready']} upd={r['updated']} unavail={r['unavailable']} progressing={r['progressing']} image={r['image']}")
+print("--- Pod changes" + (" (matching those Deployments)" if show else ""))
+for r in rows:
+    if r["src"] == "pod" and (show is None or any(r["name"].startswith(x) for x in show) or "migrate" in r["name"]):
+        if r.get("gone"):
+            print(" ", r["t"], r["name"], "gone")
+        else:
+            print(" ", r["t"], r["name"], f"uid={r['uid']} {r['phase']} ready={r['ready']} restarts={r['restarts']} waiting={r['waiting']} terminated={r['terminated']} last={r['last_exit']} deleting={bool(r['deleting'])} image={r['image']}")
+print("--- Alerts: each alert and label set, as Prometheus reported them, every 5s on change")
+seen = {}
+order = []
+prom = [r for r in rows if r["src"] == "prometheus" and "alerts" in r]
+for r in prom:
+    for a in r["alerts"]:
+        l = a["labels"]
+        key = (l["alertname"], l.get("namespace", ""), l.get("dest_namespace", ""), l.get("name", ""), l.get("pod", ""), l.get("rule_group", "").split("/")[-1], l.get("deployment", ""))
+        e = seen.setdefault(key, {"first": r["t"], "activeAt": a.get("activeAt"), "pending": None, "firing": None, "last": r["t"], "sev": l.get("severity")})
+        if key not in order: order.append(key)
+        e["last"] = r["t"]
+        e["gone"] = None
+        if a["state"] == "pending" and not e["pending"]: e["pending"] = r["t"]
+        if a["state"] == "firing" and not e["firing"]: e["firing"] = r["t"]
+    now = set((a["labels"]["alertname"], a["labels"].get("namespace", ""), a["labels"].get("dest_namespace", ""), a["labels"].get("name", ""), a["labels"].get("pod", ""), a["labels"].get("rule_group", "").split("/")[-1], a["labels"].get("deployment", "")) for a in r["alerts"])
+    for k, e in seen.items():
+        if k not in now and not e.get("gone"): e["gone"] = r["t"]
+missing = [k for k in order if k[0] == "PrometheusMissingRuleEvaluations"]
+for k in order:
+    if k[0] == "PrometheusMissingRuleEvaluations": continue
+    e = seen[k]
+    print(" ", k[0], "sev=" + str(e["sev"]), {"ns": k[1], "dest": k[2], "name": k[3], "pod": k[4], "deployment": k[6]}, "first_seen", e["first"], "activeAt", e["activeAt"], "first_firing", e["firing"], "gone_from_the_reading_at", e.get("gone"))
+print(f"  PrometheusMissingRuleEvaluations: {len(missing)} label sets, pending only: {all(seen[k]['firing'] is None for k in missing)}")
+am = [r for r in rows if r["src"] == "alertmanager" and "alerts" in r]
+print("--- Alertmanager, active alerts on each change")
+for r in am:
+    print(" ", r["t"], [(a["labels"]["alertname"], a["labels"].get("namespace", a["labels"].get("dest_namespace", "")), a["state"]) for a in r["alerts"]])
+print("--- Metrics on change")
+for r in rows:
+    if r["src"] == "metric":
+        if "values" in r:
+            print(" ", r["t"], r["name"], [v for v in r["values"] if v[0] == "plane-dev" or r["name"] == "pg_up"])

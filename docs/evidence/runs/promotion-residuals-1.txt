@@ -1,0 +1,100 @@
+# date 2026-11-05T05:00:24Z, scratch clone of a286e52, GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25), extra scenarios spliced into the flows, which print what they see
+flows exit 0
+ ok residual-two-pending
+ ok residual-empty-plan
+ ok 2 of 2 promotion flow scenarios passed, with a stub cluster
+--- what they saw
+two pending: Argo CD reads for prod-sim's web before: sha256:100000000000
+two pending: make rollback ENV=prod-sim exit 0
+two pending: Argo CD reads for prod-sim's web after:  sha256:aaaaaaaaaaaa, which is sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+==> This publish moves prod-sim's images, through:
+       01c0670 Revert "promote(prod-sim): plane-frontend bbbbbbbbbbbb"
+       3cec391 promote(prod-sim): plane-frontend bbbbbbbbbbbb
+       cefc780 promote(prod-sim): plane-frontend aaaaaaaaaaaa
+warn plane-dev check not run for this publish: rollback of 3cec391c0162: an emergency path must not need plane-dev to be healthy. Logged in .local/evidence-raw/promotion-
+empty plan, no CONFIRM, no terminal: exit 0, published is HEAD: yes, dumps 1
+==> This publish moves prod-sim's images, through:
+       bb80a4e promote(prod-sim): plane-frontend aaaaaaaaaaaa
+==> This publish changes a prod-sim image, so plane-dev must have proven it
+ ok passed: plane-dev was Synced and Healthy and running every digest here
+==> This publish changes a prod-sim image, so taking a backup first
+warn origin/main is unknown here, so this cannot say whether GitHub CI and review saw these commits
+ ok published main bb80a4e878ee to /var/folders/q9/gnkm1lh53m30f5k08sjzdv680000gn/T/tmp.uGz02Untqv/repo/.local/git/plane-platform.git
+ ok prod-sim already runs these digests, nothing to promote
+
+=== GITHUB_STEP_SUMMARY: command: GITHUB_STEP_SUMMARY=<file> ./scripts/ci/test-promotion-flows.sh no-cluster
+flows exit 0
+ ok promote-no-cluster-says-skipped
+ ok publish-merged-promotion-no-cluster-says-skipped
+ ok promote-no-cluster-writes-the-job-summary
+ ok 3 of 3 promotion flow scenarios passed, with a stub cluster
+lines in the step summary after that run: 0
+
+=== the script
+#!/bin/bash
+# What the fixes leave as it was, shown on stubs: extra scenarios spliced into a scratch copy of the flows at main's HEAD.
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-track
+MAIN=/Users/bek/dev/pr/plane-platform
+W="$S/residuals"; rm -rf "${W:?}"; mkdir -p "$W"
+git clone --quiet "$MAIN" "$W/c" || exit 98
+cd "$W/c" || exit 98
+mkdir -p .tools; ln -s "$MAIN/.tools/bin" .tools/bin
+echo "# date $(date -u +%Y-%m-%dT%H:%M:%SZ), scratch clone of $(git rev-parse --short HEAD), $(/bin/bash --version | head -1), extra scenarios spliced into the flows, which print what they see"
+python3 -B - "$W/seen.txt" <<'PY'
+import sys
+seen = sys.argv[1]
+p = 'scripts/ci/test-promotion-flows.sh'
+s = open(p).read()
+extra = r'''
+seen() { printf '%s\n' "$*" >>"''' + seen + r'''"; }
+residual_two_pending_prod_sim_promotions() {
+  # Two promotions of prod-sim, neither published. A rollback reverts the newer, and the older goes out under the waiver.
+  local status=0 argo_before
+  argo_before="$(argo_reads_web prod-sim)"
+  promote_dev "$DIGEST_A"
+  promote_dev "$DIGEST_B"
+  echo down >"$STUB/cluster"
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim IMAGE=web "DIGEST=$DIGEST_A"
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -m 'promote(prod-sim): plane-frontend aaaaaaaaaaaa'
+  in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes COMMIT=no ./scripts/promote.sh prod-sim IMAGE=web "DIGEST=$DIGEST_B"
+  git -C "$CLONE" add -- helm gitops
+  git -C "$CLONE" commit --quiet -m 'promote(prod-sim): plane-frontend bbbbbbbbbbbb'
+  echo up >"$STUB/cluster"
+  echo OutOfSync/Degraded >"$STUB/app-status"
+  seen "two pending: Argo CD reads for prod-sim's web before: ${argo_before:0:19}"
+  rollback prod-sim || status=$?
+  seen "two pending: make rollback ENV=prod-sim exit $status"
+  seen "two pending: Argo CD reads for prod-sim's web after:  $(argo_reads_web prod-sim | cut -c1-19), which is $DIGEST_A"
+  grep -E 'moves prod-sim|^       [0-9a-f]+ |not run for this publish' "$OUT" | sed 's/\x1b\[[0-9;]*m//g' | cut -c1-170 >>"''' + seen + r'''"
+}
+residual_empty_plan_asks_nothing() {
+  # The commit is on main, so the plan is empty, and the publish that moves prod-sim's image asks for no CONFIRM.
+  local status=0
+  merged_prod_sim_promotion
+  in_clone env SKIP_REGISTRY_CHECK=yes ./scripts/promote.sh prod-sim || status=$?
+  seen "empty plan, no CONFIRM, no terminal: exit $status, published is HEAD: $([ "$(published)" == "$(head_commit)" ] && echo yes || echo no), dumps $(backup_calls)"
+  sed 's/\x1b\[[0-9;]*m//g' "$OUT" | cut -c1-170 >>"''' + seen + r'''"
+}
+'''
+anchor = '\nscenario promote-digest-under-another-image digest_under_another_image\n'
+assert anchor in s
+s = s.replace(anchor, extra + anchor)
+tail = '\n[[ $((passed + failed)) -gt 0 ]] || die "no scenario matches'
+assert tail in s
+s = s.replace(tail, '\nscenario residual-two-pending residual_two_pending_prod_sim_promotions\nscenario residual-empty-plan residual_empty_plan_asks_nothing\n' + tail)
+open(p, 'w').write(s)
+PY
+./scripts/ci/test-promotion-flows.sh residual- >"$W/out.txt" 2>&1
+echo "flows exit $?"
+sed 's/\x1b\[[0-9;]*m//g' "$W/out.txt" | tail -n 4 | cut -c1-160
+echo "--- what they saw"
+cat "$W/seen.txt"
+echo
+echo "=== GITHUB_STEP_SUMMARY: command: GITHUB_STEP_SUMMARY=<file> ./scripts/ci/test-promotion-flows.sh no-cluster"
+: >"$W/summary.txt"
+GITHUB_STEP_SUMMARY="$W/summary.txt" ./scripts/ci/test-promotion-flows.sh no-cluster >"$W/out2.txt" 2>&1
+echo "flows exit $?"
+sed 's/\x1b\[[0-9;]*m//g' "$W/out2.txt" | tail -n 4 | cut -c1-160
+echo "lines in the step summary after that run: $(wc -l <"$W/summary.txt" | tr -d ' ')"
+cd "$S" && rm -rf "${W:?}"

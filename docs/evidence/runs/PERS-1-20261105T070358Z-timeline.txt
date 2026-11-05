@@ -1,0 +1,67 @@
+# 2026-11-05T07:11:32Z commit f1ff355
+# command: python3 -B scratchpad/plane-dev/analyze.py .local/evidence-raw/PERS-1-20261105T070358Z-watch.txt plane-minio-wl-0,plane-pgdb-wl-0,plane-rabbitmq-wl-0,plane-redis-wl-0. Derived from that raw file, which stays as written.
+watch file .local/evidence-raw/PERS-1-20261105T070358Z-watch.txt
+first line 2026-11-05T07:04:14.266Z last line 2026-11-05T07:07:44.308Z lines 378
+session GET /api/users/me/: 180 samples, 7 not 200
+  failed run 2026-11-05T07:04:26.373Z to 2026-11-05T07:04:32.411Z: 7 samples, statuses ['500']
+  latency ms median 22 p99 105 max 373
+front, each of ['/', '/sign-in/', '/god-mode/', '/spaces/']: 91 cycles
+  /: {'200': 91}
+  /sign-in/: {'200': 91}
+  /god-mode/: {'200': 91}
+  /spaces/: {'200': 91}
+prod-sim GET /sign-in/: 19 samples, not 200: 0, errors: 0
+prod-sim pod list changes after the first reading: 0
+VM memory used GiB: first 9.81, max 9.87, readings 7. oom_kill first 62, last 62. Host free GiB, last 13.15
+--- Application changes
+  2026-11-05T07:04:14.659Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:14.659Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:14.659Z plane-prod-sim Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T05:34:07Z finished=2026-11-05T05:35:07Z retry=None rev=9891630da5ea history=5 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:17.436Z plane-dev Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:17.436Z root Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:23.438Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:23.438Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:26.438Z plane-dev Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:26.438Z root Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:35.467Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:35.467Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:38.467Z plane-dev Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:38.467Z root Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:50.496Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:04:53.510Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:05:02.619Z plane-dev Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:05:02.619Z root Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T07:05:05.518Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T06:49:44Z finished=2026-11-05T06:59:53Z retry=3 rev=9891630da5ea history=10 msg='successfully synced (all tasks run)'
+  2026-11-05T07:05:05.518Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+--- Deployment changes for ['plane-minio-wl-0', 'plane-pgdb-wl-0', 'plane-rabbitmq-wl-0', 'plane-redis-wl-0']
+--- Pod changes (matching those Deployments)
+  2026-11-05T07:04:14.598Z plane-api-migrate-1-srfpw uid=147fcffb Succeeded ready=False restarts=0 waiting=None terminated=Completed last=None deleting=False image=8c04bd18bb08
+  2026-11-05T07:04:14.598Z plane-minio-wl-0 uid=2792dd06 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=e6544a902f42
+  2026-11-05T07:04:14.598Z plane-pgdb-wl-0 uid=c387d195 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=54e0dd8e8cdd
+  2026-11-05T07:04:14.598Z plane-rabbitmq-wl-0 uid=4f622751 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=606d8c0d6b3c
+  2026-11-05T07:04:14.598Z plane-redis-wl-0 uid=d7a8cef8 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=f8c1a646f4b3
+  2026-11-05T07:04:17.378Z plane-minio-wl-0 uid=42e6d222 Running ready=False restarts=0 waiting=None terminated=None last=None deleting=False image=e6544a902f42
+  2026-11-05T07:04:23.390Z plane-minio-wl-0 uid=42e6d222 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=e6544a902f42
+  2026-11-05T07:04:26.392Z plane-pgdb-wl-0 uid=c387d195 Succeeded ready=False restarts=0 waiting=None terminated=Completed last=None deleting=True image=54e0dd8e8cdd
+  2026-11-05T07:04:29.420Z plane-pgdb-wl-0 uid=092acc8a Running ready=False restarts=0 waiting=None terminated=None last=None deleting=False image=54e0dd8e8cdd
+  2026-11-05T07:04:35.419Z plane-pgdb-wl-0 uid=092acc8a Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=54e0dd8e8cdd
+  2026-11-05T07:04:38.423Z plane-rabbitmq-wl-0 uid=4f622751 Succeeded ready=False restarts=0 waiting=None terminated=Completed last=None deleting=True image=606d8c0d6b3c
+  2026-11-05T07:04:41.447Z plane-rabbitmq-wl-0 uid=bb1de7d9 Running ready=False restarts=0 waiting=None terminated=None last=None deleting=False image=606d8c0d6b3c
+  2026-11-05T07:04:50.446Z plane-rabbitmq-wl-0 uid=bb1de7d9 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=606d8c0d6b3c
+  2026-11-05T07:05:02.474Z plane-redis-wl-0 uid=d8f002f1 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=f8c1a646f4b3
+--- Alerts: each alert and label set, as Prometheus reported them, every 5s on change
+  Watchdog sev=none {'ns': '', 'dest': '', 'name': '', 'pod': '', 'deployment': ''} first_seen 2026-11-05T07:04:14.295Z activeAt 2026-11-05T00:34:26.617154565Z first_firing 2026-11-05T07:04:14.295Z gone_from_the_reading_at None
+  KubeContainerWaiting sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'plane-minio-wl-0', 'deployment': ''} first_seen 2026-11-05T07:04:54.337Z activeAt 2026-11-05T07:04:22.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T07:05:24.356Z
+  KubePodNotReady sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'plane-minio-wl-0', 'deployment': ''} first_seen 2026-11-05T07:04:54.337Z activeAt 2026-11-05T07:04:22.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T07:05:24.356Z
+  KubeStatefulSetReplicasMismatch sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'kps-kube-state-metrics-58c95899dd-s8bb4', 'deployment': ''} first_seen 2026-11-05T07:04:54.337Z activeAt 2026-11-05T07:04:22.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T07:05:54.381Z
+  ArgoAppStuckProgressing sev=warning {'ns': '', 'dest': 'plane-dev', 'name': 'plane-dev', 'pod': '', 'deployment': ''} first_seen 2026-11-05T07:05:04.351Z activeAt 2026-11-05T07:04:32.417343552Z first_firing None gone_from_the_reading_at 2026-11-05T07:07:04.472Z
+  KubePodNotReady sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'plane-rabbitmq-wl-0', 'deployment': ''} first_seen 2026-11-05T07:05:24.356Z activeAt 2026-11-05T07:04:52.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T07:05:54.381Z
+  PlanePostgresDown sev=critical {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'postgres-exporter-79f8bbdffd-p5q9g', 'deployment': ''} first_seen 2026-11-05T07:05:24.356Z activeAt 2026-11-05T07:04:50.409489239Z first_firing None gone_from_the_reading_at 2026-11-05T07:05:54.381Z
+  PrometheusMissingRuleEvaluations: 0 label sets, pending only: True
+--- Alertmanager, active alerts on each change
+  2026-11-05T07:04:14.307Z [('Watchdog', '', 'active')]
+--- Metrics on change
+  2026-11-05T07:04:14.294Z pg_up [['plane-dev', '', '1'], ['plane-prod-sim', '', '1']]
+  2026-11-05T07:04:14.319Z probe_plane_dev [['plane-dev', 'api-db', '1'], ['plane-dev', 'api-instance', '1'], ['plane-dev', 'frontend', '1'], ['plane-dev', 'frontend', '1'], ['plane-dev', 'frontend', '1'], ['plane-dev', 'live', '1']]
+  2026-11-05T07:04:44.289Z pg_up [['plane-dev', '', '0'], ['plane-prod-sim', '', '1']]
+  2026-11-05T07:05:14.288Z pg_up [['plane-dev', '', '1'], ['plane-prod-sim', '', '1']]

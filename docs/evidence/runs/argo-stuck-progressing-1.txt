@@ -1,0 +1,55 @@
+# date: 2026-11-05T01:08:20Z
+# Application created 00:37:39Z. Operation closed at once, Synced and Progressing since. A new commit reached it at 00:49:01Z (rev a9baf8b) while stuck: the operation ran and closed, and ALERTS_FOR_STATE activeAt stayed 00:38:02Z (1793839082).
+2026-11-05T01:08:12Z group=firing alert=firing ArgoAppStuckProgressing alert-truth-stuck-progressing    startsAt=2026-11-05T01:08:02 endsAt=0001-01-01T00:00:00
+alertname=ArgoAppStuckProgressing,component=argocd,dest_namespace=monitoring,severity=warning 1793839082 01:08:20Z
+firing ArgoAppStuckProgressing activeAt 2026-11-05T00:38:02 Application alert-truth-stuck-progressing has read Progressing for 30m
+SYNC     HEALTH        OP          STARTED                FINISHED
+Synced   Progressing   Succeeded   2026-11-05T00:49:01Z   2026-11-05T00:49:01Z
+# date: 2026-11-05T01:16:34Z
+# The manifest:
+# Throwaway: reads as Synced and Progressing with its operation closed, the state of a stuck chart child.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alert-truth-stuck-progressing
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  source:
+    repoURL: git://plane-git/plane-platform.git
+    targetRevision: main
+    path: tests/rules/fixtures/stuck-progressing
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+[01:16:34Z] the Application before deleting it:
+  sync Synced health Progressing operation open: False last op: Succeeded 2026-11-05T00:49:01Z
+[01:16:34Z] metric: autosync_enabled=true,container=application-controller,dest_namespace=monitoring,dest_server=https://kubernetes.default.svc,exported_namespace=argocd,health_status=Progressing,namespace=argocd,pod=argocd-application-controller-0,p
+[01:16:34Z] ALERTS: alertname=ArgoAppStuckProgressing,alertstate=firing,component=argocd,dest_namespace=monitoring,severity=warning 1 01:16:34Z;alertname=ArgoAppSyncUnknown,alertstate=pending,component=argocd,dest_namespace=monitoring,severity=warning 1 01:16:34Z;
+[01:16:34Z] every alert naming this Application in the rules API:
+   pending ArgoAppSyncUnknown activeAt 2026-11-05T01:16:02 Argo CD has been unable to compare Application alert-truth-stuck-progressing with Git for 15m, so new commits do not reach it
+   firing ArgoAppStuckProgressing activeAt 2026-11-05T00:38:02 Application alert-truth-stuck-progressing has read Progressing for 30m
+[01:16:34Z] at the sink so far:
+2026-11-05T01:08:12Z group=firing alert=firing ArgoAppStuckProgressing alert-truth-stuck-progressing    startsAt=2026-11-05T01:08:02 endsAt=0001-01-01T00:00:00
+[01:16:34Z] deleting alert-truth-stuck-progressing
+application.argoproj.io "alert-truth-stuck-progressing" deleted from argocd namespace
+[01:18:47Z] after 132s, every line at the sink for it:
+2026-11-05T01:08:12Z group=firing alert=firing ArgoAppStuckProgressing alert-truth-stuck-progressing    startsAt=2026-11-05T01:08:02 endsAt=0001-01-01T00:00:00
+2026-11-05T01:18:42Z group=resolved alert=resolved ArgoAppStuckProgressing alert-truth-stuck-progressing    startsAt=2026-11-05T01:08:02 endsAt=2026-11-05T01:18:32
+[01:18:47Z] Application still there? 
+# done

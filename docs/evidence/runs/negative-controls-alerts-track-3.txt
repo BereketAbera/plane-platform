@@ -1,0 +1,99 @@
+# date: 2026-11-05T04:18:07Z
+# command: PATH=/bin:$PATH /bin/bash scripts/ci/negative-controls.sh, at cc88450, GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+[1;34m==>[0m baseline: an untouched clone must pass, or the failures below prove nothing
+[1;32m ok[0m lint.sh passes on cc88450a1e854daf9f6f980f6ca1cc350701db50
+[1;32m ok[0m validate-manifests.sh passes on cc88450a1e854daf9f6f980f6ca1cc350701db50
+[1;32m ok[0m ownership.sh passes on cc88450a1e854daf9f6f980f6ca1cc350701db50
+[1;32m ok[0m security.sh passes on cc88450a1e854daf9f6f980f6ca1cc350701db50
+[1;34m==>[0m secret-in-rendered-manifests
+[1;32m ok[0m secret-in-rendered-manifests: ./scripts/ci/validate-manifests.sh exited 1 and printed: conftest: rendered Plane FAILED
+[1;34m==>[0m image-without-digest
+[1;32m ok[0m image-without-digest: ./scripts/ci/validate-manifests.sh exited 1 and printed: conftest: rendered Plane FAILED
+[1;34m==>[0m render-drift
+[1;32m ok[0m render-drift: ./scripts/ci/validate-manifests.sh exited 1 and printed: render is up to date FAILED
+[1;34m==>[0m unknown-field-in-manifest
+[1;32m ok[0m unknown-field-in-manifest: ./scripts/ci/validate-manifests.sh exited 1 and printed: kubeconform: rendered Plane FAILED
+[1;34m==>[0m digest-never-recorded-for-dev
+[1;32m ok[0m digest-never-recorded-for-dev: ./scripts/ci/validate-manifests.sh exited 1 and printed: promotion invariant FAILED
+[1;34m==>[0m unlintable-chart
+[1;32m ok[0m unlintable-chart: ./scripts/ci/validate-manifests.sh exited 1 and printed: helm lint: bootstrap chart FAILED
+[1;34m==>[0m chart-version-missing
+[1;32m ok[0m chart-version-missing: ./scripts/ci/validate-manifests.sh exited 1 and printed: helm template: platform charts FAILED
+[1;34m==>[0m digest-under-another-image
+[1;32m ok[0m digest-under-another-image: ./scripts/ci/validate-manifests.sh exited 1 and printed: under another image
+[1;34m==>[0m promote-digest-under-another-image
+[1;32m ok[0m promote-digest-under-another-image: promote_admin_digest_as_web exited 1 and printed: under another image
+[1;34m==>[0m plane-application-in-platform-project
+[1;32m ok[0m plane-application-in-platform-project: ./scripts/ci/validate-manifests.sh exited 1 and printed: a Plane Application must use its own project
+[1;34m==>[0m application-in-default-project
+[1;32m ok[0m application-in-default-project: ./scripts/ci/validate-manifests.sh exited 1 and printed: is not allowed, use platform
+[1;34m==>[0m dev-route-on-the-prod-sim-host
+[1;32m ok[0m dev-route-on-the-prod-sim-host: ./scripts/ci/validate-manifests.sh exited 1 and printed: which only namespace plane-prod-sim may serve
+[1;34m==>[0m route-with-no-host
+[1;32m ok[0m route-with-no-host: ./scripts/ci/validate-manifests.sh exited 1 and printed: must be limited to Host
+[1;34m==>[0m bitnami-image-in-a-manifest
+[1;32m ok[0m bitnami-image-in-a-manifest: ./scripts/ci/validate-manifests.sh exited 1 and printed: nothing from Bitnami
+[1;34m==>[0m bitnami-chart-in-terraform
+[1;32m ok[0m bitnami-chart-in-terraform: ./scripts/ci/lint.sh exited 1 and printed: no Bitnami reference FAILED
+[1;34m==>[0m chart-image-without-digest
+[1;32m ok[0m chart-image-without-digest: ./scripts/ci/validate-manifests.sh exited 1 and printed: a platform chart image must be pinned
+[1;34m==>[0m bitnami-subchart-turned-on
+[1;32m ok[0m bitnami-subchart-turned-on: ./scripts/ci/validate-manifests.sh exited 1 and printed: nothing from Bitnami
+[1;34m==>[0m thanos-default-without-digest
+[1;32m ok[0m thanos-default-without-digest: ./scripts/ci/validate-manifests.sh exited 1 and printed: --thanos-default-base-image=
+[1;34m==>[0m thanos-base-image-without-digest
+[1;32m ok[0m thanos-base-image-without-digest: ./scripts/ci/validate-manifests.sh exited 1 and printed: spec.thanos.baseImage is
+[1;34m==>[0m internal-route-without-allow-list
+[1;32m ok[0m internal-route-without-allow-list: ./scripts/ci/validate-manifests.sh exited 1 and printed: so it must name the node-network-only middleware
+[1;34m==>[0m ui-route-under-another-host
+[1;32m ok[0m ui-route-under-another-host: ./scripts/ci/validate-manifests.sh exited 1 and printed: so it must name the node-network-only middleware
+[1;34m==>[0m ui-route-under-a-host-regexp
+[1;32m ok[0m ui-route-under-a-host-regexp: ./scripts/ci/validate-manifests.sh exited 1 and printed: so it must name the node-network-only middleware
+[1;34m==>[0m tcp-route-to-a-ui
+[1;32m ok[0m tcp-route-to-a-ui: ./scripts/ci/validate-manifests.sh exited 1 and printed: is not allowed beside an internal UI
+[1;34m==>[0m route-with-a-blank-namespace
+[1;32m ok[0m route-with-a-blank-namespace: ./scripts/ci/validate-manifests.sh exited 1 and printed: so it must name the node-network-only middleware
+[1;34m==>[0m ui-route-in-a-list
+[1;32m ok[0m ui-route-in-a-list: ./scripts/ci/validate-manifests.sh exited 1 and printed: wraps other objects
+[1;34m==>[0m ui-route-in-items-of-a-good-route
+[1;32m ok[0m ui-route-in-items-of-a-good-route: ./scripts/ci/validate-manifests.sh exited 1 and printed: wraps other objects
+[1;34m==>[0m allow-list-opened-to-everyone
+[1;32m ok[0m allow-list-opened-to-everyone: ./scripts/ci/validate-manifests.sh exited 1 and printed: must be an ipAllowList of exactly
+[1;34m==>[0m invalid-alert-expression
+[1;32m ok[0m invalid-alert-expression: ./scripts/ci/validate-manifests.sh exited 1 and printed: promtool: platform rules FAILED
+[1;34m==>[0m alert-that-fires-late
+[1;32m ok[0m alert-that-fires-late: ./scripts/ci/validate-manifests.sh exited 1 and printed: promtool: rule unit tests FAILED
+[1;34m==>[0m pod-restarting-that-extrapolates
+[1;32m ok[0m pod-restarting-that-extrapolates: ./scripts/ci/validate-manifests.sh exited 1 and printed: promtool: rule unit tests FAILED
+[1;34m==>[0m pod-restarting-with-one-side-narrowed
+[1;32m ok[0m pod-restarting-with-one-side-narrowed: ./scripts/ci/validate-manifests.sh exited 1 and printed: promtool: rule unit tests FAILED
+[1;34m==>[0m namespace-in-gitops
+[1;32m ok[0m namespace-in-gitops: ./scripts/ci/ownership.sh exited 1 and printed: is owned by Terraform, not Argo CD
+[1;34m==>[0m bad-workflow-expression
+[1;32m ok[0m bad-workflow-expression: ./scripts/ci/lint.sh exited 1 and printed: actionlint FAILED
+[1;34m==>[0m unpinned-action
+[1;32m ok[0m unpinned-action: ./scripts/ci/lint.sh exited 1 and printed: zizmor FAILED
+[1;34m==>[0m shell-warning-outside-scripts
+[1;32m ok[0m shell-warning-outside-scripts: ./scripts/ci/lint.sh exited 1 and printed: shellcheck FAILED
+[1;34m==>[0m python-syntax-error
+[1;32m ok[0m python-syntax-error: ./scripts/ci/lint.sh exited 1 and printed: python compile FAILED
+[1;34m==>[0m floating-base-image
+[1;32m ok[0m floating-base-image: ./scripts/ci/lint.sh exited 1 and printed: hadolint FAILED
+[1;34m==>[0m unformatted-terraform
+[1;32m ok[0m unformatted-terraform: ./scripts/ci/lint.sh exited 1 and printed: terraform fmt FAILED
+[1;34m==>[0m invalid-terraform
+[1;32m ok[0m invalid-terraform: ./scripts/ci/lint.sh exited 1 and printed: terraform validate FAILED
+[1;34m==>[0m unused-terraform-variable
+[1;32m ok[0m unused-terraform-variable: ./scripts/ci/lint.sh exited 1 and printed: tflint FAILED
+[1;34m==>[0m weakened-policy
+[1;32m ok[0m weakened-policy: ./scripts/ci/lint.sh exited 1 and printed: conftest verify FAILED
+[1;34m==>[0m token-in-working-tree
+[1;32m ok[0m token-in-working-tree: ./scripts/ci/security.sh exited 1 and printed: gitleaks working tree FAILED
+[1;34m==>[0m token-only-in-history
+[1;32m ok[0m token-only-in-history: ./scripts/ci/security.sh exited 1 and printed: gitleaks history FAILED
+[1;34m==>[0m privileged-pod-trivy-config
+[1;32m ok[0m privileged-pod-trivy-config: ./scripts/ci/security.sh exited 1 and printed: trivy config FAILED
+[1;34m==>[0m vulnerable-lockfile-trivy-fs
+[1;32m ok[0m vulnerable-lockfile-trivy-fs: ./scripts/ci/security.sh exited 1 and printed: trivy fs FAILED
+[1;32m ok[0m 45 of 45 planted defects were caught, on cc88450a1e854daf9f6f980f6ca1cc350701db50
+# end: 2026-11-05T04:32:08Z, negative-controls exit=0

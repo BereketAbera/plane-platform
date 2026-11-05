@@ -1,0 +1,71 @@
+# LOAD-3 quiet window: 2026-11-05T03:40:00Z to 04:10:00Z. Captured 2026-11-05T07:46:46Z.
+# How it was picked: the longest gap between raw evidence files since Prometheus last started (00:34Z) is 30 minutes, 03:39:57Z to 04:10:55Z; total container CPU in 10-minute buckets is at its lowest there; the Prometheus checks in the windows file then show only Watchdog firing, every Application Synced and Healthy, no sync operation, no pod created, no restart and no OOM in the window.
+
+# 2026-11-05T07:46:46Z command: raw evidence files last written between 03:30Z and 04:20Z (TZ=UTC find .local/evidence-raw -type f -newermt ... | stat)
+2026-11-05T03:37:17Z review-ci-3-behind-state-1.txt
+2026-11-05T03:37:17Z review-ci-3-make-ci-1.txt
+2026-11-05T03:37:17Z review-ci-3-planted-defects-1.txt
+2026-11-05T03:37:17Z review-ci-3-scenarios-1.txt
+2026-11-05T03:37:41Z review-ci-3-h50-1.txt
+2026-11-05T03:37:56Z review-ci-3-candidate-fixes-1.txt
+2026-11-05T03:38:21Z review-ci-3-controls-1.txt
+2026-11-05T03:39:57Z review-ci-3-real-reads-1.txt
+2026-11-05T04:10:55Z validate-manifests-alerts-track-1.txt
+2026-11-05T04:12:08Z alert-text-figures-1.txt
+2026-11-05T04:14:26Z promotion-flows-before-the-fixes-1.txt
+2026-11-05T04:16:37Z browser-cache-seed-1.txt
+2026-11-05T04:17:24Z negative-controls-alerts-track-2.txt
+2026-11-05T04:18:20Z harness-instance-stub-1.txt
+2026-11-05T04:18:20Z harness-instance-stub-script-1.py.txt
+2026-11-05T04:18:21Z harness-separation-stub-2.txt
+2026-11-05T04:18:21Z harness-separation-stub-script-2.py.txt
+2026-11-05T04:19:08Z harness-netpol-selftest-2.txt
+
+# 2026-11-05T07:46:46Z command: git log --since 03:30Z --until 04:20Z
+335bc58 2026-11-05T07:18:08+03:00 docs(test-alert,hardening): say the header's terms add up to about 105s, and that Trae
+cc88450 2026-11-05T07:18:07+03:00 fix(drill): record every pending and firing alert from Prometheus to the failed-deploy
+3c2aed6 2026-11-05T07:17:44+03:00 docs(monitoring): mark the drill's 2 to 3m as an estimate, name the looks' evidence, g
+b27813d 2026-11-05T07:13:58+03:00 fix(separation): read a client or credential attempt with no output line as BLOCKED, r
+8a10acd 2026-11-05T07:13:57+03:00 fix(netpol): count a failed lookup outside the cluster if the node reached the name in
+ef7a48d 2026-11-05T07:13:57+03:00 fix(e2e): read the instance route by a key nothing else fills, keep the stored admin u
+a8bce12 2026-11-05T07:03:20+03:00 test(ci): plant a route with a blank namespace, a route inside a List and inside items
+86805e2 2026-11-05T07:03:19+03:00 docs(monitoring): correct Loki's reason, the drill's two margins, the look intervals, 
+62af944 2026-11-05T07:03:19+03:00 test(rules): hold the drill's margin on ArgoSyncFailed from both sides on plane-dev, A
+dc200f2 2026-11-05T07:03:19+03:00 fix(policy): read a blank or null namespace as none, and refuse a document that wraps 
+
+# 2026-11-05T07:46:46Z command: kubectl -n monitoring logs pod/alert-sink-78dcd6dbb4-fxfst --since-time=2026-11-05T03:00:00Z, lines stamped 03:30Z to 04:20Z only
+2026-11-05T03:34:27.382031587Z {"received_at": "2026-11-05T03:34:27.381589+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T03:39:27.404061962Z {"received_at": "2026-11-05T03:39:27.403402+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T03:44:27.412652629Z {"received_at": "2026-11-05T03:44:27.412397+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T03:49:27.425054504Z {"received_at": "2026-11-05T03:49:27.424731+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T03:54:27.431877837Z {"received_at": "2026-11-05T03:54:27.431563+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T03:59:27.446817795Z {"received_at": "2026-11-05T03:59:27.446517+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T04:04:27.460403879Z {"received_at": "2026-11-05T04:04:27.460065+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T04:09:27.467539420Z {"received_at": "2026-11-05T04:09:27.467276+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+2026-11-05T04:14:27.476827087Z {"received_at": "2026-11-05T04:14:27.476428+00:00", "path": "/alerts", "payload": {"receiver": "sink", "status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "Watchdog", "prometheus": "monitoring/kps-promethe
+# line count in the sink log since 03:00Z, by hour:
+  12 2026-11-05T03
+  10 2026-11-05T04
+  15 2026-11-05T05
+  12 2026-11-05T06
+  23 2026-11-05T07
+
+# 2026-11-05T07:46:46Z command: kubectl get applications -A
+NAMESPACE   NAME                          SYNC STATUS   HEALTH STATUS
+argocd      alloy                         Synced        Healthy
+argocd      backup-storage                Synced        Healthy
+argocd      infisical                     Synced        Healthy
+argocd      infisical-operator-dev        Synced        Healthy
+argocd      infisical-operator-prod-sim   Synced        Healthy
+argocd      kube-prometheus-stack         Synced        Healthy
+argocd      loki                          Synced        Healthy
+argocd      metrics-server                Synced        Healthy
+argocd      monitoring-extras             Synced        Healthy
+argocd      network-policies              Synced        Healthy
+argocd      plane-dev                     Synced        Healthy
+argocd      plane-prod-sim                Synced        Healthy
+argocd      root                          Synced        Healthy
+argocd      traefik                       Synced        Healthy
+
+# 2026-11-05T07:46:46Z command: kubectl get prometheus -n monitoring scrapeInterval
+30s

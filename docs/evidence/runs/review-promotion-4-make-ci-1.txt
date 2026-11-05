@@ -1,0 +1,419 @@
+# date 2026-11-05T05:46:17Z, command: make ci in a clean clone of 9c8e098, tools linked, caches copy-on-write, default TMPDIR, GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+make ci exit 0 in 490s, git status lines before: 0, after: 0, free: 13 GiB
+ ok lint passed
+ ok 132 of 132 promotion flow scenarios passed, with a stub cluster
+ ok manifests valid
+ ok security checks passed
+--- raw output of make ci
+==> shellcheck
+ ok shellcheck
+==> actionlint
+ ok actionlint
+==> zizmor
+ INFO zizmor: 🌈 zizmor v1.32.0
+ INFO audit: zizmor: 🌈 completed .github/workflows/ci.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/images.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/promote-prod-sim.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/wayline-upstream-check.yml
+No findings to report. Good job! (3 suppressed)
+ ok zizmor
+==> terraform fmt
+ ok terraform fmt
+==> terraform validate
+Success! The configuration is valid.
+
+Success! The configuration is valid.
+
+ ok terraform validate
+==> tflint
+ ok tflint
+==> hadolint
+apps/wayline/runtime/Dockerfile.backend:29 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.backend:33 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.space:28 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+ ok hadolint
+==> conftest verify
+
+102 tests, 102 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+ ok conftest verify
+==> no Bitnami reference
+ ok no Bitnami reference
+==> python compile
+ ok python compile
+==> smoke.py self check
+selftest ok
+ ok smoke.py self check
+==> scan report self check
+selftest ok
+ ok scan report self check
+==> network policy verdict self check
+ ok selftest passed
+ ok network policy verdict self check
+ ok lint passed
+==> render is up to date
+ ok dev is up to date
+ ok prod-sim is up to date
+ ok render is up to date
+==> helm lint: bootstrap chart
+ ok helm lint: bootstrap chart
+==> kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+ ok kubeconform: rendered Plane
+==> kubeconform: platform manifests
+Summary: 135 resources found in 7 files - Valid: 135, Invalid: 0, Errors: 0, Skipped: 0
+ ok kubeconform: platform manifests
+==> conftest: rendered Plane
+
+1850 tests, 1850 passed, 0 warnings, 0 failures, 0 exceptions
+ ok conftest: rendered Plane
+==> conftest: platform manifests
+
+2835 tests, 2835 passed, 0 warnings, 0 failures, 0 exceptions
+ ok conftest: platform manifests
+==> promotion invariant
+ ok 9 image(s) were recorded for dev under the same name
+ ok promotion invariant
+==> promtool: platform rules
+ ok 2 rule file(s) valid
+ ok promtool: platform rules
+==> promtool: rule unit tests
+  SUCCESS
+
+  SUCCESS
+
+ ok promtool: rule unit tests
+==> helm template: platform charts
+ ok 9 platform chart(s) rendered
+ ok helm template: platform charts
+==> kubeconform: platform charts
+Summary: 194 resources found in 9 files - Valid: 184, Invalid: 0, Errors: 0, Skipped: 10
+ ok kubeconform: platform charts
+==> conftest: platform charts
+
+3298 tests, 3298 passed, 0 warnings, 0 failures, 0 exceptions
+ ok conftest: platform charts
+==> promtool: chart rules
+ ok 26 rule file(s) valid
+ ok promtool: chart rules
+==> promotion flows with a stub cluster
+ ok promote-digest-under-another-image
+ ok promote-digest-never-recorded
+ ok promote-dev-healthy-and-running
+ ok promote-dev-out-of-sync
+ ok promote-dev-degraded
+ ok promote-dev-application-missing
+ ok promote-dev-running-another-digest
+ ok promote-dev-container-not-ready
+ ok promote-no-cluster-says-skipped
+ ok promote-override-is-logged
+ ok promote-override-unused-when-dev-is-fine
+ ok rollback-rerun-after-failed-publish
+ ok rollback-prod-sim-with-broken-backup
+ ok rollback-prod-sim-with-hung-backup
+ ok rollback-prod-sim-names-the-older-dump
+ ok rollback-prod-sim-skip-backup
+ ok rollback-prod-sim-past-a-later-change-beside-the-image
+ ok rollback-dev-past-a-later-change-beside-the-image
+ ok rollback-stops-on-a-conflict-in-the-overlay
+ ok rollback-dev-takes-no-dump
+ ok rollback-leaves-other-staged-files-alone
+ ok publish-warns-when-ahead-of-origin
+ ok publish-quiet-when-level-with-origin
+ ok publish-says-when-origin-is-unknown
+ ok publish-still-backs-up-prod-sim-change
+ ok publish-warns-when-a-shared-change-reaches-prod-sim
+ ok publish-warns-when-the-chart-reaches-prod-sim
+ ok publish-warns-when-only-prod-sim-changes
+ ok publish-warns-and-checks-a-mixed-push
+ ok publish-quiet-when-a-shared-change-renders-to-nothing
+ ok publish-quiet-when-only-dev-changes
+ ok publish-merged-promotion-dev-proven
+ ok publish-merged-promotion-dev-out-of-sync
+ ok publish-merged-promotion-dev-degraded
+ ok publish-merged-promotion-dev-application-missing
+ ok publish-merged-promotion-dev-running-another-digest
+ ok publish-merged-promotion-dev-container-not-ready
+ ok publish-merged-promotion-override-is-logged
+ ok publish-merged-promotion-refused-then-retried
+ ok publish-merged-promotion-no-cluster-says-skipped
+ ok publish-skip-backup-is-no-way-past-the-dev-check
+ ok publish-skip-dev-check-is-recorded
+ ok publish-prod-sim-not-deployed-needs-no-dev-check
+ ok publish-dev-change-needs-no-dev-check
+ ok promote-override-reaches-the-publish
+ ok rollback-prod-sim-with-unhealthy-dev
+ ok rollback-prod-sim-rerun-with-unhealthy-dev
+ ok make-passes-the-documented-options
+ ok promote-level-has-nothing-to-do
+ ok promote-four-images-through-make
+ ok promote-four-images-one-at-a-time
+ ok promote-four-images-each-must-run-in-dev
+ ok promote-four-images-each-must-be-recorded
+ ok promote-four-images-each-must-be-in-the-registry
+ ok promote-four-images-override-names-them-all
+ ok publish-merged-four-images-checks-each
+ ok rollback-four-images-together
+ ok drill-runs-to-a-pass
+ ok drill-failed-promotion-reverts-nothing-else
+ ok promote-refuses-a-terminating-pod
+ ok promote-refuses-a-pod-not-running
+ ok promote-refuses-a-ready-sibling
+ ok promote-refuses-the-failure-drill-digest
+ ok promote-stops-when-the-dump-fails
+ ok publish-stops-when-the-dump-fails
+ ok promote-prod-sim-needs-confirmation
+ ok rollback-prod-sim-needs-confirmation
+ ok promote-refuses-a-dirty-overlay
+ ok rollback-refuses-a-dirty-overlay
+ ok promote-refuses-off-main
+ ok rollback-refuses-off-main
+ ok promote-refuses-while-a-revert-is-under-way
+ ok promote-takes-a-whole-digests-file
+ ok promote-refuses-a-partial-digests-file
+ ok promote-refuses-a-malformed-digests-file
+ ok promote-checks-its-arguments
+ ok promote-refuses-an-ambiguous-image
+ ok promote-render-failure-puts-the-overlay-back
+ ok promote-ended-halfway-puts-the-overlay-back
+ ok promote-commit-failure-puts-the-overlay-back
+ ok promote-waits-out-a-git-add
+ ok promote-says-what-to-do-when-the-index-stays-held
+ ok promote-rechecks-the-overlay-after-the-dump
+ ok promote-holds-the-commit-lock-for-its-commit
+ ok rollback-holds-the-commit-lock-for-its-commit
+ ok promote-waits-for-the-commit-lock
+ ok rollback-waits-for-the-commit-lock
+ ok promote-gives-up-on-a-commit-lock-left-behind
+ ok rollback-gives-up-on-a-commit-lock-left-behind
+ ok promote-again-publishes-after-a-refused-push
+ ok promote-again-publishes-after-a-refused-check
+ ok promote-dev-again-publishes-after-a-refused-push
+ ok promote-commit-no-publishes-nothing
+ ok promote-dev-takes-the-dump-a-carried-prod-sim-change-needs
+ ok promote-dev-stops-when-a-carried-dump-fails
+ ok publish-names-the-prod-sim-commit-a-dev-change-waits-behind
+ ok publish-refusal-of-prod-sim-alone-says-nothing-of-dev
+ ok rollback-dev-stops-before-moving-prod-sim
+ ok rollback-chain-after-a-refused-promotion
+ ok rollback-dev-override-keeps-the-checks
+ ok rollback-dev-rerun-stops-too
+ ok rollback-dev-goes-on-past-what-does-not-move-prod-sim
+ ok rollback-dev-goes-on-when-a-promotion-was-withdrawn
+ ok rollback-conflict-keeps-someones-staged-work
+ ok rollback-conflict-with-a-partly-staged-file
+ ok rollback-render-failure-keeps-someones-staged-work
+ ok rollback-commit-failure-can-run-again
+ ok rollback-ended-halfway-puts-the-revert-back
+ ok rollback-waits-out-a-git-add
+ ok rollback-says-what-to-do-when-the-index-stays-held
+ ok rollback-says-when-the-revert-cannot-start
+Automatic merge went well; stopped before committing as requested
+ ok rollback-leaves-someones-merge-alone
+ ok rollback-says-a-promotion-put-back-by-hand-is-undone
+ ok rollback-promotion-that-added-a-file
+ ok rollback-promotion-whose-added-file-is-gone
+ ok rollback-refuses-an-edit-in-a-file-the-promotion-touched
+ ok rollback-rechecks-after-the-dump
+ ok rollback-leaves-the-other-render-as-git-has-it
+ ok rollback-finds-a-subject-only-promotion
+ ok rollback-finds-a-trailer-only-promotion
+ ok rollback-second-attempt-names-the-dump-from-before-the-promotion
+ ok rollback-says-when-no-dump-is-older
+ ok rollback-skips-an-unfinished-dump
+ ok publish-creates-the-bare-repository
+ ok publish-sends-what-it-checked
+ ok publish-warning-leaves-dev-out-when-it-only-moves-an-image
+ ok publish-warning-says-when-its-list-is-cut
+ ok publish-warning-says-nothing-of-more-when-all-are-named
+ ok publish-warning-says-when-no-source-changed
+ ok publish-warns-when-a-digest-by-hand-breaks-the-invariant
+ ok publish-quiet-about-the-invariant-for-a-promotion
+ ok promote-no-cluster-writes-the-job-summary
+ ok 132 of 132 promotion flow scenarios passed, with a stub cluster
+ ok promotion flows with a stub cluster
+ ok manifests valid
+ ok 205 Argo CD objects and 7 Terraform objects, no resource has two owners
+==> gitleaks history
+ ok gitleaks history
+==> gitleaks working tree
+ ok gitleaks working tree
+==> trivy config
+2026-11-05T08:54:25+03:00	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-11-05T08:54:25+03:00	INFO	[checks-client] Using existing checks from cache	path="/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/review-promotion-4/ci/repo/.local/trivy-cache/policy/content"
+2026-11-05T08:54:27+03:00	INFO	[terraform scanner] Scanning root module	file_path="infisical/terraform"
+2026-11-05T08:54:27+03:00	WARN	[terraform parser] Variable values were not found in the environment or variable files. Evaluating may not work correctly.	module="root" variables="kubernetes_ca_certificate, org_id"
+2026-11-05T08:54:27+03:00	INFO	[terraform scanner] Scanning root module	file_path="infrastructure/terraform/environments/local"
+2026-11-05T08:54:27+03:00	INFO	Detected config files	num=70
+
+Report Summary
+
+┌──────────────────────────────────────────────────────────────────┬────────────┬───────────────────┐
+│                              Target                              │    Type    │ Misconfigurations │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ apps/wayline/runtime/Dockerfile.admin                            │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ apps/wayline/runtime/Dockerfile.backend                          │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ apps/wayline/runtime/Dockerfile.space                            │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ apps/wayline/runtime/Dockerfile.web                              │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/alloy.yaml                                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/backup-storage.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/infisical-operator-dev.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/infisical-operator-prod-sim.yaml             │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/infisical.yaml                               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/kube-prometheus-stack.yaml                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/loki.yaml                                    │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/metrics-server.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/monitoring-extras.yaml                       │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/network-policies.yaml                        │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/plane-dev.yaml                               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/plane-prod-sim.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/applications/traefik.yaml                                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/bootstrap/argocd-route/ingressroute.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/bootstrap/chart/templates/appprojects.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/bootstrap/chart/templates/root-application.yaml           │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/environments/dev/manifests.yaml                           │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/environments/prod-sim/manifests.yaml                      │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/backup-storage/dev.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/backup-storage/infisical.yaml                    │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/backup-storage/prod-sim.yaml                     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/argocd.yaml                     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/infisical.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/kube-system-metrics-server.yaml │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/monitoring-agents.yaml          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/monitoring.yaml                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/plane-dev-loadtest.yaml         │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/plane-dev.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/plane-prod-sim.yaml             │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ gitops/platform/network-policies/traefik.yaml                    │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/admin.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/api.yaml                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/beat.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/live.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/migrator.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/postgres.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/rabbitmq.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/silo.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/space.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/valkey.yaml              │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/web.yaml                 │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/patches/worker.yaml              │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/rabbitmq-conf.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/serviceaccounts.yaml             │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/components/hardening/traefik-redirect.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/overlays/dev/infisical.yaml                           │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ helm/plane/overlays/prod-sim/infisical.yaml                      │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/ingressroute.yaml                            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/postgres.yaml                                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/redis.yaml                                   │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/serviceaccount.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/manifests/token-reviewer.yaml                          │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infisical/terraform                                              │ terraform  │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infrastructure/local-services/git-daemon/Dockerfile              │ dockerfile │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ infrastructure/terraform/environments/local                      │ terraform  │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/exporters.yaml            │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/probes.yaml               │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/rabbitmq-metrics.yaml     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/environments/base/service-monitors.yaml     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/alert-sink.yaml                      │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/blackbox.yaml                        │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/ingress-routes.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/rules-plane.yaml                     │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/rules-platform.yaml                  │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ monitoring/manifests/shared/service-monitors.yaml                │ kubernetes │         0         │
+├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+│ tests/rules/fixtures/stuck-progressing/service.yaml              │ kubernetes │         0         │
+└──────────────────────────────────────────────────────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+ ok trivy config
+==> trivy fs
+2026-11-05T08:54:27+03:00	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-05T08:54:27+03:00	INFO	[secret] Secret scanning is enabled
+2026-11-05T08:54:27+03:00	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-11-05T08:54:27+03:00	INFO	[secret] Please see https://trivy.dev/docs/v0.76/guide/scanner/secret#recommendation for faster secret detection
+2026-11-05T08:54:27+03:00	INFO	Number of language-specific files	num=0
+2026-11-05T08:54:27+03:00	WARN	[report] Supported files for scanner(s) not found.	scanners=[vuln]
+2026-11-05T08:54:27+03:00	INFO	[report] No issues detected with scanner(s).	scanners=[secret]
+
+Report Summary
+
+┌────────┬──────┬─────────────────┬─────────┐
+│ Target │ Type │ Vulnerabilities │ Secrets │
+├────────┼──────┼─────────────────┼─────────┤
+│   -    │  -   │        -        │    -    │
+└────────┴──────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+ ok trivy fs
+ ok security checks passed

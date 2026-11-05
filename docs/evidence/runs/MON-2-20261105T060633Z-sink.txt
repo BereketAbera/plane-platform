@@ -1,0 +1,5 @@
+# MON-2 what the sink received since the snapshot before the refused run. The test did not run, so this is not a test result
+# date_utc: 2026-11-05T06:11:20Z
+# commit: 0dde813
+# command: kubectl -n monitoring logs deploy/alert-sink --since-time=2026-11-05T06:06:33Z --timestamps
+# kubectl exit 0

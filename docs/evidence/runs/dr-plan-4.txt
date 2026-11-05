@@ -1,0 +1,26 @@
+# date: 2026-11-05T06:04:51Z
+# command: /bin/bash scripts/restore.sh clean latest PLAN_ONLY=yes, at 0bd3e2d, on the live cluster. Read only
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T022627Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim, 1 users, 6 projects, 18 secrets, server v0.167.6
+    dev        20261105T000616Z, SECRET_KEY 4ceb3f709b196ae0, 23 users, 16 workspaces, 31 projects, 132 work items, 34 file rows, 34 objects, sentinel sentinel-f10a5851, uploaded rows with no object: not recorded
+    prod-sim   20261105T053351Z, SECRET_KEY 77d617b20fb32955, 29 users, 17 workspaces, 34 projects, 152 work items, 61 file rows, 61 objects, sentinel sentinel-5bf39257, uploaded rows with no object: 0
+    admin      the file this backup names, ending 2027-02-02T21:25:32Z
+    images     4 localhost:5001 digests in Git
+    disk       13.2 GiB free, kind volume 12.6 GiB, about 24.9 GiB after a delete at 93%, up.sh asks for 25 GiB
+[1;33mwarn[0m about 24.9 GiB would be free after the delete: 13.2 GiB now plus 93% of the 12.6 GiB kind volume, and up.sh asks for 25 GiB to create a cluster. Free space, or say why to go on with ALLOW_LOW_DISK="<reason>", which is logged. See scripts/lib/up-checks.sh for what those numbers are based on.
+[1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+exit 1
+
+# date: 2026-11-05T06:05:03Z
+# command: ALLOW_LOW_DISK="a plan only, to read the rest of it" /bin/bash scripts/restore.sh clean latest PLAN_ONLY=yes
+[1;33mwarn[0m about 24.9 GiB would be free after the delete: 13.2 GiB now plus 93% of the 12.6 GiB kind volume, and up.sh asks for 25 GiB to create a cluster. ALLOW_LOW_DISK says to go on anyway: a plan only, to read the rest of it
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T022627Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim, 1 users, 6 projects, 18 secrets, server v0.167.6
+    dev        20261105T000616Z, SECRET_KEY 4ceb3f709b196ae0, 23 users, 16 workspaces, 31 projects, 132 work items, 34 file rows, 34 objects, sentinel sentinel-f10a5851, uploaded rows with no object: not recorded
+    prod-sim   20261105T053351Z, SECRET_KEY 77d617b20fb32955, 29 users, 17 workspaces, 34 projects, 152 work items, 61 file rows, 61 objects, sentinel sentinel-5bf39257, uploaded rows with no object: 0
+    admin      the file this backup names, ending 2027-02-02T21:25:32Z
+    images     4 localhost:5001 digests in Git
+    disk       13.2 GiB free, kind volume 12.6 GiB, about 24.9 GiB after a delete at 93%, up.sh asks for 25 GiB
+[1;33mwarn[0m a real run would refuse right now: cluster plane-platform already holds Plane volumes. To replace it: make destroy CONFIRM=yes SKIP_BACKUP=yes, then make restore-clean BACKUP=20261105T022627Z. Without SKIP_BACKUP=yes, make destroy backs up what is there now, and BACKUP=latest would then name that set. To restore one environment in place: make restore.
+[1;32m ok[0m PLAN_ONLY=yes: nothing was changed
+exit 0

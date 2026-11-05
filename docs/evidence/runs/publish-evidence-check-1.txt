@@ -55,7 +55,7 @@ findings: 32
 gitleaks dir docs/evidence/runs: exit 0
 
 ## A search of the published copies for credential-looking text, long tokens masked as <Tn>. Read by hand. Script source files are left out
-dr-compare-live-1.txt:6 [assign] PASS doctored set refused: dev PG_PASSWORD: value differs;prod-sim SECRET_KEY: rewritten, same value
+dr-compare-live-1.txt:6 [assign] PASS doctored set refused: dev <redacted>: value differs;prod-sim SECRET_KEY: rewritten, same value
 dr-inplace-restore-1.txt:28 [assign] [1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: <T22> <T30>
 dr-inplace-restore-2.txt:23 [assign] [1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: <T22> <T30>
 harness-separation-state-1.txt:188 [cookie/auth] dev's session cookie: on <T19> 200, replayed on <T24> 401

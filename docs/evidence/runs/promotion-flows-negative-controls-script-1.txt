@@ -1,0 +1,76 @@
+#!/bin/bash
+# One-off negative controls for test-promotion-flows.sh: plant one defect in a scratch clone's scripts, run the scenarios
+# that should catch it, and require a non-zero exit and that scenario's FAILED line.
+set -uo pipefail
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/ci-3
+MAIN=/Users/bek/dev/pr/plane-platform
+M=$S/mut
+rm -rf "$M"; git clone --quiet "$MAIN" "$M"; mkdir -p "$M/.tools"; ln -s "$MAIN/.tools/bin" "$M/.tools/bin"
+fresh() { rm -rf "$M/scripts" "$M/tests/drills"; cp -R "$MAIN/scripts" "$M/scripts"; cp -R "$MAIN/tests/drills" "$M/tests/drills"; }
+total=0; missed=0
+control() { # control <name> <file> <python-old> <python-new> <filter> <scenario that must fail>
+  local name="$1" file="$2" old="$3" new="$4" filter="$5" want="$6" rc=0 out
+  fresh
+  python3 -I -c 'import sys
+p,o,n=sys.argv[1:4]
+s=open(p).read()
+assert s.count(o)>=1,"no match: "+o
+open(p,"w").write(s.replace(o,n,1))' "$M/$file" "$old" "$new" || { echo "control $name: could not plant"; missed=$((missed+1)); return; }
+  out="$S/mut-$name.txt"
+  (cd "$M" && ./scripts/ci/test-promotion-flows.sh "$filter") >"$out" 2>&1 || rc=$?
+  total=$((total+1))
+  if [[ "$rc" -ne 0 ]] && grep -qF "$want FAILED" "$out"; then
+    echo "CAUGHT $name: exit $rc, $want FAILED; $(sed 's/\x1b\[[0-9;]*m//g' "$out" | grep -F 'expected:' | head -n 2 | sed 's/^warn *expected: //' | tr '\n' ';' | cut -c1-160)"
+  else
+    echo "MISSED $name: exit $rc"; missed=$((missed+1)); sed 's/\x1b\[[0-9;]*m//g' "$out" | tail -n 12 | cut -c1-200
+  fi
+}
+control only-first-digest-in-dev-check scripts/lib/dev-check.sh 'for digest in "$@"; do
+    grep -qF' 'for digest in "${1:-}"; do
+    grep -qF' four-images-each-must-run promote-four-images-each-must-run-in-dev
+control plan-check-loop-eats-stdin scripts/promote.sh '"$ROOT/scripts/ci/check-promoted-digests.sh" "$name=$digest"' '"$ROOT/scripts/ci/check-promoted-digests.sh" "$name=$digest"; cat >/dev/null' four-images-each-must-be-recorded promote-four-images-each-must-be-recorded
+control registry-check-only-first scripts/promote.sh 'die "$repo@$digest is not in the local registry. Run make images, or copy it with scripts/ci/copy-to-local-registry.sh."' 'die "$repo@$digest is not in the local registry. Run make images, or copy it with scripts/ci/copy-to-local-registry.sh."; break' four-images-each-must-be-in promote-four-images-each-must-be-in-the-registry
+control apply-loop-eats-stdin scripts/promote.sh '(cd "$OVERLAY" && kustomize edit set image "$name=$reference")' '(cd "$OVERLAY" && kustomize edit set image "$name=$reference"); cat >/dev/null' four-images-through-make promote-four-images-through-make
+control tag-not-dropped scripts/promote.sh '[[ "$tag" == - ]] || reference="$repo:$tag@$digest"' 'reference="$repo:v0@$digest"' four-images-through-make promote-four-images-through-make
+control dump-after-a-change scripts/promote.sh '    log "Backing up prod-sim first, because rolling back an image does not roll back a migration"' '    echo "# planted" >>"$KUSTOMIZATION"; log "Backing up prod-sim first, because rolling back an image does not roll back a migration"' four-images-through-make promote-four-images-through-make
+control promote-takes-other-staged-files scripts/promote.sh 'git commit --quiet --file "$message_file" -- "$OVERLAY" "$RENDERED"' 'git commit --quiet --file "$message_file"' four-images-through-make promote-four-images-through-make
+control publish-checks-only-first-digest scripts/gitops-publish.sh "sed -n 's/^+.*@\\(sha256:[a-f0-9]\\{64\\}\\).*/\\1/p' | sort -u)" "sed -n 's/^+.*@\\(sha256:[a-f0-9]\\{64\\}\\).*/\\1/p' | sort -u | sed -n 1p)" merged-four publish-merged-four-images-checks-each
+control one-at-a-time-moves-all scripts/promote.sh 'if [[ -n "$IMAGE" ]]; then
+  read -r name current_repo _ _' 'if [[ -n "$IMAGE" && -z "$IMAGE" ]]; then
+  read -r name current_repo _ _' four-images-one-at-a-time promote-four-images-one-at-a-time
+control warning-removed scripts/gitops-publish.sh 'if [[ -n "$beyond_images" ]]; then' 'if false; then' publish-warns publish-warns-when-a-shared-change-reaches-prod-sim
+control warning-blocks scripts/gitops-publish.sh 'warn "publishing $(wc -l' 'die "publishing $(wc -l' publish-warns publish-warns-when-the-chart-reaches-prod-sim
+control warning-counts-images scripts/gitops-publish.sh "|^[-+][[:space:]-]*image: '" "|^[-+][[:space:]-]*imageX: '" four-images-through-make promote-four-images-through-make
+control warning-reads-paths-not-render scripts/gitops-publish.sh 'beyond_images="$(git diff -U0 "$old" "$new" -- "$PROD_SIM_MANIFESTS"' 'beyond_images="$(git diff -U0 "$old" "$new" -- helm/plane/components' publish-quiet publish-quiet-when-a-shared-change-renders-to-nothing
+control warning-claims-both-always scripts/gitops-publish.sh 'reach=prod-sim' 'reach="dev and prod-sim together"' only-prod-sim publish-warns-when-only-prod-sim-changes
+control rollback-stops-on-generated-conflict scripts/rollback.sh 'if [[ "$(git diff --name-only --diff-filter=U)" != "$RENDERED" ]]; then' 'if true; then' rollback-prod-sim-past rollback-prod-sim-past-a-later-change-beside-the-image
+control rollback-ignores-overlay-conflict scripts/rollback.sh 'if [[ "$(git diff --name-only --diff-filter=U)" != "$RENDERED" ]]; then' 'if false; then' rollback-stops-on rollback-stops-on-a-conflict-in-the-overlay
+control rollback-keeps-conflict-comment scripts/rollback.sh 'commit_flags=(--quiet --no-edit --cleanup=strip)' 'commit_flags=(--quiet --no-edit)' rollback-prod-sim-past rollback-prod-sim-past-a-later-change-beside-the-image
+control rollback-four-leaves-one scripts/rollback.sh 'paths=("$RENDERED")' 'git restore --source=HEAD --staged --worktree -- "$RENDERED"; paths=("$RENDERED")' rollback-four-images rollback-four-images-together
+# The harness itself: a scenario whose own setup fails must end alone. The old run stopped there, and 19 scenarios went unread.
+control setup-failure-ends-one-scenario-not-the-run scripts/promote.sh 'if [[ "$COMMIT" != yes ]]; then
+  applied=no' 'if [[ "$COMMIT" != yes ]]; then
+  git restore --source=HEAD --staged --worktree -- "$OVERLAY" "$RENDERED"
+  applied=no' publish-still-backs-up publish-still-backs-up-prod-sim-change
+grep -c . "$S/mut-setup-failure-ends-one-scenario-not-the-run.txt" >/dev/null
+sed 's/\x1b\[[0-9;]*m//g' "$S/mut-setup-failure-ends-one-scenario-not-the-run.txt" | grep -E 'a command in the scenario itself failed|scenarios failed' | cut -c1-120
+fresh
+python3 -I -c 'import sys
+p,o,n=sys.argv[1:4]
+s=open(p).read()
+assert s.count(o)==1
+open(p,"w").write(s.replace(o,n))' "$M/scripts/promote.sh" 'if [[ "$COMMIT" != yes ]]; then
+  applied=no' 'if [[ "$COMMIT" != yes ]]; then
+  git restore --source=HEAD --staged --worktree -- "$OVERLAY" "$RENDERED"
+  applied=no'
+rc=0; (cd "$M" && ./scripts/ci/test-promotion-flows.sh publish-) >"$S/mut-harness-keeps-going.txt" 2>&1 || rc=$?
+total=$((total+1))
+later="publish-dev-change-needs-no-dev-check"
+if [[ "$rc" -ne 0 ]] && sed 's/\x1b\[[0-9;]*m//g' "$S/mut-harness-keeps-going.txt" | grep -qE "^ ok $later|^warn $later FAILED" && sed 's/\x1b\[[0-9;]*m//g' "$S/mut-harness-keeps-going.txt" | grep -qE '^fail [0-9]+ of [0-9]+ promotion flow scenarios failed'; then
+  echo "CAUGHT harness-keeps-going: exit $rc, a scenario after the stopped one still ran, and the summary line printed: $(sed 's/\x1b\[[0-9;]*m//g' "$S/mut-harness-keeps-going.txt" | grep -E '^fail ' | cut -c1-100); stopped: $(sed 's/\x1b\[[0-9;]*m//g' "$S/mut-harness-keeps-going.txt" | grep -c 'a command in the scenario itself failed')"
+else
+  echo "MISSED harness-keeps-going: exit $rc"; missed=$((missed+1)); sed 's/\x1b\[[0-9;]*m//g' "$S/mut-harness-keeps-going.txt" | tail -n 12 | cut -c1-200
+fi
+echo "controls: $total, missed: $missed"
+rm -rf "$M"
+exit "$missed"

@@ -1,0 +1,12 @@
+784K	/var/local-path-provisioner/pvc-1caa4b30-68d2-4a05-967c-34be857d6129_plane-dev_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+12K	/var/local-path-provisioner/pvc-3f2f00f9-32b5-4fa8-bbb5-8ac0196f4129_plane-prod-sim_pvc-plane-redis-vol-plane-redis-wl-0
+56M	/var/local-path-provisioner/pvc-4ecbc6b1-55d8-40f9-8fe0-e372ba3e71f6_plane-prod-sim_pvc-plane-minio-vol-plane-minio-wl-0
+700K	/var/local-path-provisioner/pvc-61c58b9d-f625-411d-8bb2-d955c39a00d6_plane-prod-sim_pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+77M	/var/local-path-provisioner/pvc-6fcb0c5e-f886-4b88-9c08-621e9e9755cb_plane-prod-sim_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+886M	/var/local-path-provisioner/pvc-77583616-fb41-4e84-9864-2abd5e0c3538_monitoring_storage-loki-0
+79M	/var/local-path-provisioner/pvc-7e53cc45-a69c-493f-a97f-8b75a6be78cb_plane-dev_pvc-plane-pgdb-vol-plane-pgdb-wl-0
+58M	/var/local-path-provisioner/pvc-974fedf5-e207-42c1-aa70-613e6fb08206_infisical_data-infisical-redis-0
+83M	/var/local-path-provisioner/pvc-bb4c631d-0466-4b18-b70c-1708ee8a037f_plane-dev_pvc-plane-minio-vol-plane-minio-wl-0
+643M	/var/local-path-provisioner/pvc-e5b3f129-2f45-44ad-8671-317a235a5174_monitoring_prometheus-kps-prometheus-db-prometheus-kps-prometheus-0
+170M	/var/local-path-provisioner/pvc-f2678959-c3b6-4b83-a944-f39f5ac04b3a_infisical_data-infisical-postgres-0
+8.0K	/var/local-path-provisioner/pvc-ffbc0cf8-a81d-4943-964e-4c481b91e6f4_plane-dev_pvc-plane-redis-vol-plane-redis-wl-0

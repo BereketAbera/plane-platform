@@ -1,0 +1,38 @@
+# Real runs on plane-dev, 2026-11-05T02:02:49Z, HEAD ec45e21. Application plane-dev read Synced/Healthy before each
+
+== FROM_NS=plane-dev scripts/test-netpol.sh, 01:52:37Z to 01:55:00Z
+[1;34m==>[0m PASS 153, FAIL 0, INCONCLUSIVE 0, of which 0 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 0. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261105T015237Z.tsv
+[1;34m==>[0m A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target.
+[1;32m ok[0m network policy matrix passed
+netpol exit 0
+01:55:00
+
+== python3 -B tests/e2e/smoke.py --env dev --evidence <scratch>, no worker control, 01:57:37Z to 01:57:57Z
+PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml
+PASS    branding-web  title 'Wayline | Simple, extensible, open-source project management tool.', /source 302 to https://github.com/BereketAbera/plane-platform/tree/1563cbfbe895... (not followed: the repository is private for now), /licenses/ lists 6
+PASS    branding-admin  /god-mode/ title 'Wayline | Simple, extensible, open-source project management tool.', and no upstream brand in the page
+PASS    branding-space  /spaces/ title 'Wayline Publish | Make your Wayline boards public with one-click', and no upstream brand in the page
+PASS    branding-backend  instance_changelog_url is '', so "What's new" shows the local fallback
+PASS    branding-seed  the bot of this new workspace is named Wayline, and 7 seed work items, its pages and its cycles name Wayline 10 times and upstream 0
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean insta
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+RESULT  PASS
+PASS {'BLOCKED': 0, 'FAIL': 0, 'PASS': 44, 'SKIP': 1}
+
+== python3 -B tests/e2e/smoke.py --env dev --mode verify --sentinel <a record whose workspace is not in this database>
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+FAIL    sentinel-reread  API token refused with 403: the user or token row is gone
+RESULT  FAIL
+
+== POST project invitations with the stored admin session, through Traefik
+sign-in 302 ok
+GET invitations 200
+POST invitations 500 b'{"error":"Something went wrong please try again later"}'
+GET after 200 count 0
+
+== select display_name, first_name, count(*) from users where is_bot, and page_versions, plane-dev, 01:47Z
+Plane|Plane|16
+Wayline|Wayline|8
+page_versions rows: 0

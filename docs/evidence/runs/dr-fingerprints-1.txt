@@ -1,0 +1,13 @@
+# The recovery set against the Plane manifests. 2026-11-05T02:02:13Z. jq over the files on the host, for Infisical backup 20261105T001814Z.
+dev 20261104T231324Z secret_key_fp=4ceb3f709b196ae0 set.plane_secrets.dev.SECRET_KEY.fp=4ceb3f709b196ae0
+dev 20261105T000512Z secret_key_fp=4ceb3f709b196ae0 set.plane_secrets.dev.SECRET_KEY.fp=4ceb3f709b196ae0
+dev 20261105T000616Z secret_key_fp=4ceb3f709b196ae0 set.plane_secrets.dev.SECRET_KEY.fp=4ceb3f709b196ae0
+prod-sim 20261104T231335Z secret_key_fp=77d617b20fb32955 set.plane_secrets.prod-sim.SECRET_KEY.fp=77d617b20fb32955
+prod-sim 20261105T000523Z secret_key_fp=77d617b20fb32955 set.plane_secrets.prod-sim.SECRET_KEY.fp=77d617b20fb32955
+prod-sim 20261105T000627Z secret_key_fp=77d617b20fb32955 set.plane_secrets.prod-sim.SECRET_KEY.fp=77d617b20fb32955
+
+# The same comparison as one jq expression over the newest backup of each environment.
+{
+  "dev_equal": true,
+  "prod_sim_equal": true
+}

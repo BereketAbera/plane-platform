@@ -1,0 +1,68 @@
+date_utc: 2026-11-05T06:20:05Z
+commit: 0dde813
+command: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/prodsim/ops7-log.sh
+---
+### start
+log has 0 lines
+
+### A. floor raised: MIN_FREE_DISK_GIB=999, no argument. The code says refuse, and log nothing, because only a value below 10 logs
+[1;31mfail[0m only 13 GiB free on the host, need at least 999 GiB. Free space first.
+exit code: 1
+log has 0 lines
+
+### B. floor at the default: unset. The code says no line
+guard_disk (no argument, first call) returned 0
+guard_disk (no argument, second call) returned 0
+guard_disk 1 (names its own limit) returned 0
+exit code: 0
+log has 0 lines
+
+### C. floor equal to the default: MIN_FREE_DISK_GIB=10. The code says no line, because it is not below
+guard_disk (no argument, first call) returned 0
+guard_disk (no argument, second call) returned 0
+guard_disk 1 (names its own limit) returned 0
+exit code: 0
+log has 0 lines
+
+### D. floor lowered: MIN_FREE_DISK_GIB=9, two no-argument calls in one script. The code says one line, once per script, and goes on
+[1;33mwarn[0m MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free. Logged in .local/evidence-raw/low-disk-overrides.log.
+guard_disk (no argument, first call) returned 0
+guard_disk (no argument, second call) returned 0
+guard_disk 1 (names its own limit) returned 0
+exit code: 0
+log has 1 lines
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+
+### E. the same again, a new script process. The code says one more line
+[1;33mwarn[0m MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free. Logged in .local/evidence-raw/low-disk-overrides.log.
+guard_disk (no argument, first call) returned 0
+guard_disk (no argument, second call) returned 0
+guard_disk 1 (names its own limit) returned 0
+exit code: 0
+log has 2 lines
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+
+### F. floor lowered, but the caller names its own limit. The code says no line
+guard_disk 1 returned 0
+exit code: 0
+log has 2 lines
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+
+### G. a value that is not a whole number. The code says refuse
+[1;31mfail[0m MIN_FREE_DISK_GIB takes a whole number of GiB, and got 'abc'
+exit code: 1
+log has 2 lines
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+
+### H. floor raised, caller names its own limit of 1. The code says the raised floor does not apply: not refused
+guard_disk 1 returned 0
+exit code: 0
+log has 2 lines
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+2026-11-05T06:20:06Z ops7-floor.sh: MIN_FREE_DISK_GIB=9 lowers the 10 GiB floor, with 13 GiB free
+---
+finished_utc: 2026-11-05T06:20:06Z
+exit_code: 0

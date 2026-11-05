@@ -1,0 +1,90 @@
+# 2026-11-05T07:11:31Z commit f1ff355
+# command: python3 -B scratchpad/plane-dev/analyze.py .local/evidence-raw/DEP-1-20261105T062323Z-watch.txt plane-web-wl. Derived from that raw file, which stays as written. Source: DEP-1-20261105T062323Z-analyze-source.txt
+watch file .local/evidence-raw/DEP-1-20261105T062323Z-watch.txt
+first line 2026-11-05T06:23:43.122Z last line 2026-11-05T06:39:13.507Z lines 1640
+session GET /api/users/me/: 913 samples, 0 not 200
+  latency ms median 23 p99 84 max 1625
+front, each of ['/', '/sign-in/', '/god-mode/', '/spaces/']: 458 cycles
+  /: {'200': 458}
+  /sign-in/: {'200': 458}
+  /god-mode/: {'200': 458}
+  /spaces/: {'200': 458}
+prod-sim GET /sign-in/: 92 samples, not 200: 0, errors: 0
+prod-sim pod list changes after the first reading: 0
+VM memory used GiB: first 9.94, max 9.97, readings 31. oom_kill first 62, last 62. Host free GiB, last 13.25
+--- Application changes
+  2026-11-05T06:23:43.467Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T05:29:48Z finished=2026-11-05T05:30:54Z retry=None rev=9c8e09828be3 history=6 msg='successfully synced (all tasks run)'
+  2026-11-05T06:23:43.467Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T06:23:43.467Z plane-prod-sim Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T05:34:07Z finished=2026-11-05T05:35:07Z retry=None rev=9c8e09828be3 history=5 msg='successfully synced (all tasks run)'
+  2026-11-05T06:23:46.326Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg=''
+  2026-11-05T06:23:46.326Z root Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T06:23:49.293Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for healthy state of /ServiceAccount/plane and 2 more resources'
+  2026-11-05T06:23:52.317Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical'
+  2026-11-05T06:23:55.316Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for healthy state of /ConfigMap/plane-app-vars and 11 more resources'
+  2026-11-05T06:23:58.372Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for healthy state of apps/StatefulSet/plane-minio-wl and 3 more resources'
+  2026-11-05T06:24:01.309Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for deletion of hook batch/Job/plane-api-migrate-1'
+  2026-11-05T06:24:04.310Z plane-dev OutOfSync/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for completion of hook batch/Job/plane-api-migrate-1'
+  2026-11-05T06:24:10.308Z plane-dev Synced/Progressing op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for completion of hook batch/Job/plane-api-migrate-1'
+  2026-11-05T06:24:13.304Z plane-dev Synced/Progressing op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=None rev=61570743ba00 history=6 msg='waiting for healthy state of apps/Deployment/plane-web-wl'
+  2026-11-05T06:25:34.472Z plane-prod-sim Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T05:34:07Z finished=2026-11-05T05:35:07Z retry=None rev=61570743ba00 history=5 msg='successfully synced (all tasks run)'
+  2026-11-05T06:34:11.350Z plane-dev Synced/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=2026-11-05T06:34:09Z retry=1 rev=61570743ba00 history=6 msg='one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 6:34AM.'
+  2026-11-05T06:34:11.350Z root Synced/Degraded op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T06:34:20.358Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=2026-11-05T06:34:09Z retry=1 rev=b7d1bfab5bbd history=6 msg='one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 6:34AM.'
+  2026-11-05T06:35:11.419Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='Retrying operation with latest revisions. Attempt #1'
+  2026-11-05T06:35:14.450Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='waiting for healthy state of secrets.infisical.com/InfisicalAuth/infisical'
+  2026-11-05T06:35:17.418Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='waiting for healthy state of secrets.infisical.com/InfisicalStaticSecret/plane-app-env and 5 more resources'
+  2026-11-05T06:35:20.432Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='waiting for healthy state of /ConfigMap/plane-app-vars and 11 more resources'
+  2026-11-05T06:35:23.470Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='waiting for deletion of hook batch/Job/plane-api-migrate-1'
+  2026-11-05T06:35:26.481Z plane-dev OutOfSync/Degraded op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='waiting for completion of hook batch/Job/plane-api-migrate-1'
+  2026-11-05T06:35:26.481Z plane-prod-sim Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T05:34:07Z finished=2026-11-05T05:35:07Z retry=None rev=b7d1bfab5bbd history=5 msg='successfully synced (all tasks run)'
+  2026-11-05T06:35:35.463Z plane-dev Synced/Healthy op=Running in_flight=True started=2026-11-05T06:23:45Z finished=None retry=1 rev=b7d1bfab5bbd history=6 msg='waiting for completion of hook batch/Job/plane-api-migrate-1'
+  2026-11-05T06:35:35.463Z root Synced/Progressing op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+  2026-11-05T06:35:38.442Z plane-dev Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T06:23:45Z finished=2026-11-05T06:35:36Z retry=1 rev=b7d1bfab5bbd history=7 msg='successfully synced (all tasks run)'
+  2026-11-05T06:35:38.442Z root Synced/Healthy op=Succeeded in_flight=False started=2026-11-05T00:34:05Z finished=2026-11-05T00:34:05Z retry=None rev= history=4 msg='successfully synced (all tasks run)'
+--- Deployment changes for ['plane-web-wl']
+  2026-11-05T06:23:43.413Z plane-web-wl gen=10 obs=10 rev=9 rep=1 ready=1 upd=1 unavail=None progressing=NewReplicaSetAvailable image=3d7575a1b934
+  2026-11-05T06:24:10.255Z plane-web-wl gen=11 obs=11 rev=10 rep=2 ready=1 upd=1 unavail=1 progressing=ReplicaSetUpdated image=000000000000
+  2026-11-05T06:34:11.292Z plane-web-wl gen=11 obs=11 rev=10 rep=2 ready=1 upd=1 unavail=1 progressing=ProgressDeadlineExceeded image=000000000000
+  2026-11-05T06:35:35.398Z plane-web-wl gen=12 obs=12 rev=11 rep=1 ready=1 upd=1 unavail=None progressing=NewReplicaSetAvailable image=3d7575a1b934
+--- Pod changes (matching those Deployments)
+  2026-11-05T06:23:43.413Z plane-api-migrate-1-8hpmh uid=b83c55ac Succeeded ready=False restarts=0 waiting=None terminated=Completed last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:23:43.413Z plane-web-wl-748764649d-q72kc uid=dda78f72 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=3d7575a1b934
+  2026-11-05T06:23:58.254Z plane-api-migrate-1-8hpmh gone
+  2026-11-05T06:24:01.249Z plane-api-migrate-1-g2tfp uid=fa5be19e Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:24:07.242Z plane-api-migrate-1-g2tfp uid=fa5be19e Running ready=False restarts=0 waiting=None terminated=Completed last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:24:10.255Z plane-api-migrate-1-g2tfp uid=fa5be19e Succeeded ready=False restarts=0 waiting=None terminated=Completed last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:24:10.255Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:24:25.270Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:24:40.296Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:24:49.314Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:25:04.361Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:25:19.356Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:25:43.401Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:25:55.423Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:27:10.566Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:27:22.589Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:29:55.882Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:30:07.914Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:34:56.413Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ErrImagePull terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:35:11.364Z plane-web-wl-95867ffd6-sm2l2 uid=bc0a45ce Pending ready=False restarts=0 waiting=ImagePullBackOff terminated=None last=None deleting=False image=000000000000
+  2026-11-05T06:35:23.397Z plane-api-migrate-1-7rklf uid=6b1cb2b6 Running ready=True restarts=0 waiting=None terminated=None last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:35:23.397Z plane-api-migrate-1-g2tfp gone
+  2026-11-05T06:35:32.510Z plane-api-migrate-1-7rklf uid=6b1cb2b6 Running ready=False restarts=0 waiting=None terminated=Completed last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:35:35.398Z plane-api-migrate-1-7rklf uid=6b1cb2b6 Succeeded ready=False restarts=0 waiting=None terminated=Completed last=None deleting=False image=8c04bd18bb08
+  2026-11-05T06:35:35.398Z plane-web-wl-95867ffd6-sm2l2 gone
+--- Alerts: each alert and label set, as Prometheus reported them, every 5s on change
+  Watchdog sev=none {'ns': '', 'dest': '', 'name': '', 'pod': '', 'deployment': ''} first_seen 2026-11-05T06:23:43.152Z activeAt 2026-11-05T00:34:26.617154565Z first_firing 2026-11-05T06:23:43.152Z gone_from_the_reading_at None
+  KubeContainerWaiting sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'plane-web-wl-95867ffd6-sm2l2', 'deployment': ''} first_seen 2026-11-05T06:24:23.162Z activeAt 2026-11-05T06:24:22.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T06:35:53.825Z
+  KubePodNotReady sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'plane-web-wl-95867ffd6-sm2l2', 'deployment': ''} first_seen 2026-11-05T06:24:23.162Z activeAt 2026-11-05T06:24:22.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T06:35:53.825Z
+  ArgoAppOutOfSync sev=warning {'ns': '', 'dest': 'plane-dev', 'name': 'plane-dev', 'pod': '', 'deployment': ''} first_seen 2026-11-05T06:24:33.171Z activeAt 2026-11-05T06:24:02.417343552Z first_firing None gone_from_the_reading_at 2026-11-05T06:36:33.870Z
+  ArgoSyncFailed sev=critical {'ns': '', 'dest': 'plane-dev', 'name': 'plane-dev', 'pod': '', 'deployment': ''} first_seen 2026-11-05T06:24:33.171Z activeAt 2026-11-05T06:24:02.417343552Z first_firing None gone_from_the_reading_at 2026-11-05T06:38:03.945Z
+  ArgoAppStuckProgressing sev=warning {'ns': '', 'dest': 'plane-dev', 'name': 'plane-dev', 'pod': '', 'deployment': ''} first_seen 2026-11-05T06:25:03.206Z activeAt 2026-11-05T06:24:32.417343552Z first_firing None gone_from_the_reading_at 2026-11-05T06:36:33.870Z
+  KubeDeploymentRolloutStuck sev=warning {'ns': 'plane-dev', 'dest': '', 'name': '', 'pod': 'kps-kube-state-metrics-58c95899dd-s8bb4', 'deployment': 'plane-web-wl'} first_seen 2026-11-05T06:34:23.753Z activeAt 2026-11-05T06:34:22.109597967Z first_firing None gone_from_the_reading_at 2026-11-05T06:35:53.825Z
+  ArgoAppDegraded sev=critical {'ns': '', 'dest': 'argocd', 'name': 'root', 'pod': '', 'deployment': ''} first_seen 2026-11-05T06:35:03.788Z activeAt 2026-11-05T06:34:32.417343552Z first_firing None gone_from_the_reading_at 2026-11-05T06:36:33.870Z
+  ArgoAppDegraded sev=critical {'ns': '', 'dest': 'plane-dev', 'name': 'plane-dev', 'pod': '', 'deployment': ''} first_seen 2026-11-05T06:35:03.788Z activeAt 2026-11-05T06:34:32.417343552Z first_firing None gone_from_the_reading_at 2026-11-05T06:36:33.870Z
+  PrometheusMissingRuleEvaluations: 29 label sets, pending only: True
+--- Alertmanager, active alerts on each change
+  2026-11-05T06:23:43.162Z [('Watchdog', '', 'active')]
+--- Metrics on change
+  2026-11-05T06:23:43.145Z pg_up [['plane-dev', '', '1'], ['plane-prod-sim', '', '1']]
+  2026-11-05T06:23:43.164Z probe_plane_dev [['plane-dev', 'api-db', '1'], ['plane-dev', 'api-instance', '1'], ['plane-dev', 'frontend', '1'], ['plane-dev', 'frontend', '1'], ['plane-dev', 'frontend', '1'], ['plane-dev', 'live', '1']]

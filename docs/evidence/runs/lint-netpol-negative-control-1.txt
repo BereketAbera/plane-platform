@@ -1,0 +1,67 @@
+# date 2026-11-05T02:31:57Z, command: scripts/ci/lint.sh in a clean clone of 218f423 with decide() in scripts/test-netpol.sh made to answer PASS for everything. exit 1
+==> shellcheck
+ ok shellcheck
+==> actionlint
+ ok actionlint
+==> zizmor
+ INFO zizmor: 🌈 zizmor v1.32.0
+ INFO audit: zizmor: 🌈 completed .github/workflows/ci.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/images.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/promote-prod-sim.yml
+ INFO audit: zizmor: 🌈 completed .github/workflows/wayline-upstream-check.yml
+No findings to report. Good job! (3 suppressed)
+ ok zizmor
+==> terraform fmt
+ ok terraform fmt
+==> terraform validate
+ ok terraform validate
+==> tflint
+ ok tflint
+==> hadolint
+apps/wayline/runtime/Dockerfile.backend:29 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.backend:33 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+apps/wayline/runtime/Dockerfile.space:28 DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+ ok hadolint
+==> conftest verify
+97 tests, 97 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+ ok conftest verify
+==> no Bitnami reference
+ ok no Bitnami reference
+==> python compile
+ ok python compile
+==> smoke.py self check
+selftest ok
+ ok smoke.py self check
+==> scan report self check
+selftest ok
+ ok scan report self check
+==> network policy verdict self check
+FAIL decide deny TIMEOUT cluster ready=1 witness=SILENT reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny TIMEOUT cluster ready=1 witness=NO_READING reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny TIMEOUT cluster ready=0 witness=ANSWERED reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny TIMEOUT cluster ready=1 witness=ANSWERED reference=no: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny TIMEOUT outside ready=- witness=SILENT reference=yes: got PASS|counts, want INCONCLUSIVE|free
+FAIL decide deny TIMEOUT outside ready=- witness=UNRESOLVED reference=yes: got PASS|counts, want INCONCLUSIVE|free
+FAIL decide deny TIMEOUT outside ready=- witness=NO_READING reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny DNS outside ready=- witness=UNRESOLVED reference=yes: got PASS|counts, want INCONCLUSIVE|free
+FAIL decide deny DNS outside ready=- witness=SILENT reference=yes: got PASS|counts, want INCONCLUSIVE|free
+FAIL decide deny DNS outside ready=- witness=ANSWERED reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny DNS outside ready=- witness=NO_READING reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny DNS cluster ready=- witness=NONE reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide deny CONNECTED cluster ready=1 witness=ANSWERED reference=yes: got PASS|counts, want FAIL|counts
+FAIL decide deny REFUSED cluster ready=1 witness=ANSWERED reference=yes: got PASS|counts, want FAIL|counts
+FAIL decide deny REFUSED cluster ready=0 witness=ANSWERED reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow REFUSED cluster ready=0 witness=ANSWERED reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow TIMEOUT cluster ready=0 witness=ANSWERED reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow TIMEOUT cluster ready=1 witness=ANSWERED reference=yes: got PASS|counts, want FAIL|counts
+FAIL decide allow TIMEOUT cluster ready=1 witness=NONE reference=yes: got PASS|counts, want FAIL|counts
+FAIL decide allow TIMEOUT cluster ready=1 witness=SILENT reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow TIMEOUT cluster ready=1 witness=NO_READING reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow TIMEOUT outside ready=- witness=SILENT reference=yes: got PASS|counts, want INCONCLUSIVE|free
+FAIL decide allow DNS outside ready=- witness=UNRESOLVED reference=yes: got PASS|counts, want INCONCLUSIVE|free
+FAIL decide allow DNS outside ready=- witness=ANSWERED reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow NOT_RUN cluster ready=1 witness=NONE reference=yes: got PASS|counts, want INCONCLUSIVE|counts
+FAIL decide allow OTHER:35 cluster ready=1 witness=ANSWERED reference=yes: got PASS|counts, want FAIL|counts
+fail selftest: 26 failed
+warn network policy verdict self check FAILED
+fail 1 lint check(s) failed

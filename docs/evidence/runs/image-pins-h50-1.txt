@@ -1,0 +1,46 @@
+# H50: does the pinned tag now name a newer digest? Read only, no pulls.
+# date: 2026-11-05T02:28:16Z  docker buildx imagetools inspect <ref> --format '{{json .Manifest}}', with the pin read from the repo at 70cb6b0
+
+postgres  docker.io/library/postgres:15.19-alpine
+  pinned:  sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+  tag now: sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984  (application/vnd.oci.image.index.v1+json, exit 0)  -> SAME
+valkey  docker.io/valkey/valkey:7.2.15-alpine
+  pinned:  sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+  tag now: sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e  (application/vnd.oci.image.index.v1+json, exit 0)  -> SAME
+rabbitmq  docker.io/library/rabbitmq:3.13.7-management-alpine
+  pinned:  sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+  tag now: sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281  (application/vnd.oci.image.index.v1+json, exit 0)  -> SAME
+silo  docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless
+  pinned:  sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+  tag now: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885  (application/vnd.oci.image.index.v1+json, exit 0)  -> SAME
+argocd  quay.io/argoproj/argocd:v3.5.7
+  pinned:  sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+  tag now: sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db  (application/vnd.docker.distribution.manifest.list.v2+json, exit 0)  -> SAME
+
+# Second path, the registry's own API with anonymous tokens and curl HEAD. date: 2026-11-05T02:31:09Z
+library/postgres:15.19-alpine sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984
+valkey/valkey:7.2.15-alpine sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e
+library/rabbitmq:3.13.7-management-alpine sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281
+pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+argoproj/argocd:v3.5.7 sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+
+# When each image behind the tag was built, from its config. date: 2026-11-05T02:43:15Z  docker buildx imagetools inspect <ref> --format '{{json .Image}}', the linux/arm64 entry's created
+docker.io/library/postgres:15.19-alpine created 2026-10-21T23:19:18.837394962Z
+docker.io/valkey/valkey:7.2.15-alpine created 2026-10-27T00:18:05.451265316Z
+docker.io/library/rabbitmq:3.13.7-management-alpine created 2025-12-02T03:27:12.758168125Z
+docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless created 2026-10-26T18:29:16.387387433Z
+quay.io/argoproj/argocd:v3.5.7 created 2026-11-02T19:46:02.857448753Z
+
+# What the complete scan listed, docs/evidence/security/scan-images-20261104T215437Z/summary.tsv and critical.tsv
+image | os | critical | critical_fixable | high | high_fixable
+docker.io/library/postgres:15.19-alpine | alpine 3.24.3 | 1 | 1 | 25 | 25
+docker.io/library/rabbitmq:3.13.7-management-alpine | alpine 3.22.2 | 2 | 2 | 70 | 70
+docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless | debian 12.15 | 0 | 0 | 1 | 0
+docker.io/valkey/valkey:7.2.15-alpine | alpine 3.24.3 | 0 | 0 | 0 | 0
+quay.io/argoproj/argocd:v3.5.7 | ubuntu 26.04 | 2 | 2 | 121 | 121
+image | id | package | installed | fixed_in
+docker.io/library/postgres:15.19-alpine | CVE-2025-68121 | stdlib | v1.24.6 | 1.24.13, 1.25.7, 1.26.0-rc.3
+docker.io/library/rabbitmq:3.13.7-management-alpine | CVE-2026-31789 | libcrypto3 | 3.5.4-r0 | 3.5.6-r0
+docker.io/library/rabbitmq:3.13.7-management-alpine | CVE-2026-31789 | libssl3 | 3.5.4-r0 | 3.5.6-r0
+quay.io/argoproj/argocd:v3.5.7 | CVE-2025-68121 | stdlib | v1.25.3 | 1.24.13, 1.25.7, 1.26.0-rc.3
+quay.io/argoproj/argocd:v3.5.7 | CVE-2025-68121 | stdlib | v1.24.0 | 1.24.13, 1.25.7, 1.26.0-rc.3

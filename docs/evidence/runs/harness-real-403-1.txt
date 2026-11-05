@@ -1,0 +1,7 @@
+# python3 -B tests/e2e/smoke.py --env dev --mode verify --sentinel <record whose workspace is not in this database> --evidence <scratch>, real requests on plane-dev, GET only. 2026-11-05T02:25:22Z commit 1fb4707
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+FAIL    sentinel-reread  sentinel workspace sentinel-notindatabase answered 403 to a token that works, so this account has no such workspace and this database does not hold the record: data was lost, or stale-record.json, written 2026-11-01T00:00:00Z, is from an older database. If this environment was installed after that, remove the file and run the full smoke test
+evidence: <scratch>/stale-record-evidence.json
+RESULT  FAIL
+exit 1

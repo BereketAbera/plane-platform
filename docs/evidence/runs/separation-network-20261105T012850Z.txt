@@ -1,0 +1,393 @@
+# Separation of plane-dev and plane-prod-sim, network. Real attempts from real pods. 2026-11-05T01:28:50Z
+# command: tests/separation/network.py
+
+## dev->prod-sim: every source pod dials the other environment. A pass is a TIMEOUT and nothing else. 2026-11-05T01:28:51Z
+verdict utc	direction	source	source_ip	hostNetwork	target	host	ip	port	via	verdict	seconds
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-live-wl-5744d85f8b-qdb9d	10.244.0.19	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5.007	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5.007	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	TIMEOUT	5.005	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-space-wl-7fcd9ddf68-wzbtl	10.244.0.112	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-web-wl-864665b66c-7rsk9	10.244.0.116	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-admin-wl-6fdbdb8cc-sx6lg	10.244.0.115	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-pgdb-wl-0	10.244.0.222	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-redis-wl-0	10.244.0.224	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:28:51Z	dev->prod-sim	plane-dev/plane-rabbitmq-wl-0	10.244.0.223	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+
+## dev->prod-sim: reference, a pod inside plane-prod-sim dials the same targets in the same moment. 2026-11-05T01:28:57Z
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:02Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+
+## dev->prod-sim: reference, the source pods with a data-tier rule dial their own environment. 2026-11-05T01:29:02Z
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:08Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:13Z	dev->dev	plane-dev/plane-worker-wl-68ff64dd8b-rclhs	10.244.0.84	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:19Z	dev->dev	plane-dev/plane-beat-worker-wl-657897986c-mv2kk	10.244.0.113	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+
+## dev->prod-sim: the real clients, with plane-dev's own credentials from the pod's environment. 2026-11-05T01:29:19Z
+PASS psycopg from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:20Z", "client": "psycopg", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.38, "detail": "SELECT 1 -> 1"}
+PASS redis-py from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:20Z", "client": "redis-py", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.03, "detail": "PING -> True"}
+PASS amqp from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:20Z", "client": "amqp", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.03, "detail": "AMQP open, server RabbitMQ"}
+PASS boto3 from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:20Z", "client": "boto3", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.39, "detail": "ListBuckets -> ['uploads']"}
+PASS psycopg from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-prod-sim: want a timeout, {"utc": "2026-11-05T01:29:41Z", "client": "psycopg", "target_namespace": "plane-prod-sim", "verdict": "ConnectionTimeout", "seconds": 5.42, "detail": "connection timeout expired"}
+PASS redis-py from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-prod-sim: want a timeout, {"utc": "2026-11-05T01:29:41Z", "client": "redis-py", "target_namespace": "plane-prod-sim", "verdict": "TimeoutError", "seconds": 5.03, "detail": "Timeout connecting to server"}
+PASS amqp from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-prod-sim: want a timeout, {"utc": "2026-11-05T01:29:41Z", "client": "amqp", "target_namespace": "plane-prod-sim", "verdict": "TimeoutError", "seconds": 5.02, "detail": "timed out"}
+PASS boto3 from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-prod-sim: want a timeout, {"utc": "2026-11-05T01:29:41Z", "client": "boto3", "target_namespace": "plane-prod-sim", "verdict": "ConnectTimeoutError", "seconds": 5.63, "detail": "Connect timeout on endpoint URL: \"http://plane-minio.plane-prod-sim.svc.cluster.local:9000/\""}
+PASS psycopg from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:42Z", "client": "psycopg", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.46, "detail": "SELECT 1 -> 1"}
+PASS redis-py from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:42Z", "client": "redis-py", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.03, "detail": "PING -> True"}
+PASS amqp from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:42Z", "client": "amqp", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.01, "detail": "AMQP open, server RabbitMQ"}
+PASS boto3 from plane-dev/plane-api-wl-648bc8f87c-6m7p6 to plane-dev: want a connection, {"utc": "2026-11-05T01:29:42Z", "client": "boto3", "target_namespace": "plane-dev", "verdict": "CONNECTED", "seconds": 0.24, "detail": "ListBuckets -> ['uploads']"}
+
+## dev->prod-sim: psql and valkey-cli inside plane-dev's data pods. 2026-11-05T01:29:42Z
+PASS 2026-11-05T01:29:47Z plane-dev/plane-pgdb-wl-0 -> plane-pgdb.plane-prod-sim.svc.cluster.local: want rc=2, no response: plane-pgdb.plane-prod-sim.svc.cluster.local:5432 - no response
+pg_isready rc=2 seconds=5 
+PASS 2026-11-05T01:29:52Z plane-dev/plane-redis-wl-0 -> plane-redis.plane-prod-sim.svc.cluster.local: want a hang until the timeout: valkey-cli rc=143 seconds=5 Terminated
+
+## prod-sim->dev: every source pod dials the other environment. A pass is a TIMEOUT and nothing else. 2026-11-05T01:29:52Z
+verdict utc	direction	source	source_ip	hostNetwork	target	host	ip	port	via	verdict	seconds
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5.004	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5.003	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5.003	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.003	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5.003	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-live-wl-5d5fd749c6-szdzq	10.244.0.242	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.003	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	TIMEOUT	5.002	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.007	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	TIMEOUT	5.001	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-space-wl-54c66d4dcb-zz2nn	10.244.0.244	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.006	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-web-wl-8fb59c6c9-b4nq8	10.244.0.248	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	6	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	6	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-admin-wl-5d6489d557-vr62j	10.244.0.249	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-pgdb-wl-0	10.244.0.99	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-redis-wl-0	10.244.0.101	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	-	5432	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	-	9090	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	-	6379	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	-	5672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	-	15672	service-dns	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5	want=TIMEOUT
+PASS 2026-11-05T01:29:52Z	prod-sim->dev	plane-prod-sim/plane-rabbitmq-wl-0	10.244.0.127	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	-	9000	service-dns	TIMEOUT	5	want=TIMEOUT
+
+## prod-sim->dev: reference, a pod inside plane-dev dials the same targets in the same moment. 2026-11-05T01:29:58Z
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	postgres	plane-pgdb.plane-dev.svc.cluster.local	10.244.0.222	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	postgres	10.244.0.222	10.244.0.222	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	valkey	plane-redis.plane-dev.svc.cluster.local	10.244.0.224	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	valkey	10.244.0.224	10.244.0.224	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-amqp	10.244.0.223	10.244.0.223	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-dev.svc.cluster.local	10.244.0.223	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	rabbitmq-mgmt	10.244.0.223	10.244.0.223	15672	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-s3	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-s3	10.244.0.221	10.244.0.221	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-console	plane-minio.plane-dev.svc.cluster.local	10.244.0.221	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:03Z	dev->dev	plane-dev/plane-api-wl-648bc8f87c-6m7p6	10.244.0.114	hostNetwork=false	silo-console	10.244.0.221	10.244.0.221	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+
+## prod-sim->dev: reference, the source pods with a data-tier rule dial their own environment. 2026-11-05T01:30:03Z
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:09Z	prod-sim->prod-sim	plane-prod-sim/plane-api-wl-8566bcd789-lc7df	10.244.0.246	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:14Z	prod-sim->prod-sim	plane-prod-sim/plane-worker-wl-667f56c7f8-t9g6g	10.244.0.126	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	postgres	plane-pgdb.plane-prod-sim.svc.cluster.local	10.244.0.99	5432	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	postgres	10.244.0.99	10.244.0.99	5432	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	valkey	plane-redis.plane-prod-sim.svc.cluster.local	10.244.0.101	6379	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	valkey	10.244.0.101	10.244.0.101	6379	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-amqp	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	5672	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-amqp	10.244.0.127	10.244.0.127	5672	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-mgmt	plane-rabbitmq.plane-prod-sim.svc.cluster.local	10.244.0.127	15672	service-dns	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	rabbitmq-mgmt	10.244.0.127	10.244.0.127	15672	pod-ip	TIMEOUT	5.0	want=TIMEOUT
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-s3	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9000	service-dns	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-s3	10.244.0.98	10.244.0.98	9000	pod-ip	CONNECTED	0.0	want=CONNECTED
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-console	plane-minio.plane-prod-sim.svc.cluster.local	10.244.0.98	9090	service-dns	TIMEOUT	5.01	want=TIMEOUT
+PASS 2026-11-05T01:30:20Z	prod-sim->prod-sim	plane-prod-sim/plane-beat-worker-wl-5c8845c7d5-cqhpz	10.244.0.66	hostNetwork=false	silo-console	10.244.0.98	10.244.0.98	9090	pod-ip	TIMEOUT	5.01	want=TIMEOUT
+
+## prod-sim->dev: the real clients, with plane-prod-sim's own credentials from the pod's environment. 2026-11-05T01:30:20Z
+PASS psycopg from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:20Z", "client": "psycopg", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.41, "detail": "SELECT 1 -> 1"}
+PASS redis-py from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:20Z", "client": "redis-py", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.04, "detail": "PING -> True"}
+PASS amqp from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:20Z", "client": "amqp", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.01, "detail": "AMQP open, server RabbitMQ"}
+PASS boto3 from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:20Z", "client": "boto3", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.25, "detail": "ListBuckets -> ['uploads']"}
+PASS psycopg from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-dev: want a timeout, {"utc": "2026-11-05T01:30:41Z", "client": "psycopg", "target_namespace": "plane-dev", "verdict": "ConnectionTimeout", "seconds": 5.44, "detail": "connection timeout expired"}
+PASS redis-py from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-dev: want a timeout, {"utc": "2026-11-05T01:30:41Z", "client": "redis-py", "target_namespace": "plane-dev", "verdict": "TimeoutError", "seconds": 5.04, "detail": "Timeout connecting to server"}
+PASS amqp from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-dev: want a timeout, {"utc": "2026-11-05T01:30:41Z", "client": "amqp", "target_namespace": "plane-dev", "verdict": "TimeoutError", "seconds": 5.02, "detail": "timed out"}
+PASS boto3 from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-dev: want a timeout, {"utc": "2026-11-05T01:30:41Z", "client": "boto3", "target_namespace": "plane-dev", "verdict": "ConnectTimeoutError", "seconds": 5.25, "detail": "Connect timeout on endpoint URL: \"http://plane-minio.plane-dev.svc.cluster.local:9000/\""}
+PASS psycopg from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:42Z", "client": "psycopg", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.37, "detail": "SELECT 1 -> 1"}
+PASS redis-py from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:42Z", "client": "redis-py", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.02, "detail": "PING -> True"}
+PASS amqp from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:42Z", "client": "amqp", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.01, "detail": "AMQP open, server RabbitMQ"}
+PASS boto3 from plane-prod-sim/plane-api-wl-8566bcd789-lc7df to plane-prod-sim: want a connection, {"utc": "2026-11-05T01:30:42Z", "client": "boto3", "target_namespace": "plane-prod-sim", "verdict": "CONNECTED", "seconds": 0.2, "detail": "ListBuckets -> ['uploads']"}
+
+## prod-sim->dev: psql and valkey-cli inside plane-prod-sim's data pods. 2026-11-05T01:30:42Z
+PASS 2026-11-05T01:30:47Z plane-prod-sim/plane-pgdb-wl-0 -> plane-pgdb.plane-dev.svc.cluster.local: want rc=2, no response: plane-pgdb.plane-dev.svc.cluster.local:5432 - no response
+pg_isready rc=2 seconds=5 
+PASS 2026-11-05T01:30:52Z plane-prod-sim/plane-redis-wl-0 -> plane-redis.plane-dev.svc.cluster.local: want a hang until the timeout: valkey-cli rc=143 seconds=5 Terminated
+
+RESULT checks passed=364 failed=0 blocked=0 2026-11-05T01:30:52Z
+Scanned this output for 20 secret values: 0 found and replaced.

@@ -1,0 +1,32 @@
+# Throwaway containers only, nothing in the cluster. Script: harness-review-shutdown-control-script.sh.txt. Run 2026-11-05T01:49:17Z, saved 2026-11-05T02:02:49Z
+# docker --restart=always stands in for the pod's restartPolicy: Always. docker logs keeps every restart, where kubectl logs reads only the running container.
+# image localhost:5001/wayline/backend:1563cbfbe895, 2026-11-05T01:49:17Z
+01:49:23 consumer on queue celery after 6s
+container restarts 0, running true, pid 1863624, exit 0
+
+== 1. cancel_consumer, add_consumer: the dirty worker, as the control leaves it
+        no longer consuming from celery
+after cancel: consumers=0
+        add consumer celery
+01:49:58 consumer on queue celery after 1s
+Canceling queue lines in the container's log: 2
+
+== 2. remote control shutdown, the same kind of command as the two above
+container restarts 1, running true, pid 1867251, exit 0
+01:50:09 consumer on queue celery after 0s
+container restarts 1, running true, pid 1867251, exit 0
+celery exited line: celery exited 0 
+
+== 3. a broker restart, which is what an emptied selection does not survive
+01:50:17 broker restarted
+01:50:23 consumer on queue celery after 6s
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'typ
+container restarts 1, running true, pid 1867251, exit 0
+
+== 4. control: the same broker restart with a dirty worker and no shutdown
+        no longer consuming from celery
+        add consumer celery
+01:51:08 consumer on queue celery after 0s
+01:51:16 broker restarted
+01:52:02 NO consumer on queue celery after 45s (consumers=0)
+== done 2026-11-05T01:52:02Z

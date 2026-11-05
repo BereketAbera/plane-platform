@@ -1,0 +1,14 @@
+# date 2026-11-05T03:39:56Z, HEAD 1936016. Read only.
+# command: source scripts/lib/common.sh scripts/lib/dev-check.sh; dev_problems <the four digests in prod-sim's overlay>, then the same and a digest no pod runs
+four digests, problems: []
+and a made-up one, problems: [no ready container in namespace plane-dev runs sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]
+
+# command: curl -I against the local registry, with promote.sh's Accept header, for each of the four
+localhost:5001/wayline/admin sha256:c24ead5a02a1 HTTP 200
+localhost:5001/wayline/backend sha256:9c7130942d90 HTTP 200
+localhost:5001/wayline/web sha256:96841278d02a HTTP 200
+localhost:5001/wayline/space sha256:0a4ca742292d HTTP 200
+
+# results copied from runs earlier in this review, in scratch clones of 1936016, since removed
+scripts/test-netpol.sh --selftest, clone with no .tools, env -i PATH=/usr/bin:/bin: ok selftest passed, exit 0, git status lines 0
+scripts/ci/test-promotion-flows.sh four-images-through, every proxy variable set to http://127.0.0.1:9: exit 0, 1 of 1 passed. This is not a real offline run

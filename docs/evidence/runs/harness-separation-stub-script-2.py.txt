@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""tests/separation/network.py and state.py with kubectl stubbed, so nothing reaches a pod. Each case runs in a new process,
+because each module holds one report. Fake values only, and no Secret is read. It says what the scripts do given these
+answers, and nothing about the real pods.
+
+usage: separation-stub.py <directory holding network.py, state.py and common.py> <directory holding smoke.py>"""
+import json
+import subprocess
+import sys
+from types import SimpleNamespace as R
+
+CODE, SMOKE = sys.argv[1], sys.argv[2]
+sys.path.insert(0, CODE)
+sys.path.insert(1, SMOKE)
+
+
+def network_case(case):
+    import network as N
+
+    def pod_list(ns):
+        names = ["plane-api-wl-x", "plane-worker-wl-x", "plane-beat-worker-wl-x", "plane-live-wl-x", "plane-space-wl-x", "plane-web-wl-x", "plane-admin-wl-x",
+                 "plane-pgdb-wl-0", "plane-redis-wl-0", "plane-rabbitmq-wl-0", "plane-minio-wl-0"]
+        return {"items": [{"metadata": {"name": n}, "status": {"phase": "Running", "podIP": f"10.244.{1 if ns == 'plane-dev' else 2}.{i + 1}"}, "spec": {}} for i, n in enumerate(names)]}
+
+    def verdicts(targets, ns):
+        out = []
+        for t in targets:
+            own = t["host"].startswith(f"10.244.{1 if ns == 'plane-dev' else 2}.") or f".{ns}." in t["host"]
+            if t["name"] == "dns-tcp" or (own and t["name"] in N.OWN_ALLOWED):
+                verdict = "CONNECTED"
+            else:
+                verdict = "TIMEOUT"
+            out.append({**t, "ip": "10.244.9.9", "verdict": verdict, "seconds": 5})
+        return out
+
+    def kubectl(*args, stdin=None, timeout=120):
+        args = list(args)
+        if args[:1] == ["-n"] and args[2:4] == ["get", "pods"]:
+            return R(returncode=0, stdout=json.dumps(pod_list(args[1])), stderr="")
+        ns = args[1]
+        rest = args[args.index("--") + 1:]
+        if rest[0] == "python" and rest[2] == N.PY_PROBE or rest[0] == "node":
+            return R(returncode=0, stdout=json.dumps(verdicts(json.loads(stdin), ns)), stderr="")
+        if rest[0] == "sh" and rest[2] == N.SH_PROBE:
+            lines = [dict(zip(("name", "host", "port", "via"), line.split())) for line in stdin.splitlines()]
+            for line in lines:
+                line["port"] = int(line["port"])
+            text = []
+            for r in verdicts(lines, ns):
+                text.append(f"{r['name']} {r['host']} {r['port']} {r['via']} " + ("0 0 " if r["verdict"] == "CONNECTED" else "1 5 nc:_timed_out"))
+            return R(returncode=0, stdout="\n".join(text) + "\n", stderr="")
+        if rest[0] == "python" and rest[2] == N.REAL_CLIENTS:
+            target = rest[3]
+            own = target == ns
+            lines = [json.dumps({"client": client, "target_namespace": target, "verdict": "CONNECTED" if own else "TimeoutError",
+                                 "seconds": 0.1 if own else 5, "detail": "ok" if own else "timed out"})
+                     for client in ("psycopg", "redis-py", "amqp", "boto3")]
+            if case == "clients-empty":
+                lines = []
+            if case == "clients-one":
+                lines = lines[:1]
+            if case == "clients-noise":
+                lines = ["a warning that is not JSON", *lines]
+            if case == "clients-only-noise":
+                lines = ["a warning that is not JSON"]
+            return R(returncode=0, stdout="".join(line + "\n" for line in lines), stderr="")
+        if rest[0] == "sh" and "pg_isready" in rest[2]:
+            if case == "pg-fast":
+                return R(returncode=0, stdout="no response\npg_isready rc=2 seconds=0\n", stderr="")
+            if case == "pg-exec-failed":
+                return R(returncode=1, stdout="", stderr="error: unable to upgrade connection")
+            return R(returncode=0, stdout="no response\npg_isready rc=2 seconds=5\n", stderr="")
+        if rest[0] == "sh" and "valkey-cli" in rest[2]:
+            if case == "valkey-exec-failed":
+                return R(returncode=1, stdout="", stderr="error: unable to upgrade connection")
+            return R(returncode=0, stdout="valkey-cli rc=124 seconds=5\n", stderr="")
+        raise AssertionError(args)
+
+    N.kubectl = kubectl
+    N.require_environments = lambda: None
+    N.read_secrets = lambda: {}
+    return run_quietly(N)
+
+
+def state_case(case):
+    import state as S
+
+    def store(env):
+        return {"plane-app-env": {"DATABASE_URL": f"postgres://u:pw-{env}-aaaa@plane-pgdb.plane-{env}.svc.cluster.local/db",
+                                  "REDIS_URL": f"redis://plane-redis.plane-{env}.svc.cluster.local:6379/",
+                                  "AMQP_URL": f"amqp://u:rabbit-{env}-aaaa@plane-rabbitmq.plane-{env}.svc.cluster.local:5672/"},
+                "plane-app-keys": {"SECRET_KEY": f"secret-{env}-aaaa", "LIVE_SERVER_SECRET_KEY": f"live-{env}-aaaa"},
+                "plane-live-env": {"REDIS_URL": f"redis://plane-redis.plane-{env}.svc.cluster.local:6379/"},
+                "plane-doc-store": {"USE_MINIO": "1", "AWS_ACCESS_KEY_ID": f"key-{env}-aaaa", "AWS_SECRET_ACCESS_KEY": f"s3-{env}-aaaa",
+                                    "AWS_S3_BUCKET_NAME": "uploads", "AWS_S3_ENDPOINT_URL": "http://plane-minio:9000", "FILE_SIZE_LIMIT": "5242880"},
+                "plane-pgdb": {"POSTGRES_USER": "plane", "POSTGRES_PASSWORD": f"pw-{env}-aaaa", "POSTGRES_DB": "plane"},
+                "plane-rabbitmq": {"RABBITMQ_DEFAULT_USER": "plane", "RABBITMQ_DEFAULT_PASS": f"rabbit-{env}-aaaa"},
+                "plane-infisical-identity": {"identityId": f"id-{env}-aaaa"}}
+
+    stores = {"dev": store("dev"), "prod-sim": store("prod-sim")}
+
+    def run_in_api(env, script, stdin=None, *argv):
+        assert script == S.CREDENTIAL_ATTEMPTS
+        lines = []
+        for name in ("own postgres password", "other environment's postgres password", "own rabbitmq password",
+                     "other environment's rabbitmq password", "own silo keys", "other environment's silo keys"):
+            if name.startswith("own"):
+                lines.append(json.dumps({"attempt": name, "verdict": "ACCEPTED", "detail": "ok"}))
+            else:
+                lines.append(json.dumps({"attempt": name, "verdict": "REFUSED", "error": "AccessRefused", "code": None, "detail": "password authentication failed"}))
+        if case == "attempts-empty":
+            lines = []
+        if case == "attempts-own-only":
+            lines = [line for line in lines if '"own ' in line]
+        if case == "attempts-only-noise":
+            lines = ["a warning that is not JSON"]
+        return "".join(line + "\n" for line in lines)
+
+    S.run_in_api = run_in_api
+    S.read_secrets = lambda: stores
+    S.valkey = lambda namespace, *args: "requirepass\n"
+    S.require_environments = lambda: None
+    for name in ("identity", "connected", "data", "infisical", "known_gap"):
+        setattr(S, name, lambda: None)
+    import tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory() as directory:
+        S.ACCOUNTS = Path(directory) / "accounts.env"
+        return run_quietly(S)
+
+
+def run_quietly(module):
+    """The first lines of each kind, and the result."""
+    original = module.report.say
+    shown = {"BLOCKED": 0, "FAIL": 0}
+
+    def say(text=""):
+        word = text.split(" ", 1)[0]
+        if word in shown and shown[word] < 2:
+            shown[word] += 1
+            original(text[:230])
+        elif "RESULT" in text or "Scanned" in text:
+            original(text.strip())
+    module.report.say = say
+    if hasattr(module, "say"):
+        module.say = say
+    code = module.main()
+    print(f"exit {code}")
+    return code
+
+
+if len(sys.argv) == 4:
+    kind, case = sys.argv[3].split("=")
+    sys.exit(network_case(case) if kind == "network" else state_case(case))
+
+CASES = [("network", "normal"), ("network", "clients-noise"), ("network", "clients-empty"), ("network", "clients-one"), ("network", "clients-only-noise"),
+         ("network", "pg-fast"), ("network", "pg-exec-failed"), ("network", "valkey-exec-failed"),
+         ("state", "normal"), ("state", "attempts-empty"), ("state", "attempts-own-only"), ("state", "attempts-only-noise")]
+for kind, case in CASES:
+    print(f"== {kind} {case}", flush=True)
+    done = subprocess.run([sys.executable, "-B", __file__, CODE, SMOKE, f"{kind}={case}"], capture_output=True, text=True)
+    print(done.stdout + done.stderr[-400:], flush=True)

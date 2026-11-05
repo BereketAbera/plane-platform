@@ -1,0 +1,21 @@
+# Item 5. Stub: python3 -B .local/evidence-raw/harness-overlay-stub-script-1.py.txt, 2026-11-05T02:45:31Z, commit 9e86372. Real overlay and real Deployments of plane-dev, one status at a time changed in memory.
+A. as the cluster is now
+  want PASS: PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/dev/kustomization.yaml, with every rollout finished
+B. the reviewer's case: new template applied, updatedReplicas 0, the old pod still ready
+  want BLOCKED: BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-web-wl is set to the overlay's image, and 0 of 1 replicas have the new template
+C. the new pod surged, the old one still there
+  want BLOCKED: BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-web-wl is set to the overlay's image, and 1 old replicas are still there
+D. the controller has not read the newest spec
+  want BLOCKED: BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-web-wl is set to the overlay's image, and the controller has read generation 9 of 10
+E. the old pod is gone and the new one is not available yet
+  want BLOCKED: BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-web-wl is set to the overlay's image, and 0 of 1 new replicas are available
+F. the template itself is not what the overlay names
+  want BLOCKED: BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-web-wl is set to ['docker.io/makeplane/plane-frontend@sha256:old'], and the overlay names localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b
+failures: 0
+
+# Real rollout: python3 -B .local/evidence-raw/harness-overlay-watch-script-1.py.txt, the promotion 0af8956 rolling out in plane-prod-sim, 2026-11-05 from 02:21Z, commit 8dcf2a1 and after. Printed when the line changed. Only reads.
+02:21:22Z BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-api-wl is set to the overlay's image, and 1 old replicas are still there; plane-worker-wl is set to the overlay's image, and 1 old replicas are still there; plane-beat-worker-wl is set to the overlay's image, and 1 old replicas are still there; plane-space-wl is
+02:21:32Z BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-api-wl is set to the overlay's image, and 1 old replicas are still there; plane-beat-worker-wl is set to the overlay's image, and 1 old replicas are still there
+02:21:47Z BLOCKED branding-overlay  what is running is not what the overlay names, so a check here would say nothing about this overlay. Is the rollout finished? plane-api-wl is set to the overlay's image, and 1 old replicas are still there
+02:21:52Z PASS    branding-overlay  admin, backend, space, web run the digests in helm/plane/overlays/prod-sim/kustomization.yaml, with every rollout finished
+done 02:22:08Z
