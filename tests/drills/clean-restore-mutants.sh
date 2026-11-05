@@ -43,10 +43,10 @@ no-prepare-admin	scripts/backup.sh	S25	s/^  recovery_prepare_admin\n//m
 no-version-check	scripts/restore.sh	S35	s/if recovery_version_newer "\$backup_version" "\$live_version"; then/if false; then/
 repair-leaves-the-job	scripts/restore.sh	S31	s/^      kc -n "\$ns" delete job "\$job" --cascade=foreground --timeout=180s >\/dev\/null \|\| die [^\n]*\n//m
 restored-mode-applies-anything	scripts/infisical-bootstrap.sh	S1 S10	s/^  apply_restored$/  tf apply -lock-timeout=10m -input=false -auto-approve/m
-stale-done-lines-kept	scripts/restore.sh	S15	s/^    if ! cluster_exists && grep -qE '\^\(done\|data-back\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
+stale-done-lines-kept	scripts/restore.sh	S15	s/^    if recovery_marker_cluster_gone && grep -qE '\^\(done\|data-back\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
 no-overwrite-guard-infisical	scripts/restore.sh	R8	s/^  refuse_if_not_empty "\$users" 0\n//m
 marker-not-compared-with-latest	scripts/restore.sh	R1	s/^    if \[\[ "\$requested" == latest \]\]; then clean_refuse_stale_marker; fi\n//m
-marker-plane-choice-stands	scripts/restore.sh	R1	s/^  if cluster_exists; then return 0; fi\n  for env in \$CLEAN_ENVS; do\n    id="\$\(clean_marker_value "\$env"\)"\n    fresh=/  return 0\n  for env in \$CLEAN_ENVS; do\n    id="\$(clean_marker_value "\$env")"\n    fresh=/m
+marker-plane-choice-stands	scripts/restore.sh	R1	s/^  if ! recovery_marker_cluster_gone; then return 0; fi\n  for env in \$CLEAN_ENVS; do\n    id="\$\(clean_marker_value "\$env"\)"\n    fresh=/  return 0\n  for env in \$CLEAN_ENVS; do\n    id="\$(clean_marker_value "\$env")"\n    fresh=/m
 resume-not-told-to-child	scripts/restore.sh	R2	s/ "RESTORE_RESUME=\$under_way" \|\| rc=\$\?/ || rc=\$?/g
 resume-refuses-a-partial-restore	scripts/restore.sh	R2	s/\("\$users" -eq 0 \|\| "\$users" == "\$want_users"\) && "\$objects" -le "\$want_objects"/"\$users" == "\$want_users" && "\$objects" == "\$want_objects"/
 next-from-every-infisical-id	infisical/lib/recovery.sh	R3	s/if \[\[ "\$id" > "\$iid" \]\] && recovery_set_complete "\$LOCAL_DIR\/backups\/infisical\/\$id"; then/if [[ "\$id" > "\$iid" ]]; then/
@@ -106,6 +106,34 @@ override-reads-as-a-pass	scripts/restore.sh	V3	s/^      OVERWROTE=yes\n      if[
 data-back-not-written	scripts/restore.sh	V4	s/^ +data_back_mark\n//mg
 data-back-not-read	scripts/restore.sh	V4	s/^  elif data_back_on_resume && ! resume_overwrite_names_this; then/  elif false; then/m
 data-back-beats-the-override	scripts/restore.sh	V4	s/^  elif data_back_on_resume && ! resume_overwrite_names_this; then/  elif data_back_on_resume; then/m
+finished-job-not-read	scripts/restore.sh	V4b	s/^    clean_note_finished_data_job "\$\{ns#plane-\}" "\$jobs_json"\n//m
+finished-job-by-any-name	scripts/restore.sh	V4b	s/any\(\.items\[\]; \.metadata\.name == \$job and any\(\.status\.conditions\[\]\?; \.type == "Complete" and \.status == "True"\)\)/any(.items[]; (.metadata.name | test("^plane-restore-[0-9]{8}t[0-9]{6}z\$")) and any(.status.conditions[]?; .type == "Complete" and .status == "True"))/
+failed-job-reads-as-finished	scripts/restore.sh	V4b	s/any\(\.items\[\]; \.metadata\.name == \$job and any\(\.status\.conditions\[\]\?; \.type == "Complete" and \.status == "True"\)\)/any(.items[]; .metadata.name == \$job)/
+data-job-not-named	scripts/restore.sh	V4b	s/^  printf 'data-job %s plane-restore-%s\\n' "\$ENV_NAME" "\$JOB_SUFFIX" >> "\$RESTORE_CLEAN_MARKER\.tmp"\n//m
+earlier-line-outlives-a-new-data-job	scripts/restore.sh	V4b	s/ -e "\/\^data-back \$ENV_NAME\\\$\/d"//
+refusal-says-nothing-changed	scripts/restore.sh	M1	s/\$NS was not changed\. What this resume did before it could look stands: its repair, and make up as far as this step\./Nothing was changed./
+child-speaks-for-the-whole-run	scripts/restore.sh	M1	s/if \[\[ "\$ANYTHING_CHANGED" == no && "\$RESTORE_MODE" == clean \]\]; then/if false; then/
+state-walked-back-on-a-resume	scripts/restore.sh	M1	s/^  if clean_done infisical \|\| grep -qx 'data-back infisical' "\$RESTORE_CLEAN_MARKER"; then\n    \[\[ ! -f "\$RECOVERY_TF_STATE" \]\] \|\| return 0\n  fi\n//m
+state-never-installed-on-a-resume	scripts/restore.sh	M1	s/^    \[\[ ! -f "\$RECOVERY_TF_STATE" \]\] \|\| return 0\n/    return 0\n/m
+child-walks-the-state-back	scripts/restore.sh	M1	s/^(    if \[\[ -n "\$set_file" \]\]; then recovery_rebuild_machine_file "\$backup_dir"; fi\n  fi\n)/$1  recovery_install_tf_state "\$backup_dir"\n/m
+new-cluster-keeps-the-lines	infisical/lib/recovery.sh	M2	s/^  \[\[ -n "\$now" && "\$now" != "\$was" \]\]\n/  false\n/m
+cluster-not-noted	scripts/restore.sh	M2	s/^  clean_note_cluster\n//m
+docker-silence-reads-as-new	infisical/lib/recovery.sh	M2	s/\[\[ -n "\$now" && "\$now" != "\$was" \]\]/[[ "\$now" != "\$was" ]]/
+stale-choice-on-a-new-cluster	scripts/restore.sh	M2	s/^  if ! recovery_marker_cluster_gone; then return 0; fi\n/  if cluster_exists; then return 0; fi\n/m
+backup-trusts-lines-of-another-cluster	scripts/backup.sh	M2	s/ && ! recovery_marker_cluster_gone; then/; then/g
+plan-promises-on-a-new-cluster	scripts/restore.sh	M2	s/ && ! clean_done "\$env" && ! recovery_marker_cluster_gone; then/ && ! clean_done "\$env"; then/
+job-check-after-the-last-plane-job	scripts/restore.sh	M3	s/^  JOB_MAY_RUN=no\n//m
+job-check-after-the-last-infisical-job	scripts/restore.sh	M3	s/^  JOB_MAY_RUN=no # Every Job[^\n]*\n//m
+job-check-ends-before-the-migrator	scripts/restore.sh	M3	s/^(  run_migrator\n)/  JOB_MAY_RUN=no\n$1/m
+finished-backup-still-fatal	scripts/restore.sh	M4	s/ \|\| clean_done_stands "\$env"; then continue; fi/; then continue; fi/
+finished-backup-still-read	scripts/restore.sh	M4	s/^    if \[\[ ! -f "\$LOCAL_DIR\/backups\/\$env\/\$id\/manifest\.json" \]\]; then continue; fi\n//m
+plan-reads-a-finished-backup	scripts/restore.sh	M4	s/^    if \[\[ ! -f "\$LOCAL_DIR\/backups\/\$env\/\$id\/manifest\.json" \]\]; then\n      printf[^\n]*\n      continue\n    fi\n//m
+verify-reads-a-finished-backup	scripts/restore.sh	M4	s/^      slug="\$\(jq -r '\.slug \/\/ ""' "\$sentinel" 2>\/dev\/null \|\| true\)"\n/      slug=""\n/m
+line-of-a-lost-cluster-spares-a-backup	scripts/restore.sh	M4	s/^clean_done_stands\(\) \{[^\n]*\n/clean_done_stands() { clean_done "\$1"; }\n/m
+plan-rounds-up-to-the-limit	scripts/lib/up-checks.sh	M5	s/^kib_as_gib_down\(\) \{[^\n]*\n/kib_as_gib_down() { kib_as_gib "\$1"; }\n/m
+plan-rounds-to-two-decimals-only	scripts/lib/up-checks.sh	M5	s/int\(k \* 100 \/ 1048576\) \/ 100/k \/ 1048576/
+probe-outlives-the-script	scripts/rotate.sh	H66	s/while kill -0 "\$\$" 2>\/dev\/null; do/while :; do/
+probe-stops-at-once	scripts/rotate.sh	H66	s/while kill -0 "\$\$" 2>\/dev\/null; do/while false; do/
 TABLE
 }
 

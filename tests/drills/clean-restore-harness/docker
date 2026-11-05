@@ -8,6 +8,11 @@ case "$1" in
     case "$*" in
       *Mounts*) printf 'kind-var-volume\n' ;;
       *State.Status*) if grep -F '"stopped": true' "$H_STATE/cluster.json" >/dev/null; then printf 'exited\n'; else printf 'running\n'; fi ;;
+      *.Id*)
+        # The node's container id, which only a new cluster changes. A scenario can make Docker not say.
+        [[ ! -e "$H_STATE/docker-id-fails" ]] || exit 1
+        jq -r '"node-of-cluster-generation-\(.generation)"' "$H_STATE/cluster.json"
+        ;;
       *) exit 99 ;;
     esac
     ;;

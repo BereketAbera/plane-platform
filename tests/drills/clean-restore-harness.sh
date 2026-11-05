@@ -7,14 +7,15 @@
 #                                                the same scenarios against other code, to see them fail
 # S and a number is a scenario of the first review of the clean restore or from before it. R and a number is finding
 # that number of the second review, in clean-restore-harness/scenarios-second-review.sh. V and a number is MAJOR problem
-# that number of the review of those fixes, at the end of the same file.
+# that number of the review of those fixes, at the end of the same file, and M and a number its MINOR problem that
+# number. H66 is that entry of the hardening backlog, the probe loop of scripts/rotate.sh.
 #
 # macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. Run it in the background: one scenario at a time
 # takes about an hour, an estimate, and in six ONLY= groups at once it took 26 minutes.
 #
 # WHAT IT DOES. Each scenario copies the real scripts into a throwaway tree under $TMPDIR and runs them there:
 # restore.sh, backup.sh, destroy.sh, up.sh, cluster-up.sh, secret-zero.sh, infisical-bootstrap.sh,
-# infisical-seed.sh, the drill, and every library they source. Real: bash 3.2, jq, yq, shasum, openssl, git, the recovery
+# infisical-seed.sh, the drill, rotate.sh as far as its probe loop, and every library they source. Real: bash 3.2, jq, yq, shasum, openssl, git, the recovery
 # sets and every other file on disk, and, as written and on real folders, the lines of the Plane backup Job for its
 # retention and for what it records about uploaded rows. Stubbed, in tests/drills/clean-restore-harness/: kubectl, kind,
 # docker, df, sleep, rclone, Terraform, tests/e2e/smoke.py, gitops-publish.sh, status.sh, build-images.sh, the Infisical
@@ -104,7 +105,7 @@ reset() {
   stop_api
   rm -rf "$H"
   mkdir -p "$H"/{scripts/lib,scripts/ci,monitoring/ops,infisical/lib,infisical/terraform,infisical/manifests,tests/drills,tests/e2e,gitops/environments/dev,gitops/environments/prod-sim,gitops/applications,helm/values,infrastructure/kind,.tools/bin,state,.local/secret-zero,.local/terraform/infisical,.local/terraform/local,.local/evidence-raw}
-  cp "$SOURCE"/scripts/{restore,backup,destroy,up,cluster-up,infisical-bootstrap,infisical-seed,secret-zero}.sh "$H/scripts/"
+  cp "$SOURCE"/scripts/{restore,backup,destroy,up,cluster-up,infisical-bootstrap,infisical-seed,secret-zero,rotate}.sh "$H/scripts/"
   cp "$SOURCE"/scripts/lib/*.sh "$H/scripts/lib/"
   cp "$SOURCE"/monitoring/ops/lib.sh "$H/monitoring/ops/"
   cp "$SOURCE"/infisical/lib/*.sh "$H/infisical/lib/"
@@ -1640,7 +1641,7 @@ S36() {
 # shellcheck source=clean-restore-harness/scenarios-second-review.sh
 source "$STUBS/scenarios-second-review.sh"
 
-SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22 V1 V2 V3 V4"
+SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22 V1 V2 V3 V4 V4b M1 M2 M3 M4 M5 H66"
 
 for s in $SCENARIOS; do
   case " ${ONLY:-$SCENARIOS} " in
