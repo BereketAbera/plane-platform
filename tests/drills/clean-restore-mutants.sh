@@ -43,7 +43,7 @@ no-prepare-admin	scripts/backup.sh	S25	s/^  recovery_prepare_admin\n//m
 no-version-check	scripts/restore.sh	S35	s/if recovery_version_newer "\$backup_version" "\$live_version"; then/if false; then/
 repair-leaves-the-job	scripts/restore.sh	S31	s/^      kc -n "\$ns" delete job "\$job" --cascade=foreground --timeout=180s >\/dev\/null \|\| die [^\n]*\n//m
 restored-mode-applies-anything	scripts/infisical-bootstrap.sh	S1 S10	s/^  apply_restored$/  tf apply -lock-timeout=10m -input=false -auto-approve/m
-stale-done-lines-kept	scripts/restore.sh	S15	s/^    if recovery_marker_cluster_gone && grep -qE '\^\(done\|data-back\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
+stale-done-lines-kept	scripts/restore.sh	S15	s/^    if recovery_marker_cluster_gone && grep -qE '\^\(done\|data-back\|overwrote\) ' "\$RESTORE_CLEAN_MARKER"; then/    if false; then/m
 no-overwrite-guard-infisical	scripts/restore.sh	R8	s/^  refuse_if_not_empty "\$users" 0\n//m
 marker-not-compared-with-latest	scripts/restore.sh	R1	s/^    if \[\[ "\$requested" == latest \]\]; then clean_refuse_stale_marker; fi\n//m
 marker-plane-choice-stands	scripts/restore.sh	R1	s/^  if ! recovery_marker_cluster_gone; then return 0; fi\n  for env in \$CLEAN_ENVS; do\n    id="\$\(clean_marker_value "\$env"\)"\n    fresh=/  return 0\n  for env in \$CLEAN_ENVS; do\n    id="\$(clean_marker_value "\$env")"\n    fresh=/m
@@ -95,7 +95,7 @@ in-place-ignores-a-dangling-row	scripts/restore.sh	R22	s/^  if \[\[ "\$missing" 
 manifest-does-not-record-it	scripts/backup.sh	R22	s/^ *"uploaded_objects": \$UPLOADED,\n//m
 comparison-failure-costs-the-backup	scripts/backup.sh	R22	s/^( *)echo "objects: could not compare[^\n]*\n/$1exit 1\n/m
 comparison-the-wrong-way-round	scripts/backup.sh	R22	s/LC_ALL=C comm -23 "\$D\/postgres\/uploaded-keys.txt"/LC_ALL=C comm -13 "\$D\/postgres\/uploaded-keys.txt"/
-stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$evidence\.log" 2>&1\n)/  trap '' HUP INT TERM\n$1/m
+stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  client_probe\n)/  trap '' HUP INT TERM\n$1/m
 stop-says-nothing-on-a-dead-client	scripts/restore.sh	V1	s/^  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$evidence\.log" 2>&1\n//m
 clean-stop-dies-on-a-dead-client	scripts/restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n(  \{ printf '\\n'; \} 2>\/dev\/null \|\| exec >>"\$CLEAN_EVIDENCE\.log" 2>&1\n)/$1/m
 drill-stop-dies-on-a-dead-client	tests/drills/clean-restore.sh	V1	s/^  set \+e\n  trap '' HUP INT TERM PIPE\n//m
@@ -134,6 +134,20 @@ plan-rounds-up-to-the-limit	scripts/lib/up-checks.sh	M5	s/^kib_as_gib_down\(\) \
 plan-rounds-to-two-decimals-only	scripts/lib/up-checks.sh	M5	s/int\(k \* 100 \/ 1048576\) \/ 100/k \/ 1048576/
 probe-outlives-the-script	scripts/rotate.sh	H66	s/while kill -0 "\$\$" 2>\/dev\/null; do/while :; do/
 probe-stops-at-once	scripts/rotate.sh	H66	s/while kill -0 "\$\$" 2>\/dev\/null; do/while false; do/
+newer-backup-advice-skips-its-backup	scripts/restore.sh	D1	s/To use it, start over: \$delete, then make restore-clean BACKUP=latest \$option=\$newer\./To use it, start over and pass \$option=\$newer: make destroy CONFIRM=yes SKIP_BACKUP=yes first./
+stop-probes-only-at-its-top	scripts/restore.sh	D2	s/^    client_probe\n//mg
+gone-cluster-read-through-a-pipeline	infisical/lib/recovery.sh	D3	s/^  list="\$\(kind get clusters 2>\/dev\/null\)" \|\| return 1\n  grep -qx "\$CLUSTER_NAME" <<<"\$list" \|\| return 0\n/  cluster_exists || return 0\n/m
+overwrote-line-stays-on-a-new-cluster	scripts/restore.sh	D4	s/ -e '\/\^overwrote \/d'//
+overwrote-line-alone-is-not-looked-at	scripts/restore.sh	D4	s/\(done\|data-back\|overwrote\)/(done|data-back)/g
+listed-only-after-the-pause	monitoring/ops/lib.sh	D5	s/^  ARGO_PAUSED_APPS\+=\("\$app"\)\n  ARGO_PAUSED_SPECS\+=\("\$spec"\)\n(  kc -n argocd patch application "\$app" --type merge \\\n[^\n]*\n)/$1  ARGO_PAUSED_APPS+=("\$app")\n  ARGO_PAUSED_SPECS+=("\$spec")\n/m
+alarm-after-plane-guard-jobs	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=no # The guard Jobs have returned[^\n]*\n//m
+alarm-after-infisical-guard-job	scripts/restore.sh	D6	s/^  JOB_MAY_RUN=no # The guard Job has returned[^\n]*\n//m
+no-look-before-a-kept-resume-migrator	scripts/restore.sh	D7	s/^  JOB_MAY_RUN=yes\n(  run_migrator\n)/$1/m
+no-look-before-the-plane-data-job	scripts/restore.sh	D2	s/^    JOB_MAY_RUN=yes\n(    data_job_mark\n    restore_data )/$1/m
+no-look-before-the-infisical-data-job	scripts/restore.sh	D2	s/^    JOB_MAY_RUN=yes\n(    data_job_mark\n    restore_infisical_db )/$1/m
+no-copy-of-the-test-files	scripts/restore.sh	D7	s/^  if \[\[ "\$KEEP_DATA" == yes \]\]; then recovery_keep_test_files[^\n]*\n//m
+kept-data-reads-as-part-of-the-backup	scripts/restore.sh	D7	s/^      elif \[\[ "\$JOB_STOPPED" == yes && "\$KEEP_DATA" == yes \]\]; then\n[^\n]*\n//m
+kept-infisical-reads-as-a-bad-restore	scripts/restore.sh	D7	s/^      if \[\[ "\$KEEP_DATA" == yes \]\]; then\n        die "this resume kept what[^\n]*\n      fi\n//m
 TABLE
 }
 

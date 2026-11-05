@@ -88,6 +88,23 @@ def asked_to_fail():
     return False
 
 
+# A stop that comes once this call has taken effect, and before its client has returned. One regular expression, matched
+# as above, and only once: $H_STATE/kubectl-signal-after. It signals the whole process group, as a stop at that moment would.
+if os.path.exists(f"{S}/kubectl-signal-after"):
+    with open(f"{S}/kubectl-signal-after") as f:
+        signal_after = f.read().strip()
+    if signal_after and re.search(signal_after, f"{ns or ''} {cmd}"):
+        import atexit, signal
+
+        def stop_after_this_call():
+            sys.stdout.flush()
+            os.killpg(os.getpgid(0), signal.SIGTERM)
+            time.sleep(1)
+
+        os.remove(f"{S}/kubectl-signal-after")
+        log(f"kc signals its group after this call, as the scenario asked: {ns or ''} {cmd}")
+        atexit.register(stop_after_this_call)
+
 if asked_to_fail():
     log(f"kc failed, as the scenario asked: {ns or ''} {cmd}")
     print("Unable to connect to the server: net/http: TLS handshake timeout", file=sys.stderr)
@@ -557,6 +574,11 @@ if args[0] == "apply":
 
 if args[0] == "delete":
     if args[1] == "job":
+        # How long the removal takes, for a scenario that does something while it waits.
+        if os.path.exists(f"{S}/delete-takes"):
+            log("kc delete job started")
+            with open(f"{S}/delete-takes") as f:
+                time.sleep(float(f.read().strip()))
         jobs = jload("jobs.json", {})
         jobs.pop(args[2], None)
         jsave("jobs.json", jobs)

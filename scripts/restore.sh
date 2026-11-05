@@ -35,7 +35,10 @@
 #
 # If this client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it removes
 # that Job first, because the Job would otherwise carry on and drop or replace a database with the apps back up. If it
-# cannot remove it, the server or apps stay down and auto-sync stays paused, and it prints what to run.
+# cannot remove it, the server or apps stay down and auto-sync stays paused, and it prints what to run. A signal has to
+# reach the process group, as Ctrl-C and a closed terminal do, or kill -TERM -- -<pgid>. run_job polls in a pipeline, and
+# the trap runs only when that pipeline has ended, so a signal to this script's pid alone, or to make's, which passes it
+# to that pid alone, removes nothing until the Job has ended, which can be 30 minutes.
 #
 # Every refusal comes before anything is touched. Order for a Plane environment:
 #   verify checksums and fingerprint, refuse, pause auto-sync (root first), stop the apps, restore
@@ -457,13 +460,15 @@ clean_warn_plane_content() { # env id
 # Says when a newer Plane backup with the same SECRET_KEY exists than the one chosen, because what it holds is then
 # left out, and a plan is the last place to see that.
 clean_warn_newer_plane() { # env id set-file
-  local env="$1" id="$2" newer dir option
+  local env="$1" id="$2" newer dir option delete='make destroy CONFIRM=yes'
   newer="$(recovery_newer_plane "$env" "$id" "$3")"
   [[ -n "$newer" ]] || return 0
   dir="$LOCAL_DIR/backups/$env/$newer"
   option="$(clean_plane_option "$env")"
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
-    warn "backup $env/$newer was taken after $env/$id, which the restore under way uses, with the same SECRET_KEY, and it holds $(clean_count "$dir" users) users and $(jq -r .objects.count "$dir/manifest.json") objects. A resume keeps what it started with. To use it, start over and pass $option=$newer: make destroy CONFIRM=yes SKIP_BACKUP=yes first."
+    # With its backup: the delete takes every environment, and a refusal that led here named only one of them.
+    if cluster_exists; then delete="$delete, which backs up every environment the cluster holds and then deletes it"; fi
+    warn "backup $env/$newer was taken after $env/$id, which the restore under way uses, with the same SECRET_KEY, and it holds $(clean_count "$dir" users) users and $(jq -r .objects.count "$dir/manifest.json") objects. A resume keeps what it started with. To use it, start over: $delete, then make restore-clean BACKUP=latest $option=$newer."
   else
     warn "backup $env/$newer was taken after $env/$id, which this plan chose, with the same SECRET_KEY, and it holds $(clean_count "$dir" users) users and $(jq -r .objects.count "$dir/manifest.json") objects. What it holds is left out, unless $option=$newer picks it."
   fi
@@ -813,7 +818,7 @@ restore_clean() {
     if [[ ! -f "$RESTORE_CLEAN_MARKER" ]]; then
       problem="$(clean_environment_problem)"
       if [[ -n "$problem" ]]; then warn "a real run would refuse right now: $problem. $(clean_replace_advice)"; fi
-    elif recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+    elif recovery_marker_cluster_gone && grep -qE '^(done|data-back|overwrote) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so a real run starts again from the beginning"
     fi
     ok "PLAN_ONLY=yes: nothing was changed"
@@ -823,10 +828,11 @@ restore_clean() {
   clean_refuse_another_run
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
     under_way=yes
-    # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not.
-    if recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+    # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not. Nor
+    # does what it overwrote there: nothing has been overwritten on a new one. restore-<env>-*.json still records it.
+    if recovery_marker_cluster_gone && grep -qE '^(done|data-back|overwrote) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so it starts again from the beginning"
-      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' -e '/^data-job /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' -e '/^data-job /d' -e '/^overwrote /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
       mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
     fi
   else
@@ -971,7 +977,7 @@ secret_tmp=""
 sentinel_tmp=""
 INFISICAL_STOPPED=no
 ANYTHING_CHANGED=no # Until a refusal has passed, a failure is a refusal.
-JOB_MAY_RUN=no      # Yes from just before this run's first Job until its last has finished, so a stop knows to look.
+JOB_MAY_RUN=no      # Yes from just before a Job until it has returned, so a stop knows to look. Not while none can run.
 JOB_STOPPED=no
 JOBS_LEFT_RUNNING=""
 OVERWROTE=no             # This run used ALLOW_RESUME_OVERWRITE, so it does not read PASS.
@@ -987,31 +993,47 @@ record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contrac
   esac
 }
 
+# Whether this client can still print, and if it cannot, what it has to say goes to a file beside the evidence. A print
+# that failed stays in stdio's buffer, and the next read through a pipe or a $(...) takes it in with the answer: jq then
+# fails on it, which reads as kubectl not being able to say, and auto-sync stays paused with nothing said. The output can
+# die at any moment of the trap, as when a person sees "up to 180s" and closes the window. So this comes before each read
+# in the trap, and after the delete. The second goes through fd 3, because inside 2>/dev/null a print to fd 2 goes to
+# /dev/null, and could never see that stderr is dead. Each one that finds the output alive prints an empty line.
+client_probe() {
+  { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
+  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$evidence.log"
+}
+
 # The Jobs of this run, by name, which this run's stamp makes its own. They run in the cluster, so a client that ends
 # does not end them, and one carrying on would drop or replace a database under whatever comes back up.
 stop_this_runs_jobs() {
-  local job state
+  local job state removed
   [[ "$JOB_MAY_RUN" == yes ]] || return 0
   for job in "plane-restore-guard-$JOB_SUFFIX" "plane-restore-guard-objects-$JOB_SUFFIX" "plane-restore-$JOB_SUFFIX" "plane-restore-migrate-$JOB_SUFFIX"; do
+    client_probe
     if ! state="$(job_state_if_any "$NS" "$job" 2>/dev/null)"; then
       warn "kubectl cannot say whether restore Job $NS/$job is running"
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
       continue
     fi
-    # Any whole line. If the client's output dies after on_exit's probe, a print that failed since then is still in
+    # Any whole line. If the client's output dies just after the probe, a print that failed since then is still in
     # stdio's buffer, and a $(...) captures it after the answer. Read as anything but running, the Job would stay.
     case $'\n'"$state"$'\n' in
       *$'\n'running$'\n'*) ;;
       *) continue ;;
     esac
     log "Removing restore Job $NS/$job, which would otherwise go on without this client (up to 180s)"
-    if kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null; then
+    removed=yes
+    kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null || removed=no
+    client_probe
+    if [[ "$removed" == yes ]]; then
       JOB_STOPPED=yes
       record restore-job-stopped PASS "$job was still running when this client ended, and it is gone, with its pod, before anything starts again"
     else
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
     fi
   done
+  client_probe
 }
 
 on_exit() {
@@ -1021,13 +1043,10 @@ on_exit() {
   # a Job's removal for 180s at most, and a resume repairs what a SIGKILL leaves.
   # That includes a client that can no longer print: a terminal that closed, or a tee that took the same Ctrl-C. Under
   # set -e and a default SIGPIPE its first print would end this, with the Job still running and auto-sync still paused.
-  # So no error stops this, and what it has to say goes to a file beside the evidence. The probes are needed: a failed
-  # print stays in stdio's buffer, and the next $(...) would capture it. The second goes through fd 3, because inside
-  # 2>/dev/null a print to fd 2 goes to /dev/null, and could never see that stderr is dead.
+  # So no error stops this, and what it has to say goes to a file beside the evidence: see client_probe.
   set +e
   trap '' HUP INT TERM PIPE
-  { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
-  { printf '\n' >&3; } 3>&2 2>/dev/null || exec 2>>"$evidence.log"
+  client_probe
   stop_this_runs_jobs
   if [[ -n "$JOBS_LEFT_RUNNING" ]]; then
     warn "COULD NOT REMOVE these restore Jobs in $NS:$JOBS_LEFT_RUNNING. One may still drop or replace a database, so nothing is being started: auto-sync stays paused, and what was stopped stays stopped. When the cluster answers, run these, in this order:"
@@ -1053,6 +1072,7 @@ on_exit() {
   [[ -z "$secret_tmp" ]] || rm -f "$secret_tmp"
   [[ -z "$sentinel_tmp" ]] || rm -f "$sentinel_tmp"
   # A proof that could not run is not a pass. proof-probes is about monitoring and not the data, as in the drill.
+  client_probe
   not_run="$(awk -F '\t' '$2 == "NOT RUN" && $1 != "proof-probes" { printf "%s ", $1 }' "$steps_file")"
   if [[ "$rc" -eq 0 && -n "$not_run" && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then rc=2; fi
   if [[ "$rc" -eq 0 && "$OVERWROTE" == yes ]]; then rc="$EXIT_OVERWROTE"; fi
@@ -1088,6 +1108,8 @@ on_exit() {
         warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. Nothing was changed. Evidence: $evidence"
       elif [[ -n "$JOBS_LEFT_RUNNING" ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME FAILED, and its Job may still be running, as said above. Auto-sync is still paused. Evidence: $evidence"
+      elif [[ "$JOB_STOPPED" == yes && "$KEEP_DATA" == yes ]]; then
+        warn "restore of $BACKUP_ID into $ENV_NAME FAILED: its migrator's Job was stopped before it finished. This resume kept the data an earlier run brought back, so $NS holds that, and the migrator may have done part of its work on it. Auto-sync is back on. Running this again keeps that data and runs the migrator again. Evidence: $evidence"
       elif [[ "$JOB_STOPPED" == yes ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME FAILED: its Job was stopped before it finished, so $NS may hold the old data, the backup's, or a part of it. Auto-sync is back on. The backup is untouched, and running this again restores it. Evidence: $evidence"
       else
@@ -1620,6 +1642,7 @@ restore_plane() {
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
   inspect="$(inspect_bucket)" || { printf '%s\n' "$inspect" >&2; die "could not list the bucket"; }
   objects="$(printf '%s\n' "$inspect" | sed -n 's/.*OBJECTS=//p' | tail -1)"
+  JOB_MAY_RUN=no # The guard Jobs have returned, so a refusal cannot read as one that may still drop a database.
   [[ -n "$users" && -n "$objects" ]] || die "could not read the state of $NS"
   warn_empty_backup_over_data "$users"
   refuse_if_not_empty "$users" "$objects"
@@ -1635,12 +1658,14 @@ restore_plane() {
   record apps-stopped PASS "api, worker, beat and live at zero with auto-sync paused"
 
   if [[ "$KEEP_DATA" == no ]]; then
+    JOB_MAY_RUN=yes
     data_job_mark
     restore_data "$pg_image"
     data_back_mark
     record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
     record objects PASS "synced and checked by download, every uploaded asset has its object"
   fi
+  if [[ "$KEEP_DATA" == yes ]]; then recovery_keep_test_files "$backup_dir" "$ENV_NAME"; fi
   recovery_reinstate_test_files "$backup_dir" "$ENV_NAME"
 
   # Old cache entries and queued tasks describe rows from before the restore.
@@ -1654,6 +1679,7 @@ restore_plane() {
     record rabbitmq PASS "no celery queue to purge"
   fi
 
+  JOB_MAY_RUN=yes
   run_migrator
   record migrator PASS "completed"
   # Every Job of this run has finished. So a kubectl error from here on cannot read as one that may still be running,
@@ -1853,6 +1879,7 @@ restore_infisical() {
   JOB_MAY_RUN=yes
   inspect="$(inspect_target "$pg_image" infisical-postgres infisical-db)" || { printf '%s\n' "$inspect" >&2; die "could not inspect the database"; }
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
+  JOB_MAY_RUN=no # The guard Job has returned, as in restore_plane.
   [[ -n "$users" ]] || die "could not read the state of $NS"
   refuse_if_not_empty "$users" 0
 
@@ -1871,6 +1898,7 @@ restore_infisical() {
 
   INFISICAL_REDIS_STALE=yes
   if [[ "$KEEP_DATA" == no ]]; then
+    JOB_MAY_RUN=yes
     data_job_mark
     restore_infisical_db "$pg_image"
     data_back_mark
@@ -1932,6 +1960,9 @@ restore_infisical() {
       record proof-values PASS "every Plane secret decrypts to the value, version and id the backup recorded"
     else
       record proof-values FAIL "$(printf '%s' "$problems" | tr '\n' ';')"
+      if [[ "$KEEP_DATA" == yes ]]; then
+        die "this resume kept what $NS holds, and it does not hold what backup $BACKUP_ID recorded, as after a rotation since. If that is not what should be there, the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME replaces it with that backup, what it holds now is then gone, and that run does not read PASS. To keep a copy first: make backup ENV=$ENV_NAME."
+      fi
       die "the restored instance does not hold what the backup recorded"
     fi
   else
