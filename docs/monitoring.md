@@ -233,9 +233,9 @@ Runbook: [Plane debugging](runbooks/plane-app-debugging.md), and [Backup and res
 
 | Alert | Fires on | `for` | Severity | Cannot see | Seen |
 |---|---|---|---|---|---|
-| `PlaneApiDown` | `probe_success{probe="api-instance"} == 0` | 1m | critical | Postgres, because the route is cached | Fired in `make test-alert` in each environment on 2026-11-05, through to the sink and resolved. See [How alerts are tested](#how-alerts-are-tested). Also fired on the first boot, with Plane absent. See below |
-| `PlaneApiDatabaseProbeFailing` | `probe_success{probe="api-db"} == 0` | 1m | critical | Any write path | Fired beside `PlaneApiDown` in that test in dev, through to the sink and resolved, because the API was gone and not Postgres ([MON-1-20261105T055029Z-sink-final.txt](evidence/runs/MON-1-20261105T055029Z-sink-final.txt)). Also fired on the first boot, with Plane absent. See below. Pending for one sample in each Postgres round of the pod restart drill |
-| `PlaneFrontendDown` | `probe` is `frontend` or `live`, and it fails | 2m | warning | A page that loads and does not work, an old page a browser kept in its cache ([live-dev](evidence/branding/live-dev/README.md)), WebSocket auth | Fired on the first boot, with Plane absent. See below |
+| `PlaneApiDown` | `probe_success{probe="api-instance"} == 0` | 1m | critical | Postgres, because the route is cached | Fired in `make test-alert` in each environment on 2026-11-05, through to the sink and resolved. See [How alerts are tested](#how-alerts-are-tested). Also fired on the first boot, with Plane absent, and in prod-sim's in-place restore. See below |
+| `PlaneApiDatabaseProbeFailing` | `probe_success{probe="api-db"} == 0` | 1m | critical | Any write path | Fired beside `PlaneApiDown` in that test in dev, through to the sink and resolved, because the API was gone and not Postgres ([MON-1-20261105T055029Z-sink-final.txt](evidence/runs/MON-1-20261105T055029Z-sink-final.txt)). Also fired on the first boot, with Plane absent, and in prod-sim's in-place restore. See below. Pending for one sample in each Postgres round of the pod restart drill |
+| `PlaneFrontendDown` | `probe` is `frontend` or `live`, and it fails | 2m | warning | A page that loads and does not work, an old page a browser kept in its cache ([live-dev](evidence/branding/live-dev/README.md)), WebSocket auth | Fired on the first boot, with Plane absent, and for its `live` probe in prod-sim's in-place restore. See below |
 | `PlanePodCrashLooping` | A Plane container waiting in `CrashLoopBackOff` | 1m | critical | `ImagePullBackOff`, or a single restart | None in evidence |
 | `PlanePostgresDown` | `pg_up == 0` | 1m | critical | A slow or full database that still answers. A stopped exporter leaves no series | Fired on the first boot, before Postgres was ready. See below. Pending in each Postgres round of the pod restart drill |
 | `PlaneValkeyDown` | `redis_up == 0` | 1m | critical | The same for Valkey | Fired on the first boot, before Valkey was ready. See below |
@@ -258,8 +258,10 @@ answers. The read of `ALERTS` shows them firing on 2026-11-04, in UTC ([monitori
 
 The API and frontend alerts cleared when each environment came up. The two data alerts cleared earlier, when the data pods came up. `PlanePostgresDown`
 started later because `pg_up` has no series until the exporter runs, and the exporter sat in `CreateContainerConfigError` until 21:29. This shows
-the rules can fire on a missing environment, not that each fires on the fault it names. With the API alone gone, `make test-alert` later made `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` fire. The other three have not fired on a Plane that was up. A first boot
+the rules can fire on a missing environment, not that each fires on the fault it names. With the API alone gone, `make test-alert` later made `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` fire. `PlanePostgresDown` and `PlaneValkeyDown` have not fired on a Plane that was up. A first boot
 also fires Argo CD rules: see `ArgoAppDegraded` and `ArgoSyncFailed` below.
+
+**An in-place restore fires them too,** because it stops api, worker, beat and live on purpose. In prod-sim's restore on 2026-11-05, Alertmanager read `PlaneApiDown` and `PlaneApiDatabaseProbeFailing` active from 07:36:26Z to 07:36:51Z, and `PlaneFrontendDown` on the `live` probe from 07:37:26Z to 07:37:57Z, the only time it has fired with the rest of Plane in place. Those readings come from a side watcher, and nobody read the sink for them ([SEC-2-20261105T072331Z-watch.txt](evidence/runs/SEC-2-20261105T072331Z-watch.txt), [LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). Dev's restore has no such reading.
 
 `PlaneCeleryQueueMissing` exists because of how RabbitMQ 4.3 fails with Celery. The broker is up, and the worker
 never attaches and never creates a queue, so `PlaneWorkerNoConsumer` has no series to read. Contract section 9
