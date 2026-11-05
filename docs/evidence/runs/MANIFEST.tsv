@@ -352,6 +352,10 @@ drill-pod-restart-prod-sim-plane-rabbitmq-wl.json	2026-11-05T07:24:24Z	1230	0
 drill-pod-restart-prod-sim-plane-redis-wl.json	2026-11-05T07:24:30Z	1230	0
 final-dev-smoke-1.txt	2026-11-05T02:19:34Z	4995	0
 final-dev-smoke-2.txt	2026-11-05T05:33:22Z	4995	0
+final-harness-ddcb105/harness-V1.txt	2026-11-05T14:56:57Z	3413	0
+final-harness-ddcb105/mutant-survivor-rerun.txt	2026-11-05T14:58:27Z	351	0
+final-harness-f05930d/harness-V1.txt	2026-11-05T15:01:10Z	3826	0
+final-harness-f05930d/mutant-survivor-rerun.txt	2026-11-05T15:02:49Z	443	0
 final-harness-f30a7f5/group-0.txt	2026-11-05T14:08:55Z	7904	0
 final-harness-f30a7f5/group-1.txt	2026-11-05T14:16:07Z	13158	0
 final-harness-f30a7f5/group-2.txt	2026-11-05T14:15:00Z	11195	0

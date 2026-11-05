@@ -1,0 +1,8 @@
+started: 2026-11-05T14:56:57Z
+commit: ddcb105439babba69fa47a56cf37a269331a400c
+command: MUTANTS="stop-says-nothing-on-a-dead-client" /bin/bash tests/drills/clean-restore-mutants.sh, in a fresh clone, with TMPDIR set
+SURVIVED     stop-says-nothing-on-a-dead-client [V1]
+
+RESULT 0 caught, 1 survived, 0 did not apply
+exit: 1
+ended: 2026-11-05T14:58:27Z

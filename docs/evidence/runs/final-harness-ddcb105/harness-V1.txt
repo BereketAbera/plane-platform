@@ -1,0 +1,53 @@
+started: 2026-11-05T14:55:22Z
+commit: ddcb105439babba69fa47a56cf37a269331a400c
+command: ONLY=V1 /bin/bash tests/drills/clean-restore-harness.sh, in a fresh clone, with TMPDIR set
+
+=== V1. The client's output is dead, by a closed terminal or a tee that took the same Ctrl-C: the stop still does all of its work
+PASS  a terminal that closes in dev's Job: not a pass (got 129)
+PASS  a terminal that closes in dev's Job: no Job is left running
+PASS  a terminal that closes in dev's Job: the Job goes first, then auto-sync, root last
+PASS  a terminal that closes in dev's Job: nothing stays paused
+PASS  a terminal that closes in dev's Job: nothing started over a running Job
+PASS  a terminal that closes in dev's Job: the evidence says FAIL
+PASS  a terminal that closes in dev's Job: what it had to say is in a file beside the evidence
+PASS  a terminal that closes in dev's Job: what it printed to stdout is in that file too
+PASS  a tee and Ctrl-C in dev's Job: not a pass (got 130)
+PASS  a tee and Ctrl-C in dev's Job: no Job is left running
+PASS  a tee and Ctrl-C in dev's Job: the Job goes first, then auto-sync, root last
+PASS  a tee and Ctrl-C in dev's Job: nothing stays paused
+PASS  a tee and Ctrl-C in dev's Job: nothing started over a running Job
+PASS  a tee and Ctrl-C in dev's Job: the evidence says FAIL
+PASS  stderr alone through a tee, Ctrl-C: not a pass (got 130)
+PASS  stderr alone through a tee, Ctrl-C: no Job is left running
+PASS  stderr alone through a tee, Ctrl-C: the Job goes first, then auto-sync, root last
+PASS  stderr alone through a tee, Ctrl-C: nothing stays paused
+PASS  stderr alone through a tee, Ctrl-C: nothing started over a running Job
+PASS  stderr alone through a tee, Ctrl-C: the evidence says FAIL
+PASS  stderr alone through a tee, Ctrl-C: what it warned is beside the evidence
+PASS  the warning about a 0-user backup got through the tee
+PASS  and Ctrl-C after it removes the Job
+PASS  and the data stays
+PASS  a terminal that closes before any Job: not a pass (got 129)
+PASS  a terminal that closes before any Job: no data Job ran
+PASS  a terminal that closes before any Job: auto-sync comes back, root last
+PASS  a terminal that closes before any Job: nothing stays paused
+PASS  a terminal that closes before any Job: the evidence says FAIL
+PASS  a tee and Ctrl-C before any Job: not a pass (got 130)
+PASS  a tee and Ctrl-C before any Job: no data Job ran
+PASS  a tee and Ctrl-C before any Job: auto-sync comes back, root last
+PASS  a tee and Ctrl-C before any Job: nothing stays paused
+PASS  a tee and Ctrl-C before any Job: the evidence says FAIL
+PASS  a terminal that closes in Infisical's Job: no Job is left running
+PASS  a terminal that closes in Infisical's Job: the Job, the flush, the server, auto-sync
+PASS  a clean restore through a tee, Ctrl-C: no Job is left running
+PASS  a clean restore through a tee, Ctrl-C: nothing stays paused
+PASS  a clean restore through a tee, Ctrl-C: its evidence is written, and says FAIL
+PASS  a clean restore through a tee, Ctrl-C: what it had to say is beside that
+PASS  a clean restore through a tee, Ctrl-C: no steps file is left
+PASS  and the resume finishes, exit 0 (got 0)
+PASS  the drill through a tee, Ctrl-C: no Job is left running
+PASS  the drill through a tee, Ctrl-C: its evidence has the RESULT line
+PASS  the drill through a tee, Ctrl-C: and how to go on
+
+RESULT 45 passed, 0 failed
+exit: 0 ended: 2026-11-05T14:56:57Z
