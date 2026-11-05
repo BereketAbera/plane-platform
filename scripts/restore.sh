@@ -974,7 +974,7 @@ secret_tmp=""
 sentinel_tmp=""
 INFISICAL_STOPPED=no
 ANYTHING_CHANGED=no # Until a refusal has passed, a failure is a refusal.
-JOB_MAY_RUN=no      # Yes from just before this run's first Job until its last has finished, so a stop knows to look.
+JOB_MAY_RUN=no      # Yes from just before a Job until it has returned, so a stop knows to look. Not while none can run.
 JOB_STOPPED=no
 JOBS_LEFT_RUNNING=""
 OVERWROTE=no             # This run used ALLOW_RESUME_OVERWRITE, so it does not read PASS.
@@ -1637,6 +1637,7 @@ restore_plane() {
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
   inspect="$(inspect_bucket)" || { printf '%s\n' "$inspect" >&2; die "could not list the bucket"; }
   objects="$(printf '%s\n' "$inspect" | sed -n 's/.*OBJECTS=//p' | tail -1)"
+  JOB_MAY_RUN=no # The guard Jobs have returned, so a refusal cannot read as one that may still drop a database.
   [[ -n "$users" && -n "$objects" ]] || die "could not read the state of $NS"
   warn_empty_backup_over_data "$users"
   refuse_if_not_empty "$users" "$objects"
@@ -1652,6 +1653,7 @@ restore_plane() {
   record apps-stopped PASS "api, worker, beat and live at zero with auto-sync paused"
 
   if [[ "$KEEP_DATA" == no ]]; then
+    JOB_MAY_RUN=yes
     data_job_mark
     restore_data "$pg_image"
     data_back_mark
@@ -1671,6 +1673,7 @@ restore_plane() {
     record rabbitmq PASS "no celery queue to purge"
   fi
 
+  JOB_MAY_RUN=yes
   run_migrator
   record migrator PASS "completed"
   # Every Job of this run has finished. So a kubectl error from here on cannot read as one that may still be running,
@@ -1870,6 +1873,7 @@ restore_infisical() {
   JOB_MAY_RUN=yes
   inspect="$(inspect_target "$pg_image" infisical-postgres infisical-db)" || { printf '%s\n' "$inspect" >&2; die "could not inspect the database"; }
   users="$(printf '%s\n' "$inspect" | sed -n 's/.*USERS=//p' | tail -1)"
+  JOB_MAY_RUN=no # The guard Job has returned, as in restore_plane.
   [[ -n "$users" ]] || die "could not read the state of $NS"
   refuse_if_not_empty "$users" 0
 
@@ -1888,6 +1892,7 @@ restore_infisical() {
 
   INFISICAL_REDIS_STALE=yes
   if [[ "$KEEP_DATA" == no ]]; then
+    JOB_MAY_RUN=yes
     data_job_mark
     restore_infisical_db "$pg_image"
     data_back_mark
