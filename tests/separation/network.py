@@ -11,22 +11,25 @@ For each direction:
      have no rule to any data port, so this is what they can all be asked. If it does not connect, that pod's timeouts
      read BLOCKED, so a dead network stack or a broken probe cannot pass as isolation.
   3. At the same time, a pod in the target environment dials the same targets, so a target that is down cannot pass as
-     isolation.
+     isolation. Except rabbitmq-mgmt and silo-console: policy blocks those two ports from that pod as well, so its reading
+     is TIMEOUT whether they are up or not, and nothing in this script shows they are up. That is 4 of the 12 targets each
+     source dials, and 80 of the 240 rows across. The other four ports have that proof.
   4. Then api, worker and beat dial their own environment's data tier, which their policy allows on four of those ports.
   5. The real clients the app uses (psycopg, redis-py, amqp, boto3), with the source environment's own credentials,
      dial their own and the other environment's servers.
 
-A deny counts only as a TIMEOUT: refused means the packet arrived. A failed exec, a target the probe returned nothing for
-and a failed DNS lookup say nothing either way, so each reads BLOCKED. Exit status: 0 everything passed, 1 something failed,
-2 nothing failed but something could not run.
+A deny counts only as a TIMEOUT: refused means the packet arrived. A failed exec, a target or a client that printed no
+result, and a failed DNS lookup say nothing either way, so each reads BLOCKED. Exit status: 0 everything passed, 1 something
+failed, 2 nothing failed but something could not run.
 """
 from __future__ import annotations
 
 import concurrent.futures
 import json
+import re
 import sys
 
-from common import ENVS, Blocked, Report, credential_values, kubectl, now, read_secrets, require_environments
+from common import ENVS, Blocked, Report, attempts_printed, credential_values, kubectl, now, read_secrets, require_environments
 
 TIMEOUT = 5
 TARGETS = [("postgres", "plane-pgdb", 5432), ("valkey", "plane-redis", 6379), ("rabbitmq-amqp", "plane-rabbitmq", 5672),
@@ -153,6 +156,7 @@ attempt("redis-py", valkey)
 attempt("amqp", amqp_)
 attempt("boto3", silo)
 """ % {"timeout": TIMEOUT}
+REAL_CLIENT_NAMES = re.findall(r'^attempt\("([^"]+)"', REAL_CLIENTS, flags=re.M)
 
 report = Report()
 
@@ -247,6 +251,16 @@ def judge(result: dict, want: str, line: str) -> None:
         report.check(result["verdict"] == want, f"{line}\twant={want}")
 
 
+def hang_row(done, line: str, otherwise_as_wanted: bool) -> None:
+    """A deny from a client inside a data pod. seconds= is that pod's own clock, and a refused port or a name that does not
+    resolve answers at once, so only the time tells either of them from a hang. No time at all means the client did not run."""
+    taken = re.search(r"seconds=(\d+)", done.stdout)
+    if taken is None:
+        report.block(f"{line}\tit printed no time, so it says nothing either way")
+    else:
+        report.check(otherwise_as_wanted and int(taken.group(1)) >= TIMEOUT - 1, line)
+
+
 def direction(source_env: str, target_env: str) -> None:
     source_ns, target_ns = ENVS[source_env], ENVS[target_env]
     source_pods, target_pods = running_pods(source_ns), running_pods(target_ns)
@@ -302,8 +316,12 @@ def direction(source_env: str, target_env: str) -> None:
         if done.returncode != 0:
             report.block(f"real clients in {api} exited {done.returncode}: {done.stderr.strip()[:200]}")
             continue
-        for line in done.stdout.splitlines():
-            record = json.loads(line)
+        printed = attempts_printed(done.stdout, "client")
+        for client in REAL_CLIENT_NAMES:
+            record = printed.get(client)
+            if record is None:
+                report.block(f"{client} from {source_ns}/{api} to {namespace}: the exec exited 0 and printed no result for it, so it says nothing either way")
+                continue
             timed_out = record["verdict"] in ("ConnectionTimeout", "ConnectTimeoutError", "TimeoutError", "timeout", "OperationalError") \
                 and ("timeout" in record["detail"].lower() or "timed out" in record["detail"].lower() or record["seconds"] >= TIMEOUT - 1)
             ok = record["verdict"] == "CONNECTED" if want_connected else timed_out
@@ -316,11 +334,13 @@ def direction(source_env: str, target_env: str) -> None:
     target_valkey = f"plane-redis.{target_ns}.svc.cluster.local"
     command = f'started=$(date +%s); pg_isready -h {target_pg} -t {TIMEOUT}; rc=$?; echo "pg_isready rc=$rc seconds=$(( $(date +%s)-started ))"'
     done = kubectl("-n", source_ns, "exec", "plane-pgdb-wl-0", "-c", "plane-pgdb", "--", "sh", "-c", command, timeout=60)
-    report.check("rc=2" in done.stdout, f"{now()} {source_ns}/plane-pgdb-wl-0 -> {target_pg}: want rc=2, no response: {done.stdout.strip()} {done.stderr.strip()[:100]}")
+    # pg_isready gives 2 at once for a closed port and for a name that does not resolve, so the code alone is not a deny.
+    hang_row(done, f"{now()} {source_ns}/plane-pgdb-wl-0 -> {target_pg}: want rc=2, no response, after a hang until the timeout: {done.stdout.strip()} {done.stderr.strip()[:100]}",
+             "rc=2" in done.stdout)
     command = f'started=$(date +%s); timeout {TIMEOUT} valkey-cli -h {target_valkey} ping; rc=$?; echo "valkey-cli rc=$rc seconds=$(( $(date +%s)-started ))"'
     done = kubectl("-n", source_ns, "exec", "plane-redis-wl-0", "-c", "plane-redis", "--", "sh", "-c", command, timeout=60)
-    hung = "PONG" not in done.stdout and "seconds=" in done.stdout and int(done.stdout.rsplit("seconds=", 1)[1].split()[0]) >= TIMEOUT - 1
-    report.check(hung, f"{now()} {source_ns}/plane-redis-wl-0 -> {target_valkey}: want a hang until the timeout: {done.stdout.strip()} {done.stderr.strip()[:100]}")
+    hang_row(done, f"{now()} {source_ns}/plane-redis-wl-0 -> {target_valkey}: want a hang until the timeout: {done.stdout.strip()} {done.stderr.strip()[:100]}",
+             "PONG" not in done.stdout)
 
 
 def main() -> int:

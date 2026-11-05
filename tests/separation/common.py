@@ -77,6 +77,20 @@ def require_environments() -> None:
             raise Blocked(f"Application {namespace} is {state}. Run this when both environments are Synced and Healthy")
 
 
+def attempts_printed(stdout: str, key: str) -> dict[str, dict]:
+    """The JSON lines a script in a pod printed, by the attempt each one names. A line that is not one is left out, and the
+    caller compares the rest with what it asked for, so an attempt with no line reads BLOCKED and does not just vanish."""
+    printed = {}
+    for line in stdout.splitlines():
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(record, dict) and key in record:
+            printed[record[key]] = record
+    return printed
+
+
 class Report:
     def __init__(self) -> None:
         self.passes = 0
