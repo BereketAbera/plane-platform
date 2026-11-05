@@ -44,7 +44,7 @@ conditions and the rest.
 | Item | Value | Source |
 |---|---|---|
 | Docker VM used, quiet | 9.44 GiB median, of 13.63 GiB | 30 samples on 2026-11-05 ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)) |
-| Docker VM used, highest sampled | 10.49 GiB | The same file, 2026-11-04T23:23:42Z, under smoke tests and drills |
+| Docker VM used, highest sampled | 10.49 GiB | The same file, 2026-11-04T23:23:42Z, right after a change replaced the Argo CD pods. The smoke tests topped at 9.87 GiB and the drills at 9.90 GiB |
 | Swap used, highest | 0.60 GiB of 2 GiB | The same file |
 | Host disk growth | 19.5 to 24.8 GiB, estimate | Image sizes summed from registry layer metadata (8.56 GiB unpacked), plus estimates for volumes, logs, build bases, caches and tools |
 
@@ -129,12 +129,12 @@ Seen on the staged first boot on 2026-11-04, unless the row says otherwise.
 | `argocd.localhost` does not answer | The route needs Traefik's CRD and syncs at wave -8 | Traefik is Healthy. Until then use `kubectl -n argocd port-forward svc/argocd-server 8080:80`. [[VERIFY: port-forward path works before Traefik exists]] |
 | Infisical Postgres and Redis in `CreateContainerConfigError` | They wait for Secrets from `scripts/secret-zero.sh`. Expected from reading, and not seen in the staged run, where secret zero ran well before wave -4 | Step 4 finishes. [[VERIFY: pods recover without intervention after secret zero]] |
 | `plane-dev` Degraded, `InfisicalAuth` not ready | `plane-infisical-identity` does not exist until step 6 | Step 6 publishes it, and the next retry moves on with no help, up to 5 minutes later: published at 21:25:44, retried at 21:28:54 ([infisical-unready-sync-1.txt](evidence/runs/infisical-unready-sync-1.txt)) |
-| `kube-prometheus-stack` Progressing for about 10 minutes, with root waiting on it | Its images pull through the mirror one at a time | It took 591 s on the staged boot ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt)). Later waves wait for it, which is the design |
-| `plane-dev` Progressing for minutes in wave 3 | The kubelet pulls one image at a time. The last of four was ready after 448 s ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)) | `progressDeadlineSeconds` is now 600 s, because 360 s failed that boot once before a retry recovered it |
+| `kube-prometheus-stack` Degraded for about 9 minutes, with root failing and retrying | Its images pull through the mirror one at a time, and Argo CD's built-in check read a Prometheus with no ready pod as Degraded | It took 591 s on the staged boot ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt), [timeline](evidence/runs/bootstrap-timeline-1.txt)). Root reached the next wave on its fourth retry, 3 minutes later. An override since reads that state as Progressing, with root waiting and no retry. That has been shown on a restart ([h43-repro-after-1.txt](evidence/runs/h43-repro-after-1.txt)) and not on a first boot |
+| `plane-dev` Progressing for minutes in wave 3 | The kubelet pulls one image at a time. The last of four was ready after 448 s ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)) | `progressDeadlineSeconds` is now 600 s, because 360 s failed that boot once before a retry recovered it. That failure was read live and is not in a saved file |
 | Application phase `Running` for a long time, with a retry message | Retries have no limit, so a failing sync reads as `Running`. See [argocd.md](argocd.md#retry-behaviour) | The cause is fixed, or the operation is terminated. `ArgoSyncFailed` fires on an operation still open after 15 minutes |
 
-The prod-sim operator was expected to crash-loop until `infisical-operator-dev` had installed the CRDs. It did not: it read 0 restarts
-([infisical-memory-1.txt](evidence/runs/infisical-memory-1.txt)).
+The prod-sim operator was expected to crash-loop until `infisical-operator-dev` had installed the CRDs. It did not: at 21:22:31Z, about 11 minutes after the operators came up, Grafana was the only pod in the
+cluster with a restart ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt)).
 
 ## Local URLs
 
@@ -281,7 +281,7 @@ Details are in [data-operations.md](data-operations.md).
 
 | Target | What it does | State on 2026-11-05 |
 |---|---|---|
-| `make drill-pod-restart ENV=dev` | Restarts each StatefulSet pod and proves the data survives | PASS in dev and in prod-sim. See [validation.md](validation.md) |
+| `make drill-pod-restart ENV=dev` | Restarts each StatefulSet pod and proves the data survives | PASS in dev and in prod-sim, on upstream images, 2026-11-04. Not yet run on the branded images. See [validation.md](validation.md) |
 | `make drill-failed-deploy` | A bad image reaches dev through Git, the rollout refuses it, and a revert restores it. Dev only | NOT RUN |
 | `make drill-clean-restore CONFIRM=yes` | Takes a backup, **deletes the cluster**, restores everything and proves it. `PLAN_ONLY=yes` stops before the delete | NOT RUN for the delete and restore. `PLAN_ONLY=yes` has run ([dr-drill-planonly-1.txt](evidence/runs/dr-drill-planonly-1.txt)) |
 
