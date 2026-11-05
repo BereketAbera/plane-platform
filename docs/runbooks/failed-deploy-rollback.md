@@ -2,7 +2,7 @@
 
 A bad image or a bad migration reached an environment through a promotion.
 
-The drills and the rollback below ran in dev on 2026-11-05, starting from the final images built from `84b63d9`, on the cluster the rebuild later deleted. They have not been repeated on the restored one, where the final `make test` passed ([log](../evidence/runs/MAKE-TEST-20261105T083455Z.txt)). A rollback of prod-sim was not tested in Pass 1.
+The drills and the rollback below ran in dev on 2026-11-05, starting from the final images built from `84b63d9`, on the cluster the rebuild later deleted. They have not been repeated on a restored one, where `make test` passed ([first](../evidence/runs/MAKE-TEST-20261105T083455Z.txt), [final](../evidence/runs/MAKE-TEST-20261105T140019Z.txt)). A rollback of prod-sim was not tested in Pass 1.
 
 Preamble for raw commands:
 
