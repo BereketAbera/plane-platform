@@ -96,10 +96,11 @@ patches:
     patch: |-
       - {op: add, path: /spec/progressDeadlineSeconds, value: 600}
 
-  # A pod gets SIGTERM at the moment its endpoint starts to go, and Traefik reacts about 2s later. With
-  # no pause the process is gone first: during a rollout each route answered 502, then left requests
-  # hanging, even with the new pod Ready. So these keep serving for 5s. Sleep needs no shell, and
-  # worker and beat have no Service, so they do not need it.
+  # A pod gets SIGTERM at the moment its endpoint starts to go, and Traefik can still send it requests
+  # for a moment, for how long was not measured. With no pause the process is gone first: during a
+  # rollout each route answered 502, then left requests hanging, even with the new pod Ready. So these
+  # keep serving for 5s. Measured with it: 0 failed of 5,902 samples across two rollouts. Sleep needs
+  # no shell, and worker and beat have no Service, so they do not need it.
   - target: {kind: Deployment, name: plane-(web|admin|space|live|api)-wl}
     patch: |-
       - op: add
