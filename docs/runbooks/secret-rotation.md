@@ -2,7 +2,7 @@
 
 What can be rotated, how, and how to recover from a rotation that stopped partway.
 
-**`make rotate` has run once, in dev, on 2026-11-05, with the owner's approval, and every evidence line reads PASS** (`.local/evidence-raw/SEC-2-20261105T072331Z.txt`, not yet published). It has not run in prod-sim, and neither `RESUME=yes` nor `ROLLBACK=yes` has run. A `VERIFY` or `MEASURE` marker here waits on those.
+**`make rotate` has run in both environments on 2026-11-05, with the owner's approval, and every evidence line reads PASS**: dev at 07:23Z ([SEC-2-20261105T072331Z.txt](../evidence/runs/SEC-2-20261105T072331Z.txt)), prod-sim at 07:32Z ([SEC-3-BKP-3-20261105T073240Z.txt](../evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). In prod-sim a rotation killed with SIGKILL was finished by `RESUME=yes` ([SEC-4-20261105T073843Z.txt](../evidence/runs/SEC-4-20261105T073843Z.txt)). `ROLLBACK=yes` has not run. `SECRET_KEY` did not move in any of these runs.
 
 Preamble for raw commands:
 
@@ -59,10 +59,9 @@ What `scripts/rotate.sh` does, checking real state at each step:
 8. Removes the journal, then takes an Infisical backup, because an older dump holds the old `PG_PASSWORD`. `SKIP_BACKUP=yes` skips it. If it fails,
    the rotation stands and the script exits 3: run `make backup ENV=infisical`.
 
-The window where Plane may fail runs from `ALTER ROLE` until the new api pod is ready. In dev it was about 38 s: a signed-in request answered 500 from 07:23:51Z to 07:24:29Z (`.local/evidence-raw/SEC-2-20261105T072331Z-watch.txt`). Prod-sim is not measured yet. The script measures it with a probe once a
-second. [[MEASURE: rotation error window in seconds, per environment, from the rotate evidence log]]
+The window where Plane may fail runs from `ALTER ROLE` until the new api pod is ready. In dev it was about 38 s: of 1002 signed-in readings 38 answered 500, from 07:23:51Z to 07:24:29Z, and 964 answered 200 ([SEC-2-20261105T072331Z-watch.txt](../evidence/runs/SEC-2-20261105T072331Z-watch.txt)). In prod-sim the script's probe printed 39 s, 37 of 60 probes, one unbroken run from 07:32:48Z to 07:33:26Z ([rotate-prod-sim-20261105T073240Z.log](../evidence/runs/rotate-prod-sim-20261105T073240Z.log), [rotate-prod-sim-20261105T073240Z.probe](../evidence/runs/rotate-prod-sim-20261105T073240Z.probe)). No signed-in reading ran beside that one. The script measures the window with a probe once a second.
 
-**Read the script's number with care.** In that run it printed 60 s, 39 of 62 probes (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`). The probe is anonymous, and `db_probe` counts anything but its expected 404 as a failure. Plane throttled the same route after 30 requests: the 31st got 429 with `Retry-After` 54 (`.local/evidence-raw/SEC-2-throttle-precheck-20261105T061924Z.txt`). The script's last three failures came 19 s after the signed-in request had recovered, which fits that, though the probe log keeps no status code. So measure the window from a signed-in request as well, which is outside the anonymous limit, as `.local/evidence-raw/SEC-2-20261105T062211Z-watcher-source.txt` does.
+**Read the script's number with care.** In the dev run it printed 60 s, 39 of 62 probes ([rotate-dev-20261105T072345Z.log](../evidence/runs/rotate-dev-20261105T072345Z.log)). The probe is anonymous, and `db_probe` counts anything but its expected 404 as a failure. Plane throttled the same route after 30 requests: the 31st got 429 with `Retry-After` 54 ([SEC-2-throttle-precheck-20261105T061924Z.txt](../evidence/runs/SEC-2-throttle-precheck-20261105T061924Z.txt)). The script's last three failures came 19 s after the signed-in request had recovered, which fits that, though the probe log keeps no status code. A probe left running shows the same shape: from 07:40:17Z the killed prod-sim run's loop read about 30 `ok` then about 29 `fail` in each minute ([rotate-prod-sim-20261105T073843Z.probe](../evidence/runs/rotate-prod-sim-20261105T073843Z.probe)). So measure the window from a signed-in request as well, which is outside the anonymous limit, as [SEC-2-20261105T062211Z-watcher-source.txt](../evidence/runs/SEC-2-20261105T062211Z-watcher-source.txt) does.
 
 ## Diagnosis
 
@@ -86,14 +85,22 @@ make rotate ENV=dev RESUME=yes     # finish it
 make rotate ENV=dev ROLLBACK=yes   # undo it
 ```
 
-Both run the same steps aimed at a different password, so either is safe to run twice. The journal is removed only when one succeeds. Prod-sim also
+Both run the same steps aimed at a different password, so either is meant to be safe to run twice. The journal is removed only when one succeeds. Prod-sim also
 needs `CONFIRM=yes`.
+
+What has run: in prod-sim, a rotation with `SKIP_BACKUP=yes` was killed with SIGKILL 4 s in, after `ALTER ROLE`, while it waited for the operator's restart. `RESUME=yes` finished it and exited 0. Postgres took the new password and refused the replaced one, `SECRET_KEY` did not change, and the rollouts finished 33 s after the resume began ([SEC-4-20261105T073843Z.txt](../evidence/runs/SEC-4-20261105T073843Z.txt)). That is one stop at one point. A stop between the Infisical write and `ALTER ROLE`: Not tested in Pass 1. Running either one twice: Not tested in Pass 1.
+
+**After a hard stop, also stop the probe.** SIGKILL leaves the script's probe loop running, and it goes on spending the anonymous limit once a second. The killed run's loop was still in `ps` at 07:52Z, 14 minutes later. Make sure no rotation is really running, then stop what this names:
+
+```bash
+pgrep -fl rotate.sh
+```
 
 **Someone changed `PG_PASSWORD` by hand in the Infisical UI.** There is no journal to resume, and the script's preflight refuses, because Postgres does not
 accept the current Infisical value. Restore the previous value from Infisical's version history, so that Infisical matches the role again, then wait for the
-operator to sync and run a normal rotation. [[VERIFY: restoring an earlier version in the Infisical UI re-syncs the Secret and clears the preflight refusal]]
+operator to sync and run a normal rotation. Restoring a version in the UI, the Secret following it and the preflight then passing: Not tested in Pass 1.
 
-**postgres-exporter after a rotation.** The exporter reads `plane-pgdb` through environment variables, so at its next reconnection after a rotation `pg_up` could go to 0 and critical `PlanePostgresDown` could fire on a healthy database. It carries `secrets.infisical.com/auto-reload: "true"` (`monitoring/manifests/environments/base/exporters.yaml`). In the dev rotation the operator restarted it at 07:23:47Z, `pg_up` stayed 1 at every 15 s reading, and `PlanePostgresDown` did not fire in dev (`.local/evidence-raw/SEC-2-20261105T072331Z-watch.txt`). `scripts/rotate.sh` checks and waits for consumers of `plane-app-env` only, so it neither waits for the exporter nor restarts it.
+**postgres-exporter after a rotation.** The exporter reads `plane-pgdb` through environment variables, so at its next reconnection after a rotation `pg_up` could go to 0 and critical `PlanePostgresDown` could fire on a healthy database. It carries `secrets.infisical.com/auto-reload: "true"` (`monitoring/manifests/environments/base/exporters.yaml`). In the dev rotation the operator restarted it at 07:23:47Z, `pg_up` stayed 1 at every 15 s reading, and `PlanePostgresDown` did not fire in dev ([SEC-2-20261105T072331Z-watch.txt](../evidence/runs/SEC-2-20261105T072331Z-watch.txt)). `scripts/rotate.sh` checks and waits for consumers of `plane-app-env` only, so it neither waits for the exporter nor restarts it.
 
 If it still happens, restart it. A rollout restart adds only a template annotation, which Argo CD's three-way diff does not revert:
 
@@ -115,14 +122,14 @@ make test-e2e ENV=dev
 
 You want a final `PASS` line, "Infisical backed up", and no journal. The evidence also records "Postgres rejects the replaced password", "SECRET_KEY unchanged" and "workload generations stable".
 
-In dev every line read PASS and no journal was left. An independent check found the old password refused, the new one accepted and the three Deployments holding the new value (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`, `.local/evidence-raw/SEC-2-20261105T072331Z-old-value.txt`).
+In dev every line read PASS and no journal was left. An independent check found the old password refused, the new one accepted and the three Deployments holding the new value ([rotate-dev-20261105T072345Z.log](../evidence/runs/rotate-dev-20261105T072345Z.log), [SEC-2-20261105T072331Z-old-value.txt](../evidence/runs/SEC-2-20261105T072331Z-old-value.txt)). In prod-sim every line read PASS too, by the script's own checks, and no independent check ran beside it ([rotate-prod-sim-20261105T073240Z.log](../evidence/runs/rotate-prod-sim-20261105T073240Z.log)). `make test-e2e` passed afterwards on the rotated password in dev, and in prod-sim after its first rotation ([BKP-2-20261105T074322Z.txt](../evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](../evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)).
 
-[[VERIFY: ROLLBACK=yes returns a deliberately interrupted rotation to the old password]]
+`ROLLBACK=yes` returning an interrupted rotation to the old password: Not tested in Pass 1.
 
-The operator's annotation and Argo CD self-heal did not fight in dev: `plane-dev` stayed Synced, went Progressing and back to Healthy at 07:24:28Z, and started no new sync operation (`.local/evidence-raw/SEC-6-20261105T072331Z-application-watch.txt`). Workload generations held still for the 20 s the script watches.
+The operator's annotation and Argo CD self-heal did not fight in dev: `plane-dev` stayed Synced, went Progressing and back to Healthy at 07:24:28Z, and the rotation started no sync operation ([SEC-6-20261105T072331Z-application-watch.txt](../evidence/runs/SEC-6-20261105T072331Z-application-watch.txt)). The file runs to 07:40:51Z, and its one operation came at 07:32:41Z, from a replica change made on purpose to test self-heal ([GITOPS-4-20261105T073240Z.txt](../evidence/runs/GITOPS-4-20261105T073240Z.txt)). The api, worker and beat generations did not move again in the watcher's readings to 07:40:17Z ([SEC-2-20261105T072331Z-watch.txt](../evidence/runs/SEC-2-20261105T072331Z-watch.txt)). Prod-sim had no such watch. There the script's 20 s check passed in each run.
 
 Old Plane dumps should stay usable. A backup does not store the database password, a restore authenticates with what the live Secret holds, and `pg_dump` of one database does not include roles, so a restore leaves the role's current password alone. An Infisical dump older than the rotation is different, since it holds the old `PG_PASSWORD`: `make restore ENV=infisical` refuses it in place unless `ALLOW_STALE_PLANE_SECRETS=yes`.
-[[VERIFY: restoring a backup taken before a rotation still lets Plane log in with the current password]]
+Restoring a Plane backup taken before a rotation: Not tested in Pass 1. Both real Plane restores used dumps taken after that environment's rotation ([BKP-2-20261105T074322Z.txt](../evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](../evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)).
 
 ## What not to do
 
