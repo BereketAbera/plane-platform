@@ -93,11 +93,14 @@ if asked_to_fail():
     print("Unable to connect to the server: net/http: TLS handshake timeout", file=sys.stderr)
     sys.exit(1)
 # A call that does not answer until something stops it, as a wedged API does. One regular expression, matched as above,
-# and only once, because what runs after the stop must not hang on the same thing.
+# and only once, because what runs after the stop must not hang on the same thing. A second line, if any, is what
+# calls.log must hold by then, for a call that a script makes more than once.
 if os.path.exists(f"{S}/kubectl-hang"):
     with open(f"{S}/kubectl-hang") as f:
-        pattern = f.read().strip()
-    if pattern and re.search(pattern, f"{ns or ''} {cmd}"):
+        hang = f.read().splitlines() + ["", ""]
+    with open(f"{S}/calls.log") as f:
+        so_far = f.read()
+    if hang[0] and re.search(hang[0], f"{ns or ''} {cmd}") and re.search(hang[1], so_far):
         os.remove(f"{S}/kubectl-hang")
         log(f"kc hung, as the scenario asked: {ns or ''} {cmd}")
         time.sleep(600)
