@@ -1,0 +1,48 @@
+# Thu Nov  5 04:58:45 EAT 2026
+$ python3 -B apps/wayline/checks/flatten-config.py localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
+base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
+built localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e, config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d
+
+== Env
+PASS GPG_KEY is the base's value
+PASS INSTANCE_CHANGELOG_URL is ours, as the Dockerfile means it
+PASS LANG is the base's value
+PASS PATH is the base's value
+PASS PIP_DISABLE_PIP_VERSION_CHECK is the base's value
+PASS PYTHONDONTWRITEBYTECODE is the base's value
+PASS PYTHONUNBUFFERED is the base's value
+PASS PYTHON_SHA256 is the base's value
+PASS PYTHON_VERSION is the base's value
+
+== Labels
+PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
+PASS org.opencontainers.image.licenses is set AGPL-3.0-only
+PASS org.opencontainers.image.revision is set ec45e212ee6185d286762a753913c253dac51358
+PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
+PASS org.opencontainers.image.title is set wayline-backend
+
+== User
+PASS User is 1000, where the base says None '1000'
+
+== Everything else
+PASS Cmd is the base's ["./bin/docker-entrypoint-api.sh"]
+PASS Entrypoint is the base's null
+PASS WorkingDir is the base's "/code"
+PASS ExposedPorts is the base's {"8000/tcp": {}}
+PASS Volumes is the base's null
+PASS StopSignal is the base's null
+PASS Healthcheck is the base's null
+PASS Shell is the base's null
+PASS OnBuild is the base's null
+PASS ArgsEscaped is the base's true
+PASS every config field has a rule here
+
+== Layers
+PASS the image shares no layer with the base, other than the empty one 2 layers
+PASS architecture is the base's arm64
+PASS os is the base's linux
+
+RESULT PASS: 0 failed
+# exit 0
+

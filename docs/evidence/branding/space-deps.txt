@@ -271,3 +271,262 @@ FAIL trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"
 
 space-deps: 6 failed
 exit 1
+
+$ # 6. Added on Thu Nov  5 05:06:37 EAT 2026, at commit 83ba5d28327fc4957be17bb4431928cb43ceaf0d. What sections 1 to 3 cannot see: packages the bundler inlined into build/server, which nothing imports, so the closure and the load trace, which see node_modules only, do not list them. Sections 1 to 5 are from the image they name: the space image's source has not changed since, except for the licence texts and the wording of two messages in space-deps.mjs
+$ node apps/wayline/checks/space-regions.mjs .build/wayline-dist/space/build/server docs/evidence/security/scan-images-20261105T020423Z/images/localhost_5001_wayline_space_0a4ca742292d.json
+# 533 bundle files, 1750 //#region comments: 1039 from 206 packages in node_modules, 711 from the app and workspace packages
+# regions	package	where	findings at this version in the scan given
+28	@atlaskit/pragmatic-drag-and-drop@1.7.4	index.js	-
+15	@babel/runtime@7.29.7	index.js	-
+97	@base-ui-components/react@1.0.0-beta.3	index.js	-
+21	@base-ui-components/utils@0.1.1	index.js	-
+1	@borewit/text-codec@0.1.1	index.js	-
+1	@floating-ui/core@1.7.3	index.js	-
+1	@floating-ui/dom@1.7.4	index.js	-
+1	@floating-ui/react-dom@2.1.6	index.js	-
+2	@floating-ui/react@0.26.28	index.js	-
+2	@floating-ui/utils@0.2.10	index.js	-
+1	@formatjs/fast-memoize@2.2.7	index.js	-
+7	@formatjs/icu-messageformat-parser@2.11.2	index.js	-
+3	@formatjs/icu-skeleton-parser@1.8.14	index.js	-
+1	@hocuspocus/common@2.15.3	index.js	-
+1	@hocuspocus/provider@2.15.2	index.js	-
+1	@lifeomic/attempt@3.1.0	index.js	-
+1	@react-router/dev@7.17.0	index.js	-
+1	@tiptap/core@2.26.3	index.js	{"MEDIUM":1}
+1	@tiptap/extension-blockquote@2.26.1	index.js	-
+1	@tiptap/extension-bold@2.26.2	index.js	-
+1	@tiptap/extension-bubble-menu@2.26.3	index.js	-
+1	@tiptap/extension-bullet-list@2.26.2	index.js	-
+1	@tiptap/extension-character-count@2.26.1	index.js	-
+1	@tiptap/extension-code-block@2.26.2	index.js	-
+1	@tiptap/extension-code@2.26.2	index.js	-
+1	@tiptap/extension-collaboration@2.26.1	index.js	-
+1	@tiptap/extension-document@2.26.1	index.js	-
+1	@tiptap/extension-dropcursor@2.26.2	index.js	-
+1	@tiptap/extension-emoji@2.26.1	index.js	-
+1	@tiptap/extension-gapcursor@2.26.2	index.js	-
+1	@tiptap/extension-hard-break@2.26.2	index.js	-
+1	@tiptap/extension-heading@2.26.1	index.js	-
+1	@tiptap/extension-history@2.26.1	index.js	-
+1	@tiptap/extension-horizontal-rule@2.26.2	index.js	-
+1	@tiptap/extension-image@2.26.1	index.js	-
+1	@tiptap/extension-italic@2.26.2	index.js	-
+1	@tiptap/extension-list-item@2.26.1	index.js	-
+1	@tiptap/extension-mention@2.26.1	index.js	-
+1	@tiptap/extension-ordered-list@2.26.2	index.js	-
+1	@tiptap/extension-paragraph@2.26.2	index.js	-
+1	@tiptap/extension-placeholder@2.26.1	index.js	-
+1	@tiptap/extension-strike@2.26.2	index.js	-
+1	@tiptap/extension-task-item@2.26.1	index.js	-
+1	@tiptap/extension-task-list@2.26.1	index.js	-
+1	@tiptap/extension-text-align@2.26.1	index.js	-
+1	@tiptap/extension-text-style@2.26.1	index.js	-
+1	@tiptap/extension-text@2.26.1	index.js	-
+1	@tiptap/extension-underline@2.26.1	index.js	-
+1	@tiptap/react@2.26.1	index.js	-
+1	@tiptap/starter-kit@2.26.1	index.js	-
+1	@tiptap/suggestion@2.26.1	index.js	-
+3	@tokenizer/inflate@0.4.1	index.js	-
+3	@ungap/structured-clone@1.3.0	index.js	-
+1	bail@2.0.2	index.js	-
+3	bind-event-listener@3.0.0	index.js	-
+1	ccount@2.0.1	index.js	-
+1	character-entities@2.0.2	index.js	-
+102	chroma-js@3.2.0	index.js	-
+1	class-variance-authority@0.7.1	index.js	-
+1	comma-separated-tokens@2.0.3	index.js	-
+2	css-what@6.2.2	index.js	-
+1	dayjs@1.11.21	index.js	-
+4	debug@4.4.3	index.js	-
+1	decode-named-character-reference@1.2.0	index.js	-
+1	deepmerge@4.3.1	index.js	-
+2	dom-serializer@3.1.1	index.js	-
+1	domelementtype@3.0.0	index.js	-
+2	domhandler@6.0.1	index.js	-
+8	domutils@4.0.2	index.js	-
+1	emoji-regex@10.5.0	index.js	-
+4	entities@4.5.0	index.js	-
+4	entities@5.0.0	index.js	-
+2	entities@6.0.1	index.js	-
+8	entities@8.1.0	index.js	-
+1	escape-string-regexp@4.0.0	index.js	-
+1	escape-string-regexp@5.0.0	index.js	-
+1	extend@3.0.2	index.js	-
+3	file-type@21.3.3	index.js	-
+1	frimousse@0.3.0	index.js	-
+1	has-flag@4.0.0	index.js	-
+1	hast-util-embedded@3.0.0	index.js	-
+2	hast-util-from-html@2.0.3	index.js	-
+1	hast-util-from-parse5@8.0.3	index.js	-
+1	hast-util-has-property@3.0.0	index.js	-
+1	hast-util-is-body-ok-link@3.0.1	index.js	-
+1	hast-util-is-element@3.0.0	index.js	-
+4	hast-util-minify-whitespace@1.0.1	index.js	-
+1	hast-util-parse-selector@4.0.0	index.js	-
+1	hast-util-phrasing@3.0.1	index.js	-
+36	hast-util-to-mdast@10.1.2	index.js	-
+1	hast-util-to-text@4.0.2	index.js	-
+1	hast-util-whitespace@3.0.0	index.js	-
+3	hastscript@9.0.1	index.js	-
+37	highlight.js@11.11.1	index.js	-
+3	htmlparser2@12.0.0	index.js	-
+2	i18next-icu@2.4.3	index.js	-
+1	i18next-resources-to-backend@1.2.1	index.js	-
+1	i18next@25.10.9	index.js	-
+4	intl-messageformat@10.7.16	index.js	-
+1	is-emoji-supported@0.0.5	index.js	-
+1	is-plain-obj@4.1.0	index.js	-
+1	is-plain-object@5.0.0	index.js	-
+1	launder@1.7.1	index.js	-
+29	lib0@0.2.114	index.js	-
+2	linkify-it@5.0.2	index.js	-
+1	linkifyjs@4.3.2	index.js	-
+157	lodash@4.18.1	index.js	-
+1	longest-streak@3.1.0	index.js	-
+2	lowlight@3.3.0	index.js	-
+49	markdown-it@14.2.0	index.js	{"HIGH":2,"MEDIUM":1,"LOW":1}
+1	markdown-table@3.0.4	index.js	-
+1	material-colors@1.2.6	index.js	-
+1	mdast-util-find-and-replace@3.0.2	index.js	-
+1	mdast-util-gfm-autolink-literal@2.0.1	index.js	-
+1	mdast-util-gfm-footnote@2.1.0	index.js	-
+1	mdast-util-gfm-strikethrough@2.0.0	index.js	-
+1	mdast-util-gfm-table@2.0.0	index.js	-
+1	mdast-util-gfm-task-list-item@2.0.0	index.js	-
+1	mdast-util-gfm@3.1.0	index.js	-
+1	mdast-util-phrasing@4.1.0	index.js	-
+47	mdast-util-to-markdown@2.1.2	index.js	-
+1	mdast-util-to-string@4.0.0	index.js	-
+5	mdurl@2.0.0	index.js	-
+1	micromark-core-commonmark@2.0.3	index.js	-
+1	micromark-extension-gfm-autolink-literal@2.1.0	index.js	-
+1	micromark-extension-gfm-footnote@2.1.0	index.js	-
+1	micromark-extension-gfm-strikethrough@2.1.0	index.js	-
+3	micromark-extension-gfm-table@2.1.1	index.js	-
+1	micromark-extension-gfm-task-list-item@2.1.0	index.js	-
+1	micromark-extension-gfm@3.0.0	index.js	-
+1	micromark-factory-space@2.0.1	index.js	-
+1	micromark-util-character@2.1.1	index.js	-
+1	micromark-util-chunked@2.0.1	index.js	-
+1	micromark-util-classify-character@2.0.1	index.js	-
+1	micromark-util-combine-extensions@2.0.1	index.js	-
+1	micromark-util-decode-numeric-character-reference@2.0.2	index.js	-
+1	micromark-util-decode-string@2.0.1	index.js	-
+1	micromark-util-normalize-identifier@2.0.1	index.js	-
+1	micromark-util-resolve-all@2.0.1	index.js	-
+1	ms@2.1.3	index.js	-
+1	nanoid@3.3.8	index.js	{"HIGH":3}
+1	object-assign@4.1.1	index.js	-
+1	orderedmap@2.1.1	index.js	-
+1	parse-srcset@1.0.2	index.js	-
+13	parse5@7.3.0	index.js	-
+1	picocolors@1.1.1	index.js	-
+28	postcss@8.5.25	index.js	-
+5	prop-types@15.8.1	index.js	-
+17	property-information@7.1.0	index.js	-
+4	prosemirror-codemark@0.4.2	index.js	-
+1	prosemirror-commands@1.7.1	index.js	-
+1	prosemirror-dropcursor@1.8.2	index.js	-
+1	prosemirror-gapcursor@1.3.2	index.js	-
+1	prosemirror-history@1.4.1	index.js	-
+1	prosemirror-keymap@1.2.3	index.js	-
+1	prosemirror-markdown@1.13.2	index.js	-
+1	prosemirror-model@1.25.3	index.js	-
+1	prosemirror-schema-list@1.5.1	index.js	-
+1	prosemirror-state@1.4.3	index.js	-
+1	prosemirror-tables@1.7.1	index.js	-
+1	prosemirror-transform@1.10.4	index.js	-
+1	prosemirror-view@1.40.0	index.js	{"HIGH":1}
+1	punycode.js@2.3.1	index.js	-
+1	raf-schd@4.0.3	index.js	-
+51	react-color@2.19.3	index.js	-
+8	react-i18next@16.6.6	index.js	-
+3	react-is@16.13.1	index.js	-
+6	reactcss@1.2.3	index.js	-
+1	rehype-minify-whitespace@6.0.2	index.js	-
+1	rehype-parse@9.0.1	index.js	-
+1	rehype-remark@10.0.1	index.js	-
+1	remark-gfm@4.0.1	index.js	-
+1	remark-stringify@11.0.0	index.js	-
+1	rope-sequence@1.3.4	index.js	-
+11	source-map-js@1.2.1	index.js	{"HIGH":1}
+1	space-separated-tokens@2.0.2	index.js	-
+11	strtok3@10.3.4	index.js	-
+1	supports-color@7.2.0	index.js	-
+1	tailwind-merge@3.4.0	index.js	-
+1	tinycolor2@1.6.0	index.js	-
+1	tippy.js@6.3.7	index.js	-
+1	tiptap-markdown@0.8.10	index.js	-
+1	token-types@6.1.1	index.js	-
+1	trim-trailing-lines@2.1.0	index.js	-
+1	trough@2.2.0	index.js	-
+1	tslib@2.8.1	index.js	-
+7	uc.micro@2.1.0	index.js	-
+2	unified@11.0.5	index.js	-
+1	unist-util-find-after@5.0.0	index.js	-
+1	unist-util-is@6.0.0	index.js	-
+1	unist-util-position@5.0.0	index.js	-
+1	unist-util-stringify-position@4.0.0	index.js	-
+2	unist-util-visit-parents@6.0.1	index.js	-
+1	unist-util-visit@5.0.0	index.js	-
+1	use-font-face-observer@1.3.0	index.js	-
+2	use-sync-external-store@1.6.0	index.js	-
+1	vfile-location@5.0.3	index.js	-
+1	vfile-message@4.0.3	index.js	-
+2	vfile@6.0.3	index.js	-
+1	w3c-keyname@2.2.8	index.js	-
+1	web-namespaces@2.0.1	index.js	-
+1	y-indexeddb@9.0.12	index.js	-
+5	y-prosemirror@1.3.7	index.js	-
+1	yjs@13.6.27	index.js	-
+2	zeed-dom@0.15.1	index.js	-
+1	zwitch@2.0.4	index.js	-
+# inlined at a version with a finding: 5
+@tiptap/core@2.26.3	{"MEDIUM":1}
+markdown-it@14.2.0	{"HIGH":2,"MEDIUM":1,"LOW":1}
+nanoid@3.3.8	{"HIGH":3}
+prosemirror-view@1.40.0	{"HIGH":1}
+source-map-js@1.2.1	{"HIGH":1}
+# exit 0
+
+$ # 7. HIGH and MEDIUM findings by package in the same scan, for comparison
+1	MEDIUM	@tiptap/core@2.26.3
+7	HIGH	axios@1.18.1
+5	MEDIUM	axios@1.18.1
+1	HIGH	body-parser@1.20.6
+4	HIGH	brace-expansion@5.0.7
+1	MEDIUM	brace-expansion@5.0.7
+1	HIGH	compression@1.8.1
+2	MEDIUM	fast-uri@3.1.8
+3	HIGH	follow-redirects@1.16.0
+1	MEDIUM	glob@11.1.0
+2	HIGH	markdown-it@14.2.0
+1	MEDIUM	markdown-it@14.2.0
+1	MEDIUM	minimatch@10.2.3
+1	MEDIUM	morgan@1.12.0
+3	HIGH	nanoid@3.3.8
+1	MEDIUM	postcss-selector-parser@6.0.10
+1	MEDIUM	postcss-selector-parser@6.1.3
+1	MEDIUM	postcss-selector-parser@7.1.3
+1	HIGH	prosemirror-view@1.40.0
+1	MEDIUM	qs@6.16.0
+1	HIGH	react-router@7.18.1
+2	MEDIUM	sanitize-html@2.17.7
+1	HIGH	source-map-js@1.2.1
+4	HIGH	toml@4.3.0
+1	HIGH	vite@8.0.16
+3	MEDIUM	vite@8.0.16
+1	HIGH	webpack-dev-middleware@6.1.3
+
+$ # 8. The closure on the final image, localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2, its summary lines
+exit 0
+# 30 static imports of a package in the server bundle:
+# import() or require() of a package with a literal name:
+# of those, not resolvable here: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-
+# 131 packages in node_modules reachable, with what first pulled each in. Code the bundler inlined is not here: checks/space-regions.mjs lists that:
+# storybook or tinypool among them: 0
+# bundle files that mention either name: 0
+# missing: none
+
+# Read together: the server has HIGH findings in packages it loads from node_modules (axios, body-parser, compression, follow-redirects, react-router) and in packages inlined into its bundle (markdown-it, nanoid, prosemirror-view, source-map-js), with a MEDIUM in @tiptap/core, also inlined. The sentence "in space, HIGH findings sit in five packages the server can reach", in an earlier report, was wrong: it counted only the first group. Nobody has checked whether any of these can be reached in a way that matters.

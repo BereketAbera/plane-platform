@@ -1,5 +1,7 @@
+# Thu Nov  5 04:58:46 EAT 2026
+$ env WAYLINE_EXPECT_REF=ec45e212ee6185d286762a753913c253dac51358 apps/wayline/checks/smoke-images.sh
 
-== web: localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+== web: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS / title names Wayline
@@ -12,9 +14,9 @@ PASS font /assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 status: 200
 PASS font content type: font/woff2
 PASS SPA route /some-workspace/projects/ status: 200
 PASS SPA route serves index.html: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
-/source -> 302 https://github.com/BereketAbera/plane-platform/tree/1563cbfbe89536541c041ec59f241edeab3740c2
+/source -> 302 https://github.com/BereketAbera/plane-platform/tree/ec45e212ee6185d286762a753913c253dac51358
 PASS /source is a 302 to the repository at a commit
-PASS /source names commit 1563cbfbe89536541c041ec59f241edeab3740c2
+PASS /source names commit ec45e212ee6185d286762a753913c253dac51358
 NOTE /source target, followed logged out, answers 404. 404 is expected while the repository is private or the commit is unpushed
 PASS /licenses/LICENSE.txt status: 200
 PASS /licenses/LICENSE.txt content type: text/plain
@@ -23,19 +25,319 @@ PASS /licenses/OFL-JetBrainsMono.txt status: 200
 PASS manifest status: 200
 PASS manifest names Wayline
 PASS X-Frame-Options: DENY
+1060 files under /assets/
+PASS HTML /: status: 200
+PASS HTML /: Cache-Control: no-cache
+PASS HTML /: X-Frame-Options: 1
+PASS HTML /: X-Content-Type-Options: 1
+PASS HTML /: Strict-Transport-Security: 1
+PASS HTML /: X-XSS-Protection: 1
+PASS HTML /index.html: status: 200
+PASS HTML /index.html: Cache-Control: no-cache
+PASS HTML /index.html: X-Frame-Options: 1
+PASS HTML /index.html: X-Content-Type-Options: 1
+PASS HTML /index.html: Strict-Transport-Security: 1
+PASS HTML /index.html: X-XSS-Protection: 1
+PASS SPA fallback /some-workspace/projects/: status: 200
+PASS SPA fallback /some-workspace/projects/: Cache-Control: no-cache
+PASS SPA fallback /some-workspace/projects/: X-Frame-Options: 1
+PASS SPA fallback /some-workspace/projects/: X-Content-Type-Options: 1
+PASS SPA fallback /some-workspace/projects/: Strict-Transport-Security: 1
+PASS SPA fallback /some-workspace/projects/: X-XSS-Protection: 1
+PASS hashed js-icon-lKS6TT2t.png: status: 200
+PASS hashed js-icon-lKS6TT2t.png: Cache-Control: public, max-age=31536000, immutable
+PASS hashed js-icon-lKS6TT2t.png: X-Frame-Options: 1
+PASS hashed js-icon-lKS6TT2t.png: X-Content-Type-Options: 1
+PASS hashed js-icon-lKS6TT2t.png: Strict-Transport-Security: 1
+PASS hashed js-icon-lKS6TT2t.png: X-XSS-Protection: 1
+PASS hashed tour-BRmUyuDP.js: status: 200
+PASS hashed tour-BRmUyuDP.js: Cache-Control: public, max-age=31536000, immutable
+PASS hashed tour-BRmUyuDP.js: X-Frame-Options: 1
+PASS hashed tour-BRmUyuDP.js: X-Content-Type-Options: 1
+PASS hashed tour-BRmUyuDP.js: Strict-Transport-Security: 1
+PASS hashed tour-BRmUyuDP.js: X-XSS-Protection: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: status: 200
+PASS hashed gitlab-logo-BL2xQyij.svg: Cache-Control: public, max-age=31536000, immutable
+PASS hashed gitlab-logo-BL2xQyij.svg: X-Frame-Options: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: X-Content-Type-Options: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: Strict-Transport-Security: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: X-XSS-Protection: 1
+PASS hashed cycles-light-CsVWyFv4.webp: status: 200
+PASS hashed cycles-light-CsVWyFv4.webp: Cache-Control: public, max-age=31536000, immutable
+PASS hashed cycles-light-CsVWyFv4.webp: X-Frame-Options: 1
+PASS hashed cycles-light-CsVWyFv4.webp: X-Content-Type-Options: 1
+PASS hashed cycles-light-CsVWyFv4.webp: Strict-Transport-Security: 1
+PASS hashed cycles-light-CsVWyFv4.webp: X-XSS-Protection: 1
+PASS hashed heavy-lPV88BO8.ttf: status: 200
+PASS hashed heavy-lPV88BO8.ttf: Cache-Control: public, max-age=31536000, immutable
+PASS hashed heavy-lPV88BO8.ttf: X-Frame-Options: 1
+PASS hashed heavy-lPV88BO8.ttf: X-Content-Type-Options: 1
+PASS hashed heavy-lPV88BO8.ttf: Strict-Transport-Security: 1
+PASS hashed heavy-lPV88BO8.ttf: X-XSS-Protection: 1
+PASS hashed image_12-Bt4XfBD3.jpg: status: 200
+PASS hashed image_12-Bt4XfBD3.jpg: Cache-Control: public, max-age=31536000, immutable
+PASS hashed image_12-Bt4XfBD3.jpg: X-Frame-Options: 1
+PASS hashed image_12-Bt4XfBD3.jpg: X-Content-Type-Options: 1
+PASS hashed image_12-Bt4XfBD3.jpg: Strict-Transport-Security: 1
+PASS hashed image_12-Bt4XfBD3.jpg: X-XSS-Protection: 1
+PASS hashed AppProgressBar-D_Zs2VgL.css: status: 200
+PASS hashed AppProgressBar-D_Zs2VgL.css: Cache-Control: public, max-age=31536000, immutable
+PASS hashed AppProgressBar-D_Zs2VgL.css: X-Frame-Options: 1
+PASS hashed AppProgressBar-D_Zs2VgL.css: X-Content-Type-Options: 1
+PASS hashed AppProgressBar-D_Zs2VgL.css: Strict-Transport-Security: 1
+PASS hashed AppProgressBar-D_Zs2VgL.css: X-XSS-Protection: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: status: 200
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: Cache-Control: public, max-age=31536000, immutable
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: X-Frame-Options: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: X-Content-Type-Options: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: Strict-Transport-Security: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: X-XSS-Protection: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: status: 200
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: Cache-Control: public, max-age=31536000, immutable
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: X-Frame-Options: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: X-Content-Type-Options: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: Strict-Transport-Security: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: X-XSS-Protection: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: status: 200
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: Cache-Control: public, max-age=31536000, immutable
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: X-Frame-Options: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: X-Content-Type-Options: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: Strict-Transport-Security: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: X-XSS-Protection: 1
+PASS hashed favicon-9mRML3cy.ico: status: 200
+PASS hashed favicon-9mRML3cy.ico: Cache-Control: public, max-age=31536000, immutable
+PASS hashed favicon-9mRML3cy.ico: X-Frame-Options: 1
+PASS hashed favicon-9mRML3cy.ico: X-Content-Type-Options: 1
+PASS hashed favicon-9mRML3cy.ico: Strict-Transport-Security: 1
+PASS hashed favicon-9mRML3cy.ico: X-XSS-Protection: 1
+PASS hashed page-Coab7WTi2.js: status: 200
+PASS hashed page-Coab7WTi2.js: Cache-Control: public, max-age=31536000, immutable
+PASS hashed page-Coab7WTi2.js: X-Frame-Options: 1
+PASS hashed page-Coab7WTi2.js: X-Content-Type-Options: 1
+PASS hashed page-Coab7WTi2.js: Strict-Transport-Security: 1
+PASS hashed page-Coab7WTi2.js: X-XSS-Protection: 1
+PASS hashed manifest-dbe3575a.js: status: 200
+PASS hashed manifest-dbe3575a.js: Cache-Control: public, max-age=31536000, immutable
+PASS hashed manifest-dbe3575a.js: X-Frame-Options: 1
+PASS hashed manifest-dbe3575a.js: X-Content-Type-Options: 1
+PASS hashed manifest-dbe3575a.js: Strict-Transport-Security: 1
+PASS hashed manifest-dbe3575a.js: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.js: status: 200
+PASS missing hashed missing-AbCd1234.js: Cache-Control: no-cache
+PASS missing hashed missing-AbCd1234.js: X-Frame-Options: 1
+PASS missing hashed missing-AbCd1234.js: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd1234.js: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd1234.js: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.js is the index.html fallback: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
+PASS missing hashed missing-AbCd12342.js: status: 200
+PASS missing hashed missing-AbCd12342.js: Cache-Control: no-cache
+PASS missing hashed missing-AbCd12342.js: X-Frame-Options: 1
+PASS missing hashed missing-AbCd12342.js: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd12342.js: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd12342.js: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd12342.js is the index.html fallback: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
+PASS missing hashed missing-AbCd1234.css: status: 200
+PASS missing hashed missing-AbCd1234.css: Cache-Control: no-cache
+PASS missing hashed missing-AbCd1234.css: X-Frame-Options: 1
+PASS missing hashed missing-AbCd1234.css: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd1234.css: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd1234.css: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.css is the index.html fallback: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
+PASS missing hashed missing-AbCd1234.woff2: status: 200
+PASS missing hashed missing-AbCd1234.woff2: Cache-Control: no-cache
+PASS missing hashed missing-AbCd1234.woff2: X-Frame-Options: 1
+PASS missing hashed missing-AbCd1234.woff2: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd1234.woff2: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd1234.woff2: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.woff2 is the index.html fallback: 49799843ca9c26f77fdd3978d737be9910c397d128f8803570df998b3dd435df  -
+PASS unhashed unhashed.js under assets/: status: 200
+PASS unhashed unhashed.js under assets/: Cache-Control: no-cache
+PASS unhashed unhashed.js under assets/: X-Frame-Options: 1
+PASS unhashed unhashed.js under assets/: X-Content-Type-Options: 1
+PASS unhashed unhashed.js under assets/: Strict-Transport-Security: 1
+PASS unhashed unhashed.js under assets/: X-XSS-Protection: 1
+PASS unhashed logo-dark.png under assets/: status: 200
+PASS unhashed logo-dark.png under assets/: Cache-Control: no-cache
+PASS unhashed logo-dark.png under assets/: X-Frame-Options: 1
+PASS unhashed logo-dark.png under assets/: X-Content-Type-Options: 1
+PASS unhashed logo-dark.png under assets/: Strict-Transport-Security: 1
+PASS unhashed logo-dark.png under assets/: X-XSS-Protection: 1
+PASS the directory /assets/: status: 403
+PASS the directory /assets/: Cache-Control: no-cache
+PASS the directory /assets/: X-Frame-Options: 1
+PASS the directory /assets/: X-Content-Type-Options: 1
+PASS the directory /assets/: Strict-Transport-Security: 1
+PASS the directory /assets/: X-XSS-Protection: 1
+PASS not hashed 50x.html: status: 200
+PASS not hashed 50x.html: Cache-Control: no-cache
+PASS not hashed 50x.html: X-Frame-Options: 1
+PASS not hashed 50x.html: X-Content-Type-Options: 1
+PASS not hashed 50x.html: Strict-Transport-Security: 1
+PASS not hashed 50x.html: X-XSS-Protection: 1
+PASS not hashed licenses/COPYRIGHT.txt: status: 200
+PASS not hashed licenses/COPYRIGHT.txt: Cache-Control: no-cache
+PASS not hashed licenses/COPYRIGHT.txt: X-Frame-Options: 1
+PASS not hashed licenses/COPYRIGHT.txt: X-Content-Type-Options: 1
+PASS not hashed licenses/COPYRIGHT.txt: Strict-Transport-Security: 1
+PASS not hashed licenses/COPYRIGHT.txt: X-XSS-Protection: 1
+PASS not hashed licenses/NOTICE.txt: status: 200
+PASS not hashed licenses/NOTICE.txt: Cache-Control: no-cache
+PASS not hashed licenses/NOTICE.txt: X-Frame-Options: 1
+PASS not hashed licenses/NOTICE.txt: X-Content-Type-Options: 1
+PASS not hashed licenses/NOTICE.txt: Strict-Transport-Security: 1
+PASS not hashed licenses/NOTICE.txt: X-XSS-Protection: 1
+PASS not hashed licenses/OFL-JetBrainsMono.txt: status: 200
+PASS not hashed licenses/OFL-JetBrainsMono.txt: Cache-Control: no-cache
+PASS not hashed licenses/OFL-JetBrainsMono.txt: X-Frame-Options: 1
+PASS not hashed licenses/OFL-JetBrainsMono.txt: X-Content-Type-Options: 1
+PASS not hashed licenses/OFL-JetBrainsMono.txt: Strict-Transport-Security: 1
+PASS not hashed licenses/OFL-JetBrainsMono.txt: X-XSS-Protection: 1
+PASS not hashed licenses/LICENSE.txt: status: 200
+PASS not hashed licenses/LICENSE.txt: Cache-Control: no-cache
+PASS not hashed licenses/LICENSE.txt: X-Frame-Options: 1
+PASS not hashed licenses/LICENSE.txt: X-Content-Type-Options: 1
+PASS not hashed licenses/LICENSE.txt: Strict-Transport-Security: 1
+PASS not hashed licenses/LICENSE.txt: X-XSS-Protection: 1
+PASS not hashed licenses/OFL-InstrumentSans.txt: status: 200
+PASS not hashed licenses/OFL-InstrumentSans.txt: Cache-Control: no-cache
+PASS not hashed licenses/OFL-InstrumentSans.txt: X-Frame-Options: 1
+PASS not hashed licenses/OFL-InstrumentSans.txt: X-Content-Type-Options: 1
+PASS not hashed licenses/OFL-InstrumentSans.txt: Strict-Transport-Security: 1
+PASS not hashed licenses/OFL-InstrumentSans.txt: X-XSS-Protection: 1
+PASS not hashed licenses/MODIFICATIONS.txt: status: 200
+PASS not hashed licenses/MODIFICATIONS.txt: Cache-Control: no-cache
+PASS not hashed licenses/MODIFICATIONS.txt: X-Frame-Options: 1
+PASS not hashed licenses/MODIFICATIONS.txt: X-Content-Type-Options: 1
+PASS not hashed licenses/MODIFICATIONS.txt: Strict-Transport-Security: 1
+PASS not hashed licenses/MODIFICATIONS.txt: X-XSS-Protection: 1
+PASS not hashed plane-logos/plane-mobile-pwa.png: status: 200
+PASS not hashed plane-logos/plane-mobile-pwa.png: Cache-Control: no-cache
+PASS not hashed plane-logos/plane-mobile-pwa.png: X-Frame-Options: 1
+PASS not hashed plane-logos/plane-mobile-pwa.png: X-Content-Type-Options: 1
+PASS not hashed plane-logos/plane-mobile-pwa.png: Strict-Transport-Security: 1
+PASS not hashed plane-logos/plane-mobile-pwa.png: X-XSS-Protection: 1
+PASS not hashed icons/icon-192x192.png: status: 200
+PASS not hashed icons/icon-192x192.png: Cache-Control: no-cache
+PASS not hashed icons/icon-192x192.png: X-Frame-Options: 1
+PASS not hashed icons/icon-192x192.png: X-Content-Type-Options: 1
+PASS not hashed icons/icon-192x192.png: Strict-Transport-Security: 1
+PASS not hashed icons/icon-192x192.png: X-XSS-Protection: 1
+PASS not hashed icons/icon-512x512.png: status: 200
+PASS not hashed icons/icon-512x512.png: Cache-Control: no-cache
+PASS not hashed icons/icon-512x512.png: X-Frame-Options: 1
+PASS not hashed icons/icon-512x512.png: X-Content-Type-Options: 1
+PASS not hashed icons/icon-512x512.png: Strict-Transport-Security: 1
+PASS not hashed icons/icon-512x512.png: X-XSS-Protection: 1
+PASS not hashed icons/icon-348x348.png: status: 200
+PASS not hashed icons/icon-348x348.png: Cache-Control: no-cache
+PASS not hashed icons/icon-348x348.png: X-Frame-Options: 1
+PASS not hashed icons/icon-348x348.png: X-Content-Type-Options: 1
+PASS not hashed icons/icon-348x348.png: Strict-Transport-Security: 1
+PASS not hashed icons/icon-348x348.png: X-XSS-Protection: 1
+PASS not hashed manifest.json: status: 200
+PASS not hashed manifest.json: Cache-Control: no-cache
+PASS not hashed manifest.json: X-Frame-Options: 1
+PASS not hashed manifest.json: X-Content-Type-Options: 1
+PASS not hashed manifest.json: Strict-Transport-Security: 1
+PASS not hashed manifest.json: X-XSS-Protection: 1
+PASS not hashed site.webmanifest.json: status: 200
+PASS not hashed site.webmanifest.json: Cache-Control: no-cache
+PASS not hashed site.webmanifest.json: X-Frame-Options: 1
+PASS not hashed site.webmanifest.json: X-Content-Type-Options: 1
+PASS not hashed site.webmanifest.json: Strict-Transport-Security: 1
+PASS not hashed site.webmanifest.json: X-XSS-Protection: 1
+PASS not hashed sw.js: status: 200
+PASS not hashed sw.js: Cache-Control: no-cache
+PASS not hashed sw.js: X-Frame-Options: 1
+PASS not hashed sw.js: X-Content-Type-Options: 1
+PASS not hashed sw.js: Strict-Transport-Security: 1
+PASS not hashed sw.js: X-XSS-Protection: 1
+PASS not hashed favicon/site.webmanifest: status: 200
+PASS not hashed favicon/site.webmanifest: Cache-Control: no-cache
+PASS not hashed favicon/site.webmanifest: X-Frame-Options: 1
+PASS not hashed favicon/site.webmanifest: X-Content-Type-Options: 1
+PASS not hashed favicon/site.webmanifest: Strict-Transport-Security: 1
+PASS not hashed favicon/site.webmanifest: X-XSS-Protection: 1
+PASS not hashed favicon/android-chrome-512x512.png: status: 200
+PASS not hashed favicon/android-chrome-512x512.png: Cache-Control: no-cache
+PASS not hashed favicon/android-chrome-512x512.png: X-Frame-Options: 1
+PASS not hashed favicon/android-chrome-512x512.png: X-Content-Type-Options: 1
+PASS not hashed favicon/android-chrome-512x512.png: Strict-Transport-Security: 1
+PASS not hashed favicon/android-chrome-512x512.png: X-XSS-Protection: 1
+PASS not hashed favicon/android-chrome-192x192.png: status: 200
+PASS not hashed favicon/android-chrome-192x192.png: Cache-Control: no-cache
+PASS not hashed favicon/android-chrome-192x192.png: X-Frame-Options: 1
+PASS not hashed favicon/android-chrome-192x192.png: X-Content-Type-Options: 1
+PASS not hashed favicon/android-chrome-192x192.png: Strict-Transport-Security: 1
+PASS not hashed favicon/android-chrome-192x192.png: X-XSS-Protection: 1
+PASS not hashed workbox-9f2f79cf.js: status: 200
+PASS not hashed workbox-9f2f79cf.js: Cache-Control: no-cache
+PASS not hashed workbox-9f2f79cf.js: X-Frame-Options: 1
+PASS not hashed workbox-9f2f79cf.js: X-Content-Type-Options: 1
+PASS not hashed workbox-9f2f79cf.js: Strict-Transport-Security: 1
+PASS not hashed workbox-9f2f79cf.js: X-XSS-Protection: 1
+PASS not hashed workbox-9f2f79cf.js.map: status: 200
+PASS not hashed workbox-9f2f79cf.js.map: Cache-Control: no-cache
+PASS not hashed workbox-9f2f79cf.js.map: X-Frame-Options: 1
+PASS not hashed workbox-9f2f79cf.js.map: X-Content-Type-Options: 1
+PASS not hashed workbox-9f2f79cf.js.map: Strict-Transport-Security: 1
+PASS not hashed workbox-9f2f79cf.js.map: X-XSS-Protection: 1
+PASS not hashed sw.js.map: status: 200
+PASS not hashed sw.js.map: Cache-Control: no-cache
+PASS not hashed sw.js.map: X-Frame-Options: 1
+PASS not hashed sw.js.map: X-Content-Type-Options: 1
+PASS not hashed sw.js.map: Strict-Transport-Security: 1
+PASS not hashed sw.js.map: X-XSS-Protection: 1
+PASS / with its ETag: status: 304
+PASS / with its ETag: Cache-Control: no-cache
+PASS / with its ETag: X-Frame-Options: 1
+PASS / with its ETag: X-Content-Type-Options: 1
+PASS / with its ETag: Strict-Transport-Security: 1
+PASS / with its ETag: X-XSS-Protection: 1
+PASS / with an ETag from another image: status: 200
+PASS / with an ETag from another image: Cache-Control: no-cache
+PASS / with an ETag from another image: X-Frame-Options: 1
+PASS / with an ETag from another image: X-Content-Type-Options: 1
+PASS / with an ETag from another image: Strict-Transport-Security: 1
+PASS / with an ETag from another image: X-XSS-Protection: 1
+PASS /assets/js-icon-lKS6TT2t.png with its ETag: status: 304
+PASS /assets/js-icon-lKS6TT2t.png with its ETag: Cache-Control: public, max-age=31536000, immutable
+PASS /assets/js-icon-lKS6TT2t.png with its ETag: X-Frame-Options: 1
+PASS /assets/js-icon-lKS6TT2t.png with its ETag: X-Content-Type-Options: 1
+PASS /assets/js-icon-lKS6TT2t.png with its ETag: Strict-Transport-Security: 1
+PASS /assets/js-icon-lKS6TT2t.png with its ETag: X-XSS-Protection: 1
+PASS /source: status: 302
+PASS /source: Cache-Control: no-cache
+PASS /source: X-Frame-Options: 1
+PASS /source: X-Content-Type-Options: 1
+PASS /source: Strict-Transport-Security: 1
+PASS /source: X-XSS-Protection: 1
+PASS /licenses/ listing: status: 200
+PASS /licenses/ listing: Cache-Control: no-cache
+PASS /licenses/ listing: X-Frame-Options: 1
+PASS /licenses/ listing: X-Content-Type-Options: 1
+PASS /licenses/ listing: Strict-Transport-Security: 1
+PASS /licenses/ listing: X-XSS-Protection: 1
+PASS a missing licence: status: 404
+PASS a missing licence: Cache-Control: no-cache
+PASS a missing licence: X-Frame-Options: 1
+PASS a missing licence: X-Content-Type-Options: 1
+PASS a missing licence: Strict-Transport-Security: 1
+PASS a missing licence: X-XSS-Protection: 1
+PASS onboarding form's marketing consent default: confirm_password:void 0,has_marketing_email_consent:!1
 uid in container: 101
 PASS web carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 3.43MiB / 64MiB
+memory after these requests: 4.426MiB / 64MiB
 PASS web logs show no permission or fatal errors
 
-== web: localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+== web: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
 PASS / answers 200 after about 1 s
 PASS web also runs without the chart's emptyDirs
 
-== admin: localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+== admin: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
 run as uid 101, memory 64m, cpus 0.1, cap-drop ALL, no-new-privileges
-PASS /god-mode/ answers 200 after about 0 s
+PASS /god-mode/ answers 200 after about 1 s
 PASS /god-mode/ title names Wayline
 PASS /god-mode/ has no upstream brand
 PASS stylesheet /god-mode/assets/globals-baDRgtAC.css status: 200
@@ -46,14 +348,175 @@ PASS font /god-mode/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2 st
 PASS font content type: font/woff2
 PASS SPA route /god-mode/general/ status: 200
 PASS SPA route serves god-mode index.html: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
+79 files under /god-mode/assets/
+PASS HTML /god-mode/: status: 200
+PASS HTML /god-mode/: Cache-Control: no-cache
+PASS HTML /god-mode/: X-Frame-Options: 1
+PASS HTML /god-mode/: X-Content-Type-Options: 1
+PASS HTML /god-mode/: Strict-Transport-Security: 1
+PASS HTML /god-mode/: X-XSS-Protection: 1
+PASS HTML /god-mode/index.html: status: 200
+PASS HTML /god-mode/index.html: Cache-Control: no-cache
+PASS HTML /god-mode/index.html: X-Frame-Options: 1
+PASS HTML /god-mode/index.html: X-Content-Type-Options: 1
+PASS HTML /god-mode/index.html: Strict-Transport-Security: 1
+PASS HTML /god-mode/index.html: X-XSS-Protection: 1
+PASS SPA fallback /god-mode/general/: status: 200
+PASS SPA fallback /god-mode/general/: Cache-Control: no-cache
+PASS SPA fallback /god-mode/general/: X-Frame-Options: 1
+PASS SPA fallback /god-mode/general/: X-Content-Type-Options: 1
+PASS SPA fallback /god-mode/general/: Strict-Transport-Security: 1
+PASS SPA fallback /god-mode/general/: X-XSS-Protection: 1
+PASS hashed 404-De9tSrE1.js: status: 200
+PASS hashed 404-De9tSrE1.js: Cache-Control: public, max-age=31536000, immutable
+PASS hashed 404-De9tSrE1.js: X-Frame-Options: 1
+PASS hashed 404-De9tSrE1.js: X-Content-Type-Options: 1
+PASS hashed 404-De9tSrE1.js: Strict-Transport-Security: 1
+PASS hashed 404-De9tSrE1.js: X-XSS-Protection: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: status: 200
+PASS hashed gitlab-logo-BL2xQyij.svg: Cache-Control: public, max-age=31536000, immutable
+PASS hashed gitlab-logo-BL2xQyij.svg: X-Frame-Options: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: X-Content-Type-Options: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: Strict-Transport-Security: 1
+PASS hashed gitlab-logo-BL2xQyij.svg: X-XSS-Protection: 1
+PASS hashed apple-touch-icon-CCByo7db.png: status: 200
+PASS hashed apple-touch-icon-CCByo7db.png: Cache-Control: public, max-age=31536000, immutable
+PASS hashed apple-touch-icon-CCByo7db.png: X-Frame-Options: 1
+PASS hashed apple-touch-icon-CCByo7db.png: X-Content-Type-Options: 1
+PASS hashed apple-touch-icon-CCByo7db.png: Strict-Transport-Security: 1
+PASS hashed apple-touch-icon-CCByo7db.png: X-XSS-Protection: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: status: 200
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: Cache-Control: public, max-age=31536000, immutable
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: X-Frame-Options: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: X-Content-Type-Options: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: Strict-Transport-Security: 1
+PASS hashed instrument-sans-latin-wght-normal-BbzFLZTg.woff2: X-XSS-Protection: 1
+PASS hashed root-BFyys3wl.css: status: 200
+PASS hashed root-BFyys3wl.css: Cache-Control: public, max-age=31536000, immutable
+PASS hashed root-BFyys3wl.css: X-Frame-Options: 1
+PASS hashed root-BFyys3wl.css: X-Content-Type-Options: 1
+PASS hashed root-BFyys3wl.css: Strict-Transport-Security: 1
+PASS hashed root-BFyys3wl.css: X-XSS-Protection: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: status: 200
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: Cache-Control: public, max-age=31536000, immutable
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: X-Frame-Options: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: X-Content-Type-Options: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: Strict-Transport-Security: 1
+PASS hashed material-symbols-rounded-latin-200-normal-B9_93z2O.woff: X-XSS-Protection: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: status: 200
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: Cache-Control: public, max-age=31536000, immutable
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: X-Frame-Options: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: X-Content-Type-Options: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: Strict-Transport-Security: 1
+PASS hashed logo-spinner-dark-DFhr4Yw7.gif: X-XSS-Protection: 1
+PASS hashed favicon-9mRML3cy.ico: status: 200
+PASS hashed favicon-9mRML3cy.ico: Cache-Control: public, max-age=31536000, immutable
+PASS hashed favicon-9mRML3cy.ico: X-Frame-Options: 1
+PASS hashed favicon-9mRML3cy.ico: X-Content-Type-Options: 1
+PASS hashed favicon-9mRML3cy.ico: Strict-Transport-Security: 1
+PASS hashed favicon-9mRML3cy.ico: X-XSS-Protection: 1
+PASS hashed manifest-dd0d1dea.js: status: 200
+PASS hashed manifest-dd0d1dea.js: Cache-Control: public, max-age=31536000, immutable
+PASS hashed manifest-dd0d1dea.js: X-Frame-Options: 1
+PASS hashed manifest-dd0d1dea.js: X-Content-Type-Options: 1
+PASS hashed manifest-dd0d1dea.js: Strict-Transport-Security: 1
+PASS hashed manifest-dd0d1dea.js: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.js: status: 200
+PASS missing hashed missing-AbCd1234.js: Cache-Control: no-cache
+PASS missing hashed missing-AbCd1234.js: X-Frame-Options: 1
+PASS missing hashed missing-AbCd1234.js: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd1234.js: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd1234.js: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.js is the index.html fallback: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
+PASS missing hashed missing-AbCd12342.js: status: 200
+PASS missing hashed missing-AbCd12342.js: Cache-Control: no-cache
+PASS missing hashed missing-AbCd12342.js: X-Frame-Options: 1
+PASS missing hashed missing-AbCd12342.js: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd12342.js: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd12342.js: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd12342.js is the index.html fallback: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
+PASS missing hashed missing-AbCd1234.css: status: 200
+PASS missing hashed missing-AbCd1234.css: Cache-Control: no-cache
+PASS missing hashed missing-AbCd1234.css: X-Frame-Options: 1
+PASS missing hashed missing-AbCd1234.css: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd1234.css: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd1234.css: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.css is the index.html fallback: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
+PASS missing hashed missing-AbCd1234.woff2: status: 200
+PASS missing hashed missing-AbCd1234.woff2: Cache-Control: no-cache
+PASS missing hashed missing-AbCd1234.woff2: X-Frame-Options: 1
+PASS missing hashed missing-AbCd1234.woff2: X-Content-Type-Options: 1
+PASS missing hashed missing-AbCd1234.woff2: Strict-Transport-Security: 1
+PASS missing hashed missing-AbCd1234.woff2: X-XSS-Protection: 1
+PASS missing hashed missing-AbCd1234.woff2 is the index.html fallback: f0fbf4c1cfa3744760fee0b7b983ed27cdf5744c680e931b2d68921fe2d40702  -
+PASS unhashed unhashed.js under assets/: status: 200
+PASS unhashed unhashed.js under assets/: Cache-Control: no-cache
+PASS unhashed unhashed.js under assets/: X-Frame-Options: 1
+PASS unhashed unhashed.js under assets/: X-Content-Type-Options: 1
+PASS unhashed unhashed.js under assets/: Strict-Transport-Security: 1
+PASS unhashed unhashed.js under assets/: X-XSS-Protection: 1
+PASS unhashed logo-dark.png under assets/: status: 200
+PASS unhashed logo-dark.png under assets/: Cache-Control: no-cache
+PASS unhashed logo-dark.png under assets/: X-Frame-Options: 1
+PASS unhashed logo-dark.png under assets/: X-Content-Type-Options: 1
+PASS unhashed logo-dark.png under assets/: Strict-Transport-Security: 1
+PASS unhashed logo-dark.png under assets/: X-XSS-Protection: 1
+PASS the directory /god-mode/assets/: status: 403
+PASS the directory /god-mode/assets/: Cache-Control: no-cache
+PASS the directory /god-mode/assets/: X-Frame-Options: 1
+PASS the directory /god-mode/assets/: X-Content-Type-Options: 1
+PASS the directory /god-mode/assets/: Strict-Transport-Security: 1
+PASS the directory /god-mode/assets/: X-XSS-Protection: 1
+PASS not hashed site.webmanifest.json: status: 200
+PASS not hashed site.webmanifest.json: Cache-Control: no-cache
+PASS not hashed site.webmanifest.json: X-Frame-Options: 1
+PASS not hashed site.webmanifest.json: X-Content-Type-Options: 1
+PASS not hashed site.webmanifest.json: Strict-Transport-Security: 1
+PASS not hashed site.webmanifest.json: X-XSS-Protection: 1
+PASS not hashed .well-known/appspecific/com.chrome.devtools.json: status: 200
+PASS not hashed .well-known/appspecific/com.chrome.devtools.json: Cache-Control: no-cache
+PASS not hashed .well-known/appspecific/com.chrome.devtools.json: X-Frame-Options: 1
+PASS not hashed .well-known/appspecific/com.chrome.devtools.json: X-Content-Type-Options: 1
+PASS not hashed .well-known/appspecific/com.chrome.devtools.json: Strict-Transport-Security: 1
+PASS not hashed .well-known/appspecific/com.chrome.devtools.json: X-XSS-Protection: 1
+PASS not hashed favicon/android-chrome-512x512.png: status: 200
+PASS not hashed favicon/android-chrome-512x512.png: Cache-Control: no-cache
+PASS not hashed favicon/android-chrome-512x512.png: X-Frame-Options: 1
+PASS not hashed favicon/android-chrome-512x512.png: X-Content-Type-Options: 1
+PASS not hashed favicon/android-chrome-512x512.png: Strict-Transport-Security: 1
+PASS not hashed favicon/android-chrome-512x512.png: X-XSS-Protection: 1
+PASS not hashed favicon/android-chrome-192x192.png: status: 200
+PASS not hashed favicon/android-chrome-192x192.png: Cache-Control: no-cache
+PASS not hashed favicon/android-chrome-192x192.png: X-Frame-Options: 1
+PASS not hashed favicon/android-chrome-192x192.png: X-Content-Type-Options: 1
+PASS not hashed favicon/android-chrome-192x192.png: Strict-Transport-Security: 1
+PASS not hashed favicon/android-chrome-192x192.png: X-XSS-Protection: 1
+PASS /god-mode/ with its ETag: status: 304
+PASS /god-mode/ with its ETag: Cache-Control: no-cache
+PASS /god-mode/ with its ETag: X-Frame-Options: 1
+PASS /god-mode/ with its ETag: X-Content-Type-Options: 1
+PASS /god-mode/ with its ETag: Strict-Transport-Security: 1
+PASS /god-mode/ with its ETag: X-XSS-Protection: 1
+PASS /god-mode/ with an ETag from another image: status: 200
+PASS /god-mode/ with an ETag from another image: Cache-Control: no-cache
+PASS /god-mode/ with an ETag from another image: X-Frame-Options: 1
+PASS /god-mode/ with an ETag from another image: X-Content-Type-Options: 1
+PASS /god-mode/ with an ETag from another image: Strict-Transport-Security: 1
+PASS /god-mode/ with an ETag from another image: X-XSS-Protection: 1
+PASS /god-mode/assets/404-De9tSrE1.js with its ETag: status: 304
+PASS /god-mode/assets/404-De9tSrE1.js with its ETag: Cache-Control: public, max-age=31536000, immutable
+PASS /god-mode/assets/404-De9tSrE1.js with its ETag: X-Frame-Options: 1
+PASS /god-mode/assets/404-De9tSrE1.js with its ETag: X-Content-Type-Options: 1
+PASS /god-mode/assets/404-De9tSrE1.js with its ETag: Strict-Transport-Security: 1
+PASS /god-mode/assets/404-De9tSrE1.js with its ETag: X-XSS-Protection: 1
 uid in container: 101
 PASS admin carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 3.309MiB / 64MiB
+memory after these requests: 3.523MiB / 64MiB
 PASS admin logs show no permission or fatal errors
 
-== space: localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+== space: localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
 run as uid 1000, memory 256m, cpus 0.25, cap-drop ALL, no-new-privileges
-PASS /spaces/ answers 200 after about 8 s
+PASS /spaces/ answers 200 after about 9 s
 PASS /spaces/ title names Wayline
 PASS /spaces/ has no upstream brand
 PASS stylesheet /spaces/assets/globals-BbMWYMN9.css status: 200
@@ -67,14 +530,21 @@ PASS /spaces/ with X-Forwarded-For '::ffff:203.0.113.9': 200
 PASS /spaces/ with X-Forwarded-For 'not-an-ip, <script>': 200
 PASS /spaces/ with X-Forwarded-For '': 200
 PASS server still running after those: true
+PASS /spaces/ HTML has no cache-control: 0
+PASS /spaces/ HTML has no expires: 0
+PASS /spaces/ HTML has no etag: 0
+PASS /spaces/ HTML has no last-modified: 0
+PASS hashed /spaces/assets/globals-BbMWYMN9.css Cache-Control: public, max-age=31536000, immutable
+PASS a missing hashed file under /spaces/assets/ has no Cache-Control: 0
+PASS /spaces/assets/globals-BbMWYMN9.css with its ETag: 304
 uid in container: 1000
 PASS space carries the licence texts in /usr/share/licenses/wayline
-memory after these requests: 73.38MiB / 256MiB
+memory after these requests: 74.95MiB / 256MiB
 PASS space logs show no permission or fatal errors
 
 == What the server bundle imports
 30 static imports and 25 import() or require() of a package, across 533 bundle files
-131 packages reachable from them and from @react-router/serve
+131 packages in node_modules reachable from them and from @react-router/serve
 PASS every import and required dependency resolves
 PASS storybook and tinypool are not reachable
 PASS no bundle file mentions storybook or tinypool
@@ -101,9 +571,9 @@ PASS space-deps.mjs check exit 0
 
 0 failure(s) in the frontend images
 
-== backend: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+== backend: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
 == docker image inspect
-id=sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+id=sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
 == base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 == manage.py check
@@ -283,5 +753,52 @@ PASS brand scan finished 489 explained lines
 RESULT PASS: 0 failed
 PASS backend check-image.sh exit 0
 PASS backend carries the licence texts in /usr/share/licenses/wayline
+PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
+base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
+built localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e, config sha256:aa65d6a7ddb57be1b452ad67ea96daed1d3a5adeba9ac045ead1a0d2501c9a9d
+
+== Env
+PASS GPG_KEY is the base's value
+PASS INSTANCE_CHANGELOG_URL is ours, as the Dockerfile means it
+PASS LANG is the base's value
+PASS PATH is the base's value
+PASS PIP_DISABLE_PIP_VERSION_CHECK is the base's value
+PASS PYTHONDONTWRITEBYTECODE is the base's value
+PASS PYTHONUNBUFFERED is the base's value
+PASS PYTHON_SHA256 is the base's value
+PASS PYTHON_VERSION is the base's value
+
+== Labels
+PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
+PASS org.opencontainers.image.licenses is set AGPL-3.0-only
+PASS org.opencontainers.image.revision is set ec45e212ee6185d286762a753913c253dac51358
+PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
+PASS org.opencontainers.image.title is set wayline-backend
+
+== User
+PASS User is 1000, where the base says None '1000'
+
+== Everything else
+PASS Cmd is the base's ["./bin/docker-entrypoint-api.sh"]
+PASS Entrypoint is the base's null
+PASS WorkingDir is the base's "/code"
+PASS ExposedPorts is the base's {"8000/tcp": {}}
+PASS Volumes is the base's null
+PASS StopSignal is the base's null
+PASS Healthcheck is the base's null
+PASS Shell is the base's null
+PASS OnBuild is the base's null
+PASS ArgsEscaped is the base's true
+PASS every config field has a rule here
+
+== Layers
+PASS the image shares no layer with the base, other than the empty one 2 layers
+PASS architecture is the base's arm64
+PASS os is the base's linux
+
+RESULT PASS: 0 failed
+PASS backend flatten-config.py exit 0
 
 smoke-images: 0 failure(s)
+# exit 0
+

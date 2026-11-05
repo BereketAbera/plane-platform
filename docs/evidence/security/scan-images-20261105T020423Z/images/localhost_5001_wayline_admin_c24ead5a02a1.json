@@ -1,0 +1,371 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.1"
+  },
+  "ReportID": "01a1a973-3c69-7505-8e96-48a3a1f322b2",
+  "CreatedAt": "2026-11-05T05:04:24.041332+03:00",
+  "ArtifactID": "sha256:c81f44f26a4f3cf3b761cf0dc281596eb20b7a2a17eab3212c779e25157392ad",
+  "ArtifactName": "localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "Size": 72912896,
+    "OS": {
+      "Family": "alpine",
+      "Name": "3.24.3"
+    },
+    "ImageID": "sha256:b3355e32ee222ec62b393619a8090fb45f3698a469613135da205eef7af6642a",
+    "DiffIDs": [
+      "sha256:a278e6f39431cd0ed74238a3d377893ad0d905d68b676bf9a65529080669756b",
+      "sha256:c55ed3947c0dd17f391ea0475474a9d785467ce92a8a76b99fd2951c86c05797",
+      "sha256:d1a7fc8a77f4d076878aa9fe69cae639603f8ac77652711833f9aeab7ef526a3",
+      "sha256:765a126e5d7d2159ae7e635b14ab2d044d76b0fa903fcb906919449145a47c13",
+      "sha256:24a67d2827ff65cad24b42aaf924713e13dc8a922cf46f0931196a77fdaad460",
+      "sha256:6bcd7020333643273c4cbb7a6d6ddc1e565dd5df26b38a694a563846161e35f1",
+      "sha256:1bb97dd90c8ab18238a91a5010009a930b43457a04702134815ce3c3700797f3",
+      "sha256:499ae474bbbc156a632ba4d1b3ce64f100b598b63e908f4eda1f7b818b149158",
+      "sha256:e595e03eea9a4a73fdb481125583deefb9905e6de833327ccf902bbab15f2230",
+      "sha256:4e703b0b01f5f21142e0dc3eca151a3020ad763f854ee9916f7a3c3761a1be8c",
+      "sha256:92f2e38ad1f3c3b13e82ecb5da1f5a22d84443a3646bcf39efdabc1ae0f56a24",
+      "sha256:b9ec6e1da6cbfb806039c2aff7e9e83c924b0d0fc997097d8e7823abb016ed85",
+      "sha256:84c2cfcea1c66dc65166be6f253865e793d3519b930b2d546d908c03baf34255"
+    ],
+    "RepoDigests": [
+      "localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1"
+    ],
+    "Reference": "localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1",
+    "ImageConfig": {
+      "architecture": "arm64",
+      "created": "2026-11-05T01:57:37Z",
+      "history": [
+        {
+          "created": "2026-10-21T22:51:39.084385804Z",
+          "created_by": "ADD alpine-minirootfs-3.24.3-aarch64.tar.gz / # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T22:51:39.084385804Z",
+          "created_by": "CMD [\"/bin/sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.439238693Z",
+          "created_by": "LABEL maintainer=NGINX Docker Maintainers \u003cdocker-maint@nginx.com\u003e",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.439238693Z",
+          "created_by": "ENV NGINX_VERSION=1.31.8",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.439238693Z",
+          "created_by": "ENV PKG_RELEASE=1",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.439238693Z",
+          "created_by": "ENV DYNPKG_RELEASE=1",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.439238693Z",
+          "created_by": "RUN /bin/sh -c set -x     \u0026\u0026 addgroup -g 101 -S nginx     \u0026\u0026 adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx     \u0026\u0026 apkArch=\"$(cat /etc/apk/arch)\"     \u0026\u0026 nginxPackages=\"         nginx=${NGINX_VERSION}-r${PKG_RELEASE}     \"     \u0026\u0026 apk add --no-cache --virtual .checksum-deps         openssl     \u0026\u0026 case \"$apkArch\" in         x86_64|aarch64)             set -x             \u0026\u0026 KEY_SHA512=\"e09fa32f0a0eab2b879ccbbc4d0e4fb9751486eedda75e35fac65802cc9faa266425edf83e261137a2f4d16281ce2c1a5f4502930fe75154723da014214f0655\"             \u0026\u0026 wget -O /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub             \u0026\u0026 if echo \"$KEY_SHA512 */tmp/nginx_signing.rsa.pub\" | sha512sum -c -; then                 echo \"key verification succeeded!\";                 mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/;             else                 echo \"key verification failed!\";                 exit 1;             fi             \u0026\u0026 DEPS=$(apk query --summarize depends --recursive --no-cache                        --repository \"@nginxorg https://nginx.org/packages/mainline/alpine/v$(egrep -o '^[0-9]+\\.[0-9]+' /etc/alpine-release)/main\"                        ${nginxPackages/=/@nginxorg=})             \u0026\u0026 apk add --no-cache $DEPS             \u0026\u0026 apk add --repositories-file /dev/null -X \"https://nginx.org/packages/mainline/alpine/v$(egrep -o '^[0-9]+\\.[0-9]+' /etc/alpine-release)/main\" --no-cache $nginxPackages             ;;         *)             set -x             \u0026\u0026 tempDir=\"$(mktemp -d)\"             \u0026\u0026 chown nobody:nobody $tempDir             \u0026\u0026 apk add --no-cache --virtual .build-deps                 gcc                 libc-dev                 make                 openssl-dev                 pcre2-dev                 zlib-dev                 linux-headers                 bash                 alpine-sdk                 findutils                 curl             \u0026\u0026 su nobody -s /bin/sh -c \"                 export HOME=${tempDir}                 \u0026\u0026 cd ${tempDir}                 \u0026\u0026 curl -f -L -O https://github.com/nginx/pkg-oss/archive/${NGINX_VERSION}-${PKG_RELEASE}.tar.gz                 \u0026\u0026 PKGOSSCHECKSUM=\\\"e5f00e946092f1e50144db1d26e52d43efb2bc2cbb93b3b5b468aaf78516afab169af9f21d115276c60de8bfc6da1615acc0d092cc99f7b0ed1abb182af56d0d *${NGINX_VERSION}-${PKG_RELEASE}.tar.gz\\\"                 \u0026\u0026 if [ \\\"\\$(openssl sha512 -r ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz)\\\" = \\\"\\$PKGOSSCHECKSUM\\\" ]; then                     echo \\\"pkg-oss tarball checksum verification succeeded!\\\";                 else                     echo \\\"pkg-oss tarball checksum verification failed!\\\";                     exit 1;                 fi                 \u0026\u0026 tar xzvf ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz                 \u0026\u0026 cd pkg-oss-${NGINX_VERSION}-${PKG_RELEASE}                 \u0026\u0026 cd alpine                 \u0026\u0026 make base                 \u0026\u0026 apk index --allow-untrusted -o ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz ${tempDir}/packages/alpine/${apkArch}/*.apk                 \u0026\u0026 abuild-sign -k ${tempDir}/.abuild/abuild-key.rsa ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz                 \"             \u0026\u0026 cp ${tempDir}/.abuild/abuild-key.rsa.pub /etc/apk/keys/             \u0026\u0026 apk del --no-network .build-deps             \u0026\u0026 DEPS=$(apk query --summarize depends --recursive --no-cache                        --repository \"@nginxorg ${tempDir}/packages/alpine/\"                        ${nginxPackages/=/@nginxorg=})             \u0026\u0026 apk add --no-cache $DEPS             \u0026\u0026 apk add --repositories-file /dev/null -X ${tempDir}/packages/alpine/ --no-cache $nginxPackages             ;;     esac     \u0026\u0026 apk del --no-network .checksum-deps     \u0026\u0026 if [ -n \"$tempDir\" ]; then rm -rf \"$tempDir\"; fi     \u0026\u0026 if [ -f \"/etc/apk/keys/abuild-key.rsa.pub\" ]; then rm -f /etc/apk/keys/abuild-key.rsa.pub; fi     \u0026\u0026 apk add --no-cache gettext-envsubst     \u0026\u0026 apk add --no-cache tzdata     \u0026\u0026 ln -sf /dev/stdout /var/log/nginx/access.log     \u0026\u0026 ln -sf /dev/stderr /var/log/nginx/error.log     \u0026\u0026 mkdir /docker-entrypoint.d # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T23:13:00.484331695Z",
+          "created_by": "COPY docker-entrypoint.sh / # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T23:13:00.529721537Z",
+          "created_by": "COPY 10-listen-on-ipv6-by-default.sh /docker-entrypoint.d # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T23:13:00.576692509Z",
+          "created_by": "COPY 15-local-resolvers.envsh /docker-entrypoint.d # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T23:13:00.625430858Z",
+          "created_by": "COPY 20-envsubst-on-templates.sh /docker-entrypoint.d # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T23:13:00.670382503Z",
+          "created_by": "COPY 30-tune-worker-processes.sh /docker-entrypoint.d # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T23:13:00.670382503Z",
+          "created_by": "ENTRYPOINT [\"/docker-entrypoint.sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.670382503Z",
+          "created_by": "EXPOSE map[80/tcp:{}]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.670382503Z",
+          "created_by": "STOPSIGNAL SIGQUIT",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-21T23:13:00.670382503Z",
+          "created_by": "CMD [\"nginx\" \"-g\" \"daemon off;\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-22T00:16:54.616730281Z",
+          "created_by": "ENV NJS_VERSION=1.0.2",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-22T00:16:54.616730281Z",
+          "created_by": "ENV NJS_RELEASE=1",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-22T00:16:54.616730281Z",
+          "created_by": "ENV ACME_VERSION=0.4.1",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-22T00:16:54.616730281Z",
+          "created_by": "RUN /bin/sh -c set -x     \u0026\u0026 apkArch=\"$(cat /etc/apk/arch)\"     \u0026\u0026 nginxPackages=\"         nginx=${NGINX_VERSION}-r${PKG_RELEASE}         nginx-module-xslt=${NGINX_VERSION}-r${DYNPKG_RELEASE}         nginx-module-geoip=${NGINX_VERSION}-r${DYNPKG_RELEASE}         nginx-module-image-filter=${NGINX_VERSION}-r${DYNPKG_RELEASE}         nginx-module-njs=${NGINX_VERSION}.${NJS_VERSION}-r${NJS_RELEASE}         nginx-module-acme=${NGINX_VERSION}.${ACME_VERSION}-r${PKG_RELEASE}     \"     \u0026\u0026 apk add --no-cache --virtual .checksum-deps         openssl     \u0026\u0026 case \"$apkArch\" in         x86_64|aarch64)             apk add -X \"https://nginx.org/packages/mainline/alpine/v$(egrep -o '^[0-9]+\\.[0-9]+' /etc/alpine-release)/main\" --no-cache $nginxPackages             ;;         *)             set -x             \u0026\u0026 tempDir=\"$(mktemp -d)\"             \u0026\u0026 chown nobody:nobody $tempDir             \u0026\u0026 apk add --no-cache --virtual .build-deps                 gcc                 libc-dev                 make                 openssl-dev                 pcre2-dev                 zlib-dev                 linux-headers                 libxslt-dev                 gd-dev                 geoip-dev                 libedit-dev                 bash                 alpine-sdk                 findutils                 curl                 cargo                 clang-libclang             \u0026\u0026 su nobody -s /bin/sh -c \"                 export HOME=${tempDir}                 \u0026\u0026 cd ${tempDir}                 \u0026\u0026 curl -f -L -O https://github.com/nginx/pkg-oss/archive/${NGINX_VERSION}-${PKG_RELEASE}.tar.gz                 \u0026\u0026 PKGOSSCHECKSUM=\\\"e5f00e946092f1e50144db1d26e52d43efb2bc2cbb93b3b5b468aaf78516afab169af9f21d115276c60de8bfc6da1615acc0d092cc99f7b0ed1abb182af56d0d *${NGINX_VERSION}-${PKG_RELEASE}.tar.gz\\\"                 \u0026\u0026 if [ \\\"\\$(openssl sha512 -r ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz)\\\" = \\\"\\$PKGOSSCHECKSUM\\\" ]; then                     echo \\\"pkg-oss tarball checksum verification succeeded!\\\";                 else                     echo \\\"pkg-oss tarball checksum verification failed!\\\";                     exit 1;                 fi                 \u0026\u0026 tar xzvf ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz                 \u0026\u0026 cd pkg-oss-${NGINX_VERSION}-${PKG_RELEASE}                 \u0026\u0026 cd alpine                 \u0026\u0026 export BUILDTARGET=\\\"module-geoip module-image-filter module-njs module-xslt module-acme\\\"                 \u0026\u0026 if [ \\\"\\$(apk --print-arch)\\\" = \\\"armhf\\\" ]; then BUILDTARGET=\\\"\\$( echo \\$BUILDTARGET | sed 's,module-acme,,' )\\\"; fi                 \u0026\u0026 make \\$BUILDTARGET                 \u0026\u0026 apk index --allow-untrusted -o ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz ${tempDir}/packages/alpine/${apkArch}/*.apk                 \u0026\u0026 abuild-sign -k ${tempDir}/.abuild/abuild-key.rsa ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz                 \"             \u0026\u0026 cp ${tempDir}/.abuild/abuild-key.rsa.pub /etc/apk/keys/             \u0026\u0026 apk del --no-network .build-deps             \u0026\u0026 if [ \"$apkArch\" = \"armhf\" ]; then nginxPackages=\"$( echo $nginxPackages | sed 's,nginx-module-acme=.*,,')\"; fi             \u0026\u0026 apk add -X ${tempDir}/packages/alpine/ --no-cache $nginxPackages             ;;     esac     \u0026\u0026 apk del --no-network .checksum-deps     \u0026\u0026 if [ -n \"$tempDir\" ]; then rm -rf \"$tempDir\"; fi     \u0026\u0026 if [ -f \"/etc/apk/keys/abuild-key.rsa.pub\" ]; then rm -f /etc/apk/keys/abuild-key.rsa.pub; fi     \u0026\u0026 apk add --no-cache curl ca-certificates # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "ARG APK_SECURITY_PATCH=2026-11-04",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "RUN |1 APK_SECURITY_PATCH=2026-11-04 /bin/sh -c echo \"apk-security-patch ${APK_SECURITY_PATCH}\" \u0026\u0026 apk upgrade --no-cache --available \u0026\u0026 rm -rf /var/cache/apk/* # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "ARG WAYLINE_SOURCE_REF",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "LABEL org.opencontainers.image.title=wayline-admin org.opencontainers.image.description=Customized Plane Community Edition instance admin org.opencontainers.image.licenses=AGPL-3.0-only org.opencontainers.image.source=https://github.com/BereketAbera/plane-platform org.opencontainers.image.revision=ec45e212ee6185d286762a753913c253dac51358",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "COPY nginx.conf /etc/nginx/nginx.conf # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "COPY client/ /usr/share/nginx/html/god-mode/ # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "COPY licenses/ /usr/share/licenses/wayline/ # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "RUN |3 APK_SECURITY_PATCH=2026-11-04 WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform WAYLINE_SOURCE_REF=ec45e212ee6185d286762a753913c253dac51358 /bin/sh -c chown -R 101:101 /run /var/cache/nginx # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "USER 101",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "EXPOSE map[3000/tcp:{}]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "HEALTHCHECK \u0026{[\"CMD\" \"wget\" \"-q\" \"-O\" \"/dev/null\" \"http://127.0.0.1:3000/god-mode/\"] \"30s\" \"5s\" \"10s\" \"0s\" '\\x03'}",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-11-05T01:57:37Z",
+          "created_by": "CMD [\"nginx\" \"-g\" \"daemon off;\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:a278e6f39431cd0ed74238a3d377893ad0d905d68b676bf9a65529080669756b",
+          "sha256:c55ed3947c0dd17f391ea0475474a9d785467ce92a8a76b99fd2951c86c05797",
+          "sha256:d1a7fc8a77f4d076878aa9fe69cae639603f8ac77652711833f9aeab7ef526a3",
+          "sha256:765a126e5d7d2159ae7e635b14ab2d044d76b0fa903fcb906919449145a47c13",
+          "sha256:24a67d2827ff65cad24b42aaf924713e13dc8a922cf46f0931196a77fdaad460",
+          "sha256:6bcd7020333643273c4cbb7a6d6ddc1e565dd5df26b38a694a563846161e35f1",
+          "sha256:1bb97dd90c8ab18238a91a5010009a930b43457a04702134815ce3c3700797f3",
+          "sha256:499ae474bbbc156a632ba4d1b3ce64f100b598b63e908f4eda1f7b818b149158",
+          "sha256:e595e03eea9a4a73fdb481125583deefb9905e6de833327ccf902bbab15f2230",
+          "sha256:4e703b0b01f5f21142e0dc3eca151a3020ad763f854ee9916f7a3c3761a1be8c",
+          "sha256:92f2e38ad1f3c3b13e82ecb5da1f5a22d84443a3646bcf39efdabc1ae0f56a24",
+          "sha256:b9ec6e1da6cbfb806039c2aff7e9e83c924b0d0fc997097d8e7823abb016ed85",
+          "sha256:84c2cfcea1c66dc65166be6f253865e793d3519b930b2d546d908c03baf34255"
+        ]
+      },
+      "config": {
+        "Cmd": [
+          "nginx",
+          "-g",
+          "daemon off;"
+        ],
+        "Healthcheck": {
+          "Test": [
+            "CMD",
+            "wget",
+            "-q",
+            "-O",
+            "/dev/null",
+            "http://127.0.0.1:3000/god-mode/"
+          ],
+          "Interval": 30000000000,
+          "Timeout": 5000000000,
+          "StartPeriod": 10000000000,
+          "Retries": 3
+        },
+        "Entrypoint": [
+          "/docker-entrypoint.sh"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "NGINX_VERSION=1.31.8",
+          "PKG_RELEASE=1",
+          "DYNPKG_RELEASE=1",
+          "NJS_VERSION=1.0.2",
+          "NJS_RELEASE=1",
+          "ACME_VERSION=0.4.1"
+        ],
+        "Labels": {
+          "maintainer": "NGINX Docker Maintainers \u003cdocker-maint@nginx.com\u003e",
+          "org.opencontainers.image.description": "Customized Plane Community Edition instance admin",
+          "org.opencontainers.image.licenses": "AGPL-3.0-only",
+          "org.opencontainers.image.revision": "ec45e212ee6185d286762a753913c253dac51358",
+          "org.opencontainers.image.source": "https://github.com/BereketAbera/plane-platform",
+          "org.opencontainers.image.title": "wayline-admin"
+        },
+        "User": "101",
+        "WorkingDir": "/",
+        "ExposedPorts": {
+          "3000/tcp": {},
+          "80/tcp": {}
+        },
+        "ArgsEscaped": true,
+        "StopSignal": "SIGQUIT"
+      }
+    },
+    "Layers": [
+      {
+        "Size": 8939008,
+        "Digest": "sha256:d3531b7a4f217bdc3426c57bcff84c170f086f456a39689d4a615c6d026c4be0",
+        "DiffID": "sha256:a278e6f39431cd0ed74238a3d377893ad0d905d68b676bf9a65529080669756b"
+      },
+      {
+        "Size": 5122048,
+        "Digest": "sha256:1408044c7403b2c319cdbb2cb2d18025d7997a703c1c1115dec6ae21fff824d3",
+        "DiffID": "sha256:c55ed3947c0dd17f391ea0475474a9d785467ce92a8a76b99fd2951c86c05797"
+      },
+      {
+        "Size": 3584,
+        "Digest": "sha256:7b9d02243238d0f039c78eac1c532b5cc281e680fedbb27aec087a6e8c85e0a1",
+        "DiffID": "sha256:d1a7fc8a77f4d076878aa9fe69cae639603f8ac77652711833f9aeab7ef526a3"
+      },
+      {
+        "Size": 4608,
+        "Digest": "sha256:f523b340a6c003e3b253f885115ab55af1d1f6a12a3fed8203adbe67173d805f",
+        "DiffID": "sha256:765a126e5d7d2159ae7e635b14ab2d044d76b0fa903fcb906919449145a47c13"
+      },
+      {
+        "Size": 2560,
+        "Digest": "sha256:dbb1ef19121a83d4810308cc89451dd32a5fafdf8d17da3f7c3a88a3edd70573",
+        "DiffID": "sha256:24a67d2827ff65cad24b42aaf924713e13dc8a922cf46f0931196a77fdaad460"
+      },
+      {
+        "Size": 5120,
+        "Digest": "sha256:567a969e02211a0b0f51a1ac9b901e1bf88b7c79dbb994979df79b328fb64ab6",
+        "DiffID": "sha256:6bcd7020333643273c4cbb7a6d6ddc1e565dd5df26b38a694a563846161e35f1"
+      },
+      {
+        "Size": 7168,
+        "Digest": "sha256:c2fefbef531492feca04133b10436cc9783fce87888d03b115887db02b4f0610",
+        "DiffID": "sha256:1bb97dd90c8ab18238a91a5010009a930b43457a04702134815ce3c3700797f3"
+      },
+      {
+        "Size": 49924096,
+        "Digest": "sha256:cbe54b031f3e1a4ce4471c96573084c6454f1c5f91e03bbd51c5bb5d90af7864",
+        "DiffID": "sha256:499ae474bbbc156a632ba4d1b3ce64f100b598b63e908f4eda1f7b818b149158"
+      },
+      {
+        "Size": 3795968,
+        "Digest": "sha256:986092e408731dbf3f2c3ed821068a1469c55329e3aa544ffd451339a445e45b",
+        "DiffID": "sha256:e595e03eea9a4a73fdb481125583deefb9905e6de833327ccf902bbab15f2230"
+      },
+      {
+        "Size": 5120,
+        "Digest": "sha256:c6f1064967b579b0bde2d93452934bb34a0bb88c09c36960c11b157808b34bac",
+        "DiffID": "sha256:4e703b0b01f5f21142e0dc3eca151a3020ad763f854ee9916f7a3c3761a1be8c"
+      },
+      {
+        "Size": 5025280,
+        "Digest": "sha256:cde5f93d87b08bc63eafbd9105ccac8b61a81e6ab8a6c46486b9ba1d691a83f7",
+        "DiffID": "sha256:92f2e38ad1f3c3b13e82ecb5da1f5a22d84443a3646bcf39efdabc1ae0f56a24"
+      },
+      {
+        "Size": 74752,
+        "Digest": "sha256:65e14095fb9fe8f6a2123992dddd9fbb4fb8aa51080901279c51f5436ffb81c2",
+        "DiffID": "sha256:b9ec6e1da6cbfb806039c2aff7e9e83c924b0d0fc997097d8e7823abb016ed85"
+      },
+      {
+        "Size": 3584,
+        "Digest": "sha256:bdf13b123409c8044eca37ca5330013ef67f188a1771cdb5fe52da1234b7be50",
+        "DiffID": "sha256:84c2cfcea1c66dc65166be6f253865e793d3519b930b2d546d908c03baf34255"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Target": "localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1 (alpine 3.24.3)",
+      "Class": "os-pkgs",
+      "Type": "alpine"
+    }
+  ]
+}

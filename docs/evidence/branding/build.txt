@@ -1,5 +1,5 @@
-# Thu Nov  5 02:53:51 EAT 2026 commit 1563cbfbe89536541c041ec59f241edeab3740c2
-$ rm -rf .build/plane-src && /usr/bin/time -l scripts/ci/build-images.sh localhost:5001/wayline
+# Thu Nov  5 04:57:37 EAT 2026 commit ec45e212ee6185d286762a753913c253dac51358
+$ /usr/bin/time -l scripts/ci/build-images.sh localhost:5001/wayline
 ==> Node v22.22.2
  ok /Users/bek/dev/pr/plane-platform/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
 ==> Overlay against the pinned commit
@@ -43,21 +43,12 @@ source-links: 1579 files read, 0 problems
 ==> pnpm 11.10.0
 ==> pnpm install
 Scope: 16 of 20 workspace projects
-✓ Lockfile passes supply-chain policies (verified 3h ago)
+✓ Lockfile passes supply-chain policies (verified 5h ago)
 Lockfile is up to date, resolution step is skipped
-Progress: resolved 1, reused 0, downloaded 0, added 0
-.                                        |    +1301 ++++++++++++++++++++++++++++
-Progress: resolved 1301, reused 1297, downloaded 0, added 414
-Progress: resolved 1301, reused 1297, downloaded 0, added 751
-Progress: resolved 1301, reused 1297, downloaded 0, added 1118
-Progress: resolved 1301, reused 1297, downloaded 0, added 1300
-Progress: resolved 1301, reused 1297, downloaded 0, added 1301, done
-.../node_modules/@swc/core postinstall$ node postinstall.js
-.../node_modules/@swc/core postinstall: Done
 . prepare$ husky
 . prepare: HUSKY=0 skip install
 . prepare: Done
-Done in 7.4s using pnpm v11.10.0
+Done in 1.7s using pnpm v11.10.0
 ==> turbo build web
 
    • Packages in scope: web
@@ -67,7 +58,7 @@ Done in 7.4s using pnpm v11.10.0
 
  Tasks:    11 successful, 11 total
 Cached:    11 cached, 11 total
-  Time:    220ms >>> FULL TURBO
+  Time:    237ms >>> FULL TURBO
 
 ==> turbo build admin
 
@@ -78,7 +69,7 @@ Cached:    11 cached, 11 total
 
  Tasks:    8 successful, 8 total
 Cached:    8 cached, 8 total
-  Time:    79ms >>> FULL TURBO
+  Time:    100ms >>> FULL TURBO
 
 ==> turbo build space
 
@@ -89,7 +80,7 @@ Cached:    8 cached, 8 total
 
  Tasks:    10 successful, 10 total
 Cached:    10 cached, 10 total
-  Time:    172ms >>> FULL TURBO
+  Time:    227ms >>> FULL TURBO
 
 leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
   allowlisted 293x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
@@ -109,38 +100,42 @@ leak-scan: 2117 files, 350 matches, 350 allowlisted, 0 leaks
  ok admin ships none of upstream's empty-state illustrations
  ok space: 5 font URLs under /spaces/assets/, all files present, brand values present
  ok space ships none of upstream's empty-state illustrations
+==> web: 1060 files under assets/, 1060 named as the rule says, 0 in a subdirectory, which the rule does not cover
+a suffix of lower-case letters only, so read it: notification-jgmydpsu.js
+==> admin: 79 files under assets/, 79 named as the rule says, 0 in a subdirectory, which the rule does not cover
 ==> Assemble /Users/bek/dev/pr/plane-platform/.build/wayline-dist
-==> web built from commit=1563cbfbe89536541c041ec59f241edeab3740c2 dirty=no
-==> admin built from commit=1563cbfbe89536541c041ec59f241edeab3740c2 dirty=no
-==> space built from commit=1563cbfbe89536541c041ec59f241edeab3740c2 dirty=no
-==> backend built from commit=1563cbfbe89536541c041ec59f241edeab3740c2 dirty=no
+==> web built from commit=ec45e212ee6185d286762a753913c253dac51358 dirty=no
+==> admin built from commit=ec45e212ee6185d286762a753913c253dac51358 dirty=no
+==> space built from commit=ec45e212ee6185d286762a753913c253dac51358 dirty=no
+==> backend built from commit=ec45e212ee6185d286762a753913c253dac51358 dirty=no
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.admin
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.backend
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.space
 4.0K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web
 5.0M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/admin
-224K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
+232K	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/backend
  24M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/space
  28M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/web
  ok Build complete for: web admin space backend
-# Docker's part is in images-build.txt. The time below covers the native build and the images together. Turbo reused its cache from the earlier builds of this source, so this build's memory is not a cold build's: build-ci-settings.txt is the cold one.
-       34.23 real        10.80 user        19.71 sys
-           695468032  maximum resident set size
+warn ec45e212ee6185d286762a753913c253dac51358 is not on origin/main, so web's /source link answers 404 until it is pushed
+# Docker's part of this command is in images-build.txt. What follows is time -l over the whole command.
+       42.47 real        13.67 user         9.49 sys
+           332234752  maximum resident set size
                    0  average shared memory size
                    0  average unshared data size
                    0  average unshared stack size
-              623543  page reclaims
-               12253  page faults
+             1448134  page reclaims
+               13993  page faults
                    0  swaps
                    0  block input operations
                    0  block output operations
-               27927  messages sent
-               13920  messages received
-                1159  signals received
-               16821  voluntary context switches
-              217265  involuntary context switches
-            92861628  instructions retired
-            63603672  cycles elapsed
-             1720632  peak memory footprint
-build-images.sh exit 0
-peak_sum_rss_mib=619 processes_at_peak=1
+               28289  messages sent
+               17878  messages received
+                1178  signals received
+               20968  voluntary context switches
+              162293  involuntary context switches
+           101301722  instructions retired
+            69693520  cycles elapsed
+             1737016  peak memory footprint
+# exit 0
+# Thu Nov  5 04:58:19 EAT 2026

@@ -1,3 +1,5 @@
+# Thu Nov  5 04:58:31 EAT 2026
+$ node apps/wayline/checks/contrast.mjs .build/plane-src/packages/tailwind-config/variables.css
 light: 194 pairs, lowest 4.58
 light [data-shell]: 40 pairs, lowest 5.25
 light page main: 194 pairs, lowest 4.53
@@ -25,3 +27,5 @@ dark-contrast shell nav: 307 pairs, lowest 5.21
 dark-contrast shell top: 330 pairs, lowest 4.92
 dark-contrast shell: hairline 5.21, disabled text 8.42 (informational, 7:1 and 3:1 rules above apply to high contrast only)
 3854 pairs checked, 0 below AA
+# exit 0
+

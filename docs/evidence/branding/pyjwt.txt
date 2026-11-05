@@ -1,42 +1,38 @@
-# PyJWT in the backend image. Recorded Thu Nov  5 02:57:21 EAT 2026.
+# PyJWT in the backend image. Recorded Thu Nov  5 05:03:12 EAT 2026.
 
-$ # what pins it, in upstream's base image
-66:# jwt
+$ # what pins it, in upstream's image
+66-# jwt
 67:PyJWT==2.13.0
 Version: 2.13.0
 Requires: 
 Required-by: 
-installed packages that declare a requirement on PyJWT, including extras: []
 
-$ # the same in the derived image, localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
-66:# jwt
+$ # the same in the published image, localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+66-# jwt
 67:PyJWT==2.14.0
 Version: 2.14.0
 Requires: 
 Required-by: 
-WARNING: The directory '/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
 No broken requirements found.
 pip check exit 0
 /usr/local/lib/python3.12/site-packages/jwt
 /usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info
 
-$ # pip freeze, base against derived. The only difference must be PyJWT
-packages in the base image: 111
-82c82
+$ # pip freeze, base against published. The only difference must be PyJWT
+packages in the base image: 110
+81c81
 < PyJWT==2.13.0
 ---
 > PyJWT==2.14.0
 diff exit 1 (1 means they differ, in the lines above)
 
-$ # the hash the Dockerfile pins, against PyPI now
+$ # the old version. The published image has one filesystem, so this is all of it: dist-info directories for PyJWT, as root
+/usr/local/lib/python3.12/site-packages/pyjwt-2.14.0.dist-info
+find exit 0
+
+$ # the hash the Dockerfile pins
 # Replaces PyJWT 2.13.0 from the base image, for CVE-2026-102268. Fixed in 2.14.0. PyJWT requires nothing on this
 # Python and no installed package requires it, so runtime/Dockerfile.backend installs this with --no-deps.
 # Hash of pyjwt-2.14.0-py3-none-any.whl from https://pypi.org/pypi/PyJWT/2.14.0/json, 2026-11-05.
 PyJWT==2.14.0 \
     --hash=sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
-pyjwt-2.14.0-py3-none-any.whl ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
-
-$ # Plane's use: 'PyJWT as installed' and 'PyJWT as Plane uses it' in smoke.txt, and 'PyJWT through the two views' in backend-db.txt.
-# Plane imports jwt in two views and calls only jwt.encode(..., algorithm="HS256"). Nothing in Plane calls jwt.decode.
-$ # importers of jwt among installed packages, outside jwt itself
-exit 123 (non-zero with nothing listed means none matched)

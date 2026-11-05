@@ -1,0 +1,96 @@
+# Acceptance of the flattening itself. b is the published stage of runtime/Dockerfile.backend, with its COPY pointed at a itself, so nothing else could differ.
+# a is the unflattened image the platform runs in dev. b was built with docker buildx build --platform linux/arm64 --provenance=false --sbom=false, the same build arguments as a, from this Dockerfile:
+
+    # syntax=docker/dockerfile:1.7
+    # check=skip=SecretsUsedInArgOrEnv
+    FROM scratch
+    # hadolint ignore=DL3067
+    COPY --from=localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c / /
+    
+    ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
+    ARG WAYLINE_SOURCE_REF
+    # The public fingerprint of CPython's release signing key, which the base image sets in GPG_KEY. It goes through a build
+    # argument only because the secret scanner reads a KEY=<hex> line as a credential, and it is not one.
+    ARG CPYTHON_RELEASE_SIGNER=<redacted>
+    
+    LABEL org.opencontainers.image.title="wayline-backend" \
+          org.opencontainers.image.description="Customized Plane Community Edition backend" \
+          org.opencontainers.image.licenses="AGPL-3.0-only" \
+          org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
+          org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
+    
+    # FROM scratch starts with an empty config, so this restates the base's, in its order, as 'docker buildx imagetools
+    # inspect --format {{json .Image}}' read it from the digest above on 2026-11-05. It has no Entrypoint, Labels, Volumes, StopSignal
+    # or Healthcheck. checks/flatten-config.py fails if a later base says something this does not, and allows two differences:
+    # INSTANCE_CHANGELOG_URL, whose default is a page on upstream's site, embedded in the "What's new" modal, where empty takes
+    # upstream's own fallback; and the UID, the same as the hardening patches, where upstream's image runs as root and
+    # chmods /code to allow this.
+    ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+        LANG=C.UTF-8 \
+        GPG_KEY=${CPYTHON_RELEASE_SIGNER} \
+        PYTHON_VERSION=3.12.12 \
+        PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4 \
+        PYTHONDONTWRITEBYTECODE=1 \
+        PYTHONUNBUFFERED=1 \
+        PIP_DISABLE_PIP_VERSION_CHECK=1 \
+        INSTANCE_CHANGELOG_URL=
+    WORKDIR /code
+    EXPOSE 8000/tcp
+    USER 1000
+    CMD ["./bin/docker-entrypoint-api.sh"]
+
+# Thu Nov  5 04:38:48 EAT 2026
+$ python3 -B apps/wayline/checks/flatten-compare.py localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442
+
+== localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+read from localhost:5001/wayline/backend
+28 layers, 2 of them empty, 106.0 MiB compressed
+-- totals of a, localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+paths 28235: {"dir": 6801, "file": 20810, "symlink": 624}
+bytes in regular files 296893950
+empty directories 141
+setuid or setgid or sticky 2: ['tmp', 'var/tmp']
+hard link groups 111, holding 365 paths
+with xattrs 0
+
+== localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442
+read from localhost:5055/trial/flat-4add
+2 layers, 1 of them empty, 97.4 MiB compressed
+-- totals of b, localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442
+paths 28235: {"dir": 6801, "file": 20810, "symlink": 624}
+bytes in regular files 296893950
+empty directories 141
+setuid or setgid or sticky 2: ['tmp', 'var/tmp']
+hard link groups 111, holding 365 paths
+with xattrs 0
+
+== Filesystem: b against a
+DIFFERS etc: mtime 1793216001 to 1793836472
+DIFFERS tmp: mtime 1769548774 to 1793836472
+28235 paths in both, 0 only in a, 0 only in b, 2 differ, 0 hard link groups differ
+differences by attribute: {"type": 0, "mode": 0, "uid": 0, "gid": 0, "size": 0, "target": 0, "device": 0, "xattrs": 0, "sha256": 0, "mtime": 2}
+
+== Config: b against a
+same ArgsEscaped: true
+same Cmd: ["./bin/docker-entrypoint-api.sh"]
+same Entrypoint: null
+same Env: ["PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "GPG_KEY=<redacted>", "PYTHON_VERSION=3.12.12", "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4", "PYTHONDONTWRITEBYTECODE=1", "PYTHONUNBUFFERED=1", "PIP_DISABLE_PIP_VERSION_CHECK=1", "INSTANCE_CHANGELOG_URL="]
+same ExposedPorts: {"8000/tcp": {}}
+same Healthcheck: null
+same Labels: {"org.opencontainers.image.description": "Customized Plane Community Edition backend", "org.opencontainers.image.licenses": "AGPL-3.0-only", "org.opencontainers.image.revision": "1563cbfbe89536541c041ec59f241edeab3740c2", "org.opencontainers.image.source": "https://github.com/BereketAbera/plane-platform", "org.opencontainers.image.title": "wayline-backend"}
+same OnBuild: null
+same Shell: null
+same StopSignal: null
+same User: "1000"
+same Volumes: null
+same WorkingDir: "/code"
+
+RESULT different: 0 paths on one side only, 2 paths differ, 0 hard link groups differ, 0 config fields differ
+# exit 1
+
+# Thu Nov  5 04:38:50 EAT 2026
+$ date -r 1793836472
+Thu Nov  5 02:54:32 EAT 2026
+# exit 0
+
+# 02:54:32 falls in the build of a: build.txt at commit c5eb3ad starts that build at 02:53:51. So the two directories hold the time of a's RUN steps, not of the flattening. How I read that, not proved: those steps' containers wrote and removed files in them, a directory time alone is in no diff layer, so a does not carry it, and the COPY reads the stage as it stands, so b does. Every file keeps its time, so no .pyc goes stale.

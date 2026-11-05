@@ -1,0 +1,20 @@
+==> Disk limits for this run: 11 GiB free to start, 10 GiB free to keep going. 12 GiB free now.
+ ok 5 image(s) to scan, listed in <scratch>/scan-images-20261105T020423Z/inventory.tsv
+==> Making sure the vulnerability database is current
+==> [1/5] localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+==> [2/5] localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+==> [3/5] localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+==> [4/5] localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+==> [5/5] wayline-source-lockfiles
+image                                                                                    CRITICAL         HIGH       MEDIUM    LOW  os
+localhost:5001/wayline/space@0a4ca742292d                                               0 (0 fix)  30 (30 fix)  22 (22 fix)      5  alpine 3.24.3
+localhost:5001/wayline/backend@9c7130942d90                                             0 (0 fix)    4 (4 fix)  11 (11 fix)      2  alpine 3.23.7
+localhost:5001/wayline/admin@c24ead5a02a1                                               0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+localhost:5001/wayline/web@96841278d02a                                                 0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+wayline-source-lockfiles                                                                1 (1 fix)  31 (31 fix)  24 (24 fix)      7  none
+
+5 of 5 targets scanned, 4 of the scanned ones built here.
+Findings across all images: 1 CRITICAL, 65 HIGH, 57 MEDIUM, 14 LOW, 0 UNKNOWN.
+Reported, not failing: 1 upstream target(s) have a CRITICAL finding with a fix, so a newer version may help:
+  wayline-source-lockfiles
+PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.

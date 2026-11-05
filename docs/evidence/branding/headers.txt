@@ -1,3 +1,4 @@
-# Removed lines holding an SPDX or copyright notice, .build/plane-src against tag v1.4.3, after overlay, patches and codemod. Expect none.
+# Removed lines holding an SPDX or copyright notice, .build/plane-src against tag v1.4.3, after overlay, patches and codemod. Expect none. Commit ec45e212ee6185d286762a753913c253dac51358.
+git diff against 37a15d99231042b3ff5a4401fed479fdbec9effe: exit 0, 23148 lines of diff
 0
-# The backend image replaces plane/utils/email.py whole with upstream's later file, so its old header is gone from that image's filesystem. See email-py.txt.
+# The backend image replaces plane/utils/email.py whole with upstream's later file, in the stage it is flattened from. See email-py.txt.

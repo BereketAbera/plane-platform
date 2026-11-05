@@ -1,0 +1,82 @@
+# Size and push time of the backend image, before and after flattening. Recorded Thu Nov  5 04:37:54 EAT 2026, by <scratch>/measure-push.sh, on this Mac, with the kind cluster and the owner's other containers running.
+# before: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c, built from 1563cbf, unflattened.
+# after, the same files: localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442, the published stage of Dockerfile.backend with that exact image as what it copies. flatten-compare-4add277c.txt compares them. So only the layers differ.
+# the next version, before: 8195e1b, then 1563cbf, as those two were really built one after the other.
+# the next version, after: that flattened image, then localhost:5055/wayline/backend@sha256:96a0bff79087c48bac89dbea63df0448d9d6f8c331830fc241b23447e296000e, the flattened image built from e21ac51.
+
+## Registry size, from each manifest, read with docker buildx imagetools inspect --raw
+localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c 28 layers 111193865 bytes, 106.0 MiB, largest layer 75.6 MiB
+localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442 2 layers 102159324 bytes, 97.4 MiB, largest layer 97.4 MiB
+localhost:5055/wayline/backend@sha256:96a0bff79087c48bac89dbea63df0448d9d6f8c331830fc241b23447e296000e 2 layers 102161795 bytes, 97.4 MiB, largest layer 97.4 MiB
+
+## Docker image size, from docker image inspect --format {{.Size}}
+localhost:5001/wayline/backend:1563cbfbe895 111213948 bytes
+localhost:5055/trial/flat-4add:t 102163091 bytes
+localhost:5055/wayline/backend:trial 102165562 bytes
+makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 111022455 bytes
+
+## Push time: docker push into a new, empty registry on loopback, a throwaway distribution:3.1.2 on a tmpfs. Three rounds, taking turns
+round 1, before, first version: docker push of localhost:5001/wayline/backend:1563cbfbe895: real 0.93, exit 0, registry grew by 108808 KiB, to 108808 KiB
+round 1, after, first version: docker push of localhost:5055/trial/flat-4add:t: real 0.90, exit 0, registry grew by 99804 KiB, to 99804 KiB
+round 2, before, first version: docker push of localhost:5001/wayline/backend:1563cbfbe895: real 0.99, exit 0, registry grew by 108808 KiB, to 108808 KiB
+round 2, after, first version: docker push of localhost:5055/trial/flat-4add:t: real 1.02, exit 0, registry grew by 99804 KiB, to 99804 KiB
+round 3, before, first version: docker push of localhost:5001/wayline/backend:1563cbfbe895: real 0.93, exit 0, registry grew by 108808 KiB, to 108808 KiB
+round 3, after, first version: docker push of localhost:5055/trial/flat-4add:t: real 0.84, exit 0, registry grew by 99804 KiB, to 99804 KiB
+
+## The next version: the previous version is already in that registry, as it would be after the first publish
+round 1, before: docker push of localhost:5001/wayline/backend:8195e1b020d6: real 0.87, exit 0, registry grew by 108808 KiB, to 108808 KiB
+round 1, before: docker push of localhost:5001/wayline/backend:1563cbfbe895: real 0.74, exit 0, registry grew by 256 KiB, to 109064 KiB
+round 1, after: docker push of localhost:5055/trial/flat-4add:t: real 0.86, exit 0, registry grew by 99804 KiB, to 99804 KiB
+round 1, after: docker push of localhost:5055/wayline/backend:trial: real 1.06, exit 0, registry grew by 99796 KiB, to 199600 KiB
+round 2, before: docker push of localhost:5001/wayline/backend:8195e1b020d6: real 0.99, exit 0, registry grew by 108808 KiB, to 108808 KiB
+round 2, before: docker push of localhost:5001/wayline/backend:1563cbfbe895: real 0.73, exit 0, registry grew by 256 KiB, to 109064 KiB
+round 2, after: docker push of localhost:5055/trial/flat-4add:t: real 0.86, exit 0, registry grew by 99804 KiB, to 99804 KiB
+round 2, after: docker push of localhost:5055/wayline/backend:trial: real 0.92, exit 0, registry grew by 99796 KiB, to 199600 KiB
+round 3, before: docker push of localhost:5001/wayline/backend:8195e1b020d6: real 0.97, exit 0, registry grew by 108808 KiB, to 108808 KiB
+round 3, before: docker push of localhost:5001/wayline/backend:1563cbfbe895: real 0.74, exit 0, registry grew by 256 KiB, to 109064 KiB
+round 3, after: docker push of localhost:5055/trial/flat-4add:t: real 0.88, exit 0, registry grew by 99804 KiB, to 99804 KiB
+round 3, after: docker push of localhost:5055/wayline/backend:trial: real 0.98, exit 0, registry grew by 99796 KiB, to 199600 KiB
+
+## Docker VM, from docker system df, with all of these still present
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          66        26        21.41GB   3.397GB (15%)
+Containers      31        24        5.812MB   114.7kB (1%)
+Local Volumes   31        19        19.46GB   1.413GB (7%)
+Build Cache     302       0         3.891GB   322MB
+
+REPOSITORY                                      TAG                            IMAGE ID       CREATED         SIZE      SHARED SIZE   UNIQUE SIZE   CONTAINERS
+localhost:5055/wayline/backend                  trial                          96a0bff79087   7 minutes ago   479MB     32B           478.8MB       0
+localhost:5055/trial/flat-4add                  t                              060255ab094b   2 hours ago     479MB     32B           478.8MB       0
+localhost:5001/wayline/backend                  1563cbfbe895                   4add277ce63e   2 hours ago     512MB     511MB         1.272MB       0
+localhost:5001/wayline/backend                  8195e1b020d6                   be6c6057a679   2 hours ago     512MB     511MB         1.272MB       0
+localhost:5001/wayline/backend                  8e328a065450                   cd6302a9cc04   2 hours ago     512MB     511MB         1.272MB       0
+localhost:5001/wayline/backend                  1242134361ff                   2e5e574957be   3 hours ago     512MB     511MB         723.1kB       0
+localhost:5001/wayline/backend                  283b51ae3e33                   3cc93e1c3ca3   3 hours ago     512MB     511MB         723.1kB       0
+localhost:5001/wayline/backend                  efb5af9d6e75                   e9e571864b1d   4 hours ago     512MB     511.1MB       481.1kB       0
+# done Thu Nov  5 04:38:30 EAT 2026
+
+## After the final build: plane-registry, the local registry
+# At the start of this work, with docker exec plane-registry du -sh /var/lib/registry: 748.5M
+# Thu Nov  5 05:06:38 EAT 2026
+$ docker exec plane-registry du -sh /var/lib/registry
+881.2M	/var/lib/registry
+# Two full builds went in, baeaa4b and then ec45e21, because a lint failure in the first led to a rebuild. Their backends have the same filesystem layer, sha256:390d08785ed2, because the backend's context did not change between them, so that 97.4 MiB is stored once. A build whose context changes stores it again.
+
+## Docker VM, from docker system df, once my scratch images were gone
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          65        27        20.93GB   2.394GB (11%)
+Containers      34        27        6.365MB   114.7kB (1%)
+Local Volumes   32        18        19.02GB   1.414GB (7%)
+Build Cache     323       0         3.963GB   872.4MB
+REPOSITORY                                      TAG                            IMAGE ID       CREATED          SIZE      SHARED SIZE   UNIQUE SIZE   CONTAINERS
+localhost:5001/wayline/backend                  ec45e212ee61                   9c7130942d90   9 minutes ago    479MB     32B           478.8MB       1
+
+## The cost in the build, from the log of the flat-4add build, which had no cache for this step
+25:#7 [stage-0 1/2] COPY --from=localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c / /
+26:#7 DONE 3.2s
+28:#8 [stage-0 2/2] WORKDIR /code
+33:#9 exporting layers 8.5s done
+40:#9 pushing layers 1.0s done
+47:real 22.18
+
+# Read: push time on loopback does not separate the two, because it hides the transfer. The size does: a later version uploads 97.5 MiB where it uploaded 0.25 MiB. This is not measured on a real network. Upstream's image stays on the build machine as an input, and on any node while an environment runs it: gitops/environments/prod-sim/manifests.yaml still names it, so nothing else uses its layers only after that environment is promoted.

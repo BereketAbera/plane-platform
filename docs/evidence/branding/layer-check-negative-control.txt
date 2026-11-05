@@ -1,0 +1,120 @@
+# Negative control: apps/wayline/checks/layer-check.py on the unflattened backend from commit 1563cbf, and on the web, admin and space images from that commit. It must fail.
+# Layers 13 and 20 are the original email.py, from upstream. Layer 22 is check_image.py, which then held the identifier as a literal, and layer 25, like the hits in the other three, is the text of MODIFICATIONS.md, which then quoted it. Both are rewritten now, so a clean result needs no exception.
+
+# Thu Nov  5 05:01:38 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+searching 4 image(s) for 27 bytes on linux/arm64: LicenseRef-Plane-Commercial
+gate: a hit fails
+
+== localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+read from localhost:5001/wayline/backend
+config sha256:784a52fe28f35329926cc36a04e34ce8b9e9c3a243f17f3ba5052768752233e8: clean
+28 layers
+layer  1/28 sha256:d8ad8cd72600      4.0 MiB    515 entries, 2 archives opened: clean
+layer  2/28 sha256:c746ec0a997c      0.4 MiB   1101 entries, 2 archives opened: clean
+layer  3/28 sha256:c87aa1e804eb     13.2 MiB   1858 entries, 3 archives opened: clean
+layer  4/28 sha256:be1bf212c5ab      0.0 MiB      8 entries, 0 archives opened: clean
+layer  5/28 sha256:f043ea3ac942      7.5 MiB    970 entries, 6 archives opened: clean
+layer  6/28 sha256:c02fb40c743e      0.0 MiB      1 entries, 0 archives opened: clean
+layer  7/28 sha256:339c97cee789      1.5 MiB     36 entries, 2 archives opened: clean
+layer  8/28 sha256:4e7b563da78e      0.0 MiB      2 entries, 0 archives opened: clean
+layer  9/28 sha256:6015bd0ae1a1      0.0 MiB      6 entries, 0 archives opened: clean
+layer 10/28 sha256:cb75f56cc560      1.7 MiB   1039 entries, 2 archives opened: clean
+layer 11/28 sha256:0cc0f01ded38     75.6 MiB  22997 entries, 844 archives opened: clean
+layer 12/28 sha256:f21a91bde4b7      0.0 MiB      2 entries, 0 archives opened: clean
+layer 13/28 sha256:cd1e248a64dd      0.6 MiB    779 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 13 of 28: code/plane/utils/email.py
+layer 14/28 sha256:82afb6fae256      0.0 MiB     24 entries, 0 archives opened: clean
+layer 15/28 sha256:8b5cf9ef44c8      0.0 MiB      2 entries, 0 archives opened: clean
+layer 16/28 sha256:2971492cd252      0.6 MiB     62 entries, 2 archives opened: clean
+layer 17/28 sha256:a944bb63192a      0.0 MiB      7 entries, 0 archives opened: clean
+layer 18/28 sha256:e4e24f985b56      0.0 MiB      3 entries, 0 archives opened: clean
+layer 19/28 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 20/28 sha256:e1b4054f2054      0.6 MiB    817 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 20 of 28: code/plane/utils/email.py
+layer 21/28 sha256:c30c2b20e09a      0.0 MiB     21 entries, 0 archives opened: clean
+layer 22/28 sha256:0280be888312      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 22 of 28: opt/wayline/check_image.py
+layer 23/28 sha256:26efa19115c6      0.0 MiB      5 entries, 0 archives opened: clean
+layer 24/28 sha256:6705cf8a8bfe      0.0 MiB      4 entries, 0 archives opened: clean
+layer 25/28 sha256:3ca6d3f91873      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 25 of 28: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 26/28 sha256:6233f2de23d8      0.0 MiB     49 entries, 0 archives opened: clean
+layer 27/28 sha256:682e7cbebc79      0.1 MiB     43 entries, 0 archives opened: clean
+layer 28/28 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+read from localhost:5001/wayline/web
+config sha256:a8ae131fcdeb3a460ed60c80e2050730efbe44d8f40da7d72a44fee6d0c367a1: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/15 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/15 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/15 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/15 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/15 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/15 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/15 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/15 sha256:5df6a65eacc8      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/15 sha256:faa2add99015     14.2 MiB   1082 entries, 0 archives opened: clean
+layer 12/15 sha256:77aae00b6b18      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 12 of 15: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 13/15 sha256:77af4b3680c8      0.0 MiB     11 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 13 of 15: usr/share/nginx/html/licenses/MODIFICATIONS.txt
+layer 14/15 sha256:ac1e7aa5a601      0.0 MiB      3 entries, 0 archives opened: clean
+layer 15/15 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+read from localhost:5001/wayline/admin
+config sha256:3122126c200ab7b20e5ee53c60a17c46b179b30edee87e3590a3ca0698f811f8: clean
+13 layers
+layer  1/13 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/13 sha256:1408044c7403      1.9 MiB    694 entries, 3 archives opened: clean
+layer  3/13 sha256:7b9d02243238      0.0 MiB      1 entries, 0 archives opened: clean
+layer  4/13 sha256:f523b340a6c0      0.0 MiB      2 entries, 0 archives opened: clean
+layer  5/13 sha256:dbb1ef19121a      0.0 MiB      2 entries, 0 archives opened: clean
+layer  6/13 sha256:567a969e0221      0.0 MiB      2 entries, 0 archives opened: clean
+layer  7/13 sha256:c2fefbef5314      0.0 MiB      2 entries, 0 archives opened: clean
+layer  8/13 sha256:cbe54b031f3e     19.2 MiB    961 entries, 2 archives opened: clean
+layer  9/13 sha256:986092e40873      1.4 MiB    659 entries, 2 archives opened: clean
+layer 10/13 sha256:3e83f3be6fb2      0.0 MiB      3 entries, 0 archives opened: clean
+layer 11/13 sha256:478ae191c79f      3.8 MiB     93 entries, 0 archives opened: clean
+layer 12/13 sha256:676bbca0c018      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 12 of 13: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 13/13 sha256:bdf13b123409      0.0 MiB      5 entries, 0 archives opened: clean
+
+== localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+read from localhost:5001/wayline/space
+config sha256:963cc36c82a51bb767f85669bd37b93283b9380dc97749860c9a3498922ae484: clean
+21 layers
+layer  1/21 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/21 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/21 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/21 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/21 sha256:5003ba2fd1d4      0.0 MiB      1 entries, 0 archives opened: clean
+layer  6/21 sha256:7e0cb804cc44      0.0 MiB      9 entries, 0 archives opened: clean
+layer  7/21 sha256:d8d7c57874d2      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/21 sha256:c3d9c20b2a9c      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/21 sha256:7be0340e75cd      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/21 sha256:29bd0300b378      9.5 MiB   1144 entries, 0 archives opened: clean
+layer 11/21 sha256:525d0c743e46      0.0 MiB     68 entries, 0 archives opened: clean
+layer 12/21 sha256:e1d6b285f31f    182.7 MiB  88928 entries, 0 archives opened: clean
+layer 13/21 sha256:54085b214fd0      0.0 MiB     61 entries, 0 archives opened: clean
+layer 14/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+layer 15/21 sha256:2d8544241ab1      2.4 MiB     37 entries, 2 archives opened: clean
+layer 16/21 sha256:8f1b33a3f76d      0.0 MiB      4 entries, 0 archives opened: clean
+layer 17/21 sha256:d38237518641      8.1 MiB   1130 entries, 0 archives opened: clean
+layer 18/21 sha256:adb2e9690752      0.0 MiB     10 entries, 0 archives opened: 1 HIT(S)
+  HIT layer 18 of 21: usr/share/licenses/wayline/MODIFICATIONS.txt
+layer 19/21 sha256:ffb3a51350d3      0.0 MiB      3 entries, 0 archives opened: clean
+layer 20/21 sha256:e0d4879e2a77      0.0 MiB    172 entries, 0 archives opened: clean
+layer 21/21 sha256:4f4fb700ef54      0.0 MiB      0 entries, 0 archives opened: clean
+
+== Summary
+HIT          4 hit(s) localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
+HIT          2 hit(s) localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
+HIT          1 hit(s) localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
+HIT          1 hit(s) localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
+# exit 1
+

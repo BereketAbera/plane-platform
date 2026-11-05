@@ -1,17 +1,18 @@
-# Provenance and publishing refusals, each run on purpose, plus the build-time licence check. None of them pushes anything.
+# Publishing and provenance refusals, each run on purpose, in a clone of commit ec45e212ee6185d286762a753913c253dac51358, plus the build-time checks. Recorded Thu Nov  5 05:03:24 EAT 2026.
+# Only scratch registries receive anything, and the real .build/digests.tsv is not read or written by any of this.
 
-$ scripts/ci/build-images.sh docker.io/someone/wayline    # not the local registry, and not the owner's GHCR namespace
-publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not docker.io/someone/wayline
+$ scripts/ci/build-images.sh docker.io/someone/wayline    # not the local registry, and not on the list
+publish-gate: images go only to the local registry or to ghcr.io/bereketabera/wayline, and not to docker.io/someone/wayline
 fail not publishing to docker.io/someone/wayline
 exit 1
 
-$ scripts/ci/build-images.sh ghcr.io/someoneelse/wayline    # not the local registry, and not the owner's GHCR namespace
-publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not ghcr.io/someoneelse/wayline
+$ scripts/ci/build-images.sh ghcr.io/someoneelse/wayline    # not on the list
+publish-gate: images go only to the local registry or to ghcr.io/bereketabera/wayline, and not to ghcr.io/someoneelse/wayline
 fail not publishing to ghcr.io/someoneelse/wayline
 exit 1
 
-$ scripts/ci/build-images.sh ghcr.io/BereketAbera/wayline    # not the local registry, and not the owner's GHCR namespace
-publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not ghcr.io/BereketAbera/wayline
+$ scripts/ci/build-images.sh ghcr.io/BereketAbera/wayline    # the list is lower case, as GHCR names are
+publish-gate: images go only to the local registry or to ghcr.io/bereketabera/wayline, and not to ghcr.io/BereketAbera/wayline
 fail not publishing to ghcr.io/BereketAbera/wayline
 exit 1
 
@@ -19,58 +20,87 @@ $ # the gate table, with no build: apps/wayline/scripts/publish-gate.sh <prefix>
 localhost:5001/wayline: exit 0
 127.0.0.1:5001/wayline: exit 0
 ghcr.io/bereketabera/wayline: exit 0
-publish-gate: D12 allows only the owner's private GHCR packages, ghcr.io/bereketabera/wayline, and not ghcr.io/someoneelse/wayline
+publish-gate: images go only to the local registry or to ghcr.io/bereketabera/wayline, and not to ghcr.io/someoneelse/wayline
 ghcr.io/someoneelse/wayline: exit 1
+publish-gate: images go only to the local registry or to ghcr.io/bereketabera/wayline, and not to docker.io/someone/wayline
+docker.io/someone/wayline: exit 1
 
-$ # a decision file that still says pending, in a scratch copy of the gate: the owner's own namespace is refused too
-publish-gate: <scratch copy>/backend/email-py-decision.txt says 'pending', which does not allow ghcr.io/bereketabera/wayline. See D12 in PASS2_HANDOFF.md
-exit 1
-localhost:5001/wayline: exit 0
+$ # a decision file that says pending, and then the one the gate used to know, in a scratch copy of the gate: the list's own namespace is refused too, and the local registry is not
+publish-gate: <scratch copy>/backend/email-py-decision.txt says 'pending', which does not allow ghcr.io/bereketabera/wayline. See D12 in apps/wayline/MODIFICATIONS.md
+ghcr.io/bereketabera/wayline with pending: exit 1
+localhost:5001/wayline with pending: exit 0
+publish-gate: <scratch copy>/backend/email-py-decision.txt says 'replace-with-upstream-agpl-private-ghcr-only', which does not allow ghcr.io/bereketabera/wayline. See D12 in apps/wayline/MODIFICATIONS.md
+ghcr.io/bereketabera/wayline with replace-with-upstream-agpl-private-ghcr-only: exit 1
+localhost:5001/wayline with replace-with-upstream-agpl-private-ghcr-only: exit 0
 
-$ # the stamp refusals: a copy of the stamp saying dirty, then no stamp at all, with SKIP_NATIVE_BUILD=yes
+$ # the stamp refusals: a stamp saying dirty, then no stamp at all, with SKIP_NATIVE_BUILD=yes
+
+$ env SKIP_NATIVE_BUILD=yes DIGESTS_FILE=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wl/refusal-digests.tsv scripts/ci/build-images.sh localhost:5055/refusal    # a context built from uncommitted source
 warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
 fail web was built from uncommitted source. Commit, then rebuild without SKIP_NATIVE_BUILD
 exit 1
+a digests file written: no
+
+$ env SKIP_NATIVE_BUILD=yes DIGESTS_FILE=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wl/refusal-digests.tsv scripts/ci/build-images.sh localhost:5055/refusal    # no stamp
 warn SKIP_NATIVE_BUILD=yes: reusing contexts in .build/wayline-dist, each stamped with the commit that built it
-fail no /Users/bek/dev/pr/plane-platform/.build/wayline-dist/SOURCE.web, so nothing says what built this context. Run apps/wayline/scripts/build.sh
+fail no <clone>/.build/wayline-dist/SOURCE.web, so nothing says what built this context. Run apps/wayline/scripts/build.sh
+exit 1
+a digests file written: no
+
+$ # a changed vendored email.py, which assemble.sh must refuse. On a scratch copy of backend/
+assemble.sh: vendor/email.py is 64ec36ecd51110e5db82427edf3790be3d71c7c912cede4442c7c1e1a0c17218, and vendor/email.py.pin says 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
 exit 1
 
-digests.tsv unchanged by all of the above
-
-$ # the build-time check in Dockerfile.backend: without the COPY of email.py, the image build must stop
-FAIL no file under /code contains LicenseRef-Plane-Commercial ['/code/plane/utils/email.py']
+$ # the build-time check, without the COPY of email.py: the image build must stop, and now it reads the whole filesystem
+lines the edit removed: 1
+4.276 FAIL /code/plane/utils/email.py carries AGPL-3.0-only
+4.276 FAIL /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc
+4.276 FAIL no file under / contains LicenseRef-Plane-Commercial ['/code/plane/utils/email.py']
+4.283 PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
+4.305 PASS one copy installed: ['2.14.0']
+5.374 PASS pip check No broken requirements found.
+5.374 RESULT FAIL: 3 failed
 FAIL /code/plane/utils/email.py carries AGPL-3.0-only
 FAIL /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc
+FAIL no file under / contains LicenseRef-Plane-Commercial ['/code/plane/utils/email.py']
 PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
 PASS one copy installed: ['2.14.0']
 PASS pip check No broken requirements found.
 RESULT FAIL: 3 failed
-0.455 FAIL no file under /code contains LicenseRef-Plane-Commercial ['/code/plane/utils/email.py']
-0.455 FAIL /code/plane/utils/email.py carries AGPL-3.0-only
-0.455 FAIL /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc
-0.460 PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
-0.485 PASS one copy installed: ['2.14.0']
-1.273 PASS pip check No broken requirements found.
-1.273 RESULT FAIL: 3 failed
 exit 1
 
 $ # and without the PyJWT install, it must stop too
-PASS no file under /code contains LicenseRef-Plane-Commercial 707 files read
-PASS /code/plane/utils/email.py carries AGPL-3.0-only
-PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+lines the edit removed: 1
+4.016 PASS /code/plane/utils/email.py carries AGPL-3.0-only
+4.016 PASS no file under / contains LicenseRef-Plane-Commercial 20811 files read
+4.017 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+4.026 FAIL PyJWT is 2.13.0, and backend/pyjwt-requirements.txt pins 2.14.0
+4.048 FAIL one copy installed: ['2.13.0']
+4.931 PASS pip check No broken requirements found.
+4.931 RESULT FAIL: 2 failed
 FAIL PyJWT is 2.13.0, and backend/pyjwt-requirements.txt pins 2.14.0
 FAIL one copy installed: ['2.13.0']
+PASS /code/plane/utils/email.py carries AGPL-3.0-only
+PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+PASS no file under / contains LicenseRef-Plane-Commercial 20811 files read
 PASS pip check No broken requirements found.
 RESULT FAIL: 2 failed
-0.375 PASS no file under /code contains LicenseRef-Plane-Commercial 707 files read
-0.375 PASS /code/plane/utils/email.py carries AGPL-3.0-only
-0.375 PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
-0.379 FAIL PyJWT is 2.13.0, and backend/pyjwt-requirements.txt pins 2.14.0
-0.403 FAIL one copy installed: ['2.13.0']
-1.250 PASS pip check No broken requirements found.
-1.250 RESULT FAIL: 2 failed
 exit 1
 
-$ # the vendored file changed by one byte: assemble.sh must refuse, in a scratch copy
-assemble.sh: vendor/email.py is 64ec36ecd51110e5db82427edf3790be3d71c7c912cede4442c7c1e1a0c17218, and vendor/email.py.pin says 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
-exit 1
+$ # build-images.sh stopping after a push, when the layer check fails. A shim gives layer-check.py a needle the web image really holds, so this exercises the script and no real finding. It pushes one image to a scratch registry
+build-images.sh exit 1
+searching 1 image(s) for 5 bytes on linux/arm64: nginx
+HIT        1219 hit(s) localhost:5055/refusal/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+a digests file written: no
+
+$ # the same when the flattened backend dropped config. A shim gives flatten-config.py the doctored base from flatten-config-negative-control.txt. It pushes all four images to the scratch registry
+build-images.sh exit 1
+FAIL A_NEW_SETTING is in the base and the image dropped it
+FAIL label org.example.new is in the base and the image dropped it
+FAIL ExposedPorts is the base's {"8000/tcp": {}}
+FAIL StopSignal is the base's null
+FAIL every config field has a rule here no rule for: ['SomeFutureField']
+RESULT FAIL: 5 failed
+a digests file written: no
+
+# the real .build/digests.tsv: unchanged by all of the above

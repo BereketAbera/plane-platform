@@ -1,4 +1,4 @@
-# Strings the review named, read from the built output of commit 1563cbfbe89536541c041ec59f241edeab3740c2.
+# Strings the review named, read from the built output of commit ec45e212ee6185d286762a753913c253dac51358.
 mailto:the source repository               files in web, admin, space client: 0
 Join our community of active creators      files in web, admin, space client: 0
 Learn more about projects                  files in web, admin, space client: 0
@@ -8,34 +8,32 @@ placeholder:`/source`                      files in web, admin, space client: 0
 # Marketing consent in onboarding, in the built web client. false minifies to !1, and upstream's true to !0
    2 has_marketing_email_consent:!1
 
+# Where the onboarding form defines its default, in the built web client, then in upstream's image, makeplane/plane-frontend@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5. The check in smoke-images.sh
+confirm_password:void 0,has_marketing_email_consent:!1
+confirm_password:void 0,has_marketing_email_consent:!0
+
 # Telemetry defaults in the built admin client
    1 is_telemetry_enabled:!1
 
-# Who can send telemetry when it is on: the only exporter is telemetry_metrics.py, behind instance.is_telemetry_enabled. The endpoint default stays upstream's, and the consent text says so.
-./license/bgtasks/telemetry_metrics.py
-license/bgtasks/telemetry_metrics.py:80:    if not instance.is_telemetry_enabled:
-license/api/views/admin.py:129:        is_telemetry_enabled = request.POST.get("is_telemetry_enabled", False)
-license/api/views/admin.py:141:                    "is_telemetry_enabled": is_telemetry_enabled,
-license/api/views/admin.py:166:                    "is_telemetry_enabled": is_telemetry_enabled,
-license/api/views/admin.py:186:                    "is_telemetry_enabled": is_telemetry_enabled,
-license/api/views/admin.py:205:                        "is_telemetry_enabled": is_telemetry_enabled,
-license/api/views/admin.py:259:                instance.is_telemetry_enabled = is_telemetry_enabled
-license/management/commands/register_instance.py:69:                is_telemetry_enabled=False,
-license/models/instance.py:35:    is_telemetry_enabled = models.BooleanField(default=True)
-
-# The web, admin and space consent text about where telemetry goes
--regular text-tertiary`,children:[`No PII is collected. The upstream project uses this anonymized data to understand how the software is
-etry_enabled`,children:[`Send anonymous usage events to the upstream project.`,` `,(0,j.jsx)(`a`,{href:`https://developers.plane.so/self
-
 # Image labels
-web AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
-admin AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
-space AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
-backend AGPL-3.0-only 1563cbfbe89536541c041ec59f241edeab3740c2
+web AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
+admin AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
+space AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
+backend AGPL-3.0-only ec45e212ee6185d286762a753913c253dac51358
 
-# Reserved slug in the backend image and the frontend list
-RESTRICTED_WORKSPACE_SLUGS = [
-    "404",
-    "accounts",
-    "source",
-16:  "source",
+# Text that ships at /usr/share/licenses/wayline/MODIFICATIONS.txt, in each image. Lines naming a project lead, then the who-chose lines
+web: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
+admin: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
+space: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
+backend: /usr/share/licenses/wayline/MODIFICATIONS.txt:0 /usr/share/licenses/wayline/NOTICE.txt:0 
+147:**What is done.** The notice is not edited. The backend image replaces the file with upstream's own AGPL-3.0-only version,
+150:**Who chose this.** No person did. An AI coding agent implementing this image chose to replace the file, under the
+154:**What the owner has and has not seen.** The agent told the owner after the fact that the file was replaced. The owner has not reviewed
+
+# Libraries with findings in the source lockfiles, by name, in what the web and admin clients ship. Files under assets/ holding each string. trivy sees none of these, because these are bundled static files with no package metadata
+markdown-it          web 1, admin 0
+prosemirror-view     web 1, admin 0
+ProseMirror          web 4, admin 1
+nanoid               web 1, admin 0
+@tiptap              web 1, admin 0
+axios                web 3, admin 1
