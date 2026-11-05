@@ -4,7 +4,7 @@ This page says what the platform is not and what has not been shown. Read it bef
 
 The platform is a customized deployment of open-source Plane Community Edition v1.4.3 (AGPL-3.0), named Wayline, on a local kind cluster. It is local and production-inspired, and this repository makes no claim that it is ready for production.
 
-Updated 2026-11-05 at about 15:15Z. `docs/evidence/runs/` holds runs published up to 2026-11-05T15:02Z ([index](evidence/runs/MANIFEST.tsv)), and `branding/`, `ci/` and `security/` hold what was copied there by hand. By [the evidence rules](evidence/README.md#rules) a run with no file there has no result. No `VERIFY` or `MEASURE` marker is left on this page. Where nothing measured a figure, it says Not measured in Pass 1.
+Results as of 2026-11-05 at about 15:15Z, with the wording checked until about 18:00Z. `docs/evidence/runs/` holds runs published up to 2026-11-05T15:02Z ([index](evidence/runs/MANIFEST.tsv)), and `branding/`, `ci/` and `security/` hold what was copied there by hand. By [the evidence rules](evidence/README.md#rules) a run with no file there has no result. No `VERIFY` or `MEASURE` marker is left on this page. Where nothing measured a figure, it says Not measured in Pass 1.
 
 ## Status
 
