@@ -78,6 +78,9 @@ NOT_SECRET = re.compile(
 # then =) with a UUID as the value. These are record ids such as "SECRET_KEY id=<uuid>" and Kubernetes
 # uids such as "plane-app-keys uid=<uuid>". Neither is a credential, but allowlisting the shape would
 # also let a real key through in the same position.
+# A session cookie k6 carried in setup_data. It is in no source the scrub reads, because the test signs in for itself.
+SESSION = re.compile(rb'("session"\s*:\s*")[^"]+')
+
 IDENTIFIER = re.compile(
     rb"((?:access|auth|api|credential|creds|key|passw(?:or)?d|secret|token)[ \t\w.-]{0,20}=)"
     rb"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
@@ -224,7 +227,9 @@ def scrub(data, patterns):
         if hits:
             data = data.replace(pattern, REDACTED)
             count += hits
+    data, session_hits = SESSION.subn(lambda match: match.group(1) + REDACTED, data)
     data, hits = IDENTIFIER.subn(lambda match: match.group(1) + REDACTED, data)
+    hits += session_hits
     return data, count + hits
 
 

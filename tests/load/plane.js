@@ -158,6 +158,8 @@ export default function (data) {
 }
 
 // The Job's logs are the only way out of the pod, so the summary goes to stdout between markers.
+// setup_data holds the signed-in session, and this output is published as evidence, so it never leaves the pod.
 export function handleSummary(data) {
+  delete data.setup_data;
   return { stdout: `\n@@K6-SUMMARY-BEGIN@@\n${JSON.stringify(data)}\n@@K6-SUMMARY-END@@\n` };
 }
