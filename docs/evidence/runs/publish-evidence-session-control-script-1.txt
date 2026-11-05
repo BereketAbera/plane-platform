@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""Negative control for the SESSION pattern in scripts/publish-evidence.sh, on a scratch copy of the tree it runs in.
+
+The method of publish-evidence-control-script-1.txt: plant, run the real script, count what is left. It differs in
+that nothing real goes in. The planted values are random, the only scrub source is a scratch file that holds none of
+them, and kubectl is a stub that exits 1 and records each call, so no cluster is read. It prints counts and the
+published session lines, never a value.
+"""
+import hashlib, os, re, secrets, shutil, string, subprocess, sys, uuid
+from datetime import datetime, timezone
+
+REPO = "/Users/bek/dev/pr/plane-platform"
+SCRATCH = sys.argv[1]
+T = os.path.join(SCRATCH, "tree")
+RAW = T + "/.local/evidence-raw"
+RUNS = T + "/docs/evidence/runs"
+STUB_LOG = os.path.join(SCRATCH, "kubectl-calls")
+SESSION_CALL = b"    data, session_hits = SESSION.subn(lambda match: match.group(1) + REDACTED, data)\n"
+failures = 0
+outputs = []
+
+
+def check(ok, text):
+    global failures
+    print("PASS " if ok else "FAIL ", text)
+    failures += 0 if ok else 1
+
+
+def stage(text):
+    print("\n--- " + text)
+
+
+def value(length=64):
+    return "".join(secrets.choice(string.ascii_lowercase + string.digits) for _ in range(length)).encode()
+
+
+def write(path, data):
+    with open(path, "wb") as handle:
+        handle.write(data)
+
+
+def run():
+    done = subprocess.run(["/bin/bash", "scripts/publish-evidence.sh"], cwd=T, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    outputs.append(done.stdout)
+    for line in re.sub(rb"\x1b\[[0-9;]*m", b"", done.stdout).decode().splitlines():
+        print("    | " + line.replace(SCRATCH, "<scratch>"))
+    return done.returncode, done.stdout.decode()
+
+
+def in_runs(needle):
+    total = 0
+    for directory, _, names in os.walk(RUNS):
+        for name in names:
+            with open(os.path.join(directory, name), "rb") as handle:
+                total += handle.read().count(needle)
+    return total
+
+
+def build_tree(script):
+    shutil.rmtree(T, ignore_errors=True)
+    os.makedirs(T + "/scripts/lib")
+    os.makedirs(RAW)
+    os.makedirs(T + "/docs/evidence")
+    os.makedirs(T + "/.tools/bin")
+    write(T + "/scripts/publish-evidence.sh", script)
+    shutil.copy(REPO + "/scripts/lib/common.sh", T + "/scripts/lib/")
+    shutil.copy(REPO + "/.gitleaks.toml", T)
+    os.symlink(REPO + "/.tools/bin/gitleaks", T + "/.tools/bin/gitleaks")
+    write(T + "/.tools/bin/kubectl", b'#!/bin/sh\necho "$*" >>"%s"\nexit 1\n' % STUB_LOG.encode())
+    os.chmod(T + "/.tools/bin/kubectl", 0o755)
+    write(T + "/.local/kubeconfig", b"")
+    # The only scrub source, because the script stops if it has none. Its value appears nowhere else.
+    write(T + "/.local/test-accounts.env", b"SCRATCH_ONLY_VALUE=" + value(32) + b"\n")
+
+
+def plant(planted):
+    """Writes the raw file. Returns {case: value that must go}, {case: value that must stay}, {case: shape outside the pattern}."""
+    gone = {name: value() for name in ('"session": "...", with a space, as asked', '"session":"...", k6-summary.json\'s own shape', '"session"  :  "...", more space')}
+    stays = {name: value() for name in ('"session_name": "..."', '"user": "..."')}
+    outside = {name: value() for name in ('session=..., cookie form', '\\"session\\":\\"...\\", JSON inside a JSON string')}
+    names = list(gone)
+    lines = [b'{"setup_data": {"session": "' + gone[names[0]] + b'"}}',
+             b'{"setup_data":{"workspace":"' + str(uuid.uuid4()).encode() + b'","session":"' + gone[names[1]] + b'"},"root_group":{}}',
+             b'{"session"  :  "' + gone[names[2]] + b'"}',
+             b'{"session_name": "' + stays['"session_name": "..."'] + b'", "user": "' + stays['"user": "..."'] + b'"}',
+             b"Cookie: session=" + outside['session=..., cookie form'],
+             b'{"msg": "{\\"session\\":\\"' + outside['\\"session\\":\\"...\\", JSON inside a JSON string'] + b'\\"}"}']
+    write(RAW + "/" + planted, b"\n".join(lines) + b"\n")
+    return gone, stays, outside
+
+
+def session_lines(path):
+    with open(path, "rb") as handle:
+        return [line.decode() for line in handle.read().splitlines() if b'"session"' in line]
+
+
+def main():
+    with open(REPO + "/scripts/publish-evidence.sh", "rb") as handle:
+        real = handle.read()
+    planted = "planted-session.json"
+
+    stage("1. The real script over a planted raw file. No source holds the planted values, so only SESSION can replace them")
+    build_tree(real)
+    gone, stays, outside = plant(planted)
+    print('raw line 1 is {"setup_data": {"session": "<a random value of 64 characters>"}}')
+    code, _ = run()
+    check(code == 0, "exit 0")
+    for name, needle in gone.items():
+        count = in_runs(needle)
+        check(count == 0, "%s: %d left in the copy" % (name, count))
+    for name, needle in gone.items():
+        with open(RAW + "/" + planted, "rb") as handle:
+            check(needle in handle.read(), "%s: the raw file still holds it, so the plant was there to replace" % name)
+    copy = os.path.join(RUNS, planted)
+    shown = session_lines(copy)
+    print("the copy's session lines, whole:")
+    for line in shown:
+        print("    " + line)
+    check(sum(line.count("<redacted>") for line in shown) == 3, "those lines hold 3 <redacted>")
+    for name, needle in stays.items():
+        count = in_runs(needle)
+        check(count == 1, "%s: still there (%d), not over-redacted" % (name, count))
+    with open(os.path.join(RUNS, "MANIFEST.tsv")) as handle:
+        row = [line.split("\t") for line in handle if line.startswith(planted + "\t")][0]
+    check(int(row[3]) == 3, "MANIFEST.tsv records %s replacements for the file" % row[3].strip())
+    print("INFO  outside the pattern, so it does not replace these:")
+    for name, needle in outside.items():
+        print("INFO    %s: %d left in the copy" % (name, in_runs(needle)))
+
+    stage("2. The same plant with SESSION's substitution taken out of a copy of the script: can this control fail?")
+    if real.count(SESSION_CALL) != 1:
+        check(False, "the substitution line was not found once in the script")
+        return
+    build_tree(real.replace(SESSION_CALL, b"    session_hits = 0\n"))
+    gone_2, _, _ = plant(planted)
+    code, _ = run()
+    check(code == 0, "exit %d, so gitleaks does not flag this shape, and SESSION is all that stands in its way" % code)
+    for name, needle in gone_2.items():
+        count = in_runs(needle)
+        check(count == 1, "%s: %d left in the copy, so the first stage's 0 came from SESSION" % (name, count))
+
+    stage("3. Nothing the script printed, and no cluster")
+    printed = b"".join(outputs)
+    everything = {**gone, **stays, **outside, **gone_2}
+    leaked = [name for name, needle in everything.items() if needle in printed]
+    check(not leaked, "%d planted values in %d runs' output" % (len(leaked), len(outputs)))
+    with open(STUB_LOG) as handle:
+        calls = handle.read().splitlines()
+    print("kubectl was the stub, and exited 1 on each of its %d calls: %s" % (len(calls), sorted(set(calls))))
+
+
+print("# Negative control for the SESSION pattern in scripts/publish-evidence.sh, on a scratch copy of the tree")
+print("# date (UTC): " + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+print("# command: python3 -I -B control.py <scratch dir>. The script is publish-evidence-session-control-script-1.txt beside this file")
+print("# commit: " + subprocess.run(["git", "-C", REPO, "rev-parse", "--short=12", "HEAD"], stdout=subprocess.PIPE).stdout.decode().strip())
+with open(REPO + "/scripts/publish-evidence.sh", "rb") as handle:
+    print("# scripts/publish-evidence.sh sha256: " + hashlib.sha256(handle.read()).hexdigest())
+print("# Output below: case names and counts, never a value. Lines starting with | are what the script printed. Nothing real was planted, and no cluster was read.")
+shutil.rmtree(T, ignore_errors=True)
+try:
+    main()
+finally:
+    shutil.rmtree(T, ignore_errors=True)
+print("\n--- Scratch tree removed: " + str(not os.path.exists(T)))
+print("--- Summary: %d failed" % failures)
+sys.exit(1 if failures else 0)
