@@ -7,7 +7,7 @@ which alerts exist, what each can and cannot see, where they go, and how the pat
 **Status.** The stack ran on the one local kind cluster on 2026-11-04 and 2026-11-05. Targets, rules, dashboards, log search and
 several alerts were proved by queries, not by pod status, and each result links its file under
 [`docs/evidence/runs/`](evidence/README.md), or names it under `.local/evidence-raw/` for the runs of 2026-11-05 that `make publish-evidence` has not copied yet.
-`make test-alert ENV=dev` passed once. `make test-alert ENV=prod-sim` has not run. Each remaining `VERIFY` and `MEASURE` marker is a
+`make test-alert` passed once in each environment. Each remaining `VERIFY` and `MEASURE` marker is a
 claim that still needs a real run. This stack is sized for a laptop and has no redundancy: one Prometheus, one Alertmanager, one
 Loki, no paging. It is local and production-inspired, and it makes no claim of production readiness.
 
@@ -233,8 +233,8 @@ Runbook: [Plane debugging](runbooks/plane-app-debugging.md), and [Backup and res
 
 | Alert | Fires on | `for` | Severity | Cannot see | Seen |
 |---|---|---|---|---|---|
-| `PlaneApiDown` | `probe_success{probe="api-instance"} == 0` | 1m | critical | Postgres, because the route is cached | Fired in `make test-alert ENV=dev` on 2026-11-05, through to the sink and resolved. See [How alerts are tested](#how-alerts-are-tested). Also fired on the first boot, with Plane absent. See below |
-| `PlaneApiDatabaseProbeFailing` | `probe_success{probe="api-db"} == 0` | 1m | critical | Any write path | Fired beside `PlaneApiDown` in that test, through to the sink and resolved, because the API was gone and not Postgres (`.local/evidence-raw/MON-1-20261105T055029Z-sink-final.txt`). Also fired on the first boot, with Plane absent. See below. Pending for one sample in each Postgres round of the pod restart drill |
+| `PlaneApiDown` | `probe_success{probe="api-instance"} == 0` | 1m | critical | Postgres, because the route is cached | Fired in `make test-alert` in each environment on 2026-11-05, through to the sink and resolved. See [How alerts are tested](#how-alerts-are-tested). Also fired on the first boot, with Plane absent. See below |
+| `PlaneApiDatabaseProbeFailing` | `probe_success{probe="api-db"} == 0` | 1m | critical | Any write path | Fired beside `PlaneApiDown` in that test in dev, through to the sink and resolved, because the API was gone and not Postgres (`.local/evidence-raw/MON-1-20261105T055029Z-sink-final.txt`). Also fired on the first boot, with Plane absent. See below. Pending for one sample in each Postgres round of the pod restart drill |
 | `PlaneFrontendDown` | `probe` is `frontend` or `live`, and it fails | 2m | warning | A page that loads and does not work, an old page a browser kept in its cache ([live-dev](evidence/branding/live-dev/README.md)), WebSocket auth | Fired on the first boot, with Plane absent. See below |
 | `PlanePodCrashLooping` | A Plane container waiting in `CrashLoopBackOff` | 1m | critical | `ImagePullBackOff`, or a single restart | None in evidence |
 | `PlanePostgresDown` | `pg_up == 0` | 1m | critical | A slow or full database that still answers. A stopped exporter leaves no series | Fired on the first boot, before Postgres was ready. See below. Pending in each Postgres round of the pod restart drill |
@@ -434,21 +434,21 @@ Limits to keep in mind:
 ## How alerts are tested
 
 `make test-alert ENV=dev` (or `ENV=prod-sim`) runs `scripts/test-alert.sh`. It proves one complete path for one alert,
-`PlaneApiDown`, including the other environment staying quiet. **It passed once in dev, and has not run in prod-sim.**
+`PlaneApiDown`, including the other environment staying quiet. **It passed once in each environment, on 2026-11-05.**
 
-| Stage | What the script does | Deadline after injection | Dev, 2026-11-05 |
-|---|---|---:|---:|
-| Preflight | Prometheus, Alertmanager and sink are reachable, the rule is loaded, the alert is not already active, and both environments' API probes are healthy | | Passed |
-| Pause | Pauses auto-sync on the root, then the target app, because self-heal would undo the scale in about 5 seconds | | Done |
-| Inject | Scales `plane-api-wl` to 0 | 0 | 0 |
-| Pending | Alert visible in Prometheus | 60s | 7s |
-| Firing | Alert `firing` in Prometheus | 150s | 68s |
-| Alertmanager | Alert active in Alertmanager | 165s | 68s |
-| Sink | A `firing` webhook for this namespace in the sink's log | 180s | 78s |
-| Isolation | `PlaneApiDown` not active in the other namespace, no firing webhook for it, and no new `PlaneApiDown`, `PlaneApiDatabaseProbeFailing` or `PlaneFrontendDown` there. Other alerts there are unrelated and do not count ([test-alert-isolation-stub-1.txt](evidence/runs/test-alert-isolation-stub-1.txt), a stub) | | PASS |
-| Recover | Scales back to the original replica count | | Done |
-| Resolved | A `resolved` webhook reaches the sink | 300s after recovery | 91s after recovery |
-| Isolation again | Same check | | PASS |
+| Stage | What the script does | Deadline after injection | Dev, 05:50Z | Prod-sim, 07:25Z |
+|---|---|---:|---:|---:|
+| Preflight | Prometheus, Alertmanager and sink are reachable, the rule is loaded, the alert is not already active, and both environments' API probes are healthy | | Passed | Passed |
+| Pause | Pauses auto-sync on the root, then the target app, because self-heal would undo the scale in about 5 seconds | | Done | Done |
+| Inject | Scales `plane-api-wl` to 0 | 0 | 0 | 0 |
+| Pending | Alert visible in Prometheus | 60s | 7s | 24s |
+| Firing | Alert `firing` in Prometheus | 150s | 68s | 83s |
+| Alertmanager | Alert active in Alertmanager | 165s | 68s | 83s |
+| Sink | A `firing` webhook for this namespace in the sink's log | 180s | 78s | 83s |
+| Isolation | `PlaneApiDown` not active in the other namespace, no firing webhook for it, and no new `PlaneApiDown`, `PlaneApiDatabaseProbeFailing` or `PlaneFrontendDown` there. Other alerts there are unrelated and do not count ([test-alert-isolation-stub-1.txt](evidence/runs/test-alert-isolation-stub-1.txt), a stub) | | PASS | PASS |
+| Recover | Scales back to the original replica count | | Done | Done |
+| Resolved | A `resolved` webhook reaches the sink | 300s after recovery | 91s after recovery | 61s after recovery |
+| Isolation again | Same check | | PASS | PASS |
 
 A trap puts the replicas and auto-sync back on any exit, including Ctrl-C. It cannot run after `kill -9` or a power
 loss. If that happens, see [Argo sync stuck](runbooks/argo-sync-stuck.md#auto-sync-was-left-paused).
@@ -457,18 +457,16 @@ Evidence goes to `.local/evidence-raw/alert-test-<env>-<stamp>.json`, with `PASS
 seconds per stage. `make publish-evidence` copies it to `docs/evidence/runs/` for it to count.
 
 From configuration, the worst case to the sink is the 5s `preStop` sleep, a 15s probe, 15s evaluation, 1m `for` and 10s `group_wait`. Those
-add up to 105 seconds, as the script's header says. The comment in `rules-plane.yaml` says about 2 minutes. Those are calculations. Measured on 2026-11-05 at 05:50Z in dev, at commit `9c8e098`: 78 seconds from injection
-to the firing webhook at the sink, one run (`.local/evidence-raw/alert-test-dev-20261105T055044Z.json`). Earlier, a temporary `vector(1)` rule with `for: 1m` took 70 seconds from pending to the sink, and the resolved line arrived 330 seconds
+add up to 105 seconds, as the script's header says. The comment in `rules-plane.yaml` says about 2 minutes. Those are calculations. Measured on 2026-11-05, one run each, from injection to the firing webhook at the sink: 78 seconds in dev and 83 seconds in prod-sim
+(`.local/evidence-raw/alert-test-dev-20261105T055044Z.json`, `.local/evidence-raw/alert-test-prod-sim-20261105T072541Z.json`). Earlier, a temporary `vector(1)` rule with `for: 1m` took 70 seconds from pending to the sink, and the resolved line arrived 330 seconds
 after the rule was deleted ([monitoring-alert-path-1.txt](evidence/runs/monitoring-alert-path-1.txt)).
-[[MEASURE: seconds from injection to firing webhook at the sink, per environment]]
 
-`make test-alert ENV=dev` delivered firing and resolved webhooks, and read result PASS and isolation PASS: `plane-prod-sim` stayed quiet, and auto-sync came back on `plane-dev` and `root`
+`make test-alert ENV=dev` delivered firing and resolved webhooks, and read result PASS and isolation PASS at `9c8e098`: `plane-prod-sim` stayed quiet, and auto-sync came back on `plane-dev` and `root`
 (`.local/evidence-raw/MON-1-20261105T055029Z.txt`). The sink received `PlaneApiDown` and `PlaneApiDatabaseProbeFailing`, firing at 05:52:05Z and resolved at 05:53:35Z, and only `Watchdog` otherwise (`.local/evidence-raw/MON-1-20261105T055029Z-sink-final.txt`). `make test-e2e ENV=dev` passed afterwards, 45 PASS and 1 SKIP (`.local/evidence-raw/smoke-dev-20261105T055933Z-16552.json`).
-That is one alert on one fault in one environment, and the sink is the end of the path, so no person was told.
 
-`make test-alert ENV=prod-sim` did not start. On 2026-11-05 the session's permission system refused the command, so nothing was paused or scaled (`.local/evidence-raw/MON-2-20261105T060633Z.txt`).
+`make test-alert ENV=prod-sim` read the same at `3227c91`: result PASS and isolation PASS, `plane-dev` quiet, and auto-sync back on `plane-prod-sim` and `root` (`.local/evidence-raw/MON-2-20261105T072541Z-run.txt`). A first attempt at 06:08Z was refused by the session's permission system before anything ran, and the owner then approved the run (`.local/evidence-raw/MON-2-20261105T060633Z.txt`).
 
-[[VERIFY: make test-alert ENV=prod-sim delivers firing and resolved webhooks and dev stays quiet]]
+That is one alert on one fault, once in each environment, and the sink is the end of the path, so no person was told.
 
 The preflight requires both environments' API probes to be healthy, so this test cannot run with prod-sim down.
 
