@@ -815,7 +815,7 @@ restore_clean() {
     if [[ ! -f "$RESTORE_CLEAN_MARKER" ]]; then
       problem="$(clean_environment_problem)"
       if [[ -n "$problem" ]]; then warn "a real run would refuse right now: $problem. $(clean_replace_advice)"; fi
-    elif recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+    elif recovery_marker_cluster_gone && grep -qE '^(done|data-back|overwrote) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so a real run starts again from the beginning"
     fi
     ok "PLAN_ONLY=yes: nothing was changed"
@@ -825,10 +825,11 @@ restore_clean() {
   clean_refuse_another_run
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
     under_way=yes
-    # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not.
-    if recovery_marker_cluster_gone && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
+    # The cluster it was restoring into is gone, so nothing it finished still counts, with a new one here or not. Nor
+    # does what it overwrote there: nothing has been overwritten on a new one. restore-<env>-*.json still records it.
+    if recovery_marker_cluster_gone && grep -qE '^(done|data-back|overwrote) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so it starts again from the beginning"
-      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' -e '/^data-job /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' -e '/^data-job /d' -e '/^overwrote /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
       mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
     fi
   else
