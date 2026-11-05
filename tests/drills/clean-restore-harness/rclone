@@ -1,0 +1,5 @@
+#!/bin/bash
+# Stub rclone for the lines of the backup Job that tests/drills/clean-restore-harness.sh runs on real folders. Only what
+# those lines ask of it: rclone lsf -R --files-only <folder>, which prints each file's path under that folder.
+[[ "$1 $2 $3" == "lsf -R --files-only" ]] || { printf 'stub rclone: unhandled: %s\n' "$*" >&2; exit 99; }
+cd "$4" && find . -type f | sed 's|^\./||'

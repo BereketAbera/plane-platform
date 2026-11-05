@@ -38,7 +38,17 @@ def log(line):
 
 def server_up():
     c = cluster()
-    return c.get("exists") and not c.get("stopped") and "infisical-secrets" in c.get("zero", {}) and c.get("workloads", {}).get("infisical/infisical", 1) > 0
+    return c.get("exists") and not c.get("stopped") and not c.get("infisical_migrating") and "infisical-secrets" in c.get("zero", {}) and c.get("workloads", {}).get("infisical/infisical", 1) > 0
+
+
+def migrations_go_on():
+    """A fresh server answers nothing until its migrations are done. Each look at its status lets them go on a bit."""
+    c = cluster()
+    if c.get("infisical_migrating") and "infisical-secrets" in c.get("zero", {}):
+        c["infisical_migrating"] -= 1
+        with open(f"{S}/cluster.json.api", "w") as f:
+            json.dump(c, f)
+        os.replace(f"{S}/cluster.json.api", f"{S}/cluster.json")
 
 
 def jwt(claims):
@@ -100,6 +110,8 @@ class H(BaseHTTPRequestHandler):
             return self.out(503 if os.path.exists(f"{S}/registry-down") else 200, {})
         if u.path.startswith("/fake/prometheus"):
             return self.out(200, {"data": {"result": [{"value": [0, "1"]}]}})
+        if u.path == "/api/status":
+            migrations_go_on()
         if not server_up():
             return self.out(503, {"message": "no available server"})
         d = st()

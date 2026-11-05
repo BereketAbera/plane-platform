@@ -6,21 +6,30 @@
 #   HARNESS_SOURCE=<another checkout> tests/drills/clean-restore-harness.sh
 #                                                the same scenarios against other code, to see them fail
 #
-# macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. It takes about 15 minutes, in the background.
+# macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. It takes about half an hour, in the background.
 #
 # WHAT IT DOES. Each scenario copies the real scripts into a throwaway tree under $TMPDIR and runs them there:
 # restore.sh, backup.sh, destroy.sh, up.sh, cluster-up.sh, secret-zero.sh, infisical-bootstrap.sh,
 # infisical-seed.sh, the drill, and every library they source. Real: bash 3.2, jq, yq, shasum, openssl, git, the recovery
-# sets and every other file on disk, the retention lines of the Plane backup Job, and the order of everything.
-# Stubbed, in tests/drills/clean-restore-harness/: kubectl, kind, docker, df, sleep, Terraform, tests/e2e/smoke.py,
-# gitops-publish.sh, status.sh, build-images.sh, the Infisical API, and curl, which refuses anything but that API.
-# Nothing here can reach the cluster, the registry or Docker on this machine.
+# sets and every other file on disk, and, as written and on real folders, the lines of the Plane backup Job for its
+# retention and for what it records about uploaded rows. Stubbed, in tests/drills/clean-restore-harness/: kubectl, kind,
+# docker, df, sleep, rclone, Terraform, tests/e2e/smoke.py, gitops-publish.sh, status.sh, build-images.sh, the Infisical
+# API, and curl, which refuses anything but that API. Nothing here can reach the cluster, the registry or Docker on
+# this machine.
+#
+# WHAT ITS ORDER CHECKS COVER. The calls the scripts make are real, and so is their order, but a check sees only the
+# calls it names. S1 names the steps of a whole clean restore, and others name a few each. So a line nothing names can
+# go, and every scenario still pass. tests/drills/clean-restore-mutants.sh removes such lines one at a time, and says
+# which the scenarios catch and which they do not. Passing here says nothing about a call that list does not catch.
 #
 # WHAT IT PROVES. The logic of these scripts, against a model of the platform that keeps state: which step runs when,
 # what each refusal refuses and says, what is left on disk, what a resume does, and that a stub's state is read back.
 # Deployments have replicas, pods go when they reach zero, an Application reads Synced and Healthy only while what it
 # owns matches Git, self-heal reverts a scale unless auto-sync is paused, the API refuses an unknown or expired token,
-# a backup and a restore carry the API's database, and a token minted after a dump is not in that dump.
+# a backup and a restore carry the API's database, and a token minted after a dump is not in that dump. A fresh server
+# answers only after its migrations, and an API on a restored database only after the migrator. A Job left running has
+# not done its work yet. Each thing that must not happen, such as starting what a running restore Job writes under,
+# is logged as a line starting ERROR, and any scenario can look for those.
 #
 # WHAT IT DOES NOT PROVE. Anything about the platform itself. No Pod, Job, Argo CD, Postgres, Infisical, Traefik or disk is
 # real here. A stub answers as the real thing was seen to answer, so a change in the real thing passes here and fails in
@@ -119,6 +128,7 @@ reset() {
   export UP_WAIT_TRAEFIK_SECONDS=15 UP_WAIT_ROUTE_SECONDS=15 UP_WAIT_INFISICAL_SECONDS=15 UP_WAIT_APPS_SECONDS=15 INFISICAL_WAIT_SECONDS=15 CLEAN_WAIT_APPS_SECONDS=3
   unset ENV BACKUP KEEP CONFIRM SKIP_BACKUP PLAN_ONLY SKIP_E2E ENVS BACKUP_DEV BACKUP_PROD_SIM PURGE LOSE_CLUSTER RESTORE_MODE
   unset ALLOW_LOW_DISK ALLOW_NO_SENTINEL ALLOW_NEWER_INFISICAL_BACKUP ALLOW_NO_ADMIN_TOKEN ALLOW_STALE_PLANE_SECRETS ALLOW_SECRET_KEY_MISMATCH
+  unset ALLOW_RESUME_OVERWRITE ALLOW_BACKUP_DURING_RESTORE RESTORE_RESUME OVERRIDE_DEV_CHECK
   unset MIN_FREE_DISK_GIB RENEW_ADMIN_TOKEN INFISICAL_RESTORED UP_STOP_AFTER BACKUP_RETENTION_DAYS
   PORT=$((20000 + RANDOM % 10000))
   export INFISICAL_URL="http://127.0.0.1:$PORT"
@@ -224,6 +234,9 @@ reseal() { # backup-dir file: after a change to a file in a backup, its checksum
 }
 set_disk() { printf '%s' "$(($1 * 1048576))" > "$H/state/free-kib"; }
 dirty_tree() { printf 'changed\n' >> "$H/monitoring/README.md"; }
+empty_cluster() { # A cluster that holds nothing, as make up UP_STOP_AFTER=cluster leaves it.
+  edit_cluster 'c["plane_pvcs"] = False; c["infisical_pvc"] = False; c["zero"] = {}; c["workloads"] = {"infisical/infisical": 1}; c["identities"] = {}; c["users"] = {}; c["objects"] = {}'
+}
 leave_paused() { # app...: auto-sync off, as a killed run leaves it
   local app
   for app in "$@"; do
@@ -244,6 +257,45 @@ s = os.environ["S"]; c = json.load(open(f"{s}/cluster.json"))
 c.setdefault("workloads", {})[os.environ["K"]] = int(os.environ["N"])
 json.dump(c, open(f"{s}/cluster.json", "w"))'
   done
+}
+edit_cluster() { # Python statements on c, what the fake cluster holds.
+  C="$1" S="$H/state" python3 -I -c '
+import json, os
+s = os.environ["S"]; c = json.load(open(f"{s}/cluster.json"))
+exec(os.environ["C"])
+json.dump(c, open(f"{s}/cluster.json", "w"))'
+}
+cluster_holds() { # namespace users objects: what that namespace holds right now
+  edit_cluster "c.setdefault('users', {})['$1'] = $2; c.setdefault('objects', {})['$1'] = $3"
+}
+cluster_value() { jq -r "$1" "$H/state/cluster.json"; }
+plane_counts() { # users: what the next Plane backups count
+  printf '{"users":%s,"workspaces":16,"projects":31,"issues":132,"file_assets":34}' "$1" > "$H/state/plane-counts.json"
+}
+fail_line_has() { grep '^FAIL' "$OUT" | grep -F -- "$1" >/dev/null; }
+step_status_is() { # evidence-file step status
+  jq -e --arg s "$2" --arg st "$3" 'any(.steps[]; .step == $s and .status == $st)' "$1"
+}
+# In a session of its own, so a signal can reach all of it, as Ctrl-C does. A shell starts a background job with SIGINT
+# ignored, and a script cannot trap what it was started ignoring, so this puts that back as a terminal would have it.
+# Sets DETACHED and OUT.
+start_detached() { # command...
+  OUT="$H/state/detached.txt"
+  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
+  DETACHED=$!
+}
+wait_for_log() { # pattern
+  local waited=0
+  until log_has "$1" || [[ "$waited" -gt 900 ]]; do
+    /bin/sleep 0.2
+    waited=$((waited + 1))
+  done
+  log_has "$1"
+}
+stop_detached() { # signal. Sets RC to how it ended.
+  kill "-$1" -- "-$DETACHED" 2>/dev/null
+  wait "$DETACHED" 2>/dev/null
+  RC=$?
 }
 write_marker() { # Under way, as a run that got this far leaves it.
   local iid dev prod
@@ -290,7 +342,7 @@ S1() {
   run scripts/restore.sh clean latest
   check "exit 0 (got $RC)" test "$RC" -eq 0
   show_tail
-  check "order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, dev, prod-sim" order \
+  check "order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, then each environment" order \
     'kind create cluster' \
     'tf local apply' \
     'kc patch application infisical pause' \
@@ -301,7 +353,22 @@ S1() {
     'kc patch application infisical resume' \
     'tf plan' 'tf apply saved-plan' \
     'kc publish identity ns=plane-dev id=i-dev' 'kc publish identity ns=plane-prod-sim id=i-prod' \
-    'kc apply Job plane-restore ns=plane-dev' 'kc apply Job plane-restore ns=plane-prod-sim' 'smoke --env dev' 'smoke --env prod-sim'
+    'kc apply Job plane-restore-guard ns=plane-dev' 'kc apply Job plane-restore-guard-objects ns=plane-dev' \
+    'kc patch application root pause' 'kc patch application plane-dev pause' \
+    'kc scale deployment/plane-api-wl --replicas=0 ns=plane-dev' 'kc scale deployment/plane-live-wl --replicas=0 ns=plane-dev' \
+    'kc apply Job plane-restore ns=plane-dev' \
+    'kc exec valkey FLUSHALL ns=plane-dev' 'kc exec rabbitmq purge ns=plane-dev' 'kc apply Job plane-restore-migrate ns=plane-dev' \
+    'kc scale deployment/plane-api-wl --replicas=1 ns=plane-dev' 'kc scale deployment/plane-live-wl --replicas=1 ns=plane-dev' \
+    'kc exec proof-decrypt ns=plane-dev' 'smoke --env dev --mode verify proof' \
+    'kc patch application plane-dev resume' 'kc patch application root resume' \
+    'kc apply Job plane-restore-guard ns=plane-prod-sim' 'kc apply Job plane-restore-guard-objects ns=plane-prod-sim' \
+    'kc patch application root pause' 'kc patch application plane-prod-sim pause' \
+    'kc scale deployment/plane-api-wl --replicas=0 ns=plane-prod-sim' \
+    'kc apply Job plane-restore ns=plane-prod-sim' \
+    'kc exec valkey FLUSHALL ns=plane-prod-sim' 'kc exec rabbitmq purge ns=plane-prod-sim' 'kc apply Job plane-restore-migrate ns=plane-prod-sim' \
+    'kc scale deployment/plane-api-wl --replicas=1 ns=plane-prod-sim' \
+    'kc exec proof-decrypt ns=plane-prod-sim' 'smoke --env prod-sim --mode verify proof' \
+    'smoke --env dev --mode verify$' 'smoke --env prod-sim --mode verify$'
   check "no database or cache was replaced under a running server" no_log '^ERROR'
   check "root was never paused for Infisical" order 'kc patch application infisical resume' 'kc publish identity' 'kc patch application root pause'
   check "no admin bootstrap call" no_log 'api POST bootstrap'
@@ -431,6 +498,22 @@ S7() {
   check "what it replaced is kept" test -n "$(find "$H/.local/secret-zero" -maxdepth 2 -path '*archive-pre-restore-*' -name infisical-admin.json)"
   check "Terraform state is the backup's" jq -e '.lineage == "L" and .serial == 12' "$H/.local/terraform/infisical/terraform.tfstate"
   check "the state it replaced is kept" test -n "$(find "$H/.local/terraform/infisical" -name 'terraform.tfstate.pre-restore-*')"
+
+  # The key itself in an archive, and another in its place. secret-zero.sh applies what is in place, and the dump can be
+  # read only with the old one, so this is what putting them back is for: no token path brings it back.
+  reset
+  take_backups
+  want="$(sum_zero)"
+  mkdir "$H/.local/secret-zero/archive-20260101T000000Z"
+  mv "$H/.local/secret-zero/ENCRYPTION_KEY" "$H/.local/secret-zero/archive-20260101T000000Z/"
+  printf 'a-key-from-another-instance' > "$H/.local/secret-zero/ENCRYPTION_KEY"
+  lose_cluster
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "the key this dump needs is in an archive: found by checksum, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "the key this dump needs is back in place" test "$want" = "$(sum_zero)"
+  check "and the other is kept" grep -l 'a-key-from-another-instance' "$H"/.local/secret-zero/archive-pre-restore-*/ENCRYPTION_KEY
 }
 
 S8() {
@@ -1132,14 +1215,20 @@ S28() {
 
   reset
   take_backups
-  # An empty cluster that stays creates nothing, so low disk is not a reason to refuse it.
-  S="$H/state" python3 -I -c '
-import json, os
-s = os.environ["S"]; c = json.load(open(f"{s}/cluster.json")); c["plane_pvcs"] = False; c["infisical_pvc"] = False; c["zero"] = {}; c["workloads"] = {}
-json.dump(c, open(f"{s}/cluster.json", "w"))'
+  # An empty cluster that stays creates nothing, and it still has all of it to pull, and the restores after that
+  # check the floor. So it needs that much plus the floor (finding 9 of the second review).
+  empty_cluster
   set_disk 12
   run scripts/restore.sh clean latest PLAN_ONLY=yes
-  check "an empty cluster that stays, 12 GiB: no disk refusal (got $RC)" test "$RC" -eq 0
+  check "an empty cluster that stays, 12 GiB: refused, it still has 12.94 GiB to pull (got $RC)" test "$RC" -ne 0
+  check "and the plan says so" out_has "this empty cluster still has 12.94 GiB to pull"
+  set_disk 22
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "22 GiB: refused, 12.94 plus the 10 GiB floor is 22.94 (got $RC)" test "$RC" -ne 0
+  set_disk 23
+  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  check "23 GiB: goes through (got $RC)" test "$RC" -eq 0
+  check "and the disk line is about this cluster, and not a delete" no_out "after a delete"
   show_tail
 
   reset
@@ -1192,9 +1281,13 @@ S29() {
   reset
   take_backups
   touch "$H/state/registry-down"
+  lose_cluster
   run scripts/restore.sh clean latest PLAN_ONLY=yes
-  check "the registry merely stopped, its volume there: no refusal (got $RC)" test "$RC" -eq 0
+  check "no cluster, the registry merely stopped, its volume there: no refusal, nothing is lost by finding out later (got $RC)" test "$RC" -eq 0
   check "and it says up.sh will check" out_has "scripts/up.sh starts it and checks the digests then"
+  reset
+  take_backups
+  touch "$H/state/registry-down"
   touch "$H/state/registry-volume-gone"
   run scripts/restore.sh clean latest PLAN_ONLY=yes
   check "the registry and its volume gone, as after PURGE=yes: refuses" test "$RC" -ne 0
@@ -1379,6 +1472,18 @@ S32() {
   check "the older complete one goes" test ! -e "$H/.local/backups/infisical/$good"
   check "and the failure older than it" test "$(ls "$H/.local/backups/infisical" | wc -l | tr -d ' ')" -eq 1
 
+  # A backup that could not finish its set removes nothing, even where KEEP would have it.
+  reset
+  take_backups
+  /bin/sleep 1
+  take_backups
+  /bin/sleep 1
+  stop_api
+  ( cd "$H" && KEEP=1 scripts/backup.sh infisical ) > "$H/state/o6.txt" 2>&1
+  /bin/sleep 1
+  start_api
+  check "a backup with no complete set, KEEP=1: both complete ones stay" test "$(ls "$H/.local/backups/infisical" | wc -l | tr -d ' ')" -eq 3
+
   reset
   take_backups
   /bin/sleep 1
@@ -1464,6 +1569,11 @@ S34() {
   check "0 users: names the way to it" out_has "BACKUP_DEV=$old"
   check "a sentinel with 0 workspaces in the dump: warned" out_has "records sentinel workspace s, and its dump counts 0 workspaces"
   rm "$H/state/plane-counts.json"
+  # Finding 20 of the second review: on a live cluster, the plan's advice is the refusal's.
+  check "a plan on a live cluster says what a real run would" out_has "a real run would refuse right now"
+  check "and the advice skips a backup, which would take over BACKUP=latest" out_has "make destroy CONFIRM=yes SKIP_BACKUP=yes, then make restore-clean BACKUP=$(ls "$H/.local/backups/infisical" | tail -1)"
+  check "and says why" out_has "Without SKIP_BACKUP=yes, make destroy backs up what is there now"
+  check "and not the advice that makes BACKUP=latest name the empty set" no_out "Run make destroy first"
 }
 
 S35() {
@@ -1516,7 +1626,10 @@ S36() {
   check "the manifest asks for the larger lock table" grep -F 'max_locks_per_transaction=128' "$H/infisical/manifests/postgres.yaml"
 }
 
-SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36"
+# shellcheck source=clean-restore-harness/scenarios-second-review.sh
+source "$STUBS/scenarios-second-review.sh"
+
+SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22"
 
 for s in $SCENARIOS; do
   case " ${ONLY:-$SCENARIOS} " in

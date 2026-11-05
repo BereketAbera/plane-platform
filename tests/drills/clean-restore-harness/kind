@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Stub kind for tests/drills/clean-restore-harness.sh. A new cluster is empty, and its Infisical boots uninitialized."""
-import json, os, re, sys
+import json, os, re, subprocess, sys
 
 S = os.environ["H_STATE"]
 
@@ -38,9 +38,15 @@ if sys.argv[1:3] == ["get", "clusters"]:
         print("plane-platform")
     sys.exit(0)
 if sys.argv[1:3] == ["delete", "cluster"]:
+    if os.path.exists(f"{S}/kind-delete-does-nothing"):
+        log("kind delete cluster, which left the cluster there")
+        sys.exit(0)
     jsave("cluster.json", {"exists": False, "generation": cl.get("generation", 1)})
     jsave("jobs.json", {})
     log("kind delete cluster")
+    # So a scenario can change what the drill compares across the delete.
+    if os.path.exists(f"{S}/kind-delete-hook"):
+        subprocess.run(["/bin/bash", f"{S}/kind-delete-hook"], check=True)
     # What the host gets back, if this scenario tracks free disk. See stubs df and docker.
     if os.path.exists(f"{S}/free-kib"):
         m = re.match(r"([0-9.]+)GB", read("kind-volume-size", "12.22GB"))
@@ -54,7 +60,11 @@ if sys.argv[1:3] == ["create", "cluster"]:
     if cl.get("exists"):
         print("the cluster exists", file=sys.stderr)
         sys.exit(1)
-    jsave("cluster.json", {"exists": True, "generation": cl.get("generation", 0) + 1, "workloads": {"infisical/infisical": 1}})
+    if os.path.exists(f"{S}/kind-create-fails"):
+        print("ERROR: failed to create cluster, as the scenario asked", file=sys.stderr)
+        sys.exit(1)
+    # infisical_migrating: a fresh server does not answer until its migrations are done, which the fake API counts.
+    jsave("cluster.json", {"exists": True, "generation": cl.get("generation", 0) + 1, "workloads": {"infisical/infisical": 1}, "infisical_migrating": 3})
     jsave("jobs.json", {})
     api = jload("api.json", {})
     api.update(initialized=False, tokens=[], projects={}, password="")
@@ -63,6 +73,9 @@ if sys.argv[1:3] == ["create", "cluster"]:
         f.write("update")
     sys.exit(0)
 if sys.argv[1:3] == ["export", "kubeconfig"]:
+    if os.path.exists(f"{S}/kind-export-fails"):
+        print('ERROR: could not locate any control plane nodes for cluster named "plane-platform"', file=sys.stderr)
+        sys.exit(1)
     sys.exit(0)
 print("stub kind: unhandled", sys.argv[1:], file=sys.stderr)
 sys.exit(99)

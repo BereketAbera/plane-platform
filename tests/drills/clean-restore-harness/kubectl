@@ -6,6 +6,10 @@ Deployments have replicas, pods exist only while replicas are above zero, Applic
 only when what they own matches Git, self-heal reverts a scale unless auto-sync is paused, and a rendered Secret
 holds what the fake Infisical holds, once that environment's identity is published. Anything it has no answer
 for exits 99, so a new call in a script shows up as a failure and not as a quiet success.
+
+A scenario can make it fail as a broken API does: $H_STATE/kubectl-fail holds one regular expression per line, matched
+against the namespace and the command, and a line that starts with once: is used up by its first match.
+What must never happen is logged as a line starting ERROR, and S1 and others look for those.
 """
 import base64, json, os, re, subprocess, sys
 
@@ -64,6 +68,30 @@ if not cl.get("exists") or cl.get("stopped"):
     print("The connection to the server was refused", file=sys.stderr)
     sys.exit(1)
 cmd = " ".join(args)
+
+
+def asked_to_fail():
+    path = f"{S}/kubectl-fail"
+    if not os.path.exists(path):
+        return False
+    with open(path) as f:
+        lines = f.read().splitlines()
+    for i, line in enumerate(lines):
+        once = line.startswith("once:")
+        pattern = line[5:] if once else line
+        if pattern and re.search(pattern, f"{ns or ''} {cmd}"):
+            if once:
+                del lines[i]
+                with open(path, "w") as f:
+                    f.write("\n".join(lines) + "\n")
+            return True
+    return False
+
+
+if asked_to_fail():
+    log(f"kc failed, as the scenario asked: {ns or ''} {cmd}")
+    print("Unable to connect to the server: net/http: TLS handshake timeout", file=sys.stderr)
+    sys.exit(1)
 api = jload("api.json", {})
 b64 = lambda s: base64.b64encode(s.encode()).decode()
 PLANE_APPS = ["plane-api-wl", "plane-worker-wl", "plane-beat-worker-wl", "plane-live-wl"]
@@ -132,6 +160,24 @@ def app_object(name):
     }
 
 
+def running_restore_jobs(namespace=None):
+    """Restore Jobs still changing data, in one namespace or any. A guard only reads, so it does not count."""
+    return [n for n, j in jload("jobs.json", {}).items()
+            if j["state"] == "Running" and n.startswith("plane-restore-") and "guard" not in n and (namespace is None or j.get("ns") == namespace)]
+
+
+def apps_up(namespace):
+    return any(workloads().get(f"{namespace}/{d}", 1) > 0 for d in PLANE_APPS)
+
+
+def state_text(name, default=""):
+    try:
+        with open(f"{S}/{name}") as f:
+            return f.read()
+    except FileNotFoundError:
+        return default
+
+
 def server_image():
     try:
         with open(f"{S}/server-image") as f:
@@ -178,6 +224,8 @@ if args[0] == "patch" and args[1] == "application":
             sys.exit(1)
         cl.setdefault("paused", {})[name] = False
         log(f"kc patch application {name} resume")
+        if running_restore_jobs(None if name == "root" else {"infisical": "infisical", "plane-dev": "plane-dev", "plane-prod-sim": "plane-prod-sim"}.get(name, "-")):
+            log(f"ERROR auto-sync on {name} came back with a restore Job still running")
     else:
         log(f"kc patch application {name} other")
     jsave("cluster.json", cl)
@@ -209,6 +257,11 @@ if args[0] == "get" and args[1] == "secret":
             }
             if name in m:
                 data = {k: ren[v] for k, v in m[name].items() if v in ren}
+                # What a scenario says differs from Infisical: lines of namespace, Secret, key.
+                for line in state_text("rendered-tamper").splitlines():
+                    t_ns, t_name, t_key = line.split()
+                    if t_ns == ns and t_name == name and t_key in data:
+                        data[t_key] += "-differs"
     if data is None:
         print(f'secret "{name}" not found', file=sys.stderr)
         sys.exit(NOT_FOUND)
@@ -249,7 +302,10 @@ if args[0] == "get" and args[1] == "pvc":
         print("persistentvolumeclaim/backups")
         sys.exit(0)
     if len(args) > 2 and args[2] == "data-infisical-postgres-0":
-        sys.exit(0 if cl.get("infisical_pvc") else NOT_FOUND)
+        if cl.get("infisical_pvc"):
+            print("persistentvolumeclaim/data-infisical-postgres-0")
+            sys.exit(0)
+        sys.exit(0 if "--ignore-not-found" in args else NOT_FOUND)
     print("persistentvolumeclaim/backups")
     if ns and ns.startswith("plane-") and cl.get("plane_pvcs"):
         print("persistentvolumeclaim/data-plane-pgdb-wl-0")
@@ -280,7 +336,7 @@ if args[0] == "get" and args[1] == "jobs":
     for name, state in jobs.items():
         if state.get("ns") != ns:
             continue
-        status = {"active": 1} if state["state"] == "Running" else ({"failed": 1} if state["state"] == "Failed" else {"succeeded": 1})
+        status = {"active": 1} if state["state"] == "Running" else {("failed" if state["state"] == "Failed" else "succeeded"): 1, "conditions": [{"type": state["state"], "status": "True"}]}
         items.append({"metadata": {"name": name, "labels": {"app.kubernetes.io/name": state.get("label", "")}}, "status": status})
     selector = next((x for x in args if x.startswith("app.kubernetes.io/name=")), None)
     if selector:
@@ -290,13 +346,26 @@ if args[0] == "get" and args[1] == "jobs":
     sys.exit(0)
 
 if args[0] == "get" and args[1] == "job":
-    state = jload("jobs.json", {}).get(args[2], {"state": "Complete"})["state"]
+    job = jload("jobs.json", {}).get(args[2])
+    if job is None:
+        if "--ignore-not-found" in args:
+            sys.exit(0)
+        print(f'jobs.batch "{args[2]}" not found', file=sys.stderr)
+        sys.exit(NOT_FOUND)
+    state = job["state"]
     conditions = [] if state == "Running" else [{"type": state, "status": "True"}]
     print(json.dumps({"status": {"conditions": conditions}}))
     sys.exit(0)
 
 if args[0] == "get" and args[1] == "configmap":
-    ca = f"-----BEGIN CERTIFICATE-----cluster-{cl.get('generation', 1)}-----END CERTIFICATE-----"
+    # The drill's first read after its restore, which only it makes with -o json on a new cluster. So a scenario can
+    # change what a comparison looks at, between the restore that finished and the comparison.
+    hook = f"{S}/post-restore-hook"
+    if "jsonpath" not in cmd and cl.get("generation", 1) >= 2 and os.path.exists(hook):
+        os.rename(hook, hook + ".ran")
+        subprocess.run(["/bin/bash", hook + ".ran"], check=True)
+    generation = "the-same" if os.path.exists(f"{S}/ca-constant") else cl.get("generation", 1)
+    ca = f"-----BEGIN CERTIFICATE-----cluster-{generation}-----END CERTIFICATE-----"
     print(ca if "jsonpath" in cmd else json.dumps({"data": {"ca.crt": ca}}), end="")
     sys.exit(0)
 
@@ -323,6 +392,8 @@ if args[0] == "scale":
     if app and not paused(app) and n != 1:
         log(f"self-heal reverted the scale of {key}, because auto-sync on {app} is on")
         sys.exit(0)
+    if n > 0 and running_restore_jobs(ns):
+        log(f"ERROR {key} was started with a restore Job still running")
     old = workloads().get(key, 1)
     workloads()[key] = n
     if n == 0 and old > 0:
@@ -338,6 +409,10 @@ if args[0] == "rollout":
     log("kc " + " ".join(args[:3]) + f" ns={ns}")
     if "deployment/infisical" in cmd and os.path.exists(f"{S}/fail-server-start"):
         sys.exit(1)
+    # The real API blocks forever in wait_for_migrations on a restored database the migrator has not seen.
+    if "deployment/plane-api-wl" in cmd and cl.get("needs_migrate", {}).get(ns):
+        print(f'Waiting for deployment "plane-api-wl" rollout to finish: 0 of 1 updated replicas are available', file=sys.stderr)
+        sys.exit(1)
     sys.exit(0)
 
 if args[0] == "exec":
@@ -350,14 +425,23 @@ if args[0] == "exec":
         sys.exit(0)
     if "valkey-cli FLUSHALL" in joined:
         log(f"kc exec valkey FLUSHALL ns={ns}")
+        if apps_up(ns):
+            log(f"ERROR Valkey of {ns} flushed with its apps still up")
         print("OK")
         sys.exit(0)
     if "rabbitmqctl" in joined:
-        print("celery")
+        if "purge_queue" in joined:
+            log(f"kc exec rabbitmq purge ns={ns}")
+            if apps_up(ns):
+                log(f"ERROR RabbitMQ of {ns} purged with its apps still up")
+            sys.exit(0)
+        if not os.path.exists(f"{S}/rabbitmq-no-queue"):
+            print("celery")
         sys.exit(0)
     if "manage.py shell" in joined:
         if "SENTINEL=" in joined:
-            print("@@SENTINEL=ok\n@@ROWS=1\n@@UNDECRYPTABLE=")
+            log(f"kc exec proof-decrypt ns={ns}")
+            print(state_text("proof-decrypt-output", "@@SENTINEL=ok\n@@ROWS=1\n@@UNDECRYPTABLE=").rstrip("\n"))
         elif "APIToken" in joined:
             print("@@faketoken")
         else:
@@ -398,12 +482,21 @@ if args[0] == "apply":
             state = "Failed"
         if any(f in name and (not fl or fl in str(target)) for f, fl in jload("hang-jobs.json", [])):
             state = "Running"
-        label = "plane-backup" if name.startswith("plane-backup") else "plane-restore"
+        if target == "infisical" and name.startswith("plane-restore-") and "guard" not in name and cl.get("infisical_migrating"):
+            log("ERROR the database was replaced while the fresh server was still migrating")
+        # The migrator's Job is made from the rendered one, and keeps its labels.
+        label = "plane-backup" if name.startswith("plane-backup") else ("plane-ce" if "migrate" in name else "plane-restore")
         jobs[name] = {"state": state, "ns": target, "label": label}
         jsave("jobs.json", jobs)
         if name.startswith("plane-backup") and state == "Complete":
             subprocess.run([sys.executable, os.path.join(STUBS, "fakejob.py"), doc], check=True)
-        if name.startswith("plane-restore-") and "guard" not in name and "migrate" not in name and state != "Failed":
+        if name.startswith("plane-restore-migrate") and state == "Complete":
+            if apps_up(target):
+                log(f"ERROR the migrator of {target} ran with its apps still up")
+            cl.setdefault("needs_migrate", {}).pop(target, None)
+            jsave("cluster.json", cl)
+        # A Job left running has not got to the end yet, and one that is removed never does.
+        if name.startswith("plane-restore-") and "guard" not in name and "migrate" not in name and state == "Complete":
             if target == "infisical":
                 if workloads().get("infisical/infisical", 1) > 0:
                     log("ERROR the database was replaced with the Infisical server still up")
@@ -418,6 +511,9 @@ if args[0] == "apply":
                 with open(f"{ROOT}/.local/backups/{env_of(target)}/{bid}/postgres/rowcounts.tsv") as f:
                     counts = dict(line.rstrip("\n").split("\t") for line in f)
                 cl.setdefault("users", {})[target] = int(counts.get("users", 0))
+                with open(f"{ROOT}/.local/backups/{env_of(target)}/{bid}/manifest.json") as f:
+                    cl.setdefault("objects", {})[target] = json.load(f)["objects"]["count"]
+                cl.setdefault("needs_migrate", {})[target] = True
                 jsave("cluster.json", cl)
         sys.exit(0)
     log(f"kc apply {kind} {name}")

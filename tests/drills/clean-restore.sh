@@ -15,8 +15,10 @@
 #                    .local/terraform/local behind. The restore then has to move it aside
 # ALLOW_LOW_DISK="<reason>"  go on although the check before the delete says up.sh would refuse. Logged
 #
-# Before the delete it checks what scripts/up.sh would stop on, with the same code: uncommitted changes,
-# digests the registry cannot serve, and disk, as free space plus the share of the kind volume a delete brings
+# It stops at once if a clean restore is still marked as under way, because a plan would then check that one's backups
+# and not the fresh set. Before the delete it checks what scripts/up.sh would stop on, with the same code: uncommitted
+# changes, digests the registry cannot serve, which a registry that does not answer cannot say, and disk, as free space
+# plus the share of the kind volume a delete brings
 # back. So a run that passes here does not stop at up.sh's check for a new cluster. If less comes back than
 # measured, the drill says so and passes that to up.sh as a logged reason, since the cluster is gone by then and
 # a stop there would protect nothing. Other work must keep off gitops, helm, monitoring and infisical until it ends.
@@ -55,8 +57,17 @@ RENDERED_SECRETS="plane-app-env plane-app-keys plane-live-env plane-doc-store pl
 finish_trap() {
   local status=$?
   rm -rf "$WORK"
-  if [[ "$DELETED" == yes && "$status" -ne 0 ]]; then
-    printf '\nThe cluster is gone and the backups are intact. Continue with: make restore-clean BACKUP=%s\n' "${IID:-latest}"
+  if [[ "$status" -ne 0 ]]; then
+    case "$DELETED" in
+      started) printf '\nThe delete did not finish, so the cluster may be partly gone. The backups are intact. If it is gone, continue with: make restore-clean BACKUP=%s\n' "${IID:-latest}" ;;
+      yes)
+        if cluster_exists; then
+          printf '\nThe old cluster is gone, and the restore into a new one did not finish. The backups are intact. Continue with: make restore-clean BACKUP=%s\n' "${IID:-latest}"
+        else
+          printf '\nThe cluster is gone and the backups are intact. Continue with: make restore-clean BACKUP=%s\n' "${IID:-latest}"
+        fi
+        ;;
+    esac
   fi
   drill_result_on_abort
   exit "$status"
@@ -117,6 +128,11 @@ restore_evidence_clean() { # file
 }
 
 stage "0. Preflight"
+# A plan under a marker checks the set it names, and not the fresh one this drill restores, so a plan that passes
+# here would be followed by a delete and then by a refusal of that fresh set.
+if [[ -e "$RESTORE_CLEAN_MARKER" ]]; then
+  abort "a clean restore of Infisical backup $(sed -n 's/^infisical=//p' "$RESTORE_CLEAN_MARKER") is still marked as under way (${RESTORE_CLEAN_MARKER#"$ROOT"/}), so a plan here would check that backup and not the fresh one this drill restores. Nothing was deleted. To clear it: make restore-clean BACKUP=<that id> finishes it, and removes the file once every proof passes. If the platform here is what you want to keep and that restore is over, rm ${RESTORE_CLEAN_MARKER#"$ROOT"/}, which deletes nothing. make destroy CONFIRM=yes SKIP_BACKUP=yes removes it too, with the cluster."
+fi
 kc get --raw /readyz >/dev/null || abort "cluster is not reachable"
 apps_all_ok || abort "a drill needs a working baseline, and it needs exactly the Applications in Git: $(apps_summary)"
 pass "every Application is Synced and Healthy"
@@ -164,8 +180,8 @@ else
 fi
 
 stage "3. Plan"
-"$ROOT/scripts/restore.sh" clean "$BACKUP" PLAN_ONLY=yes || abort "the recovery set does not check out, so nothing was deleted"
-pass "the recovery set checks out"
+"$ROOT/scripts/restore.sh" clean "$BACKUP" PLAN_ONLY=yes || abort "the plan refused, as it says above, so nothing was deleted"
+pass "the plan passed: the recovery set checks out, and nothing up.sh would stop on was found"
 if [[ "$BACKUP" == latest ]]; then IID="$(recovery_latest_infisical)"; else IID="$BACKUP"; fi
 if [[ "${PLAN_ONLY:-}" == yes ]]; then
   pass "PLAN_ONLY=yes: stopping before the delete"
@@ -174,7 +190,7 @@ if [[ "${PLAN_ONLY:-}" == yes ]]; then
 fi
 
 stage "4. Delete the cluster"
-DELETED=yes
+DELETED=started
 STARTED=$SECONDS
 FREE_BEFORE_DELETE="$(free_disk_kib)"
 STALE_BEFORE="$(stale_local_states)"
@@ -183,6 +199,7 @@ if [[ "${LOSE_CLUSTER:-}" == yes ]]; then
 else
   CONFIRM=yes SKIP_BACKUP=yes "$ROOT/scripts/destroy.sh" || abort "scripts/destroy.sh failed"
 fi
+DELETED=yes
 if cluster_exists; then fail "the cluster still exists"; else pass "cluster gone"; fi
 if [[ "${LOSE_CLUSTER:-}" == yes ]]; then
   if [[ -f "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then pass "the local Terraform state was left behind, as a disaster leaves it"; else fail "the local Terraform state is gone, so this did not test a disaster"; fi
@@ -213,6 +230,9 @@ stage "5. Restore into the clean environment"
 RESTORE_LOG_MARK="$(date -u +%Y%m%dT%H%M%SZ)"
 "$ROOT/scripts/restore.sh" clean "$IID" || abort "the clean restore failed or could not finish, with exit status $?"
 pass "scripts/restore.sh clean $IID finished in $((SECONDS - STARTED))s, counting from the delete"
+# The platform is back from here on, so what the exit trap says about a cluster that is gone no longer holds, and
+# following it would be refused, with advice that deletes what was just restored.
+DELETED=no
 
 stage "6. Same data and secrets, new cluster"
 AFTER_CA="$(cluster_ca_fp)"
@@ -269,7 +289,12 @@ else
   cat "$BOOTSTRAP_LOG"
 fi
 if "$ROOT/scripts/infisical-bootstrap.sh" > "$BOOTSTRAP_LOG" 2>&1; then
-  if grep -F 'all secrets already exist, nothing written' "$BOOTSTRAP_LOG" >/dev/null; then pass "plain bootstrap, as make up runs it: nothing written"; else fail "plain bootstrap wrote secrets"; fi
+  # One line for each environment, so that the one that has them all does not speak for the other.
+  WROTE=""
+  for env in dev prod-sim; do
+    grep -F "$env: all secrets already exist, nothing written" "$BOOTSTRAP_LOG" >/dev/null || WROTE="$WROTE $env"
+  done
+  if [[ -z "$WROTE" ]]; then pass "plain bootstrap, as make up runs it: nothing written"; else fail "plain bootstrap wrote secrets in:$WROTE"; fi
 else
   fail "plain bootstrap failed after the restore"
   cat "$BOOTSTRAP_LOG"

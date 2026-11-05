@@ -16,10 +16,15 @@
 UP_NEW_CLUSTER_GIB=25
 # shellcheck disable=SC2034 # scripts/cluster-up.sh reads it.
 CLUSTER_UP_NEW_CLUSTER_GIB=15
+# What a cluster with nothing in it yet still has to pull, for a plan that has more to do after make up, because
+# the restores that follow check the floor too. So the plan asks for this plus the floor: 12.94 for a cluster when
+# the registry and mirror volumes are there, and 17.75, the first install, when they are not.
+UP_PULL_CLUSTER_GIB=12.94
+UP_PULL_FIRST_INSTALL_GIB=17.75
+UP_LOCAL_VOLUMES="plane-platform-local_registry-data plane-platform-local_mirror-docker-data plane-platform-local_mirror-quay-data plane-platform-local_mirror-k8s-data"
 # Of a kind volume's size, how much reached the host within 15s of removing it. Measured on a 273 MB volume:
 # 254 MB back within 15s, and 15s was the first reading. A 12 GB volume has not been measured.
 KIND_RECLAIM_PERCENT=93
-LOW_DISK_LOG="$LOCAL_DIR/evidence-raw/low-disk-overrides.log"
 
 # ------ Uncommitted changes -------------------------------------------------------------------------------
 
@@ -43,13 +48,14 @@ up_missing_local_images() { # Prints each localhost:5001 reference the registry 
 # ------ Disk ----------------------------------------------------------------------------------------------
 
 # ALLOW_LOW_DISK="<reason>" is the one way past a guard below. It wants words, so the log can later answer
-# why, and yes answers nothing. Call this before anything else, so a bad value stops the run while nothing
-# has been deleted, whatever the disk looks like today.
+# why, and yes or a few spaces answer nothing. Call this before anything else, so a bad value stops the run while
+# nothing has been deleted, whatever the disk looks like today.
 low_disk_check_value() {
-  case "${ALLOW_LOW_DISK:-}" in
-    "" | *" "*) ;;
-    *) die "ALLOW_LOW_DISK takes a reason in words, which is logged, as in ALLOW_LOW_DISK=\"short by 1 GiB, and I am watching this run\". It got '$ALLOW_LOW_DISK'." ;;
-  esac
+  local words=()
+  [[ -n "${ALLOW_LOW_DISK:-}" ]] || return 0
+  read -r -a words <<<"$ALLOW_LOW_DISK"
+  [[ "${#words[@]}" -lt 2 ]] || return 0
+  die "ALLOW_LOW_DISK takes a reason in words, which is logged, as in ALLOW_LOW_DISK=\"short by 1 GiB, and I am watching this run\". It got '$ALLOW_LOW_DISK'."
 }
 
 low_disk_log() { # who what-it-went-past
@@ -58,8 +64,8 @@ low_disk_log() { # who what-it-went-past
   warn "$1: $2. Going on, because ALLOW_LOW_DISK says: $ALLOW_LOW_DISK. Logged in ${LOW_DISK_LOG#"$ROOT"/}."
 }
 
-# guard_disk for a cluster about to be created. guard_disk itself has no way past it, and that stays true of
-# the 10 GiB floor every script checks.
+# guard_disk for a cluster about to be created. ALLOW_LOW_DISK does not go past guard_disk itself, the floor every
+# script checks. Only MIN_FREE_DISK_GIB lowers that, and guard_disk logs it.
 guard_new_cluster() { # <GiB> <who>
   local need="$1" who="$2" free
   free="$(free_disk_gib)"
@@ -113,40 +119,97 @@ disk_after_delete_kib() {
   printf '%s' "$(($(free_disk_kib) + volume * KIND_RECLAIM_PERCENT / 100))"
 }
 
-# One line for a plan: what is free, what a delete should bring back, and what up.sh asks for.
+# True if the registry and every mirror have their volumes, so what they hold need not be pulled again.
+up_local_volumes_present() {
+  # shellcheck disable=SC2086 # One word per volume, on purpose.
+  docker volume inspect $UP_LOCAL_VOLUMES >/dev/null 2>&1
+}
+
+up_gib_as_kib() { awk -v g="$1" 'BEGIN { printf "%d", g * 1048576 }'; }
+
+up_pull_plus_floor_gib() { # gib-to-pull
+  awk -v p="$1" -v f="$MIN_FREE_DISK_GIB" 'BEGIN { printf "%g", p + f }'
+}
+
+# What a plan asks for when a new cluster is to be created, in GiB, whole or not. up.sh's own limit, unless this
+# machine has no registry or mirror volumes yet, as on a first install: that ends past every guard in make up, and
+# below the floor the restores after it check.
+up_new_cluster_need_gib() {
+  if up_local_volumes_present; then
+    printf '%s' "$UP_NEW_CLUSTER_GIB"
+  else
+    awk -v n="$(up_pull_plus_floor_gib "$UP_PULL_FIRST_INSTALL_GIB")" -v u="$UP_NEW_CLUSTER_GIB" 'BEGIN { printf "%g", (n > u ? n : u) }'
+  fi
+}
+
+# How a plan says why it asks for that.
+up_new_cluster_need_words() {
+  if up_local_volumes_present; then
+    printf 'up.sh asks for %s GiB' "$UP_NEW_CLUSTER_GIB"
+  else
+    printf 'with no registry or mirror volumes a new cluster still has %s GiB to pull, and the restores after it check the %s GiB floor, so this asks for %s GiB' \
+      "$UP_PULL_FIRST_INSTALL_GIB" "$MIN_FREE_DISK_GIB" "$(up_new_cluster_need_gib)"
+  fi
+}
+
+# The same for an empty cluster that stays, which creates nothing and still has everything to pull.
+up_empty_cluster_pull_gib() {
+  if up_local_volumes_present; then printf '%s' "$UP_PULL_CLUSTER_GIB"; else printf '%s' "$UP_PULL_FIRST_INSTALL_GIB"; fi
+}
+
+up_empty_cluster_words() {
+  printf 'this empty cluster still has %s GiB to pull, and the restores after it check the %s GiB floor, so this asks for %s GiB' \
+    "$(up_empty_cluster_pull_gib)" "$MIN_FREE_DISK_GIB" "$(up_pull_plus_floor_gib "$(up_empty_cluster_pull_gib)")"
+}
+
+# One line for a plan: what is free, what a delete should bring back, and what is asked for.
 up_disk_report() {
   local after
   if ! cluster_exists; then
-    printf '%s GiB free, no cluster to delete, up.sh asks for %s GiB' "$(kib_as_gib "$(free_disk_kib)")" "$UP_NEW_CLUSTER_GIB"
+    printf '%s GiB free, no cluster to delete, %s' "$(kib_as_gib "$(free_disk_kib)")" "$(up_new_cluster_need_words)"
     return 0
   fi
   after="$(disk_after_delete_kib)"
   if [[ -z "$after" ]]; then
-    printf '%s GiB free, the kind volume could not be measured, up.sh asks for %s GiB' "$(kib_as_gib "$(free_disk_kib)")" "$UP_NEW_CLUSTER_GIB"
+    printf '%s GiB free, the kind volume could not be measured, %s' "$(kib_as_gib "$(free_disk_kib)")" "$(up_new_cluster_need_words)"
     return 0
   fi
-  printf '%s GiB free, kind volume %s GiB, about %s GiB after a delete at %s%%, up.sh asks for %s GiB' \
-    "$(kib_as_gib "$(free_disk_kib)")" "$(kib_as_gib "$(kind_volume_kib)")" "$(kib_as_gib "$after")" "$KIND_RECLAIM_PERCENT" "$UP_NEW_CLUSTER_GIB"
+  printf '%s GiB free, kind volume %s GiB, about %s GiB after a delete at %s%%, %s' \
+    "$(kib_as_gib "$(free_disk_kib)")" "$(kib_as_gib "$(kind_volume_kib)")" "$(kib_as_gib "$after")" "$KIND_RECLAIM_PERCENT" "$(up_new_cluster_need_words)"
 }
 
-# Prints why up.sh would refuse to create a cluster, counting a delete first if a cluster exists, and nothing if
-# it would go on. The same limit and the same rounding as guard_new_cluster: free_disk_gib rounds down, and this
-# compares whole KiB against whole GiB, so an answer of nothing here cannot be a refusal there for rounding.
+up_disk_report_empty_cluster() {
+  printf '%s GiB free, %s' "$(kib_as_gib "$(free_disk_kib)")" "$(up_empty_cluster_words)"
+}
+
+# Prints why a new cluster should not be created, counting a delete first if a cluster exists, and nothing if it
+# can go on. No lower than up.sh's limit, and the same rounding as guard_new_cluster: free_disk_gib rounds down, and
+# this compares whole KiB against that limit, so an answer of nothing here cannot be a refusal there for rounding.
 up_disk_problem() {
-  local need_kib=$((UP_NEW_CLUSTER_GIB * 1048576)) free after
+  local need_kib free after
+  need_kib="$(up_gib_as_kib "$(up_new_cluster_need_gib)")"
   free="$(free_disk_kib)"
   if ! cluster_exists; then
     if [[ "$free" -lt "$need_kib" ]]; then
-      printf 'only %s GiB free on the host, and up.sh asks for %s GiB to create a cluster' "$(kib_as_gib "$free")" "$UP_NEW_CLUSTER_GIB"
+      printf 'only %s GiB free on the host, and %s to create a cluster' "$(kib_as_gib "$free")" "$(up_new_cluster_need_words)"
     fi
     return 0
   fi
   after="$(disk_after_delete_kib)"
   if [[ -z "$after" ]]; then
-    printf 'the kind volume could not be measured, so what a delete brings back is unknown, with %s GiB free and up.sh asking for %s GiB' "$(kib_as_gib "$free")" "$UP_NEW_CLUSTER_GIB"
+    printf 'the kind volume could not be measured, so what a delete brings back is unknown, with %s GiB free, and %s' "$(kib_as_gib "$free")" "$(up_new_cluster_need_words)"
   elif [[ "$after" -lt "$need_kib" ]]; then
-    printf 'about %s GiB would be free after the delete: %s GiB now plus %s%% of the %s GiB kind volume. up.sh asks for %s GiB to create a cluster' \
-      "$(kib_as_gib "$after")" "$(kib_as_gib "$free")" "$KIND_RECLAIM_PERCENT" "$(kib_as_gib "$(kind_volume_kib)")" "$UP_NEW_CLUSTER_GIB"
+    printf 'about %s GiB would be free after the delete: %s GiB now plus %s%% of the %s GiB kind volume, and %s to create a cluster' \
+      "$(kib_as_gib "$after")" "$(kib_as_gib "$free")" "$KIND_RECLAIM_PERCENT" "$(kib_as_gib "$(kind_volume_kib)")" "$(up_new_cluster_need_words)"
+  fi
+}
+
+# Prints why an empty cluster that stays has too little room for what is still to come, and nothing if it has enough.
+up_disk_problem_empty_cluster() {
+  local free
+  free="$(free_disk_kib)"
+  if [[ "$free" -lt "$(up_gib_as_kib "$(up_pull_plus_floor_gib "$(up_empty_cluster_pull_gib)")")" ]]; then
+    printf 'only %s GiB free on the host, and %s' "$(kib_as_gib "$free")" "$(up_empty_cluster_words)"
   fi
 }
 
