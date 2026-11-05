@@ -9,7 +9,7 @@ export PATH="$PWD/.tools/bin:$PATH" KUBECONFIG="$PWD/.local/kubeconfig"
 NODE=plane-platform-control-plane
 ```
 
-Start with `make status`. It only reads, and it prints node, Applications, pods not ready, endpoints, memory and host disk. A first boot has states that look broken and are not: see [install.md](../install.md#what-looks-broken-but-is-expected).
+Start with `make status`. It only reads, and it prints node, Applications, pods not ready, endpoints, memory and host disk. A first boot has states that look broken and are not: see [install.md](../install.md#what-looks-broken-but-is-expected). So give it time: one whole `make up` from a fresh clone, keeping the registry and caches, took 955s ([summary](../evidence/runs/clean-install-20261105T075041Z/summary.txt)), and `make up` after a `make down` took 82s ([PERS-3](../evidence/runs/PERS-3-20261105T083304Z.txt)).
 
 Index:
 
@@ -22,6 +22,7 @@ Index:
 - [Image pull errors](#image-pull-errors)
 - [Pods rejected by Pod Security or quota](#pods-rejected-by-pod-security-or-quota)
 - [Infisical bootstrap or operator problems](#infisical-bootstrap-or-operator-problems)
+- [A clean restore is marked as under way](#a-clean-restore-is-marked-as-under-way)
 - [`kubectl top` fails](#kubectl-top-fails)
 - [Terraform problems](#terraform-problems)
 
@@ -102,7 +103,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: plane.dev.localhost' http://
 dscacheutil -q host -a name plane.dev.localhost
 ```
 
-If only the second works, it is your resolver or browser. Chromium resolved them in the browser session on 2026-11-05 ([live-dev](../evidence/branding/live-dev/README.md)). Safari could not be driven from that session ([AUTH-4-20261105T062750Z.txt](../evidence/runs/AUTH-4-20261105T062750Z.txt)). Safari and Firefox were not tested in Pass 1, so use a Chromium browser if one fails.
+If only the second works, it is your resolver or browser. Chromium resolved them in the browser sessions on 2026-11-05, on both hosts at once after the restore ([live-dev](../evidence/branding/live-dev/README.md), [live-final](../evidence/branding/live-final/README.md)). Safari could not be driven from that session ([AUTH-4-20261105T062750Z.txt](../evidence/runs/AUTH-4-20261105T062750Z.txt)). Safari and Firefox were not tested in Pass 1, so use a Chromium browser if one fails.
 
 **Inside pods** the rule differs. CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to Traefik, because the API dials its own public host. Terraform owns the rewrite. The API pod resolved its host to Traefik's Service address on 2026-11-04, and a worker, with no policy route to Traefik, timed out ([plane-dev-copy-object-path-1.txt](../evidence/runs/plane-dev-copy-object-path-1.txt)).
 
@@ -170,7 +171,7 @@ The count stops applying 5 minutes after its pod has gone. On a scratch pod the 
 
 `make test-netpol` proves its sentinel in a throwaway namespace first. A deny row passes only on a timeout, and INCONCLUSIVE is never a pass: `scripts/test-netpol.sh` exits 0 when every row passed, 1 when a row or the sentinel failed, and 2 when nothing failed but a row was INCONCLUSIVE. There is one exception: a row that needs something outside the cluster still reads INCONCLUSIVE offline, and does not make the run non-zero, when neither of the node's two readings reached the target. If either reached it, the row counts, so a flaky outside target can give exit 2. So an exit 0 can carry such rows. On an exit 0, read how many the summary says "need something outside the cluster".
 
-`make test-netpol` passes its full allow and deny matrix. On 2026-11-05 at 04:19Z it exited 0 with 418 PASS, 0 FAIL and 0 INCONCLUSIVE, none needing anything outside the cluster, and no deny row passing without a reference: `plane-dev` 153, `plane-prod-sim` 151, `monitoring` 50, `traefik` 28, `argocd` 19, `infisical` 14 and `kube-system` 3 ([harness-make-test-netpol-4.txt](../evidence/runs/harness-make-test-netpol-4.txt), [netpol-20261105T041921Z.tsv](../evidence/runs/netpol-20261105T041921Z.tsv)). A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. That run came before the final images were promoted, and the final `make test` comes after the rebuild, with its result not yet recorded. Earlier runs, published and by source namespace, are [`plane-dev`](../evidence/runs/netpol-20261104T232752Z.tsv), [`plane-prod-sim`](../evidence/runs/netpol-20261104T233304Z.tsv), [`monitoring`](../evidence/runs/netpol-20261104T221150Z.tsv) and [`infisical`](../evidence/runs/netpol-20261104T215857Z.tsv).
+`make test-netpol` passes its full allow and deny matrix. Its last run, inside `make test` on the restored platform with the final images, ended at 2026-11-05T08:40:48Z with 418 PASS, 0 FAIL and 0 INCONCLUSIVE, none needing anything outside the cluster, and no deny row passing without a reference: `plane-dev` 153, `plane-prod-sim` 151, `monitoring` 50, `traefik` 28, `argocd` 19, `infisical` 14 and `kube-system` 3 ([log](../evidence/runs/MAKE-TEST-20261105T083455Z.txt), [netpol-20261105T083542Z.tsv](../evidence/runs/netpol-20261105T083542Z.tsv)). A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. On the first cluster the last whole run was at 04:19Z ([harness-make-test-netpol-4.txt](../evidence/runs/harness-make-test-netpol-4.txt), [netpol-20261105T041921Z.tsv](../evidence/runs/netpol-20261105T041921Z.tsv)). Earlier runs, published and by source namespace, are [`plane-dev`](../evidence/runs/netpol-20261104T232752Z.tsv), [`plane-prod-sim`](../evidence/runs/netpol-20261104T233304Z.tsv), [`monitoring`](../evidence/runs/netpol-20261104T221150Z.tsv) and [`infisical`](../evidence/runs/netpol-20261104T215857Z.tsv).
 
 **Fallback, if enforcement really fails.** The research names Calico, at the cost of more memory. That would be a change to the kind config and to the contract.
 
@@ -223,7 +224,7 @@ kubectl get events -A --field-selector reason=FailedCreate --sort-by=.lastTimest
 | Operator crash-looping in `plane-prod-sim` only | CRDs arrive from the dev release. Predicted from the chart, and not seen on the first boot | Recovers once they exist |
 | 403 on secrets | Identity or project mismatch. Per-project isolation is the free-tier boundary | Check `.local/secret-zero/infisical-machine.json` values against the overlay, without printing secrets |
 | 429 | Not expected here. The rate limiter is not registered on self-hosted: 240 reads in 4s from one address all answered 200 ([infisical-rate-limit-1.txt](../evidence/runs/infisical-rate-limit-1.txt)). The scripts' `Retry-After` handling has never run for real | Look for something in front of Infisical |
-| Token review fails on a new cluster | Kubernetes Auth stores the old cluster's CA | Re-run `scripts/infisical-bootstrap.sh` |
+| Token review fails on a new cluster | Kubernetes Auth stores the old cluster's CA | Re-run `scripts/infisical-bootstrap.sh`. A clean restore does this itself: on the new cluster each reader logged in, and a second bootstrap had nothing to change ([log](../evidence/runs/drill-clean-restore-20261105T074859Z.log), stages 7 and 8) |
 
 ```bash
 kubectl -n infisical get pods
@@ -233,6 +234,22 @@ kubectl -n plane-dev get infisicalstaticsecrets -o json | jq -r '.items[] | "\(.
 ```
 
 More in `infisical/README.md`, including its recovery table.
+
+## A clean restore is marked as under way
+
+**Symptom.** A plain `make up` refuses to bootstrap a fresh instance, `make backup` refuses an environment, or `make restore-clean` refuses to resume.
+
+**Why.** `.local/restore-clean.state` records a clean restore under way, and it has no age limit. `make destroy` clears it, and so does finishing. [Clean restore](../../infisical/README.md#clean-restore) has the whole of it.
+
+| What you see | Why | Way on |
+|---|---|---|
+| `make up` refuses to bootstrap a fresh instance | That would create new secrets, which the backup's data cannot use | `make restore-clean BACKUP=<id>` goes on. If the platform here is what you want to keep, remove the file by hand: that ends the restore and deletes nothing |
+| `make backup` refuses an environment | Nothing has looked at what it holds, and a backup of an empty or partly restored one would become the newest | It goes ahead with a warning once that environment's data is back. `ALLOW_BACKUP_DURING_RESTORE=yes` goes past it, and `make destroy` passes that by itself. `SKIP_BACKUP=yes` on `make destroy` deletes with no backup |
+| A resume refuses an environment holding other users or objects than its backup | Until its data Job has finished, counts are all a resume can compare, so the same counts with other rows are not caught | `make backup ENV=<env> ALLOW_BACKUP_DURING_RESTORE=yes` keeps what is there. `ALLOW_RESUME_OVERWRITE=<env>` replaces it, naming each environment, and `yes` is refused. That is recorded as a FAIL, and the run exits 4 with result `OVERWROTE`, which is not a pass |
+| A resume keeps what is there and goes on from the migrator | The file has a `data-back <env>` line, so that environment's data came back, and counts cannot tell it from what has been written since | Nothing to do. `ALLOW_RESUME_OVERWRITE=<env>` replaces it instead, and that run does not read PASS. A target that is empty despite the line is restored again |
+| Apps at zero and auto-sync paused, after a client ended during a restore | A client that ends removes a running restore Job first, even with its output dead. If it cannot, the apps stay down and it prints what to run | Follow what it printed. With the file there, the same command puts back auto-sync and the Deployments first, and goes on |
+
+These paths have run on stubs only (`make drill-clean-restore-harness`). The one real clean restore ran straight through, with no resume ([record](../evidence/runs/restore-clean-20261105T081017Z.json)).
 
 ## `kubectl top` fails
 
@@ -247,7 +264,7 @@ kubectl get apiservice v1beta1.metrics.k8s.io
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Plan wants to create what exists | State lost. State lives in `.local/terraform/`. `make destroy` removes `.local/terraform/local` on purpose, and keeps `.local/terraform/infisical`, because a clean restore needs it | Import, or rebuild |
+| Plan wants to create what exists | State lost. State lives in `.local/terraform/`. `make destroy` removes `.local/terraform/local` on purpose, and keeps `.local/terraform/infisical`, because a clean restore needs it, as the drill read on a real delete ([log](../evidence/runs/drill-clean-restore-20261105T074859Z.log), stage 4) | Import, or rebuild |
 | Plan is against resources that are gone | Cluster deleted by hand | Remove the stale state with `make destroy CONFIRM=yes SKIP_BACKUP=yes`. It tolerates a missing cluster |
 | Infisical project slug conflict | A destroyed project keeps its slug for 14 days | Use a fresh instance |
 
