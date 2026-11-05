@@ -35,7 +35,7 @@ Read this table before assuming anything below was provisioned by Terraform.
 | First Infisical admin and root organization | `scripts/infisical-bootstrap.sh` | One API call. Terraform cannot create the root org, so the script passes `org_id` in |
 | `argocd-initial-admin-secret` | Argo CD | Generated at first start |
 | Image builds and digests | `scripts/ci/build-images.sh`, `scripts/promote.sh` | Written into overlays, not Terraform |
-| Anything on Hetzner or Cloudflare | Nobody yet | Nothing cloud is provisioned or configured in Pass 1 |
+| Anything on Hetzner or Cloudflare | Nobody yet | Nothing on either is provisioned or configured in Pass 1 |
 
 **Why kind is not a Terraform resource.** The Kubernetes and Helm providers read the kubeconfig during plan. The
 [provider docs](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs) warn against creating a cluster
@@ -123,8 +123,9 @@ Both state files live under `.local/terraform/`, which is gitignored, through a 
 - Root `local`'s state and the cluster share a lifecycle. `scripts/destroy.sh` removes `.local/terraform/local` when it deletes the cluster, since state describing a gone cluster would only mislead the next plan. A cluster lost any other way leaves that state behind, and since `1fb4707` `make up` moves it aside when no cluster exists. `destroy.sh` keeps `.local/terraform/infisical`, because a clean restore needs it (`make restore-clean`).
 - Pass 1 provisions nothing remote, so a remote backend would add a credential and a dependency for no gain.
 
-**What local state costs.** No locking across machines, no history, no backup, and no way to share it. This does not
-carry into a shared environment. The Pass 2 interfaces describe an `s3` backend template instead.
+**What local state costs.** No locking across machines, no version history, and no way to share it. Root `local` has no backup but the
+previous version Terraform keeps beside it. Root `infisical` also has a copy in each Infisical backup, at `recovery/terraform.tfstate`
+(`infisical/lib/recovery.sh`), on the same disk until someone copies it off. This does not carry into a shared environment. The Pass 2 interfaces describe an `s3` backend template instead.
 
 **What is in state.**
 
@@ -143,7 +144,7 @@ only in the environment of a subshell around one `terraform` process.
 | Root | What happens | Do this |
 |---|---|---|
 | `local`, cluster alive | Apply fails because the namespaces exist | Delete the cluster and start again after a backup: `make destroy CONFIRM=yes`, or import each resource |
-| `infisical`, instance alive | Terraform would try to create what exists | Import each resource, or start from a fresh instance. A destroyed project keeps its slug for 14 days, so `destroy` then `apply` on a live instance probably conflicts. After a restore, `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh` refuses rather than repairs if Terraform wants to create or delete anything |
+| `infisical`, instance alive | Terraform would try to create what exists | Copy `recovery/terraform.tfstate` from the newest Infisical backup. A scratch plan with a backup's state, against an instance restored from that backup, read no changes ([dr-fresh-instance-rehearsal-2.txt](evidence/runs/dr-fresh-instance-rehearsal-2.txt)). With no backup, import each resource, which is not tested in Pass 1, or start from a fresh instance. A destroyed project keeps its slug for 14 days, so `destroy` then `apply` on a live instance probably conflicts. After a restore, `INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh` refuses rather than repairs if Terraform wants to create or delete anything |
 | `infisical`, fresh instance | State points at nothing | Bootstrap detects `initialized=false` and moves the old state aside |
 
 ## What reaches the cluster, how
