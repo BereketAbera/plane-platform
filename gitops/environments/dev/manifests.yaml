@@ -328,7 +328,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+      - image: localhost:5001/wayline/admin@sha256:279dfd7f06ccce84b06dbfbe7b7c756d406c81d2320e28a6b5d013c3ec64685c
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -439,7 +439,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+        image: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -541,7 +541,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+        image: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -714,7 +714,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+      - image: localhost:5001/wayline/space@sha256:a8c49151ee9471439bf6fba49c23814a64904d4709f92f1258092f3b5fcdd33a
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -794,7 +794,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+      - image: localhost:5001/wayline/web@sha256:73a48d643f875e91673b56705a48358b8b0ce3ce831a6811fef25805735e3dfb
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -905,7 +905,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+        image: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -1414,7 +1414,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+        image: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c
         imagePullPolicy: IfNotPresent
         name: plane-api-migrate
         resources:
