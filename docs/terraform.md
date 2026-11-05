@@ -5,8 +5,9 @@ does not create the cluster. The application it helps deploy, Wayline, is a cust
 deployment, not an original product.
 
 **Status of this page.** It describes configuration read from the code. Both roots have applied on the real cluster since
-2026-11-04, and the text links those runs. `terraform destroy` has not run, and neither has an apply on a clean host. Statements nothing
-has measured carry a `VERIFY` marker until [`docs/evidence/`](evidence/README.md) holds the result.
+2026-11-04, and the text links those runs. `terraform destroy` was not tested in Pass 1. An apply on a clean host is part of the clean install
+that `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` was running when this was written, and its result is not recorded here.
+Evidence is in [`docs/evidence/`](evidence/README.md).
 
 ## What Terraform owns
 
@@ -132,7 +133,7 @@ carry into a shared environment. The Pass 2 interfaces describe an `s3` backend 
 | `local` | Namespaces, quotas, the Corefile, Helm release metadata and values | No secret values by design: `helm/values/argocd.yaml` holds none |
 | `infisical` | Project and identity ids, the cluster CA (public) | No secret values by design: authentication is `INFISICAL_TOKEN` in the environment |
 
-[[VERIFY: grep of both state files after a real apply finds no secret value]]
+That is by design, from reading the code. A search of both state files for secret values after a real apply was not tested in Pass 1.
 
 The `infisical` provider token never appears in a variable, a plan or state. `scripts/infisical-bootstrap.sh` sets it
 only in the environment of a subshell around one `terraform` process.
@@ -262,9 +263,9 @@ terraform -chdir=infrastructure/terraform/environments/local destroy   # read be
 | **CoreDNS breaks** | The provider's delete of `kubernetes_config_map_v1_data` applies an empty map, which removes the `Corefile` key. CoreDNS cannot mount its config at the next restart. Delete the cluster afterwards rather than reusing it |
 | Argo CD's CRDs stay | `crds.keep` |
 | Root does not cascade | The root Application has no finalizer, so removing it does not delete its children |
-| **Namespace `argocd` may hang in `Terminating`** | Six child Applications carry `resources-finalizer.argocd.argoproj.io`: traefik, metrics-server, kube-prometheus-stack, loki, alloy, monitoring-extras. The controller is removed before the namespace, so nothing would clear those finalizers. [[VERIFY: terraform destroy on root local completes, or hangs on the argocd namespace]] |
+| **Namespace `argocd` may hang in `Terminating`** | Six child Applications carry `resources-finalizer.argocd.argoproj.io`: traefik, metrics-server, kube-prometheus-stack, loki, alloy, monitoring-extras. The controller is removed before the namespace, so nothing would clear those finalizers. Not tested in Pass 1 |
 
-`terraform destroy` has not been exercised. [[VERIFY: effects of terraform destroy on root local match this table]]
+This table comes from reading the code and the provider's behaviour. `terraform destroy` was not tested in Pass 1, so none of its rows has been seen happen.
 
 Destroying root `infisical` on a live instance deletes projects and identities. Plane's operators can then no longer log
 in, and a destroyed project's slug stays reserved for 14 days. Do not use it to reset. Start from a fresh instance.
