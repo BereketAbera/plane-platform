@@ -966,6 +966,18 @@ R12() {
   run scripts/restore.sh infisical latest CONFIRM=yes
   check "the right ids: left alone, byte for byte (got $RC)" test "$before" = "$(shasum -a 256 "$z/infisical-machine.json")"
   check "the right ids: no archive" test -z "$(find "$z" -maxdepth 1 -name 'archive-pre-restore-*')"
+
+  # A state that does not agree with its own set is no better than the file it would replace.
+  reset
+  take_backups
+  local id
+  id="$(ls "$H/.local/backups/infisical" | tail -1)"
+  jq '.outputs.project_ids.value.dev = "p-from-the-state"' "$H/.local/backups/infisical/$id/recovery/terraform.tfstate" > "$H/state/t" && cp "$H/state/t" "$H/.local/backups/infisical/$id/recovery/terraform.tfstate"
+  reseal "$H/.local/backups/infisical/$id" recovery/terraform.tfstate
+  jq '.project_ids.dev = "p-another-instance"' "$z/infisical-machine.json" > "$H/state/t" && cp "$H/state/t" "$z/infisical-machine.json"
+  run scripts/restore.sh infisical latest CONFIRM=yes
+  check "a state with other ids than its set: the file is left as it is" jq -e '.project_ids.dev == "p-another-instance"' "$z/infisical-machine.json"
+  check "a state with other ids than its set: and it says so" out_has "does not name the ids its recovery set does"
 }
 
 R13() {

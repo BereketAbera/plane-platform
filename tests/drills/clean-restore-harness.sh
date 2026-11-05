@@ -5,6 +5,8 @@
 #   make drill-clean-restore-harness ONLY="S1 S20"
 #   HARNESS_SOURCE=<another checkout> tests/drills/clean-restore-harness.sh
 #                                                the same scenarios against other code, to see them fail
+# S and a number is a scenario of the first review of the clean restore or from before it. R and a number is finding
+# that number of the second review, in clean-restore-harness/scenarios-second-review.sh.
 #
 # macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. It takes about half an hour, in the background.
 #
