@@ -4,8 +4,9 @@ Operating procedures for the local Wayline platform, a customized Plane Communit
 kind node.
 
 **Status.** These runbooks were written from the code, the contract and recorded research, then corrected against what ran on the
-cluster on 2026-11-04 and 2026-11-05. A result links its file under [`docs/evidence/runs/`](../evidence/README.md). Most repair
-paths have not been followed from start to finish: the failed-deploy drill, a real rollback, a full restore, a secret rotation and a
+cluster on 2026-11-04 and 2026-11-05. A result links its file under [`docs/evidence/runs/`](../evidence/README.md), or names it under
+`.local/evidence-raw/` where `make publish-evidence` has not copied it yet. Some repair paths have now been followed from start to finish,
+once each and in dev only: the failed-deploy drill, a failing migrator, a rollback and an alert test. A rollback of prod-sim, a full restore, a secret rotation and a
 clean rebuild are NOT RUN. Each `VERIFY` marks a step or behaviour that a real run must confirm, and the rest is design intent until
 then. A successful drill, not this page, is what would show a runbook works.
 
@@ -76,7 +77,8 @@ Deployment, StatefulSet or Job in the namespace, such as `postgres-exporter`. `m
 
 | Drill | How to run | Evidence file | Result so far |
 |---|---|---|---|
-| Failed deploy and rollback, dev only | `make drill-failed-deploy` | `.local/evidence-raw/drill-failed-deploy-<stamp>.log` | NOT RUN |
-| Pod restart persistence | `make drill-pod-restart ENV=dev` or `ENV=prod-sim` | `.local/evidence-raw/drill-pod-restart-<env>-<stamp>.log` | Dev PASS ([2026-11-04](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)). Prod-sim FAIL ([first](../evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log), the [`cancel_consumer` trap](plane-app-debugging.md#the-cancel_consumer-trap)), then PASS on a clean worker ([second](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)) |
+| Failed deploy and rollback, dev only | `make drill-failed-deploy`, in the background and alone. It stops before anything moves if a prod-sim change waits on `main`, and records every pending and firing alert | `.local/evidence-raw/drill-failed-deploy-<stamp>.log`, and `-alerts.tsv` beside it | PASS, once, on 2026-11-05 (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`) |
+| Failing migrator, dev only | `tests/drills/failed-migrator.sh`, alone | `.local/evidence-raw/drill-failed-migrator-<stamp>.log`, and `-alerts.tsv` beside it | PASS, once, on 2026-11-05 (`.local/evidence-raw/drill-failed-migrator-20261105T064940Z.log`) |
+| Pod restart persistence | `make drill-pod-restart ENV=dev` or `ENV=prod-sim` | `.local/evidence-raw/drill-pod-restart-<env>-<stamp>.log` | Dev PASS ([2026-11-04](../evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)), and PASS again on the final images on 2026-11-05 (`.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log`). Prod-sim FAIL ([first](../evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log), the [`cancel_consumer` trap](plane-app-debugging.md#the-cancel_consumer-trap)), then PASS on a clean worker ([second](../evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log)), on upstream images. On the final images it has not run: the session's permission system refused it (`.local/evidence-raw/PERS-2-20261105T061948Z.txt`) |
 | Clean restore | `make drill-clean-restore PLAN_ONLY=yes`, or `CONFIRM=yes` for all of it, which deletes the cluster | `.local/evidence-raw/drill-clean-restore-<stamp>.log` | Only `PLAN_ONLY=yes`, which stops before the delete ([2026-11-05](../evidence/runs/drill-clean-restore-20261105T000555Z.log)). The drill itself is NOT RUN |
-| Alert delivery | `make test-alert ENV=dev` | `.local/evidence-raw/alert-test-<env>-<stamp>.json` | NOT RUN |
+| Alert delivery | `make test-alert ENV=dev` or `ENV=prod-sim` | `.local/evidence-raw/alert-test-<env>-<stamp>.json` | Dev PASS, once, on 2026-11-05 (`.local/evidence-raw/alert-test-dev-20261105T055044Z.json`). Prod-sim NOT RUN: the session's permission system refused it (`.local/evidence-raw/MON-2-20261105T060633Z.txt`) |
