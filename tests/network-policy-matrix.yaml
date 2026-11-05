@@ -11,6 +11,8 @@
 # - allow passes on a completed connection, or on connection refused: refused means the packet arrived.
 # - deny passes ONLY on a timeout. Refused means the packet arrived, so it is a failure. A DNS failure
 #   is inconclusive, never a pass. protocol udp rows are DNS lookups.
+# - A timeout alone cannot tell a policy from a target that is down, so scripts/test-netpol.sh also dials each
+#   target from the node in the same moment, and says in each row's note what it could and could not show.
 # - to.port is the Service port. The policy rule is written against the target port.
 # - Run a sentinel first: one deny row must time out and one allow row must connect, or kindnet may be
 #   failing open.
@@ -192,6 +194,27 @@ cases:
   - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
   - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
 
+  # plane-dev: no way out through the Mac. A connection to Docker Desktop's host address comes back as the host, and the
+  # allow list on the internal routes admits the host. Only NetworkPolicy holds this door.
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: worker } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: beat } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: migrator } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: live } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: web } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: admin } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: space } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: postgres } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: valkey } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: rabbitmq } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: minio } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: backup } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: postgres-exporter } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: redis-exporter } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-dev, labels: { app.kubernetes.io/name: k6 } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+
   # plane-dev: nothing reaches the platform's own control surfaces
   - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
   - { from: { ns: plane-dev, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }
@@ -361,6 +384,26 @@ cases:
   - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
   - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kindnet's INPUT chain" }
   - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+
+  # plane-prod-sim: no way out through the Mac. A connection to Docker Desktop's host address comes back as the host, and the
+  # allow list on the internal routes admits the host. Only NetworkPolicy holds this door.
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: worker } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: beat } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: migrator } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: live } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: web } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: admin } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: space } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: postgres } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: valkey } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: rabbitmq } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: minio } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: backup } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: postgres-exporter } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: redis-exporter } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
+  - { from: { ns: plane-prod-sim, labels: { probe: unlabelled } }, to: { host: 192.168.65.254, port: 80 }, expect: deny, note: "host.docker.internal" }
 
   # plane-prod-sim: nothing reaches the platform's own control surfaces
   - { from: { ns: plane-prod-sim, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
