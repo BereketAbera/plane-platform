@@ -3,7 +3,7 @@
 Take a backup, bring data back, and handle the failures in between. For wider scenarios, such as losing the whole cluster, see
 [Disaster recovery](../disaster-recovery.md). For the design, see [Data operations](../data-operations.md).
 
-**Status, 2026-11-05.** Backups of all three have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a new cluster is in progress as this is written, with no result recorded here yet.
+**Status, 2026-11-05.** Backups of all three have run. Infisical has been restored in place, and dev and prod-sim have each been restored in place into their real database and bucket, with result PASS and `make test-e2e` passing after. A restore into a new cluster ran on 2026-11-05 inside `make drill-clean-restore`, and has no result recorded here until its evidence is published.
 
 Preamble for raw commands:
 
@@ -34,7 +34,7 @@ make backup ENV=all
 ls -1 .local/backups/dev/
 ```
 
-There is no CronJob. Backups run when you run them, and also inside these commands: `make promote ENV=prod-sim`, a `make gitops-publish` that changes a prod-sim image, `make destroy`, `make drill-clean-restore`, and, for Infisical, a `make rotate` that finished.
+There is no CronJob. Backups run when you run them, and also inside these commands: `make promote ENV=prod-sim`, a `make gitops-publish` that changes a prod-sim image, `make rollback ENV=prod-sim`, `make destroy`, `make drill-clean-restore`, and, for Infisical, a `make rotate` that finished. `SKIP_BACKUP=yes` skips any of these. In a rollback the dump is a best effort, and a failure does not stop the rollback.
 
 | Part | Method |
 |---|---|
@@ -108,7 +108,7 @@ Then, for a Plane environment:
 8. Prove: encrypted sentinel, no empty decrypts, sentinel work item and attachment through `tests/e2e/smoke.py`, a worker running a new job, and green probes.
 9. Resume auto-sync, also on failure.
 
-For Infisical it pauses auto-sync on `infisical` only, stops the server, restores into a second database and checks its row counts, swaps it in with two renames in one transaction, installs the Terraform state and machine file that go with it, flushes Redis, starts the server, makes sure something here can log in, and proves it. In place it took 51 s to 71 s, five times, and no Plane workload moved ([dr-inplace-restore-3.txt](../evidence/runs/dr-inplace-restore-3.txt)).
+For Infisical it pauses auto-sync on `infisical` only, stops the server, restores into a second database and checks its row counts, swaps it in with two renames in one transaction, installs the Terraform state and machine file that go with it, flushes Redis, starts the server, makes sure something here can log in, and proves it. In place it has run seven times, in 44 s to 71 s: six read PASS, and one, the 71 s, read BLOCKED, because that run removed the token and the password on purpose. In the six that compared Plane before and after, every Plane pod uid and restart count, workload generation and Secret resourceVersion stayed the same, apart from probe pods of another test and one worker another test replaced ([dr-inplace-restore-3.txt](../evidence/runs/dr-inplace-restore-3.txt), [dr-inplace-no-token-no-password-2.txt](../evidence/runs/dr-inplace-no-token-no-password-2.txt), [dr-inplace-no-token-no-password-3.txt](../evidence/runs/dr-inplace-no-token-no-password-3.txt)).
 
 If the client ends while a restore Job runs, by Ctrl-C, a closed terminal or a kubectl error, it removes that Job first. If it cannot, the server or apps stay down and auto-sync stays paused, and it prints what to run. That has run only on stubs ([dr-stop-sweep-1.txt](../evidence/runs/dr-stop-sweep-1.txt)).
 
@@ -126,7 +126,7 @@ kubectl -n argocd get application plane-dev -o jsonpath='{.status.operationState
 
 ### On a new cluster
 
-Use `make restore-clean BACKUP=latest`, not `make restore`. Secret zero in `.local/secret-zero/` must survive, or the Infisical dump cannot be read. The order is in [Disaster recovery](../disaster-recovery.md#full-restoration-into-a-clean-environment), and [Clean rebuild](clean-rebuild.md) has the commands. Its first real run is in progress as this is written, inside `make drill-clean-restore`, with no result recorded here yet. Before that it had run only as far as its plan, and against stubs.
+Use `make restore-clean BACKUP=latest`, not `make restore`. Secret zero in `.local/secret-zero/` must survive, or the Infisical dump cannot be read. The order is in [Disaster recovery](../disaster-recovery.md#full-restoration-into-a-clean-environment), and [Clean rebuild](clean-rebuild.md) has the commands. Its first real run was inside `make drill-clean-restore` on 2026-11-05, and has no result recorded here until its evidence is published. Before that it had run only as far as its plan, and against stubs.
 
 ## Confirm
 
@@ -139,15 +139,15 @@ Restore evidence has one line per step, labelled PASS, FAIL or NOT RUN. A `NOT R
 
 `make restore` with `CONFIRM=yes` has run once in each Plane environment. Each brought back the sentinel work item and attachment, a worker ran a new job, `result` reads PASS, `not_run` is empty, and `make test-e2e` then passed ([restore-dev-20261105T074337Z.json](../evidence/runs/restore-dev-20261105T074337Z.json), [BKP-2-20261105T074322Z.txt](../evidence/runs/BKP-2-20261105T074322Z.txt), [restore-prod-sim-20261105T073438Z.json](../evidence/runs/restore-prod-sim-20261105T073438Z.json), [SEC-3-BKP-3-20261105T073240Z.txt](../evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). With no `CONFIRM`, prod-sim refused: 31 users and 66 objects already there, "Nothing was changed", make exit 2 ([restore-prod-sim-20261105T073428Z.json](../evidence/runs/restore-prod-sim-20261105T073428Z.json)). Dev was not asked that.
 
-**What this does not prove.** Each restore used the backup taken moments before, over the same rows, so no real loss was repaired. The database was dropped and recreated from the dump. The bucket already held the objects, and Content-Type was put back on 0 of them, so copying objects back ran for real only in the [rehearsal](../evidence/runs/dr-plane-restore-rehearsal-1.txt).
+**What this does not prove.** Each restore used the backup taken moments before, over the same rows, so no real loss was repaired. The database was dropped and recreated from the dump. The bucket already held the objects, and Content-Type was put back on 0 of them, so the only published run of copying objects back is the [rehearsal](../evidence/runs/dr-plane-restore-rehearsal-1.txt).
 
-`make restore ENV=infisical` returned `/api/status` 200 in all five runs, with `proof-values` PASS. Afterwards `make test-infisical` exited 0 with 118 PASS lines, including each rendered Secret, and all 14 Applications read Synced and Healthy ([dr-inplace-restore-3.txt](../evidence/runs/dr-inplace-restore-3.txt), [dr-after-restores-1.txt](../evidence/runs/dr-after-restores-1.txt)). The operators kept syncing on the same database contents, so this does not show a change of value reaching a Secret after a restore.
+`make restore ENV=infisical` returned `/api/status` 200 in all seven runs. `proof-values` read PASS in six. In the other it read NOT RUN and the result BLOCKED, because that run removed the token and the password on purpose ([dr-inplace-no-token-no-password-2.txt](../evidence/runs/dr-inplace-no-token-no-password-2.txt)). Afterwards `make test-infisical` exited 0 with 118 PASS lines, including each rendered Secret, and all 14 Applications read Synced and Healthy ([dr-inplace-restore-3.txt](../evidence/runs/dr-inplace-restore-3.txt), [dr-inplace-no-token-no-password-3.txt](../evidence/runs/dr-inplace-no-token-no-password-3.txt), [dr-after-restores-1.txt](../evidence/runs/dr-after-restores-1.txt)). The operators kept syncing on the same database contents, so this does not show a change of value reaching a Secret after a restore.
 
-`restore.sh` refusing a backup whose `SECRET_KEY` fingerprint differs has run on stubs ([dr-harness-stubbed-4.txt](../evidence/runs/dr-harness-stubbed-4.txt)). On a real install it is a step of the clean install in progress, `restore-foreign-key-refused`, not yet recorded here.
+`restore.sh` refusing a backup whose `SECRET_KEY` fingerprint differs ran on a real install at 2026-11-05T08:09:20Z, on the clean install, which has new secrets. `make restore ENV=dev BACKUP=20261105T074932Z CONFIRM=yes`, with a backup of the install before it, stopped at the fingerprint and said "Nothing was changed" (`.local/evidence-raw/clean-install-20261105T075041Z/restore-foreign-key-refused.txt`, not published yet). It and the other refusals have also run on stubs ([dr-harness-stubbed-4.txt](../evidence/runs/dr-harness-stubbed-4.txt)).
 
-Backup duration and size: dev 15 s and 78 MiB, prod-sim 11 s with no objects, about 17 s with 66, and 51 MiB with 61, Infisical 22 s and 6.0 MiB. See [Data operations](../data-operations.md#retention) for what each rests on.
+Backup duration and size: dev 15 s with 92 objects, and 78 MiB for that backup, `20261105T062141Z`. Prod-sim 11 s with no objects, about 17 s with 66, and 51 MiB for `20261105T053351Z` with 61. Infisical 22 s and 6.0 MiB. Backups grow with the smoke runs: on 2026-11-05 at 08:37Z the newest read 87 MiB in dev and 60 MiB in prod-sim. See [Data operations](../data-operations.md#retention) for what each rests on.
 
-Restore duration: Infisical 51 s to 71 s in place. Plane in place, from the start stamp to the evidence file's last write ([MANIFEST.tsv](../evidence/runs/MANIFEST.tsv)): dev 178 s with 97 objects, prod-sim 183 s with 66. That covers the checks and all the proofs. The time from stopping the apps to green probes was not timed on its own, and a larger dataset will take longer.
+Restore duration: Infisical 44 s to 71 s in place, over seven runs, and the 71 s is the BLOCKED one ([dr-inplace-no-token-no-password-2.txt](../evidence/runs/dr-inplace-no-token-no-password-2.txt), [dr-inplace-no-token-no-password-3.txt](../evidence/runs/dr-inplace-no-token-no-password-3.txt)). Plane in place, from the start stamp to the evidence file's last write ([MANIFEST.tsv](../evidence/runs/MANIFEST.tsv)): dev 178 s with 97 objects, prod-sim 183 s with 66. That covers the checks and all the proofs. The time from stopping the apps to green probes was not timed on its own, and a larger dataset will take longer.
 
 ## What not to do
 
