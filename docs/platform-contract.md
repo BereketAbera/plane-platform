@@ -319,7 +319,7 @@ install builds and promotes its images and pulls everything through empty caches
   1 or 2 for those, as `tests/e2e/smoke.py` does. `make` itself exits 2 on any failure, and prints which.
 - `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`. With an unfinished clean
   restore that backup still goes ahead, because what it deletes may be all there is, where a plain `make backup` refuses an environment that
-  restore has not finished and whose data has not come back, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. `SKIP_BACKUP=yes` then deletes what is there with no backup. It removes
+  restore has not finished and whose data has not come back, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. `SKIP_BACKUP=yes` then deletes what is there with no backup. `make destroy` removes
   `.local/terraform/local` and keeps backups, secret zero and `.local/terraform/infisical`, because a clean restore needs them.
   `PURGE=yes` also removes the local services and their volumes.
 - `make restore` refuses to overwrite a non-empty environment without `CONFIRM=yes`. `make restore-clean` brings the whole platform
