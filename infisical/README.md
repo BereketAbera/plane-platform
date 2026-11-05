@@ -182,7 +182,7 @@ Real runs on 2026-11-05. Raw output is in `.local/evidence-raw/`.
 | Terraform with the backup's state against that instance | No changes, and identities log in. With a stored CA that differs: 2 updates and 8 no-ops, applied as a saved plan, and both identities log in. The API refuses a CA that cannot verify the API server, so a wrong one cannot be stored by request | `dr-fresh-instance-rehearsal-1.txt`, `-2.txt` |
 | The exact Plane restore Job, into a scratch database and bucket | Postgres gates pass, objects sync and check by download through the read-only mount, Content-Type put back on 14 of 22 objects, because VirtioFS keeps no xattrs and rclone guessed `text/plain; charset=utf-8` | `dr-plane-restore-rehearsal-1.txt` |
 | Whether root undoes a paused child | No. Root stayed Synced through a hard refresh, and `kubectl apply` of the child's manifest keeps `enabled: false` | `dr-child-pause-1.txt` |
-| Order, resume and every refusal of `make restore-clean`, restored mode and the drill | 117 checks PASS, with stubbed kubectl, kind, Terraform, `up.sh`, smoke test and API. The scripts and the files on disk are real. This shows the logic, not the platform | `dr-harness-stubbed-1.txt` |
+| Order, resume and every refusal of `make restore-clean`, restored mode and the drill | 119 checks PASS, with stubbed kubectl, kind, Terraform, `up.sh`, smoke test and API. The scripts and the files on disk are real. This shows the logic, not the platform | `dr-harness-stubbed-1.txt` |
 
 ## Free-tier limits and what they forced
 
