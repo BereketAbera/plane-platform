@@ -63,7 +63,9 @@
 # It can resume: run it again after any failure, including a hard stop that ran no trap. With the marker still
 # there, a new run first puts back any auto-sync left paused and any Deployment left at zero. A resume refuses, and
 # changes nothing, if the marker has been overtaken: BACKUP=latest with a newer complete set than it names, a backup
-# it names that is gone, or an environment not yet done that holds something other than its backup. Options:
+# it names that is gone, or an environment not yet done that holds something other than its backup. An environment
+# whose data Job finished has a line saying so in the marker, and a resume does not replace it, whatever it holds: it
+# goes on from the migrator, unless ALLOW_RESUME_OVERWRITE names it. Options:
 #   PLAN_ONLY=yes                  do step 1 and print the plan. Changes nothing, and works on a live cluster
 #   ENVS="dev"                     restore only these Plane environments. Default: dev prod-sim
 #   BACKUP_DEV=<id> BACKUP_PROD_SIM=<id>  instead of the Plane backup step 1 would pick
@@ -483,6 +485,9 @@ clean_print_plan() {
       "$(jq -r '.uploaded_objects.missing // "not recorded"' "$LOCAL_DIR/backups/$env/$id/manifest.json")"
     clean_warn_plane_content "$env" "$id"
     clean_warn_newer_plane "$env" "$id" "$set_file"
+    if [[ -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $env" "$RESTORE_CLEAN_MARKER" && ! clean_done "$env"; then
+      printf '    %-10s its data came back on an earlier run, so a resume keeps what is there and goes on from the migrator, unless ALLOW_RESUME_OVERWRITE=%s\n' "" "$env"
+    fi
   done
   recovery_admin_plan "$set_file"
   if [[ "$RECOVERY_ADMIN_MODE" == token ]]; then
@@ -758,9 +763,9 @@ restore_clean() {
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
     under_way=yes
     # The cluster it was restoring into is gone, so nothing it finished still counts.
-    if ! cluster_exists && grep -q '^done ' "$RESTORE_CLEAN_MARKER"; then
+    if ! cluster_exists && grep -qE '^(done|data-back) ' "$RESTORE_CLEAN_MARKER"; then
       warn "the cluster that restore was working on is gone, so it starts again from the beginning"
-      sed -e '/^done /d' -e '/^not-run /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      sed -e '/^done /d' -e '/^not-run /d' -e '/^data-back /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
       mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
     fi
   else
@@ -839,7 +844,7 @@ restore_clean() {
       clean_record "restore-$env" PASS "already restored by an earlier run"
     else
       rc=0
-      "$restore_script" "$env" "${!var}" CONFIRM=yes "RESTORE_RESUME=$under_way" || rc=$?
+      "$restore_script" "$env" "${!var}" CONFIRM=yes RESTORE_MODE=clean "RESTORE_RESUME=$under_way" || rc=$?
       case "$rc" in
         0 | "$EXIT_OVERWROTE") clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json" ;;
         2) printf 'not-run restore-%s\n' "$env" >> "$RESTORE_CLEAN_MARKER" ;;
@@ -908,6 +913,7 @@ JOBS_STARTED=no     # Set before this run's first Job, so a stop knows there may
 JOB_STOPPED=no
 JOBS_LEFT_RUNNING=""
 OVERWROTE=no             # This run used ALLOW_RESUME_OVERWRITE, so it does not read PASS.
+KEEP_DATA=no             # This resume leaves the data an earlier run brought back, so it runs no data Job.
 INFISICAL_REDIS_STALE=no # Set before the database Job, and cleared by the flush after it.
 
 record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contract requires.
@@ -1177,6 +1183,16 @@ YAML
 
 resume_overwrite_names_this() { case " ${ALLOW_RESUME_OVERWRITE:-} " in *" $ENV_NAME "*) return 0 ;; *) return 1 ;; esac; }
 
+# Written when the data Job of a clean restore finishes, and only then. From that moment the target is this backup and
+# whatever the platform has written since, and counts cannot tell those apart: a new work item changes neither users
+# nor objects. So a resume does not compare. It keeps what is there, unless the override names it.
+data_back_mark() {
+  if [[ "$RESTORE_MODE" == clean && -f "$RESTORE_CLEAN_MARKER" ]]; then printf 'data-back %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"; fi
+}
+data_back_on_resume() {
+  [[ "$RESTORE_RESUME" == yes && -f "$RESTORE_CLEAN_MARKER" ]] && grep -qx "data-back $ENV_NAME" "$RESTORE_CLEAN_MARKER"
+}
+
 # On a resume the CONFIRM=yes is the parent's, and this target may be anything by now, so what it holds decides.
 # The data Job restores Postgres in one transaction and then syncs objects, so this same backup part way through has
 # either no users or all of them, and no more objects than the backup. Anything else has been written since.
@@ -1184,11 +1200,14 @@ refuse_if_not_empty() { # users objects
   local users="$1" objects="$2" want_users want_objects held="" have
   if [[ "$users" -eq 0 && "$objects" -eq 0 ]]; then
     record overwrite-guard PASS "target is empty"
+  elif data_back_on_resume && ! resume_overwrite_names_this; then
+    KEEP_DATA=yes
+    record data-back PASS "the data Job of an earlier run of this restore finished, so this keeps what $NS holds, $users users and $objects objects, and goes on from the migrator. ALLOW_RESUME_OVERWRITE=$ENV_NAME would replace it with backup $BACKUP_ID"
   elif [[ "$RESTORE_RESUME" == yes ]]; then
     want_users="$(clean_count "$backup_dir" users)"
     want_objects="$(jq -r '.objects.count // 0' "$manifest")"
     held="target holds $users users and $objects objects, and backup $BACKUP_ID $want_users and $want_objects"
-    if [[ ("$users" -eq 0 || "$users" == "$want_users") && "$objects" -le "$want_objects" ]]; then
+    if ! data_back_on_resume && [[ ("$users" -eq 0 || "$users" == "$want_users") && "$objects" -le "$want_objects" ]]; then
       record overwrite-guard PASS "a resume: $held, so it is this backup part way through, or nothing"
     elif resume_overwrite_names_this; then
       record overwrite-guard FAIL "a resume: $held, overwriting on ALLOW_RESUME_OVERWRITE=\"$ALLOW_RESUME_OVERWRITE\""
@@ -1211,6 +1230,7 @@ refuse_if_not_empty() { # users objects
 warn_empty_backup_over_data() { # target-users
   local other name=""
   [[ "$1" -gt 0 && "$(clean_count "$backup_dir" users)" == 0 ]] || return 0
+  if data_back_on_resume && ! resume_overwrite_names_this; then return 0; fi # Nothing is about to be replaced.
   for other in $(recovery_ids "$ENV_NAME"); do
     if [[ "$other" != "$BACKUP_ID" && "$(clean_count "$backups_dir/$other" users)" != 0 && "$(clean_count "$backups_dir/$other" users)" != "?" ]]; then name="$other"; fi
   done
@@ -1537,9 +1557,12 @@ restore_plane() {
   wait_for 180 "app pods to exit" no_app_pods
   record apps-stopped PASS "api, worker, beat and live at zero with auto-sync paused"
 
-  restore_data "$pg_image"
-  record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
-  record objects PASS "synced and checked by download, every uploaded asset has its object"
+  if [[ "$KEEP_DATA" == no ]]; then
+    restore_data "$pg_image"
+    data_back_mark
+    record postgres PASS "dump restored in one transaction, row counts and content hashes equal the backup"
+    record objects PASS "synced and checked by download, every uploaded asset has its object"
+  fi
   recovery_reinstate_test_files "$backup_dir" "$ENV_NAME"
 
   # Old cache entries and queued tasks describe rows from before the restore.
@@ -1569,6 +1592,9 @@ restore_plane() {
   prove_decrypt || failed=1
   prove_sentinel || failed=1
   prove_probes
+  if [[ $failed -ne 0 && "$KEEP_DATA" == yes ]]; then
+    die "this resume kept what $NS holds, and at least one proof failed on it. If that is not what should be there, the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME replaces it with backup $BACKUP_ID. To keep a copy first: make backup ENV=$ENV_NAME."
+  fi
   [[ $failed -eq 0 ]] || die "the data is back, but at least one proof failed"
 }
 
@@ -1763,8 +1789,11 @@ restore_infisical() {
   record app-stopped PASS "infisical at zero with auto-sync paused"
 
   INFISICAL_REDIS_STALE=yes
-  restore_infisical_db "$pg_image"
-  record postgres PASS "dump restored into a second database, row counts equal the backup, swapped in"
+  if [[ "$KEEP_DATA" == no ]]; then
+    restore_infisical_db "$pg_image"
+    data_back_mark
+    record postgres PASS "dump restored into a second database, row counts equal the backup, swapped in"
+  fi
   # State, machine file and database are a pair, so these change when the database does. Before that, a failed Job
   # would leave the old database with this backup's state, for the next make up to apply. A clean restore installed
   # them earlier, for what make up needs, and these then change nothing.
