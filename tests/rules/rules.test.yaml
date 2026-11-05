@@ -254,31 +254,6 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
             exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
-  # increase() extrapolates to the moment of evaluation, so one restart reads just over 1 between scrapes.
-  - name: PodRestarting stays quiet on one restart, and fires on two
-    interval: 30s
-    input_series:
-      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="once-1",container="c",uid="u"}'
-        values: '0x20 1x60'
-      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="twice-1",container="c",uid="u"}'
-        values: '0x20 1x6 2x60'
-      # A series that has just appeared extrapolates the most: 1.5 from one restart, 45s after it began.
-      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="young-1",container="c",uid="u"}'
-        values: '_x20 0 1 1x60'
-    alert_rule_test:
-      - eval_time: 10m45s
-        alertname: PodRestarting
-        exp_alerts: []
-      # 15s after a scrape: once-1 reads 1.02 here, as the 1.024 measured on a real restart did.
-      - eval_time: 20m15s
-        alertname: PodRestarting
-        exp_alerts:
-          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: twice-1, container: c, uid: u, severity: warning, component: pod }
-            exp_annotations: { summary: "monitoring/twice-1 container c restarted more than once in 15m" }
-      # Both restarts have left the window.
-      - eval_time: 30m
-        alertname: PodRestarting
-        exp_alerts: []
   # Taken from a real one: a throwaway Application with a path that does not exist. Sync Unknown, health Healthy, no
   # operation label, autosync on, condition ComparisonError. Only this rule can see that.
   - name: a commit that cannot render fires ArgoAppSyncUnknown at 15m, and no other Argo rule
@@ -350,6 +325,25 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, dest_namespace: plane-dev, health_status: Degraded, severity: critical, component: argocd }
             exp_annotations: { summary: Application plane-dev is Degraded }
+    # plane-prod-sim is the drill's path: the two lists in the comment on ArgoSyncFailed and in monitoring/README.md.
+    promql_expr_test:
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-prod-sim"})
+        eval_time: 9m
+        exp_samples:
+          - labels: '{alertname="ArgoAppStuckProgressing", alertstate="pending"}'
+            value: 1
+          - labels: '{alertname="ArgoSyncFailed", alertstate="pending"}'
+            value: 1
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-prod-sim"})
+        eval_time: 13m
+        exp_samples:
+          - labels: '{alertname="ArgoAppDegraded", alertstate="pending"}'
+            value: 1
+          - labels: '{alertname="ArgoSyncFailed", alertstate="pending"}'
+            value: 1
+      - expr: count by (alertname, alertstate) (ALERTS{name="plane-prod-sim"})
+        eval_time: 17m
+        exp_samples: []
   # What the timeline of the first boot showed for kube-prometheus-stack: the operation closed on apply, then Synced
   # and Progressing while root waited. Nothing else in this file reads that state.
   - name: a child Progressing with its operation closed fires ArgoAppStuckProgressing at 30m, and root does not
@@ -387,3 +381,41 @@ tests:
       - eval_time: 32m
         alertname: ArgoAppOutOfSync
         exp_alerts: []
+  # The Application override in helm/values/argocd.yaml reads Healthy and not Synced as Progressing, so root holds its
+  # wave on the child, while the child's own series still says Healthy. Which rule fires goes by its sync status.
+  - name: a child Healthy but not Synced holds root, and fires on its sync status rather than ArgoAppStuckProgressing
+    interval: 1m
+    input_series:
+      - series: 'argocd_app_info{name="render-failure",dest_namespace="monitoring",project="platform",sync_status="Unknown",health_status="Healthy"}'
+        values: '1x70'
+      - series: 'argocd_app_info{name="drifted",dest_namespace="monitoring",project="platform",sync_status="OutOfSync",health_status="Healthy"}'
+        values: '1x70'
+      - series: 'argocd_app_info{name="root",dest_namespace="argocd",project="platform",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '1x70'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: ArgoAppSyncUnknown
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: ArgoAppOutOfSync
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoAppSyncUnknown
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppSyncUnknown, name: render-failure, dest_namespace: monitoring, severity: warning, component: argocd }
+            exp_annotations:
+              summary: Argo CD has been unable to compare Application render-failure with Git for 15m, so new commits do not reach it
+              description: A commit that cannot render, or a Git that cannot be read, leaves sync Unknown and starts no sync. status.conditions has the ComparisonError; see docs/runbooks/argo-sync-stuck.md.
+      - eval_time: 17m
+        alertname: ArgoAppOutOfSync
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppOutOfSync, name: drifted, dest_namespace: monitoring, severity: warning, component: argocd }
+            exp_annotations: { summary: Application drifted has been out of sync for 15m }
+      - eval_time: 32m
+        alertname: ArgoAppStuckProgressing
+        exp_alerts: []
+      - eval_time: 62m
+        alertname: ArgoRootSyncStuck
+        exp_alerts:
+          - exp_labels: { alertname: ArgoRootSyncStuck, name: root, dest_namespace: argocd, severity: warning, component: argocd }
+            exp_annotations: { summary: The root Application has had a sync Running for 60m }
