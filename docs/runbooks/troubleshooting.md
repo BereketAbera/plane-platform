@@ -152,7 +152,7 @@ docker exec "$NODE" nft list tables
 
 Of `kube-system`, Loki gets only kindnet's `skipping network policies` line, so use `kubectl logs` here.
 
-**What the alerts see.** Alloy counts kindnet's lines. `KindnetSkippedNetworkPolicies` fires on that one line, and `KindnetLogsNotRead` fires when no line has been counted for 15m, so the tail itself is watched. They see nothing else, so `make test-netpol`, which sends real traffic, stays the real check. They were proved with a synthetic line from a scratch pod, not a real kindnet failure ([h18-synthetic-2.txt](../evidence/runs/h18-synthetic-2.txt)).
+**What the alerts see.** Alloy counts kindnet's lines. `KindnetSkippedNetworkPolicies` fires on that one line, and `KindnetLogsNotRead` fires when no line has been counted for 15m, so the tail itself is watched. They see nothing else, so `make test-netpol`, which sends real traffic, stays the real check. `KindnetSkippedNetworkPolicies` was proved with a synthetic line from a scratch pod, firing to resolved, not a real kindnet failure ([h18-synthetic-2.txt](../evidence/runs/h18-synthetic-2.txt), [kindnet-hold-1.txt](../evidence/runs/kindnet-hold-1.txt)). `KindnetLogsNotRead` has only gone pending, and a synthetic line cannot exercise it.
 
 The count stands for a pod name, so `KindnetSkippedNetworkPolicies` can stick after kindnet's container restarts healthy in the same pod. Run `make test-netpol`. If it passes, replace the pod:
 
@@ -168,9 +168,9 @@ The count stops applying 5 minutes after its pod has gone. On a scratch pod the 
 - Test from an ordinary pod, never from `hostNetwork`.
 - Do not trust a test on an existing connection.
 
-`make test-netpol` proves its sentinel in a throwaway namespace first. A deny row passes only on a timeout, and INCONCLUSIVE is never a pass: `scripts/test-netpol.sh` exits 0 when every row passed, 1 when a row or the sentinel failed, and 2 when nothing failed but a row was INCONCLUSIVE. Read which it was.
+`make test-netpol` proves its sentinel in a throwaway namespace first. A deny row passes only on a timeout, and INCONCLUSIVE is never a pass: `scripts/test-netpol.sh` exits 0 when every row passed, 1 when a row or the sentinel failed, and 2 when nothing failed but a row was INCONCLUSIVE. There is one exception: a row that needs something outside the cluster still reads INCONCLUSIVE offline, and does not make the run non-zero. So an exit 0 can carry such rows. On an exit 0, read how many the summary says "need something outside the cluster".
 
-What has run, by source namespace, on 2026-11-04: `plane-dev` 135 PASS ([netpol-20261104T232752Z.tsv](../evidence/runs/netpol-20261104T232752Z.tsv)), `plane-prod-sim` 134 PASS ([netpol-20261104T233304Z.tsv](../evidence/runs/netpol-20261104T233304Z.tsv)), `monitoring` 50 PASS ([netpol-20261104T221150Z.tsv](../evidence/runs/netpol-20261104T221150Z.tsv)) and `infisical` 14 PASS ([netpol-20261104T215857Z.tsv](../evidence/runs/netpol-20261104T215857Z.tsv)). `traefik` and `argocd` were last read while later waves did not exist yet, with INCONCLUSIVE rows ([netpol-20261104T210010Z.tsv](../evidence/runs/netpol-20261104T210010Z.tsv), [netpol-20261104T204822Z.tsv](../evidence/runs/netpol-20261104T204822Z.tsv)). No published run covers the whole matrix at once. [[VERIFY: make test-netpol passes its full allow and deny matrix]]
+What has been published, by source namespace, on 2026-11-04: `plane-dev` 135 PASS ([netpol-20261104T232752Z.tsv](../evidence/runs/netpol-20261104T232752Z.tsv)), `plane-prod-sim` 134 PASS ([netpol-20261104T233304Z.tsv](../evidence/runs/netpol-20261104T233304Z.tsv)), `monitoring` 50 PASS ([netpol-20261104T221150Z.tsv](../evidence/runs/netpol-20261104T221150Z.tsv)) and `infisical` 14 PASS ([netpol-20261104T215857Z.tsv](../evidence/runs/netpol-20261104T215857Z.tsv)). `traefik` and `argocd` were last read in a published run while later waves did not exist yet, with INCONCLUSIVE rows ([netpol-20261104T210010Z.tsv](../evidence/runs/netpol-20261104T210010Z.tsv), [netpol-20261104T204822Z.tsv](../evidence/runs/netpol-20261104T204822Z.tsv)). No published run covers the whole matrix at once. One unpublished run does, on the matrix's current 418 rows: on 2026-11-05 at 01:08Z it read 418 PASS, 0 FAIL and 0 INCONCLUSIVE, with `plane-dev` 153, `plane-prod-sim` 151, `monitoring` 50, `traefik` 28, `argocd` 19, `infisical` 14 and `kube-system` 3. That file, `netpol-20261105T010838Z.tsv`, is in `.local/evidence-raw/` and not yet published, so the marker stays until it is. [[VERIFY: make test-netpol passes its full allow and deny matrix]]
 
 **Fallback, if enforcement really fails.** The research names Calico, at the cost of more memory. That would be a change to the kind config and to the contract.
 
@@ -247,7 +247,7 @@ kubectl get apiservice v1beta1.metrics.k8s.io
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Plan wants to create what exists | State lost. State lives in `.local/terraform/`. `make destroy` removes it on purpose | Import, or rebuild |
+| Plan wants to create what exists | State lost. State lives in `.local/terraform/`. `make destroy` removes `.local/terraform/local` on purpose, and keeps `.local/terraform/infisical`, because a clean restore needs it | Import, or rebuild |
 | Plan is against resources that are gone | Cluster deleted by hand | Remove the stale state with `make destroy CONFIRM=yes SKIP_BACKUP=yes`. It tolerates a missing cluster |
 | Infisical project slug conflict | A destroyed project keeps its slug for 14 days | Use a fresh instance |
 

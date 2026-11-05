@@ -42,16 +42,16 @@ curl -s -w '\nanchor %{http_code}\n' "http://$HOST/api/public/anchor/__probe__/s
 curl -s "http://$HOST/live/health"; echo
 ```
 
-Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. [[VERIFY: /api/instances/ stays 200 with Postgres stopped]]
+Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. On 2026-11-04, on upstream images, each Postgres round of the pod restart drill took Postgres away for under a minute: the anchor route answered 500 for one 15s probe sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)). A longer outage has not been tried.
 
 | `/api/instances/` | `/api/public/anchor/__probe__/settings/` | Likely |
 |---|---|---|
 | 200 JSON | 404 "does not exist" | API and database are fine. This 404 is the healthy answer |
 | 200 JSON | 500 | **Postgres is unreachable or empty**, and the first answer is from cache |
-| 200 HTML | any | API has no endpoints, and Traefik fell through to the web route |
+| 200 HTML | any | API has no endpoints, and Traefik fell through to the web route. Not seen so far, see the 503 row |
 | 500 | 500 | Valkey or the API itself. Expected for Valkey down, as `CACHES` does not ignore exceptions. [[VERIFY: with Valkey down /api/instances/ answers 500]] |
 | 429 | any | Anonymous rate limit, 30 a minute per IP |
-| 502, 503, 504 | same | No ready API pods. Look at the pods |
+| 502, 503, 504 | same | No ready API pods. Look at the pods. With the only API pod deleted on 2026-11-04, both answered 503 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)) |
 
 ## Symptoms and causes
 
@@ -119,7 +119,7 @@ Measured in prod-sim on 2026-11-04 ([plane-prod-sim-worker-broker-restart-1.txt]
 | Worker | Broker restarted | Result |
 |---|---|---|
 | Never cancelled | Yes | Consumer back in 34s, and a new job ran |
-| After cancel, then add | Yes | 0 consumers after 90s, `active_queues` empty, messages parked |
+| After cancel, then add | Yes | In the controlled run: 0 consumers and 0 messages after a 90s wait, `active_queues` empty. The state found earlier, after the first drill failed, was the same with 210 messages parked |
 | Pod replaced | Not needed | Consumer back, 210 parked messages drained, and all 4 probe items got their activity |
 
 `PlaneWorkerNoConsumer` fired for it ([plane-prod-sim-worker-no-consumer-alert-1.txt](../evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). It also failed the first pod restart drill in prod-sim ([drill-pod-restart-prod-sim-20261104T233500Z.log](../evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log)).

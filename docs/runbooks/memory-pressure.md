@@ -23,7 +23,7 @@ How it has run so far, with both environments up, on 2026-11-04 and 2026-11-05. 
 
 Swap reached 0.60 GiB, and memory pressure (PSI) stayed at or under 0.18. One laptop on one night does not predict another machine, and the load test has not run.
 
-The worst case is first boot, so the contract says to bring environments up serially. Root's waves do that: `plane-dev`'s operation closed at 21:46:40Z and `plane-prod-sim`'s first sync began at 21:46:41Z. VM used topped 8.62 GiB in the first and 9.23 GiB in the second, whose images were already on the node ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt), [plane-prod-sim-memory-history-1.txt](../evidence/runs/plane-prod-sim-memory-history-1.txt)).
+Simultaneous first boots are expected to be the worst case, and have not been measured, so the contract says to bring environments up serially. Root's waves do that: `plane-dev`'s operation closed at 21:46:40Z and `plane-prod-sim`'s first sync began at 21:46:41Z. The measured serial first boots stayed below the later steady use in the table above: VM used topped 8.62 GiB in the first and 9.23 GiB in the second, whose images were already on the node ([plane-dev-firstboot-1.txt](../evidence/runs/plane-dev-firstboot-1.txt), [plane-prod-sim-memory-history-1.txt](../evidence/runs/plane-prod-sim-memory-history-1.txt)).
 
 | Situation | Requirement, from critique section 4 (recommendation, not a measurement) |
 |---|---|
@@ -97,7 +97,7 @@ RabbitMQ runs with `vm_memory_high_watermark.absolute = 256Mi` under a 512 MiB l
    ```
 
 2. Give Docker more memory: Docker Desktop, Settings, Resources, Memory. Leave enough for macOS.
-3. Do not run the branded image build alongside a full cluster. The estimate for its peak is 3 to 5 GiB (`plane-branding.md`, not measured here).
+3. A branded image build is mostly not VM memory. Its native part, `apps/wayline/scripts/build.sh`, runs on the Mac, so it takes the Mac's memory and not the VM's. From a cold turbo cache under the settings CI uses, its largest process reached 1,556 MiB and the sampled sum of its processes 1,640 MiB ([build-ci-settings.txt](../evidence/branding/build-ci-settings.txt)). An earlier cold run of three apps summed to 2,126 MiB ([wayline-build-1.txt](../evidence/runs/wayline-build-1.txt)), and a run reusing the cache to 619 MiB ([build.txt](../evidence/branding/build.txt)). Docker's part runs in the VM, and its own memory has not been measured. One run with most layers cached, on 2026-11-04 with both environments up, left VM used between 9,586 and 9,691 MiB from 23:53:51Z to 23:54:40Z, with a drill starting beside it ([images-build.txt](../evidence/branding/images-build.txt), [plane-prod-sim-memory-samples-2.tsv](../evidence/runs/plane-prod-sim-memory-samples-2.tsv)). A cold run of that part has not been measured, so hold it back while the VM is short.
 4. Take prod-sim's app tier down through Git, if you do not need it right now. There is no lean overlay in the repo today. The design in critique section 4 says this must be a Git overlay and not `kubectl scale`, or self-heal reverts it.
 
 **One container is too small.** Limits come from contract section 10, which says to change them only with a measurement. Record the measurement, then edit Git:
@@ -115,11 +115,11 @@ What has really happened to limits on this platform:
 
 | Workload | Limit now | What was measured |
 |---|---|---|
-| Grafana sidecars | 160 MiB | At 96 MiB they were OOM-killed about 35s after every start, before logging a line, 26 kills in the kernel log, so Grafana had no dashboard and no Ready pod, and `kube-prometheus-stack` flapped ([monitoring-grafana-before-1.txt](../evidence/runs/monitoring-grafana-before-1.txt)). They peak at 106 MiB now, and watch ConfigMaps only ([monitoring-memory-1.txt](../evidence/runs/monitoring-memory-1.txt)) |
+| Grafana sidecars | 160 MiB | At 96 MiB they were OOM-killed about 35s after every start, before logging a line, with 20 container restarts by then and 26 kill lines in `dmesg`, where each PID shown is logged twice. So Grafana had no dashboard and no Ready pod, and `kube-prometheus-stack` flapped ([monitoring-grafana-before-1.txt](../evidence/runs/monitoring-grafana-before-1.txt)). They peak at 106 MiB now, and watch ConfigMaps only ([monitoring-memory-1.txt](../evidence/runs/monitoring-memory-1.txt)) |
 | Grafana | 384 MiB | Its own container was not killed. Peak 333 MiB, and 277 MiB of anon under six parallel runs of all 26 dashboards ([monitoring-grafana-load-1.txt](../evidence/runs/monitoring-grafana-load-1.txt)). Each bundled datasource with a backend is its own process, so 15 are disabled |
 | Prometheus | 1 GiB, was 768 MiB | Anon reached 652 MiB at a head compaction, with 241k head series ([limits-breakdown-1.txt](../evidence/runs/limits-breakdown-1.txt)). No OOM kill |
 | Argo CD controller | 1 GiB, was 768 MiB | `memory.peak` 731 MiB with Plane running ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt), [argo-controller-limit-1.txt](../evidence/runs/argo-controller-limit-1.txt)). No OOM kill. One would stall every sync |
-| Argo CD repo-server | 512 MiB | Peak 259 MiB with all 8 chart Applications hard-refreshed at once ([argocd-render-load-1.txt](../evidence/runs/argocd-render-load-1.txt)) |
+| Argo CD repo-server | 512 MiB | Peak 247 MiB in the test with all 8 chart Applications hard-refreshed at once ([argocd-render-load-1.txt](../evidence/runs/argocd-render-load-1.txt)). The highest read on that pod was 269 MiB ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt), [monitoring-memory-1.txt](../evidence/runs/monitoring-memory-1.txt)) |
 | Loki | 640 MiB | Below the chart's example of 2 to 4 GiB, and it held: 553 MiB of anon at its worst under 3.5 MB/s of pushes, with no OOM kill ([monitoring-loki-limit-2.txt](../evidence/runs/monitoring-loki-limit-2.txt)). Raise this first if that changes |
 | `plane-registry` | 512 MiB, was 128 MiB | A push fills the limit with dirty page cache, and the kernel then killed a registry with almost no memory of its own ([registry-memory-1.txt](../evidence/runs/registry-memory-1.txt)) |
 | Plane workloads | Contract section 10 | Through smoke, soak and matrices in both environments, no container passed 66% of its limit by `memory.peak`, and 0 were OOM-killed ([plane-prod-sim-memory-1.txt](../evidence/runs/plane-prod-sim-memory-1.txt)). `live` reached 309 of 384 MiB on an earlier pod, after three smoke runs and the start of a soak ([plane-dev-memory-1.txt](../evidence/runs/plane-dev-memory-1.txt)) |
@@ -146,6 +146,6 @@ docker stats --no-stream
 | Raise a limit because `memory.peak` touched it | Read anon first. Loki's and Infisical Postgres's peaks were page cache |
 | Raise `vm_memory_high_watermark` to or above the container limit | RabbitMQ then gets OOM killed instead of applying back-pressure |
 | Raise `CELERY_WORKER_CONCURRENCY` to clear a backlog on a tight VM | Each fork costs memory. The chart default of 12 is what the contract's budget replaced |
-| Start both environments' first boots at the same time | It is the worst case |
+| Start both environments' first boots at the same time | It is expected to be the worst case. It has not been measured |
 | Stop containers that you do not recognise | Other projects on this host share Docker |
 | Conclude "the apps leak" from a working-set graph alone | Working set includes page cache. Check for actual OOM kills |
