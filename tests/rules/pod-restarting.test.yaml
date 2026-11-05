@@ -1,8 +1,8 @@
 # PodRestarting, in its own file for its evaluation_interval. promtool evaluates alerts at that step, whatever a group's
 # interval says, so rules.test.yaml's 15s can only reach 0s and 15s past a 30s scrape. What this rule has to survive is
 # every offset between two scrapes: by reading Prometheus's scheduling, the offset comes from hashes of the target and of
-# the rule file, so another install gets another one. scripts/ci/negative-controls.sh puts increase() back and requires
-# this file to fail.
+# the rule file, so another install gets another one. scripts/ci/negative-controls.sh puts increase() back, and separately
+# narrows one side's namespaces, and requires this file to fail.
 rule_files:
   - rules-platform.yaml
 evaluation_interval: 1s
@@ -91,10 +91,23 @@ tests:
       - eval_time: 21m30s
         alertname: PodRestarting
         exp_alerts: []
-  - name: a crash loop fires, even on a young series, and a namespace outside the list does not
+  # The rule states its namespaces twice, once on each side, and the two sides match on labels. So a namespace dropped from
+  # one line narrows the alert with no error, and only a series in that namespace can show it. monitoring has its series
+  # in the tests above, and this holds every other one.
+  - name: a crash loop fires, even on a young series, in each namespace the rule lists, and a namespace outside the list does not
     interval: 30s
     input_series:
       - series: 'kube_pod_container_status_restarts_total{namespace="plane-dev",pod="loop-1",container="c",uid="u"}'
+        values: '_x4 0 1 2 3 4x20'
+      - series: 'kube_pod_container_status_restarts_total{namespace="plane-prod-sim",pod="loop-1",container="c",uid="u"}'
+        values: '_x4 0 1 2 3 4x20'
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring-agents",pod="loop-1",container="c",uid="u"}'
+        values: '_x4 0 1 2 3 4x20'
+      - series: 'kube_pod_container_status_restarts_total{namespace="argocd",pod="loop-1",container="c",uid="u"}'
+        values: '_x4 0 1 2 3 4x20'
+      - series: 'kube_pod_container_status_restarts_total{namespace="traefik",pod="loop-1",container="c",uid="u"}'
+        values: '_x4 0 1 2 3 4x20'
+      - series: 'kube_pod_container_status_restarts_total{namespace="infisical",pod="loop-1",container="c",uid="u"}'
         values: '_x4 0 1 2 3 4x20'
       - series: 'kube_pod_container_status_restarts_total{namespace="kube-system",pod="loop-2",container="c",uid="u"}'
         values: '0 1 2 3 4x20'
@@ -107,3 +120,13 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: PodRestarting, namespace: plane-dev, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
             exp_annotations: { summary: "plane-dev/loop-1 container c restarted more than once in 15m" }
+          - exp_labels: { alertname: PodRestarting, namespace: plane-prod-sim, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "plane-prod-sim/loop-1 container c restarted more than once in 15m" }
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring-agents, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring-agents/loop-1 container c restarted more than once in 15m" }
+          - exp_labels: { alertname: PodRestarting, namespace: argocd, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "argocd/loop-1 container c restarted more than once in 15m" }
+          - exp_labels: { alertname: PodRestarting, namespace: traefik, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "traefik/loop-1 container c restarted more than once in 15m" }
+          - exp_labels: { alertname: PodRestarting, namespace: infisical, pod: loop-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "infisical/loop-1 container c restarted more than once in 15m" }
