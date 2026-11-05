@@ -20,7 +20,10 @@ if cluster_exists; then
     warn "SKIP_BACKUP=yes: deleting with no new backup"
   else
     log "Backing up all environments before deletion"
-    "$ROOT/scripts/backup.sh" all || die "backup failed, so nothing was deleted. Use SKIP_BACKUP=yes to override."
+    # Past the refusal for a clean restore under way: what is about to go may be real data, nothing has looked, and
+    # retention keeps the newest backup with users, so a backup of an empty environment costs nothing that matters.
+    ALLOW_BACKUP_DURING_RESTORE=yes "$ROOT/scripts/backup.sh" all \
+      || die "backup failed, so nothing was deleted. SKIP_BACKUP=yes deletes it with no backup, and what it holds since the last backup is then gone."
   fi
   log "Deleting kind cluster $CLUSTER_NAME"
   kind delete cluster --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG"

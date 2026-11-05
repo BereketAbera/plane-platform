@@ -6,14 +6,16 @@
 #   HARNESS_SOURCE=<another checkout> tests/drills/clean-restore-harness.sh
 #                                                the same scenarios against other code, to see them fail
 # S and a number is a scenario of the first review of the clean restore or from before it. R and a number is finding
-# that number of the second review, in clean-restore-harness/scenarios-second-review.sh.
+# that number of the second review, in clean-restore-harness/scenarios-second-review.sh. V and a number is MAJOR problem
+# that number of the review of those fixes, at the end of the same file, and M and a number its MINOR problem that
+# number. H66 is that entry of the hardening backlog, the probe loop of scripts/rotate.sh.
 #
 # macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. Run it in the background: one scenario at a time
-# takes about an hour, an estimate, and in six ONLY= groups at once it took 26 minutes.
+# took 65 minutes beside the mutants, and in six ONLY= groups at once it took 21.
 #
 # WHAT IT DOES. Each scenario copies the real scripts into a throwaway tree under $TMPDIR and runs them there:
 # restore.sh, backup.sh, destroy.sh, up.sh, cluster-up.sh, secret-zero.sh, infisical-bootstrap.sh,
-# infisical-seed.sh, the drill, and every library they source. Real: bash 3.2, jq, yq, shasum, openssl, git, the recovery
+# infisical-seed.sh, the drill, rotate.sh as far as its probe loop, and every library they source. Real: bash 3.2, jq, yq, shasum, openssl, git, the recovery
 # sets and every other file on disk, and, as written and on real folders, the lines of the Plane backup Job for its
 # retention and for what it records about uploaded rows. Stubbed, in tests/drills/clean-restore-harness/: kubectl, kind,
 # docker, df, sleep, rclone, Terraform, tests/e2e/smoke.py, gitops-publish.sh, status.sh, build-images.sh, the Infisical
@@ -90,20 +92,27 @@ jwt() { # exp. A token of the shape the server issues, for the instance admin id
   printf 'x.%s.y' "$(printf '{"exp":%s,"identityId":"adm","identityName":"Instance Admin Identity","orgId":"org-old"}' "$1" | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '=')"
 }
 
+# On a free port the system gives it, which it writes down once it listens, so harnesses running side by side cannot
+# answer for each other. A port picked at random here did that, with the mutants going.
 start_api() {
-  python3 -I "$STUBS/fakeapi.py" "$PORT" &
+  local waited=0
+  rm -f "$H/state/api-port"
+  python3 -I "$STUBS/fakeapi.py" "$H/state/api-port" &
   API_PID=$!
-  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-    /usr/bin/curl -s -o /dev/null -m 1 "$INFISICAL_URL/fake/registry" && break
+  until [[ -s "$H/state/api-port" ]] || [[ "$waited" -gt 300 ]]; do
     /bin/sleep 0.1
+    waited=$((waited + 1))
   done
+  [[ -s "$H/state/api-port" ]] || fail "fixture: the fake API did not start"
+  INFISICAL_URL="http://127.0.0.1:$(cat "$H/state/api-port" 2>/dev/null)"
+  export INFISICAL_URL
 }
 
 reset() {
   stop_api
   rm -rf "$H"
   mkdir -p "$H"/{scripts/lib,scripts/ci,monitoring/ops,infisical/lib,infisical/terraform,infisical/manifests,tests/drills,tests/e2e,gitops/environments/dev,gitops/environments/prod-sim,gitops/applications,helm/values,infrastructure/kind,.tools/bin,state,.local/secret-zero,.local/terraform/infisical,.local/terraform/local,.local/evidence-raw}
-  cp "$SOURCE"/scripts/{restore,backup,destroy,up,cluster-up,infisical-bootstrap,infisical-seed,secret-zero}.sh "$H/scripts/"
+  cp "$SOURCE"/scripts/{restore,backup,destroy,up,cluster-up,infisical-bootstrap,infisical-seed,secret-zero,rotate}.sh "$H/scripts/"
   cp "$SOURCE"/scripts/lib/*.sh "$H/scripts/lib/"
   cp "$SOURCE"/monitoring/ops/lib.sh "$H/monitoring/ops/"
   cp "$SOURCE"/infisical/lib/*.sh "$H/infisical/lib/"
@@ -133,8 +142,6 @@ reset() {
   unset ALLOW_LOW_DISK ALLOW_NO_SENTINEL ALLOW_NEWER_INFISICAL_BACKUP ALLOW_NO_ADMIN_TOKEN ALLOW_STALE_PLANE_SECRETS ALLOW_SECRET_KEY_MISMATCH
   unset ALLOW_RESUME_OVERWRITE ALLOW_BACKUP_DURING_RESTORE RESTORE_RESUME OVERRIDE_DEV_CHECK
   unset MIN_FREE_DISK_GIB RENEW_ADMIN_TOKEN INFISICAL_RESTORED UP_STOP_AFTER BACKUP_RETENTION_DAYS
-  PORT=$((20000 + RANDOM % 10000))
-  export INFISICAL_URL="http://127.0.0.1:$PORT"
   : > "$H/state/calls.log"
 
   local z="$H/.local/secret-zero" token
@@ -280,11 +287,11 @@ step_status_is() { # evidence-file step status
   jq -e --arg s "$2" --arg st "$3" 'any(.steps[]; .step == $s and .status == $st)' "$1"
 }
 # In a session of its own, so a signal can reach all of it, as Ctrl-C does. A shell starts a background job with SIGINT
-# ignored, nohup ignores SIGHUP, and a script cannot trap what it was started ignoring, so this puts those back as a
-# terminal would have them. Sets DETACHED and OUT.
+# ignored, nohup ignores SIGHUP, Python ignores SIGPIPE, and a script cannot trap what it was started ignoring, so this
+# puts those back as a terminal would have them. Sets DETACHED and OUT.
 start_detached() { # command...
   OUT="$H/state/detached.txt"
-  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGHUP, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
+  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGHUP, signal.SIG_DFL); signal.signal(signal.SIGPIPE, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
   DETACHED=$!
 }
 wait_for_log() { # pattern
@@ -749,7 +756,7 @@ S16() {
   check "PLAN_ONLY exit 0 (got $RC)" test "$RC" -eq 0
   show_tail
   check "not one file under .local changed" test "$a" = "$(sum_tree)"
-  check "the disk line is in the plan (finding 4)" out_has "kind volume 11.4 GiB"
+  check "the disk line is in the plan (finding 4)" out_has "kind volume 11.38 GiB"
   lose_cluster
   write_marker infisical
   a="$(sum_tree)"
@@ -1161,7 +1168,7 @@ S28() {
   run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
   check "14 GiB + 93% of 11.4: under 25, the drill refuses" test "$RC" -ne 0
   check "before the delete" no_log 'kind delete cluster'
-  check "and shows the arithmetic" out_has "about 24.6 GiB would be free after the delete: 14.0 GiB now plus 93% of the 11.4 GiB kind volume"
+  check "and shows the arithmetic" out_has "about 24.58 GiB would be free after the delete: 14.00 GiB now plus 93% of the 11.38 GiB kind volume"
   check "and how to go on" out_has 'ALLOW_LOW_DISK="<reason>"'
 
   reset
@@ -1536,6 +1543,9 @@ S33() {
   run scripts/restore.sh clean latest
   check "run again with the proof working: exit 0 (got $RC)" test "$RC" -eq 0
   check "without restoring anything again" no_log 'kc apply Job plane-restore ns=plane-dev'
+  # A data-back line alone spares the data Job, so these are what says the done line was read.
+  check "without stopping it or running its migrator again" no_log 'kc scale deployment/plane-api-wl --replicas=0 ns=plane-dev|kc apply Job plane-restore-migrate ns=plane-dev'
+  check "and says so" out_has "already restored by an earlier run"
   check "marker removed" test ! -e "$H/.local/restore-clean.state"
 
   reset
@@ -1639,7 +1649,7 @@ S36() {
 # shellcheck source=clean-restore-harness/scenarios-second-review.sh
 source "$STUBS/scenarios-second-review.sh"
 
-SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22"
+SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22 V1 V2 V3 V4 V4b M1 M2 M3 M4 M5 H66"
 
 for s in $SCENARIOS; do
   case " ${ONLY:-$SCENARIOS} " in

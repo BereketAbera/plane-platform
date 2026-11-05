@@ -18,8 +18,11 @@
 # Retention: Plane's runs in the Job, and it never removes the newest backup that holds users, so backups of an
 # empty environment cannot push out the last real one. Infisical's runs from here, once its set is complete, and
 # only a complete set counts toward KEEP, so a run of failures cannot remove the backup a clean restore needs.
-# While a clean restore is under way an environment it has not finished is empty or partly restored, and a backup of
-# that is worse than none, so this refuses it unless ALLOW_BACKUP_DURING_RESTORE=yes. One it has finished goes ahead.
+# While a clean restore is under way, nothing here has looked at what an environment it has not finished holds. It may
+# be empty or partly restored, and a backup of that would be the newest, so BACKUP=latest would name it. It may also be
+# real data. So this refuses unless ALLOW_BACKUP_DURING_RESTORE=yes, which make destroy passes, because what it is about
+# to delete may be all there is. One whose data has come back, or that it has finished, goes ahead, on the cluster that
+# restore was working on: on another, those lines say nothing about what is there.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../monitoring/ops/lib.sh
@@ -49,12 +52,14 @@ fi
 select_env "$target"
 
 if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
-  if grep -qx "done $ENV_NAME" "$RESTORE_CLEAN_MARKER"; then
+  if grep -qx "done $ENV_NAME" "$RESTORE_CLEAN_MARKER" && ! recovery_marker_cluster_gone; then
     warn "a clean restore is still marked as under way ($RESTORE_CLEAN_MARKER), and it has finished $ENV_NAME, so this backup goes ahead. A newer complete set stops BACKUP=latest from resuming that restore, and the refusal says what to run."
+  elif grep -qx "data-back $ENV_NAME" "$RESTORE_CLEAN_MARKER" && ! recovery_marker_cluster_gone; then
+    warn "a clean restore is still marked as under way ($RESTORE_CLEAN_MARKER), and the data of $ENV_NAME has come back, so this backup goes ahead. A newer complete set stops BACKUP=latest from resuming that restore, and the refusal says what to run."
   elif [[ "${ALLOW_BACKUP_DURING_RESTORE:-}" == yes ]]; then
     warn "a clean restore is under way ($RESTORE_CLEAN_MARKER), and it has not finished $ENV_NAME. Backing it up anyway, because ALLOW_BACKUP_DURING_RESTORE=yes."
   else
-    die "a clean restore is under way ($RESTORE_CLEAN_MARKER), and it has not finished $ENV_NAME, which is empty or partly restored. A backup of that would become the newest, and could push out the one that holds the data. Nothing was changed. Finish the restore, with the same make restore-clean. If this is before make destroy, pass SKIP_BACKUP=yes to that. To back up what is there anyway: ALLOW_BACKUP_DURING_RESTORE=yes."
+    die "a clean restore is under way ($RESTORE_CLEAN_MARKER), and it has not finished $ENV_NAME. This has not looked at what $ENV_NAME holds: it may be empty or partly restored, and a backup of that would become the newest, so BACKUP=latest would name it. It may also be real data. Nothing was changed. Finish the restore, with the same make restore-clean. To back up what is there anyway: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. make destroy does that by itself, and with SKIP_BACKUP=yes it deletes what is there with no backup."
   fi
 fi
 
