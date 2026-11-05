@@ -4,24 +4,24 @@
 
 Wayline is a customized deployment of open-source Plane Community Edition v1.4.3. It is not an original product. Plane is copyright Plane Software, Inc. and contributors, and licensed under AGPL-3.0-only. This page records what that means here, what is done, and what is not done.
 
-Written 2026-11-04, and reconciled on 2026-11-05 against `apps/wayline/` as committed then and the first real browser session on the branded images. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes.
+Written 2026-11-04, and reconciled on 2026-11-05 against `apps/wayline/` as committed then, the final images built from `84b63d9`, which both environments run, the first image build on GitHub, and the first real browser session on the branded images. Facts about upstream come from the pinned source at tag `v1.4.3`, commit `37a15d99231042b3ff5a4401fed479fdbec9effe`, and from the research notes.
 
-Two kinds of proof are kept apart below. **Built output verified** means it was checked in the build output or by running the image (`docs/evidence/branding/`). **Seen on `plane-dev`** means it was checked on the deployed platform on 2026-11-05 ([the browser session](evidence/branding/live-dev/README.md)). What neither has checked carries a `VERIFY` marker.
+Two kinds of proof are kept apart below. **Built output verified** means it was checked in the build output or by running the image (`docs/evidence/branding/`). **Seen on `plane-dev`** means it was checked on the deployed platform on 2026-11-05 ([the browser session](evidence/branding/live-dev/README.md)), on the images built from `1563cbf`, unless the row names a later record. What neither has checked carries a `VERIFY` marker.
 
 ## Status at a glance
 
 | Item | State on 2026-11-05 |
 |---|---|
 | Modified Plane code in this repository | Committed: `apps/wayline/` holds the upstream pin, overlay, patches, codemod, runtime and checks. Images build from it |
-| Images in the rendered manifests | `plane-dev` runs the four branded images by digest from `localhost:5001/wayline`, built from `1563cbf` and promoted at `4f622e3`, with upstream's `live` image unmodified. `plane-prod-sim` still runs unmodified upstream `docker.io/makeplane/*` by digest (`helm/plane/overlays/*/kustomization.yaml`). [[VERIFY: at promotion, update this row]] |
-| Who can reach the deployment | The owner, on loopback only (`127.0.0.1:80`, `:443`) |
-| `/source` offer | Built output verified, and seen on `plane-dev`: the web image answers it with a 302 to the commit that built it. **Dead today**: that target answers 404, because the repository is private and that commit is not pushed |
-| Repository visibility | **Private** (`BereketAbera/plane-platform`). Anonymous requests get 404 (checked 2026-11-05) |
+| Images in the rendered manifests | Both environments run the four branded images by digest from `localhost:5001/wayline`, built from `84b63d9`: web `3d7575a1`, admin `ce7adc37`, space `5f0119ff` and a flattened backend `8c04bd18`, with upstream's `live` image unmodified (`helm/plane/overlays/*/kustomization.yaml`, [digests](evidence/branding/digests-confirmed.txt)) |
+| Who can reach the deployment | The owner, on loopback only (`127.0.0.1:80`, `:443`, [readings](evidence/security/README.md#host-listeners)) |
+| `/source` offer | Built output verified, and through Traefik in both environments: the web image answers it with a 302 to `84b63d9`, the commit that built it. **Dead today**: with no credentials that target answers 404, because the repository is private. The commit is on GitHub ([record](evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)) |
+| Repository visibility | **Private** (`BereketAbera/plane-platform`). Anonymous requests get 404 (checked 2026-11-05, [record](evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)) |
 | `LICENSE`, `COPYRIGHT.txt` and `NOTICE.md` at this repository's root | Present. `LICENSE` and `COPYRIGHT.txt` are upstream's text, byte-identical |
 | Licence texts in images | Built output verified: every image has them at `/usr/share/licenses/wayline/`. Seen on `plane-dev`: the web image serves them at `/licenses/` |
-| Conveying to others | None known. Nothing has been pushed to GHCR, because `images.yml` has never run with `apps/wayline`. When it does, `publish-gate.sh` allows one destination besides the local registry, the owner's GHCR namespace (`ghcr.io/bereketabera/wayline`), and the job fails for anywhere else. It does not read package visibility, so making the repository public no longer stops publishing, and no package's visibility has been seen |
+| Conveying to others | None known, and whether a private package counts is for counsel. `images.yml` published four modified images from `9c8e098` to the owner's GHCR namespace (`ghcr.io/bereketabera/wayline`), the one destination `publish-gate.sh` allows besides the local registry ([what the run published](evidence/ci/ci-4-20261105T060219Z-published-compare.txt)). They are not the images running, which were built on this Mac. With no credentials all four answer 401 ([who can read them](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). The gate does not read package visibility, so making the repository public no longer stops publishing, and the API that states a package's visibility was not read, because the local token lacks `read:packages` |
 
-Contract section 5 states the end state: branded images at `localhost:5001/wayline/{web,admin,space,backend}`. Those are modified versions, and `plane-dev` runs them, so everything below applies now.
+Contract section 5 states the end state: branded images at `localhost:5001/wayline/{web,admin,space,backend}`. Those are modified versions, and both environments run them, so everything below applies now.
 
 ## The licence
 
@@ -75,14 +75,14 @@ A small "Source code" link, in places that already hold version or footer inform
 | Before sign-in | Auth footer, replacing the customer logo strip | `patches/20-auth.patch`, `auth-screens/footer.tsx` | Verified, and rendered | Seen on `plane-dev` ([screenshot](evidence/branding/live-dev/01-sign-in-dark.jpg)) |
 | God-mode admins | Help section, and admin sign-in | `patches/40-admin.patch`, `overlay/.../(home)/auth-split.tsx` | Verified, and rendered at sign-in | Admin sign-in seen on `plane-dev` ([screenshot](evidence/branding/live-dev/07-admin-sign-in.jpg)). The help section inside god-mode was not opened. [[VERIFY: source link is visible in god-mode and on its sign-in page]] |
 | Anonymous public pages | Corner badge, repurposed | `patches/50-space.patch`, `powered-by.tsx` | Verified | Seen on `plane-dev` while signed in, on the `/spaces/` landing page ([screenshot](evidence/branding/live-dev/09-public-space.jpg)). No anonymous view of a public page has been checked on the branded images, and a published board with real content was not opened. [[VERIFY: source link is visible on a public space page]] |
-| API clients, optional | `Link: <url>; rel="source"` at ingress | Traefik middleware | Not built | [[VERIFY: decide on and test the API source header]] |
-| The route itself | `/source` | `runtime/nginx-web.conf` | Verified by `checks/smoke-images.sh`: 302 to `<repo>/tree/<commit>` | Seen on `plane-dev`: `curl -I` with no session answers 302 to the tree at `1563cbf`, the commit that built the deployed image ([record](evidence/branding/live-dev/README.md)). No logged-out browser has followed it. [[VERIFY: /source returns a redirect to the exact deployed commit, from a logged-out browser]] |
+| API clients, optional | `Link: <url>; rel="source"` at ingress | Traefik middleware | Not built | Unverified: nobody has decided whether to add this header, and nothing has tested it. Check it at the start of Pass 2 |
+| The route itself | `/source` | `runtime/nginx-web.conf` | Verified by `checks/smoke-images.sh`: 302 to `<repo>/tree/<commit>` | Through Traefik in both environments, `curl -I` with no session answers 302 to the tree at `84b63d9`, the commit that built the deployed images, and that target answers 404 with no credentials ([record](evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). BR-3 is FAIL. No browser has followed it |
 
 The `/source` path and the Plane routing coexist. `source` is a reserved workspace slug in both the frontend and backend lists, and no router link may point at `/source` (`checks/source-links.mjs`). Traefik routes it to the web container: that 302 comes from the branded image, where upstream's image answered 200 with the app's page ([plane-dev-branded-images-1.txt](evidence/runs/plane-dev-branded-images-1.txt)).
 
 ### The private repository caveat
 
-`origin` is a private GitHub repository. **Before anyone other than the owner uses an instance, the repository must be public, or the source must be offered another way.** A `/source` link to a private repository returns a 404 to everyone without access, which is not an offer. Making it public is not enough on its own: the commit an image names must also be pushed, which is why `scripts/ci/build-images.sh` warns when it is not on `origin/main`. `WAYLINE_REQUIRE_PUBLIC_SOURCE=yes checks/smoke-images.sh` follows the link logged out and fails unless it answers 200.
+`origin` is a private GitHub repository. **Before anyone other than the owner uses an instance, the repository must be public, or the source must be offered another way.** A `/source` link to a private repository returns a 404 to everyone without access, which is not an offer. Making it public is not enough on its own: the commit an image names must also be pushed, which is why `scripts/ci/build-images.sh` warns when it is not on `origin/main`. `84b63d9` is pushed. `WAYLINE_REQUIRE_PUBLIC_SOURCE=yes checks/smoke-images.sh` follows the link logged out and fails unless it answers 200.
 
 | Option | Notes |
 |---|---|
@@ -98,8 +98,8 @@ Section 5 applies when modified source is conveyed, and sections 4 to 6 cover co
 | Event | Conveying? | Consequence |
 |---|---|---|
 | Pushing to the local registry | No | |
-| Pushing a modified image to private GHCR with only the owner's access | Probably not. Confirm | `images.yml` pushes to the owner's GHCR namespace on `main`, the one destination `publish-gate.sh` allows besides the local registry. It has never run with `apps/wayline`, so nothing has been pushed, and whether a package it creates is private has not been seen |
-| Pushing a modified image to public GHCR | Yes | Section 5 notices, section 6 source. The gate checks the namespace and not the visibility, so nothing stops this. GitHub's documentation reads two ways on whether a package a workflow creates takes its repository's visibility, and nothing has been pushed to see which |
+| Pushing a modified image to private GHCR with only the owner's access | Probably not. Confirm | This has happened: run 41975430939 pushed four images, and with no credentials they answer 401 ([who can read them](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). Nothing shows who else holds access. Check suites from two third-party GitHub Apps sit queued on pushed commits of the repository, and what each installation covers was not read ([record](evidence/ci/br-3-20261105T060937Z-apps.txt)) |
+| Pushing a modified image to public GHCR | Yes | Section 5 notices, section 6 source. The gate checks the namespace and not the visibility, so nothing stops this. GitHub's documentation reads two ways on whether a package a workflow creates takes its repository's visibility, so read each package's visibility again before the repository goes public |
 | Making this repository public once it holds patches | Yes | Section 5 notices |
 | Handing an image or tarball to anyone | Yes | Same |
 
@@ -136,24 +136,24 @@ At tag `v1.4.3`, `apps/api/plane/utils/email.py` is headed `SPDX-License-Identif
 
 **What was done, recorded as D12 in the [handoff](../PASS2_HANDOFF.md#12-open-decisions): the notice is not edited. The backend image replaces the file with upstream's own AGPL-3.0-only version from `preview`, pinned by commit, and the image is flattened, so that what is published holds no layer with the original.**
 
-**Who chose this.** No person did. An AI coding agent implementing the image chose to replace the file, under the owner's rule against using commercial-only assets without authorization, and the agent coordinating the work then required the flattening. The owner was told afterwards that the file was replaced, has not reviewed that choice or the flattening, and has not authorized the original file. No lawyer or other legal reviewer has looked at any of it, so this records what was done and is not a legal claim either way ([the full record](../apps/wayline/MODIFICATIONS.md#d12-the-one-file-with-a-commercial-license-header)). The copy of that record inside the images from `1563cbf`, which the web image serves at `/licenses/MODIFICATIONS.txt`, still says a project lead decided. The current text reaches a running image only at the next promotion.
+**Who chose this.** No person did. The agent coordinating the work chose to replace the file, under the owner's rule against using commercial-only assets without authorization, and an AI coding agent implementing the image made that change. The coordinating agent then required the flattening, under the same rule. It also removed the requirement that the repository be private, because no layer holds the original. The repository's owner, Bereket Abera, was told of all three in progress messages, each after it was decided. He has not reviewed them, and has not authorized the original file. No lawyer or other legal reviewer has looked at any of it, so this records what was done and is not a legal claim either way ([the full record](../apps/wayline/MODIFICATIONS.md#d12-the-one-file-with-a-commercial-license-header)). The first push of `apps/wayline` to `main` went ahead on 2026-11-05 at 05:39Z, and it published, with that review still open.
 
 | What was done | Where |
 |---|---|
 | Upstream's file at `86d9b158fa4edd0c5deebb29367b5dd9b821716f`, unchanged, sha256 `620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda`. It fits every caller at `v1.4.3`: 11 modules import only `generate_plain_text_from_html`, with one argument | `apps/wayline/backend/vendor/email.py`, `email.py.pin` |
 | Copied over the original in the image's first stage | `apps/wayline/runtime/Dockerfile.backend` |
 | The image build stops if any file in that stage's filesystem contains `LicenseRef-Plane-Commercial`, or if this file is not that AGPL-3.0-only version | `apps/wayline/backend/check_image.py --build-time` |
-| The last stage is `FROM scratch` and copies that filesystem, so the image has one layer holding it and BuildKit's empty layer for `WORKDIR`. In the code since `5adbc78`, and not yet in what `plane-dev` runs, below | `apps/wayline/runtime/Dockerfile.backend`, `apps/wayline/checks/flatten-config.py`, `docs/evidence/branding/flatten-compare-final.txt` |
-| Every layer of each image built here is read as the registry serves it after each push, and an image with a hit records no digest | `apps/wayline/checks/layer-check.py`, `scripts/ci/build-images.sh` |
+| The last stage is `FROM scratch` and copies that filesystem, so the image has one layer holding it and BuildKit's empty layer for `WORKDIR`. Both environments run this image | `apps/wayline/runtime/Dockerfile.backend`, `apps/wayline/checks/flatten-config.py`, `docs/evidence/branding/flatten-compare-final.txt` |
+| Every layer of each image built here is read in a throwaway registry before anything is published, and again as the target serves it, and an image with a hit records no digest | `apps/wayline/checks/layer-check.py`, `scripts/ci/build-images.sh` |
 | The image's license label is `AGPL-3.0-only` | `apps/wayline/runtime/Dockerfile.backend` |
 | The file renders mail from the real templates, in the image, and a mail went through it to a scratch SMTP server and back | `docs/evidence/branding/smoke.txt`, `backend-db.txt` |
-| Publishing is limited to the local registry and the owner's GHCR namespace, and for anywhere else the job fails. A pending or unknown value in the decision file publishes only to the local registry. The gate does not read visibility, so making the repository public no longer stops publishing, and no package's visibility has been seen | `apps/wayline/backend/email-py-decision.txt`, `apps/wayline/scripts/publish-gate.sh`, `.github/workflows/images.yml` |
+| Publishing is limited to the local registry and the owner's GHCR namespace, and for anywhere else the job fails. A pending or unknown value in the decision file publishes only to the local registry. The gate does not read visibility, so making the repository public no longer stops publishing | `apps/wayline/backend/email-py-decision.txt`, `apps/wayline/scripts/publish-gate.sh`, `.github/workflows/images.yml` |
 
-**What runs today, and what the code builds now.** The backend image `plane-dev` runs, `4add277c` from `1563cbf`, is not flattened, so the upstream base layers under it still hold the original file. A running container cannot see it, and nothing executes it. Anyone who pulls that image and unpacks those layers can read it. So its filesystem carries no commercially headed code, while its bytes still do, until the flattened image is promoted. The code since `5adbc78` builds an image with no such layer: on the images built from `ec45e21`, backend `9c713094`, a walk of every layer read 0 hits on all four ([record](evidence/branding/layer-check.txt)). They are in the local registry and deployed nowhere. Upstream's image is still an input to that build, which downloads it and does not republish it.
+**What runs today.** Both environments run backend `8c04bd18`, built from `84b63d9`. It is flattened. A walk of every layer of the four images read 0 hits ([record](evidence/branding/layer-check.txt)), and the running path holds the AGPL-3.0-only file ([email-py.txt](evidence/branding/email-py.txt)). Run 41975430939 did the same walk on what it published from `9c8e098`, before and after publishing, with 0 hits ([what the run published](evidence/ci/ci-4-20261105T060219Z-published-compare.txt)). Upstream's image is still an input to that build, which downloads it and does not republish it. The unflattened image from `1563cbf`, `4add277c`, is still in the local registry on this Mac ([read 2026-11-05](evidence/security/README.md#host-listeners)), deployed nowhere, and its upstream base layers hold the original file. Promoting or rolling back to that digest would run it again.
 
-**What a walk of the layers found, on 2026-11-05.** Every layer blob of the images this platform deploys was read for the identifier ([record](evidence/branding/layer-check-deployed-images.txt), [the 31 unmodified images again](evidence/branding/layer-check-deployed.txt)). `email.py` holds it in two layers of upstream's `plane-backend`, and in the same two layers of the deployed branded backend image, `4add277c`. The other hits in the images from `1563cbf` are text about it, in `check_image.py` and the record of changes. Every other image is clean. `plane-prod-sim` still runs upstream's `plane-backend`, so there the file is in the running filesystem until the branded images are promoted.
+**What a walk of the layers found, on 2026-11-05.** The images this platform deploys unmodified were read for the identifier too ([record](evidence/branding/layer-check-deployed.txt), [`live`](evidence/branding/layer-check-live.txt)). The only hit is `email.py`, in two layers of upstream's `plane-backend`, which is a build input and which no environment runs now. The same two layers are in `4add277c` ([earlier record](evidence/branding/layer-check-deployed-images.txt)). Those walks read the images and say nothing about whether anything is cleared.
 
-**What remains for the owner before a public launch.** D12 itself, since nobody has reviewed it. A public distribution of the image from `1563cbf` hands out those layers, so it is a point to take advice on. Upstream publishes the same layers publicly itself, which is a fact to give counsel and not a conclusion. The flattened image holds no layer of upstream's, and it is still derived from upstream's image as a build input, which says nothing about whether anything is cleared. Moving to an upstream release that carries the AGPL header would end the need for the replacement and the flattening, and no such release exists yet. Sending images anywhere else means a new value in `email-py-decision.txt` and a change to `publish-gate.sh`.
+**What remains for the owner before a public launch.** D12 itself, since nobody has reviewed it. Publishing no longer waits for that: a push to `main` that touches `apps/wayline/` publishes. A public distribution of the image from `1563cbf` would hand out those layers, so it is a point to take advice on. Upstream publishes the same layers publicly itself, which is a fact to give counsel and not a conclusion. The flattened image holds no layer of upstream's, and it is still derived from upstream's image as a build input, which says nothing about whether anything is cleared. Moving to an upstream release that carries the AGPL header would end the need for the replacement and the flattening, and no such release exists yet. Sending images anywhere else means a new value in `email-py-decision.txt` and a change to `publish-gate.sh`.
 
 Source is a separate matter. `apps/wayline/UPSTREAM` pins `v1.4.3`, whose tree holds the commercially headed file, so the source offer names that tree. This repository does not copy the original, and it holds the AGPL version in `backend/vendor/`.
 
@@ -163,11 +163,11 @@ Unmodified, but relevant if the deployment is offered to others or images are re
 
 | Component | Licence | Note |
 |---|---|---|
-| Silo (`pgsty/silo`) | AGPL-3.0, per `critique` section 1.5 | MinIO-compatible fork, unmodified |
-| Grafana | AGPL-3.0 from memory | [[VERIFY: Grafana licence at the pinned version]] |
-| Loki | AGPL-3.0 from memory | [[VERIFY: Loki licence at the pinned version]] |
+| Silo (`pgsty/silo`) | AGPL-3.0-or-later, by the label on the pinned image ([scan record](evidence/security/scan-images-20261104T215437Z/images/docker.io_pgsty_silo_RELEASE.2026-10-26T00-00-00Z-distroless_e6544a902f42.json)) | MinIO-compatible fork, unmodified |
+| Grafana 13.3.0 | AGPL-3.0, by the top-level [`LICENSE` at tag `v13.3.0`](https://github.com/grafana/grafana/blob/v13.3.0/LICENSE), read 2026-11-05 | Unmodified. The file inside the pinned image was not read, and the repository's other licence files were not reviewed |
+| Loki 3.7.9 | AGPL-3.0, by the top-level [`LICENSE` at tag `v3.7.9`](https://github.com/grafana/loki/blob/v3.7.9/LICENSE), read 2026-11-05 | Unmodified. The file inside the pinned image was not read, and the repository's other licence files were not reviewed |
 
-A full inventory of the platform's licences has not been done. [[VERIFY: licence inventory for all pinned images and charts]]
+Unverified: a full inventory of the licences of the pinned images and charts has not been done. Check it at the start of Pass 2.
 
 ## Trademark position (not legal advice)
 
@@ -188,7 +188,7 @@ Practical position: treat the name and logo as off limits for the product identi
 
 Items to settle with counsel before a public launch: the public hostname, since `plane.dev.localhost` is local-only and a public `plane.` host would use the upstream name (D9 in the handoff), and internal names such as the `plane-dev` namespace, which users do not see.
 
-Whether Wayline itself is free to use as a name has not been checked. [[VERIFY: trademark search on the name Wayline in relevant classes]]
+Unverified: whether Wayline itself is free to use as a name has not been checked, and no trademark search has run in any class. Check it at the start of Pass 2.
 
 ## Telemetry
 
@@ -215,13 +215,13 @@ An instance that already exists keeps its stored setting. In Pass 2 the API may 
 ## Checklist before the first other user
 
 - [x] Root `LICENSE` (AGPL-3.0), `COPYRIGHT.txt` and `NOTICE.md` committed.
-- [x] `apps/wayline` committed and complete, with patches, codemod, overlay, Dockerfiles, and build instructions. Pushing it, and someone else following them, are separate items below.
+- [x] `apps/wayline` committed and complete, with patches, codemod, overlay, Dockerfiles, and build instructions. It is pushed. Someone else following them is a separate item below.
 - [x] Upstream headers unchanged by the codemod, by diff against the tag. `docs/evidence/branding/headers.txt` reads 0 removed notice lines.
-- [ ] The owner's decision on `email.py` (D12) recorded. Agents applied the replacement and the flattening, and `apps/wayline/backend/email-py-decision.txt` names that. The owner has not reviewed it, and no legal reviewer has, [above](#the-commercial-header-in-emailpy).
-- [ ] Each GHCR package's visibility read after its first publish, and again before the repository goes public. Nothing has been pushed, and the gate does not read it.
+- [ ] The owner's decision on `email.py` (D12) recorded. Agents applied the replacement and the flattening, and removed the requirement that the repository be private, and `apps/wayline/backend/email-py-decision.txt` names that. The owner has not reviewed it, and no legal reviewer has, [above](#the-commercial-header-in-emailpy).
+- [ ] Each GHCR package's visibility read after its first publish, and again before the repository goes public. After the first publish, with no credentials, all four answer 401 ([who can read them](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). The API that states visibility has not been read, and the gate does not read it.
 - [ ] Repository public, or a complete source tarball served. `gitleaks` clean over full history.
 - [ ] A tarball of the patched tree or a mirror of the pinned upstream commit published, and linked from `NOTICE.md`.
-- [ ] The commit each running image names is pushed.
+- [x] The commit each running image names is pushed. `84b63d9` is on GitHub ([record](evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). Check again at each promotion.
 - [ ] `/source` followed logged out from a browser returns 200, on every surface above, and lands on the deployed commit. `WAYLINE_REQUIRE_PUBLIC_SOURCE=yes apps/wayline/checks/smoke-images.sh` checks the redirect's target.
 - [ ] A person outside the project followed the link and rebuilt, or the attempt is recorded.
 - [x] Telemetry off and egress denied, on the deployed instances, by API and by the matrix, as above. Check again after any new egress in Pass 2, and for an admin made through the UI.
