@@ -517,6 +517,9 @@ make gitops-publish
 
 A merge changes nothing running. GitHub Actions cannot reach the cluster. It reaches the cluster only at `make gitops-publish`.
 
+That copy has never finished. From this Mac it stopped at the first image with a 401, because the packages are private and nothing here can read them, and the local registry stayed at 404 for those digests
+([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt), [ci-4-20261105T055130Z-ghcr-local-token.txt](evidence/ci/ci-4-20261105T055130Z-ghcr-local-token.txt)). `scripts/gitops-publish.sh` has no registry check, so a publish without the copy would point `plane-dev` at digests nothing can pull. That last part is read from the code, and no run has done it.
+
 ### Prod-sim
 
 ```bash
