@@ -128,15 +128,15 @@ Upstream's backend image stays on any machine that builds this one, because it i
 
 ### Publishing to GHCR
 
-- **`images.yml` has run with `apps/wayline` in it.** Run 41975430939 at `9c8e098` built the four images natively on arm64, walked them before and after publishing, scanned them, and
+- **`images.yml` has run with `apps/wayline` in it.** Runs 41975430939 at `9c8e098` and 42044273310 at `76e98ee` each built the four images natively on arm64, walked them before and after publishing, scanned them, and
   published them to GHCR as private packages ([CI evidence](../../docs/evidence/ci/README.md)). The build-only job on a pull request has not run, and those digests are not the ones deployed.
 - Images go only to the local registry or `ghcr.io/bereketabera/wayline`. That is decision D12 (`backend/email-py-decision.txt`,
   `scripts/publish-gate.sh`, `MODIFICATIONS.md`). The `images.yml` publish job runs that gate first, and fails where publishing is not allowed.
 - Pull requests only build, and never push.
 - A push to main walks every layer of each image in a throwaway registry on the runner, and publishes only when all four pass, copying each by digest. It then walks each again as GHCR serves it, scans what it published with `scripts/ci/scan-images.sh`, and a failure in either stops the prune and the digest bump. An image that fails the first walk or the config check reaches nobody. One that fails the second walk stays in GHCR, with no digest recorded. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
-- `make images` does the same with the local registry in place of GHCR, so the throwaway registry, the walks and the copy by digest have run here. On GitHub they ran once, in run 41975430939 at `9c8e098`, with the copy to GHCR and its login.
+- `make images` does the same with the local registry in place of GHCR, so the throwaway registry, the walks and the copy by digest have run here. On GitHub they ran twice, in runs 41975430939 at `9c8e098` and 42044273310 at `76e98ee`, with the copy to GHCR and its login.
 - `make images` to the local registry uses no GHCR storage and is the path in pass 1.
-- Pruning with `GITHUB_TOKEN` ran in that run: the job listed versions and deleted none, so a prune that deletes something has not run, and that may need the package's Actions access set to Admin.
+- Pruning with `GITHUB_TOKEN` ran in both: the job listed versions and deleted none, so a prune that deletes something has not run, and that may need the package's Actions access set to Admin.
 
 **Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the repository's owner, Bereket Abera, has not reviewed that. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
 

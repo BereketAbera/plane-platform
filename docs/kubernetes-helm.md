@@ -376,8 +376,8 @@ on this GitHub plan. See [security.md](security.md).
 
 `scripts/render.sh --check` exits 0 on a clean checkout on `ubuntu-24.04`, so a render from this Mac matched one from Linux byte for byte: run
 41909741166 at `5fdf41d` on 2026-11-04 ([log](evidence/ci/ci-1-20261104T204614Z-run-41909741166.log)), and again at `9c8e098` and `0dde813` on
-2026-11-05 ([run 41975431001](evidence/ci/ci-1-20261105T053955Z-run-41975431001.log), [run 41978707479](evidence/ci/ci-1-20261105T061058Z-run-41978707479.log)).
-Commits after `0dde813` have run it only on this Mac.
+2026-11-05 ([run 41975431001](evidence/ci/ci-1-20261105T053955Z-run-41975431001.log), [run 41978707479](evidence/ci/ci-1-20261105T061058Z-run-41978707479.log)), and at `7cde05a` and `6edde64` ([run 42046683167](evidence/ci/ci-1-20261105T143644Z-run-42046683167.log), [run 42048656380](evidence/ci/ci-1-20261105T144855Z-run-42048656380.log)).
+Commits after `6edde64` have run it only on this Mac.
 
 ## Upgrades
 
