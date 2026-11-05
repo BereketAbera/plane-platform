@@ -26,9 +26,9 @@ images:
 - digest: sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
   name: artifacts.plane.so/makeplane/plane-admin
   newName: localhost:5001/wayline/admin
-- digest: sha256:abb6d359d8ab191ddc6881ad33a8d9710789156b9cc8cb06f3ed2318131aab4c
+- digest: sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
   name: artifacts.plane.so/makeplane/plane-backend
-  newName: localhost:5001/throwaway/backend-failing-migrator
+  newName: localhost:5001/wayline/backend
 - digest: sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
   name: artifacts.plane.so/makeplane/plane-frontend
   newName: localhost:5001/wayline/web
