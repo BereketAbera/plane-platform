@@ -113,7 +113,7 @@ waves pass straight through. `helm/values/argocd.yaml` adds these Lua checks thr
 | Kind | Healthy when | Degraded when | Otherwise |
 |---|---|---|---|
 | `argoproj.io/Application` | `status.health.status` is Healthy, no `.operation` is open, and `status.sync.status` is Synced | That field is Degraded | Copies that field, or Progressing |
-| `monitoring.coreos.com/Prometheus` | Condition `Available` is True | `Reconciled` is False, or `Available` is False for any reason but `NoPodReady` and `SomePodsNotReady` | Progressing |
+| `monitoring.coreos.com/Prometheus` | Condition `Available` is True, whatever `Reconciled` says | `Available` is not True, and either `Reconciled` is False or its reason is anything but `NoPodReady` and `SomePodsNotReady` | Progressing, which includes no `Available` condition yet |
 | `InfisicalStaticSecret` | `observedGeneration` matches and `status.error` is not true | `observedGeneration` matches and `status.error` is true | Progressing |
 | `InfisicalAuth`, `InfisicalConnection` | Condition `IsReady` is True for this generation | Condition `IsReady` is False for this generation | Progressing |
 
@@ -282,8 +282,11 @@ kubectl -n argocd get application plane-dev -o json \
 ```
 
 **Stuck child, stuck root.** A retry happens only after an attempt fails. A root waiting on a child that stays `Progressing` never
-fails, so it stays in `Running` with no retry and does not pick up a new commit
-([h43-repro-after-1.txt](evidence/runs/h43-repro-after-1.txt)). In order, fix the child's cause, or end the operation:
+fails, so it stays in `Running` with no retry. That hold was seen for the 17 seconds a restarting Prometheus read `Progressing`: root
+waited, then succeeded, with `retryCount` empty ([h43-repro-after-1.txt](evidence/runs/h43-repro-after-1.txt)). That such a root does not
+pick up a new commit is read from the code, as `gitops/bootstrap/chart/templates/root-application.yaml` and
+[`infrastructure/terraform/README.md`](../infrastructure/terraform/README.md) say, and has not been measured. In order, fix the child's
+cause, or end the operation:
 
 ```bash
 # With the CLI: argocd app terminate-op <app>
@@ -348,11 +351,17 @@ desired state in Git, so Argo CD has nothing to undo. It has not run. What it sh
 above the longest startup budget (api, worker and beat, 300 seconds), because image pull and scheduling count against
 the same deadline, and first-boot pulls measured 448s. Stage 4 of the drill waits that long plus 120 seconds, so up to 12 minutes.
 
-A good rollout drops nothing. web, admin, space, live and api keep serving for a 5-second `preStop` sleep after SIGTERM,
-because Traefik reacts about 2 seconds after an endpoint starts to go. Measured at 10 Hz per route through full rollouts of all
-seven Deployments: 10 failed of about 2,760 samples before, 0 of 5,902 after
-([plane-dev-rollout-availability-1.txt](evidence/runs/plane-dev-rollout-availability-1.txt),
-[plane-dev-rollout-availability-2.txt](evidence/runs/plane-dev-rollout-availability-2.txt)).
+web, admin, space, live and api keep serving for a 5-second `preStop` sleep after SIGTERM, so that Traefik stops sending to a pod
+before it goes. How long Traefik takes to react has not been measured. The "about 2 seconds" in contract section 6 and in the comment in
+`helm/plane/components/hardening/kustomization.yaml` has no run behind it.
+
+What ran, on 2026-11-04 in plane-dev on upstream images: each of the 5 routes sampled at 10 Hz through Traefik while all seven
+Deployments rolled, with a failure meaning no answer in 2 seconds or a 5xx. One rollout before the sleep failed 10 of 2,757 samples
+([plane-dev-rollout-availability-1.txt](evidence/runs/plane-dev-rollout-availability-1.txt)). Two rollouts after it failed 0 of 5,902
+([plane-dev-rollout-availability-2.txt](evidence/runs/plane-dev-rollout-availability-2.txt)). That counts HTTP answers only, and it has
+not been repeated on the branded images. An open WebSocket does not ride through: replacing the `live` pod closed it with code 4205, the
+client reconnected 21.2 seconds after the delete, and an edit still inside the debounce was not on the server afterwards
+([plane-dev-live-restart-1.txt](evidence/runs/plane-dev-live-restart-1.txt)).
 
 **Rolling back a platform change.** Revert the commit and publish:
 
@@ -376,8 +385,8 @@ hard refresh and the child's patch held for a minute, and a server dry run of ap
 ([dr-child-pause-1.txt](evidence/runs/dr-child-pause-1.txt)). So a child can be paused alone.
 
 `monitoring/ops/lib.sh` does this for `make restore` and `make test-alert`. `argo_pause` pauses `root` first and resumes it last.
-`argo_pause_child` pauses one Application and leaves root alone, for when root itself is waiting on what the restore leads to. Each saves the `automated` block, sets `enabled: false`, waits for any running operation to
-end, then checks that the patch held. `argo_resume` restores the blocks verbatim in reverse order, from an exit trap, so root sees
+`argo_pause_child` pauses one Application and leaves root alone, for when root itself is waiting on what the restore leads to. Each saves the `automated` block without its `enabled` field, sets `enabled: false`, and waits for any running operation to
+end, and `argo_pause_child` then checks that the patch held. `argo_resume` puts the saved blocks back in reverse order, from an exit trap, so root sees
 no drift. The two in-place Infisical restores went through this: the server stayed at zero while paused, and auto-sync came back
 ([dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt),
 [restore-infisical-20261105T001834Z.json](evidence/runs/restore-infisical-20261105T001834Z.json)).
@@ -426,16 +435,19 @@ Different questions need different diffs.
 # Committed on main, not yet visible to Argo CD
 git diff "$(git --git-dir=.local/git/plane-platform.git rev-parse main)" main -- gitops helm
 
-# Out-of-sync resources in one Application
+# Out-of-sync resources in one Application. A hook has no sync status, so without the first test it prints as null
 kubectl -n argocd get application plane-dev -o json \
-  | jq -r '.status.resources[] | select(.status != "Synced") | "\(.kind)/\(.name) \(.status)"'
+  | jq -r '.status.resources[] | select(.hook != true and .status != "Synced") | "\(.kind)/\(.name) \(.status)"'
 
-# Live against render, by server-side dry run
-kubectl diff -n plane-dev -f gitops/environments/dev/manifests.yaml
+# Live against render, by server-side dry run, leaving out what differs even on a synced environment
+kubectl diff -n plane-dev -f gitops/environments/dev/manifests.yaml \
+  | grep -E '^[-+] ' | grep -v -E 'tracking-id|generation:'
 ```
 
-`kubectl diff` works on what the render sets, so expect noise from the hook Job. Argo's diff is the one that decides sync
-status. [[VERIFY: kubectl diff against rendered manifests is readable on a synced environment]]
+Read the filter as well as the result. On 2026-11-05 on a `plane-dev` reading Synced and Healthy, the plain `kubectl diff` exited 1 with
+453 lines, and all 37 objects differed. Each differed by Argo CD's `argocd.argoproj.io/tracking-id` annotation, which the render does not
+carry, and the seven Deployments also by a `generation` one higher, in the dry run only. Nothing else differed, so the filtered form printed
+nothing ([argocd-kubectl-diff-1.txt](evidence/runs/argocd-kubectl-diff-1.txt)). Argo's diff is the one that decides sync status.
 
 ## Promotion
 
@@ -476,7 +488,7 @@ make promote ENV=dev IMAGE=web DIGEST=sha256:<64-hex>
 **Through GitHub.** No run has reached these steps: `images.yml` has not built an image, as row CI-4 records in
 [evidence/ci/README.md](evidence/ci/README.md).
 
-1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1.
+1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It opens the pull request with the same action as `promote-prod-sim.yml` below, so expect the same refusal while that setting is off (row CI-5).
 2. Merge it, and `git pull`.
 3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not.
 
@@ -509,9 +521,15 @@ What `scripts/promote.sh` does differently for prod-sim:
 The digest check cannot tell order inside one commit, so a change adding a digest to both environments at once passes. Human
 review covers that.
 
-**Through GitHub.** `promote-prod-sim.yml`, run by manual dispatch, opens a pull request. It never builds.
+**Through GitHub.** `promote-prod-sim.yml`, run by manual dispatch, edits the overlay, validates it, pushes branch `promote/prod-sim`, and
+asks GitHub for a pull request. It never builds. It refused an unrecorded digest on a real runner on 2026-11-04, PASS (run 41905513020).
+Opening the pull request is BLOCKED: in runs 41905611391 and 41908167069 the branch was pushed, then GitHub refused the pull request,
+because the repository setting that allows it is off (rows CI-6 and CI-6b in [validation.md](validation.md#real-github-actions-runs), and
+[evidence/ci/README.md](evidence/ci/README.md)). Turning it on
+is the owner's decision. While it is off, open the pull request by hand from the pushed branch. No promotion pull request has been opened or
+merged, so steps 2 and 3 have not run.
 
-1. Run the workflow, with `image` and `digest` or with neither to copy every image from dev.
+1. Run the workflow, with `image` and `digest` or with neither to copy every image from dev. The run goes red at the pull request step while that setting is off, and links to the page for opening it by hand.
 2. Review and merge. **Merging is the approval, and GitHub cannot enforce it.** The repository is private on the Free plan, so there are no environment reviewers and no protected branches. See [`.github/workflows/README.md`](../.github/workflows/README.md).
 3. Publish. The workflow could not reach the cluster, so both checks happen here.
 
