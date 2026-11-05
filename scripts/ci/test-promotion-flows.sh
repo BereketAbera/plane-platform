@@ -112,11 +112,11 @@ git -C "$CLONE" commit --quiet --allow-empty -m 'scripts under test'
 #               the plan the first promotion of the branded images makes.
 made_up_digest() { printf 'sha256:%s%063x' "$1" "$2"; } # made_up_digest <first hex digit> <number>
 set_image() { (cd "$CLONE/helm/plane/overlays/$1" && kustomize edit set image "$2=$3"); } # set_image <env> <image name> <reference>
-fixture_commit() {
-  (cd "$CLONE" && ./scripts/render.sh) >/dev/null
-  git -C "$CLONE" add -A -- helm gitops
-  git -C "$CLONE" commit --quiet -m "$1"
-  git -C "$CLONE" rev-parse HEAD
+fixture_commit() { # A failure here must end the run with its own message, not as 58 failed scenarios.
+  (cd "$CLONE" && ./scripts/render.sh) >/dev/null &&
+    git -C "$CLONE" add -A -- helm gitops &&
+    git -C "$CLONE" commit --quiet -m "$1" &&
+    git -C "$CLONE" rev-parse HEAD
 }
 
 image_number=0
@@ -871,7 +871,7 @@ four_images_one_at_a_time() {
   expect "it goes ahead, whatever dev runs of the other three" [ "$status" -eq 0 ]
   expect "one image in the plan" equal "$(grep -c 'recorded for dev under the same name' "$OUT")" 1
   expect "web moved with its repository" equal "$(grep -c 'plane-frontend localhost:5001/fixture/plane-frontend - ' <<<"$(images_of "$PROD_SIM_OVERLAY")")" 1
-  expect "and nothing else" equal "$(diff <(cat <<<"$before") <(images_of "$PROD_SIM_OVERLAY") | grep -c '^>')" 1
+  expect "and nothing else" equal "$(diff <(printf '%s\n' "$before") <(images_of "$PROD_SIM_OVERLAY") | grep -c '^>')" 1
 }
 four_images_each_must_run_in_dev() {
   local status before digest
