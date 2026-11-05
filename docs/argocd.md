@@ -508,7 +508,7 @@ registry, so steps 2 and 3 have not run, and what runs in the cluster came from 
 
 1. `images.yml` builds on `main`, pushes to GHCR, and opens a pull request bumping dev. Where publishing is not allowed, the job fails before it builds anything. The workflow rewrites the repository to `localhost:5001/wayline/` first, because that is where Argo CD pulls from in Pass 1. It needs the repository setting that lets workflows open pull requests, on since 2026-11-05 by the owner's decision.
 2. Merge it, and `git pull`.
-3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not. `<owner>` must be in lower case.
+3. Copy the digests before publishing, or pods fail to pull. Copying keeps the digest. Rebuilding would not. The script lower-cases `<owner>`, because an image reference takes only lower case.
 
 ```bash
 scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
@@ -517,7 +517,7 @@ make gitops-publish
 
 A merge changes nothing running. GitHub Actions cannot reach the cluster. It reaches the cluster only at `make gitops-publish`.
 
-That copy has never finished. From this Mac, with the owner as GitHub spells it, `BereketAbera`, it stopped at the first image with `invalid reference format`. In lower case it stopped there with a 401, because the packages are private and nothing here can read them. The local registry stayed at 404 for those digests
+That copy has never finished. From this Mac, with the owner as GitHub spells it, `BereketAbera`, it stopped at the first image with `invalid reference format`, before the script lower-cased the owner. In lower case it stopped there with a 401, because the packages are private and nothing here can read them. The local registry stayed at 404 for those digests
 ([ci-5-20261105T060504Z-copy-rehearsal.txt](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt), [ci-4-20261105T055130Z-ghcr-local-token.txt](evidence/ci/ci-4-20261105T055130Z-ghcr-local-token.txt)). `scripts/gitops-publish.sh` has no registry check, so a publish without the copy would point `plane-dev` at digests nothing can pull. That last part is read from the code, and no run has done it.
 
 ### Prod-sim

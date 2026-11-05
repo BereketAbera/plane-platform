@@ -75,7 +75,7 @@ So production approval here is a process, not a control:
   `gh api users/<owner>/settings/billing/usage/summary` showed no packages row right after the push. The local `gh` token cannot
   read the package pages, because it lacks `read:packages`.
 - Digests built in GitHub Actions live in GHCR, while Argo CD pulls from `localhost:5001`. After merging a digest bump, run
-  `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`, with the owner in lower case, and only then
+  `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`, which lower-cases the owner, and only then
   `make gitops-publish`, which does not look in the registry. Copying keeps the digest, and rebuilding would not: run 41975430939
   built from `9c8e098` and the Mac from `84b63d9`, and all four digests differ. The `docker login ghcr.io` the copy needs takes
   a token with `read:packages`, which the `gh` logins on this host do not have. Without it the script stops at its first image

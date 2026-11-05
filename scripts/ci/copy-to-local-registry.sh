@@ -9,7 +9,8 @@
 source "$(dirname "$0")/../lib/common.sh"
 
 [[ $# -eq 2 ]] || die "usage: $0 <source-prefix> <dev|prod-sim>"
-SOURCE="${1%/}"
+# An image reference takes only lower case, and GitHub keeps the owner's own spelling, such as BereketAbera.
+SOURCE="$(tr '[:upper:]' '[:lower:]' <<<"${1%/}")"
 FILE="$ROOT/helm/plane/overlays/$2/kustomization.yaml"
 [[ -f "$FILE" ]] || die "$FILE does not exist"
 
