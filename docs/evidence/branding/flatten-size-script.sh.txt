@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Size and push time of the backend image, before and after flattening, at the same conditions: each push goes into a
+# new registry whose storage is a tmpfs, so disk speed is not part of it, and the container goes away when stopped.
+set -uo pipefail
+cd /Users/bek/dev/pr/plane-platform
+S=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wl
+OLD_PREV=localhost:5001/wayline/backend:8195e1b020d6
+OLD=localhost:5001/wayline/backend:1563cbfbe895
+FLAT=localhost:5055/trial/flat-4add:t
+FLATNEXT=localhost:5055/wayline/backend:trial
+TRIAL_REF="$(awk -F'\t' '$1=="backend"{print $2"@"$3}' "$S/trial-digests.tsv")"
+F="$S/flatten-size.txt"
+: >"$F"
+say() { printf '%s\n' "$*" >>"$F"; }
+
+say "# Size and push time of the backend image, before and after flattening. Recorded $(date), by $0, on this Mac, with the kind cluster and the owner's other containers running."
+say "# before: localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c, built from 1563cbf, unflattened."
+say "# after, the same files: localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442, the published stage of Dockerfile.backend with that exact image as what it copies. flatten-compare-4add277c.txt compares them. So only the layers differ."
+say "# the next version, before: 8195e1b, then 1563cbf, as those two were really built one after the other."
+say "# the next version, after: that flattened image, then $TRIAL_REF, the flattened image built from e21ac51."
+say ""
+say "## Registry size, from each manifest, read with docker buildx imagetools inspect --raw"
+for r in localhost:5001/wayline/backend@sha256:4add277ce63eb11d4159f266f7dc880fc5254f1e4e13dac050ab97c90460658c localhost:5055/trial/flat-4add@sha256:060255ab094b99e6f4a8fa35491c82b3eba54738ddab1f8b31487439b928a442 "$TRIAL_REF"; do
+  docker buildx imagetools inspect --raw "$r" >"$S/m.json"
+  python3 -c '
+import json,sys
+m=json.load(open(sys.argv[1])); L=m["layers"]
+print(sys.argv[2], len(L), "layers", sum(l["size"] for l in L), "bytes,", round(sum(l["size"] for l in L)/1048576,1), "MiB, largest layer", round(max(l["size"] for l in L)/1048576,1), "MiB")
+' "$S/m.json" "$r" >>"$F"
+done
+say ""
+say "## Docker image size, from docker image inspect --format {{.Size}}"
+for r in "$OLD" "$FLAT" "$FLATNEXT" makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743; do
+  say "$r $(docker image inspect "$r" --format '{{.Size}}') bytes"
+done
+
+measure() { # measure <label> <image>...: each image in turn, into one new, empty registry
+  local label="$1" i=0 image t before after rc
+  shift
+  docker run -d --rm --name wl-measure-registry --memory 768m --tmpfs /var/lib/registry:size=500m,mode=1777 \
+    --publish 127.0.0.1:5056:5000 ghcr.io/distribution/distribution:3.1.2 >/dev/null
+  until [[ "$(curl -s -o /dev/null -m 2 -w '%{http_code}' http://localhost:5056/v2/)" == 200 ]]; do sleep 0.2; done
+  for image in "$@"; do
+    i=$((i + 1))
+    t="localhost:5056/m/backend:v$i-$(printf '%s' "$image" | shasum | cut -c1-8)"
+    docker tag "$image" "$t"
+    before="$(docker exec wl-measure-registry du -sk /var/lib/registry | cut -f1)"
+    /usr/bin/time -p docker push "$t" >"$S/push.out" 2>"$S/push.time"
+    rc=$?
+    after="$(docker exec wl-measure-registry du -sk /var/lib/registry | cut -f1)"
+    say "$label: docker push of $image: $(grep real "$S/push.time"), exit $rc, registry grew by $((after - before)) KiB, to $after KiB"
+  done
+  docker stop wl-measure-registry >/dev/null
+  while docker inspect wl-measure-registry >/dev/null 2>&1; do sleep 0.2; done
+}
+
+say ""
+say "## Push time: docker push into a new, empty registry on loopback, a throwaway distribution:3.1.2 on a tmpfs. Three rounds, taking turns"
+for round in 1 2 3; do
+  measure "round $round, before, first version" "$OLD"
+  measure "round $round, after, first version" "$FLAT"
+done
+say ""
+say "## The next version: the previous version is already in that registry, as it would be after the first publish"
+for round in 1 2 3; do
+  measure "round $round, before" "$OLD_PREV" "$OLD"
+  measure "round $round, after" "$FLAT" "$FLATNEXT"
+done
+say ""
+say "## Docker VM, from docker system df, with all of these still present"
+docker system df >>"$F" 2>&1
+say ""
+docker system df -v 2>/dev/null | grep -E 'REPOSITORY|wayline/backend|flat-4add|makeplane/plane-backend' >>"$F" 2>&1
+say "# done $(date)"
