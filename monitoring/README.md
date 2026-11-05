@@ -81,7 +81,10 @@ policy read Prometheus that way. By policy no Plane pod has that egress. The tes
 kindnet that fails open would open it. `policy/plane.rego` requires the middleware on every IngressRoute in `argocd`,
 `monitoring` or `infisical`, on a route from anywhere to any of the five Services, and on a route that names any of the five
 hosts, because the same Service under another host is the same UI. It refuses TCP and UDP routes there, which could not carry
-this middleware, and a middleware of that name that admits anything else. So dropping either fails CI before it fails at runtime.
+this middleware, and a middleware of that name that admits anything else. `policy/gitops.rego` refuses a document that wraps
+others, with a kind ending in `List` or a top-level `items` array, because conftest reads only the outer one and Argo CD applies
+only what is inside. So dropping either fails CI before it fails at runtime, for a route in a file CI reads, and
+`scripts/ci/lib-manifests.sh` and `validate-manifests.sh` say which those are.
 
 **Argo CD sync alerts.** Under `retry.limit: -1` a failing sync never completes: each failed attempt goes back to phase
 Running, `argocd_app_sync_total` does not move, and no condition is set. So `ArgoSyncFailed` also watches for an
@@ -98,26 +101,34 @@ waiting on something that never gets healthy, and neither is healthy at 15m. Roo
 | A child that is Healthy but not Synced | The override in `helm/values/argocd.yaml` reads it as Progressing, so root waits on it with no retry, while the child's own series still says Healthy | `ArgoAppSyncUnknown` or `ArgoAppOutOfSync` at 15m, by its sync status, `ArgoRootSyncStuck` at 60m, and `ArgoAppStuckProgressing` never |
 | A Prometheus that cannot start | Progressing, by the override in `helm/values/argocd.yaml` | Nothing, because nothing evaluates rules. Watchdog stops reaching the sink, and nothing watches for that |
 
-On an Application that was rendering, a real commit took longer to read Unknown. The controller looks every 120 to 180s
-(`--app-resync` 120s, `--app-resync-jitter` 60s), and from the first look that fails it ignores the failure for 180s
+On an Application that was rendering, a real commit took longer to read Unknown. The controller's looks were measured 120 to 289s
+apart, median 193s, across all 14 Applications (`--app-resync` 120s, `--app-resync-jitter` 60s), because a resync is skipped when
+the previous look landed later in its jitter. From the first look that fails it ignores the failure for 180s
 (`--repo-error-grace-period-seconds`). One real commit read Unknown after 5m57s, which is one sample, and that run stopped at
-pending. With the rule's 15m it makes about 21m from commit to alert. By reading `controller/state.go` and `appcontroller.go`, the
-first look that fails only starts the grace and a later one has to land past it, so it can take up to about 9m to read Unknown,
-which makes up to about 24m. Health stayed as it was, no operation opened and nothing was pruned. A file Argo CD cannot parse counts
-only if its text holds `apiVersion:`, `kind:` and `metadata:`. Anything else it ignores, and it reads Synced at that commit.
+pending. With the rule's 15m it makes about 21m from commit to alert, an estimate. By reading `controller/state.go` and
+`appcontroller.go`, the first look that fails only starts the grace and a later one has to land past it. By reading the repo server,
+a look can read the old `main` from its ref cache for up to 120s after a commit, the `timeout.reconciliation` here. So it can take up
+to about 11m to read Unknown, which makes up to about 26m. Both are estimates. Health stayed as it was, no operation opened and
+nothing was pruned. A file Argo CD cannot parse counts only if its text holds `apiVersion:`, `kind:` and `metadata:`. Anything else
+it ignores, and it reads Synced at that commit.
 
-`tests/drills/failed-deploy-rollback.sh` is the second row cut short: it reverts at the first Degraded, about 10m in. So
-`ArgoSyncFailed` should stay pending throughout, `ArgoAppStuckProgressing` should be pending beside it on the same series for
-those first 10m, and `ArgoAppDegraded` should then go pending in its place, with none firing unless the revert takes more than
-5m. That is expected from reading the drill and from a unit test of those series, and not yet measured. The 15m in
+`tests/drills/failed-deploy-rollback.sh` is the second row cut short, on `plane-dev`: it reverts at the first Degraded, about 10 to
+11m in, because the Deployment is applied after the migrator hook. Two margins then run, and they differ. `ArgoAppDegraded` fires
+once Degraded has held 5m. `ArgoSyncFailed` fires if the operation is still open just past 13m from its start, because
+`max_over_time` holds it true for 2m after its last open sample, and that leaves about 2 to 3m from the first Degraded. A retry
+backs off from 30s, doubling, and goes through the hook again, so the revert may not fit, and then `ArgoSyncFailed` fires in the
+drill. Until then it should stay pending, `ArgoAppStuckProgressing` should be pending on the same series until 2m after its last
+Progressing sample, and `ArgoAppDegraded` should be pending from the first Degraded, so all three for about 90s. That is expected
+from reading the drill and from unit tests of those series, either side of the 13m, and not yet measured. The 15m in
 `ArgoSyncFailed` has margin against a commit that pulls no new image (under 2m measured, 58s on promotion `4f622e3` whose layers
 were already on the node) and against 448s for wave 3 pulling four images on a first boot. No measured promotion has pulled new
 layers.
 
 The 30m in `ArgoAppStuckProgressing` has margin against a chart pulling its images: kube-prometheus-stack took about 10m to its
 first Healthy on the first boot measured. With Prometheus up throughout, it would have fired later on that same boot, and rightly.
-Grafana's sidecars were being OOM-killed, each Healthy lasted 19 to 40s, inside the rule's 2m window, and the expression read true
-for all 25m that have metrics, about 42m in the timeline.
+It read Degraded for 9m20s of those, under the built-in check the override has since replaced. Then Grafana's sidecars were being
+OOM-killed, each Healthy lasted 19 to 40s, inside the rule's 2m window, and the expression read true for all 25m that have metrics.
+The state ran from 20:57:36Z in the timeline to about 21:30Z in that query, about 33m, past the 30m by about 3m.
 
 **A Prometheus with no ready pod reads Progressing, not Degraded.** The built-in check reads NoPodReady as Degraded, which
 is every Prometheus start, and on a first boot that failed the root sync and sent it into backoff while the image pulled.
@@ -161,23 +172,36 @@ limit comes first. Measured on 2026-11-05 (`limits-pod-cgroup-1.txt` in the evid
 
 | Pod | `memory.max` in MiB, pod and container | `max` at the pod, and at the container | OOM kills | Highest anon | Limit |
 |---|---|---|---:|---|---|
-| Prometheus, before 00:34Z | 816, 768 | that pod is gone, 688 | 0 | 652 MiB (85%), at a head compaction with 241k head series | Raised to 1024Mi |
+| Prometheus, before 00:34Z | 816, an estimate from 768 plus its config reloader's 48, and 768 | that pod is gone, 688 | 0 | 652 MiB (85%), at a head compaction with 241k head series | Raised to 1024Mi |
 | Prometheus, since | 1072, 1024 | 0, 0 | 0 | 566 MiB (55%), at the WAL replay after that restart | |
-| Loki | 640, 640 | 58931, 0 | 0 | 553 MiB (86%) in a stress test, then 480 in its WAL replay, and 341 (53%) since | Kept at 640Mi |
-| Infisical Postgres | 256, 256 | 4227 and later 5066, 0 | 0 | 64 MiB (25%) | Kept at 256Mi |
+| Loki | 640, 640 | 58931, 0 | 0 | 553 MiB (86%) in a stress test, then 480 in its WAL replay, and 341 (53%) since 22:10Z | Kept at 640Mi |
+| Infisical Postgres | 256, 256 | 4227 at 02:06:47Z, 5066 at 02:18:42Z, then 876 in the pod that replaced it, and 0 | 0 | 64 MiB (25%) | Kept at 256Mi |
 
 Prometheus's limit moved because it came that close with nothing stressing it on purpose. Loki came as close, and that was not file cache:
-anon reached 553 MiB, with file down to 13 MiB at the tightest. It stays for other reasons. That test pushed 3.5 MB/s with 8
-concurrent queries, about 490 times the mean rate since (7.2 KB/s) and 40 times the busiest 5 minutes (87 KB/s), which took anon to
-244 MiB. `GOMEMLIMIT` 560MiB held, and there was no OOM kill and no failed push or query, although queries slowed to 19s at the
-median. The 553 is from the container the test then ended with `kill -9`, and the container's `max` of 0 is from the one after it.
+anon reached 553 MiB, with file down to 13 MiB at the tightest. It stays for other reasons. That test pushed 3.5 MB/s with 8 query
+threads, and `GOMEMLIMIT` 560MiB held, with no OOM kill and no failed push or query, although queries slowed to 19s at the median.
+Real anon has stayed at 53% of the limit or under, as below. The 553 is from the container the test then ended with `kill -9`, and
+the container's `max` of 0 is from the one after it.
+
+Real anon peaked at 341 MiB (53%) at 22:26Z on 2026-11-04, minutes after the highest query rate, with ingest at 2.5 KB/s. Inside the
+busiest 5 minutes of ingest (87 KB/s, 23:06Z to 23:11Z) it was 127 to 158 MiB. So real anon does not follow ingest, and the test's
+multiple on ingest, 40 times that busiest rate and about 620 times the mean from 22:10Z to 04:01Z (5.6 KB/s), is not a margin on anon.
+Set against the test's 8 threads, real queries were more frequent and far lighter: at most 1.98 a second at 22:22:30Z against the test's
+0.33, and at most 0.044 in flight averaged over 2m against its 8. They were not the same queries, so that compares how busy Loki was,
+not what each query costs (`alert-text-figures-1.txt` in the evidence).
 
 Each count went with about 63 pages of direct reclaim in both pods, so it counts reclaim, and an OOM kill is a separate counter,
 which reads 0 for the whole of each pod. cAdvisor's `container_memory_failcnt` reads 0 here, so the count has no history. Usage
 bounds it: Loki's pod was last over 560 MiB at 21:59:25Z and last over 450 MiB at 22:25:55Z, and the count stood still from 01:36Z
 on, so as far as 30s samples can say, its 58931 belong to that test and its replay. Raise Loki if the count moves again with no test
-running, or if real load takes anon near `GOMEMLIMIT`. Postgres's count does move in ordinary use, 839 in five minutes while its
-cache filled, with anon under 65 MiB. That is file cache being reclaimed, so nothing needs changing.
+running, or if real load takes anon near `GOMEMLIMIT`.
+
+Postgres's count moved only under backups and restore drills, in the readings there are. It read 4227 at 02:06:47Z and 5066 at
+02:18:42Z, about 12 minutes later, with two backup Jobs started in between. The pod that replaced it at 02:25:36Z read 876 at 02:47:47Z,
+after a backup and five restore Jobs, and still 876 at 04:01:35Z with no Job since. Anon stayed under 65 MiB. `file` includes shmem,
+which reclaim cannot drop, because the container's `memory.swap.max` is 0, so read shmem beside anon for Postgres: at 02:18:42Z `file`
+was 135.5 MiB, 41.7 of it shmem, and shmem read 41.7 again at 04:01:35Z. Anon's highest plus that is about 106 MiB of 256, an estimate,
+since they were not read together. The rest of `file` is cache being reclaimed, so nothing needs changing.
 
 ## Sentinels
 

@@ -56,9 +56,12 @@ sidecar:
 singleBinary:
   replicas: 1 # chart default is 0, so nothing deploys without this
   sidecar: false # no ruler in use, so no rules sidecar and no kiwigrid image
-  # Measured on this limit and GOMEMLIMIT at 3.5 MB/s of pushes with 8 concurrent queries: peak anon 553 MiB of 640 (86%),
-  # no OOM kill, no failed push or query. That rate is about 490 times the mean measured since and 40 times its busiest
-  # 5 minutes, which took anon to 244 MiB, so the limit stays. monitoring/README.md has the reading.
+  # Measured on this limit and GOMEMLIMIT at 3.5 MB/s of pushes with 8 query threads: peak anon 553 MiB of 640 (86%), no OOM
+  # kill, no failed push or query. Real anon peaked at 341 MiB (53%) at 22:26Z on 2026-11-04, minutes after the highest query
+  # rate, with ingest at 2.5 KB/s, and inside the busiest 5 minutes of ingest (87 KB/s) it was 127 to 158 MiB. So that test's
+  # 40 times the busiest ingest is not a margin on anon. Real queries averaged at most 0.044 in flight over 2m, against the
+  # test's 8 threads, and they were not the same queries. So the limit stays, on that 53% and on GOMEMLIMIT holding in the
+  # test. monitoring/README.md has the reading.
   resources:
     requests: { cpu: 50m, memory: 192Mi }
     limits: { cpu: "1", memory: 640Mi } # the chart example uses 2 to 4 GiB, so raise this first on an OOMKill
