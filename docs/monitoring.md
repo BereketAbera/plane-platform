@@ -72,7 +72,7 @@ flowchart LR
 ## Why Plane has no `/metrics`, and what replaces it
 
 No Plane service exports Prometheus metrics. A repo-wide search of Plane v1.4.3 for `prometheus`,
-`django_prometheus` and `prom-client` finds nothing (research note `plane-app.md`, read from source).
+`django_prometheus` and `prom-client` finds nothing (read from upstream source, `git grep -i` at `37a15d9`, the commit `apps/wayline/UPSTREAM` pins).
 Patching them in would widen the fork, so the signal is built from outside:
 
 | Question | Signal |
@@ -109,8 +109,8 @@ what splits alerts by environment. All 12 `probe_success` series read 1 on 2026-
 ### Traps these probes are built around
 
 **`/api/instances/` is cached for two hours.** `InstanceEndpoint` carries
-`@cache_response(60*60*2, user=False)`, so this route stays 200 from Valkey through a full Postgres outage
-(research note `data-observability.md`, read from source). It looks like the obvious health check and is
+`@cache_response(60 * 60 * 2, user=False)`, so this route stays 200 from Valkey through a full Postgres outage
+(read from upstream source, `apps/api/plane/license/api/views/instance.py` at `37a15d9`). It looks like the obvious health check and is
 not one. On 2026-11-04, on upstream images, each Postgres round of the pod restart drill took Postgres away for under a minute. `api-db`
 answered 500 with `probe_success` 0 for one sample each, in plane-dev at 22:44:45Z and in plane-prod-sim at 23:35:30Z and 23:54:25Z, while
 `api-instance` stayed 200 and 1 ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). A longer outage, or one
@@ -132,8 +132,8 @@ all eight samples from 05:50:50Z to 05:52:35Z, so the probe failed on the status
 from one IP, against Plane's anonymous limit of 30 a minute. Do not raise the frequency much: a 429 fails the
 probe and looks like an outage. None has been seen at the configured 15s interval: of the 4,740 samples of those two probes that Prometheus
 held from 2026-11-04T21:04Z to 2026-11-05T02:01Z, none read 429
-([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). That window held smoke runs and drills, and no load test. A client at one request a second does reach the limit: of 36 requests to the `api-db` route, 30 answered 404 and the next 6 answered 429
-([SEC-2-throttle-precheck-20261105T061924Z.txt](evidence/runs/SEC-2-throttle-precheck-20261105T061924Z.txt)). `scripts/rotate.sh` probes that route once a second, which is why its error window reads high ([Secret rotation](runbooks/secret-rotation.md)).
+([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). That window held smoke runs and drills, and no load test. A client at about 5 requests a second does reach the limit: of 36 requests to the `api-db` route, 30 answered 404 and the next 6 answered 429
+([SEC-2-throttle-precheck-20261105T061924Z.txt](evidence/runs/SEC-2-throttle-precheck-20261105T061924Z.txt)). One a second shows the same shape: `scripts/rotate.sh` probes that route at that rate, and a probe left running read 30 `ok` then about 28 `fail` in each minute from 07:40Z ([rotate-prod-sim-20261105T073843Z.probe](evidence/runs/rotate-prod-sim-20261105T073843Z.probe)). The script's error window reads high, which fits that, though the probe keeps no status code ([Secret rotation](runbooks/secret-rotation.md)).
 
 **A wiped database shows up late on `api-instance`.** With no `Instance` row the route returns
 `{"is_activated":false,"is_setup_done":false}`, which fails the check, but only once the cache is gone.
@@ -222,7 +222,7 @@ which the `plane-(dev|prod-sim)-.*` regex in `platform-overview.json` matches, c
 ## Alert rules
 
 Project rules are in `monitoring/manifests/shared/rules-plane.yaml` and `rules-platform.yaml`: 24 rules under 23 names,
-because `ArgoSyncFailed` has two forms. `tests/rules/rules.test.yaml` holds promtool unit tests for 13 of those names. The "Seen" column
+because `ArgoSyncFailed` has two forms. `tests/rules/*.test.yaml` hold promtool unit tests for 13 of those names, 12 in `rules.test.yaml` and `PodRestarting` in `pod-restarting.test.yaml`. The "Seen" column
 says what the evidence records on the cluster. Where it gives no other file, it comes from a read of `ALERTS` over all that Prometheus held on
 2026-11-05, from 2026-11-04T20:30Z to 2026-11-05T02:01Z ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)).
 
@@ -242,7 +242,7 @@ Runbook: [Plane debugging](runbooks/plane-app-debugging.md), and [Backup and res
 | `PlaneRabbitmqDown` | `up` of the RabbitMQ `/metrics` scrape is 0 | 2m | critical | A broker that answers and has blocked publishers | Pending for seconds around broker restarts, and no firing |
 | `PlaneMinioDown` | `up` of the Silo cluster scrape is 0 | 2m | critical | Failing uploads on a Silo that still answers metrics | None in evidence |
 | `PlaneWorkerNoConsumer` | `rabbitmq_detailed_queue_consumers{queue="celery"} == 0` | 2m | critical | A worker attached and not finishing tasks. A broker with no `celery` queue | Fired for real in prod-sim on 2026-11-04: pending 23:36:20, in Alertmanager 23:38:20, cleared after the repair ([plane-prod-sim-worker-no-consumer-alert-1.txt](evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)) |
-| `PlaneCeleryQueueMissing` | RabbitMQ is up and has no `celery` queue | 10m | critical | A queue with no consumer, which is the rule above | Pending only, and no firing: on both first boots, with the broker up before any worker, for 5m45s in plane-dev and 1m15s in plane-prod-sim, and for seconds after a broker restart ([same file](evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)) |
+| `PlaneCeleryQueueMissing` | RabbitMQ is up and has no `celery` queue | 10m | critical | A queue with no consumer, which is the rule above | Pending only, and no firing: on both first boots, with the broker up before any worker, for 5m45s in plane-dev and 1m15s in plane-prod-sim, and for seconds after a broker restart, one of them also read at 23:54:50Z ([plane-prod-sim-worker-no-consumer-alert-1.txt](evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)) |
 | `PlaneCeleryBacklog` | More than 500 ready messages on `celery` | 5m | warning | A backlog under 500 | None in evidence |
 | `PlaneBackupFailed` | `kube_job_status_failed` on a `plane-backup-*` Job, in a Plane namespace or `infisical` | none | warning | A backup that never ran. The "Last backup" stat shows that | Fired for real in `infisical` on 2026-11-04, from 22:57:30Z, on two backups that failed ([dr-backup-1.txt](evidence/runs/dr-backup-1.txt), [dr-backup-2.txt](evidence/runs/dr-backup-2.txt)). It cleared by 22:59Z, when the next backup succeeded and deleted those Jobs ([dr-backup-3.txt](evidence/runs/dr-backup-3.txt)) |
 
@@ -279,15 +279,15 @@ Runbooks: [Memory pressure](runbooks/memory-pressure.md) for workloads and the V
 
 | Alert | Fires on | `for` | Severity | Cannot see | Seen |
 |---|---|---|---|---|---|
-| `PodRestarting` | More than one restart in 15m (`increase` above 1.5), in a Plane, monitoring, `argocd`, `traefik` or `infisical` namespace | none | warning | One restart, on purpose. `kube-system` | Quiet on one Alloy restart, firing on the second ([kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt)) |
+| `PodRestarting` | The highest sample of a container's restart count less the lowest is 2 or more in 15m, in a Plane, `monitoring`, `monitoring-agents`, `argocd`, `traefik` or `infisical` namespace | none | warning | One restart, on purpose. `kube-system` | On this form, on 2026-11-05 from 02:28Z: quiet on a scratch pod that restarted once, and firing on one that restarted twice, to the sink and resolved ([podrestarting-live-1.txt](evidence/runs/podrestarting-live-1.txt)). Before it the rule read `increase`. Above 1.5, until `ba72573` at 02:26Z: quiet on one in-place Alloy restart, firing on the second ([kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt)). Above 1, until `01fa6e3` at 00:32Z: firing on Grafana's sidecars from 21:05:00 to 21:41:45 on 2026-11-04, while they were being OOM-killed ([Memory pressure](runbooks/memory-pressure.md)), on Loki from 21:51:00 to 22:12:45, beside two `kill -9` tests ([monitoring-loki-replay-1.txt](evidence/runs/monitoring-loki-replay-1.txt)), and on Alloy from 23:54:00 to 00:08:15, after one restart ([plane-prod-sim-snapshot-final-1.txt](evidence/runs/plane-prod-sim-snapshot-final-1.txt)) |
 | `ContainerMemorySaturation` | Working set above 90% of the limit | 5m | warning | A `memory.peak` at the limit that is page cache. `kube-system` | Pending only, and no firing: Loki between 21:46Z and 21:58Z on 2026-11-04, and Prometheus for seconds on 2026-11-05 |
 | `VmMemoryLow` | `MemAvailable` below 10% of the node's total | 5m | warning | The Mac's memory | None in evidence. VM used has to pass about 12.27 GiB of 13.63 for this. Its top was 10.49 GiB through the first night ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)), and 10.93 GiB in the 60s readings from 00:35Z to 07:47Z on 2026-11-05, at 01:50Z ([LOAD-3-20261105T074543Z-timeline.json](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)) |
-| `KindnetSkippedNetworkPolicies` | The count of kindnet's `skipping network policies` line, held for 3d | none | critical | Any other way enforcement can fail. A line Alloy forgot more than 3d ago. It also sticks after kindnet's container restarts healthy in the same pod | A synthetic line from a scratch pod, firing to resolved, and through two in-place Alloy restarts ([h18-synthetic-2.txt](evidence/runs/h18-synthetic-2.txt), [kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt)). No real kindnet failure |
+| `KindnetSkippedNetworkPolicies` | The count of kindnet's `skipping network policies` line, held for 3d | none | critical | Any other way enforcement can fail. A line Alloy forgot more than 3d ago. It also sticks after kindnet's container restarts healthy in the same pod | A synthetic line from a scratch pod, firing to resolved ([h18-synthetic-2.txt](evidence/runs/h18-synthetic-2.txt)). With heartbeats after the line, as real kindnet logs, an in-place Alloy restart took the count out of Alloy at 00:55:04Z, the 3d hold kept it at 1, and the alert held until 5m after the pod's delete ([kindnet-hold-2.txt](evidence/runs/kindnet-hold-2.txt)). In [kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt) the count stayed at 1 through two such restarts only because the pod's sole line was the fail-open line, which was read again, as the note at its top says. No real kindnet failure |
 | `KindnetLogsNotRead` | No kindnet line counted, by `absent()` | 10m | warning | A tail that reads and counts wrongly | Pending after an Alloy restart, and no firing recorded ([kindnet-hold-1.txt](evidence/runs/kindnet-hold-1.txt)) |
 | `ArgoAppOutOfSync` | `sync_status="OutOfSync"` | 15m | warning | Sync status Unknown, which is the next rule | Fired on a throwaway ([h16-fire-1.txt](evidence/runs/h16-fire-1.txt)) |
 | `ArgoAppSyncUnknown` | `sync_status="Unknown"`: a commit that cannot render, or a Git that cannot be read. On an Application that was rendering, the controller ignores the failure for 180s and its looks are 120 to 289s apart, so `rules-platform.yaml` estimates about 21m after the commit, and up to about 26m | 15m of reading Unknown | warning | Nothing else fires for this. The cluster silently stays on the old commit | A throwaway with a path that never existed: to the sink at 15m, resolved 2 minutes after its delete ([argo-sync-unknown-1.txt](evidence/runs/argo-sync-unknown-1.txt)). That proves the path, not the timing from a real commit, which has not fired: one read Unknown 5m57s after it and reached pending before it was taken out ([argo-sync-unknown-2.txt](evidence/runs/argo-sync-unknown-2.txt)) |
 | `ArgoAppDegraded` | `health_status` is `Degraded` or `Missing` | 5m | critical | A retry loop whose health stays Healthy. Anything that stays Progressing | Fired on a throwaway ([h16-throwaway-1.txt](evidence/runs/h16-throwaway-1.txt)). Also on `plane-dev` and `root` on the first boot, up to 21:26Z, while they waited for the identity Secret. Pending only in the failed-deploy drill, on both `plane-dev` and `root`, for about 2 minutes before the revert cleared it |
-| `ArgoSyncFailed`, open operation | `argocd_app_info{operation="sync"}` held on any child except root | 15m | critical | It cannot tell a retry loop from a wave waiting on something that never gets healthy. A single-wave chart Application closes its operation on apply, so this never sees it | Fired on a throwaway at 15m, through 2 Prometheus and 1 controller restarts, resolved after its delete ([h16-fire-1.txt](evidence/runs/h16-fire-1.txt)). This form went live after the first boot, at 23:06:02Z. Pending only in the two drills of 2026-11-05: 13m45s in the failed-deploy drill and 11m19s in the failing-migrator drill, because each revert closed the operation first |
+| `ArgoSyncFailed`, open operation | `argocd_app_info{operation="sync"}` held on any child except root | 15m | critical | It cannot tell a retry loop from a wave waiting on something that never gets healthy. A single-wave chart Application closes its operation on apply, so this never sees it | Fired on a throwaway at 15m, through 2 Prometheus and 1 controller restarts, resolved after its delete ([h16-fire-1.txt](evidence/runs/h16-fire-1.txt)). This form went live after the first boot, at 23:06:02Z. Pending only in the two drills of 2026-11-05, from its `activeAt` to the last reading: 13m45s in the failed-deploy drill and 11m57s in the failing-migrator drill, because each revert closed the operation first |
 | `ArgoSyncFailed`, completed | `argocd_app_sync_total{phase=~"Error\|Failed"}` increases, or first appears, in 15m | none | critical | A retry loop, which never completes | Fired with `phase="Failed"` on operations ended by the Terminating patch, on 2026-11-04: scratch Applications `term-a` and `term-b` from 21:05:15Z, and `root` from 21:15:45Z to 21:19:00Z ([argocd-terminate-1.txt](evidence/runs/argocd-terminate-1.txt), [argocd-root-terminate-1.txt](evidence/runs/argocd-root-terminate-1.txt)) |
 | `ArgoAppStuckProgressing` | `health_status="Progressing"` on any child except root | 30m | warning | The first 30m. Root itself | Fired on a throwaway at 30m on 2026-11-05, from 01:08:15Z to 01:18:30Z, reading `tests/rules/fixtures/stuck-progressing`. The run's own file is [argo-stuck-progressing-1.txt](evidence/runs/argo-stuck-progressing-1.txt) |
 | `ArgoRootSyncStuck` | `argocd_app_info{operation="sync",name="root"}` held | 60m | warning | A Prometheus that cannot start, since nothing then evaluates rules | Pending for under 4 minutes on 2026-11-04 from 23:22:45Z, and no firing |
@@ -303,8 +303,8 @@ completes. Measured over 30 minutes of a retry loop on a real controller: phase 
 So the rule now also reads the open operation. Its 15m has margin against a first boot's wave 3 at 448s
 ([plane-prod-sim-firstboot-1.txt](evidence/runs/plane-prod-sim-firstboot-1.txt)). It has none against the whole of `plane-dev`'s first boot: that operation stayed open about 35 minutes, from 21:11:33Z to 21:46:40Z, about 14 of them
 waiting on `scripts/infisical-bootstrap.sh` and the rest waves 1 to 3 and the hook ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt), [infisical-bootstrap-1.txt](evidence/runs/infisical-bootstrap-1.txt)).
-So `rules-platform.yaml` expects this rule to fire on `plane-dev` on a first boot. This form was not live on the one first boot that ran, so that is expected
-and not measured. The promotions of 2026-11-05 closed in about a minute ([Argo CD](argocd.md#after-a-promotion)), and none was timed through a cold mirror.
+So `rules-platform.yaml` expects this rule to fire on `plane-dev` on a first boot held on bootstrap like that stage-by-stage one. This form was not live on it, so that is expected
+and not measured. The clean install of 2026-11-05 did not wait like that. In its one `make up`, on warm mirrors, `plane-dev`'s operation cannot have opened before 182s into the Infisical wait, in a step of 245s, and had closed by 185s into the last wait, when root had moved on to `plane-prod-sim`. So it lasted at most about 248s, about 4 minutes. That run's evidence is not yet published, and nobody read `ALERTS` in it, so whether this rule stayed quiet is not recorded. The promotions of 2026-11-05 closed in about a minute ([Argo CD](argocd.md#after-a-promotion)), and none was timed through a cold mirror.
 
 **What the failed-deploy drill measured,** on 2026-11-05 in dev. It reverted 8s after the first Degraded, at 10m24s, so `ArgoAppDegraded` stayed pending. The rule above reads a 2m window, so it holds true for 2m after the last open sample, and the operation closed at 11m51s. So `ArgoSyncFailed` stayed pending for 13m45s, against its 15m, and a revert about 75s
 later would have let it fire. `ArgoAppOutOfSync`, `ArgoAppStuckProgressing` and the chart's `KubePodNotReady`, `KubeContainerWaiting` and `KubeDeploymentRolloutStuck` went pending too, and only `Watchdog` reached the sink ([drill-failed-deploy-20261105T062343Z-alerts.tsv](evidence/runs/drill-failed-deploy-20261105T062343Z-alerts.tsv)). The failing-migrator drill held for 6 minutes, too short for a 15m rule, and shows `ArgoAppDegraded` never went pending, because health stayed `Healthy`
@@ -489,10 +489,10 @@ exists. `PlanePodCrashLooping` is the exception: its metric held other waiting r
 returned nothing in what Prometheus holds. This shows what each rule reads, not that it fires on its fault.
 
 A bad rule has two gates before it runs. The Prometheus Operator's admission webhook is off, so `scripts/ci/validate-manifests.sh` runs
-`promtool check rules` over the rule files and `promtool test rules` over `tests/rules/rules.test.yaml`. Each published run covers the rules as they stood. At
+`promtool check rules` over the rule files and `promtool test rules` over `tests/rules/*.test.yaml`. Each published run covers the rules as they stood. At
 2026-11-04T22:19Z both passed on 18 rules, 12 and 6 ([monitoring-rules-1.txt](evidence/runs/monitoring-rules-1.txt)). At 23:04Z both passed on 20, 12 and 8, and the
-rules from before that change failed the new tests, exit 1 ([h16-promtool-1.txt](evidence/runs/h16-promtool-1.txt)). The current 24 passed at 2026-11-05T01:11Z, and the rules
-from before that work failed, exit 1, in [rules-unit-1.txt](evidence/runs/rules-unit-1.txt). `scripts/ci/negative-controls.sh` plants a broken expression and a rule that
+rules from before that change failed the new tests, exit 1 ([h16-promtool-1.txt](evidence/runs/h16-promtool-1.txt)). At 2026-11-05T01:11Z both passed on 24, and the rules
+from before that work failed, exit 1, in [rules-unit-1.txt](evidence/runs/rules-unit-1.txt). The 24 as they stand, with `PodRestarting`'s later expression and the later tests, passed at 06:16Z on a clean clone at `0dde813` ([ci-2-20261105T061644Z-make-ci.log](evidence/ci/ci-2-20261105T061644Z-make-ci.log)). `scripts/ci/negative-controls.sh` plants a broken expression and a rule that
 fires late, and requires each to go red. GitHub's runners have run promtool on Linux too, as [evidence/ci/README.md](evidence/ci/README.md) says. A
 broken expression that gets past these shows up only at evaluation, through `PrometheusRuleFailures`.
 
@@ -511,6 +511,6 @@ Volume growth per day on an idle platform was not tested in Pass 1, because the 
 
 - [Runbooks](runbooks/README.md)
 - [`monitoring/README.md`](../monitoring/README.md), for the decisions behind this stack and the limits of the kindnet alert
-- [Security](security.md), for why `monitoring-agents` is `privileged` and why postgres-exporter's superuser is accepted
+- [Security](security.md), for why `monitoring-agents` is `privileged`, and for postgres-exporter's superuser among what Pass 1 leaves
 - [Known limitations](known-limitations.md)
 - [Platform contract](platform-contract.md)
