@@ -250,8 +250,8 @@ kubectl -n argocd annotate application plane-dev argocd.argoproj.io/refresh=norm
 ```
 
 The controller removes the annotation once it has compared, which took 18s after a hard refresh in one test
-([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)). In each real promotion, rollback and drill revert of 2026-11-05 a refresh was asked for,
-and the sync began within a second of it (`.local/evidence-raw/argocd-refresh-reasons-1.txt`).
+([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)). In each real promotion, rollback and drill revert of 2026-11-05 the controller logged a refresh asked for by annotation,
+and the sync began within a second of it (`.local/evidence-raw/argocd-refresh-reasons-1.txt`). `make promote` and `make rollback` do not ask for one themselves, and the log does not say who did. So after either, expect to wait for a look, or ask. The times below include a refresh for this reason.
 
 Two things that look like drift and should not fight:
 
