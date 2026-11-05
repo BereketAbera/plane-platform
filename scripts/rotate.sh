@@ -234,10 +234,12 @@ db_probe() {
   [[ "$code" == 404 && "$out" == *"does not exist"* ]]
 }
 
+# Ends with this script. A SIGKILL runs no trap, and nothing else would stop this loop, which would go on spending the
+# anonymous rate limit for good. In a subshell $$ is still the script's pid.
 start_probe_loop() {
   (
     trap - EXIT
-    while :; do
+    while kill -0 "$$" 2>/dev/null; do
       if db_probe; then printf '%s ok\n' "$(date +%s)"; else printf '%s fail\n' "$(date +%s)"; fi
       sleep 1
     done
