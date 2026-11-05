@@ -3,10 +3,10 @@
 Argo CD deploys the workloads. Terraform owns namespaces, quotas and the rest that [the bootstrap chain](#the-bootstrap-chain) lists, and Argo CD itself. Wayline, the application Argo CD delivers, is
 a customized Plane Community Edition v1.4.3 deployment, not an original product.
 
-**Status of this page.** It describes the configuration in the code, and what ran on the one local kind cluster on
-2026-11-04 and 2026-11-05 with Argo CD v3.5.7. A measured statement links its file under
+**Status of this page.** It describes the configuration in the code, and what ran on local kind clusters, one at a time, on
+2026-11-04 and 2026-11-05 with Argo CD v3.5.7: the first, the clean and cold installs' own, and three restored from backup. A measured statement links its file under
 [`docs/evidence/runs/`](evidence/README.md). What Pass 1 did not test is stated where it comes up, among them a cluster-scoped refusal, a restore during a failing sync and a rollback of prod-sim.
-The clean install inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` finished at about 08:10Z on 2026-11-05. Its evidence is not yet published, and what this page says of it is marked that way. Several results come from scratch
+The clean install inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` finished at about 08:10Z on 2026-11-05. Its evidence is [published](evidence/runs/clean-install-20261105T075041Z/summary.txt). Several results come from scratch
 Applications on the real controller. They show how Argo CD behaves, not how a first boot from nothing would go.
 
 ## Access
@@ -182,7 +182,7 @@ The waves are in the rendered manifests, from `helm/plane/components/hardening`,
 The order held on `plane-dev`'s first boot on 2026-11-04, at commit `e95a6f8`: data pods at 21:29:03Z, 164 migrations from 21:33:49Z
 to 21:35:12Z, Deployments at 21:35:15Z, operation closed at 21:46:40Z
 ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)). That was a first boot on a running platform, not `make up`
-from nothing, which is row INST-1. The clean install of 2026-11-05 finished at about 08:10Z: one `make up` on a fresh clone took 955s, and all 14 Applications read `Synced` and `Healthy`. It kept the local registry and the pull-through caches, so it does not meet that row's definition of clean, and its evidence is not yet published. That row stays NOT RUN.
+from nothing, which is row INST-1. The clean install of 2026-11-05 finished at about 08:10Z: one `make up` on a fresh clone took 955s, and all 14 Applications read `Synced` and `Healthy`. It kept the local registry and the pull-through caches, so it does not meet that row's definition of clean ([summary](evidence/runs/clean-install-20261105T075041Z/summary.txt)). The cold install at `e602dad` is INST-1a to INST-1c. INST-1, in one go on the fixed code, stays NOT RUN.
 
 While `InfisicalAuth` is unready the sync fails and retries. It does not wait. The identity Secret was published at 21:25:44Z,
 and the next attempt, #5 after backoff, moved on at 21:28:54Z
@@ -578,7 +578,7 @@ make test-e2e ENV=prod-sim
 
 Both halves have run. On 2026-11-05, `make promote ENV=dev` published `1fc9fbe` and `make promote ENV=prod-sim` published `9c8e098`, carrying the final images from `84b63d9` through the local registry
 ([promote-dev-final-2.txt](evidence/runs/promote-dev-final-2.txt), [promote-prod-sim-final-2.txt](evidence/runs/promote-prod-sim-final-2.txt)). After them, `make test-e2e` read 45 PASS and 1 SKIP in dev, and 44 PASS and 1 SKIP in prod-sim, with the running digests equal to the overlay's ([smoke-dev-20261105T053137Z-52811.json](evidence/runs/smoke-dev-20261105T053137Z-52811.json), [smoke-prod-sim-20261105T053533Z-8468.json](evidence/runs/smoke-prod-sim-20261105T053533Z-8468.json)). The skip needs a clean
-database. The clean install's first smoke ran it, and read 46 PASS in dev and 45 PASS in prod-sim, in evidence not yet published.
+database. The clean install's first smoke ran it, and read 46 PASS in dev and 45 PASS in prod-sim ([dev](evidence/runs/clean-install-20261105T075041Z/clone-evidence/smoke-dev-20261105T080642Z-65896.json), [prod-sim](evidence/runs/clean-install-20261105T075041Z/clone-evidence/smoke-prod-sim-20261105T080826Z-22080.json)).
 
 **The dump comes first.** Prod-sim's promotion checked each digest against dev's record, asked plane-dev, and took backup `20261105T053351Z` with its row counts and object check before it committed `9c8e098` at 05:34:06Z. The publish then asked plane-dev
 again, and took no second dump ([promote-prod-sim-final-2.txt](evidence/runs/promote-prod-sim-final-2.txt)). That backup has not been restored, so this shows it exists and came first. A later prod-sim backup was restored in place with result PASS ([restore-prod-sim-20261105T073438Z.json](evidence/runs/restore-prod-sim-20261105T073438Z.json)), on the same schema, so going back past a migration was not tested in Pass 1.
