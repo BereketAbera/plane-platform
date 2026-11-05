@@ -1,0 +1,149 @@
+# date: 2026-11-05T02:04:40Z
+# kubectl diff on a synced environment. It is a server-side dry run, so it changes nothing: the generations below read the same before and after.
+# main at 83ba5d28327f. Last change to the file diffed: 4f622e3.
+$ kubectl -n argocd get application plane-dev -o jsonpath='{.status.sync.status} {.status.health.status} {.status.sync.revision}'
+Synced Healthy adffb3cf7b8e3493e515bb087ab2d47d9faa330c
+$ kubectl -n plane-dev get deploy,sts -o custom-columns=NAME:.metadata.name,GEN:.metadata.generation   (before)
+NAME                         GEN
+iso-dev-controller-manager   1
+plane-admin-wl               8
+plane-api-wl                 8
+plane-beat-worker-wl         7
+plane-live-wl                7
+plane-space-wl               8
+plane-web-wl                 8
+plane-worker-wl              7
+postgres-exporter            3
+redis-exporter               1
+plane-minio-wl               1
+plane-pgdb-wl                1
+plane-rabbitmq-wl            1
+plane-redis-wl               1
+$ kubectl -n plane-dev diff -f gitops/environments/dev/manifests.yaml > diff.out
+exit=1 lines=453 stderr-lines=0
+$ grep -c '^diff -u' diff.out                                    objects that differ
+37
+$ grep -E '^[-+] ' diff.out | grep -c tracking-id                 lines that are Argo CD's tracking annotation
+37
+$ grep -E '^[-+] ' diff.out | grep -v tracking-id                 every other changed line
+-  generation: 8
++  generation: 9
+-  generation: 8
++  generation: 9
+-  generation: 7
++  generation: 8
+-  generation: 7
++  generation: 8
+-  generation: 8
++  generation: 9
+-  generation: 8
++  generation: 9
+-  generation: 7
++  generation: 8
+$ grep -E '^[-+] ' diff.out | grep -v -E 'tracking-id|generation:'   what is left
+(end of that list)
+$ kubectl -n plane-dev get deploy,sts -o custom-columns=NAME:.metadata.name,GEN:.metadata.generation   (after)
+NAME                         GEN
+iso-dev-controller-manager   1
+plane-admin-wl               8
+plane-api-wl                 8
+plane-beat-worker-wl         7
+plane-live-wl                7
+plane-space-wl               8
+plane-web-wl                 8
+plane-worker-wl              7
+postgres-exporter            3
+redis-exporter               1
+plane-minio-wl               1
+plane-pgdb-wl                1
+plane-rabbitmq-wl            1
+plane-redis-wl               1
+# The whole diff, with the lines between hunks removed for size: only the objects' headers and changed lines.
+diff apps.v1.Deployment.plane-dev.plane-admin-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-admin-wl
+-  generation: 8
++  generation: 9
+diff apps.v1.Deployment.plane-dev.plane-api-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-api-wl
+-  generation: 8
++  generation: 9
+diff apps.v1.Deployment.plane-dev.plane-beat-worker-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-beat-worker-wl
+-  generation: 7
++  generation: 8
+diff apps.v1.Deployment.plane-dev.plane-live-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-live-wl
+-  generation: 7
++  generation: 8
+diff apps.v1.Deployment.plane-dev.plane-space-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-space-wl
+-  generation: 8
++  generation: 9
+diff apps.v1.Deployment.plane-dev.plane-web-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-web-wl
+-  generation: 8
++  generation: 9
+diff apps.v1.Deployment.plane-dev.plane-worker-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/Deployment:plane-dev/plane-worker-wl
+-  generation: 7
++  generation: 8
+diff apps.v1.StatefulSet.plane-dev.plane-minio-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/StatefulSet:plane-dev/plane-minio-wl
+diff apps.v1.StatefulSet.plane-dev.plane-pgdb-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/StatefulSet:plane-dev/plane-pgdb-wl
+diff apps.v1.StatefulSet.plane-dev.plane-rabbitmq-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/StatefulSet:plane-dev/plane-rabbitmq-wl
+diff apps.v1.StatefulSet.plane-dev.plane-redis-wl
+-    argocd.argoproj.io/tracking-id: plane-dev:apps/StatefulSet:plane-dev/plane-redis-wl
+diff batch.v1.Job.plane-dev.plane-api-migrate-1
+-    argocd.argoproj.io/tracking-id: plane-dev:batch/Job:plane-dev/plane-api-migrate-1
+diff secrets.infisical.com.v1beta1.InfisicalAuth.plane-dev.infisical
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalAuth:plane-dev/infisical
+diff secrets.infisical.com.v1beta1.InfisicalConnection.plane-dev.infisical
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalConnection:plane-dev/infisical
+diff secrets.infisical.com.v1beta1.InfisicalStaticSecret.plane-dev.plane-app-env
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalStaticSecret:plane-dev/plane-app-env
+diff secrets.infisical.com.v1beta1.InfisicalStaticSecret.plane-dev.plane-app-keys
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalStaticSecret:plane-dev/plane-app-keys
+diff secrets.infisical.com.v1beta1.InfisicalStaticSecret.plane-dev.plane-doc-store
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalStaticSecret:plane-dev/plane-doc-store
+diff secrets.infisical.com.v1beta1.InfisicalStaticSecret.plane-dev.plane-live-env
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalStaticSecret:plane-dev/plane-live-env
+diff secrets.infisical.com.v1beta1.InfisicalStaticSecret.plane-dev.plane-pgdb
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalStaticSecret:plane-dev/plane-pgdb
+diff secrets.infisical.com.v1beta1.InfisicalStaticSecret.plane-dev.plane-rabbitmq
+-    argocd.argoproj.io/tracking-id: plane-dev:secrets.infisical.com/InfisicalStaticSecret:plane-dev/plane-rabbitmq
+diff traefik.io.v1alpha1.IngressRoute.plane-dev.plane-ingress
+-    argocd.argoproj.io/tracking-id: plane-dev:traefik.io/IngressRoute:plane-dev/plane-ingress
+diff traefik.io.v1alpha1.Middleware.plane-dev.plane-body-limit
+-    argocd.argoproj.io/tracking-id: plane-dev:traefik.io/Middleware:plane-dev/plane-body-limit
+diff traefik.io.v1alpha1.Middleware.plane-dev.plane-trailing-slash
+-    argocd.argoproj.io/tracking-id: plane-dev:traefik.io/Middleware:plane-dev/plane-trailing-slash
+diff v1.ConfigMap.plane-dev.plane-app-vars
+-    argocd.argoproj.io/tracking-id: plane-dev:/ConfigMap:plane-dev/plane-app-vars
+diff v1.ConfigMap.plane-dev.plane-live-vars
+-    argocd.argoproj.io/tracking-id: plane-dev:/ConfigMap:plane-dev/plane-live-vars
+diff v1.ConfigMap.plane-dev.plane-rabbitmq-conf
+-    argocd.argoproj.io/tracking-id: plane-dev:/ConfigMap:plane-dev/plane-rabbitmq-conf
+diff v1.Service.plane-dev.plane-admin
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-admin
+diff v1.Service.plane-dev.plane-api
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-api
+diff v1.Service.plane-dev.plane-live
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-live
+diff v1.Service.plane-dev.plane-minio
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-minio
+diff v1.Service.plane-dev.plane-pgdb
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-pgdb
+diff v1.Service.plane-dev.plane-rabbitmq
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-rabbitmq
+diff v1.Service.plane-dev.plane-redis
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-redis
+diff v1.Service.plane-dev.plane-space
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-space
+diff v1.Service.plane-dev.plane-web
+-    argocd.argoproj.io/tracking-id: plane-dev:/Service:plane-dev/plane-web
+diff v1.ServiceAccount.plane-dev.plane
+-    argocd.argoproj.io/tracking-id: plane-dev:/ServiceAccount:plane-dev/plane
+diff v1.ServiceAccount.plane-dev.plane-infisical-auth
+-    argocd.argoproj.io/tracking-id: plane-dev:/ServiceAccount:plane-dev/plane-infisical-auth
