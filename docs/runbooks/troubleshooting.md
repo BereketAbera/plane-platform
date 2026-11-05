@@ -249,7 +249,7 @@ More in `infisical/README.md`, including its recovery table.
 | A resume keeps what is there and goes on from the migrator | The file has a `data-back <env>` line, so that environment's data came back, and counts cannot tell it from what has been written since | Nothing to do. `ALLOW_RESUME_OVERWRITE=<env>` replaces it instead, and that run does not read PASS. A target that is empty despite the line is restored again |
 | Apps at zero and auto-sync paused, after a client ended during a restore | A client that ends removes a running restore Job first, even with its output dead. If it cannot, the apps stay down and it prints what to run | Follow what it printed. With the file there, the same command puts back auto-sync and the Deployments first, and goes on |
 
-These paths have run on stubs only (`make drill-clean-restore-harness`). The one real clean restore ran straight through, with no resume ([record](../evidence/runs/restore-clean-20261105T081017Z.json)).
+These paths have run on stubs only (`make drill-clean-restore-harness`). The one published real clean restore ran straight through, with no resume, on the script as it was before the last of these fixes merged at `18af97a` ([record](../evidence/runs/restore-clean-20261105T081017Z.json)).
 
 ## `kubectl top` fails
 
