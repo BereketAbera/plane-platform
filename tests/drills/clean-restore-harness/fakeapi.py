@@ -220,4 +220,9 @@ class H(BaseHTTPRequestHandler):
         self.out(404, {"message": "not stubbed"})
 
 
-HTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_forever()
+# Listening by the time the port is written, so whoever reads it can connect.
+server = HTTPServer(("127.0.0.1", 0), H)
+with open(sys.argv[1] + ".tmp", "w") as f:
+    f.write(str(server.server_address[1]))
+os.replace(sys.argv[1] + ".tmp", sys.argv[1])
+server.serve_forever()

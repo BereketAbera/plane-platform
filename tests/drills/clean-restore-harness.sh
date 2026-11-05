@@ -92,13 +92,20 @@ jwt() { # exp. A token of the shape the server issues, for the instance admin id
   printf 'x.%s.y' "$(printf '{"exp":%s,"identityId":"adm","identityName":"Instance Admin Identity","orgId":"org-old"}' "$1" | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '=')"
 }
 
+# On a free port the system gives it, which it writes down once it listens, so harnesses running side by side cannot
+# answer for each other. A port picked at random here did that, with the mutants going.
 start_api() {
-  python3 -I "$STUBS/fakeapi.py" "$PORT" &
+  local waited=0
+  rm -f "$H/state/api-port"
+  python3 -I "$STUBS/fakeapi.py" "$H/state/api-port" &
   API_PID=$!
-  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-    /usr/bin/curl -s -o /dev/null -m 1 "$INFISICAL_URL/fake/registry" && break
+  until [[ -s "$H/state/api-port" ]] || [[ "$waited" -gt 300 ]]; do
     /bin/sleep 0.1
+    waited=$((waited + 1))
   done
+  [[ -s "$H/state/api-port" ]] || fail "fixture: the fake API did not start"
+  INFISICAL_URL="http://127.0.0.1:$(cat "$H/state/api-port" 2>/dev/null)"
+  export INFISICAL_URL
 }
 
 reset() {
@@ -135,8 +142,6 @@ reset() {
   unset ALLOW_LOW_DISK ALLOW_NO_SENTINEL ALLOW_NEWER_INFISICAL_BACKUP ALLOW_NO_ADMIN_TOKEN ALLOW_STALE_PLANE_SECRETS ALLOW_SECRET_KEY_MISMATCH
   unset ALLOW_RESUME_OVERWRITE ALLOW_BACKUP_DURING_RESTORE RESTORE_RESUME OVERRIDE_DEV_CHECK
   unset MIN_FREE_DISK_GIB RENEW_ADMIN_TOKEN INFISICAL_RESTORED UP_STOP_AFTER BACKUP_RETENTION_DAYS
-  PORT=$((20000 + RANDOM % 10000))
-  export INFISICAL_URL="http://127.0.0.1:$PORT"
   : > "$H/state/calls.log"
 
   local z="$H/.local/secret-zero" token
