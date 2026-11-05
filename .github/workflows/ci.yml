@@ -26,6 +26,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Each pinned tool was checked against tools.lock when it was first fetched. GitHub's release downloads answered 504
+      # for minutes at a time on 2026-11-05, and one such download fails a job before any check has run.
+      - name: Restore pinned tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools
+          key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
       - name: Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests
         run: ./scripts/ci/lint.sh
 
@@ -41,6 +48,13 @@ jobs:
           # The promotion invariant reads the history of the dev overlay.
           fetch-depth: 0
           persist-credentials: false
+      # Each pinned tool was checked against tools.lock when it was first fetched. GitHub's release downloads answered 504
+      # for minutes at a time on 2026-11-05, and one such download fails a job before any check has run.
+      - name: Restore pinned tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools
+          key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
       - name: Render drift, kubeconform, conftest, promotion invariant
         run: ./scripts/ci/validate-manifests.sh
       - name: One owner per resource
@@ -58,5 +72,12 @@ jobs:
           # gitleaks scans all of history, not only this commit.
           fetch-depth: 0
           persist-credentials: false
+      # Each pinned tool was checked against tools.lock when it was first fetched. GitHub's release downloads answered 504
+      # for minutes at a time on 2026-11-05, and one such download fails a job before any check has run.
+      - name: Restore pinned tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools
+          key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
       - name: Gitleaks, trivy config, trivy fs
         run: ./scripts/ci/security.sh
