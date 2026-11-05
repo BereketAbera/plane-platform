@@ -89,6 +89,44 @@ deny contains msg if {
 	msg := sprintf("%s: %s is not allowed in a Plane namespace, because it could take traffic from every host", [identity, input.kind])
 }
 
+# Contract section 3: the internal UIs. Each Plane api must reach Traefik for the CoreDNS self-dial, and Traefik
+# routes by Host header, so a route to one of these with no allow list lets that pod read every metric and silence
+# alerts. monitoring/manifests/shared/ingress-routes.yaml has the reasoning, and tests/routes/internal-routes.sh
+# proves it at runtime. A missing Middleware fails closed, with a 404, so naming it is the part to check.
+internal_hosts := {
+	"argocd.localhost",
+	"grafana.localhost",
+	"prometheus.localhost",
+	"alertmanager.localhost",
+	"infisical.localhost",
+}
+
+allow_list := "node-network-only"
+
+# Traefik matches hosts in any case, and a HostRegexp would escape the dots.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	some route in input.spec.routes
+	some host in internal_hosts
+	contains(replace(lower(route.match), `\`, ""), host)
+	not names_allow_list(route)
+	msg := sprintf("%s: route %q serves %s, so it must name the %s middleware", [identity, route.match, host, allow_list])
+}
+
+names_allow_list(route) if {
+	some middleware in route.middlewares
+	middleware.name == allow_list
+}
+
+# Naming it proves little if it admits everyone. Docker's default pool, contract section 3, and no ipStrategy,
+# because with one Traefik would read X-Forwarded-For, which any client can set.
+deny contains msg if {
+	input.kind == "Middleware"
+	input.metadata.name == allow_list
+	input.spec != {"ipAllowList": {"sourceRange": ["172.16.0.0/12"]}}
+	msg := sprintf("%s: must be an ipAllowList of exactly 172.16.0.0/12 with no ipStrategy", [identity])
+}
+
 host_matcher(host) := sprintf("Host(`%s`)", [host])
 
 stays_on_host(match, host) if match == host_matcher(host)

@@ -122,7 +122,7 @@ test_one_bad_route_among_good_ones_rejected if {
 }
 
 test_platform_route_on_its_own_host_accepted if {
-	count(plane.deny) == 0 with input as route_in("monitoring", "Host(`grafana.localhost`)", "grafana")
+	count(plane.deny) == 0 with input as route_in("monitoring", "Host(`whoami.localhost`)", "whoami")
 }
 
 test_platform_route_naming_a_plane_host_rejected if {
@@ -165,4 +165,75 @@ test_bitnami_mention_in_prose_accepted if {
 
 test_similar_names_accepted if {
 	count(plane.deny) == 0 with input as workload_with_image("docker.io/notbitnami/postgresql:17")
+}
+
+internal_route(namespace, match, middlewares) := {
+	"kind": "IngressRoute",
+	"metadata": {"name": "internal", "namespace": namespace},
+	"spec": {"routes": [{"match": match, "kind": "Rule", "middlewares": middlewares, "services": [{"name": "ui", "port": 80}]}]},
+}
+
+test_internal_route_with_the_allow_list_accepted if {
+	count(plane.deny) == 0 with input as internal_route("monitoring", "Host(`prometheus.localhost`)", [{"name": "node-network-only"}])
+	count(plane.deny) == 0 with input as internal_route("argocd", "Host(`argocd.localhost`)", [{"name": "node-network-only"}])
+	count(plane.deny) == 0 with input as internal_route("infisical", "Host(`infisical.localhost`)", [{"name": "node-network-only"}])
+}
+
+test_every_internal_host_needs_the_allow_list if {
+	count(plane.deny) == 1 with input as internal_route("argocd", "Host(`argocd.localhost`)", [])
+	count(plane.deny) == 1 with input as internal_route("monitoring", "Host(`grafana.localhost`)", [])
+	count(plane.deny) == 1 with input as internal_route("monitoring", "Host(`prometheus.localhost`)", [])
+	count(plane.deny) == 1 with input as internal_route("monitoring", "Host(`alertmanager.localhost`)", [])
+	count(plane.deny) == 1 with input as internal_route("infisical", "Host(`infisical.localhost`)", [])
+}
+
+test_internal_route_with_no_middlewares_field_rejected if {
+	doc := {
+		"kind": "IngressRoute",
+		"metadata": {"name": "internal", "namespace": "monitoring"},
+		"spec": {"routes": [{"match": "Host(`grafana.localhost`)", "kind": "Rule", "services": [{"name": "ui", "port": 80}]}]},
+	}
+	count(plane.deny) == 1 with input as doc
+}
+
+test_internal_route_with_another_middleware_rejected if {
+	count(plane.deny) == 1 with input as internal_route("monitoring", "Host(`grafana.localhost`)", [{"name": "strip-prefix"}])
+}
+
+test_internal_route_respelled_rejected if {
+	count(plane.deny) == 1 with input as internal_route("monitoring", "Host(`PROMETHEUS.LOCALHOST`)", [])
+	count(plane.deny) == 1 with input as internal_route("monitoring", "HostRegexp(`^prometheus\\.localhost$`)", [])
+	count(plane.deny) == 1 with input as internal_route("monitoring", "Host(`x.localhost`) || Host(`alertmanager.localhost`)", [])
+}
+
+test_one_of_several_routes_missing_the_allow_list_rejected if {
+	doc := {
+		"kind": "IngressRoute",
+		"metadata": {"name": "internal", "namespace": "monitoring"},
+		"spec": {"routes": [
+			{"match": "Host(`grafana.localhost`)", "middlewares": [{"name": "node-network-only"}]},
+			{"match": "Host(`grafana.localhost`) && PathPrefix(`/api`)"},
+		]},
+	}
+	count(plane.deny) == 1 with input as doc
+}
+
+test_other_hosts_need_no_allow_list if {
+	count(plane.deny) == 0 with input as internal_route("monitoring", "Host(`traefik.localhost`)", [])
+}
+
+allow_list(spec) := {"kind": "Middleware", "metadata": {"name": "node-network-only", "namespace": "monitoring"}, "spec": spec}
+
+test_the_allow_list_itself_accepted if {
+	count(plane.deny) == 0 with input as allow_list({"ipAllowList": {"sourceRange": ["172.16.0.0/12"]}})
+}
+
+test_an_opened_allow_list_rejected if {
+	count(plane.deny) == 1 with input as allow_list({"ipAllowList": {"sourceRange": ["0.0.0.0/0"]}})
+	count(plane.deny) == 1 with input as allow_list({"ipAllowList": {"sourceRange": ["172.16.0.0/12", "10.244.0.0/16"]}})
+	count(plane.deny) == 1 with input as allow_list({"stripPrefix": {"prefixes": ["/"]}})
+}
+
+test_an_allow_list_reading_a_header_rejected if {
+	count(plane.deny) == 1 with input as allow_list({"ipAllowList": {"sourceRange": ["172.16.0.0/12"], "ipStrategy": {"depth": 1}}})
 }

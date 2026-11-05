@@ -83,6 +83,11 @@ plant_bitnami_chart_in_terraform() {
 plant_chart_image_without_digest() { yq -i 'del(.image.digest)' helm/values/traefik.yaml; }
 # Infisical's chart really does bundle these, turned off in our values. This is what turning one on does.
 plant_bitnami_subchart_enabled() { yq -i '.postgresql.enabled = true' helm/values/infisical.yaml; }
+plant_thanos_default_without_digest() { yq -i 'del(.prometheusOperator.thanosImage.sha)' helm/values/kube-prometheus-stack.yaml; }
+plant_internal_route_without_allow_list() {
+  replace_first monitoring/manifests/shared/ingress-routes.yaml '(match: Host\(`prometheus\.localhost`\)\n\s+kind: Rule\n)\s+middlewares:\n\s+- name: node-network-only\n' '\1'
+}
+plant_allow_list_opened() { replace_first gitops/bootstrap/argocd-route/ingressroute.yaml '172\.16\.0\.0/12' '0.0.0.0/0'; }
 plant_invalid_alert_expression() {
   replace_first monitoring/manifests/shared/rules-plane.yaml 'expr: probe_success\{probe="api-instance"\} == 0' 'expr: probe_success{probe="api-instance"} ==== 0'
 }
@@ -190,6 +195,9 @@ control bitnami-image-in-a-manifest validate-manifests.sh "nothing from Bitnami"
 control bitnami-chart-in-terraform lint.sh "no Bitnami reference FAILED" plant_bitnami_chart_in_terraform
 CONTROL_SKIP_CHARTS=no control chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_chart_image_without_digest
 CONTROL_SKIP_CHARTS=no control bitnami-subchart-turned-on validate-manifests.sh "nothing from Bitnami" plant_bitnami_subchart_enabled
+CONTROL_SKIP_CHARTS=no control thanos-default-without-digest validate-manifests.sh "--thanos-default-base-image=" plant_thanos_default_without_digest
+control internal-route-without-allow-list validate-manifests.sh "so it must name the node-network-only middleware" plant_internal_route_without_allow_list
+control allow-list-opened-to-everyone validate-manifests.sh "must be an ipAllowList of exactly" plant_allow_list_opened
 control invalid-alert-expression validate-manifests.sh "promtool: platform rules FAILED" plant_invalid_alert_expression
 control alert-that-fires-late validate-manifests.sh "promtool: rule unit tests FAILED" plant_alert_that_fires_late
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops

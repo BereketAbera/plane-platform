@@ -73,11 +73,18 @@ test_reloader_resource_flags_ignored if {
 	count(charts.deny) == 0 with input as workload(pinned, ["--config-reloader-cpu-limit=50m", "--log-level=info"])
 }
 
-test_unused_thanos_default_is_the_listed_exception if {
-	count(charts.deny) == 0 with input as workload(pinned, ["--thanos-default-base-image=quay.io/thanos/thanos:v0.42.5"])
+test_thanos_default_flag_checked if {
+	count(charts.deny) == 1 with input as workload(pinned, ["--thanos-default-base-image=quay.io/thanos/thanos:v0.42.5"])
+	count(charts.deny) == 0 with input as workload(pinned, [concat("", ["--thanos-default-base-image=quay.io/thanos/thanos:v0.42.5@", good_digest])])
 }
 
-test_using_thanos_ends_the_exception if {
-	count(charts.deny) == 1 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"baseImage": "x"}}}
-	count(charts.deny) == 1 with input as {"kind": "ThanosRuler", "metadata": {"name": "t"}, "spec": {"image": pinned}}
+test_thanos_sidecar_image_checked if {
+	count(charts.deny) == 1 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"image": "quay.io/thanos/thanos:v0.42.5"}}}
+	count(charts.deny) == 0 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"image": pinned}}}
+	count(charts.deny) == 0 with input as {"kind": "Prometheus", "metadata": {"name": "p"}, "spec": {"image": pinned, "thanos": {"version": "v0.42.5"}}}
+}
+
+test_thanos_ruler_image_checked if {
+	count(charts.deny) == 1 with input as {"kind": "ThanosRuler", "metadata": {"name": "t"}, "spec": {"image": "quay.io/thanos/thanos:v0.42.5"}}
+	count(charts.deny) == 0 with input as {"kind": "ThanosRuler", "metadata": {"name": "t"}, "spec": {"image": pinned}}
 }

@@ -39,26 +39,14 @@ deny contains msg if {
 	some c in kube.containers(input)
 	some arg in object.get(c, "args", [])
 	parts := regex.find_all_string_submatch_n(`^(--[a-z-]*(?:-base-image|config-reloader))=(.+)$`, arg, 1)[0]
-	not unused_image_flags[parts[1]]
 	not regex.match(digest_pinned, parts[2])
 	msg := sprintf("%s: container %q has %s=%s, and a platform chart image must be pinned by @sha256 digest in helm/values", [kube.label(input), c.name, parts[1], parts[2]])
 }
 
-# The real exceptions: images a chart names that nothing here runs, each with why. scan-images.sh
-# leaves these out for the same reason.
-unused_image_flags := {
-	# A default for Thanos, which the operator starts only for a Prometheus with spec.thanos or for a
-	# ThanosRuler, and the rule below refuses both. prometheusOperator.thanosImage.sha could pin it.
-	"--thanos-default-base-image",
-}
-
-deny contains msg if {
-	input.kind == "ThanosRuler"
-	msg := sprintf("%s: Thanos would start from an unpinned default, so pin prometheusOperator.thanosImage.sha and drop the exception in policy/charts.rego first", [kube.label(input)])
-}
-
+# A Thanos sidecar starts from the flag above unless the resource names its own image.
 deny contains msg if {
 	input.kind == "Prometheus"
-	input.spec.thanos
-	msg := sprintf("%s: spec.thanos would start from an unpinned default, so pin prometheusOperator.thanosImage.sha and drop the exception in policy/charts.rego first", [kube.label(input)])
+	image := input.spec.thanos.image
+	not regex.match(digest_pinned, image)
+	msg := sprintf("%s: spec.thanos.image is %q, and a platform chart image must be pinned by @sha256 digest in helm/values", [kube.label(input), image])
 }
