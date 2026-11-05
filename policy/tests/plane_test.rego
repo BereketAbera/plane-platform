@@ -282,6 +282,17 @@ test_any_route_in_a_namespace_with_a_ui_needs_the_allow_list if {
 	count(plane.deny) == 1 with input as route_to("infisical", "Host(`db.localhost`)", {"name": "infisical-postgres", "port": 5432}, [])
 }
 
+test_a_route_with_no_namespace_counts_as_beside_a_ui if {
+	route_with_none := {
+		"kind": "IngressRoute",
+		"metadata": {"name": "x"},
+		"spec": {"routes": [{"match": "Host(`logs.localhost`)", "services": [{"name": "loki", "port": 3100}]}]},
+	}
+	count(plane.deny) == 1 with input as route_with_none
+	tcp_with_none := {"kind": "IngressRouteTCP", "metadata": {"name": "x"}, "spec": {"routes": [{"match": "HostSNI(`*`)", "services": [{"name": "loki", "port": 3100}]}]}}
+	count(plane.deny) == 1 with input as tcp_with_none
+}
+
 test_an_internal_host_on_a_backend_of_its_own_still_needs_the_allow_list if {
 	count(plane.deny) == 1 with input as route_to("traefik", "Host(`grafana.localhost`)", {"name": "whoami", "port": 80}, [])
 }

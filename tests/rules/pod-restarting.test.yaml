@@ -1,7 +1,8 @@
 # PodRestarting, in its own file for its evaluation_interval. promtool evaluates alerts at that step, whatever a group's
 # interval says, so rules.test.yaml's 15s can only reach 0s and 15s past a 30s scrape. What this rule has to survive is
-# every offset between two scrapes, because on a real cluster that offset depends on the target and on the rule file.
-# scripts/ci/negative-controls.sh puts increase() back and requires this file to fail.
+# every offset between two scrapes: by reading Prometheus's scheduling, the offset comes from hashes of the target and of
+# the rule file, so another install gets another one. scripts/ci/negative-controls.sh puts increase() back and requires
+# this file to fail.
 rule_files:
   - rules-platform.yaml
 evaluation_interval: 1s
