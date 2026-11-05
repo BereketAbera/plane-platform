@@ -21,7 +21,7 @@ The [repository README](../README.md) has the overview, status table, and quick 
 | BLOCKED | The test could not run or finish because something it depends on failed or is missing. This says nothing about the system under test |
 | NOT RUN | The test was not attempted, or it was attempted and no evidence was captured |
 
-**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is in progress, with no results recorded yet. The markers left wait on that run alone: the time of one `make up`, disk growth of a first install, `Docker.raw` after a delete, and data across the rebuild.
+**Inline markers.** These documents were written alongside the code and are reconciled against evidence as runs finish. On 2026-11-05 `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is rebuilding the cluster, with no evidence published yet.
 
 | Marker | Meaning |
 |---|---|
@@ -34,7 +34,17 @@ To list what is still open:
 git grep -n -E '\[\[(VERIFY|MEASURE):' -- '*.md'
 ```
 
-Two plain sentences replace markers that Pass 1 will not answer. "Not tested in Pass 1" marks something this pass never ran, such as Safari or stopping and resuming the cluster. "Unverified" or "Not measured" marks a question about Hetzner, Cloudflare or what Pass 2 will decide, to check at the start of Pass 2. List them with `git grep -n -E 'Not tested in Pass 1|Unverified|Not measured' -- '*.md'`.
+The markers left do not all wait on one run:
+
+| Marker | Waits on |
+|---|---|
+| The time of one `make up`, the time of a clean restore, data across the rebuild, the CPU count of the first install, and host free disk around it | The drill's evidence, once `make publish-evidence` has copied it. Its host disk readings keep the registry and caches, so they do not give a first install's growth |
+| Disk growth of a first install | A cold install with the registry and caches gone (TEAR-4) |
+| `Docker.raw` before and after a delete | TEAR-5 |
+| Any other marker in a row of [validation.md](validation.md), such as PERS-3, SEC-4b, AUTH-4b, LOAD-2 or LOAD-3 | The run that row names |
+| OPS-2b, OPS-4 and OPS-5 in [validation.md](validation.md) | No run is planned, so they stay open |
+
+Two plain sentences replace markers that Pass 1 will not answer. "Not tested in Pass 1" marks something this pass never ran and no later run in it will read, such as Safari. What a later run may still answer reads NOT RUN, such as stopping and resuming the cluster (PERS-3). "Unverified" or "Not measured" marks a question about Hetzner, Cloudflare or what Pass 2 will decide, to check at the start of Pass 2. List them with `git grep -n -E 'Not tested in Pass 1|Unverified|Not measured' -- '*.md'`.
 
 A number with no measurement behind it says "estimate" and how it was derived. Present-tense descriptions such as "the policy allows X" describe configuration. They do not say the behaviour has been observed.
 
