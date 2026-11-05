@@ -151,6 +151,10 @@ fi
 git push --quiet "$BARE" "$new:refs/heads/main" ||
   die "push refused. If main was rewritten, restore it or delete $BARE to republish from scratch."
 ok "published main ${new:0:12} to $BARE"
+# A promotion's dump comes just before the publish that first sends it, and that is not always near its
+# commit, so make rollback ENV=prod-sim reads this to name the right dump. Without it, that goes by the commit.
+printf '%s %s %s\n' "$(date -u +%Y%m%dT%H%M%SZ)" "${old:--}" "$new" >>"$PUBLISH_LOG" ||
+  warn "could not record this publish in ${PUBLISH_LOG#"$ROOT"/}, so a rollback will go by the commit's time"
 
 current="$(git symbolic-ref --quiet --short HEAD || true)"
 [[ "$current" == main ]] || warn "HEAD is on ${current:-a detached commit}: main was published, not this checkout"
