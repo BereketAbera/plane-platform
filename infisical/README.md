@@ -209,7 +209,7 @@ While that file is there, `make backup` refuses an environment the restore has n
 | A dump from a newer Infisical than will run on it | Deploy that version, or `ALLOW_NEWER_INFISICAL_BACKUP=yes` | That server refuses to start on the dump until a newer image is deployed |
 | A key the set names is not on this machine | Put it back. Without `ENCRYPTION_KEY` the dump is unreadable | |
 
-**The disk check.** `make up` asks for 25 GiB to create a cluster, and `cluster-up.sh` alone for 15. Before a delete the drill and the plan compute what would be free after it: what is free now, plus 93% of the kind volume as `docker system df -v` measures it, which reads lower than `du` in the node and so errs towards refusing. 93% is what a 273 MB volume returned within 15s, and a 12 GB volume has not been measured, so the drill prints what really came back. A run that passes this check does not stop at `up.sh`'s check for a new cluster: if less comes back than the check counted on, the drill hands `up.sh` a logged reason saying so, since the cluster is gone by then and stopping protects nothing. `scripts/lib/up-checks.sh` says what the numbers are based on: the node's volume at 12.94 GiB by `du`, the 10 GiB floor later scripts check, and about 2 over. A number set beside one of these limits prints with two decimals, rounded down, so what is under a limit cannot print as that limit.
+**The disk check.** `make up` asks for 25 GiB to create a cluster, and `cluster-up.sh` alone for 15. Before a delete the drill and the plan compute what would be free after it: what is free now, plus 93% of the kind volume as `docker system df -v` measures it, which reads lower than `du` in the node and so errs towards refusing. 93% is what a 273 MB volume returned within 15s. The two real deletes so far each gave back more than it counted on (TEAR-5 in `docs/validation.md`), and two do not settle that, so the drill prints what really came back. A run that passes this check does not stop at `up.sh`'s check for a new cluster: if less comes back than the check counted on, the drill hands `up.sh` a logged reason saying so, since the cluster is gone by then and stopping protects nothing. `scripts/lib/up-checks.sh` says what the numbers are based on: the node's volume at 12.94 GiB by `du`, the 10 GiB floor later scripts check, and about 2 over. A number set beside one of these limits prints with two decimals, rounded down, so what is under a limit cannot print as that limit.
 
 A plan has a restore to do after `make up`, and that checks the floor too, so it counts what is still to pull. With no registry or mirror volumes that is a first install's 17.75 GiB, plus the floor, so 27.75. An empty cluster that stays, as `make up UP_STOP_AFTER=cluster` leaves one, creates nothing and still has its 12.94 GiB to pull, so it asks for 22.94, or 27.75 with no volumes. A resume on a cluster that stays cannot tell how much it has pulled, and has only the floor.
 
@@ -279,7 +279,7 @@ make promote ENV=prod-sim CONFIRM=yes SKIP_BACKUP=yes OVERRIDE_DEV_CHECK="restor
 make restore-clean BACKUP=<id>
 ```
 
-The same goes for what the mirrors hold, except that they fetch it again by themselves: those images are upstream's, by digest. This has run only on stubs, because the drill keeps the registry.
+The same goes for what the mirrors hold, except that they fetch it again by themselves: those images are upstream's, by digest. A restore that meets this has run only on stubs, because each drill's restore found a registry: with `COLD_INSTALL=yes` the drill removes it for the install, and puts it back from a snapshot before the restore. The same stop in `make up`, and the mirrors filling again from empty, ran for real on the cold install (TEAR-4 in `docs/validation.md`).
 
 **Anything after the backup.** A dump is what it was when it was taken.
 
@@ -297,7 +297,7 @@ In place, `make restore ENV=<env> BACKUP=latest` warns if that backup holds 0 us
 
 ## Measured clean restore
 
-Real runs on 2026-11-05. Raw output is in `.local/evidence-raw/`, and the first four rows' files are under `docs/evidence/runs/`.
+Real runs on 2026-11-05. Raw output is in `.local/evidence-raw/`, and the first three rows' files are under `docs/evidence/runs/`.
 
 | What | Result | Evidence |
 |---|---|---|
