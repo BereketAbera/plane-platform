@@ -250,6 +250,8 @@ Run on the live instance on 2026-11-05, in place, with a generated password and 
 
 A restore Job runs in the cluster, so Ctrl-C, SIGTERM, a closed terminal or a kubectl error while the client polls ends only the client. A Job that carried on would go on to replace Infisical's database or drop Plane's, under a server the client had already started, after it had already said FAILED. So on any exit the client first removes this run's restore Jobs that have not finished, with `--cascade=foreground`, so their pods are gone when that returns. Then it flushes Infisical's Redis, because the database may be the restored one by then, starts the server and puts auto-sync back, root last. The run says the environment may hold the old data, the backup's, or a part of it, and running it again restores it.
 
+All of that holds with a client that can no longer print, as after a terminal that closed or a `tee` that took the same Ctrl-C. No error stops it then, and what it has to say goes to a file beside the evidence, `restore-<env>-<time>.json.log`. The drill's own evidence log takes its messages the same way.
+
 If a Job cannot be removed, or kubectl cannot say whether it runs, nothing starts: the server or apps stay down, auto-sync stays paused, and it prints what to run, in order. A clean restore that resumes does all of that by itself.
 
 ### What a clean restore cannot bring back
