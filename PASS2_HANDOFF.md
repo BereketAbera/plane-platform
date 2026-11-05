@@ -370,7 +370,7 @@ Monitoring in each cluster fails with that cluster. An outside check is required
 
 ### 4.11 Alert routing to real receivers
 
-Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints lines. Nobody is paged. `make test-alert` read PASS in dev on 2026-11-05: `PlaneApiDown` fired at 68 s and reached the sink at 78 s, with prod-sim quiet (`.local/evidence-raw/alert-test-dev-20261105T055044Z.json`, unpublished). It has not run on prod-sim. A temporary rule took 70 seconds from pending to the sink ([path](docs/evidence/runs/monitoring-alert-path-1.txt)), and `PlaneWorkerNoConsumer` fired on a real fault ([record](docs/evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). A failed deploy fired nothing, because `ArgoSyncFailed` was still pending when the revert closed the operation (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`, unpublished).
+Pass 1 routes every alert to an in-cluster webhook, `alert-sink`, which prints lines. Nobody is paged. `make test-alert` read PASS in dev on 2026-11-05: `PlaneApiDown` fired at 68 s and reached the sink at 78 s, with prod-sim quiet (`.local/evidence-raw/alert-test-dev-20261105T055044Z.json`, unpublished). It has not run on prod-sim. A temporary rule took 70 seconds from pending to the sink ([path](docs/evidence/runs/monitoring-alert-path-1.txt)), and `PlaneWorkerNoConsumer` fired on a real fault ([record](docs/evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). A failed deploy fired nothing, because the revert ended it with `ArgoSyncFailed` still pending (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`, unpublished).
 
 | Task | Detail |
 |---|---|
@@ -508,7 +508,7 @@ Collect from [docs/resource-utilization.md](docs/resource-utilization.md). It ho
 | Idle working set per workload | `kubectl top`, Prometheus `container_memory_working_set_bytes` | Quiet readings per workload, 2026-11-05T00:03:44Z, in [resource-utilization.md](docs/resource-utilization.md#plane-per-environment). A strict idle capture has not run |
 | Peak working set per workload during first boot and load | Prometheus `max_over_time` over the run. Cgroup peaks under smoke tests and drills are in the same page | [[MEASURE: peak working set per pod]] |
 | CPU p95 per workload under load | `tests/load/run.sh` samples | [[MEASURE: CPU p95 per pod under load]] |
-| Image store size on the node | Node disk, per architecture | [[MEASURE: image filesystem usage on the node]] |
+| Image store size on the node | Node disk, per architecture | arm64: 10.51 GiB in `/var/lib/containerd` by `du`, on the running platform at 2026-11-05T02:01Z (`.local/evidence-raw/dr-disk-1.txt`, unpublished). It moves by a few hundred MB while builds run, and it holds older image versions too, since kind disables image garbage collection. Not measured: x86. Measure it on the target at the start of Pass 2 |
 | Data growth per day | PV usage over time | Not measured: PV growth per day per service. Pass 1 holds test data and has run for under two days, so measure it on the target at the start of Pass 2 |
 | Load the target must carry | Owner's expectation of users | Open decision D8 |
 
