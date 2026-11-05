@@ -1,35 +1,50 @@
 # CI evidence
 
 Raw output from GitHub Actions for `BereketAbera/plane-platform` and from the same scripts run locally, captured on
-2026-11-04 and 2026-11-05. Nothing is edited or trimmed by hand. GitHub masks tokens as `***`, and a gitleaks scan of this directory found
+2026-11-04 and 2026-11-05. Nothing is edited or trimmed by hand, apart from the signed query strings cut from one read of the tool URLs, as its row below says. GitHub masks tokens as `***`, and a gitleaks scan of this directory, last at 2026-11-05T15:01Z, exit 0, found
 nothing. Row IDs are from [validation.md](../../validation.md), and results use the labels in contract section 12.
 
 ## Results
 
 | Row | Result | Basis |
 |---|---|---|
-| CI-1, `ci.yml` on a real runner | PASS | Runs 41903137276, 41907667785, 41907841985, 41909741166, 41975431001 at 9c8e098, and 41978707479 at 0dde813: Lint, Manifests and Security all green, on `push`. No job has run on `on: pull_request`: GitHub holds those runs with no jobs, see `ci-1-20261105T060416Z-pull-request-runs.txt` |
-| CI-2, `make ci` locally | PASS | Exit 0 every time, see the `ci-2` files. The newest two are clean clones from GitHub, of 9c8e098 at 2026-11-05T05:54Z and of 0dde813 at 06:16Z, each with 132 stubbed scenarios. The stubbed flows alone stood at 149 of 149 at 53aab26 ([hardening-round-5-flows-1.txt](../runs/hardening-round-5-flows-1.txt)), which no runner has seen |
+| CI-1, `ci.yml` on a real runner | PASS | Runs 41903137276, 41907667785, 41907841985, 41909741166, 41975431001 at 9c8e098, 41978707479 at 0dde813, and 42048656380 at 6edde64: Lint, Manifests and Security all green, on `push`. In between, run 42044273346 at 76e98ee and run 42046683167 at 7cde05a each lost a job to a 504 fetching a pinned tool, before any check in that job ran, as [below](#the-504-on-a-pinned-tool) says. No job has run on `on: pull_request`: GitHub holds those runs with no jobs, see `ci-1-20261105T060416Z-pull-request-runs.txt` |
+| CI-2, `make ci` locally | PASS | Exit 0 every time, see the `ci-2` files. The newest is a clean clone of f30a7f5, from 2026-11-05T14:00:06Z to 14:14:34Z, with `.tools` copied and 149 of 149 stubbed scenarios ([ci-2-20261105T140005Z-clean-clone-f30a7f5.txt](../runs/ci-2-20261105T140005Z-clean-clone-f30a7f5.txt)). That clone was made from this checkout, not from GitHub, because the commit was not yet pushed. The two before it are clean clones from GitHub, of 9c8e098 at 05:54Z and of 0dde813 at 06:16Z, each with 132. The stubbed flows alone stood at 149 of 149 at 53aab26 ([hardening-round-5-flows-1.txt](../runs/hardening-round-5-flows-1.txt)), and a runner first read them at 7cde05a, in run 42046683167 |
 | CI-3, a failing check goes red | PASS, by another route than the row names | Run 41907873100, 21 controls on a real runner. No pull request: the defect was planted in the runner's checkout. Not run on `on: pull_request`. The later controls, 45 of 45 at cc88450 ([negative-controls-alerts-track-3.txt](../runs/negative-controls-alerts-track-3.txt)), ran only on this Mac |
-| CI-4, `images.yml` builds and pushes | PASS | Run 41975430939 at 9c8e098 on `ubuntu-24.04-arm`: four images built, walked clean before and after publishing, four digests recorded. Run 41903137226 built nothing, because `apps/wayline/images.txt` was not on main |
-| CI-5, `images.yml` opens a dev bump | PASS | The same run opened [pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), with the four digests it published. Not merged. Nothing has copied those digests to the local registry |
+| CI-4, `images.yml` builds and pushes | PASS | Run 42044273310 at 76e98ee, and run 41975430939 at 9c8e098 before it, on `ubuntu-24.04-arm`: each built four images, walked them clean before and after publishing, and recorded four digests. Run 41903137226 built nothing, because `apps/wayline/images.txt` was not on main |
+| CI-5, `images.yml` opens a dev bump | PASS | Run 41975430939 opened [pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), with the four digests it published. Run 42044273310 force-updated it at 2026-11-05T14:29:32Z, head de9525e, to its own four. Not merged. Nothing has copied those digests to the local registry |
 | CI-6, refuses an unrecorded digest | PASS | Runs 41976950402, an invented digest, and 41977025314, another image's digest, at 9c8e098. Both exit 1 at `promote.sh`, and no branch is pushed. Run 41905513020 was the first, at f733b87 |
 | CI-6b, opens a pull request | PASS | Run 41977114312 at 9c8e098 opened [pull request 2](https://github.com/BereketAbera/plane-platform/pull/2), closed unmerged as a test. Run 41977288287, the same inputs again, succeeds and changes nothing. Runs 41905611391 and 41908167069 show GitHub's refusal while the setting was off |
-| CI-7b, the images built here have no CRITICAL finding with a fix | PASS | The step `Scan what was just pushed` in run 41975430939, on the GHCR digests. Exit 0 on a real runner. Only the table in the log remains, because the raw results stayed on the runner. The Mac's digests are in [security/scan-images-20261105T052024Z](../security/scan-images-20261105T052024Z/run.log), not repeated here |
+| CI-7b, the images built here have no CRITICAL finding with a fix | PASS | The step `Scan what was just pushed`, in run 42044273310 and in run 41975430939, on the GHCR digests. Exit 0 on a real runner, each time. Only the table in the log remains, because the raw results stayed on the runner. The Mac's digests are in [security/scan-images-20261105T052024Z](../security/scan-images-20261105T052024Z/run.log), not repeated here |
 | BR-3, `/source` from outside | FAIL | `br-3-20261105T054812Z-source-logged-out.txt`: 302 to 84b63d9, which answers 404 with no credentials. The commit is on GitHub. The repository is private |
 
 ## What GitHub has not seen
 
-Everything up to 9c8e098 reached GitHub at 2026-11-05T05:39Z, and runs 41975431001 and 41975430939 cover that commit, so the policy
-rules, promtool on Linux, the digest binding, the stubbed promotion scenarios and the image scan have now run on real runners. A commit
-after 0dde813 is covered by no run here, and `origin/main` read 0dde813 by the local ref at 2026-11-05T07:59Z, with well over 100 local commits after it, the drills and fixes among them. Run 41978707479 covers 0dde813, and `images.yml` did not run on it, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner
-since run 41907873100: no job failed on the 9c8e098 push, so nothing new shows a check going red there.
+76e98ee reached GitHub at 2026-11-05T14:21:38Z, the first push since 0dde813 at 06:10:56Z, with 347 commits, the drills and fixes among them ([state](ci-1-20261105T150014Z-github-state.txt)). gitleaks over the history exited 0 and the search for session values found 0 before that push, and [history-rewrite.md](../history-rewrite.md) has both checks. 7cde05a followed at 14:36:42Z, and 6edde64 at 14:48:53Z, each changing how CI fetches its tools.
+
+So the drills and fixes are on GitHub, and a commit after 6edde64 is covered by no run here, as read at 15:00Z. Run 42048656380 at 6edde64 covers Lint, Manifests and Security, so the policy rules, promtool on Linux, the digest binding and the 149 stubbed promotion scenarios have run on a real runner on the code the drills ran. `images.yml` ran at 76e98ee, run 42044273310, and not on the two later pushes, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner since run 41907873100. The jobs that went red on 2026-11-05 went red fetching a tool, before any check in them ran, so nothing new shows a check going red there.
+
+### The 504 on a pinned tool
+
+`scripts/ci/lint.sh`, `validate-manifests.sh` and `security.sh` each start by running `scripts/install-tools.sh`, which fetches each pinned tool from its release URL and checks it against `tools.lock`. A job that cannot fetch one fails there, before any of its checks.
+
+| When | Job | What the log reads |
+|---|---|---|
+| 14:22:13Z, run 42044273346, attempt 1, at 76e98ee | Manifests. Lint and Security passed | `curl: (22) The requested URL returned error: 504`, four times in six seconds, exit 22. The log names no tool, because `validate-manifests.sh` sends that script's stdout to /dev/null |
+| 14:31:17Z, attempt 2, a re-run of that job from 14:30:39Z | Manifests | The same |
+| 14:35:53Z, attempt 3, a re-run of that job from 14:35:37Z | Manifests | The same |
+| 14:37:34Z, run 42046683167, at 7cde05a | Lint. Manifests and Security passed | One 504 at 14:36:50Z, then six from 14:37:09Z to 14:37:34Z, then `could not download shellcheck v0.11.0`, exit 1 |
+| 14:49:44Z and 14:58:17Z, run 42048656380, at 6edde64 | Lint, Manifests and Security all passed | No 504. `Cache not found` on each job's first run, so each fetched its tools, and `Cache saved` after |
+
+So no check failed in any of these, and the first three say nothing about the code at 76e98ee. Read at 14:32Z from this Mac, with no file kept: GitHub answered 504 for `https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.8.3/kustomize_v5.8.3_linux_amd64.tar.gz`, repeatedly and in about 0.3 s with no redirect, while the same asset through api.github.com's asset route answered 200 with the checksum `tools.lock` pins, the darwin asset answered 200, GitHub's status page read All Systems Operational, and the other five tools' URLs answered 200. Two later reads are in files, and they show it coming and going: at 14:39:16Z that URL answered 302 three times ([read](ci-1-20261105T143916Z-tool-urls.txt)), and at 14:40:17Z 504 three times, with the other five tools answering as before and the API naming the digest `tools.lock` pins ([read](ci-1-20261105T144017Z-tool-urls.txt)). The shellcheck failure shows it was not that one asset alone.
+
+Three commits answer it. `30f422a` lengthened the retries to `--retry 5 --retry-delay 5 --retry-connrefused`, and [install-tools-retry-check.txt](../runs/install-tools-retry-check.txt) shows those options reaching a 200 after three 504s from a local stub. Run 42046683167 shows that was not always enough: six tries over 25 s all read 504. `7cde05a` makes the script name the tool and URL when a download fails. `6edde64` changes the retries to `--retry 8 --retry-connrefused`, with [the same stub](../runs/install-tools-retry-check-2.txt), and keeps each job's tools in the Actions cache, keyed on `tools.lock`. Run 42048656380 met no 504, so it shows neither at work, and no run yet has restored that cache. A longer retry does not help if the 504 lasts longer than that.
 
 ## Files
 
 Each run has `<row>-<UTC start>-run-<id>.json` from `gh run view <id> --json attempt,conclusion,createdAt,databaseId,displayTitle,event,headBranch,headSha,jobs,name,number,startedAt,status,updatedAt,url,workflowDatabaseId,workflowName`,
 holding the run URL, the conclusion, and every job and step. `.jobs-api.json` is `gh api repos/BereketAbera/plane-platform/actions/runs/<id>/jobs`,
-which adds runner labels. `.log` is `gh run view <id> --log`. Step summaries are not here, because neither `gh run view --json`
+which adds runner labels. `.log` is `gh run view <id> --log`. A run with re-runs has one set per attempt, named `-attempt-<n>`, from `--attempt <n>` and `actions/runs/<id>/attempts/<n>/jobs`. Step summaries are not here, because neither `gh run view --json`
 nor the check-run API returns them: `plan-step-summary-check-20261104T204404Z.txt` shows `summary: null` for a job that wrote one.
 
 | Run | Workflow, commit | Trigger | Conclusion | What it shows |
@@ -53,6 +68,13 @@ nor the check-run API returns them: `plan-step-summary-check-20261104T204404Z.tx
 | [41977201138](https://github.com/BereketAbera/plane-platform/actions/runs/41977201138) | `ci`, 4bdb73c | pull request 2, by `github-actions[bot]` | failure | **Not a check's result.** Held like 41976206674, and it turned to failure when the pull request closed, with no jobs and no log |
 | [41977288287](https://github.com/BereketAbera/plane-platform/actions/runs/41977288287) | `promote-prod-sim`, 9c8e098 | the same inputs again | success | `pull-request-operation = none`, the branch unchanged, so a second dispatch does not fail |
 | [41978707479](https://github.com/BereketAbera/plane-platform/actions/runs/41978707479) | `ci`, 0dde813 | push | success | With `--prefer-index=false` in `copy-to-local-registry.sh`. Lint 51 s, Security 35 s, Manifests 295 s |
+| [42044273310](https://github.com/BereketAbera/plane-platform/actions/runs/42044273310) | `images`, 76e98ee | push | success | **The second real build.** Tag `76e98ee725a8`. web `02021903218c`, admin `556d9fa49ab7`, space `9640dd473509`, backend `b447fc9acb97`, each walked clean before and after publishing. Build and push 409 s, the build step 325 s and the scan 43 s, prune 8 s, digest bump 51 s. Its prune log reads `pruned, keeping 2 versions per image`, with no `deleting` line, so it removed nothing. It force-updated pull request 1. `Build only` is skipped on a push |
+| [42044273346](https://github.com/BereketAbera/plane-platform/actions/runs/42044273346), attempt 1 | `ci`, 76e98ee | push | failure | **Not a check's result.** Lint 64 s and Security 38 s passed. Manifests failed fetching a tool, before any check ran |
+| [42044273346](https://github.com/BereketAbera/plane-platform/actions/runs/42044273346), attempt 2 | `ci`, 76e98ee | re-run of Manifests, 14:30:39Z | failure | **Not a check's result.** The same |
+| [42044273346](https://github.com/BereketAbera/plane-platform/actions/runs/42044273346), attempt 3 | `ci`, 76e98ee | re-run of Manifests, 14:35:37Z | failure | **Not a check's result.** The same |
+| [42045522553](https://github.com/BereketAbera/plane-platform/actions/runs/42045522553) | `ci`, de9525e | pull request 1, by `github-actions[bot]` | action_required | Held by GitHub for approval, the same way as 41976206674, with no jobs and no log, so it has `.json` and `.jobs-api.json` and no `.log`. Nobody has approved it |
+| [42046683167](https://github.com/BereketAbera/plane-platform/actions/runs/42046683167) | `ci`, 7cde05a | push | failure | **Lint's failure is not a check's result:** it failed fetching shellcheck. Manifests passed in 605 s, the first on a commit after 0dde813, with 149 of 149 stubbed scenarios. Security 36 s |
+| [42048656380](https://github.com/BereketAbera/plane-platform/actions/runs/42048656380) | `ci`, 6edde64 | push | success | All three green. Lint 51 s, Security 40 s, Manifests 566 s, with 149 of 149 stubbed scenarios |
 
 The admin digest under `web` in runs 41905611391 and 41908167069 is a test fixture: dev and prod-sim matched, so no other digest
 recorded for dev existed to create a difference. Nobody should merge that, so both `promote/prod-sim` branches were
@@ -108,21 +130,25 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 | `ci-6b-20261105T055738Z-pr-2-opened.txt`, `ci-6b-20261105T055943Z-pr-2-closed.txt` | Pull request 2 when opened, and after it was closed unmerged |
 | `br-3-20261105T054812Z-source-logged-out.txt` | `/source` through Traefik in both environments, then its target and the repository with no credentials, then who can read it, from the owner's login |
 | `br-3-20261105T060937Z-apps.txt` | The check suites `netlify` and `builder-io-integration` left on pushed commits, what each App's permissions are, and the 403 that keeps this token from listing installations |
+| `ci-5-20261105T150014Z-pr-1.txt` | Pull request 1 after run 42044273310 force-updated it, as `gh pr view` and `gh pr diff` give it, with the branches |
+| `ci-1-20261105T150014Z-github-state.txt` | What GitHub says of the pushes, in its activity feed, the remote refs, the commits from 0dde813 to 76e98ee, the newest runs, and the two runs held for pull request 1 |
+| `ci-1-20261105T143916Z-tool-urls.txt`, `ci-1-20261105T144017Z-tool-urls.txt` | What GitHub answered this Mac, not a runner, for the six tools `validate-manifests.sh` fetches, three tries each, asking for the first 1024 bytes and keeping nothing. Then the digest GitHub's API states for the kustomize asset, beside `tools.lock`, and its status page. Each redirect's signed query string is cut to the host: by hand after the read in the first, by the command in the second |
+| `make-status-20261105T150014Z.txt` | `make status`, which only reads, on the cluster the checks at f30a7f5 ran on. Not a CI result. It sits here because `.local/evidence-raw/` was closed to this write-up |
 
 ## GitHub Free, private repository: what is measured and what is only documented
 
 | Question | Answer | Basis |
 |---|---|---|
-| Is `ubuntu-24.04-arm` usable? | Yes | Run 41975430939 built all four images on it. Billing shows `Actions Linux ARM`, 7 minutes for that job, at $0.005 a minute, netted to $0 against included compute |
-| May `GITHUB_TOKEN` push to GHCR? | Yes | Run 41975430939 pushed four images, and read every layer back from GHCR with the same login |
+| Is `ubuntu-24.04-arm` usable? | Yes | Runs 41975430939 and 42044273310 built all four images on it. Billing shows `Actions Linux ARM`, 7 minutes for that job, at $0.005 a minute, netted to $0 against included compute |
+| May `GITHUB_TOKEN` push to GHCR? | Yes | Runs 41975430939 and 42044273310 each pushed four images, and read every layer back from GHCR with the same login |
 | Are the packages private? | Yes, to anyone who can test it from outside | With no credentials the token endpoint answers 401 for all four names, 200 for a public image and 403 for a name with no package. The API that states a package's visibility needs `read:packages`, which the local token lacks |
-| What is the GHCR quota? | Documented only | [Packages billing](https://docs.github.com/en/billing/concepts/product-billing/github-packages) gives Free 500 MB and 1 GB a month, shared with Actions artifacts, and says Container registry storage and bandwidth are free for now. The four images hold 401.8 MiB, counting each distinct layer once. November's usage summary showed no packages row after the push. Nothing has met the limit |
+| What is the GHCR quota? | Documented only | [Packages billing](https://docs.github.com/en/billing/concepts/product-billing/github-packages) gives Free 500 MB and 1 GB a month, shared with Actions artifacts, and says Container registry storage and bandwidth are free for now. The first four images hold 401.8 MiB, counting each distinct layer once. November's usage summary showed no packages row after that push. Run 42044273310 added a second build, whose total no file here reads. Nothing has met the limit |
 | Can `promote-prod-sim.yml` open a pull request? | Yes, with the setting on, as it has been since 2026-11-05T02:32:59Z, when the owner said yes in chat ([ci-actions-pr-setting-1.txt](../runs/ci-actions-pr-setting-1.txt)) | Run 41977114312. `can_approve_pull_request_reviews` is `true` in `plan-facts-20261105T060710Z.txt`. With it off, run 41905611391 shows the refusal |
 | Is approval enforceable? | No | Branch protection and rulesets answer 403. [Environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments), [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) and [attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations) are documented as unavailable on this plan and visibility |
 
 ## Not run yet
 
-- `images.yml` on a pull request, so its `Build only` job, and a prune that deletes something. The prune job listed versions and deleted none.
+- `images.yml` on a pull request, so its `Build only` job, and a prune that deletes something. In both real builds the prune job listed versions and deleted none.
 - A job of `ci.yml` on `on: pull_request`. GitHub holds the run for a pull request a workflow opens, and no person has opened one or approved one.
 - A promotion pull request reviewed and merged, and `scripts/ci/copy-to-local-registry.sh` finishing a copy. It needs a token with `read:packages`.
 - A read of the published images from this Mac, for the same reason. Their digests as GHCR serves them are what the run's own walk, inspect and scan read, on the runner.

@@ -1,0 +1,1008 @@
+Lint	Set up job	﻿2026-11-05T14:48:58.8041589Z Current runner version: '2.338.2'
+Lint	Set up job	2026-11-05T14:48:58.8068286Z ##[group]Runner Image Provisioner
+Lint	Set up job	2026-11-05T14:48:58.8069552Z Hosted Compute Agent
+Lint	Set up job	2026-11-05T14:48:58.8070199Z Version: 20261028.624
+Lint	Set up job	2026-11-05T14:48:58.8070838Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Lint	Set up job	2026-11-05T14:48:58.8071565Z Build Date: 2026-10-28T21:51:42Z
+Lint	Set up job	2026-11-05T14:48:58.8072268Z Worker ID: {525d5057-208f-4ff9-a843-0fb8db91bcac}
+Lint	Set up job	2026-11-05T14:48:58.8073007Z Region: us-east-1
+Lint	Set up job	2026-11-05T14:48:58.8073590Z Cloud: AWS
+Lint	Set up job	2026-11-05T14:48:58.8074114Z ##[endgroup]
+Lint	Set up job	2026-11-05T14:48:58.8075785Z ##[group]Operating System
+Lint	Set up job	2026-11-05T14:48:58.8076437Z Ubuntu
+Lint	Set up job	2026-11-05T14:48:58.8076969Z 24.04.5
+Lint	Set up job	2026-11-05T14:48:58.8077431Z LTS
+Lint	Set up job	2026-11-05T14:48:58.8078089Z ##[endgroup]
+Lint	Set up job	2026-11-05T14:48:58.8078820Z ##[group]Runner Image
+Lint	Set up job	2026-11-05T14:48:58.8079472Z Image: ubuntu-24.04
+Lint	Set up job	2026-11-05T14:48:58.8080066Z Version: 20261101.114.1
+Lint	Set up job	2026-11-05T14:48:58.8081202Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.114/images/ubuntu/Ubuntu2404-Readme.md
+Lint	Set up job	2026-11-05T14:48:58.8083058Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.114
+Lint	Set up job	2026-11-05T14:48:58.8084415Z ##[endgroup]
+Lint	Set up job	2026-11-05T14:48:58.8085631Z ##[group]GITHUB_TOKEN Permissions
+Lint	Set up job	2026-11-05T14:48:58.8087892Z Contents: read
+Lint	Set up job	2026-11-05T14:48:58.8088844Z Metadata: read
+Lint	Set up job	2026-11-05T14:48:58.8089433Z ##[endgroup]
+Lint	Set up job	2026-11-05T14:48:58.8091456Z Secret source: Actions
+Lint	Set up job	2026-11-05T14:48:58.8092316Z Cache mode: write
+Lint	Set up job	2026-11-05T14:48:58.8093172Z Prepare workflow directory
+Lint	Set up job	2026-11-05T14:48:58.8772832Z Prepare all required actions
+Lint	Set up job	2026-11-05T14:48:58.8865017Z Getting action download info
+Lint	Set up job	2026-11-05T14:48:59.1663327Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Lint	Set up job	2026-11-05T14:49:00.8619562Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+Lint	Set up job	2026-11-05T14:49:01.1548106Z Complete job name: Lint
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:49:01.2200062Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2201006Z with:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2201445Z   persist-credentials: false
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2201966Z   repository: BereketAbera/plane-platform
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2205532Z   token: ***
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2206007Z   ssh-strict: true
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2206441Z   ssh-user: git
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2206873Z   clean: true
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2207309Z   sparse-checkout-cone-mode: true
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2207820Z   fetch-depth: 1
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2208258Z   fetch-tags: false
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2208960Z   show-progress: true
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2209453Z   lfs: false
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2209877Z   submodules: false
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2210315Z   set-safe-directory: true
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2210859Z   allow-unsafe-pr-checkout: false
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2211507Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.2028247Z Syncing repository: BereketAbera/plane-platform
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.2029864Z ##[group]Getting Git version info
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.2030828Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.2121725Z [command]/usr/bin/git version
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.3677972Z git version 2.56.0
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.3714333Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.3722747Z Temporarily overriding HOME='/home/runner/work/_temp/b3778c1f-b705-4f32-8724-1e3eb78bfe34' before making global git config changes
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.3723793Z Adding repository directory to the temporary git global config as a safe directory
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.3724659Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4102325Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4105580Z ##[group]Determining repository object format
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4106761Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4107521Z ##[group]Initializing the repository
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4111927Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4510526Z hint: Using 'master' as the name for the initial branch. This default branch name
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4511432Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4512000Z hint: to use in all of your new repositories, which will suppress this warning,
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4512420Z hint: call:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4512670Z hint:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4513025Z hint: 	git config --global init.defaultBranch <name>
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4513380Z hint:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4513745Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4514291Z hint: 'development'. The just-created branch can be renamed via this command:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4514690Z hint:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4514989Z hint: 	git branch -m <name>
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4515284Z hint:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4515645Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4530300Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4534398Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4591272Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4592329Z ##[group]Disabling automatic garbage collection
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4593621Z [command]/usr/bin/git config --local gc.auto 0
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4621210Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4622109Z ##[group]Setting up auth
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4622768Z Removing SSH command configuration
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4626552Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.4653946Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7019663Z Removing HTTP extra header
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7040524Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7064226Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7309553Z Removing includeIf entries pointing to credentials config files
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7310634Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7360903Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7587205Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7610895Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7632172Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7656151Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7681687Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7701864Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7702467Z ##[group]Fetching the repository
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:04.7706730Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6edde64e261a58b53177b59b345b9626511b43f7:refs/remotes/origin/main
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7166392Z From https://github.com/BereketAbera/plane-platform
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7167607Z  * [new ref]         6edde64e261a58b53177b59b345b9626511b43f7 -> origin/main
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7179831Z [command]/usr/bin/git branch --list --remote origin/main
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7204996Z   origin/main
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7212168Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7231019Z 6edde64e261a58b53177b59b345b9626511b43f7
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7232724Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7233354Z ##[group]Determining the checkout info
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7233998Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7236966Z [command]/usr/bin/git sparse-checkout disable
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7285676Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7307726Z ##[group]Checking out the ref
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.7310318Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8622041Z Switched to a new branch 'main'
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8629969Z branch 'main' set up to track 'origin/main'.
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8639449Z ##[endgroup]
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8682021Z [command]/usr/bin/git log -1 --format=%H
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8702532Z 6edde64e261a58b53177b59b345b9626511b43f7
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8711494Z ##[group]Removing auth
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8712066Z Removing SSH command configuration
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8714901Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8737368Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8878261Z Removing HTTP extra header
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8881056Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.8903439Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9048317Z Removing includeIf entries pointing to credentials config files
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9049352Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9067534Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9074474Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9075221Z includeif.gitdir:/github/workspace/.git.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9075711Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9082832Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9094280Z /home/runner/work/_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9102551Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-fc7bcbfc\-9319\-4cfb\-823b\-3469bce38df3\.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9129379Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9145474Z /home/runner/work/_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9151692Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-fc7bcbfc\-9319\-4cfb\-823b\-3469bce38df3\.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9184357Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9202226Z /github/runner_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9210441Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-fc7bcbfc\-9319\-4cfb\-823b\-3469bce38df3\.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9254687Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9269590Z /github/runner_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9273119Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-fc7bcbfc\-9319\-4cfb\-823b\-3469bce38df3\.config
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9349901Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9562601Z Removing credentials config '/home/runner/work/_temp/git-credentials-fc7bcbfc-9319-4cfb-823b-3469bce38df3.config'
+Lint	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:05.9570023Z ##[endgroup]
+Lint	Restore pinned tools	﻿2026-11-05T14:49:06.0260254Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+Lint	Restore pinned tools	2026-11-05T14:49:06.0260635Z with:
+Lint	Restore pinned tools	2026-11-05T14:49:06.0260884Z   path: .tools
+Lint	Restore pinned tools	2026-11-05T14:49:06.0261288Z   key: tools-lint-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Lint	Restore pinned tools	2026-11-05T14:49:06.0261720Z   enableCrossOsArchive: false
+Lint	Restore pinned tools	2026-11-05T14:49:06.0261983Z   fail-on-cache-miss: false
+Lint	Restore pinned tools	2026-11-05T14:49:06.0262236Z   lookup-only: false
+Lint	Restore pinned tools	2026-11-05T14:49:06.0262485Z   save-always: false
+Lint	Restore pinned tools	2026-11-05T14:49:06.0262705Z ##[endgroup]
+Lint	Restore pinned tools	2026-11-05T14:49:06.2024188Z Cache not found for input keys: tools-lint-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	﻿2026-11-05T14:49:06.2169904Z ##[group]Run ./scripts/ci/lint.sh
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:06.2170865Z ^[[36;1m./scripts/ci/lint.sh^[[0m
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:06.2207268Z shell: /usr/bin/bash -e {0}
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:06.2207662Z ##[endgroup]
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:09.9668024Z ^[[1;34m==>^[[0m shellcheck
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.4182485Z ^[[1;32m ok^[[0m shellcheck
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.4183359Z ^[[1;34m==>^[[0m actionlint
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.4950938Z ^[[1;32m ok^[[0m actionlint
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.4969900Z ^[[1;34m==>^[[0m zizmor
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.4974035Z ^[[32m INFO^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 zizmor v1.32.0
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5409160Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/ci.yml
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5419088Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/images.yml
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5424500Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/promote-prod-sim.yml
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5430006Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/wayline-upstream-check.yml
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5431019Z ^[[32mNo findings to report. Good job!^[[39m (^[[1m^[[93m3^[[39m suppressed^[[0m)
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5435895Z ^[[1;32m ok^[[0m zizmor
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5436430Z ^[[1;34m==>^[[0m terraform fmt
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5737918Z ^[[1;32m ok^[[0m terraform fmt
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:34.5738831Z ^[[1;34m==>^[[0m terraform validate
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:37.4065772Z Success! The configuration is valid.
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:37.4066470Z 
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.3540081Z Success! The configuration is valid.
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.3540875Z 
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.3559092Z ^[[1;32m ok^[[0m terraform validate
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.3559917Z ^[[1;34m==>^[[0m tflint
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.5223250Z ^[[1;32m ok^[[0m tflint
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.5239988Z ^[[1;34m==>^[[0m hadolint
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.5657988Z apps/wayline/runtime/Dockerfile.backend:29 DL3059 ^[[92minfo^[[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.5661289Z apps/wayline/runtime/Dockerfile.backend:33 DL3059 ^[[92minfo^[[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.5845764Z apps/wayline/runtime/Dockerfile.space:28 DL3059 ^[[92minfo^[[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.6427211Z ^[[1;32m ok^[[0m hadolint
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.6439820Z ^[[1;34m==>^[[0m conftest verify
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.8620675Z 
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.8629841Z 104 tests, 104 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.8641133Z ^[[1;32m ok^[[0m conftest verify
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.8642034Z ^[[1;34m==>^[[0m no Bitnami reference
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.8867446Z ^[[1;32m ok^[[0m no Bitnami reference
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:39.8868331Z ^[[1;34m==>^[[0m python compile
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:40.1532639Z ^[[1;32m ok^[[0m python compile
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:40.1533550Z ^[[1;34m==>^[[0m smoke.py self check
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:43.8829972Z selftest ok
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:43.8920478Z ^[[1;32m ok^[[0m smoke.py self check
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:43.8921544Z ^[[1;34m==>^[[0m scan report self check
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:43.9145947Z selftest ok
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:43.9179294Z ^[[1;32m ok^[[0m scan report self check
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:43.9180122Z ^[[1;34m==>^[[0m network policy verdict self check
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:44.0821612Z ^[[1;32m ok^[[0m selftest passed
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:44.0831850Z ^[[1;32m ok^[[0m network policy verdict self check
+Lint	Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests	2026-11-05T14:49:44.0832619Z ^[[1;32m ok^[[0m lint passed
+Lint	Post Restore pinned tools	﻿2026-11-05T14:49:44.1357411Z Post job cleanup.
+Lint	Post Restore pinned tools	2026-11-05T14:49:44.2427380Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/plane-platform/plane-platform --files-from manifest.txt --use-compress-program zstdmt
+Lint	Post Restore pinned tools	2026-11-05T14:49:46.6380035Z Sent 55508992 of 97272648 (57.1%), 52.9 MBs/sec
+Lint	Post Restore pinned tools	2026-11-05T14:49:47.6386157Z Sent 97272648 of 97272648 (100.0%), 46.4 MBs/sec
+Lint	Post Restore pinned tools	2026-11-05T14:49:48.1187463Z Cache saved with key: tools-lint-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:49:48.1304888Z Post job cleanup.
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.1999910Z [command]/usr/bin/git version
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2066075Z git version 2.56.0
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2119102Z Temporarily overriding HOME='/home/runner/work/_temp/9dc3dc56-6d9e-4f71-8301-90ab4d01cb27' before making global git config changes
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2120113Z Adding repository directory to the temporary git global config as a safe directory
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2120955Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2170187Z Removing SSH command configuration
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2170915Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2220696Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2531073Z Removing HTTP extra header
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2550327Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2570843Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2841312Z Removing includeIf entries pointing to credentials config files
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2859642Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Lint	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:48.2876467Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Lint	Complete job	﻿2026-11-05T14:49:48.3195552Z Cleaning up orphan processes
+Manifests	Set up job	﻿2026-11-05T14:48:59.6530210Z Current runner version: '2.338.2'
+Manifests	Set up job	2026-11-05T14:48:59.6612240Z ##[group]Runner Image Provisioner
+Manifests	Set up job	2026-11-05T14:48:59.6614075Z Hosted Compute Agent
+Manifests	Set up job	2026-11-05T14:48:59.6615003Z Version: 20261028.624
+Manifests	Set up job	2026-11-05T14:48:59.6616118Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Manifests	Set up job	2026-11-05T14:48:59.6617308Z Build Date: 2026-10-28T21:51:42Z
+Manifests	Set up job	2026-11-05T14:48:59.6618602Z Worker ID: {286a99cc-1f20-4d3b-8a0f-c3af0ce38148}
+Manifests	Set up job	2026-11-05T14:48:59.6619854Z Region: westcentralus
+Manifests	Set up job	2026-11-05T14:48:59.6620965Z Cloud: Azure
+Manifests	Set up job	2026-11-05T14:48:59.6621862Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:48:59.6624286Z ##[group]Operating System
+Manifests	Set up job	2026-11-05T14:48:59.6625345Z Ubuntu
+Manifests	Set up job	2026-11-05T14:48:59.6626355Z 24.04.5
+Manifests	Set up job	2026-11-05T14:48:59.6627195Z LTS
+Manifests	Set up job	2026-11-05T14:48:59.6628111Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:48:59.6629035Z ##[group]Runner Image
+Manifests	Set up job	2026-11-05T14:48:59.6630049Z Image: ubuntu-24.04
+Manifests	Set up job	2026-11-05T14:48:59.6651577Z Version: 20261101.360.1
+Manifests	Set up job	2026-11-05T14:48:59.6654251Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Manifests	Set up job	2026-11-05T14:48:59.6657390Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Manifests	Set up job	2026-11-05T14:48:59.6658982Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:48:59.6661282Z ##[group]GITHUB_TOKEN Permissions
+Manifests	Set up job	2026-11-05T14:48:59.6664890Z Contents: read
+Manifests	Set up job	2026-11-05T14:48:59.6666548Z Metadata: read
+Manifests	Set up job	2026-11-05T14:48:59.6667516Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:48:59.6691370Z Secret source: Actions
+Manifests	Set up job	2026-11-05T14:48:59.6692902Z Cache mode: write
+Manifests	Set up job	2026-11-05T14:48:59.6694592Z Prepare workflow directory
+Manifests	Set up job	2026-11-05T14:48:59.7362881Z Prepare all required actions
+Manifests	Set up job	2026-11-05T14:48:59.7483949Z Getting action download info
+Manifests	Set up job	2026-11-05T14:49:00.0834558Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Manifests	Set up job	2026-11-05T14:49:00.1871415Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+Manifests	Set up job	2026-11-05T14:49:00.4288908Z Complete job name: Manifests
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:49:00.5169030Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5170117Z with:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5170772Z   fetch-depth: 0
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5171284Z   persist-credentials: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5171865Z   repository: BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5175779Z   token: ***
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5176248Z   ssh-strict: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5176724Z   ssh-user: git
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5177173Z   clean: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5177646Z   sparse-checkout-cone-mode: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5178192Z   fetch-tags: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5178651Z   show-progress: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5179118Z   lfs: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5179550Z   submodules: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5180021Z   set-safe-directory: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5180664Z   allow-unsafe-pr-checkout: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.5181392Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9207246Z Syncing repository: BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9210287Z ##[group]Getting Git version info
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9242512Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9244457Z [command]/usr/bin/git version
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9245242Z git version 2.56.0
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9247660Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9255244Z Temporarily overriding HOME='/home/runner/work/_temp/72888863-26bb-4887-a2ef-ee8d51ba9e07' before making global git config changes
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9257486Z Adding repository directory to the temporary git global config as a safe directory
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9259522Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9431957Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9493247Z ##[group]Determining repository object format
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9511859Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9531614Z ##[group]Initializing the repository
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9551817Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9593953Z hint: Using 'master' as the name for the initial branch. This default branch name
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9658755Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9701676Z hint: to use in all of your new repositories, which will suppress this warning,
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9703113Z hint: call:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9721115Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9726635Z hint: 	git config --global init.defaultBranch <name>
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9727885Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9728956Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9730807Z hint: 'development'. The just-created branch can be renamed via this command:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9767008Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9791746Z hint: 	git branch -m <name>
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9831388Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9836590Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9878314Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9988737Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0079346Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0103960Z ##[group]Disabling automatic garbage collection
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0138116Z [command]/usr/bin/git config --local gc.auto 0
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0202545Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0222006Z ##[group]Setting up auth
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0239626Z Removing SSH command configuration
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0322264Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.0414651Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1367415Z Removing HTTP extra header
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1369020Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1374130Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1625258Z Removing includeIf entries pointing to credentials config files
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1627066Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1683802Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.1973589Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2034577Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2087081Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2138879Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2192285Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2243755Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2245121Z ##[group]Fetching the repository
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:01.2252653Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8188441Z From https://github.com/BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8198190Z  * [new branch]      bump/dev-images  -> origin/bump/dev-images
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8199744Z  * [new branch]      main             -> origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8201070Z  * [new branch]      promote/prod-sim -> origin/promote/prod-sim
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8208509Z [command]/usr/bin/git branch --list --remote origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8251855Z   origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8262549Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8305626Z 6edde64e261a58b53177b59b345b9626511b43f7
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8310229Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8312396Z ##[group]Determining the checkout info
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8314385Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8315862Z [command]/usr/bin/git sparse-checkout disable
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8416963Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8496114Z ##[group]Checking out the ref
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.8521886Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0605654Z Switched to a new branch 'main'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0622186Z branch 'main' set up to track 'origin/main'.
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0641043Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0705325Z [command]/usr/bin/git log -1 --format=%H
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0750523Z 6edde64e261a58b53177b59b345b9626511b43f7
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0764469Z ##[group]Removing auth
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0766365Z Removing SSH command configuration
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0768749Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0821342Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1109381Z Removing HTTP extra header
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1113681Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1169219Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1475834Z Removing includeIf entries pointing to credentials config files
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1479485Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1529645Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1538891Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1543315Z includeif.gitdir:/github/workspace/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1546746Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1554443Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1593005Z /home/runner/work/_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1612261Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-9321b40b\-a5d1\-4d4b\-a17e\-030fb32ce44e\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1680921Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1727886Z /home/runner/work/_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1744507Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-9321b40b\-a5d1\-4d4b\-a17e\-030fb32ce44e\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1832912Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1866003Z /github/runner_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1882744Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-9321b40b\-a5d1\-4d4b\-a17e\-030fb32ce44e\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1938413Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1982964Z /github/runner_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.1995760Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-9321b40b\-a5d1\-4d4b\-a17e\-030fb32ce44e\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.2057028Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.2362878Z Removing credentials config '/home/runner/work/_temp/git-credentials-9321b40b-a5d1-4d4b-a17e-030fb32ce44e.config'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.2369284Z ##[endgroup]
+Manifests	Restore pinned tools	﻿2026-11-05T14:49:03.3437727Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3439496Z with:
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3440706Z   path: .tools
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3442727Z   key: tools-manifests-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3445121Z   enableCrossOsArchive: false
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3446342Z   fail-on-cache-miss: false
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3447499Z   lookup-only: false
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3448556Z   save-always: false
+Manifests	Restore pinned tools	2026-11-05T14:49:03.3449709Z ##[endgroup]
+Manifests	Restore pinned tools	2026-11-05T14:49:03.7041622Z Cache not found for input keys: tools-manifests-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Manifests	Render drift, kubeconform, conftest, promotion invariant	﻿2026-11-05T14:49:03.7260712Z ##[group]Run ./scripts/ci/validate-manifests.sh
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:03.7261333Z ^[[36;1m./scripts/ci/validate-manifests.sh^[[0m
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:03.7287967Z shell: /usr/bin/bash -e {0}
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:03.7288348Z ##[endgroup]
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.0284225Z ^[[1;34m==>^[[0m render is up to date
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.4437100Z ^[[1;32m ok^[[0m dev is up to date
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.7189770Z ^[[1;32m ok^[[0m prod-sim is up to date
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.7209054Z ^[[1;32m ok^[[0m render is up to date
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.7210030Z ^[[1;34m==>^[[0m helm lint: bootstrap chart
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.7726775Z ^[[1;32m ok^[[0m helm lint: bootstrap chart
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:16.7732341Z ^[[1;34m==>^[[0m kubeconform: rendered Plane
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.2412878Z Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.2472569Z ^[[1;32m ok^[[0m kubeconform: rendered Plane
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.2473860Z ^[[1;34m==>^[[0m kubeconform: platform manifests
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.6409508Z Summary: 135 resources found in 7 files - Valid: 135, Invalid: 0, Errors: 0, Skipped: 0
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.6480851Z ^[[1;32m ok^[[0m kubeconform: platform manifests
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.6490160Z ^[[1;34m==>^[[0m conftest: rendered Plane
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.9088121Z 
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.9089263Z 1850 tests, 1850 passed, 0 warnings, 0 failures, 0 exceptions
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.9125712Z ^[[1;32m ok^[[0m conftest: rendered Plane
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:17.9126797Z ^[[1;34m==>^[[0m conftest: platform manifests
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.2480906Z 
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.2486073Z 2835 tests, 2835 passed, 0 warnings, 0 failures, 0 exceptions
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.2523546Z ^[[1;32m ok^[[0m conftest: platform manifests
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.2524535Z ^[[1;34m==>^[[0m promotion invariant
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.4336061Z ^[[1;32m ok^[[0m 9 image(s) were recorded for dev under the same name
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.4341505Z ^[[1;32m ok^[[0m promotion invariant
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.5079542Z ^[[1;34m==>^[[0m promtool: platform rules
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.5532206Z ^[[1;32m ok^[[0m 2 rule file(s) valid
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.5541604Z ^[[1;32m ok^[[0m promtool: platform rules
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.5561234Z ^[[1;34m==>^[[0m promtool: rule unit tests
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.6628384Z   SUCCESS
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:18.6629524Z 
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:21.5674161Z   SUCCESS
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:21.5674541Z 
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:47.9785654Z   SUCCESS
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:47.9786168Z 
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:47.9846718Z ^[[1;32m ok^[[0m promtool: rule unit tests
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:47.9847673Z ^[[1;34m==>^[[0m helm template: platform charts
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:57.6611302Z ^[[1;32m ok^[[0m 9 platform chart(s) rendered
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:57.6625414Z ^[[1;32m ok^[[0m helm template: platform charts
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:49:59.6692229Z ^[[1;34m==>^[[0m kubeconform: platform charts
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:00.2982642Z Summary: 194 resources found in 9 files - Valid: 184, Invalid: 0, Errors: 0, Skipped: 10
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:00.3055181Z ^[[1;32m ok^[[0m kubeconform: platform charts
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:00.3056102Z ^[[1;34m==>^[[0m conftest: platform charts
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:01.6221271Z 
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:01.6222300Z 3492 tests, 3492 passed, 0 warnings, 0 failures, 0 exceptions
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:01.6266622Z ^[[1;32m ok^[[0m conftest: platform charts
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:04.9087423Z ^[[1;34m==>^[[0m promtool: chart rules
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:04.9793847Z ^[[1;32m ok^[[0m 26 rule file(s) valid
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:04.9795085Z ^[[1;32m ok^[[0m promtool: chart rules
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:04.9796174Z ^[[1;34m==>^[[0m promotion flows with a stub cluster
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:08.2049262Z ^[[1;32m ok^[[0m promote-digest-under-another-image
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:08.3398368Z ^[[1;32m ok^[[0m promote-digest-never-recorded
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:11.1654970Z ^[[1;32m ok^[[0m promote-dev-healthy-and-running
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:12.7861469Z ^[[1;32m ok^[[0m promote-dev-out-of-sync
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:14.4093354Z ^[[1;32m ok^[[0m promote-dev-degraded
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:16.0337029Z ^[[1;32m ok^[[0m promote-dev-application-missing
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:17.6080708Z ^[[1;32m ok^[[0m promote-dev-running-another-digest
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:19.1986598Z ^[[1;32m ok^[[0m promote-dev-container-not-ready
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:21.9713619Z ^[[1;32m ok^[[0m promote-no-cluster-says-skipped
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:24.7584514Z ^[[1;32m ok^[[0m promote-override-is-logged
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:27.5243343Z ^[[1;32m ok^[[0m promote-override-unused-when-dev-is-fine
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:32.0994534Z ^[[1;32m ok^[[0m rollback-rerun-after-failed-publish
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:37.0104109Z ^[[1;32m ok^[[0m rollback-prod-sim-with-broken-backup
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:42.9151069Z ^[[1;32m ok^[[0m rollback-prod-sim-with-hung-backup
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:47.7834679Z ^[[1;32m ok^[[0m rollback-prod-sim-names-the-older-dump
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:51.6904449Z ^[[1;32m ok^[[0m rollback-prod-sim-skip-backup
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:50:57.8467636Z ^[[1;32m ok^[[0m rollback-prod-sim-past-a-later-change-beside-the-image
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:01.3676098Z ^[[1;32m ok^[[0m rollback-dev-past-a-later-change-beside-the-image
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:06.1649797Z ^[[1;32m ok^[[0m rollback-stops-on-a-conflict-in-the-overlay
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:08.3823297Z ^[[1;32m ok^[[0m rollback-dev-takes-no-dump
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:10.6276244Z ^[[1;32m ok^[[0m rollback-leaves-other-staged-files-alone
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:12.0434077Z ^[[1;32m ok^[[0m publish-warns-when-ahead-of-origin
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:13.5461968Z ^[[1;32m ok^[[0m publish-quiet-when-level-with-origin
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:14.9618824Z ^[[1;32m ok^[[0m publish-says-when-origin-is-unknown
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:17.8174422Z ^[[1;32m ok^[[0m publish-still-backs-up-prod-sim-change
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:18.5732930Z ^[[1;32m ok^[[0m publish-warns-when-a-shared-change-reaches-prod-sim
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:19.3278962Z ^[[1;32m ok^[[0m publish-warns-when-the-chart-reaches-prod-sim
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:20.0710897Z ^[[1;32m ok^[[0m publish-warns-when-only-prod-sim-changes
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:23.6701334Z ^[[1;32m ok^[[0m publish-warns-and-checks-a-mixed-push
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:24.3961573Z ^[[1;32m ok^[[0m publish-quiet-when-a-shared-change-renders-to-nothing
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:25.1123510Z ^[[1;32m ok^[[0m publish-quiet-when-only-dev-changes
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:28.0947205Z ^[[1;32m ok^[[0m publish-merged-promotion-dev-proven
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:31.0187716Z ^[[1;32m ok^[[0m publish-merged-promotion-dev-out-of-sync
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:33.9048822Z ^[[1;32m ok^[[0m publish-merged-promotion-dev-degraded
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:36.8458583Z ^[[1;32m ok^[[0m publish-merged-promotion-dev-application-missing
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:39.7625179Z ^[[1;32m ok^[[0m publish-merged-promotion-dev-running-another-digest
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:42.6644920Z ^[[1;32m ok^[[0m publish-merged-promotion-dev-container-not-ready
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:45.6580913Z ^[[1;32m ok^[[0m publish-merged-promotion-override-is-logged
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:48.7152422Z ^[[1;32m ok^[[0m publish-merged-promotion-refused-then-retried
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:51.6192216Z ^[[1;32m ok^[[0m publish-merged-promotion-no-cluster-says-skipped
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:54.6337863Z ^[[1;32m ok^[[0m publish-skip-backup-is-no-way-past-the-dev-check
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:51:57.5713417Z ^[[1;32m ok^[[0m publish-skip-dev-check-is-recorded
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:00.5295422Z ^[[1;32m ok^[[0m publish-prod-sim-not-deployed-needs-no-dev-check
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:01.9472278Z ^[[1;32m ok^[[0m publish-dev-change-needs-no-dev-check
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:04.9680043Z ^[[1;32m ok^[[0m promote-override-reaches-the-publish
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:09.8235029Z ^[[1;32m ok^[[0m rollback-prod-sim-with-unhealthy-dev
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:14.9238431Z ^[[1;32m ok^[[0m rollback-prod-sim-rerun-with-unhealthy-dev
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:18.5597783Z ^[[1;32m ok^[[0m make-passes-the-documented-options
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:19.3488714Z ^[[1;32m ok^[[0m promote-level-has-nothing-to-do
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:22.7566554Z ^[[1;32m ok^[[0m promote-four-images-through-make
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:24.1463635Z ^[[1;32m ok^[[0m promote-four-images-one-at-a-time
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:26.7451860Z ^[[1;32m ok^[[0m promote-four-images-each-must-run-in-dev
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:27.7424333Z ^[[1;32m ok^[[0m promote-four-images-each-must-be-recorded
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:28.6901090Z ^[[1;32m ok^[[0m promote-four-images-each-must-be-in-the-registry
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:30.5444629Z ^[[1;32m ok^[[0m promote-four-images-override-names-them-all
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:33.0082583Z ^[[1;32m ok^[[0m publish-merged-four-images-checks-each
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:38.6723116Z ^[[1;32m ok^[[0m rollback-four-images-together
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:42.1942520Z ^[[1;32m ok^[[0m drill-runs-to-a-pass
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:45.4137105Z ^[[1;32m ok^[[0m drill-failed-promotion-reverts-nothing-else
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:47.0276113Z ^[[1;32m ok^[[0m promote-refuses-a-terminating-pod
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:48.6353413Z ^[[1;32m ok^[[0m promote-refuses-a-pod-not-running
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:50.2455689Z ^[[1;32m ok^[[0m promote-refuses-a-ready-sibling
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:51.8373581Z ^[[1;32m ok^[[0m promote-refuses-the-failure-drill-digest
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:54.0638121Z ^[[1;32m ok^[[0m promote-stops-when-the-dump-fails
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:56.9993762Z ^[[1;32m ok^[[0m publish-stops-when-the-dump-fails
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:52:59.1869024Z ^[[1;32m ok^[[0m promote-prod-sim-needs-confirmation
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:02.2769346Z ^[[1;32m ok^[[0m rollback-prod-sim-needs-confirmation
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:03.7219175Z ^[[1;32m ok^[[0m promote-refuses-a-dirty-overlay
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:05.1951292Z ^[[1;32m ok^[[0m rollback-refuses-a-dirty-overlay
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:06.5429772Z ^[[1;32m ok^[[0m promote-refuses-off-main
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:07.9768042Z ^[[1;32m ok^[[0m rollback-refuses-off-main
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:09.4297474Z ^[[1;32m ok^[[0m promote-refuses-while-a-revert-is-under-way
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:11.0133615Z ^[[1;32m ok^[[0m promote-takes-a-whole-digests-file
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:11.1187646Z ^[[1;32m ok^[[0m promote-refuses-a-partial-digests-file
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:11.2455102Z ^[[1;32m ok^[[0m promote-refuses-a-malformed-digests-file
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:11.3838556Z ^[[1;32m ok^[[0m promote-checks-its-arguments
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:12.1656681Z ^[[1;32m ok^[[0m promote-refuses-an-ambiguous-image
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:12.9809869Z ^[[1;32m ok^[[0m promote-render-failure-puts-the-overlay-back
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:13.7666898Z ^[[1;32m ok^[[0m promote-ended-halfway-puts-the-overlay-back
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:16.5378200Z ^[[1;32m ok^[[0m promote-commit-failure-puts-the-overlay-back
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:19.9626185Z ^[[1;32m ok^[[0m promote-waits-out-a-git-add
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:28.7087869Z ^[[1;32m ok^[[0m promote-says-what-to-do-when-the-index-stays-held
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:30.9053950Z ^[[1;32m ok^[[0m promote-rechecks-the-overlay-after-the-dump
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:32.3203635Z ^[[1;32m ok^[[0m promote-holds-the-commit-lock-for-its-commit
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:34.5428357Z ^[[1;32m ok^[[0m rollback-holds-the-commit-lock-for-its-commit
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:37.9924933Z ^[[1;32m ok^[[0m promote-waits-for-the-commit-lock
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:42.2536717Z ^[[1;32m ok^[[0m rollback-waits-for-the-commit-lock
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:44.9607042Z ^[[1;32m ok^[[0m promote-gives-up-on-a-commit-lock-left-behind
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:48.4919675Z ^[[1;32m ok^[[0m rollback-gives-up-on-a-commit-lock-left-behind
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:52.2136977Z ^[[1;32m ok^[[0m promote-again-publishes-after-a-refused-push
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:55.8722990Z ^[[1;32m ok^[[0m promote-again-publishes-after-a-refused-check
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:53:58.0584507Z ^[[1;32m ok^[[0m promote-dev-again-publishes-after-a-refused-push
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:01.5868595Z ^[[1;32m ok^[[0m promote-commit-no-publishes-nothing
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:05.9989593Z ^[[1;32m ok^[[0m promote-dev-takes-the-dump-a-carried-prod-sim-change-needs
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:10.2947630Z ^[[1;32m ok^[[0m promote-dev-stops-when-a-carried-dump-fails
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:16.4134353Z ^[[1;32m ok^[[0m publish-names-the-prod-sim-commit-a-dev-change-waits-behind
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:19.3340874Z ^[[1;32m ok^[[0m publish-refusal-of-prod-sim-alone-says-nothing-of-dev
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:22.2136366Z ^[[1;32m ok^[[0m rollback-dev-stops-before-moving-prod-sim
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:27.8521343Z ^[[1;32m ok^[[0m rollback-chain-after-a-refused-promotion
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:31.5086225Z ^[[1;32m ok^[[0m rollback-dev-override-keeps-the-checks
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:34.3333807Z ^[[1;32m ok^[[0m rollback-dev-rerun-stops-too
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:37.0939908Z ^[[1;32m ok^[[0m rollback-dev-goes-on-past-what-does-not-move-prod-sim
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:40.6545406Z ^[[1;32m ok^[[0m rollback-dev-goes-on-when-a-promotion-was-withdrawn
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:45.3753685Z ^[[1;32m ok^[[0m rollback-conflict-keeps-someones-staged-work
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:51.3316717Z ^[[1;32m ok^[[0m rollback-conflict-with-a-partly-staged-file
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:54:55.5115121Z ^[[1;32m ok^[[0m rollback-render-failure-keeps-someones-staged-work
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:02.1902478Z ^[[1;32m ok^[[0m rollback-commit-failure-can-run-again
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:03.7942190Z ^[[1;32m ok^[[0m rollback-ended-halfway-puts-the-revert-back
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:10.6645556Z ^[[1;32m ok^[[0m rollback-waits-out-a-git-add
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:24.2699604Z ^[[1;32m ok^[[0m rollback-says-what-to-do-when-the-index-stays-held
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:28.3986956Z ^[[1;32m ok^[[0m rollback-says-when-the-revert-cannot-start
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:29.8493619Z Automatic merge went well; stopped before committing as requested
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:29.8906592Z ^[[1;32m ok^[[0m rollback-leaves-someones-merge-alone
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:37.0479339Z ^[[1;32m ok^[[0m rollback-says-a-promotion-put-back-by-hand-is-undone
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:41.8202395Z ^[[1;32m ok^[[0m rollback-promotion-that-added-a-file
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:46.6585319Z ^[[1;32m ok^[[0m rollback-promotion-whose-added-file-is-gone
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:49.7134372Z ^[[1;32m ok^[[0m rollback-refuses-an-edit-in-a-file-the-promotion-touched
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:53.8657067Z ^[[1;32m ok^[[0m rollback-rechecks-after-the-dump
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:55:56.1962305Z ^[[1;32m ok^[[0m rollback-leaves-the-other-render-as-git-has-it
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:01.1231527Z ^[[1;32m ok^[[0m rollback-finds-a-subject-only-promotion
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:06.0117252Z ^[[1;32m ok^[[0m rollback-finds-a-trailer-only-promotion
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:13.7203667Z ^[[1;32m ok^[[0m rollback-second-attempt-names-the-dump-from-before-the-promotion
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:18.5577950Z ^[[1;32m ok^[[0m rollback-says-when-no-dump-is-older
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:23.4246952Z ^[[1;32m ok^[[0m rollback-skips-an-unfinished-dump
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:26.4727648Z ^[[1;32m ok^[[0m publish-says-when-another-publish-sent-it
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:31.0371558Z ^[[1;32m ok^[[0m promote-says-nothing-of-a-stay-when-another-publish-sent-it
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:35.2994517Z ^[[1;32m ok^[[0m promote-names-its-own-commit-when-the-publish-fails
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:40.2513457Z ^[[1;32m ok^[[0m rollback-names-its-own-commit-when-the-publish-fails
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:45.4202009Z ^[[1;32m ok^[[0m publish-advice-fits-a-change-by-hand
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:52.0859480Z ^[[1;32m ok^[[0m rollback-advice-on-a-conflict-works-with-dev-broken
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:56.4333390Z ^[[1;32m ok^[[0m promote-empty-plan-reads-the-render
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:56:58.3636054Z ^[[1;32m ok^[[0m rollback-stops-on-a-commit-touching-both-environments
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:02.9796929Z ^[[1;32m ok^[[0m rollback-stops-cleanly-when-a-later-commit-removed-a-file
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:14.2922333Z ^[[1;32m ok^[[0m rollback-how-to-clear-works-on-a-path-head-lacks
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:19.0989720Z ^[[1;32m ok^[[0m rollback-of-a-refused-promotion-says-nothing-to-restore
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:26.8353196Z ^[[1;32m ok^[[0m rollback-of-a-retried-promotion-names-the-dump-of-the-run-that-sent-it
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:32.8607581Z ^[[1;32m ok^[[0m rollback-rerun-names-the-dump
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:37.8265057Z ^[[1;32m ok^[[0m rollback-rerun-of-a-withdrawal-says-nothing-to-restore
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:44.7178856Z ^[[1;32m ok^[[0m rollback-goes-by-the-commit-with-no-record-of-the-publish
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:57:55.8449451Z ^[[1;32m ok^[[0m rollback-reverts-a-refused-promotion-above-an-unpublished-revert
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:02.5458148Z ^[[1;32m ok^[[0m rollback-stops-before-sending-what-waits-under-a-withdrawal
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:03.1476702Z ^[[1;32m ok^[[0m publish-creates-the-bare-repository
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:06.3057033Z ^[[1;32m ok^[[0m publish-sends-what-it-checked
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:08.3145280Z ^[[1;32m ok^[[0m publish-warning-leaves-dev-out-when-it-only-moves-an-image
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:09.0507306Z ^[[1;32m ok^[[0m publish-warning-says-when-its-list-is-cut
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:09.8062561Z ^[[1;32m ok^[[0m publish-warning-says-nothing-of-more-when-all-are-named
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:09.9772287Z ^[[1;32m ok^[[0m publish-warning-says-when-no-source-changed
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:10.9265972Z ^[[1;32m ok^[[0m publish-warns-when-a-digest-by-hand-breaks-the-invariant
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:14.1223615Z ^[[1;32m ok^[[0m publish-quiet-about-the-invariant-for-a-promotion
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:16.9031996Z ^[[1;32m ok^[[0m promote-no-cluster-writes-the-job-summary
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:16.9033670Z ^[[1;32m ok^[[0m 149 of 149 promotion flow scenarios passed, with a stub cluster
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:17.1360137Z ^[[1;32m ok^[[0m promotion flows with a stub cluster
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:58:17.1361309Z ^[[1;32m ok^[[0m manifests valid
+Manifests	One owner per resource	﻿2026-11-05T14:58:17.1472191Z ##[group]Run ./scripts/ci/ownership.sh
+Manifests	One owner per resource	2026-11-05T14:58:17.1472551Z ^[[36;1m./scripts/ci/ownership.sh^[[0m
+Manifests	One owner per resource	2026-11-05T14:58:17.1494818Z shell: /usr/bin/bash -e {0}
+Manifests	One owner per resource	2026-11-05T14:58:17.1495097Z ##[endgroup]
+Manifests	One owner per resource	2026-11-05T14:58:17.9674535Z ^[[1;32m ok^[[0m 205 Argo CD objects and 7 Terraform objects, no resource has two owners
+Manifests	Post Restore pinned tools	﻿2026-11-05T14:58:18.0468825Z Post job cleanup.
+Manifests	Post Restore pinned tools	2026-11-05T14:58:18.2812122Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/plane-platform/plane-platform --files-from manifest.txt --use-compress-program zstdmt
+Manifests	Post Restore pinned tools	2026-11-05T14:58:20.8964728Z Sent 40370176 of 106681484 (37.8%), 38.5 MBs/sec
+Manifests	Post Restore pinned tools	2026-11-05T14:58:21.8973624Z Sent 106681484 of 106681484 (100.0%), 50.8 MBs/sec
+Manifests	Post Restore pinned tools	2026-11-05T14:58:22.1558131Z Cache saved with key: tools-manifests-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:58:22.1753421Z Post job cleanup.
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.2811328Z [command]/usr/bin/git version
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.2936960Z git version 2.56.0
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3011965Z Temporarily overriding HOME='/home/runner/work/_temp/8f757fbf-b546-4c1e-b6df-d670be8d5c30' before making global git config changes
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3021154Z Adding repository directory to the temporary git global config as a safe directory
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3029538Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3103621Z Removing SSH command configuration
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3104666Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3205994Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3701344Z Removing HTTP extra header
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3721485Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.3902409Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.4545785Z Removing includeIf entries pointing to credentials config files
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.4556208Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:58:22.4608384Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests	Complete job	﻿2026-11-05T14:58:22.5086565Z Cleaning up orphan processes
+Security	Set up job	﻿2026-11-05T14:48:59.5505012Z Current runner version: '2.338.2'
+Security	Set up job	2026-11-05T14:48:59.5534732Z ##[group]Runner Image Provisioner
+Security	Set up job	2026-11-05T14:48:59.5535901Z Hosted Compute Agent
+Security	Set up job	2026-11-05T14:48:59.5536623Z Version: 20261028.624
+Security	Set up job	2026-11-05T14:48:59.5537370Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Security	Set up job	2026-11-05T14:48:59.5538376Z Build Date: 2026-10-28T21:51:42Z
+Security	Set up job	2026-11-05T14:48:59.5539226Z Worker ID: {3090a80f-4b98-4012-b91c-68c1db7330a2}
+Security	Set up job	2026-11-05T14:48:59.5540243Z Region: westus3
+Security	Set up job	2026-11-05T14:48:59.5540985Z Cloud: Azure
+Security	Set up job	2026-11-05T14:48:59.5541661Z ##[endgroup]
+Security	Set up job	2026-11-05T14:48:59.5543429Z ##[group]Operating System
+Security	Set up job	2026-11-05T14:48:59.5544523Z Ubuntu
+Security	Set up job	2026-11-05T14:48:59.5545286Z 24.04.5
+Security	Set up job	2026-11-05T14:48:59.5545938Z LTS
+Security	Set up job	2026-11-05T14:48:59.5546559Z ##[endgroup]
+Security	Set up job	2026-11-05T14:48:59.5547319Z ##[group]Runner Image
+Security	Set up job	2026-11-05T14:48:59.5548107Z Image: ubuntu-24.04
+Security	Set up job	2026-11-05T14:48:59.5548827Z Version: 20261101.360.1
+Security	Set up job	2026-11-05T14:48:59.5550261Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Security	Set up job	2026-11-05T14:48:59.5552634Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Security	Set up job	2026-11-05T14:48:59.5554102Z ##[endgroup]
+Security	Set up job	2026-11-05T14:48:59.5555649Z ##[group]GITHUB_TOKEN Permissions
+Security	Set up job	2026-11-05T14:48:59.5557727Z Contents: read
+Security	Set up job	2026-11-05T14:48:59.5558886Z Metadata: read
+Security	Set up job	2026-11-05T14:48:59.5559660Z ##[endgroup]
+Security	Set up job	2026-11-05T14:48:59.5562429Z Secret source: Actions
+Security	Set up job	2026-11-05T14:48:59.5563929Z Cache mode: write
+Security	Set up job	2026-11-05T14:48:59.5564803Z Prepare workflow directory
+Security	Set up job	2026-11-05T14:48:59.6092808Z Prepare all required actions
+Security	Set up job	2026-11-05T14:48:59.6151489Z Getting action download info
+Security	Set up job	2026-11-05T14:48:59.9424006Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Security	Set up job	2026-11-05T14:49:00.0818356Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+Security	Set up job	2026-11-05T14:49:00.4251390Z Complete job name: Security
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:49:00.4925564Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4926413Z with:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4926771Z   fetch-depth: 0
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4927146Z   persist-credentials: false
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4927591Z   repository: BereketAbera/plane-platform
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4930650Z   token: ***
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4931016Z   ssh-strict: true
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4931380Z   ssh-user: git
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4931726Z   clean: true
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4932094Z   sparse-checkout-cone-mode: true
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4932519Z   fetch-tags: false
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4932883Z   show-progress: true
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4933247Z   lfs: false
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4933728Z   submodules: false
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4934113Z   set-safe-directory: true
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4934527Z   allow-unsafe-pr-checkout: false
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.4935092Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7606089Z Syncing repository: BereketAbera/plane-platform
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7608555Z ##[group]Getting Git version info
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7609631Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7610946Z [command]/usr/bin/git version
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7655516Z git version 2.56.0
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7659438Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7687237Z Temporarily overriding HOME='/home/runner/work/_temp/f44f6c54-dad2-4855-89c1-ae102af6ad8c' before making global git config changes
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7689072Z Adding repository directory to the temporary git global config as a safe directory
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7690220Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7801133Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7803137Z ##[group]Determining repository object format
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7804966Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7806112Z ##[group]Initializing the repository
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7807468Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7900230Z hint: Using 'master' as the name for the initial branch. This default branch name
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7903262Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7904963Z hint: to use in all of your new repositories, which will suppress this warning,
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7906805Z hint: call:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7907671Z hint:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7927205Z hint: 	git config --global init.defaultBranch <name>
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7928390Z hint:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7929610Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7930950Z hint: 'development'. The just-created branch can be renamed via this command:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7932329Z hint:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7933082Z hint: 	git branch -m <name>
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7934265Z hint:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7937220Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7938638Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.7941037Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8218631Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8219699Z ##[group]Disabling automatic garbage collection
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8220586Z [command]/usr/bin/git config --local gc.auto 0
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8222259Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8223292Z ##[group]Setting up auth
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8232620Z Removing SSH command configuration
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8233722Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8236406Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8630456Z Removing HTTP extra header
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8631855Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.8668799Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9067584Z Removing includeIf entries pointing to credentials config files
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9069135Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9073918Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9235330Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9273413Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9316719Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9358025Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9400782Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9447884Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9448834Z ##[group]Fetching the repository
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:00.9450336Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7717572Z From https://github.com/BereketAbera/plane-platform
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7720227Z  * [new branch]      bump/dev-images  -> origin/bump/dev-images
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7721827Z  * [new branch]      main             -> origin/main
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7723449Z  * [new branch]      promote/prod-sim -> origin/promote/prod-sim
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7727476Z [command]/usr/bin/git branch --list --remote origin/main
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7763976Z   origin/main
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7771403Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7804911Z 6edde64e261a58b53177b59b345b9626511b43f7
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7838130Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7839219Z ##[group]Determining the checkout info
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7840342Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7841039Z [command]/usr/bin/git sparse-checkout disable
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7880730Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7923961Z ##[group]Checking out the ref
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.7927003Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9490824Z Switched to a new branch 'main'
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9496251Z branch 'main' set up to track 'origin/main'.
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9522985Z ##[endgroup]
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9573097Z [command]/usr/bin/git log -1 --format=%H
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9608052Z 6edde64e261a58b53177b59b345b9626511b43f7
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9623460Z ##[group]Removing auth
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9624984Z Removing SSH command configuration
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9626963Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:02.9668642Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0050080Z Removing HTTP extra header
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0057954Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0074230Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0298765Z Removing includeIf entries pointing to credentials config files
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0299962Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0337180Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0338583Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0339574Z includeif.gitdir:/github/workspace/.git.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0340616Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0347477Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0382522Z /home/runner/work/_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0392427Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-2abdcef8\-3fdf\-486e\-a106\-851e9a6b5bcf\.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0444169Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0477439Z /home/runner/work/_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0489684Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-2abdcef8\-3fdf\-486e\-a106\-851e9a6b5bcf\.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0539239Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0574649Z /github/runner_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0582872Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-2abdcef8\-3fdf\-486e\-a106\-851e9a6b5bcf\.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0624799Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0656639Z /github/runner_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0664522Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-2abdcef8\-3fdf\-486e\-a106\-851e9a6b5bcf\.config
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0706338Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0927688Z Removing credentials config '/home/runner/work/_temp/git-credentials-2abdcef8-3fdf-486e-a106-851e9a6b5bcf.config'
+Security	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:03.0938571Z ##[endgroup]
+Security	Restore pinned tools	﻿2026-11-05T14:49:03.1714213Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+Security	Restore pinned tools	2026-11-05T14:49:03.1714753Z with:
+Security	Restore pinned tools	2026-11-05T14:49:03.1714971Z   path: .tools
+Security	Restore pinned tools	2026-11-05T14:49:03.1715366Z   key: tools-security-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Security	Restore pinned tools	2026-11-05T14:49:03.1715823Z   enableCrossOsArchive: false
+Security	Restore pinned tools	2026-11-05T14:49:03.1716077Z   fail-on-cache-miss: false
+Security	Restore pinned tools	2026-11-05T14:49:03.1716313Z   lookup-only: false
+Security	Restore pinned tools	2026-11-05T14:49:03.1716531Z   save-always: false
+Security	Restore pinned tools	2026-11-05T14:49:03.1716747Z ##[endgroup]
+Security	Restore pinned tools	2026-11-05T14:49:03.5197456Z Cache not found for input keys: tools-security-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Security	Gitleaks, trivy config, trivy fs	﻿2026-11-05T14:49:03.5375808Z ##[group]Run ./scripts/ci/security.sh
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:03.5376212Z ^[[36;1m./scripts/ci/security.sh^[[0m
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:03.5397163Z shell: /usr/bin/bash -e {0}
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:03.5397450Z ##[endgroup]
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:05.3838615Z ^[[1;34m==>^[[0m gitleaks history
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:09.4665384Z ^[[1;32m ok^[[0m gitleaks history
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:09.4666656Z ^[[1;34m==>^[[0m gitleaks working tree
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:12.5125182Z ^[[1;32m ok^[[0m gitleaks working tree
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:12.5134524Z ^[[1;34m==>^[[0m trivy config
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:12.6084423Z 2026-11-05T14:49:12Z	INFO	[misconfig] Misconfiguration scanning is enabled
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:12.6085242Z 2026-11-05T14:49:12Z	INFO	[checks-client] Need to update the checks bundle
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:12.6085826Z 2026-11-05T14:49:12Z	INFO	[checks-client] Downloading the checks bundle...
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:18.5132860Z 234.57 KiB / 234.57 KiB [---------------------------------------------------------] 100.00% ? p/s 0s2026-11-05T14:49:18Z	INFO	[terraform scanner] Scanning root module	file_path="infisical/terraform"
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:18.5142197Z 2026-11-05T14:49:18Z	WARN	[terraform parser] Variable values were not found in the environment or variable files. Evaluating may not work correctly.	module="root" variables="kubernetes_ca_certificate, org_id"
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:18.5161116Z 2026-11-05T14:49:18Z	INFO	[terraform scanner] Scanning root module	file_path="infrastructure/terraform/environments/local"
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0901083Z 2026-11-05T14:49:19Z	INFO	Detected config files	num=73
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0961071Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0961123Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0965066Z 📣 ^[[34mNotices:^[[0m
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0965394Z Report Summary
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0965814Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0966310Z   - Version 0.76.2 of Trivy is now available, current version is 0.76.1
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0967543Z ┌──────────────────────────────────────────────────────────────────┬────────────┬───────────────────┐
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0970523Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0970940Z │                              Target                              │    Type    │ Misconfigurations │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0971832Z To suppress version checks, run Trivy scans with the --skip-version-check flag
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0973276Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0976027Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0976590Z │ apps/wayline/runtime/Dockerfile.admin                            │ dockerfile │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0978089Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0979313Z │ apps/wayline/runtime/Dockerfile.backend                          │ dockerfile │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0980574Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0981786Z │ apps/wayline/runtime/Dockerfile.space                            │ dockerfile │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0983041Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0984527Z │ apps/wayline/runtime/Dockerfile.web                              │ dockerfile │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0985753Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0986925Z │ docs/evidence/runs/load-20261105T073241Z/job.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0988124Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0989270Z │ docs/evidence/runs/load-20261105T090247Z/job.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0990514Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0991732Z │ docs/evidence/runs/load-20261105T091213Z/job.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0993329Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0994853Z │ gitops/applications/alloy.yaml                                   │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0996179Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0997509Z │ gitops/applications/backup-storage.yaml                          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.0998827Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1000089Z │ gitops/applications/infisical-operator-dev.yaml                  │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1001376Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1002675Z │ gitops/applications/infisical-operator-prod-sim.yaml             │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1004158Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1005386Z │ gitops/applications/infisical.yaml                               │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1006869Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1008155Z │ gitops/applications/kube-prometheus-stack.yaml                   │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1009465Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1010605Z │ gitops/applications/loki.yaml                                    │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1011816Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1012990Z │ gitops/applications/metrics-server.yaml                          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1014586Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1015779Z │ gitops/applications/monitoring-extras.yaml                       │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1017046Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1018252Z │ gitops/applications/network-policies.yaml                        │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1019472Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1020614Z │ gitops/applications/plane-dev.yaml                               │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1021820Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1025175Z │ gitops/applications/plane-prod-sim.yaml                          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1026562Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1027991Z │ gitops/applications/traefik.yaml                                 │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1029270Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1031320Z │ gitops/bootstrap/argocd-route/ingressroute.yaml                  │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1032629Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1034073Z │ gitops/bootstrap/chart/templates/appprojects.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1035467Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1036708Z │ gitops/bootstrap/chart/templates/root-application.yaml           │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1038185Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1039419Z │ gitops/environments/dev/manifests.yaml                           │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1040716Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1041907Z │ gitops/environments/prod-sim/manifests.yaml                      │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1043145Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1044516Z │ gitops/platform/backup-storage/dev.yaml                          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1045771Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1046959Z │ gitops/platform/backup-storage/infisical.yaml                    │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1048267Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1049624Z │ gitops/platform/backup-storage/prod-sim.yaml                     │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1051098Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1052250Z │ gitops/platform/network-policies/argocd.yaml                     │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1053504Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1054922Z │ gitops/platform/network-policies/infisical.yaml                  │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1056160Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1057557Z │ gitops/platform/network-policies/kube-system-metrics-server.yaml │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1058842Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1060070Z │ gitops/platform/network-policies/monitoring-agents.yaml          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1061323Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1062577Z │ gitops/platform/network-policies/monitoring.yaml                 │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1063927Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1065184Z │ gitops/platform/network-policies/plane-dev-loadtest.yaml         │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1066422Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1067600Z │ gitops/platform/network-policies/plane-dev.yaml                  │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1068788Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1070106Z │ gitops/platform/network-policies/plane-prod-sim.yaml             │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1071323Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1072468Z │ gitops/platform/network-policies/traefik.yaml                    │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1073790Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1074952Z │ helm/plane/components/hardening/patches/admin.yaml               │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1076245Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1077555Z │ helm/plane/components/hardening/patches/api.yaml                 │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1078776Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1079904Z │ helm/plane/components/hardening/patches/beat.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1081092Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1082240Z │ helm/plane/components/hardening/patches/live.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1083444Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1084732Z │ helm/plane/components/hardening/patches/migrator.yaml            │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1085934Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1087043Z │ helm/plane/components/hardening/patches/postgres.yaml            │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1088418Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1089569Z │ helm/plane/components/hardening/patches/rabbitmq.yaml            │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1090753Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1091850Z │ helm/plane/components/hardening/patches/silo.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1092997Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1094203Z │ helm/plane/components/hardening/patches/space.yaml               │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1095473Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1096598Z │ helm/plane/components/hardening/patches/valkey.yaml              │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1097798Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1098892Z │ helm/plane/components/hardening/patches/web.yaml                 │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1100163Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1101287Z │ helm/plane/components/hardening/patches/worker.yaml              │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1102454Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1103733Z │ helm/plane/components/hardening/rabbitmq-conf.yaml               │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1105150Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1106325Z │ helm/plane/components/hardening/serviceaccounts.yaml             │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1107587Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1108749Z │ helm/plane/components/hardening/traefik-redirect.yaml            │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1109959Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1111076Z │ helm/plane/overlays/dev/infisical.yaml                           │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1112301Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1113419Z │ helm/plane/overlays/prod-sim/infisical.yaml                      │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1114763Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1115901Z │ infisical/manifests/ingressroute.yaml                            │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1117240Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1118347Z │ infisical/manifests/postgres.yaml                                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1119553Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1120660Z │ infisical/manifests/redis.yaml                                   │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1121808Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1122944Z │ infisical/manifests/serviceaccount.yaml                          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1124566Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1125706Z │ infisical/manifests/token-reviewer.yaml                          │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1126894Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1127911Z │ infisical/terraform                                              │ terraform  │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1128997Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1130128Z │ infrastructure/local-services/git-daemon/Dockerfile              │ dockerfile │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1131329Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1132445Z │ infrastructure/terraform/environments/local                      │ terraform  │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1133738Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1135121Z │ monitoring/manifests/environments/base/exporters.yaml            │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1136333Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1137472Z │ monitoring/manifests/environments/base/probes.yaml               │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1138653Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1139876Z │ monitoring/manifests/environments/base/rabbitmq-metrics.yaml     │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1141102Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1142269Z │ monitoring/manifests/environments/base/service-monitors.yaml     │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1143802Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1144967Z │ monitoring/manifests/shared/alert-sink.yaml                      │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1146139Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1147252Z │ monitoring/manifests/shared/blackbox.yaml                        │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1148485Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1149616Z │ monitoring/manifests/shared/ingress-routes.yaml                  │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1150814Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1151946Z │ monitoring/manifests/shared/rules-plane.yaml                     │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1153162Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1154581Z │ monitoring/manifests/shared/rules-platform.yaml                  │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1155773Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1156912Z │ monitoring/manifests/shared/service-monitors.yaml                │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1158115Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1159246Z │ tests/rules/fixtures/stuck-progressing/service.yaml              │ kubernetes │         0         │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1160442Z └──────────────────────────────────────────────────────────────────┴────────────┴───────────────────┘
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1161382Z Legend:
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1161742Z - '-': Not scanned
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1162163Z - '0': Clean (no security findings detected)
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1162549Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1177587Z ^[[1;32m ok^[[0m trivy config
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1178280Z ^[[1;34m==>^[[0m trivy fs
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1783042Z 2026-11-05T14:49:19Z	INFO	[vulndb] Need to update DB
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1784052Z 2026-11-05T14:49:19Z	INFO	[vulndb] Downloading vulnerability DB...
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:19.1784986Z 2026-11-05T14:49:19Z	INFO	[vulndb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-db:2"
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:30.5357488Z 2026-11-05T14:49:30Z	INFO	[vulndb] Artifact successfully downloaded	repo="mirror.gcr.io/aquasec/trivy-db:2"
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:30.5424363Z 2026-11-05T14:49:30Z	INFO	[vuln] Vulnerability scanning is enabled
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:30.5425155Z 2026-11-05T14:49:30Z	INFO	[secret] Secret scanning is enabled
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:30.5436352Z 2026-11-05T14:49:30Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:30.5437685Z 2026-11-05T14:49:30Z	INFO	[secret] Please see https://trivy.dev/docs/v0.76/guide/scanner/secret#recommendation for faster secret detection
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1704213Z 2026-11-05T14:49:32Z	INFO	Number of language-specific files	num=0
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1706117Z 2026-11-05T14:49:32Z	WARN	[report] Supported files for scanner(s) not found.	scanners=[vuln]
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1706771Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1707302Z 2026-11-05T14:49:32Z	INFO	[report] No issues detected with scanner(s).	scanners=[secret]
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1707766Z Report Summary
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1724100Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1724697Z 📣 ^[[34mNotices:^[[0m
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1725269Z   - Version 0.76.2 of Trivy is now available, current version is 0.76.1
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1725763Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1726167Z To suppress version checks, run Trivy scans with the --skip-version-check flag
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1726765Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1734119Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1748357Z ┌────────┬──────┬─────────────────┬─────────┐
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1748903Z │ Target │ Type │ Vulnerabilities │ Secrets │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1749391Z ├────────┼──────┼─────────────────┼─────────┤
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1750411Z │   -    │  -   │        -        │    -    │
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1754270Z └────────┴──────┴─────────────────┴─────────┘
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1754771Z Legend:
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1755164Z - '-': Not scanned
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1755511Z - '0': Clean (no security findings detected)
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1758909Z 
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1759181Z ^[[1;32m ok^[[0m trivy fs
+Security	Gitleaks, trivy config, trivy fs	2026-11-05T14:49:32.1759575Z ^[[1;32m ok^[[0m security checks passed
+Security	Post Restore pinned tools	﻿2026-11-05T14:49:32.3595787Z Post job cleanup.
+Security	Post Restore pinned tools	2026-11-05T14:49:32.4847499Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/plane-platform/plane-platform --files-from manifest.txt --use-compress-program zstdmt
+Security	Post Restore pinned tools	2026-11-05T14:49:34.4927327Z Sent 37355520 of 56246422 (66.4%), 35.7 MBs/sec
+Security	Post Restore pinned tools	2026-11-05T14:49:34.8925481Z Sent 56246422 of 56246422 (100.0%), 38.3 MBs/sec
+Security	Post Restore pinned tools	2026-11-05T14:49:35.3345415Z Cache saved with key: tools-security-Linux-X64-5df7c716267a87d736ec55a17495aedba57d4d176355a320a1eed1ce459c6f33
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:49:35.3566582Z Post job cleanup.
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.4355066Z [command]/usr/bin/git version
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.4414100Z git version 2.56.0
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.4462403Z Temporarily overriding HOME='/home/runner/work/_temp/74b2da5d-ac9a-4f6c-a17c-baa70df8a98b' before making global git config changes
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.4468224Z Adding repository directory to the temporary git global config as a safe directory
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.4469282Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6076534Z Removing SSH command configuration
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6084522Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6130284Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6348943Z Removing HTTP extra header
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6354311Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6397529Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6609551Z Removing includeIf entries pointing to credentials config files
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6616595Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Security	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:49:35.6655442Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Security	Complete job	﻿2026-11-05T14:49:35.8265517Z Cleaning up orphan processes

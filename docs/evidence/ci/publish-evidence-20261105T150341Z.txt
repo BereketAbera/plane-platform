@@ -1,0 +1,11 @@
+UTC date: 2026-11-05T15:03:40Z
+commit: f05930d
+command: make publish-evidence
+[1;34m==>[0m Publishing .local/evidence-raw to docs/evidence/runs
+  skipped, image scans go to docs/evidence/security/ by hand: scan-images-20261104T213712Z
+  skipped, image scans go to docs/evidence/security/ by hand: scan-images-20261104T215437Z
+  skipped, image scans go to docs/evidence/security/ by hand: scan-images-20261105T140048Z
+  files: 955 in runs/, 4 new or changed, 948 unchanged, 11 images not scrubbed
+  scrub: 66 files changed, 416 replacements
+[1;32m ok[0m gitleaks: no findings in docs/evidence/runs
+make exit: 0

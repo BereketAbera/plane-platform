@@ -1,0 +1,759 @@
+Manifests	Set up job	﻿2026-11-05T14:35:38.3662627Z Current runner version: '2.338.2'
+Manifests	Set up job	2026-11-05T14:35:38.3682191Z ##[group]Runner Image Provisioner
+Manifests	Set up job	2026-11-05T14:35:38.3682843Z Hosted Compute Agent
+Manifests	Set up job	2026-11-05T14:35:38.3683192Z Version: 20261028.624
+Manifests	Set up job	2026-11-05T14:35:38.3683694Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Manifests	Set up job	2026-11-05T14:35:38.3684200Z Build Date: 2026-10-28T21:51:42Z
+Manifests	Set up job	2026-11-05T14:35:38.3684623Z Worker ID: {0bb69db0-0321-44e0-80fa-817e4260a511}
+Manifests	Set up job	2026-11-05T14:35:38.3685060Z Region: centralus
+Manifests	Set up job	2026-11-05T14:35:38.3685499Z Cloud: Azure
+Manifests	Set up job	2026-11-05T14:35:38.3685816Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:35:38.3686667Z ##[group]Operating System
+Manifests	Set up job	2026-11-05T14:35:38.3687023Z Ubuntu
+Manifests	Set up job	2026-11-05T14:35:38.3687359Z 24.04.5
+Manifests	Set up job	2026-11-05T14:35:38.3687676Z LTS
+Manifests	Set up job	2026-11-05T14:35:38.3687983Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:35:38.3688370Z ##[group]Runner Image
+Manifests	Set up job	2026-11-05T14:35:38.3688749Z Image: ubuntu-24.04
+Manifests	Set up job	2026-11-05T14:35:38.3689108Z Version: 20261101.360.1
+Manifests	Set up job	2026-11-05T14:35:38.3689713Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Manifests	Set up job	2026-11-05T14:35:38.3690803Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Manifests	Set up job	2026-11-05T14:35:38.3691337Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:35:38.3692005Z ##[group]GITHUB_TOKEN Permissions
+Manifests	Set up job	2026-11-05T14:35:38.3693192Z Contents: read
+Manifests	Set up job	2026-11-05T14:35:38.3693777Z Metadata: read
+Manifests	Set up job	2026-11-05T14:35:38.3694229Z ##[endgroup]
+Manifests	Set up job	2026-11-05T14:35:38.3695942Z Secret source: Actions
+Manifests	Set up job	2026-11-05T14:35:38.3696552Z Cache mode: write
+Manifests	Set up job	2026-11-05T14:35:38.3696974Z Prepare workflow directory
+Manifests	Set up job	2026-11-05T14:35:38.3929978Z Prepare all required actions
+Manifests	Set up job	2026-11-05T14:35:38.3961618Z Getting action download info
+Manifests	Set up job	2026-11-05T14:35:38.6854038Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Manifests	Set up job	2026-11-05T14:35:39.4929317Z Complete job name: Manifests
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:35:39.5512083Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5512685Z with:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5512966Z   fetch-depth: 0
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5513239Z   persist-credentials: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5513680Z   repository: BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5515961Z   token: ***
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5516211Z   ssh-strict: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5516469Z   ssh-user: git
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5516719Z   clean: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5516982Z   sparse-checkout-cone-mode: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5517704Z   fetch-tags: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5518100Z   show-progress: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5518516Z   lfs: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5518860Z   submodules: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5519146Z   set-safe-directory: true
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5519452Z   allow-unsafe-pr-checkout: false
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.5519954Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.7946094Z Syncing repository: BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.7952580Z ##[group]Getting Git version info
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.7953761Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.7965169Z [command]/usr/bin/git version
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8066771Z git version 2.56.0
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8115841Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8136017Z Temporarily overriding HOME='/home/runner/work/_temp/301f3f05-e5f6-4a7c-aac4-cd0be0a2a865' before making global git config changes
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8139113Z Adding repository directory to the temporary git global config as a safe directory
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8140685Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8210383Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8232257Z ##[group]Determining repository object format
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8234810Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8235626Z ##[group]Initializing the repository
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8236405Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8386677Z hint: Using 'master' as the name for the initial branch. This default branch name
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8405745Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8409215Z hint: to use in all of your new repositories, which will suppress this warning,
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8410121Z hint: call:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8410565Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8411225Z hint: 	git config --global init.defaultBranch <name>
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8411864Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8412508Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8413446Z hint: 'development'. The just-created branch can be renamed via this command:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8425230Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8425815Z hint: 	git branch -m <name>
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8426378Z hint:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8427029Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8428414Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8430818Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8516392Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8517566Z ##[group]Disabling automatic garbage collection
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8518470Z [command]/usr/bin/git config --local gc.auto 0
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8616631Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8625076Z ##[group]Setting up auth
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8625630Z Removing SSH command configuration
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8626423Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.8655106Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9035544Z Removing HTTP extra header
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9036632Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9068224Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9273965Z Removing includeIf entries pointing to credentials config files
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9275170Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9314666Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9527615Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9576056Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9619079Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9662165Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9703525Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9746695Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9747629Z ##[group]Fetching the repository
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:39.9753102Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4866886Z From https://github.com/BereketAbera/plane-platform
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4868005Z  * [new branch]      bump/dev-images  -> origin/bump/dev-images
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4868936Z  * [new branch]      main             -> origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4869392Z  * [new branch]      promote/prod-sim -> origin/promote/prod-sim
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4870945Z [command]/usr/bin/git branch --list --remote origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4902513Z   origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4909171Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4941226Z 76e98ee725a80626a69d1d9e16de2fc7c9feaadc
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4945337Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4945877Z ##[group]Determining the checkout info
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4946542Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.4949209Z [command]/usr/bin/git sparse-checkout disable
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.5004635Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.5050584Z ##[group]Checking out the ref
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.5051879Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6565072Z Switched to a new branch 'main'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6584337Z branch 'main' set up to track 'origin/main'.
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6588434Z ##[endgroup]
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6674086Z [command]/usr/bin/git log -1 --format=%H
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6714101Z 76e98ee725a80626a69d1d9e16de2fc7c9feaadc
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6802823Z ##[group]Removing auth
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6803317Z Removing SSH command configuration
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6804050Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.6805375Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7131632Z Removing HTTP extra header
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7132385Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7136986Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7357540Z Removing includeIf entries pointing to credentials config files
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7358392Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7396666Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7397589Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7398195Z includeif.gitdir:/github/workspace/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7398634Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7406891Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7440902Z /home/runner/work/_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7449003Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-698f5a21\-b169\-420e\-b375\-eafe6e044223\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7504290Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7531763Z /home/runner/work/_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7537864Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-698f5a21\-b169\-420e\-b375\-eafe6e044223\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7586787Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7620890Z /github/runner_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7626649Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-698f5a21\-b169\-420e\-b375\-eafe6e044223\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7670674Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7702897Z /github/runner_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7709276Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-698f5a21\-b169\-420e\-b375\-eafe6e044223\.config
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7749378Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7949129Z Removing credentials config '/home/runner/work/_temp/git-credentials-698f5a21-b169-420e-b375-eafe6e044223.config'
+Manifests	Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:41.7959624Z ##[endgroup]
+Manifests	Render drift, kubeconform, conftest, promotion invariant	﻿2026-11-05T14:35:41.8139669Z ##[group]Run ./scripts/ci/validate-manifests.sh
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:41.8139963Z ^[[36;1m./scripts/ci/validate-manifests.sh^[[0m
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:41.8158150Z shell: /usr/bin/bash -e {0}
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:41.8158313Z ##[endgroup]
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:47.6465276Z curl: (22) The requested URL returned error: 504
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:49.6775421Z curl: (22) The requested URL returned error: 504
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:51.7085785Z curl: (22) The requested URL returned error: 504
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:53.7404811Z curl: (22) The requested URL returned error: 504
+Manifests	Render drift, kubeconform, conftest, promotion invariant	2026-11-05T14:35:53.7448105Z ##[error]Process completed with exit code 22.
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	﻿2026-11-05T14:35:53.7683100Z Post job cleanup.
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8340255Z [command]/usr/bin/git version
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8404636Z git version 2.56.0
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8474626Z Temporarily overriding HOME='/home/runner/work/_temp/cbe4d585-db72-4d63-a8a4-242a7ca881ff' before making global git config changes
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8475587Z Adding repository directory to the temporary git global config as a safe directory
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8476342Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8705257Z Removing SSH command configuration
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8706134Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.8766555Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.9056138Z Removing HTTP extra header
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.9060960Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.9105250Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.9307672Z Removing includeIf entries pointing to credentials config files
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.9313413Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Manifests	Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1	2026-11-05T14:35:53.9355348Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Manifests	Complete job	﻿2026-11-05T14:35:53.9768966Z Cleaning up orphan processes
+Lint	UNKNOWN STEP	﻿2026-11-05T14:21:51.1898529Z Current runner version: '2.338.2'
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1921214Z ##[group]Runner Image Provisioner
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1922051Z Hosted Compute Agent
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1922694Z Version: 20261028.624
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1923239Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1924044Z Build Date: 2026-10-28T21:51:42Z
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1924737Z Worker ID: {8c87c0a0-6c08-4c0a-9021-2f0d1aa376d0}
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1925403Z Region: northcentralus
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1925971Z Cloud: Azure
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1926463Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1927776Z ##[group]Operating System
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1928429Z Ubuntu
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1928968Z 24.04.5
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1929461Z LTS
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1929920Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1930399Z ##[group]Runner Image
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1930983Z Image: ubuntu-24.04
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1931517Z Version: 20261101.360.1
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1932722Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1934279Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1935214Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1936245Z ##[group]GITHUB_TOKEN Permissions
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1937854Z Contents: read
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1938370Z Metadata: read
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1938848Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1940742Z Secret source: Actions
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1941679Z Cache mode: write
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.1942402Z Prepare workflow directory
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.2236168Z Prepare all required actions
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.2279419Z Getting action download info
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.4829001Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.6512655Z Complete job name: Lint
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7105842Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7106348Z with:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7106619Z   persist-credentials: false
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7106924Z   repository: BereketAbera/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7109042Z   token: ***
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7109277Z   ssh-strict: true
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7109522Z   ssh-user: git
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7109759Z   clean: true
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7110011Z   sparse-checkout-cone-mode: true
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7110300Z   fetch-depth: 1
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7110544Z   fetch-tags: false
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7110792Z   show-progress: true
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7111042Z   lfs: false
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7111273Z   submodules: false
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7111525Z   set-safe-directory: true
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7111807Z   allow-unsafe-pr-checkout: false
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.7112162Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9163625Z Syncing repository: BereketAbera/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9196090Z ##[group]Getting Git version info
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9197843Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9199543Z [command]/usr/bin/git version
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9347655Z git version 2.56.0
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9350662Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9356493Z Temporarily overriding HOME='/home/runner/work/_temp/30ed8cdf-7289-4f24-93fb-3540c8fdc80c' before making global git config changes
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9357968Z Adding repository directory to the temporary git global config as a safe directory
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9359463Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9412325Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9413993Z ##[group]Determining repository object format
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9414921Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9416063Z ##[group]Initializing the repository
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9435530Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9503779Z hint: Using 'master' as the name for the initial branch. This default branch name
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9507169Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9508000Z hint: to use in all of your new repositories, which will suppress this warning,
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9522644Z hint: call:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9523021Z hint:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9523626Z hint: 	git config --global init.defaultBranch <name>
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9524151Z hint:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9524628Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9525402Z hint: 'development'. The just-created branch can be renamed via this command:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9526025Z hint:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9526374Z hint: 	git branch -m <name>
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9526776Z hint:
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9527306Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9539666Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9542295Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9680239Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9682522Z ##[group]Disabling automatic garbage collection
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9683129Z [command]/usr/bin/git config --local gc.auto 0
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9684480Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9685065Z ##[group]Setting up auth
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9685501Z Removing SSH command configuration
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9690869Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Lint	UNKNOWN STEP	2026-11-05T14:21:51.9807604Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0112639Z Removing HTTP extra header
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0117798Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0164350Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0377218Z Removing includeIf entries pointing to credentials config files
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0380760Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0420504Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0628537Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0670732Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0709182Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0747708Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0786155Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0823389Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0824465Z ##[group]Fetching the repository
+Lint	UNKNOWN STEP	2026-11-05T14:21:52.0828245Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +76e98ee725a80626a69d1d9e16de2fc7c9feaadc:refs/remotes/origin/main
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.0999701Z From https://github.com/BereketAbera/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1001263Z  * [new ref]         76e98ee725a80626a69d1d9e16de2fc7c9feaadc -> origin/main
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1015770Z [command]/usr/bin/git branch --list --remote origin/main
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1036892Z   origin/main
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1044938Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1077652Z 76e98ee725a80626a69d1d9e16de2fc7c9feaadc
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1082433Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1084236Z ##[group]Determining the checkout info
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1086581Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1087703Z [command]/usr/bin/git sparse-checkout disable
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1140347Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1180460Z ##[group]Checking out the ref
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.1194718Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3275295Z Switched to a new branch 'main'
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3279435Z branch 'main' set up to track 'origin/main'.
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3281438Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3283251Z [command]/usr/bin/git log -1 --format=%H
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3301785Z 76e98ee725a80626a69d1d9e16de2fc7c9feaadc
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3311195Z ##[group]Removing auth
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3311719Z Removing SSH command configuration
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3314705Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3356116Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3563865Z Removing HTTP extra header
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3565932Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3605670Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3814953Z Removing includeIf entries pointing to credentials config files
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3815760Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3849577Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3852069Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3853386Z includeif.gitdir:/github/workspace/.git.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3854303Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3857105Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3890252Z /home/runner/work/_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3902408Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-f2362ab3\-a213\-4e26\-8b61\-4d18b7ddbced\.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3944614Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3977303Z /home/runner/work/_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.3994698Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-f2362ab3\-a213\-4e26\-8b61\-4d18b7ddbced\.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4029170Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4064961Z /github/runner_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4070168Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-f2362ab3\-a213\-4e26\-8b61\-4d18b7ddbced\.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4108744Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4139785Z /github/runner_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4154683Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-f2362ab3\-a213\-4e26\-8b61\-4d18b7ddbced\.config
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4187146Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4381057Z Removing credentials config '/home/runner/work/_temp/git-credentials-f2362ab3-a213-4e26-8b61-4d18b7ddbced.config'
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4388923Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4561812Z ##[group]Run ./scripts/ci/lint.sh
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4562092Z ^[[36;1m./scripts/ci/lint.sh^[[0m
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4580321Z shell: /usr/bin/bash -e {0}
+Lint	UNKNOWN STEP	2026-11-05T14:21:53.4580528Z ##[endgroup]
+Lint	UNKNOWN STEP	2026-11-05T14:21:56.4394470Z ^[[1;34m==>^[[0m shellcheck
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.7667040Z ^[[1;32m ok^[[0m shellcheck
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.7784804Z ^[[1;34m==>^[[0m actionlint
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.8744814Z ^[[32m INFO^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 zizmor v1.32.0
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.8745515Z ^[[1;32m ok^[[0m actionlint
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.8745879Z ^[[1;34m==>^[[0m zizmor
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9078087Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/ci.yml
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9107983Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/images.yml
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9108721Z ^[[32mNo findings to report. Good job!^[[39m (^[[1m^[[93m3^[[39m suppressed^[[0m)
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9116307Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/promote-prod-sim.yml
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9117105Z ^[[32m INFO^[[0m ^[[1maudit^[[0m^[[2m:^[[0m ^[[2mzizmor^[[0m^[[2m:^[[0m 🌈 completed .github/workflows/wayline-upstream-check.yml
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9121970Z ^[[1;32m ok^[[0m zizmor
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9144213Z ^[[1;34m==>^[[0m terraform fmt
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9428143Z ^[[1;32m ok^[[0m terraform fmt
+Lint	UNKNOWN STEP	2026-11-05T14:22:18.9432132Z ^[[1;34m==>^[[0m terraform validate
+Lint	UNKNOWN STEP	2026-11-05T14:22:46.2671299Z Success! The configuration is valid.
+Lint	UNKNOWN STEP	2026-11-05T14:22:46.2671602Z 
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.2588487Z Success! The configuration is valid.
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.2588801Z 
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.2632743Z ^[[1;32m ok^[[0m terraform validate
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.2633395Z ^[[1;34m==>^[[0m tflint
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.4775791Z ^[[1;32m ok^[[0m tflint
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.4776951Z ^[[1;34m==>^[[0m hadolint
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.5335585Z apps/wayline/runtime/Dockerfile.backend:29 DL3059 ^[[92minfo^[[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.5336817Z apps/wayline/runtime/Dockerfile.backend:33 DL3059 ^[[92minfo^[[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.5634542Z apps/wayline/runtime/Dockerfile.space:28 DL3059 ^[[92minfo^[[0m: Multiple consecutive `RUN` instructions. Consider consolidation.
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.6219684Z ^[[1;32m ok^[[0m hadolint
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.6235878Z ^[[1;34m==>^[[0m conftest verify
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.8224477Z 
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.8225763Z 104 tests, 104 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.8253927Z ^[[1;32m ok^[[0m conftest verify
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.8254460Z ^[[1;34m==>^[[0m no Bitnami reference
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.8612223Z ^[[1;32m ok^[[0m no Bitnami reference
+Lint	UNKNOWN STEP	2026-11-05T14:22:48.8612843Z ^[[1;34m==>^[[0m python compile
+Lint	UNKNOWN STEP	2026-11-05T14:22:49.0297993Z ^[[1;32m ok^[[0m python compile
+Lint	UNKNOWN STEP	2026-11-05T14:22:49.0298861Z ^[[1;34m==>^[[0m smoke.py self check
+Lint	UNKNOWN STEP	2026-11-05T14:22:52.7723448Z selftest ok
+Lint	UNKNOWN STEP	2026-11-05T14:22:52.7816541Z ^[[1;32m ok^[[0m smoke.py self check
+Lint	UNKNOWN STEP	2026-11-05T14:22:52.7817261Z ^[[1;34m==>^[[0m scan report self check
+Lint	UNKNOWN STEP	2026-11-05T14:22:52.8059013Z selftest ok
+Lint	UNKNOWN STEP	2026-11-05T14:22:52.8092536Z ^[[1;32m ok^[[0m scan report self check
+Lint	UNKNOWN STEP	2026-11-05T14:22:52.8093034Z ^[[1;34m==>^[[0m network policy verdict self check
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.0638635Z ^[[1;32m ok^[[0m selftest passed
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.0658180Z ^[[1;32m ok^[[0m network policy verdict self check
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.0658726Z ^[[1;32m ok^[[0m lint passed
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.0845810Z Post job cleanup.
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1641957Z [command]/usr/bin/git version
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1714799Z git version 2.56.0
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1801174Z Temporarily overriding HOME='/home/runner/work/_temp/e680e2fb-de54-4d6e-8cf9-83ca777f00b1' before making global git config changes
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1802188Z Adding repository directory to the temporary git global config as a safe directory
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1803040Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1804539Z Removing SSH command configuration
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1805073Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.1844172Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2187277Z Removing HTTP extra header
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2188067Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2294925Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2522976Z Removing includeIf entries pointing to credentials config files
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2529701Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2573676Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Lint	UNKNOWN STEP	2026-11-05T14:22:53.2991506Z Cleaning up orphan processes
+Security	UNKNOWN STEP	﻿2026-11-05T14:21:51.7082346Z Current runner version: '2.338.2'
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7161168Z ##[group]Runner Image Provisioner
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7162651Z Hosted Compute Agent
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7164110Z Version: 20261028.624
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7165511Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7166849Z Build Date: 2026-10-28T21:51:42Z
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7168127Z Worker ID: {580a5994-76b8-4af9-bf28-9c9869214420}
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7169455Z Region: eastus
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7170405Z Cloud: Azure
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7171566Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7194667Z ##[group]Operating System
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7195848Z Ubuntu
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7196802Z 24.04.5
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7197784Z LTS
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7198831Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7199834Z ##[group]Runner Image
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7200841Z Image: ubuntu-24.04
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7201959Z Version: 20261101.360.1
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7204451Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7207388Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7209382Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7211432Z ##[group]GITHUB_TOKEN Permissions
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7235085Z Contents: read
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7236200Z Metadata: read
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7237170Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7240604Z Secret source: Actions
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7242264Z Cache mode: write
+Security	UNKNOWN STEP	2026-11-05T14:21:51.7244502Z Prepare workflow directory
+Security	UNKNOWN STEP	2026-11-05T14:21:51.8234344Z Prepare all required actions
+Security	UNKNOWN STEP	2026-11-05T14:21:51.8359655Z Getting action download info
+Security	UNKNOWN STEP	2026-11-05T14:21:52.0949268Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Security	UNKNOWN STEP	2026-11-05T14:21:52.3248318Z Complete job name: Security
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4200901Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4202059Z with:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4202558Z   fetch-depth: 0
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4203297Z   persist-credentials: false
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4203888Z   repository: BereketAbera/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4207618Z   token: ***
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4208080Z   ssh-strict: true
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4208551Z   ssh-user: git
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4209033Z   clean: true
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4209522Z   sparse-checkout-cone-mode: true
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4210075Z   fetch-tags: false
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4210553Z   show-progress: true
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4211034Z   lfs: false
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4211490Z   submodules: false
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4211979Z   set-safe-directory: true
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4212518Z   allow-unsafe-pr-checkout: false
+Security	UNKNOWN STEP	2026-11-05T14:21:52.4213568Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:52.7510359Z Syncing repository: BereketAbera/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:21:52.7513872Z ##[group]Getting Git version info
+Security	UNKNOWN STEP	2026-11-05T14:21:52.7515419Z Working directory is '/home/runner/work/plane-platform/plane-platform'
+Security	UNKNOWN STEP	2026-11-05T14:21:52.7517528Z [command]/usr/bin/git version
+Security	UNKNOWN STEP	2026-11-05T14:21:52.8879563Z git version 2.56.0
+Security	UNKNOWN STEP	2026-11-05T14:21:52.8967686Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:52.8978789Z Temporarily overriding HOME='/home/runner/work/_temp/69c94650-790a-488b-b0a1-77befcff53ff' before making global git config changes
+Security	UNKNOWN STEP	2026-11-05T14:21:52.8984306Z Adding repository directory to the temporary git global config as a safe directory
+Security	UNKNOWN STEP	2026-11-05T14:21:52.8990996Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:21:52.8999911Z Deleting the contents of '/home/runner/work/plane-platform/plane-platform'
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9002032Z ##[group]Determining repository object format
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9004635Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9005930Z ##[group]Initializing the repository
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9007299Z [command]/usr/bin/git init /home/runner/work/plane-platform/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9009045Z hint: Using 'master' as the name for the initial branch. This default branch name
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9012371Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9014413Z hint: to use in all of your new repositories, which will suppress this warning,
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9015798Z hint: call:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9016494Z hint:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9017387Z hint: 	git config --global init.defaultBranch <name>
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9018555Z hint:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9019581Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9021260Z hint: 'development'. The just-created branch can be renamed via this command:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9022637Z hint:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9024225Z hint: 	git branch -m <name>
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9025079Z hint:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9026226Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9028211Z Initialized empty Git repository in /home/runner/work/plane-platform/plane-platform/.git/
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9031285Z [command]/usr/bin/git remote add origin https://github.com/BereketAbera/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9039366Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9040757Z ##[group]Disabling automatic garbage collection
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9041934Z [command]/usr/bin/git config --local gc.auto 0
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9044876Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9046340Z ##[group]Setting up auth
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9047545Z Removing SSH command configuration
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9048899Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9063123Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9208798Z Removing HTTP extra header
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9214661Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9252080Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9668434Z Removing includeIf entries pointing to credentials config files
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9690608Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Security	UNKNOWN STEP	2026-11-05T14:21:52.9697121Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0079155Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0085558Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path /home/runner/work/_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0091526Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0135843Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0179948Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0238474Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0240420Z ##[group]Fetching the repository
+Security	UNKNOWN STEP	2026-11-05T14:21:53.0244060Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2057958Z From https://github.com/BereketAbera/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2059412Z  * [new branch]      bump/dev-images  -> origin/bump/dev-images
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2061067Z  * [new branch]      main             -> origin/main
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2062261Z  * [new branch]      promote/prod-sim -> origin/promote/prod-sim
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2065735Z [command]/usr/bin/git branch --list --remote origin/main
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2105007Z   origin/main
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2115307Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2154806Z 76e98ee725a80626a69d1d9e16de2fc7c9feaadc
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2166623Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2167879Z ##[group]Determining the checkout info
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2169031Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2169797Z [command]/usr/bin/git sparse-checkout disable
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2241094Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2290659Z ##[group]Checking out the ref
+Security	UNKNOWN STEP	2026-11-05T14:21:54.2304464Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4451539Z Switched to a new branch 'main'
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4456668Z branch 'main' set up to track 'origin/main'.
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4488416Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4489550Z [command]/usr/bin/git log -1 --format=%H
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4670613Z 76e98ee725a80626a69d1d9e16de2fc7c9feaadc
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4694186Z ##[group]Removing auth
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4828750Z Removing SSH command configuration
+Security	UNKNOWN STEP	2026-11-05T14:21:54.4851355Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5114499Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5116883Z Removing HTTP extra header
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5118210Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5122604Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5385475Z Removing includeIf entries pointing to credentials config files
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5386488Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5430942Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5432130Z includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5434257Z includeif.gitdir:/github/workspace/.git.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5441931Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5460103Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5482673Z /home/runner/work/_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5504088Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-3526d12f\-aba3\-42b0\-8587\-394360146032\.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5557399Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5596855Z /home/runner/work/_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5607145Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/plane-platform/plane-platform/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-3526d12f\-aba3\-42b0\-8587\-394360146032\.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5667716Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5708108Z /github/runner_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5718144Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-3526d12f\-aba3\-42b0\-8587\-394360146032\.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5766417Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5805700Z /github/runner_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5815969Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-3526d12f\-aba3\-42b0\-8587\-394360146032\.config
+Security	UNKNOWN STEP	2026-11-05T14:21:54.5864674Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Security	UNKNOWN STEP	2026-11-05T14:21:54.6134189Z Removing credentials config '/home/runner/work/_temp/git-credentials-3526d12f-aba3-42b0-8587-394360146032.config'
+Security	UNKNOWN STEP	2026-11-05T14:21:54.6145807Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:54.6367043Z ##[group]Run ./scripts/ci/security.sh
+Security	UNKNOWN STEP	2026-11-05T14:21:54.6367516Z ^[[36;1m./scripts/ci/security.sh^[[0m
+Security	UNKNOWN STEP	2026-11-05T14:21:54.6392003Z shell: /usr/bin/bash -e {0}
+Security	UNKNOWN STEP	2026-11-05T14:21:54.6392294Z ##[endgroup]
+Security	UNKNOWN STEP	2026-11-05T14:21:56.7793702Z ^[[1;34m==>^[[0m gitleaks history
+Security	UNKNOWN STEP	2026-11-05T14:22:02.7793783Z ^[[1;32m ok^[[0m gitleaks history
+Security	UNKNOWN STEP	2026-11-05T14:22:02.7794768Z ^[[1;34m==>^[[0m gitleaks working tree
+Security	UNKNOWN STEP	2026-11-05T14:22:06.8852651Z ^[[1;32m ok^[[0m gitleaks working tree
+Security	UNKNOWN STEP	2026-11-05T14:22:06.8854028Z ^[[1;34m==>^[[0m trivy config
+Security	UNKNOWN STEP	2026-11-05T14:22:06.9608817Z 2026-11-05T14:22:06Z	INFO	[misconfig] Misconfiguration scanning is enabled
+Security	UNKNOWN STEP	2026-11-05T14:22:06.9610279Z 2026-11-05T14:22:06Z	INFO	[checks-client] Need to update the checks bundle
+Security	UNKNOWN STEP	2026-11-05T14:22:06.9611326Z 2026-11-05T14:22:06Z	INFO	[checks-client] Downloading the checks bundle...
+Security	UNKNOWN STEP	2026-11-05T14:22:17.3034702Z 234.57 KiB / 234.57 KiB [------------------------------------------------------] 100.00% ? p/s 100ms2026-11-05T14:22:17Z	INFO	[terraform scanner] Scanning root module	file_path="infisical/terraform"
+Security	UNKNOWN STEP	2026-11-05T14:22:17.3046228Z 2026-11-05T14:22:17Z	WARN	[terraform parser] Variable values were not found in the environment or variable files. Evaluating may not work correctly.	module="root" variables="kubernetes_ca_certificate, org_id"
+Security	UNKNOWN STEP	2026-11-05T14:22:17.3083743Z 2026-11-05T14:22:17Z	INFO	[terraform scanner] Scanning root module	file_path="infrastructure/terraform/environments/local"
+Security	UNKNOWN STEP	2026-11-05T14:22:17.8844379Z 2026-11-05T14:22:17Z	INFO	Detected config files	num=73
+Security	UNKNOWN STEP	2026-11-05T14:22:17.8997146Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:17.8999582Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:17.8999981Z Report Summary
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9002606Z 📣 ^[[34mNotices:^[[0m
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9005086Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9006218Z ┌──────────────────────────────────────────────────────────────────┬────────────┬───────────────────┐
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9007667Z   - Version 0.76.2 of Trivy is now available, current version is 0.76.1
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9020266Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9020838Z │                              Target                              │    Type    │ Misconfigurations │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9023746Z To suppress version checks, run Trivy scans with the --skip-version-check flag
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9024896Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9026562Z │ apps/wayline/runtime/Dockerfile.admin                            │ dockerfile │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9027590Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9028232Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9029712Z │ apps/wayline/runtime/Dockerfile.backend                          │ dockerfile │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9031105Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9032465Z │ apps/wayline/runtime/Dockerfile.space                            │ dockerfile │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9034405Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9053852Z │ apps/wayline/runtime/Dockerfile.web                              │ dockerfile │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9055496Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9056803Z │ docs/evidence/runs/load-20261105T073241Z/job.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9058279Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9059637Z │ docs/evidence/runs/load-20261105T090247Z/job.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9060983Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9062595Z │ docs/evidence/runs/load-20261105T091213Z/job.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9064384Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9065617Z │ gitops/applications/alloy.yaml                                   │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9066925Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9068298Z │ gitops/applications/backup-storage.yaml                          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9069634Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9070899Z │ gitops/applications/infisical-operator-dev.yaml                  │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9072253Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9074088Z │ gitops/applications/infisical-operator-prod-sim.yaml             │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9075543Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9077028Z │ gitops/applications/infisical.yaml                               │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9078361Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9079691Z │ gitops/applications/kube-prometheus-stack.yaml                   │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9081132Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9082356Z │ gitops/applications/loki.yaml                                    │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9083898Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9085410Z │ gitops/applications/metrics-server.yaml                          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9086843Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9088180Z │ gitops/applications/monitoring-extras.yaml                       │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9089562Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9090838Z │ gitops/applications/network-policies.yaml                        │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9092207Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9093736Z │ gitops/applications/plane-dev.yaml                               │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9195215Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9198977Z │ gitops/applications/plane-prod-sim.yaml                          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9200866Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9202204Z │ gitops/applications/traefik.yaml                                 │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9203957Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9205362Z │ gitops/bootstrap/argocd-route/ingressroute.yaml                  │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9206821Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9208197Z │ gitops/bootstrap/chart/templates/appprojects.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9209661Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9211256Z │ gitops/bootstrap/chart/templates/root-application.yaml           │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9212987Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9214492Z │ gitops/environments/dev/manifests.yaml                           │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9216098Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9217587Z │ gitops/environments/prod-sim/manifests.yaml                      │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9219194Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9220653Z │ gitops/platform/backup-storage/dev.yaml                          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9222171Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9224036Z │ gitops/platform/backup-storage/infisical.yaml                    │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9225658Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9227195Z │ gitops/platform/backup-storage/prod-sim.yaml                     │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9229139Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9230550Z │ gitops/platform/network-policies/argocd.yaml                     │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9231996Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9233603Z │ gitops/platform/network-policies/infisical.yaml                  │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9235321Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9236829Z │ gitops/platform/network-policies/kube-system-metrics-server.yaml │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9238496Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9239905Z │ gitops/platform/network-policies/monitoring-agents.yaml          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9241459Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9242959Z │ gitops/platform/network-policies/monitoring.yaml                 │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9244474Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9245881Z │ gitops/platform/network-policies/plane-dev-loadtest.yaml         │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9247677Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9249134Z │ gitops/platform/network-policies/plane-dev.yaml                  │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9250617Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9251992Z │ gitops/platform/network-policies/plane-prod-sim.yaml             │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9253687Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9255126Z │ gitops/platform/network-policies/traefik.yaml                    │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9256569Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9257951Z │ helm/plane/components/hardening/patches/admin.yaml               │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9259760Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9261314Z │ helm/plane/components/hardening/patches/api.yaml                 │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9262930Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9264314Z │ helm/plane/components/hardening/patches/beat.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9265781Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9267163Z │ helm/plane/components/hardening/patches/live.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9268624Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9270018Z │ helm/plane/components/hardening/patches/migrator.yaml            │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9271526Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9273130Z │ helm/plane/components/hardening/patches/postgres.yaml            │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9274619Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9276043Z │ helm/plane/components/hardening/patches/rabbitmq.yaml            │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9277519Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9278892Z │ helm/plane/components/hardening/patches/silo.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9280353Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9281740Z │ helm/plane/components/hardening/patches/space.yaml               │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9283412Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9285062Z │ helm/plane/components/hardening/patches/valkey.yaml              │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9286551Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9287908Z │ helm/plane/components/hardening/patches/web.yaml                 │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9289456Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9290826Z │ helm/plane/components/hardening/patches/worker.yaml              │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9292294Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9294108Z │ helm/plane/components/hardening/rabbitmq-conf.yaml               │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9295684Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9297156Z │ helm/plane/components/hardening/serviceaccounts.yaml             │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9298577Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9299848Z │ helm/plane/components/hardening/traefik-redirect.yaml            │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9301211Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9302406Z │ helm/plane/overlays/dev/infisical.yaml                           │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9303918Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9305183Z │ helm/plane/overlays/prod-sim/infisical.yaml                      │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9306499Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9308056Z │ infisical/manifests/ingressroute.yaml                            │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9309374Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9310579Z │ infisical/manifests/postgres.yaml                                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9311859Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9313200Z │ infisical/manifests/redis.yaml                                   │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9314502Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9315917Z │ infisical/manifests/serviceaccount.yaml                          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9317384Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9318600Z │ infisical/manifests/token-reviewer.yaml                          │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9319912Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9321072Z │ infisical/terraform                                              │ terraform  │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9322323Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9323793Z │ infrastructure/local-services/git-daemon/Dockerfile              │ dockerfile │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9325153Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9326428Z │ infrastructure/terraform/environments/local                      │ terraform  │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9327772Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9329048Z │ monitoring/manifests/environments/base/exporters.yaml            │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9330410Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9331671Z │ monitoring/manifests/environments/base/probes.yaml               │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9333206Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9334527Z │ monitoring/manifests/environments/base/rabbitmq-metrics.yaml     │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9335925Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9337450Z │ monitoring/manifests/environments/base/service-monitors.yaml     │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9339033Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9340271Z │ monitoring/manifests/shared/alert-sink.yaml                      │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9341591Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9342987Z │ monitoring/manifests/shared/blackbox.yaml                        │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9344420Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9345705Z │ monitoring/manifests/shared/ingress-routes.yaml                  │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9347063Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9348742Z │ monitoring/manifests/shared/rules-plane.yaml                     │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9350135Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9351401Z │ monitoring/manifests/shared/rules-platform.yaml                  │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9352951Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9354275Z │ monitoring/manifests/shared/service-monitors.yaml                │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9355674Z ├──────────────────────────────────────────────────────────────────┼────────────┼───────────────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9356955Z │ tests/rules/fixtures/stuck-progressing/service.yaml              │ kubernetes │         0         │
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9358524Z └──────────────────────────────────────────────────────────────────┴────────────┴───────────────────┘
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9359333Z Legend:
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9359959Z - '-': Not scanned
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9360493Z - '0': Clean (no security findings detected)
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9361638Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9465871Z ^[[1;32m ok^[[0m trivy config
+Security	UNKNOWN STEP	2026-11-05T14:22:17.9466715Z ^[[1;34m==>^[[0m trivy fs
+Security	UNKNOWN STEP	2026-11-05T14:22:18.0696007Z 2026-11-05T14:22:18Z	INFO	[vulndb] Need to update DB
+Security	UNKNOWN STEP	2026-11-05T14:22:18.0709891Z 2026-11-05T14:22:18Z	INFO	[vulndb] Downloading vulnerability DB...
+Security	UNKNOWN STEP	2026-11-05T14:22:18.0713729Z 2026-11-05T14:22:18Z	INFO	[vulndb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-db:2"
+Security	UNKNOWN STEP	2026-11-05T14:22:24.6534910Z 2026-11-05T14:22:24Z	INFO	[vulndb] Artifact successfully downloaded	repo="mirror.gcr.io/aquasec/trivy-db:2"
+Security	UNKNOWN STEP	2026-11-05T14:22:24.6637267Z 2026-11-05T14:22:24Z	INFO	[vuln] Vulnerability scanning is enabled
+Security	UNKNOWN STEP	2026-11-05T14:22:24.6641143Z 2026-11-05T14:22:24Z	INFO	[secret] Secret scanning is enabled
+Security	UNKNOWN STEP	2026-11-05T14:22:24.6653886Z 2026-11-05T14:22:24Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+Security	UNKNOWN STEP	2026-11-05T14:22:24.6660497Z 2026-11-05T14:22:24Z	INFO	[secret] Please see https://trivy.dev/docs/v0.76/guide/scanner/secret#recommendation for faster secret detection
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8156589Z 2026-11-05T14:22:26Z	INFO	Number of language-specific files	num=0
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8157587Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8158446Z 2026-11-05T14:22:26Z	WARN	[report] Supported files for scanner(s) not found.	scanners=[vuln]
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8159184Z Report Summary
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8159971Z 2026-11-05T14:22:26Z	INFO	[report] No issues detected with scanner(s).	scanners=[secret]
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8160547Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8160968Z 📣 ^[[34mNotices:^[[0m
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8161510Z   - Version 0.76.2 of Trivy is now available, current version is 0.76.1
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8162001Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8162380Z To suppress version checks, run Trivy scans with the --skip-version-check flag
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8163217Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8173199Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8173751Z ┌────────┬──────┬─────────────────┬─────────┐
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8174589Z │ Target │ Type │ Vulnerabilities │ Secrets │
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8175332Z ├────────┼──────┼─────────────────┼─────────┤
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8176431Z │   -    │  -   │        -        │    -    │
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8177167Z └────────┴──────┴─────────────────┴─────────┘
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8177732Z Legend:
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8178152Z - '-': Not scanned
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8178659Z - '0': Clean (no security findings detected)
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8179136Z 
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8213433Z ^[[1;32m ok^[[0m trivy fs
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8213976Z ^[[1;32m ok^[[0m security checks passed
+Security	UNKNOWN STEP	2026-11-05T14:22:26.8354463Z Post job cleanup.
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9447460Z [command]/usr/bin/git version
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9663053Z git version 2.56.0
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9720867Z Temporarily overriding HOME='/home/runner/work/_temp/2d124ed3-91c1-43aa-82a4-d0516101a7c2' before making global git config changes
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9723347Z Adding repository directory to the temporary git global config as a safe directory
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9726334Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/plane-platform/plane-platform
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9731753Z Removing SSH command configuration
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9733688Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Security	UNKNOWN STEP	2026-11-05T14:22:26.9740461Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Security	UNKNOWN STEP	2026-11-05T14:22:27.0166917Z Removing HTTP extra header
+Security	UNKNOWN STEP	2026-11-05T14:22:27.0168265Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Security	UNKNOWN STEP	2026-11-05T14:22:27.0210825Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Security	UNKNOWN STEP	2026-11-05T14:22:27.0644212Z Removing includeIf entries pointing to credentials config files
+Security	UNKNOWN STEP	2026-11-05T14:22:27.0663788Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Security	UNKNOWN STEP	2026-11-05T14:22:27.0735877Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Security	UNKNOWN STEP	2026-11-05T14:22:27.1189217Z Cleaning up orphan processes
