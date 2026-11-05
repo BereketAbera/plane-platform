@@ -86,7 +86,7 @@ So production approval here is a process, not a control:
   `scripts/install-tools.sh`, so a job that cannot fetch one fails before any of its checks. On 2026-11-05 GitHub answered 504 for one release
   asset and then another, on and off: Manifests lost three attempts at `76e98ee`, and Lint lost a run at `7cde05a`, while GitHub's status page read
   All Systems Operational. `6edde64` lengthens the retries and keeps each job's tools in the Actions cache, keyed on `tools.lock`. Run 42048656380 at
-  that commit passed all three jobs and saved those caches, and no run has restored one yet. A longer retry does not help a 504 that lasts longer than
+  that commit passed all three jobs and saved those caches, and run 42088240603 at `d6b76c1` restored them, and all three jobs passed. A longer retry does not help a 504 that lasts longer than
   that, and a new `tools.lock` starts with no cache. [The evidence](../../docs/evidence/ci/README.md#the-504-on-a-pinned-tool) has each run.
 - `$GITHUB_STEP_SUMMARY` output shows only on the run's page. `gh run view --json` and the check-run API do not return it.
   A scan's raw results stay on the runner, so of `images.yml`'s scan only its table in the log remains.

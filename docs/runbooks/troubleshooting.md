@@ -270,6 +270,14 @@ kubectl get apiservice v1beta1.metrics.k8s.io
 
 Terraform here creates namespaces and labels, quotas, the CoreDNS rewrite, the Argo CD release, projects and the root Application. It does **not** create the cluster, which is the kind CLI, or the workloads, which are Argo CD. See [Terraform](../terraform.md).
 
+## After the Mac has slept
+
+**Why.** The kind node runs in Docker Desktop's VM, so a closed lid pauses everything, and everything catches up at once on wake. A keep-awake setting stops idle sleep and not a closed lid. On 2026-11-05 the Mac woke for under two minutes every 16 minutes with its lid closed, too short for the node to settle ([record](../evidence/runs/host-sleep-20261105T202039Z.txt)).
+
+**What it looks like.** Failed probes, system containers restarting, Applications reading `Unknown` for a time, holes in Prometheus's data, and slow `kubectl`. Anything running on this machine stops with it, so a long run takes hours longer than its figure in these docs.
+
+**What to do.** Wait for the load to fall, which took about 10 minutes with the lid open. Then read `make status` and run `make test`. Keep the lid open and the charger in for a long run.
+
 ## Still stuck
 
 Gather this before asking:
