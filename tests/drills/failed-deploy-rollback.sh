@@ -63,11 +63,6 @@ ALERTS_REPORTED=no
 RECORDER=""
 PROMOTED_AT=""
 
-# A hard refresh, because a normal one can still read the old main from the repo server's cache of refs, for up
-# to 120s, and then nothing looks again until the next resync, measured 120s to 289s apart. That and the hook
-# could use up stage 2's 300s, and would shift every time this drill is meant to show.
-refresh_hard() { kc -n argocd annotate application "$1" argocd.argoproj.io/refresh=hard --overwrite >/dev/null; }
-
 at() { # A time to read the alerts against
   printf 'AT    %s%s  %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${PROMOTED_AT:+ +$((SECONDS - PROMOTED_AT))s}" "$*"
 }
@@ -189,7 +184,7 @@ restore() {
     stage "Restore (exit trap)"
     # It also publishes a revert an earlier attempt committed and could not publish, and reverts nothing else.
     if "$ROOT/scripts/rollback.sh" dev; then
-      refresh_hard "$APP" || true
+      refresh_app "$APP" || true
       pass "bad promotion reverted by the trap. This did not wait for $APP to recover"
     else
       fail "automatic restore failed. Run scripts/rollback.sh dev and check Application $APP"
@@ -253,7 +248,7 @@ deployment_has_bad_image() {
   image="$(kc -n "$NS" get deployment "$DEPLOYMENT" -o jsonpath='{.spec.template.spec.containers[0].image}')" || return 1
   [[ "$image" == *"$BAD_DIGEST"* ]]
 }
-refresh_hard "$APP"
+refresh_app "$APP"
 if poll 300 deployment_has_bad_image; then
   at "Deployment asks for the bad digest"
   pass "Deployment now asks for the bad digest"
@@ -334,7 +329,7 @@ fi
 
 deployment_has_old_image() { [[ "$(kc -n "$NS" get deployment "$DEPLOYMENT" -o jsonpath='{.spec.template.spec.containers[0].image}')" == "$OLD_IMAGE" ]]; }
 app_recovered() { app_is "$APP" Synced Healthy; }
-refresh_hard "$APP"
+refresh_app "$APP"
 if poll 300 deployment_has_old_image; then
   at "Deployment is back on the old image"
   pass "Deployment is back on $OLD_IMAGE"
