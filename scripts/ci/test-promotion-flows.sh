@@ -437,6 +437,45 @@ rollback_prod_sim_skip_backup() {
   expect "no dump at all" [ ! -e "$STUB/backup-calls" ]
   expect "it says so" said "no dump taken before this rollback"
 }
+rollback_prod_sim_past_a_later_change_beside_the_image() {
+  # The revert conflicts in the rendered file only, which render replaces. This is the emergency path.
+  local status=0
+  promote_prod_sim_committed
+  sed -i.bak 's/imagePullPolicy, value: IfNotPresent/imagePullPolicy, value: Never/' "$CLONE/helm/plane/components/hardening/kustomization.yaml"
+  rm -f "$CLONE/helm/plane/components/hardening/kustomization.yaml.bak"
+  commit_a_change_to_helm 'a later change beside the image line'
+  in_clone ./scripts/gitops-publish.sh || status=$?
+  expect "the setup works" [ "$status" -eq 0 ]
+  rollback prod-sim || status=$?
+  expect "the rollback works" [ "$status" -eq 0 ]
+  expect "it says why it went on" said "conflicts only in $PROD_SIM_RENDERED"
+  expect "one revert" equal "$(reverts_on_main)" 1
+  expect "prod-sim's image is back" not_equal_digest "$DIGEST_A"
+  expect "and the render says so" equal "$(grep -c "@$DIGEST_A" "$CLONE/$PROD_SIM_RENDERED")" 0
+  expect "the later change stays" grep -q 'imagePullPolicy: Never' "$CLONE/$PROD_SIM_RENDERED"
+  expect "no conflict markers" equal "$(grep -c '^<<<<<<<' "$CLONE/$PROD_SIM_RENDERED")" 0
+  expect "nothing left of the conflict in the message" equal "$(git -C "$CLONE" log -1 --format=%B | grep -c '^#')" 0
+  expect "the revert commit says so" grep -q '^Promote-Dev-Check: not run' <(git -C "$CLONE" log -1 --format=%B)
+  expect "nothing left in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  expect "clean" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+  expect "published" equal "$(published)" "$(head_commit)"
+  in_clone ./scripts/render.sh --check || status=$?
+  expect "the render is current" [ "$status" -eq 0 ]
+}
+rollback_stops_on_a_conflict_in_the_overlay() {
+  local status=0 before
+  promote_prod_sim_committed
+  set_image prod-sim artifacts.plane.so/makeplane/plane-frontend "docker.io/fixture/plane-frontend:v0@$DIGEST_B"
+  commit_a_change_to_helm 'a digest changed by hand, so not a promotion'
+  before="$(head_commit)"
+  rollback prod-sim || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "the revert conflicts with a later change to helm/plane/overlays/prod-sim"
+  expect "git's own words are shown" said "could not revert"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "nothing left in progress" [ ! -e "$CLONE/.git/REVERT_HEAD" ]
+  expect "nothing changed" equal "$(git -C "$CLONE" status --porcelain -- helm gitops)" ""
+}
 rollback_dev_takes_no_dump() {
   local status=0
   promote_dev "$DIGEST_A" || status=$?
@@ -985,6 +1024,8 @@ scenario rollback-prod-sim-with-broken-backup rollback_prod_sim_with_broken_back
 scenario rollback-prod-sim-with-hung-backup rollback_prod_sim_with_hung_backup
 scenario rollback-prod-sim-names-the-older-dump rollback_prod_sim_names_the_older_dump
 scenario rollback-prod-sim-skip-backup rollback_prod_sim_skip_backup
+scenario rollback-prod-sim-past-a-later-change-beside-the-image rollback_prod_sim_past_a_later_change_beside_the_image
+scenario rollback-stops-on-a-conflict-in-the-overlay rollback_stops_on_a_conflict_in_the_overlay
 scenario rollback-dev-takes-no-dump rollback_dev_takes_no_dump
 scenario rollback-leaves-other-staged-files-alone rollback_leaves_other_staged_files_alone
 scenario publish-warns-when-ahead-of-origin publish_warns_when_ahead_of_origin

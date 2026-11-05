@@ -143,10 +143,16 @@ if [[ "$ENV" == prod-sim ]]; then
 fi
 
 # One commit holding the revert and any re-render, so a failure here leaves nothing behind. A later
-# commit may have changed what the overlay renders to, so the reverted file can be stale.
-if ! git revert --no-commit "$target" >/dev/null; then
-  git revert --abort || true
-  die "the revert conflicts with a later change to $OVERLAY. Nothing changed. Resolve it by hand."
+# commit may have changed what the overlay renders to, so the reverted file can be stale, or conflict
+# when that change sits beside an image line. It is generated and rendered next, so a conflict there
+# means nothing and must not hold up this path. A conflict anywhere else stops it.
+if ! revert_errors="$(git revert --no-commit "$target" 2>&1 >/dev/null)"; then
+  if [[ "$(git diff --name-only --diff-filter=U)" != "$RENDERED" ]]; then
+    printf '%s\n' "$revert_errors" >&2
+    git revert --abort || true
+    die "the revert conflicts with a later change to $OVERLAY. Nothing changed. Resolve it by hand."
+  fi
+  log "The revert conflicts only in $RENDERED, which is generated, so rendering replaces it"
 fi
 if ! "$ROOT/scripts/render.sh"; then
   git revert --abort || true
@@ -156,7 +162,8 @@ fi
 paths=("$RENDERED")
 while read -r path; do paths+=("$path"); done < <(git diff-tree --no-commit-id --name-only -r "$target")
 git add -- "${paths[@]}"
-commit_flags=(--quiet --no-edit)
+# strip, because a conflict leaves comment lines in the message git prepared.
+commit_flags=(--quiet --no-edit --cleanup=strip)
 [[ "$ENV" != prod-sim ]] || commit_flags+=(--trailer "Promote-Dev-Check: not run: $DEV_CHECK_WAIVER")
 git commit "${commit_flags[@]}" -- "${paths[@]}"
 ok "committed $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
