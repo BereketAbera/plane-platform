@@ -1,14 +1,14 @@
 # Future Hetzner environments: Terraform contracts
 
-`infrastructure/terraform/environments/dev` and `environments/prod` are placeholders. They hold a `README.md` and an `INTERFACE.md`, and no Terraform. **Nothing in them has ever run, and no Hetzner or Cloudflare resource exists.** This document states what the Pass 2 implementation must provide so the rest of the platform can use it. Every name is a proposal until Pass 2 builds it.
+`infrastructure/terraform/environments/dev` and `environments/prod` are placeholders. They hold a `README.md` and an `INTERFACE.md`, and no Terraform. **Nothing in them has ever run, and no Hetzner or Cloudflare resource exists.** The platform today is a customized Plane Community Edition deployment on one local kind node, local and production-inspired. This document states what the Pass 2 implementation must provide so the rest of the platform can use it. Every name is a proposal until Pass 2 builds it.
 
 The migration as a whole is in [`PASS2_HANDOFF.md`](../PASS2_HANDOFF.md). This file covers only root modules, state, and how to tell an implementation meets the contract. Local Terraform is described in [terraform.md](terraform.md).
 
-Written 2026-11-04, and checked against the code again on 2026-11-05. Pass 1 has since run on kind, and none of that says anything about this document's contracts, which remain unbuilt and untested. A sentence starting "Unverified:" is a provider detail from memory, or a behaviour nothing has tested, and Pass 1 cannot answer it. Check it at the start of Pass 2.
+Written 2026-11-04, and checked against the code again on 2026-11-05. Pass 1's results on kind are in [validation.md](validation.md). None of them says anything about this document's contracts, which remain unbuilt and untested. A sentence starting "Unverified:" is a provider detail from memory, or a behaviour nothing has tested, and Pass 1 cannot answer it. Check it at the start of Pass 2.
 
 ## What Terraform does today
 
-So the contract is not misread: in Pass 1, Terraform provisions no infrastructure. The kind CLI creates the cluster, and Docker Compose creates the registry, caches, and Git remote. Terraform creates namespaces, quotas, a CoreDNS rewrite, the Argo CD release, AppProjects, and the root Application inside a cluster that already exists. A separate root configures Infisical. Those two roots have applied on kind, and a later run of each reports no changes ([local](evidence/runs/argo-controller-limit-1.txt), [Infisical](evidence/runs/infisical-idempotency-3.txt)). Statements that Terraform provisions servers become true only after Pass 2 implements and runs what is below.
+So the contract is not misread: in Pass 1, Terraform provisions no infrastructure. The kind CLI creates the cluster, and Docker Compose creates the registry, caches, and Git remote. Terraform creates namespaces, quotas, a CoreDNS rewrite, the Argo CD release, AppProjects, and the root Application inside a cluster that already exists. A separate root configures Infisical. Those two roots have applied on kind, and a later run of each reports no changes ([local](evidence/runs/argo-controller-limit-1.txt), [Infisical](evidence/runs/infisical-idempotency-3.txt)). A clean install from a fresh clone, which applies both again, was still running when this was written, and its result is not recorded here. Statements that Terraform provisions servers become true only after Pass 2 implements and runs what is below.
 
 ## Layout
 
@@ -82,7 +82,7 @@ This root calls `modules/foundation` and `modules/argocd`, as `environments/loca
 |---|---|---|---|---|
 | `kubeconfig_path` | string | no | Yes | Kubernetes and Helm providers |
 | `kube_context` | string | no | Yes | Same |
-| `git_repo_url` | string | no | Yes | GitHub HTTPS URL, replacing `git://plane-git/plane-platform.git` |
+| `git_repo_url` | string | no | Yes | GitHub HTTPS URL, replacing `git://plane-git/plane-platform.git`. The repository is private today, and making it public is an open owner decision ([D10](../PASS2_HANDOFF.md#12-open-decisions)) |
 | `git_target_revision` | string | no | Yes | `main` unless the owner decides otherwise |
 | `environment` | string | no | New | Selects the one Plane namespace |
 | `base_domain` | string | no | New | Public parent domain, replacing `*.localhost` |
@@ -169,7 +169,7 @@ A larger prod is fine. A dev too small to run the same workloads would stop dev 
 
 ## Acceptance tests
 
-An implementation meets this contract when each passes, with evidence in `docs/evidence/`. None has run, and Pass 1 has nothing to run them on, because none of these roots exists. Set up each check at the start of Pass 2.
+An implementation meets this contract when each passes, with evidence in `docs/evidence/`. None has run, and Pass 1 has nothing to run them on, because none of these roots exists. Pass 1's own drills on kind do not count toward any row. Set up each check at the start of Pass 2.
 
 | # | Test | State |
 |---|---|---|
