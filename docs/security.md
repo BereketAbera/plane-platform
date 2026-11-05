@@ -2,7 +2,7 @@
 
 The security posture of a local, single-node, single-operator platform that runs Wayline, a customized Plane Community Edition v1.4.3 deployment, on kind. This is a learning and portfolio platform. Nothing here is a claim of production readiness.
 
-**Status on 2026-11-05.** This file describes configuration, and links the runs that bear on it: separation attempts between the environments ([environments.md](environments.md#what-real-attempts-showed)), the NetworkPolicy matrix, Infisical isolation, route tests, image scans, and CI ([ci evidence](evidence/ci/README.md), [security evidence](evidence/security/README.md)). A statement nothing has measured yet carries a marker. Secret rotation has not run.
+**Status on 2026-11-05.** This file describes configuration, and links the runs that bear on it: separation attempts between the environments ([environments.md](environments.md#what-real-attempts-showed)), the NetworkPolicy matrix, Infisical isolation, route tests, image scans, and CI ([ci evidence](evidence/ci/README.md), [security evidence](evidence/security/README.md)). Both environments run the images built from `84b63d9`. A statement nothing has measured yet carries a marker. A plain path under `.local/evidence-raw/` names a run that has not been published yet, and by [the evidence rules](evidence/README.md#rules) it becomes a result only once `make publish-evidence` copies it. Secret rotation has not run.
 
 ## Read this first
 
@@ -32,7 +32,7 @@ The security posture of a local, single-node, single-operator platform that runs
 | A mistake by the operator | Yes | Guards on `destroy`, `restore`, `rotate` and prod-sim promotion. Git as source of truth |
 | A secret committed to Git | Yes | gitleaks in `make ci` and CI, zero `kind: Secret` rule |
 | A malicious or hijacked CI dependency | Partly | SHA-pinned actions, no secrets in CI jobs, read-only tokens, no cluster access from CI |
-| Another device on the LAN | Yes | Host ports bind to `127.0.0.1` only. Docker reported 80 and 443 on `127.0.0.1`, and port 80 on the LAN address refused the connection ([traefik-routes-2.txt](evidence/runs/traefik-routes-2.txt)). `lsof` has not been run, and 443 and 5001 have not been tried from the LAN address. [[VERIFY: lsof on the host shows ports 80, 443 and 5001 listening on loopback only]] |
+| Another device on the LAN | Yes | Host ports bind to `127.0.0.1` only. On 2026-11-05 `lsof` read 80, 443 and 5001 listening on `127.0.0.1` and on nothing else, and all three refused a connection on the LAN address ([readings](evidence/security/README.md#host-listeners)). One reading, with `lsof` under the owner's account, taken from the Mac itself and not from another device |
 | A malicious process running as the same macOS user | **No** | It can read `.local/` and own everything. Nothing here defends against it |
 | Physical theft of the laptop | **No** | Depends on full-disk encryption, which this repository does not check |
 | A container escape to the node | **No** | The node is one container on one Docker VM, holding both environments |
@@ -123,7 +123,7 @@ Results, latest run for each source namespace, by `FROM_NS`. They predate `01ab7
 | `traefik` | 28 | 10 PASS, 18 INCONCLUSIVE, before Plane's Services existed | [netpol-20261104T210010Z.tsv](evidence/runs/netpol-20261104T210010Z.tsv) |
 | `kube-system` | 3 | NOT RUN | none |
 
-No published evidence yet shows the whole matrix in one run. One such run exists: `netpol-20261105T010838Z.tsv`, from `scripts/test.sh` at `aaf5fb1` on 2026-11-05, with 418 PASS, 0 FAIL and 0 INCONCLUSIVE from all seven namespaces, and all 292 deny rows ending in a timeout. It is still in `.local/evidence-raw/`, so it does not count as a result here yet. [[VERIFY: make test-netpol passes every allow and deny row on the running platform]] This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
+The whole matrix in one run, all seven namespaces, read 418 PASS, 0 FAIL and 0 INCONCLUSIVE at 2026-11-05T01:08Z and again at 04:19Z, with all 126 allow rows connecting and all 292 deny rows ending in a timeout (`.local/evidence-raw/netpol-20261105T010838Z.tsv`, `.local/evidence-raw/netpol-20261105T041921Z.tsv`, with its log `.local/evidence-raw/harness-make-test-netpol-4.txt`, unpublished). The final images were promoted after those runs, and neither the policies nor the matrix have changed since. A deny PASS is a timeout while both references answered, so it cannot rule out loss only on that pod's path to that target. This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
 
 ### kindnet limits
 
@@ -202,7 +202,7 @@ A cross-project read returns 403. On 2026-11-04 each reader got 403 on the other
 
 Pulls go through pull-through caches declared in `infrastructure/kind/containerd-certs.d/`. A digest makes the mirror safe to trust for content. It does not make the content safe.
 
-Contract section 5 specifies branded images at `localhost:5001/wayline/*`. The dev overlay has referenced web, admin, space and backend there by digest since promotion `4f622e3` on 2026-11-05, and the prod-sim overlay since `0af8956`, with the same digests. `live` stays upstream's in both.
+Contract section 5 specifies branded images at `localhost:5001/wayline/*`. Both overlays reference web, admin, space and backend there by digest, with the same digests: the images built from `84b63d9`, in dev since `29316f2` and in prod-sim since `9c8e098`. `live` stays upstream's in both.
 
 The local registry has no authentication and listens on `127.0.0.1:5001`. Anyone local can push a new tag. Pods reference digests, so a new tag changes nothing already pinned.
 
@@ -216,15 +216,18 @@ What `scripts/ci/security.sh` runs in CI and in `make ci`:
 | `trivy config` | Kubernetes, Terraform and Dockerfile misconfiguration in the repo. HIGH and CRITICAL fail |
 | `trivy fs --scanners vuln,secret` | Lockfiles and secrets in the repo. It found none of the application's lockfiles, because that source lands in `.build`, which it skips |
 
-Images are scanned by `scripts/ci/scan-images.sh`, through `make scan-images`, which is not part of `make ci`. It reads every image the platform runs from its registry for arm64, plus the Wayline builds and their source lockfiles. It fails only on a CRITICAL finding with a fix in an image built here, or on an image it could not scan, and reports the rest. `images.yml` has a step that runs it on what was just pushed, and that step has never run.
+Images are scanned by `scripts/ci/scan-images.sh`, through `make scan-images`, which is not part of `make ci`. It reads every image the platform runs from its registry for arm64, plus the Wayline builds and their source lockfiles. It fails only on a CRITICAL finding with a fix in an image built here, or on an image it could not scan, and reports the rest. `images.yml` has a step that runs it on what was just pushed. That step has run once, on a real runner.
 
 | Run | Scope | Result |
 |---|---|---|
 | [`scan-images-20261104T215437Z`](evidence/security/README.md) | 36 of 36 targets, the complete run | FAIL on the policy: 5 CRITICAL with a fix, in `wayline/backend` and `wayline/space`, all inherited from upstream's images. 26 CRITICAL, 600 HIGH, 837 MEDIUM across all targets |
 | [`scan-images-20261104T235800Z`](evidence/security/README.md) | The 5 targets built here, from `1563cbf` | PASS, exit 0: no image we build has a CRITICAL with a fix. `wayline/backend` 4 HIGH, `wayline/space` 30 HIGH. The source lockfile row still lists 1 CRITICAL, proxy-addr 2.0.7, which no bundle ships |
-| [`scan-images-20261105T020423Z`](evidence/security/scan-images-20261105T020423Z/README.md) | The same 5 targets, from `ec45e21`, the build both environments run | PASS, exit 0, with the same findings: none added and none gone |
+| [`scan-images-20261105T020423Z`](evidence/security/scan-images-20261105T020423Z/README.md) | The same 5 targets, from `ec45e21` | PASS, exit 0, with the same findings: none added and none gone |
+| [`scan-images-20261105T025857Z`](evidence/security/scan-images-20261105T025857Z/README.md) | The same 5 targets, from `b2ba587` | PASS, exit 0, with the same findings |
+| [`scan-images-20261105T052024Z`](evidence/security/scan-images-20261105T052024Z/README.md) | The same 5 targets, from `84b63d9`, the build both environments run | PASS, exit 0, with the same findings, on the same database as the run before |
+| Step `Scan what was just pushed`, [run 41975430939](evidence/ci/README.md) | The 4 images on GHCR, from `9c8e098`, which are not the digests deployed | Exit 0 on a real runner. Only the table in the log remains, because the raw results stayed on the runner |
 
-The two later runs did not scan upstream's images again. In the complete run these had a CRITICAL with a fix, reported only: postgres 15.19 and 16.15, rabbitmq 3.13.7, plane-backend, plane-live, plane-space, and argocd v3.5.7. Of the three from Plane, only plane-live still runs here. Infisical's image had 5 CRITICAL with no fix. `redis:7.2.17-alpine` is on an end-of-life Alpine, where trivy warns that its OS findings may be incomplete. RabbitMQ 3.13 is an end-of-life series, kept because Celery attaches 0 consumers on 4.3 (upstream chart PR 304).
+None of the later runs scanned upstream's images again. In the complete run these had a CRITICAL with a fix, reported only: postgres 15.19 and 16.15, rabbitmq 3.13.7, plane-backend, plane-live, plane-space, and argocd v3.5.7. Of the three from Plane, only plane-live still runs here, and the other two stay build inputs. A reading of five tags, postgres 15.19, valkey, rabbitmq 3.13.7, silo and argocd v3.5.7, found no newer digest under any (`.local/evidence-raw/image-pins-h50-1.txt`, unpublished). Infisical's image had 5 CRITICAL with no fix. `redis:7.2.17-alpine` is on an end-of-life Alpine, where trivy warns that its OS findings may be incomplete. RabbitMQ 3.13 is an end-of-life series, kept because Celery attaches 0 consumers on 4.3 (upstream chart PR 304).
 
 What this does not cover: local services outside the cluster manifests (the registry, `plane-git`, the kind node), and old package bytes left in the `FROM` layers of `wayline/space`, the backend having none since it was flattened. The zeros for web and admin cover OS packages only, because their clients are bundles with no package metadata. A finding means a version is listed as affected, and nobody has checked whether any of them can be reached here. `scripts/ci/build-images.sh` sets `--provenance=false --sbom=false`, so built images carry no SBOM or provenance. [The README](evidence/security/README.md) has the detail.
 
@@ -232,7 +235,7 @@ Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`,
 
 `.trivyignore` holds one accepted finding with an expiry, so it gets reviewed.
 
-`make ci` exited 0 in a clean clone of `6fc3708` on 2026-11-04 ([log](evidence/ci/ci-2-20261104T225907Z-make-ci.log), [exit code](evidence/ci/ci-2-20261104T225907Z-make-ci.rc)), and 33 of 33 planted defects were caught at `283b51a` ([negative controls](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). Commits are still landing, so the run at the final commit is still to come. [[VERIFY: make ci passes at the final commit, and its output is saved to docs/evidence/]]
+`make ci` exited 0 in clean clones from GitHub of `9c8e098` and `0dde813` on 2026-11-05, each with 132 stubbed scenarios ([log](evidence/ci/ci-2-20261105T061644Z-make-ci.log), [exit code](evidence/ci/ci-2-20261105T061644Z-make-ci.rc)). 33 of 33 planted defects were caught at `283b51a` ([negative controls](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). Commits are still landing, so the run at the final commit is still to come. [[VERIFY: make ci passes at the final commit, and its output is saved to docs/evidence/]]
 
 ## CI hardening
 
@@ -252,11 +255,11 @@ Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`,
 
 On GitHub, recorded in [docs/evidence/ci/](evidence/ci/README.md) with run URLs:
 
-| Workflow | Result on 2026-11-04 | What it does not show |
+| Workflow | Result | What it does not show |
 |---|---|---|
-| `ci.yml` | PASS on 4 pushes, f733b87 to 5fdf41d. One run with a planted `kind: Secret` went red, and 21 of 21 planted defects were caught on a real runner | Never on `on: pull_request`. Nothing after `da7a4c9` has reached GitHub, so promtool, the new policy rules, the dev check, the Wayline pipeline and the scan have run only on this Mac |
-| `images.yml` | One run, success, **building nothing**, because `apps/wayline/images.txt` was not on main | NOT RUN as a build: no image pushed, no digest, no scan, no bump pull request |
-| `promote-prod-sim.yml` | Refused an invented digest. BLOCKED at opening a pull request, because the repository setting that lets workflows do that is off | No promotion pull request has been opened, merged or published |
+| `ci.yml` | PASS on every push, most recently at `9c8e098` and `0dde813` on 2026-11-05. One run with a planted `kind: Secret` went red, and 21 of 21 planted defects were caught on a real runner | No job on `on: pull_request`: GitHub holds the run for a pull request a workflow opens, with no jobs, and nobody has approved one. A commit after `0dde813` is covered by no run |
+| `images.yml` | Run 41975430939 at `9c8e098`, on `ubuntu-24.04-arm`: four images built, walked clean in a throwaway registry and again on GHCR, scanned with exit 0, and published as four private packages. It opened pull request 1, which stays open and unmerged. An earlier run, 41903137226, succeeded building nothing | With no credentials all four packages answer 401, and the API that states a package's visibility was not read, because the local token lacks `read:packages`. `Build only` on a pull request has not run, the prune deleted nothing, and nothing has copied those digests to the local registry. They are not the digests deployed |
+| `promote-prod-sim.yml` | Refused an invented digest and another image's digest (runs 41976950402, 41977025314). With the repository setting on since 2026-11-05, run 41977114312 opened pull request 2, closed unmerged as a test | No promotion pull request has been reviewed, merged or published. The real prod-sim promotions ran with `make promote` on this Mac |
 | `wayline-upstream-check.yml` | NOT RUN | |
 
 ## GitHub Free limits
@@ -268,7 +271,8 @@ The repository is private on the GitHub Free plan. On that plan GitHub provides 
 - `promote-prod-sim.yml` opens a pull request. A person merging it is the approval.
 - GitHub cannot enforce that. Anyone with write access can merge their own pull request, push straight to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, by GitHub's documentation, so it does not even request a review. That has not been tried on a pull request.
 - A failing check does not block a merge.
-- A pull request opened with `GITHUB_TOKEN` does not trigger `on: pull_request`, so those workflows run validation themselves before opening it.
+- A pull request opened with `GITHUB_TOKEN` runs no CI of its own: GitHub holds the `ci` run with no jobs, as `action_required` ([record](evidence/ci/ci-1-20261105T060416Z-pull-request-runs.txt)). So those workflows run validation themselves before opening it.
+- Check suites from two third-party GitHub Apps, `netlify` and `builder-io-integration`, sit queued on pushed commits. As GitHub describes those Apps, netlify can have `contents` read, and Builder.io `contents`, `administration` and `workflows` write. What each installation really covers was not read, because the token gets 403 on installations ([record](evidence/ci/br-3-20261105T060937Z-apps.txt)). So nothing shows that only the owner can read this repository.
 
 What is enforced lives in scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim digest never recorded for dev under that image, and `scripts/lib/dev-check.sh` refuses one `plane-dev` is not running, Synced and Healthy. `make gitops-publish` warns about commits that are not on `origin/main`, and goes on. Someone with shell access can bypass a script too. A script is a safeguard against mistakes, not a security boundary.
 
@@ -289,7 +293,7 @@ Plainly, so nobody assumes otherwise.
 | Registry | No authentication on `127.0.0.1:5001` |
 | Audit | Infisical stores no audit logs on this tier. Kubernetes audit logging is not configured |
 | Runtime detection | No Falco or equivalent. No admission control beyond PSA |
-| Image content | A CVE scan runs by hand and fails only on what is built here. Upstream images keep the findings above. No signature check, no SBOM |
+| Image content | A CVE scan runs by hand and in `images.yml`, and fails only on what is built here. Upstream images keep the findings above. No signature check, no SBOM |
 | Tenant isolation | One kernel, one node, one etcd. See [Read this first](#read-this-first) |
 | Availability | One node, one replica of everything. See [disaster-recovery.md](disaster-recovery.md) |
 | Postgres least privilege | One shared superuser role per environment. The exporter connects with it too |
