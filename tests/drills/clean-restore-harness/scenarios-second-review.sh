@@ -503,7 +503,9 @@ R6() {
   : > "$H/state/calls.log"
   run scripts/backup.sh prod-sim
   check "a backup of what it has not finished: refuses (got $RC)" test "$RC" -ne 0
-  check "and says why" out_has "it has not finished prod-sim, which is empty or partly restored"
+  check "and says why, without claiming to have looked" out_has "This has not looked at what prod-sim holds"
+  check "and does not call it empty or partly restored as a fact" no_out "which is empty or partly restored"
+  check "and does not send a person to SKIP_BACKUP without saying what it loses" out_has "with SKIP_BACKUP=yes it deletes what is there with no backup"
   check "and the way past it" out_has "ALLOW_BACKUP_DURING_RESTORE=yes"
   check "and no Job ran" no_log 'kc apply Job plane-backup'
   run scripts/backup.sh dev
@@ -512,11 +514,6 @@ R6() {
   run scripts/backup.sh all
   check "make backup ENV=all: refuses for the part it cannot do (got $RC)" test "$RC" -ne 0
   check "make backup ENV=all: and prod-sim has no new backup" test "$(ls "$H/.local/backups/prod-sim" | wc -l | tr -d ' ')" -eq "$before_count"
-  : > "$H/state/calls.log"
-  run env CONFIRM=yes scripts/destroy.sh
-  check "make destroy without SKIP_BACKUP: refuses, and deletes nothing (got $RC)" test "$RC" -ne 0
-  check "make destroy without SKIP_BACKUP: says how" out_has "Use SKIP_BACKUP=yes to override"
-  check "make destroy without SKIP_BACKUP: no delete" no_log 'kind delete cluster'
   /bin/sleep 1
   run env ALLOW_BACKUP_DURING_RESTORE=yes scripts/backup.sh prod-sim
   check "the override goes ahead (got $RC)" test "$RC" -eq 0
@@ -1531,4 +1528,52 @@ V1() {
   check "the drill through a tee, Ctrl-C: no Job is left running" test "$(jobs_running_now)" = 0
   check "the drill through a tee, Ctrl-C: its evidence has the RESULT line" grep -F "RESULT FAIL" "$(ls -t "$H"/.local/evidence-raw/drill-clean-restore-*.log | head -1)"
   check "the drill through a tee, Ctrl-C: and how to go on" grep -F "make restore-clean BACKUP=" "$(ls -t "$H"/.local/evidence-raw/drill-clean-restore-*.log | head -1)"
+}
+
+V2() {
+  scenario "V2. make destroy under a kept marker backs up first, and a person is not sent past that backup"
+  reset
+  take_backups
+  lose_cluster
+  # prod-sim's Job fails, so the marker has no line about its data, and then something writes there.
+  printf '[["plane-restore-2","plane-prod-sim"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  check "fixture: prod-sim is not finished" test -z "$(grep -x 'done prod-sim' "$H/.local/restore-clean.state" || true)"
+  cluster_holds plane-prod-sim 500 777
+  local before
+  before="$(ls "$H/.local/backups/prod-sim" | wc -l | tr -d ' ')"
+  /bin/sleep 1
+  : > "$H/state/calls.log"
+  run env CONFIRM=yes scripts/destroy.sh
+  check "make destroy, with prod-sim holding 500 users: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "it says it goes past the refusal" out_has "Backing it up anyway, because ALLOW_BACKUP_DURING_RESTORE=yes"
+  check "a backup of prod-sim comes first" order 'kc apply Job plane-backup ns=plane-prod-sim' 'kind delete cluster'
+  check "and there is one more backup of it" test "$(ls "$H/.local/backups/prod-sim" | wc -l | tr -d ' ')" -gt "$before"
+  check "and of everything else" order 'kc apply Job plane-backup ns=infisical' 'kc apply Job plane-backup ns=plane-dev' 'kind delete cluster'
+
+  # A backup that fails still stops the delete, and now says what going past it loses.
+  reset
+  take_backups
+  write_marker infisical
+  printf '[["plane-backup","plane-dev"]]' > "$H/state/fail-jobs.json"
+  : > "$H/state/calls.log"
+  run env CONFIRM=yes scripts/destroy.sh
+  check "a backup that fails: refuses (got $RC)" test "$RC" -ne 0
+  check "a backup that fails: deletes nothing" no_log 'kind delete cluster'
+  check "a backup that fails: says what SKIP_BACKUP=yes loses" out_has "SKIP_BACKUP=yes deletes it with no backup, and what it holds since the last backup is then gone"
+
+  # A plain backup of what it has not finished is still refused, and goes ahead once the data has come back.
+  reset
+  take_backups
+  write_marker infisical
+  : > "$H/state/calls.log"
+  run scripts/backup.sh prod-sim
+  check "a plain backup under a marker: refuses (got $RC)" test "$RC" -ne 0
+  check "a plain backup under a marker: no Job" no_log 'kc apply Job plane-backup'
+  printf 'data-back prod-sim\n' >> "$H/.local/restore-clean.state"
+  run scripts/backup.sh prod-sim
+  check "with its data back: goes ahead (got $RC)" test "$RC" -eq 0
+  check "with its data back: says so" out_has "the data of prod-sim has come back, so this backup goes ahead"
 }
