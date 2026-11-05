@@ -171,7 +171,7 @@ case "$initialized" in
     ia_ensure_admin "$(jq -r '.organization.id // empty' "$MACHINE_FILE" 2>/dev/null || true)" || ensure_rc=$?
     if [[ "$ensure_rc" -ne 0 ]]; then
       ia_print_sign_in_steps "scripts/infisical-bootstrap.sh"
-      die "Infisical is initialized, and bootstrap works only once, so $(ia_admin_problem) has to be fixed by signing in."
+      die "Infisical is initialized, bootstrap works only once, and nothing here could replace the admin token. $(ia_admin_problem)."
     fi
     ok "Infisical already bootstrapped"
     ;;

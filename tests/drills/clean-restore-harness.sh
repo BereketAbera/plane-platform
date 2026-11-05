@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Scenario tests for make restore-clean, make restore, make backup, make destroy and the clean-restore drill.
 #
-#   make drill-clean-restore-harness             all of it, in about 5 minutes
+#   make drill-clean-restore-harness             all of it
 #   make drill-clean-restore-harness ONLY="S1 S20"
 #   HARNESS_SOURCE=<another checkout> tests/drills/clean-restore-harness.sh
 #                                                the same scenarios against other code, to see them fail
+#
+# macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. It takes about 15 minutes, in the background.
 #
 # WHAT IT DOES. Each scenario copies the real scripts into a throwaway tree under $TMPDIR and runs them there:
 # restore.sh, backup.sh, destroy.sh, up.sh, cluster-up.sh, secret-zero.sh, infisical-bootstrap.sh,
@@ -1478,6 +1480,7 @@ S35() {
   check "in place: refuses" test "$RC" -ne 0
   check "in place: says why" out_has "this backup is from Infisical v0.999.0"
   check "in place: before anything stopped" no_log 'kc scale|kc patch application infisical'
+  check "in place: and says nothing was changed" out_has "refused, as said above. Nothing was changed"
   : > "$H/state/calls.log"
   run scripts/restore.sh infisical latest CONFIRM=yes ALLOW_NEWER_INFISICAL_BACKUP=yes
   check "in place: the override goes on" log_has 'kc apply Job plane-restore ns=infisical'
