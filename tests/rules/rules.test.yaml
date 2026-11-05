@@ -217,7 +217,7 @@ tests:
     alert_rule_test:
       - eval_time: 3h
         alertname: KindnetSkippedNetworkPolicies
-        exp_alerts: &kindnet-both
+        exp_alerts:
           - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
             exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
           - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-old, severity: critical, component: network }
