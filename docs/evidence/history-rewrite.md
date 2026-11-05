@@ -31,8 +31,8 @@ It still worked. Read at 13:55:43Z from this machine, `GET /api/users/me/` on `p
 ## What it leaves
 
 - GitHub never held the value. `origin/main` read `0dde813` until the push after this rewrite.
-- The old commits stay as unreachable objects in this machine's own Git stores, here and in the bare repository, until Git expires them. No push sends them.
-- `scripts/gitops-publish.sh` refuses a non-fast-forward on purpose, so that Argo CD never follows a rewrite with no record of it. This page is that record. The bare repository was moved once by hand, with `git push --force`, and `.local/publishes.log` was put through the same map, so `make rollback` still finds each publish.
+- The old commits stay as unreachable objects in this checkout's own Git store until Git expires them. No push sends them.
+- `scripts/gitops-publish.sh` refuses a non-fast-forward on purpose, so that Argo CD never follows a rewrite with no record of it. This page is that record. The bare repository also refuses it on its own, through `receive.denyNonFastForwards`. So it was rebuilt the way that script names for this: moved aside, then `make gitops-publish` from the rewritten `main`. `.local/publishes.log` was put through the same map, so `make rollback` still finds each publish.
 - Raw evidence was not edited. A commit id inside a file under `runs/`, or in a commit message, is the id at the time, so read it through the map below. Prose under `docs/`, `README.md` and `PASS2_HANDOFF.md` was moved to the new ids.
 
 ## Map of old ids to new ids
