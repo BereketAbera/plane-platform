@@ -11,7 +11,7 @@ NODE=plane-platform-control-plane
 
 ## Why this is different from a normal cluster
 
-Three traps were found by reading kind and Docker Desktop sources (critique section 5). Each breaks a normal assumption.
+Three traps were found by reading kind's source and Docker's docs, in the build's research notes, which are not in this repository. Each breaks a normal assumption.
 
 | Trap | What happens | Consequence |
 |---|---|---|
@@ -69,13 +69,15 @@ Local services, kept in named volumes outside the cluster:
 docker system df -v | grep plane-platform-local
 ```
 
-Budget, for comparing what you see. Both figures are estimates from critique section 5, made before anything was deployed. Workload images on the node come to about 8.56 GiB unpacked, derived from each gzip layer's size trailer in the registry. Total host growth of 16.7 to 22 GiB adds planning figures for volumes and logs. [Resource utilization](../resource-utilization.md#disk) adds the caches.
+Budget, for comparing what you see. Both figures are estimates from the build's research notes, which are not in this repository, made before anything was deployed. Workload images on the node come to about 8.56 GiB unpacked, derived from each gzip layer's size trailer in the registry. Total host growth of 16.7 to 22 GiB adds planning figures for volumes and logs. [Resource utilization](../resource-utilization.md#disk) adds the caches.
 
-Read on the running platform on 2026-11-05 at 02:01Z, with both environments up: the node's `/var` volume 12.94 GiB by `du`, of which images 10.51 and volumes 1.53, local services' volumes 3.62 GiB and the node image 1.19 GiB, so about 17.75 GiB for this platform. `Docker.raw` allocated 42.18 GiB, which holds whatever else is on this host's Docker too ([dr-disk-1.txt](../evidence/runs/dr-disk-1.txt)). That comes from a platform that has been running and promoted several times, not from a first install on an empty disk, so it does not answer the line below. Read again on 2026-11-05 at 07:44Z, just after the load test: `Docker.raw` allocated 39.59 GiB and the host had 17.67 GiB free ([LOAD-3-20261105T074440Z-host.txt](../evidence/runs/LOAD-3-20261105T074440Z-host.txt)). Across `make test-load ENV=dev`, with prod-sim rotated and restored in the same minutes, the VM's `/var` moved by about 60 MiB ([results.json](../evidence/runs/load-20261105T073241Z/results.json)).
+Read on the running platform on 2026-11-05 at 02:01Z, with both environments up: the node's `/var` volume 12.94 GiB by `du`, of which images 10.51 and volumes 1.53, local services' volumes 3.62 GiB and the node image 1.19 GiB, so about 17.75 GiB for this platform. `Docker.raw` allocated 42.18 GiB, which holds whatever else is on this host's Docker too ([dr-disk-1.txt](../evidence/runs/dr-disk-1.txt)). That comes from a platform that has been running and promoted several times, not from a first install on an empty disk, so it does not answer the marker below. Read again on 2026-11-05 at 07:44Z, just after the load test: `Docker.raw` allocated 39.59 GiB and the host had 17.67 GiB free ([LOAD-3-20261105T074440Z-host.txt](../evidence/runs/LOAD-3-20261105T074440Z-host.txt)). Across `make test-load ENV=dev`, with prod-sim rotated and restored in the same minutes, the VM's `/var` moved by about 60 MiB ([results.json](../evidence/runs/load-20261105T073241Z/results.json)).
 
-`make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` is in progress as this is written, and only it can answer the two markers left on this page. Its result is not yet recorded.
+Host free space across the first clean install, inside `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` on 2026-11-05: 31 GiB free at 07:50:41Z before `make setup`, and 19 GiB at 08:06:41Z after `make up`, so about 12 GiB went, with whatever else ran on the host in those 16 minutes included. Those are warm mirrors: that run kept the local registry and the pull-through caches, so nothing was pulled from the internet, and this is not a cold install's figure. The evidence is not yet published (`.local/evidence-raw/clean-install-20261105T075041Z/`).
 
-[[MEASURE: actual Docker.raw growth and host free space after a first full install]]
+That drill and `tests/drills/clean-install.sh` read host free space only, and no script reads `Docker.raw`, so they cannot answer the two markers left on this page. Those need `ls -klsh` by hand, around a later install and delete, as row TEAR-5 does for the delete.
+
+[[MEASURE: Docker.raw allocated size before and after a first full install]]
 
 ## Fix
 
@@ -89,7 +91,7 @@ make backup ENV=dev KEEP=1
 
 Remove by hand only with a newer good backup in place.
 
-**2. Old images on the node.** Nothing removes them automatically. Each Plane version bump can leave up to about 2.2 GiB, an estimate from the unpacked size of the five Plane images (critique section 5). This removes images no running container uses:
+**2. Old images on the node.** Nothing removes them automatically. Each Plane version bump can leave up to about 2.2 GiB, an estimate from the unpacked size of the five Plane images, in the same research notes. This removes images no running container uses:
 
 ```bash
 docker exec "$NODE" crictl rmi --prune
@@ -122,7 +124,7 @@ docker run --privileged --pid=host docker/desktop-reclaim-space
 
 It runs a privileged container from Docker Hub, so read what it does first. Its effect on this host was not tested in Pass 1.
 
-**6. Delete the cluster.** See [Clean rebuild](clean-rebuild.md). Whether `kind delete cluster` alone shrinks `Docker.raw` here is unresolved, so measure it. [[VERIFY: Docker.raw allocated size before and after kind delete cluster]]
+**6. Delete the cluster.** See [Clean rebuild](clean-rebuild.md). Host free space does come back. In `make drill-clean-restore` on 2026-11-05 it went from 17.5 to 31.6 GiB across the first delete, which the script read as 14.1 GiB back. After the second delete it read 19 GiB at 08:10:16Z, and 26.8 GiB at the next plan. The local services and their volumes stayed both times. That evidence is not yet published (`.local/evidence-raw/drill-clean-restore-20261105T074859Z.log`). Neither delete had a `Docker.raw` reading, so whether `kind delete cluster` alone shrinks that file's allocated size here is unresolved, so measure it. [[VERIFY: Docker.raw allocated size before and after kind delete cluster]]
 
 ## Confirm
 
