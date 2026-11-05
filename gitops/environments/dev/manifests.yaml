@@ -794,7 +794,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
+      - image: localhost:5001/wayline/web@sha256:0000000000000000000000000000000000000000000000000000000000000000
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
