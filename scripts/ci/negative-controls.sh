@@ -96,11 +96,26 @@ plant_ui_route_under_host_regexp() {
 plant_tcp_route_to_a_ui() {
   printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRouteTCP\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  entryPoints: [web]\n  routes:\n    - match: HostSNI(`*`)\n      services:\n        - { name: kps-prometheus, port: 9090 }\n' >gitops/platform/network-policies/planted.yaml
 }
+# Argo CD fills in its Application's destination for a blank namespace, and that can be beside a UI.
+plant_route_with_a_blank_namespace() {
+  printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: planted\n  namespace: ""\nspec:\n  entryPoints: [web]\n  routes:\n    - match: Host(`logs.localhost`)\n      kind: Rule\n      services:\n        - { name: loki, port: 3100 }\n' >gitops/platform/network-policies/planted.yaml
+}
+# Argo CD applies what is inside these and drops the outer document, and conftest reads only the outer one.
+plant_ui_route_in_a_list() {
+  printf 'apiVersion: v1\nkind: List\nitems:\n  - apiVersion: traefik.io/v1alpha1\n    kind: IngressRoute\n    metadata:\n      name: planted\n      namespace: monitoring\n    spec:\n      entryPoints: [web]\n      routes:\n        - match: Host(`prometheus.localhost`)\n          kind: Rule\n          services:\n            - { name: kps-prometheus, port: 9090 }\n' >gitops/platform/network-policies/planted.yaml
+}
+plant_ui_route_in_items_of_a_good_route() {
+  printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  entryPoints: [web]\n  routes:\n    - match: Host(`prometheus.localhost`)\n      kind: Rule\n      middlewares:\n        - name: node-network-only\n      services:\n        - { name: kps-prometheus, port: 9090 }\nitems:\n  - apiVersion: traefik.io/v1alpha1\n    kind: IngressRoute\n    metadata:\n      name: planted-inside\n      namespace: monitoring\n    spec:\n      entryPoints: [web]\n      routes:\n        - match: Host(`prometheus.localhost`)\n          kind: Rule\n          services:\n            - { name: kps-prometheus, port: 9090 }\n' >gitops/platform/network-policies/planted.yaml
+}
 plant_allow_list_opened() { replace_first gitops/bootstrap/argocd-route/ingressroute.yaml '172\.16\.0\.0/12' '0.0.0.0/0'; }
 plant_thanos_base_image_without_digest() { yq -i '.prometheus.prometheusSpec.thanos.baseImage = "quay.io/thanos/thanos"' helm/values/kube-prometheus-stack.yaml; }
 # The expression before this one read nearly 2 on one restart, at an offset the 30s tests did not reach.
 plant_pod_restarting_that_extrapolates() {
   python3 -B -c 'import re; p="monitoring/manifests/shared/rules-platform.yaml"; s=open(p).read(); t,c=re.subn(r"(alert: PodRestarting\n\s+)expr: \|\n\s+max_over_time\(([^\n]*)\[15m\]\)\n[^\n]*\n\s+>= 2\n", r"\1expr: increase(\2[15m]) > 1.5\n", s); assert c==1; open(p,"w").write(t)'
+}
+# It states its namespaces on both sides, and the two sides match on labels, so one side narrowed loses those with no error.
+plant_pod_restarting_with_one_side_narrowed() {
+  replace_first monitoring/manifests/shared/rules-platform.yaml '(- min_over_time\(kube_pod_container_status_restarts_total\{namespace=~")[^"]*' '\1plane-.*|monitoring'
 }
 plant_invalid_alert_expression() {
   replace_first monitoring/manifests/shared/rules-plane.yaml 'expr: probe_success\{probe="api-instance"\} == 0' 'expr: probe_success{probe="api-instance"} ==== 0'
@@ -215,10 +230,14 @@ control internal-route-without-allow-list validate-manifests.sh "so it must name
 control ui-route-under-another-host validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_under_another_host
 control ui-route-under-a-host-regexp validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_under_host_regexp
 control tcp-route-to-a-ui validate-manifests.sh "is not allowed beside an internal UI" plant_tcp_route_to_a_ui
+control route-with-a-blank-namespace validate-manifests.sh "so it must name the node-network-only middleware" plant_route_with_a_blank_namespace
+control ui-route-in-a-list validate-manifests.sh "wraps other objects" plant_ui_route_in_a_list
+control ui-route-in-items-of-a-good-route validate-manifests.sh "wraps other objects" plant_ui_route_in_items_of_a_good_route
 control allow-list-opened-to-everyone validate-manifests.sh "must be an ipAllowList of exactly" plant_allow_list_opened
 control invalid-alert-expression validate-manifests.sh "promtool: platform rules FAILED" plant_invalid_alert_expression
 control alert-that-fires-late validate-manifests.sh "promtool: rule unit tests FAILED" plant_alert_that_fires_late
 control pod-restarting-that-extrapolates validate-manifests.sh "promtool: rule unit tests FAILED" plant_pod_restarting_that_extrapolates
+control pod-restarting-with-one-side-narrowed validate-manifests.sh "promtool: rule unit tests FAILED" plant_pod_restarting_with_one_side_narrowed
 control namespace-in-gitops ownership.sh "is owned by Terraform, not Argo CD" plant_namespace_in_gitops
 control bad-workflow-expression lint.sh "actionlint FAILED" plant_bad_workflow_expression
 control unpinned-action lint.sh "zizmor FAILED" plant_unpinned_action
