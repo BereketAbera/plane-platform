@@ -85,9 +85,12 @@ Patching them in would widen the fork, so the signal is built from outside:
 | Is a pod restarting or near its limit? | kube-state-metrics and cAdvisor |
 | What rate and error ratio does the edge see? | Traefik metrics |
 
-Workers and beat expose nothing. A consumer on `celery` proves a connection, not a working task loop. The
-only task-level proof is `tests/e2e/smoke.py --job-probe`, which creates a work item and waits for its
-background activity. A real case of a live worker with nothing to read is in
+Workers and beat expose nothing. A consumer on `celery` proves a connection, not a working task loop. Task-level
+proof comes from runs, not metrics ([JOB rows](validation.md#background-jobs)). The smoke's `background-job` step
+waits for the activity of the work item it just created (JOB-1). `tests/e2e/smoke.py --job-probe` creates a new
+work item and waits the same way, so old rows do not count after a restart (JOB-2). Neither shows beat sending a
+task. For that there is one reading by hand of `total_run_count` in Postgres, with the worker's task counts, in dev
+on 2026-11-04 on upstream images (JOB-3). A real case of a live worker with nothing to read is in
 [Plane app debugging](runbooks/plane-app-debugging.md#the-cancel_consumer-trap).
 
 ## Blackbox probes
