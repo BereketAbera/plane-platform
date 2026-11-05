@@ -6,8 +6,9 @@ project management software by Plane Software, Inc. and contributors, licensed u
 
 - **Upstream:** <https://github.com/makeplane/plane>, tag `v1.4.3`, commit
   `37a15d99231042b3ff5a4401fed479fdbec9effe`.
-- **Modified by:** Bereket Abera, from 2026-11-04. [`apps/wayline/MODIFICATIONS.md`](apps/wayline/MODIFICATIONS.md)
-  is the dated, per-file-group record.
+- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), from
+  2026-11-04. His name on the work does not mean he reviewed each change.
+  [`apps/wayline/MODIFICATIONS.md`](apps/wayline/MODIFICATIONS.md) is the dated, per-file-group record.
 - **Modified version's name:** Wayline. It is a customized Plane Community Edition deployment, not an
   original product. "Plane" and its logos belong to their owners, and nothing here implies endorsement.
 - **License of the modifications:** AGPL-3.0-only, the same as upstream.
@@ -35,7 +36,7 @@ build time. Application functionality is unchanged except where listed.
 | Dependencies with known critical vulnerabilities replaced or removed: PyJWT, proxy-addr, storybook, tinypool | `backend/pyjwt-requirements.txt`, `runtime/space-deps.mjs` |
 | Billing settings refused for every role, and the page for a paid feature (active cycles across projects) replaced with a plain statement | `patches/30-surfaces.patch` |
 | Email templates and subjects, seed data, bot name, default sender and API metadata rebranded | `backend/`, `runtime/Dockerfile.backend` |
-| Container images: thin runtime images instead of upstream's Dockerfiles, fitted to non-root UIDs. Web and admin tell browsers to revalidate everything without a content hash in its name | `runtime/` |
+| Container images: thin runtime images instead of upstream's Dockerfiles, fitted to non-root UIDs. Web and admin tell browsers to revalidate everything without a content hash in its name, and every error. They serve no byte ranges | `runtime/` |
 
 ## What is preserved
 
