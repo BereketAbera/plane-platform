@@ -43,10 +43,14 @@ deny contains msg if {
 	msg := sprintf("%s: container %q has %s=%s, and a platform chart image must be pinned by @sha256 digest in helm/values", [kube.label(input), c.name, parts[1], parts[2]])
 }
 
-# A Thanos sidecar starts from the flag above unless the resource names its own image.
+# A Thanos sidecar starts from the flag above unless the resource names its own image, in either of two fields. On
+# their own, version, tag and sha leave the flag's reference as it is, because it is already tagged and digested. Beside
+# a baseImage they build the reference, and sha is ignored if that baseImage has a tag, so only a digest in the field
+# counts (BuildImagePath, pkg/operator/image.go at v0.94.2).
 deny contains msg if {
 	input.kind == "Prometheus"
-	image := input.spec.thanos.image
+	some field in ["image", "baseImage"]
+	image := input.spec.thanos[field]
 	not regex.match(digest_pinned, image)
-	msg := sprintf("%s: spec.thanos.image is %q, and a platform chart image must be pinned by @sha256 digest in helm/values", [kube.label(input), image])
+	msg := sprintf("%s: spec.thanos.%s is %q, and a platform chart image must be pinned by @sha256 digest in helm/values", [kube.label(input), field, image])
 }

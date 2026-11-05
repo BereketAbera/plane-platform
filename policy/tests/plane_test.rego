@@ -122,11 +122,11 @@ test_one_bad_route_among_good_ones_rejected if {
 }
 
 test_platform_route_on_its_own_host_accepted if {
-	count(plane.deny) == 0 with input as route_in("monitoring", "Host(`whoami.localhost`)", "whoami")
+	count(plane.deny) == 0 with input as route_in("traefik", "Host(`whoami.localhost`)", "whoami")
 }
 
 test_platform_route_naming_a_plane_host_rejected if {
-	count(plane.deny) == 1 with input as route_in("monitoring", "Host(`plane.prod-sim.localhost`)", "grafana")
+	count(plane.deny) == 1 with input as route_in("traefik", "Host(`plane.prod-sim.localhost`)", "whoami")
 }
 
 test_tcp_route_in_a_plane_namespace_rejected if {
@@ -135,8 +135,17 @@ test_tcp_route_in_a_plane_namespace_rejected if {
 }
 
 test_tcp_route_elsewhere_ignored if {
-	doc := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {"routes": [{"match": "HostSNI(`*`)"}]}}
+	doc := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "traefik"}, "spec": {"routes": [{"match": "HostSNI(`*`)", "services": [{"name": "whoami", "port": 80}]}]}}
 	count(plane.deny) == 0 with input as doc
+}
+
+test_tcp_route_beside_or_to_an_internal_ui_rejected if {
+	beside := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {"routes": [{"match": "HostSNI(`*`)", "services": [{"name": "kps-prometheus", "port": 9090}]}]}}
+	count(plane.deny) == 1 with input as beside
+	to_it := {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "traefik"}, "spec": {"routes": [{"match": "HostSNI(`*`)", "services": [{"name": "kps-prometheus", "namespace": "monitoring", "port": 9090}]}]}}
+	count(plane.deny) == 1 with input as to_it
+	udp := {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": "infisical"}, "spec": {"routes": [{"services": [{"name": "infisical", "port": 8080}]}]}}
+	count(plane.deny) == 1 with input as udp
 }
 
 workload_with_image(image) := {
@@ -218,8 +227,67 @@ test_one_of_several_routes_missing_the_allow_list_rejected if {
 	count(plane.deny) == 1 with input as doc
 }
 
-test_other_hosts_need_no_allow_list if {
-	count(plane.deny) == 0 with input as internal_route("monitoring", "Host(`traefik.localhost`)", [])
+test_other_hosts_elsewhere_need_no_allow_list if {
+	count(plane.deny) == 0 with input as internal_route("traefik", "Host(`traefik.localhost`)", [])
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`)", "plane-web")
+}
+
+route_to(namespace, match, service, middlewares) := {
+	"kind": "IngressRoute",
+	"metadata": {"name": "x", "namespace": namespace},
+	"spec": {"routes": [{"match": match, "kind": "Rule", "middlewares": middlewares, "services": [service]}]},
+}
+
+# The five real backends, from monitoring/manifests/shared/ingress-routes.yaml, infisical/manifests/ingressroute.yaml
+# and gitops/bootstrap/argocd-route/ingressroute.yaml.
+real_ui_backends := [
+	["monitoring", {"name": "kps-grafana", "port": 80}],
+	["monitoring", {"name": "kps-prometheus", "port": 9090}],
+	["monitoring", {"name": "kps-alertmanager", "port": 9093}],
+	["argocd", {"name": "argocd-server", "port": 80}],
+	["infisical", {"name": "infisical", "port": 8080}],
+]
+
+test_every_real_backend_needs_the_allow_list_under_any_spelling if {
+	every backend in real_ui_backends {
+		every match in ["Host(`metrics.localhost`)", "PathPrefix(`/`)", "HostRegexp(`^prometheus\\..+$`)", "HostRegexp(`^prometheus[.]localhost$`)", "HostRegexp(`.+`)"] {
+			denied := plane.deny with input as route_to(backend[0], match, backend[1], [])
+			count(denied) == 1
+		}
+	}
+}
+
+test_every_real_backend_with_the_allow_list_accepted if {
+	every backend in real_ui_backends {
+		denied := plane.deny with input as route_to(backend[0], "Host(`metrics.localhost`)", backend[1], [{"name": "node-network-only"}])
+		count(denied) == 0
+	}
+}
+
+test_route_to_a_ui_from_another_namespace_rejected if {
+	every pair in real_ui_backends {
+		backend := object.union(pair[1], {"namespace": pair[0]})
+		denied := plane.deny with input as route_to("traefik", "Host(`metrics.localhost`)", backend, [])
+		count(denied) == 1
+		allowed := plane.deny with input as route_to("traefik", "Host(`metrics.localhost`)", backend, [{"name": "node-network-only"}])
+		count(allowed) == 0
+		from_plane := plane.deny with input as route_to("plane-dev", "Host(`plane.dev.localhost`) && PathPrefix(`/metrics`)", backend, [])
+		count(from_plane) == 1
+	}
+}
+
+test_any_route_in_a_namespace_with_a_ui_needs_the_allow_list if {
+	count(plane.deny) == 1 with input as route_to("monitoring", "Host(`logs.localhost`)", {"name": "loki", "port": 3100}, [])
+	count(plane.deny) == 1 with input as route_to("argocd", "Host(`repo.localhost`)", {"name": "argocd-repo-server", "port": 8081}, [])
+	count(plane.deny) == 1 with input as route_to("infisical", "Host(`db.localhost`)", {"name": "infisical-postgres", "port": 5432}, [])
+}
+
+test_an_internal_host_on_a_backend_of_its_own_still_needs_the_allow_list if {
+	count(plane.deny) == 1 with input as route_to("traefik", "Host(`grafana.localhost`)", {"name": "whoami", "port": 80}, [])
+}
+
+test_a_plane_service_named_like_nothing_internal_needs_no_allow_list if {
+	count(plane.deny) == 0 with input as route_to("plane-dev", "Host(`plane.dev.localhost`) && PathPrefix(`/api`)", {"name": "plane-api", "port": 8000}, [])
 }
 
 allow_list(spec) := {"kind": "Middleware", "metadata": {"name": "node-network-only", "namespace": "monitoring"}, "spec": spec}
