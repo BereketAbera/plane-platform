@@ -59,8 +59,11 @@ configs:
     # root sync at once, and the root's retry backoff then outlasted the image pull. So not-ready pods read
     # as Progressing, and the wave simply waits. Reconciled False stays Degraded: the operator could not
     # build the pods, so waiting will not help.
-    # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Root holds the wave
-    # either way, and a stopped Prometheus could not fire ArgoAppDegraded in any case.
+    # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Before this, root retried
+    # and re-read the newest commit each time. Now it waits with no retry, so a fix to
+    # gitops/applications/kube-prometheus-stack.yaml needs root's operation terminated by hand (infrastructure/
+    # terraform/README.md, "After a stuck first sync"). No alert says so either: with Prometheus down, nothing
+    # evaluates ArgoRootSyncStuck, and the only sign is Watchdog no longer reaching the sink.
     resource.customizations.health.monitoring.coreos.com_Prometheus: |
       local hs = {status = "Progressing", message = "Waiting for initialization"}
       if obj.status == nil or obj.status.conditions == nil then
@@ -153,11 +156,18 @@ dex:
 notifications:
   enabled: false
 
-# The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing.
+# The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing, so this limit costs
+# nothing. It was never measured: it exists so the Deployment still names one, as policy/charts.rego asks.
 applicationSet:
   replicas: 0
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
-# Memory below totals 360Mi requests and 1536Mi limits for the four running pods. Peaks measured on the
+# Memory below totals 360Mi requests and 1792Mi limits for the four running pods. Peaks measured on the
 # first real run, with monitoring and Infisical synced and no Plane workloads yet: controller 517Mi,
 # repo-server 247Mi, server 83Mi, redis 25Mi.
 # No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
@@ -171,9 +181,11 @@ controller:
     requests:
       cpu: 100m
       memory: 192Mi
-    # 640Mi left about 120Mi of room at 517Mi, measured before either Plane environment existed.
+    # 768Mi left 37Mi of room: cgroup memory.peak reached 731Mi with Plane running (2026-11-04), and an OOM kill
+    # here stalls every sync. 1024Mi is that peak plus 40%. It only moves the ceiling: no GOMEMLIMIT is set, so
+    # the heap sizes itself the same way, and the namespace has no ResourceQuota to fit.
     limits:
-      memory: 768Mi
+      memory: 1024Mi
   # Upstream ships this off because restarting an overloaded controller makes things worse
   # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
   # thresholds slack enough (5 min) that first-sync load alone should not trip it.
