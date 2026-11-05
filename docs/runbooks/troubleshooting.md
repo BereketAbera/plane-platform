@@ -9,12 +9,11 @@ export PATH="$PWD/.tools/bin:$PATH" KUBECONFIG="$PWD/.local/kubeconfig"
 NODE=plane-platform-control-plane
 ```
 
-Start with `make status`. It only reads, and it prints node, Applications, pods not ready, endpoints, memory and host disk.
+Start with `make status`. It only reads, and it prints node, Applications, pods not ready, endpoints, memory and host disk. A first boot has states that look broken and are not: see [install.md](../install.md#what-looks-broken-but-is-expected).
 
 Index:
 
 - [kind network outside 172.16.0.0/12](#kind-network-outside-172160012)
-- [`make up` or `make test` exits 127](#make-up-or-make-test-exits-127)
 - [Tool not found, or the wrong cluster](#tool-not-found-or-the-wrong-cluster)
 - [Port 80, 443 or 5001 is taken](#port-80-443-or-5001-is-taken)
 - [Hostnames do not resolve](#hostnames-do-not-resolve)
@@ -56,14 +55,6 @@ docker network inspect kind --format '{{range $id, $c := .Containers}}{{$c.Name}
 **Confirm.** `make up` prints `kind network <subnet> is inside 172.16.0.0/12`.
 
 **Do not** remove the check in `scripts/cluster-up.sh`. The failure it prevents shows up later as unexplained timeouts.
-
-## `make up` or `make test` exits 127
-
-**Symptom.** `./scripts/up.sh: No such file or directory`, or the same for `test.sh`.
-
-**Why.** As of commit f733b87 the Makefile calls these scripts and they were not yet in the repository. Integration review B1 and B2 recorded this. [[VERIFY: scripts/up.sh and scripts/test.sh exist]]
-
-**Fix.** Pull the latest `main`. If they are still missing, the design order is in [Clean rebuild](clean-rebuild.md#rebuild).
 
 ## Tool not found, or the wrong cluster
 
@@ -111,9 +102,9 @@ curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: plane.dev.localhost' http://
 dscacheutil -q host -a name plane.dev.localhost
 ```
 
-If only the second works, it is your resolver or browser. [[VERIFY: *.localhost works in Safari; Chrome and Firefox are the fallback]]
+If only the second works, it is your resolver or browser. Chromium resolved them in the browser session on 2026-11-05 ([live-dev](../evidence/branding/live-dev/README.md)). [[VERIFY: *.localhost works in Safari; Chrome and Firefox are the fallback]]
 
-**Inside pods** the rule differs. CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to Traefik, because the API dials its own public host. Terraform owns the rewrite.
+**Inside pods** the rule differs. CoreDNS rewrites `plane.dev.localhost` and `plane.prod-sim.localhost` to Traefik, because the API dials its own public host. Terraform owns the rewrite. The API pod resolved its host to Traefik's Service address on 2026-11-04, and a worker, with no policy route to Traefik, timed out ([plane-dev-copy-object-path-1.txt](../evidence/runs/plane-dev-copy-object-path-1.txt)).
 
 ```bash
 kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' | grep rewrite
@@ -130,11 +121,13 @@ kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' | gr
 | Cause | Check |
 |---|---|
 | Traefik is not up yet | `kubectl -n traefik get pods`, `make status` |
-| NodePort source is not allowed by `traefik-ingress` | Policy allows `172.16.0.0/12` and `192.168.65.0/24`. See below |
+| NodePort source is not allowed by `traefik-ingress` | Policy allows `172.16.0.0/12`. See below |
 | Node port mapping missing | `docker port "$NODE"` |
 | Route missing | `kubectl get ingressroute -A` |
 
-NodePort traffic reaches Traefik with its pre-SNAT source, so a default-deny in `traefik` must allow an `ipBlock`, not only the node (critique section 1.6). [[VERIFY: NodePort traffic is admitted by the traefik-ingress policy from this Docker Desktop setup]]
+NodePort traffic reaches Traefik with the kind gateway as its source, so a default-deny in `traefik` must allow an `ipBlock`, not only the node. Measured on 2026-11-04 with conntrack: the source is `172.24.0.1` on this host, and with `172.16.0.0/12` removed from the live policy the host's request timed out until self-heal put it back ([traefik-nodeport-source-1.txt](../evidence/runs/traefik-nodeport-source-1.txt)). `192.168.65.0/24` was allowed at first too, and that test showed it was not the source, so it is gone.
+
+**A UI answers 403.** Argo CD, Grafana, Prometheus, Alertmanager and Infisical each have a `node-network-only` Middleware that admits only `172.16.0.0/12`. The host gets 200, and a pod gets 403 from Traefik, which is correct ([routes-after-2.txt](../evidence/runs/routes-after-2.txt)). `scripts/test.sh routes` checks both sides. A route that names a missing Middleware answers 404, so it fails closed ([h17-fail-closed-1.txt](../evidence/runs/h17-fail-closed-1.txt)).
 
 Compare the node's view with the host's, and leave the policies in place while you do. From the node:
 
@@ -148,15 +141,26 @@ Note that `meta skuid 0 accept` means root sockets in the node's network namespa
 
 ## NetworkPolicy seems not to be enforced
 
-**Why this needs care.** kindnet enforces policy through nftables with `FailOpen: true`. Errors log `skipping network policies` and traffic continues, so a broken dataplane looks like a working one. Only new connections are evaluated. The day-1 gates in [`docs/evidence/day1-gates.txt`](../evidence/day1-gates.txt) record a sentinel deny case on this host, with no platform deployed, so they say nothing about the platform's own policies.
+**Why this needs care.** kindnet enforces policy through nftables with `FailOpen: true`. Errors log `skipping network policies` and traffic continues, so a broken dataplane looks like a working one. Only new connections are evaluated. The day-1 gates test a throwaway policy, not the platform's own ([day1-gates-20261104T231136Z.txt](../evidence/day1-gates-20261104T231136Z.txt)). `make test-netpol` tests the platform's.
 
 ```bash
 make test-netpol
+make test-netpol FROM_NS=plane-dev
 kubectl -n kube-system logs daemonset/kindnet --tail=200 | grep -i 'skipping network policies'
 docker exec "$NODE" nft list tables
 ```
 
-`kube-system` logs do not go to Loki, so use `kubectl logs` here.
+Of `kube-system`, Loki gets only kindnet's `skipping network policies` line, so use `kubectl logs` here.
+
+**What the alerts see.** Alloy counts kindnet's lines. `KindnetSkippedNetworkPolicies` fires on that one line, and `KindnetLogsNotRead` fires when no line has been counted for 15m, so the tail itself is watched. They see nothing else, so `make test-netpol`, which sends real traffic, stays the real check. They were proved with a synthetic line from a scratch pod, not a real kindnet failure ([h18-synthetic-2.txt](../evidence/runs/h18-synthetic-2.txt)).
+
+The count stands for a pod name, so `KindnetSkippedNetworkPolicies` can stick after kindnet's container restarts healthy in the same pod. Run `make test-netpol`. If it passes, replace the pod:
+
+```bash
+kubectl -n kube-system delete pod -l app=kindnet
+```
+
+The count stops applying 5 minutes after its pod has gone. On a scratch pod the resolved line reached the sink 321s after the delete ([kindnet-hold-1.txt](../evidence/runs/kindnet-hold-1.txt)). In the other direction, an in-place Alloy restart forgets the count, so the rule holds it for 3 days. `monitoring/README.md` has the detail.
 
 **When testing by hand:**
 
@@ -164,7 +168,9 @@ docker exec "$NODE" nft list tables
 - Test from an ordinary pod, never from `hostNetwork`.
 - Do not trust a test on an existing connection.
 
-`make test-netpol` classifies a DNS failure as INCONCLUSIVE and exits non-zero. Read which it was. [[VERIFY: make test-netpol passes its full allow and deny matrix]]
+`make test-netpol` proves its sentinel in a throwaway namespace first. A deny row passes only on a timeout, and INCONCLUSIVE is never a pass: `scripts/test-netpol.sh` exits 0 when every row passed, 1 when a row or the sentinel failed, and 2 when nothing failed but a row was INCONCLUSIVE. Read which it was.
+
+What has run, by source namespace, on 2026-11-04: `plane-dev` 135 PASS ([netpol-20261104T232752Z.tsv](../evidence/runs/netpol-20261104T232752Z.tsv)), `plane-prod-sim` 134 PASS ([netpol-20261104T233304Z.tsv](../evidence/runs/netpol-20261104T233304Z.tsv)), `monitoring` 50 PASS ([netpol-20261104T221150Z.tsv](../evidence/runs/netpol-20261104T221150Z.tsv)) and `infisical` 14 PASS ([netpol-20261104T215857Z.tsv](../evidence/runs/netpol-20261104T215857Z.tsv)). `traefik` and `argocd` were last read while later waves did not exist yet, with INCONCLUSIVE rows ([netpol-20261104T210010Z.tsv](../evidence/runs/netpol-20261104T210010Z.tsv), [netpol-20261104T204822Z.tsv](../evidence/runs/netpol-20261104T204822Z.tsv)). No published run covers the whole matrix at once. [[VERIFY: make test-netpol passes its full allow and deny matrix]]
 
 **Fallback, if enforcement really fails.** The research names Calico, at the cost of more memory. That would be a change to the kind config and to the contract.
 
@@ -172,9 +178,11 @@ docker exec "$NODE" nft list tables
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| Pods sit in `ContainerCreating` for minutes, one after another | The kubelet pulls one image at a time. Four new images took 175s, 216s, 52s and 5s in turn on the first boot, 448s for the last ([plane-prod-sim-firstboot-1.txt](../evidence/runs/plane-prod-sim-firstboot-1.txt)) | Wait. The rollout deadline is 600s, and a retry recovers a miss |
 | `ErrImagePull` with 429 | Docker Hub quota. The window is not settled: docs say 100 per 6 hours, while the header showed a 3600-second window | The mirror chain falls back to Hub. Wait, or read `ratelimit-remaining` |
 | Blob 404 from `mirror.gcr.io` | The mirror has the manifest but not the blob. It was seen for `plane-live` and the operator during research | containerd should fall through to the `server` in `hosts.toml`. Check `infrastructure/kind/containerd-certs.d/docker.io/hosts.toml` |
-| `localhost:5001/wayline/...` not found | Branded digest was never pushed | `make images`, or `scripts/ci/copy-to-local-registry.sh`. Promotion checks this unless `SKIP_REGISTRY_CHECK=yes` |
+| `localhost:5001/wayline/...` not found | Branded digest was never pushed. Dev's overlay names these since `4f622e3` | `make images`, or `scripts/ci/copy-to-local-registry.sh`. Promotion checks this unless `SKIP_REGISTRY_CHECK=yes`, and `make up` checks it before it publishes. A rebuild can give other digests, and `make up` then prints what to do |
+| A push to `plane-registry` dies, or the container restarts | A push fills the container's memory with dirty page cache. Its limit is 512m since a real push was OOM-killed at 128m ([registry-memory-1.txt](../evidence/runs/registry-memory-1.txt)) | It restarts by itself. Push again, and leave its `registry-data` volume alone: the branded images exist nowhere else |
 | Digest resolves, pull fails with connection errors | `plane-registry` or a `plane-mirror-*` is stopped, or not on the `kind` network | See below |
 | A pod uses a tag with no digest | Policy violation. Every image is pinned by digest | Run `make ci` |
 
@@ -194,11 +202,11 @@ docker exec "$NODE" cat /etc/containerd/certs.d/docker.io/hosts.toml
 | Message | Cause | Fix |
 |---|---|---|
 | `violates PodSecurity "baseline:latest"` | A pod uses `hostPath`, `hostNetwork` or privileged | Only `monitoring-agents` is `privileged`. Backup pods mount a PVC backed by a static hostPath PV, to stay compatible |
-| `exceeded quota` | ResourceQuota is computed in `infrastructure/terraform/modules/foundation/main.tf`, with room for rollout surge. A backup or test pod can use up the last slot. [[VERIFY: quota fits exporters, surge and a backup Job at once; integration review m5 counted 22 of 22 pods]] | Wait for the rollout, or update the Terraform table and apply |
+| `exceeded quota` | ResourceQuota is computed in `infrastructure/terraform/modules/foundation/main.tf`: 2732Mi requests, 7984Mi limits and 24 pods per Plane namespace. All seven Deployments surging at once reached 21 pods, 2412Mi and 6960Mi, with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](../evidence/runs/plane-dev-rollout-quota-1.txt)). The sum for everything at once, with both exporters surging, the migrator, a backup and an ad-hoc pod, is 26 pods, 2760Mi and 8064Mi, which is over ([quota-budget-1.txt](../evidence/runs/quota-budget-1.txt)). That is arithmetic on the renders, and no run has put a backup on a full surge | Wait for the rollout, or update the Terraform table and apply |
 | `container has runAsNonRoot and image will run as root` | Image has no `USER`, and the patch sets none | Set `runAsUser` in the hardening patch |
 | `Read-only file system` | A path needs an `emptyDir` | Add it in the hardening patch |
 
-`restricted` warnings in namespace events are expected. Warn and audit are `restricted`, and enforce is `baseline`. Tighten prod-sim only after a per-workload test passes (contract section 2).
+Warn and audit are `restricted`, and enforce is `baseline`. A server dry run of `restricted` gave no warning for the running pods in either Plane namespace on 2026-11-04, and each workload ran as its intended non-root UID ([plane-dev-psa-1.txt](../evidence/runs/plane-dev-psa-1.txt), [plane-prod-sim-host-and-identity-1.txt](../evidence/runs/plane-prod-sim-host-and-identity-1.txt)). That is the test contract section 2 asks for before tightening prod-sim. No label has changed.
 
 ```bash
 kubectl -n plane-dev describe resourcequota
@@ -210,11 +218,11 @@ kubectl get events -A --field-selector reason=FailedCreate --sort-by=.lastTimest
 | Symptom | Cause | Fix |
 |---|---|---|
 | Bootstrap stops on an `InfisicalAuth` mismatch | Rendered overlay disagrees with `plane-infisical-auth` or the identity Secret | Fix the overlay. The error names the field |
-| Infisical OOM-killed at first boot | About 603 migrations under a 1 GiB limit | See [Memory pressure](memory-pressure.md) |
+| Infisical killed for memory at first boot | Not seen: 602 migrations in 11.5s, a peak of 807 MiB of 1 GiB, and 0 OOM kills ([infisical-firstboot-1.txt](../evidence/runs/infisical-firstboot-1.txt)) | See [Memory pressure](memory-pressure.md) |
 | Pods wait in `CreateContainerConfigError` | Secret not synced yet | `kubectl -n plane-dev get infisicalstaticsecrets`, operator logs |
-| Operator crash-looping in `plane-prod-sim` only | CRDs arrive from the dev release | Recovers once they exist |
+| Operator crash-looping in `plane-prod-sim` only | CRDs arrive from the dev release. Predicted from the chart, and not seen on the first boot | Recovers once they exist |
 | 403 on secrets | Identity or project mismatch. Per-project isolation is the free-tier boundary | Check `.local/secret-zero/infisical-machine.json` values against the overlay, without printing secrets |
-| 429 | Reads are limited to 60 and secret requests to 40 a minute per client IP | Scripts honour `Retry-After`. Wait |
+| 429 | Not expected here. The rate limiter is not registered on self-hosted: 240 reads in 4s from one address all answered 200 ([infisical-rate-limit-1.txt](../evidence/runs/infisical-rate-limit-1.txt)). The scripts' `Retry-After` handling has never run for real | Look for something in front of Infisical |
 | Token review fails on a new cluster | Kubernetes Auth stores the old cluster's CA | Re-run `scripts/infisical-bootstrap.sh` |
 
 ```bash
@@ -228,7 +236,7 @@ More in `infisical/README.md`, including its recovery table.
 
 ## `kubectl top` fails
 
-**Why.** It needs metrics-server, wave -8, with `--kubelet-insecure-tls` because kind's kubelet certificates are not signed by the cluster CA. metrics-server runs in `kube-system`, which the contract's namespace table does not list.
+**Why.** It needs metrics-server, wave -8, with `--kubelet-insecure-tls` because kind's kubelet certificates are not signed by the cluster CA. metrics-server is the one platform workload outside the contract's namespace table: it runs in `kube-system`.
 
 ```bash
 kubectl -n kube-system get deploy metrics-server
