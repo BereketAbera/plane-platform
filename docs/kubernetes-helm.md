@@ -5,8 +5,10 @@ change it safely. Wayline is a customized Plane Community Edition v1.4.3 deploym
 is upstream's `plane-ce` 1.8.6, unmodified.
 
 **Status of this page.** It describes configuration in the code, and says so where a real run has settled something. On
-2026-11-05 Plane runs in both namespaces, on the final branded images from `ec45e21`. What nothing has
-measured yet carries a `VERIFY` or `MEASURE` marker. This is local and production-inspired, and not a claim of production readiness.
+2026-11-05 Plane runs in both namespaces, on the final branded images from `84b63d9`. What nothing has
+measured yet carries a `VERIFY` or `MEASURE` marker. A path under `.local/evidence-raw/` is raw output from a real run that is not published
+yet, and `make publish-evidence` copies it to `evidence/runs/` under the same name. This is local and production-inspired, and not a claim of
+production readiness.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one
 node, one API server, one etcd, one CoreDNS, one Traefik, one Infisical server and one Docker VM disk. Failure of any of
@@ -63,7 +65,7 @@ Everything is in `helm/plane/components/hardening/kustomization.yaml`, with one 
 | Remove `tty` and `stdin` | Deployments, StatefulSets | A TTY makes app tools emit colour and CRLF into logs Loki ingests |
 | Add security contexts | All workloads | See below |
 | Add sync-wave annotations | ConfigMaps, Services, StatefulSets, Deployments, routes | See [argocd.md](argocd.md#inside-a-plane-application) |
-| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot, an event read live and not in a saved file. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout, and the failed-deploy drill waits this long plus 120s |
+| Set `progressDeadlineSeconds: 600` | Deployments | Image pulls count against it, and the kubelet pulls one image at a time, so a Deployment also waits for every pull queued ahead of it. On a cold mirror wave 3's four images took 175s, 216s, 52s and 5s in turn ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt)), and 360 failed web, admin and space on that first boot, an event read live and not in a saved file. This value stays above the longest startup budget of 300 seconds. A longer deadline delays the Degraded report on a bad rollout: on the failed-deploy drill's first real run, `plane-dev` read Degraded 629s after the publish (`.local/evidence-raw/drill-failed-deploy-20261105T062343Z.log`). The drill waits this long plus 120s |
 | Add `preStop: {sleep: {seconds: 5}}` | web, admin, space, live, api | A pod gets SIGTERM as its endpoint starts to go, and Traefik can still send it requests for a moment, so with no pause a rollout dropped requests: 10 failed of 2,757 samples ([before](evidence/runs/plane-dev-rollout-availability-1.txt)), and 0 of 5,902 across two rollouts with it ([after](evidence/runs/plane-dev-rollout-availability-2.txt)). Sleep needs no shell. Worker and beat have no Service, so they do not need it |
 | Set `MINIO_PROMETHEUS_AUTH_TYPE=public` | Silo | The ServiceMonitor scrapes without credentials, and the default `jwt` answers 403. The ingress routes only `/uploads` to Silo, and a NetworkPolicy limits who reaches port 9000 |
 | Make the migrator a `Sync` hook at wave 2 | Job `plane-api-migrate-1` | Postgres is applied in the Sync phase and `wait_for_db` does not wait, so `PreSync` deadlocks a fresh install |
@@ -228,7 +230,7 @@ surging, exporters included, with the migrator, a backup and an ad-hoc pod: that
 - **The VM cannot see the real disk limit.** Its filesystem reports hundreds of free GiB while the host has far less. kind also sets `evictionHard` to `0%`, so a full disk means write errors, not pod eviction. `guard_disk` is the actual protection.
 - **Volumes survive `make down`,** because the node container is only stopped. [[VERIFY: data survives make down and make up]]
 - **Volumes do not survive `make destroy`.** Deleting the node deletes its volume.
-- **Deleting a pod keeps its PVC.** `tests/drills/pod-restart-persistence.sh` checks this with a data sentinel. On 2026-11-04 it ended PASS in dev, on upstream images ([dev](evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)). In prod-sim its [first run](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log) ended FAIL on the job probe after the RabbitMQ and Valkey restarts, with the sentinel row and attachment intact in every round. The smoke's worker control had left that worker unable to resume after a broker restart, which `0bba707` fixed in the test. The [second run](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), on a clean worker, ended PASS.
+- **Deleting a pod keeps its PVC.** `tests/drills/pod-restart-persistence.sh` checks this with a data sentinel. On 2026-11-04 it ended PASS in dev, on upstream images ([dev](evidence/runs/drill-pod-restart-dev-20261104T224424Z.log)). In prod-sim its [first run](evidence/runs/drill-pod-restart-prod-sim-20261104T233500Z.log) ended FAIL on the job probe after the RabbitMQ and Valkey restarts, with the sentinel row and attachment intact in every round. The smoke's worker control had left that worker unable to resume after a broker restart, which `0bba707` fixed in the test. The [second run](evidence/runs/drill-pod-restart-prod-sim-20261104T235402Z.log), on a clean worker, ended PASS. On 2026-11-05 it ended PASS again in dev on the final images, while the API answered 500 to 7 signed-in requests in a row, for about 6s, as Postgres restarted (`.local/evidence-raw/drill-pod-restart-dev-20261105T070414Z.log`, `.local/evidence-raw/PERS-1-20261105T070358Z-timeline.txt`). It has not run in prod-sim on the final images.
 - **Deleting a StatefulSet or Application keeps its PVCs.** No retention policy is set, and Argo CD does not track `volumeClaimTemplates` claims.
 - **Deleting a namespace or a PVC deletes the data,** because the reclaim policy is `Delete`.
 - **`storageClass` and claim sizes are immutable** in an existing StatefulSet. A change fails at sync. See [how to change a value](#how-to-change-a-value-safely).
@@ -267,12 +269,12 @@ because `export_task.py` hardcodes that path. Each environment has its own Silo,
 `copy_object` and OAuth avatars. The CoreDNS rewrite from Terraform sends both hostnames to
 `traefik.traefik.svc.cluster.local`.
 
-All of this ran through Traefik in both environments, on the branded images from `1563cbf` in dev and upstream's in prod-sim
-([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). Steps `frontends` and
+All of this ran through Traefik in both environments, on the final images from `84b63d9`
+(`.local/evidence-raw/smoke-dev-20261105T070735Z-94252.json`, `.local/evidence-raw/smoke-prod-sim-20261105T053533Z-8468.json`). Steps `frontends` and
 `routes` cover the prefixes, `asset-duplicate` covers `copy_object` through the CoreDNS rewrite with a valid signature, `realtime-*` covers
 the `/live` WebSocket through the buffering middleware, and `attachment-upload` and `object-in-silo` cover presigned uploads with the bucket Job
 deleted. The smoke drives HTTP and WebSocket with its own client. A real browser session is recorded in
-[live-dev](evidence/branding/live-dev/README.md), for dev only.
+[live-dev](evidence/branding/live-dev/README.md), for dev only, on the build from `1563cbf`.
 
 ## How to change a value safely
 
@@ -358,12 +360,16 @@ scripts/render.sh --check
 - `scripts/ci/validate-manifests.sh`, through `make ci` and on every pull request.
 - `scripts/promote.sh`, before it edits anything, so unrelated drift cannot fold into a promotion commit.
 
+`scripts/rollback.sh` renders instead of checking: a later change beside an image line makes the revert conflict in the rendered file, and
+that file is generated, so rendering replaces it and the rollback goes on.
+
 CI also runs kubeconform in strict mode and conftest against the rendered files. Nothing makes a failing check block a merge
 on this GitHub plan. See [security.md](security.md).
 
 `scripts/render.sh --check` exits 0 on a clean checkout on `ubuntu-24.04`, so a render from this Mac matched one from Linux byte for byte: run
-41909741166 at `5fdf41d` on 2026-11-04 ([log](evidence/ci/ci-1-20261104T204614Z-run-41909741166.log)). The commits since then have run it only on
-this Mac, because pushes are on hold.
+41909741166 at `5fdf41d` on 2026-11-04 ([log](evidence/ci/ci-1-20261104T204614Z-run-41909741166.log)), and again at `9c8e098` and `0dde813` on
+2026-11-05 ([run 41975431001](evidence/ci/ci-1-20261105T053955Z-run-41975431001.log), [run 41978707479](evidence/ci/ci-1-20261105T061058Z-run-41978707479.log)).
+Commits after `0dde813` have run it only on this Mac.
 
 ## Upgrades
 
