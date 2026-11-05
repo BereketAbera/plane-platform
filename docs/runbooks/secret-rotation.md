@@ -2,6 +2,8 @@
 
 What can be rotated, how, and how to recover from a rotation that stopped partway.
 
+**`make rotate` has not run, in either environment.** The attempt in dev was refused by the session's permission system before anything ran, and no password changed (`.local/evidence-raw/SEC-2-20261105T062211Z-refused.txt`). Prod-sim stopped at the backup that comes first (`.local/evidence-raw/SEC-3-20261105T062127Z.txt`). This page is read from `scripts/rotate.sh`, and it needs the owner to run or approve the first rotation. A `VERIFY` or `MEASURE` marker here waits on that run.
+
 Preamble for raw commands:
 
 ```bash
@@ -54,9 +56,13 @@ What `scripts/rotate.sh` does, checking real state at each step:
 6. Waits for auto-reload to roll the consumers. If the pod templates are not marked within 120s, restarts them directly.
 7. Checks a database-backed API request, that Postgres was not restarted, that `SECRET_KEY` did not move, and that workload generations
    are stable (no self-heal loop).
+8. Removes the journal, then takes an Infisical backup, because an older dump holds the old `PG_PASSWORD`. `SKIP_BACKUP=yes` skips it. If it fails,
+   the rotation stands and the script exits 3: run `make backup ENV=infisical`.
 
 The window where Plane may fail is between the operator's sync and `ALTER ROLE`, plus rollout time. The script measures it with a probe once a
 second. [[MEASURE: rotation error window in seconds, per environment, from the rotate evidence log]]
+
+**Read that number with care.** The probe is anonymous, and `db_probe` counts anything but its expected 404 as a failure. Plane throttled the same route after 30 requests: the 31st got 429 with `Retry-After` 54 (`.local/evidence-raw/SEC-2-throttle-precheck-20261105T061924Z.txt`). So a run longer than about 30 s can report throttled probes as its error window. Measure the window from a signed-in request as well, which has its own limit, as `.local/evidence-raw/SEC-2-20261105T062211Z-watcher-source.txt` does.
 
 ## Diagnosis
 
@@ -87,8 +93,7 @@ needs `CONFIRM=yes`.
 accept the current Infisical value. Restore the previous value from Infisical's version history, so that Infisical matches the role again, then wait for the
 operator to sync and run a normal rotation. [[VERIFY: restoring an earlier version in the Infisical UI re-syncs the Secret and clears the preflight refusal]]
 
-**postgres-exporter after a rotation.** The exporter reads `plane-pgdb` through environment variables, and `scripts/rotate.sh` checks only consumers of
-`plane-app-env`. At its next reconnection `pg_up` can go to 0 and critical `PlanePostgresDown` can fire on a healthy database. [[VERIFY: postgres-exporter has an auto-reload annotation or the rotate script restarts it; at commit f733b87 neither was true]]
+**postgres-exporter after a rotation.** The exporter reads `plane-pgdb` through environment variables, so at its next reconnection after a rotation `pg_up` could go to 0 and critical `PlanePostgresDown` could fire on a healthy database. It now carries `secrets.infisical.com/auto-reload: "true"` (`monitoring/manifests/environments/base/exporters.yaml`), and its running pod template holds the operator's mark (`.local/evidence-raw/SEC-2-20261105T062211Z-state-before.txt`). So the operator should restart it. No rotation has shown that yet. `scripts/rotate.sh` checks and waits for consumers of `plane-app-env` only, so it neither waits for the exporter nor restarts it.
 
 If it still happens, restart it. A rollout restart adds only a template annotation, which Argo CD's three-way diff does not revert:
 
@@ -108,7 +113,7 @@ kubectl -n "$NS" get deploy
 make test-e2e ENV=dev
 ```
 
-You want a final `PASS` line and no journal. The evidence also records "Postgres rejects the replaced password", "SECRET_KEY unchanged" and "workload generations stable".
+You want a final `PASS` line, "Infisical backed up", and no journal. The evidence also records "Postgres rejects the replaced password", "SECRET_KEY unchanged" and "workload generations stable".
 
 [[VERIFY: make rotate ENV=dev completes with every evidence line PASS]]
 
@@ -116,7 +121,7 @@ You want a final `PASS` line and no journal. The evidence also records "Postgres
 
 [[VERIFY: the operator's template annotation and Argo CD self-heal do not fight after a rotation]]
 
-Old dumps stay usable. A backup does not store the database password, a restore authenticates with what the live Secret holds, and `pg_dump` of one database does not include roles, so a restore leaves the role's current password alone.
+Old Plane dumps should stay usable. A backup does not store the database password, a restore authenticates with what the live Secret holds, and `pg_dump` of one database does not include roles, so a restore leaves the role's current password alone. An Infisical dump older than the rotation is different, since it holds the old `PG_PASSWORD`: `make restore ENV=infisical` refuses it in place unless `ALLOW_STALE_PLANE_SECRETS=yes`.
 [[VERIFY: restoring a backup taken before a rotation still lets Plane log in with the current password]]
 
 ## What not to do
