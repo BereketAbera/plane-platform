@@ -79,7 +79,7 @@ Across the cold install of 2026-11-05, with the registry and caches removed firs
 
 Do not plan on those as a good install's figures. That run built its images twice, because of [the umask defect](../known-limitations.md#what-real-runs-found), so the registry holds both sets, and the second build's source tree, package store and build cache were still on disk at the 13 GiB reading. What an install with no defect grows by: Not measured in Pass 1. On this run's figure, a host with just the 25 GiB `make up` asks for would end near 7 GiB, under the 10 GiB floor.
 
-`Docker.raw` before a first full install: Not measured in Pass 1. `tests/drills/clean-install.sh` reads it once, after `make up`, and nothing reads it before. Use `ls -klsh` by hand around a later install, as row TEAR-5 does for the delete.
+`Docker.raw` before a first full install: Not measured in Pass 1. `tests/drills/clean-install.sh` reads it once, after `make up`, and nothing reads it before. Use `ls -klsh` by hand around a later install, as row TEAR-5b does for a delete.
 
 ## Fix
 
