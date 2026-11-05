@@ -1,8 +1,8 @@
-# Thu Nov  5 05:55:32 EAT 2026
-$ python3 -B apps/wayline/checks/flatten-config.py localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+# Thu Nov  5 08:15:49 EAT 2026
+$ python3 -B apps/wayline/checks/flatten-config.py localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
 PASS Dockerfile.backend has two stages and the last is FROM scratch ['makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743', 'scratch']
 base  makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743, config sha256:a194102c02f15253b6514dee5161417dec554ec4d58b3ad37afc21cd0b610151, read from mirror.gcr.io/makeplane/plane-backend
-built localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4, config sha256:d3a1e8e177d92ee493c226f53c5c30062c4e9774cd2ab2ad6a2e34743034d9ea
+built localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe, config sha256:400a862ed0c468d8c8c91d5f17a664713ccb8edc617580dbcf425d841dc1b772
 
 == Env
 PASS GPG_KEY is the base's value
@@ -18,7 +18,7 @@ PASS PYTHON_VERSION is the base's value
 == Labels
 PASS org.opencontainers.image.description is set Customized Plane Community Edition backend
 PASS org.opencontainers.image.licenses is set AGPL-3.0-only
-PASS org.opencontainers.image.revision is set b2ba58723fe736f2ce56a972f9d396ce24416461
+PASS org.opencontainers.image.revision is set 84b63d9b6294319787276f303e354a66b945558b
 PASS org.opencontainers.image.source is set https://github.com/BereketAbera/plane-platform
 PASS org.opencontainers.image.title is set wayline-backend
 

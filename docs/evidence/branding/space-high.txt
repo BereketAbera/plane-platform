@@ -1,5 +1,5 @@
-# Every package with a HIGH finding in the space image, from the final scan, and where apps/wayline/MODIFICATIONS.md names it. Recorded Thu Nov  5 06:00:34 EAT 2026.
-# Image: localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+# Every package with a HIGH finding in the space image, from the final scan, and where apps/wayline/MODIFICATIONS.md names it. Recorded Thu Nov  5 08:21:53 EAT 2026.
+# Image: localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
 
 $ # the final scan, by package, and whether the record names it
 7 HIGH axios@1.18.1: named in MODIFICATIONS.md
@@ -52,5 +52,5 @@ webpack-dev-middleware <-:
 
 $ # what the record says, as it ships in this image
 118:The backend image is flattened, so PyJWT 2.13.0 is in none of its layers. The space image is not flattened, so there these replace or remove files in the container's filesystem only, and the old versions are still bytes in the `FROM` layers underneath. Other development packages in the space image, such as the rest of `@storybook/*`, `vite`, `typescript`, `brace-expansion`, `toml` and `webpack-dev-middleware`, are left for now, because no CRITICAL finding names them and this change stays sma
-120:The space image has other HIGH findings, left as they are. Some are in packages its server loads from `node_modules`: axios, body-parser, compression, follow-redirects and react-router. Others are in code the bundler inlined into `build/server/index.js`, where nothing imports it, so `runtime/space-deps.mjs` cannot see it: markdown-it 14.2.0, nanoid 3.3.8, prosemirror-view 1.40.0 and source-map-js 1.2.1, with a MEDIUM in @tiptap/core 2.26.3. `checks/space-regions.mjs` lists what was inlined. 
+120:The space image has other HIGH findings. An agent left these. The owner has not reviewed that. Some are in packages its server loads from `node_modules`: axios, body-parser, compression, follow-redirects and react-router. Others are in code the bundler inlined into `build/server/index.js`, where nothing imports it, so `runtime/space-deps.mjs` cannot see it: markdown-it 14.2.0, nanoid 3.3.8, prosemirror-view 1.40.0 and source-map-js 1.2.1, with a MEDIUM in @tiptap/core 2.26.3. `checks/space-r
 # exit 0

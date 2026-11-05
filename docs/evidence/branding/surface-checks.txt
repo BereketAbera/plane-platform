@@ -1,4 +1,4 @@
-# Strings the review named, read from the built output of commit b2ba58723fe736f2ce56a972f9d396ce24416461.
+# Strings the review named, read from the built output of commit 84b63d9b6294319787276f303e354a66b945558b.
 mailto:the source repository               files in web, admin, space client: 0
 Join our community of active creators      files in web, admin, space client: 0
 Learn more about projects                  files in web, admin, space client: 0
@@ -16,10 +16,10 @@ confirm_password:void 0,has_marketing_email_consent:!0
    1 is_telemetry_enabled:!1
 
 # Image labels
-web AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
-admin AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
-space AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
-backend AGPL-3.0-only b2ba58723fe736f2ce56a972f9d396ce24416461
+web AGPL-3.0-only 84b63d9b6294319787276f303e354a66b945558b
+admin AGPL-3.0-only 84b63d9b6294319787276f303e354a66b945558b
+space AGPL-3.0-only 84b63d9b6294319787276f303e354a66b945558b
+backend AGPL-3.0-only 84b63d9b6294319787276f303e354a66b945558b
 
 # Text that ships at /usr/share/licenses/wayline/, in each image, against the source files: cmp exit 0 means the same bytes
 web: MODIFICATIONS.txt cmp exit 0, NOTICE.txt cmp exit 0
@@ -29,18 +29,24 @@ backend: MODIFICATIONS.txt cmp exit 0, NOTICE.txt cmp exit 0
 
 # Who did the work and who chose, as it ships in MODIFICATIONS.txt, then NOTICE.txt, from the backend image
 9:- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), 2026-11-04 to
-10:  2026-11-05. His name on the work does not mean he reviewed each change, and the D12 section below says what he has not reviewed.
-152:**Who chose this.** No person did. An AI coding agent implementing this image chose to replace the file, under the
-153:owner's rule: "Do not use commercial-only Plane features or assets without authorization." The agent coordinating the work then required
-154:the flattening, under the same rule. The agent coordinating the work also removed the requirement that the repository be private,
-155:because no layer holds the original, and the owner has not reviewed that.
-157:**What the owner has and has not seen.** The agent told the owner after the fact that the file was replaced. The owner has not reviewed
-161:**What the owner should confirm**, before the first push that carries this directory, because that push publishes:
+10:  2026-11-05. They also made the choices this file records, within his brief for this work, unless a sentence names someone else. His name on the work does not mean he reviewed any of it. This file records no review by him, and the D12 s
+21:**The source offer is not live yet.** The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. The owner must do both before anyon
+118:The backend image is flattened, so PyJWT 2.13.0 is in none of its layers. The space image is not flattened, so there these replace or remove files in the container's filesystem only, and the old versions are still bytes in the `FROM` la
+120:The space image has other HIGH findings. An agent left these. The owner has not reviewed that. Some are in packages its server loads from `node_modules`: axios, body-parser, compression, follow-redirects and react-router. Others are in 
+122:The backend image has HIGH findings too, in Django 5.2.15 and djangorestframework 3.17.2, and MEDIUM and LOW ones. An agent left these. The owner has not reviewed that. This repository records no check of whether they can be reached in 
+124:An agent left these on purpose, and the owner has not reviewed that: the `plane` module and `X-Plane-*` headers, the "New at Plane" choice label in
+154:**Who chose this.** No person did. The agent coordinating the work chose to replace the file, under the
+155:owner's rule: "Do not use commercial-only Plane features or assets without authorization." Another agent, implementing this image, made that change. The agent coordinating the work then required
+156:the flattening, under the same rule. It also removed the requirement that the repository be private,
+157:because no layer holds the original, and the owner has not reviewed that.
+159:**What the owner has and has not seen.** The agent coordinating the work told him of all three choices above in its progress messages, each after it had decided, and asked him to say if he wanted any of them done differently. As of 2026
+186:**What the owner should confirm**, before the first push of this directory to main, because that push publishes:
 
 9:- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), from
-10:  2026-11-04. His name on the work does not mean he reviewed each change.
+10:  2026-11-04. His name on the work does not mean he reviewed any of it.
 13:  original product. "Plane" and its logos belong to their owners, and nothing here implies endorsement.
-51:  person. The owner has not reviewed it, and no legal review has happened. See D12 in `apps/wayline/MODIFICATIONS.md`.
+17:  The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. The owner must do both before anyone else uses an instance.
+52:  person. The owner has not reviewed it, and no legal review has happened. See D12 in `apps/wayline/MODIFICATIONS.md`.
 
 # Libraries with findings in the source lockfiles, by name, in what the web and admin clients ship. Files under assets/ holding each string. trivy sees none of these, because these are bundled static files with no package metadata
 markdown-it          web 1, admin 0
