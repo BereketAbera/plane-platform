@@ -1,0 +1,101 @@
+# date: 2026-11-04T20:45:21Z
+# pod: argocd-server-6879f6c57b-nmjsr
+# image: quay.io/argoproj/argocd:v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+$ argocd version --client --short (inside the pod)
+argocd: v3.5.7
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+# cases copied, running each through: argocd admin settings resource-overrides health <file> --argocd-cm-path cm.yaml
+## Application
+PASS  want Progressing got Progressing rc=0 never reconciled, no status  []
+PASS  want Progressing got Progressing rc=0 status with no health  []
+PASS  want Progressing got Progressing rc=0 health object with no status field  []
+PASS  want Missing     got Missing     rc=0 nothing live yet, sync requested  []
+PASS  want Progressing got Progressing rc=0 between internal waves: Healthy, Running, OutOfSync  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing rc=0 through the migrator hook: Healthy, Running, Synced  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing rc=0 failed sync in retry backoff: Healthy, Running, finishedAt set  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing rc=0 resync requested, not yet started, previous op Succeeded  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing rc=0 operation being terminated  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing rc=0 one-wave child just applied: stale Healthy, stale OutOfSync, op cleared  [Holding the wave: child is Healthy but not Synced]
+PASS  want Progressing got Progressing rc=0 sync status Unknown (repo unreachable)  [Holding the wave: child is Healthy but not Synced]
+PASS  want Progressing got Progressing rc=0 no sync block at all  [Holding the wave: child is Healthy but not Synced]
+PASS  want Healthy     got Healthy     rc=0 done: Healthy, Synced, op Succeeded and cleared  []
+PASS  want Healthy     got Healthy     rc=0 done: Healthy, Synced, no op ever recorded  []
+PASS  want Healthy     got Healthy     rc=0 done: operation is JSON null after the controller cleared it  []
+PASS  want Degraded    got Degraded    rc=0 Degraded while retrying still fails the root  [boom]
+PASS  want Progressing got Progressing rc=0 Progressing passes through  [rolling]
+PASS  want Suspended   got Suspended   rc=0 Suspended passes through  []
+PASS  want Unknown     got Unknown     rc=0 Unknown passes through  []
+## InfisicalStaticSecret
+PASS  want Progressing got Progressing rc=0 no status  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing rc=0 older generation  [Waiting for the operator to reconcile this generation]
+PASS  want Healthy     got Healthy     rc=0 this generation, no error  [Secrets synced]
+PASS  want Healthy     got Healthy     rc=0 this generation, no error field  [Secrets synced]
+PASS  want Degraded    got Degraded    rc=0 this generation, error  [Reconcile failed, see the LastReconcileStatus condition]
+## InfisicalAuth
+PASS  want Progressing got Progressing rc=0 no status  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing rc=0 no conditions  [Waiting for the operator to reconcile this generation]
+PASS  want Healthy     got Healthy     rc=0 ready at this generation  [m]
+PASS  want Degraded    got Degraded    rc=0 not ready at this generation  [m]
+PASS  want Progressing got Progressing rc=0 ready but for an older generation  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing rc=0 only an unrelated condition  [Waiting for the operator to reconcile this generation]
+## InfisicalConnection
+PASS  want Progressing got Progressing rc=0 no status  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing rc=0 no conditions  [Waiting for the operator to reconcile this generation]
+PASS  want Healthy     got Healthy     rc=0 ready at this generation  [m]
+PASS  want Degraded    got Degraded    rc=0 not ready at this generation  [m]
+PASS  want Progressing got Progressing rc=0 ready but for an older generation  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing rc=0 only an unrelated condition  [Waiting for the operator to reconcile this generation]
+# behaviour cases: 36 PASS, 0 FAIL
+# Negative control 1: the Application script with its closing `end` removed must not produce a status
+{"level":"info","msg":"Starting configmap/secret informers","time":"2026-11-04T20:45:27Z"}
+{"level":"info","msg":"Configmap/secret informer synced","time":"2026-11-04T20:45:27Z"}
+{"level":"info","msg":"Cluster cache informer synced","time":"2026-11-04T20:45:27Z"}
+{"level":"info","msg":"Ignore status for all objects","time":"2026-11-04T20:45:27Z"}
+{"level":"fatal","msg":"failed to get resource health for argocd/case-13: \u003cstring\u003e at EOF:   syntax error\n","time":"2026-11-04T20:45:27Z"}
+rc=20
+# Negative control 2: with the override key disabled there is no Application health script
+{"level":"info","msg":"Starting configmap/secret informers","time":"2026-11-04T20:45:28Z"}
+{"level":"info","msg":"Configmap/secret informer synced","time":"2026-11-04T20:45:28Z"}
+{"level":"info","msg":"Cluster cache informer synced","time":"2026-11-04T20:45:28Z"}
+{"level":"info","msg":"Ignore status for all objects","time":"2026-11-04T20:45:28Z"}
+Health script is not configured for 'argoproj.io/Application'
+rc=0

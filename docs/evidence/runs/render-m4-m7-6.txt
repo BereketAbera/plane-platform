@@ -1,0 +1,4 @@
+# 2026-11-04T20:11:31Z conftest test --policy policy --no-color --namespace environments --namespace gitops --namespace workloads --namespace plane gitops/environments/dev/manifests.yaml gitops/environments/prod-sim/manifests.yaml
+
+814 tests, 814 passed, 0 warnings, 0 failures, 0 exceptions
+exit=0

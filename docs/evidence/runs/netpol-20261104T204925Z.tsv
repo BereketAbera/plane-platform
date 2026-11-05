@@ -1,0 +1,29 @@
+verdict	expect	observed	from	labels	to	port	note
+PASS	allow	CONNECTED	traefik	{"probe":"unlabelled"}	kube-dns.kube-system.svc.cluster.local	53	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-web.plane-dev.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-admin.plane-dev.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-space.plane-dev.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-live.plane-dev.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-api.plane-dev.svc.cluster.local	8000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-minio.plane-dev.svc.cluster.local	9000	
+INCONCLUSIVE	deny	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-pgdb.plane-dev.svc.cluster.local	5432	no route needs the database
+INCONCLUSIVE	deny	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-minio.plane-dev.svc.cluster.local	9090	Silo console stays closed
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-web.plane-prod-sim.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-admin.plane-prod-sim.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-space.plane-prod-sim.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-live.plane-prod-sim.svc.cluster.local	3000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-api.plane-prod-sim.svc.cluster.local	8000	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-minio.plane-prod-sim.svc.cluster.local	9000	
+INCONCLUSIVE	deny	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	no route needs the database
+INCONCLUSIVE	deny	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	plane-minio.plane-prod-sim.svc.cluster.local	9090	Silo console stays closed
+INCONCLUSIVE	deny	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	infisical-postgres.infisical.svc.cluster.local	5432	
+PASS	allow	CONNECTED	traefik	{"app.kubernetes.io/name":"traefik"}	argocd-server.argocd.svc.cluster.local	80	Service 80 is pod port 8080
+FAIL	allow	TIMEOUT	traefik	{"app.kubernetes.io/name":"traefik"}	kps-grafana.monitoring.svc.cluster.local	80	Service 80 is pod port 3000
+FAIL	allow	TIMEOUT	traefik	{"app.kubernetes.io/name":"traefik"}	kps-prometheus.monitoring.svc.cluster.local	9090	
+FAIL	allow	TIMEOUT	traefik	{"app.kubernetes.io/name":"traefik"}	kps-alertmanager.monitoring.svc.cluster.local	9093	
+INCONCLUSIVE	allow	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	infisical.infisical.svc.cluster.local	8080	
+PASS	allow	CONNECTED	traefik	{"app.kubernetes.io/name":"traefik"}	kubernetes.default.svc.cluster.local	443	CRD provider
+INCONCLUSIVE	deny	DNS	traefik	{"app.kubernetes.io/name":"traefik"}	loki.monitoring.svc.cluster.local	3100	
+PASS	deny	TIMEOUT	traefik	{"app.kubernetes.io/name":"traefik"}	argocd-repo-server.argocd.svc.cluster.local	8081	
+PASS	deny	TIMEOUT	traefik	{"app.kubernetes.io/name":"traefik"}	1.1.1.1	443	
+PASS	deny	TIMEOUT	traefik	{"probe":"unlabelled"}	kubernetes.default.svc.cluster.local	443	

@@ -1,0 +1,29 @@
+# Alloy restart test. Date: 2026-11-04T22:11:49Z. kubectl delete pod of the real Alloy, so its emptyDir positions are gone and it re-reads each container's log. 256Mi limit, GOMEMLIMIT 220MiB.
+time current_mi anon_mi file_mi peak_mi max_events oom_kill
+01:10:31 48.3 43.5 3.7 48.8 0 0
+01:10:36 79.4 74.3 3.8 80.7 0 0
+01:10:41 85.3 80.2 3.8 87.3 0 0
+01:10:46 89.3 83.9 4.0 91.0 0 0
+01:10:51 89.3 83.9 4.0 91.0 0 0
+01:10:56 89.3 83.9 4.0 91.0 0 0
+01:11:01 89.3 83.9 4.0 91.0 0 0
+01:11:07 89.3 84.0 4.0 91.0 0 0
+01:11:12 89.3 84.0 4.0 91.0 0 0
+01:11:17 89.4 84.1 4.0 91.0 0 0
+01:11:22 89.4 84.1 4.0 91.0 0 0
+01:11:27 89.4 84.1 4.0 91.0 0 0
+01:11:32 89.4 84.1 4.0 91.0 0 0
+01:11:37 89.4 84.1 4.0 91.0 0 0
+01:11:42 89.4 84.1 4.0 91.0 0 0
+01:11:47 89.4 84.1 4.0 91.0 0 0
+
+## Loki lines against the container's own log, for 22:09:30Z to 22:11:30Z, across the Alloy replacement at 22:10:30Z
+plane-dev        plane-web  pod log lines   24 (excluding Blackbox filter   16), Loki lines   16, unique Loki lines   16
+plane-prod-sim   plane-web  pod log lines   24 (excluding Blackbox filter   16), Loki lines   16, unique Loki lines   16
+monitoring       grafana    pod log lines   17 (excluding Blackbox filter   17), Loki lines   17, unique Loki lines   17
+plane-dev        plane-api  pod log lines   16 (excluding Blackbox filter    0), Loki lines    0, unique Loki lines    0
+
+## what the re-read cost
+loki_write_dropped_entries_total > 0 = [{"reason":"ingester_error","v":"3469"}]
+loki_discarded_samples_total > 0 = [{"reason":"too_far_behind","v":"2577"}]
+Alloy logged: final error sending batch, status 400 'entry too far behind'. Those lines are over an hour behind their stream, so they were stored the first time.

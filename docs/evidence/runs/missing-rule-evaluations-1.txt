@@ -1,0 +1,120 @@
+# date: 2026-11-05T00:47:29Z
+# Why PrometheusMissingRuleEvaluations goes pending on a healthy Prometheus.
+
+## Rule, from the rules API
+900 increase(prometheus_rule_group_iterations_missed_total{job="kps-prometheus",namespace="monitoring"}[5m]) > 0
+
+## Is any group slow? Real start times of evaluations (prometheus_rule_group_last_evaluation_timestamp_seconds) since 23:25, and how long they took
+groups 31
+largest gap between two evaluation start times, per group, seconds:
+  30.08 23:29:08 node-exporter
+  30.03 23:39:10 k8s.rules.container_resource
+  30.02 00:27:52 kubernetes-apps
+  30.02 23:56:53 kubelet.rules
+  30.02 00:18:33 kubernetes-storage
+  30.02 00:18:37 config-reloaders
+  30.02 00:18:24 kubernetes-system-apiserver
+  30.02 00:18:18 kube-prometheus-general.rules
+longest evaluation seen since 23:25: 0.158 s
+samples of it firing since 20:57: 0
+
+## prometheus_rule_group_iterations_missed_total increases, by minute, over the last 4h
+20:59 1 groups 1.0 missed; k8s.rules.container_resource
+21:00 2 groups 2.0 missed; kube-prometheus-node-recording.rules,node-network
+21:06 19 groups 19.0 missed; general.rules,k8s.rules.container_cpu_usage_seconds_total,k8s.rules.container_memory_cache,k8s.rules.container_memory_rss
+21:07 11 groups 11.0 missed; alertmanager.rules,config-reloaders,k8s.rules.container_memory_working_set_bytes,k8s.rules.container_resource,kube-promet
+21:36 1 groups 1.0 missed; plane.availability
+21:37 3 groups 3.0 missed; kubernetes-system,plane.data,platform.argocd
+21:38 7 groups 7.0 missed; k8s.rules.container_memory_cache,kube-state-metrics,kubelet.rules,kubernetes-apps,kubernetes-system-apiserver,plane.availab
+21:39 6 groups 6.0 missed; k8s.rules.container_memory_working_set_bytes,k8s.rules.container_resource,kubernetes-resources,kubernetes-system,node-expor
+23:32 3 groups 3.0 missed; general.rules,kubernetes-system,platform.workloads
+23:33 13 groups 13.0 missed; general.rules,k8s.rules.container_memory_rss,k8s.rules.container_memory_working_set_bytes,k8s.rules.container_resource,ku
+23:34 14 groups 14.0 missed; config-reloaders,k8s.rules.pod_owner,kube-prometheus-general.rules,kube-state-metrics,kubelet.rules,kubernetes-apps,kuber
+23:35 11 groups 11.0 missed; k8s.rules.container_cpu_usage_seconds_total,k8s.rules.container_memory_cache,kube-prometheus-node-recording.rules,kube-st
+23:36 3 groups 3.0 missed; k8s.rules.container_memory_swap,kubelet.rules,platform.network
+23:57 2 groups 2.0 missed; kubelet.rules,kubernetes-apps
+00:00 1 groups 1.0 missed; kube-prometheus-general.rules
+00:02 1 groups 1.0 missed; prometheus
+00:19 31 groups 31.0 missed; alertmanager.rules,config-reloaders,general.rules,k8s.rules.container_cpu_usage_seconds_total,k8s.rules.container_memory_
+
+## A recorded series in kubelet.rules, its sample timestamps around two of those misses (23:34:16, 23:35:46)
+recorded series in kubelet.rules, slots around the missed iterations:
+['23:26:23.288', '23:26:53.288', '23:27:23.288', '23:27:53.288', '23:28:23.288', '23:28:53.288', '23:29:23.288', '23:29:53.288', '23:30:23.288', '23:30:53.288', '23:31:23.288', '23:31:53.288', '23:32:23.288', '23:32:53.288', '23:33:53.288', '23:34:23.288', '23:35:23.288', '23:35:53.288', '23:36:23.288', '23:36:53.288', '23:37:23.288', '23:37:53.288']
+spacing [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 60.0, 30.0, 60.0, 30.0, 30.0, 30.0, 30.0, 30.0]
+iterations_total deltas per scrape [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0]
+
+## Prometheus log lines: same slot evaluated twice
+time=2026-11-05T00:34:48.468Z group=k8s.rules.container_memory_cache name=node_namespace_pod_container:container_memory_
+time=2026-11-05T00:34:51.743Z group=k8s.rules.container_memory_rss name=node_namespace_pod_container:container_memory_rs
+time=2026-11-05T00:34:56.104Z group=k8s.rules.container_cpu_usage_seconds_total name=node_namespace_pod_container:contai
+time=2026-11-05T00:34:56.107Z group=k8s.rules.container_cpu_usage_seconds_total name=node_namespace_pod_container:contai
+time=2026-11-05T00:35:15.378Z group=k8s.rules.container_memory_working_set_bytes name=node_namespace_pod_container:conta
+
+## REALTIME minus MONOTONIC on the node (clock.pl: clock_gettime via syscall, bracketed by two monotonic reads, once a second; prints moves over 50us), 00:20:55Z to 00:46:04Z
+00:21:17 step_us=+66.9 rel_us=66.9 bracket_ns=750
+00:21:47 step_us=+349.3 rel_us=416.2 bracket_ns=708
+00:22:17 step_us=+129.2 rel_us=545.4 bracket_ns=916
+00:22:47 step_us=+498.4 rel_us=1043.8 bracket_ns=667
+00:23:17 step_us=+220.3 rel_us=1264.0 bracket_ns=916
+00:23:48 step_us=+441.2 rel_us=1705.2 bracket_ns=666
+00:24:18 step_us=+209.7 rel_us=1915.0 bracket_ns=583
+00:24:48 step_us=+360.7 rel_us=2275.6 bracket_ns=583
+00:25:18 step_us=+335.9 rel_us=2611.5 bracket_ns=1000
+00:25:48 step_us=+208.9 rel_us=2820.4 bracket_ns=1083
+00:26:02 range_us=[0.0,2820.5] rel_us=2820.5
+00:26:18 step_us=+389.2 rel_us=3209.6 bracket_ns=916
+00:26:48 step_us=+178.1 rel_us=3387.7 bracket_ns=833
+00:27:18 step_us=+414.5 rel_us=3802.2 bracket_ns=1041
+00:27:48 step_us=+240.4 rel_us=4042.6 bracket_ns=833
+00:28:18 step_us=+206.8 rel_us=4249.3 bracket_ns=917
+00:28:48 step_us=+443.9 rel_us=4693.3 bracket_ns=666
+00:29:17 step_us=+106.3 rel_us=4799.6 bracket_ns=625
+00:29:47 step_us=+427.2 rel_us=5226.7 bracket_ns=666
+00:30:17 step_us=+324.4 rel_us=5551.1 bracket_ns=666
+00:30:47 step_us=+279.8 rel_us=5830.9 bracket_ns=625
+00:31:02 range_us=[0.0,5830.9] rel_us=5830.9
+00:31:17 step_us=+343.3 rel_us=6174.1 bracket_ns=666
+00:31:47 step_us=+190.7 rel_us=6364.9 bracket_ns=666
+00:32:47 step_us=+770.3 rel_us=7085.1 bracket_ns=667
+00:33:17 step_us=+240.5 rel_us=7325.6 bracket_ns=666
+00:33:47 step_us=+435.8 rel_us=7761.5 bracket_ns=750
+00:34:17 step_us=-6963.0 rel_us=798.5 bracket_ns=666
+00:34:47 step_us=-5319.5 rel_us=-4521.0 bracket_ns=792
+00:35:18 step_us=-546.6 rel_us=-5067.6 bracket_ns=833
+00:35:48 step_us=-102.0 rel_us=-5169.6 bracket_ns=708
+00:36:03 range_us=[-5169.6,7761.7] rel_us=-5169.6
+00:36:18 step_us=+353.3 rel_us=-4816.2 bracket_ns=708
+00:36:48 step_us=+345.1 rel_us=-4471.1 bracket_ns=708
+00:37:18 step_us=+99.6 rel_us=-4371.5 bracket_ns=666
+00:37:48 step_us=+402.2 rel_us=-3969.3 bracket_ns=916
+00:38:48 step_us=+423.8 rel_us=-3558.1 bracket_ns=833
+00:39:18 step_us=+75.4 rel_us=-3482.7 bracket_ns=792
+00:39:48 step_us=+406.5 rel_us=-3076.2 bracket_ns=750
+00:40:18 step_us=+243.1 rel_us=-2833.1 bracket_ns=916
+00:40:48 step_us=+56.4 rel_us=-2776.7 bracket_ns=834
+00:41:03 range_us=[-5169.6,7761.7] rel_us=-2776.7
+00:41:18 step_us=+627.9 rel_us=-2148.8 bracket_ns=666
+00:42:17 step_us=+419.7 rel_us=-1751.9 bracket_ns=583
+00:42:47 step_us=-192.3 rel_us=-1944.1 bracket_ns=667
+00:43:17 step_us=+550.9 rel_us=-1393.3 bracket_ns=666
+00:43:47 step_us=+417.7 rel_us=-975.5 bracket_ns=708
+00:44:17 step_us=+146.4 rel_us=-829.1 bracket_ns=2334
+00:44:47 step_us=+349.0 rel_us=-480.5 bracket_ns=584
+00:45:17 step_us=+306.2 rel_us=-174.3 bracket_ns=792
+00:45:47 step_us=+106.9 rel_us=-67.4 bracket_ns=875
+00:46:03 range_us=[-5169.6,7761.7] rel_us=-67.3
+00:46:04 end range_us=[-5169.6,7761.7]
+
+## Still sampling from 00:41:55Z
+00:42:17 step_us=+419.7 rel_us=419.8 bracket_ns=1291
+00:42:47 step_us=-192.3 rel_us=227.4 bracket_ns=667
+00:43:17 step_us=+550.9 rel_us=778.4 bracket_ns=667
+00:43:48 step_us=+417.8 rel_us=1196.1 bracket_ns=666
+00:44:18 step_us=+146.0 rel_us=1342.1 bracket_ns=666
+00:44:48 step_us=+349.0 rel_us=1691.1 bracket_ns=667
+00:45:18 step_us=+306.3 rel_us=1997.4 bracket_ns=916
+00:45:48 step_us=+106.9 rel_us=2104.2 bracket_ns=1083
+00:46:18 step_us=+460.9 rel_us=2565.1 bracket_ns=667
+00:46:48 step_us=+443.8 rel_us=3008.9 bracket_ns=1125
+00:47:08 range_us=[0.0,3009.1] rel_us=3008.9
+00:47:18 step_us=+231.4 rel_us=3240.2 bracket_ns=1459

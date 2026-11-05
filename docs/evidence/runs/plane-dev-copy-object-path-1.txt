@@ -1,0 +1,26 @@
+# How api reaches its own public host. 2026-11-04T22:32:23Z
+## Traefik Service
+10.96.112.180 ports=80 443 targetPorts=web websecure
+## Traefik pod
+NAME                       IP
+traefik-6955f98f54-7z9wr   10.244.0.34
+## api pod
+NAME                            IP
+plane-api-wl-655ddd4b88-vwcd4   10.244.0.8
+## Resolver result inside the api pod (musl, what boto3 uses)
+['10.96.112.180']
+## HTTP from the api pod to its public host, through that resolver
+/uploads?list-type=2 403 Silo
+/api/instances/ 200 uvicorn
+/ 200 nginx/1.31.8
+## Egress control: the same public host from a worker pod, which the policy gives no route to Traefik
+URLError <urlopen error timed out>
+## CoreDNS rewrite lines
+7:    rewrite name exact plane.dev.localhost traefik.traefik.svc.cluster.local
+8:    rewrite name exact plane.prod-sim.localhost traefik.traefik.svc.cluster.local
+## Does Traefik write an access log, and what did it see from the api pod?
+       0
+
+## Traefik's own counter, from Prometheus, 22:36 UTC. Traefik writes no access log here.
+PUT 200 plane-dev-plane-ingress-728db7a9072409b04992@kubernetescrd 2
+Two smoke runs had reached asset-duplicate by then. Browsers upload with POST, so copy_object is the only PUT on this route.

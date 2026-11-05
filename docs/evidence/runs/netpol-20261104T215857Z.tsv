@@ -1,0 +1,15 @@
+verdict	expect	observed	from	labels	to	port	note
+PASS	allow	CONNECTED	infisical	{"probe":"unlabelled"}	kube-dns.kube-system.svc.cluster.local	53	
+PASS	allow	CONNECTED	infisical	{"app":"infisical-standalone","component":"infisical"}	infisical-postgres.infisical.svc.cluster.local	5432	
+PASS	allow	CONNECTED	infisical	{"app":"infisical-standalone","component":"infisical"}	infisical-redis.infisical.svc.cluster.local	6379	
+PASS	allow	CONNECTED	infisical	{"app":"infisical-standalone","component":"infisical"}	kubernetes.default.svc.cluster.local	443	token review
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	plane-pgdb.plane-dev.svc.cluster.local	5432	
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	plane-api.plane-dev.svc.cluster.local	8000	
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	plane-redis.plane-dev.svc.cluster.local	6379	
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	plane-pgdb.plane-prod-sim.svc.cluster.local	5432	
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	plane-api.plane-prod-sim.svc.cluster.local	8000	
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	plane-redis.plane-prod-sim.svc.cluster.local	6379	
+PASS	deny	TIMEOUT	infisical	{"app":"infisical-standalone","component":"infisical"}	1.1.1.1	443	
+PASS	allow	CONNECTED	infisical	{"app.kubernetes.io/component":"backup"}	infisical-postgres.infisical.svc.cluster.local	5432	
+PASS	deny	TIMEOUT	infisical	{"app.kubernetes.io/component":"backup"}	infisical-redis.infisical.svc.cluster.local	6379	
+PASS	deny	TIMEOUT	infisical	{"probe":"unlabelled"}	infisical-postgres.infisical.svc.cluster.local	5432	

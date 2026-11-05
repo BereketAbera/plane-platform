@@ -1,0 +1,17 @@
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 2faaed51)
+    Argo CD not installed yet
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              unreachable
+    http://plane.prod-sim.localhost/         unreachable
+    http://argocd.localhost/                 unreachable
+    http://grafana.localhost/                unreachable
+    http://prometheus.localhost/             unreachable
+    http://alertmanager.localhost/           unreachable
+    http://infisical.localhost/              unreachable
+[1;34m==>[0m Resources
+plane-platform-control-plane: 733.9MiB / 13.63GiB, CPU 10.45%
+    Host disk free: 28 GiB

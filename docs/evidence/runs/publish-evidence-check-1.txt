@@ -1,0 +1,97 @@
+# Checks by hand on docs/evidence/runs after make publish-evidence. Names, counts and masked text, never a value.
+# date (UTC): 2026-11-05T00:49:50Z
+
+## The exact values in .local/test-accounts.env
+# command: grep -r -a -F -c -f <values file> <directory>, summed with awk. The values file was mode 0600 in a scratch directory and is removed
+values read: 6
+matching lines in docs/evidence/runs: 0
+matching lines in all of docs/evidence: 0
+matching lines in .local/evidence-raw, which the scrub never touches: 0
+control, the same command on a scratch file holding one value: 1
+
+## Every source value and its base64 form against every file in docs/evidence, by a separate script
+# extra: is what the script does not read: the kubeconfig's client key, and the smoke test's sentinel files, whose ids, hash and timestamps the smoke JSON reports by design. They are not secrets.
+values and base64 forms checked: 120 from 4 kinds of source
+files scanned by area: {'(top level)': 7, 'branding': 61, 'security': 69, 'ci': 46, 'runs': 330}
+(top level) hits: 0
+   not extra: 0  extra: 0
+branding hits: 0
+   not extra: 0  extra: 0
+ci hits: 0
+   not extra: 0  extra: 0
+runs hits: 111
+   not extra: 0  extra: 111
+security hits: 0
+   not extra: 0  extra: 0
+left alone as not secret, 8 characters or more:
+    cluster:argocd/argocd-secret/admin.passwordMtime: a timestamp
+    cluster:infisical/infisical-db/POSTGRES_DB: ordinary words
+    cluster:infisical/infisical-db/POSTGRES_USER: ordinary words
+    cluster:monitoring/kps-prometheus-token/namespace: ordinary words
+    cluster:plane-dev/plane-app-env/REDIS_URL: a URL with no credentials
+    cluster:plane-dev/plane-doc-store/AWS_S3_ENDPOINT_URL: a URL with no credentials
+    cluster:plane-dev/plane-live-env/REDIS_URL: a URL with no credentials
+    cluster:plane-prod-sim/plane-app-env/REDIS_URL: a URL with no credentials
+    cluster:plane-prod-sim/plane-doc-store/AWS_S3_ENDPOINT_URL: a URL with no credentials
+    cluster:plane-prod-sim/plane-live-env/REDIS_URL: a URL with no credentials
+    extra:sentinel-dev.created_at: a timestamp
+    extra:sentinel-prod-sim.created_at: a timestamp
+    extra:sentinel-prod-sim.environment: ordinary words
+    zero:infisical-admin.json.identity.name: ordinary words
+    zero:infisical-admin.json.organization.slug: ordinary words
+    zero:infisical-machine.json.organization.slug: ordinary words
+    zero:infisical-machine.json.project_slugs.dev: ordinary words
+    zero:infisical-machine.json.project_slugs.prod-sim: ordinary words
+
+## gitleaks over raw, by relative and by absolute path. .gitleaks.toml allowlists ^\.local/
+gitleaks dir .local/evidence-raw: exit 0
+gitleaks dir <absolute path>: exit 1
+findings: 32
+   18 infisical-idempotency-1.txt generic-api-key
+   1 infisical-prod-sim-crs-1.txt generic-api-key
+   2 infisical-seed-partial-1.txt generic-api-key
+   9 scan-images-* generic-api-key
+   2 scan-images-* jwt
+gitleaks dir docs/evidence/runs: exit 0
+
+## A search of the published copies for credential-looking text, long tokens masked as <Tn>. Read by hand. Script source files are left out
+dr-compare-live-1.txt:6 [assign] PASS doctored set refused: dev PG_PASSWORD: value differs;prod-sim SECRET_KEY: rewritten, same value
+dr-inplace-restore-1.txt:28 [assign] [1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: <T22> <T30>
+dr-inplace-restore-2.txt:23 [assign] [1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: <T22> <T30>
+harness-separation-state-1.txt:188 [cookie/auth] dev's session cookie: on <T19> 200, replayed on <T24> 401
+harness-separation-state-1.txt:194 [cookie/auth] prod-sim's session cookie: on <T24> 200, replayed on <T19> 401
+harness-worker-control-prod-sim-1.txt:63 [url-creds]   [2026-11-05 00:31:48,510: <T16>] Connected to amqp://plane:**@<T47>:5672//
+harness-worker-control-prod-sim-1.txt:65 [url-creds]   [2026-11-05 00:32:47,749: <T16>] Connected to amqp://plane:**@<T47>:5672//
+infisical-bootstrap-1.txt:50 [pem]             -----BEGIN <T16>
+infisical-bootstrap-1.txt:91 [pem]             -----BEGIN <T16>
+infisical-config-1.txt:38 [cookie/auth]   "accessTokenTTL": 3600,
+infisical-config-1.txt:39 [cookie/auth]   "<T17>": 3600,
+infisical-config-1.txt:72 [cookie/auth]   "accessTokenTTL": 3600,
+infisical-config-1.txt:73 [cookie/auth]   "<T17>": 3600,
+infisical-config-1.txt:87 [cookie/auth] accessToken
+infisical-firstboot-1.txt:43 [cookie/auth] 2026-11-04T21:10:43Z	Startup lock acquired [<T46>] [<T33>] [attempts=1]
+infisical-prod-sim-crs-1.txt:24 [assign] <T35> <T40> gen=1 <T21>:29:35Z <T23>:<T43>:<T28>
+infisical-prod-sim-crs-1.txt:25 [assign] <T36> uid=<redacted> gen=1 <T21>:29:35Z <T23>:<T43>:<T29>
+infisical-prod-sim-crs-1.txt:26 [assign] <T37> <T40> gen=1 <T21>:29:35Z <T23>:<T43>:<T30>
+infisical-prod-sim-crs-1.txt:27 [assign] <T36> <T40> gen=1 <T21>:29:35Z <T23>:<T43>:<T29>
+infisical-prod-sim-crs-1.txt:28 [assign] <T32> <T40> gen=1 <T21>:29:35Z <T23>:<T43>:<T25>
+infisical-prod-sim-crs-1.txt:29 [assign] <T36> <T40> gen=1 <T21>:29:35Z <T23>:<T43>:<T29>
+infisical-server-log-1.txt:17 [assign]    1 <T22>: Kubernetes token review request error (request error) [identityId=<id>] [status=403]
+infisical-server-log-1.txt:18 [assign]    1 <T22>: Kubernetes token review request error (request error) [identityId=<id>] [status=401]
+plane-dev-cookies-1.txt:2 [cookie/auth] csrf response: ('csrftoken', 'expires=Wed, 03 Nov 2027 22:56:14 GMT; HttpOnly; <T16>; Path=/; SameSite=Lax')
+plane-dev-cookies-1.txt:4 [cookie/auth] sign-in response: ('csrftoken', 'expires=Wed, 03 Nov 2027 22:56:14 GMT; HttpOnly; <T16>; Path=/; SameSite=Lax')
+plane-dev-cookies-1.txt:5 [cookie/auth] sign-in response: ('session-id', 'expires=Wed, 11 Nov 2026 22:56:14 GMT; HttpOnly; Max-Age=604800; Path=/; SameSite=Lax')
+plane-dev-cookies-1.txt:8 [cookie/auth] Domain attribute present on any cookie: False
+plane-dev-pdf-export-1.txt:5 [cookie/auth] no cookie: 401 {"message":"Authentication required"}
+plane-prod-sim-host-and-identity-1.txt:14 [cookie/auth] Set-Cookie: csrftoken=<value>; expires=Wed, 03 Nov 2027 23:26:45 GMT; HttpOnly; <T16>; Path=/; SameSite=Lax
+plane-prod-sim-separation-state-1.txt:188 [cookie/auth] dev's session cookie: on <T19> 200, replayed on <T24> 401
+plane-prod-sim-separation-state-1.txt:194 [cookie/auth] prod-sim's session cookie: on <T24> 200, replayed on <T19> 401
+plane-prod-sim-separation-state-2.txt:188 [cookie/auth] dev's session cookie: on <T19> 200, replayed on <T24> 401
+plane-prod-sim-separation-state-2.txt:194 [cookie/auth] prod-sim's session cookie: on <T24> 200, replayed on <T19> 401
+wayline-backend-check.txt:188 [assign]   <T37>: expected 1 of '"A new password to your Plane account has been requested"', found 0
+lines matched: 51
+
+## Private keys in the copies
+0
+50: -----BEGIN CERTIFICATE-----
+91: -----BEGIN CERTIFICATE-----

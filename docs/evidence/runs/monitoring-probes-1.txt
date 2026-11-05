@@ -1,0 +1,29 @@
+# captured 2026-11-04T22:19:31Z
+
+$ probes: probe_success and status code, with the public host passed as ?hostname=
+== probe_success
+plane-dev api-db http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/ 1
+plane-dev api-instance http://traefik.traefik.svc.cluster.local/api/instances/ 1
+plane-dev frontend http://traefik.traefik.svc.cluster.local/ 1
+plane-dev frontend http://traefik.traefik.svc.cluster.local/god-mode/ 1
+plane-dev frontend http://traefik.traefik.svc.cluster.local/spaces/ 1
+plane-dev live http://traefik.traefik.svc.cluster.local/live/health 1
+plane-prod-sim api-db http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/ 1
+plane-prod-sim api-instance http://traefik.traefik.svc.cluster.local/api/instances/ 1
+plane-prod-sim frontend http://traefik.traefik.svc.cluster.local/ 1
+plane-prod-sim frontend http://traefik.traefik.svc.cluster.local/god-mode/ 1
+plane-prod-sim frontend http://traefik.traefik.svc.cluster.local/spaces/ 1
+plane-prod-sim live http://traefik.traefik.svc.cluster.local/live/health 1
+== probe_http_status_code
+plane-dev api-db http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/ 404
+plane-dev api-instance http://traefik.traefik.svc.cluster.local/api/instances/ 200
+plane-dev frontend http://traefik.traefik.svc.cluster.local/ 200
+plane-dev frontend http://traefik.traefik.svc.cluster.local/god-mode/ 200
+plane-dev frontend http://traefik.traefik.svc.cluster.local/spaces/ 200
+plane-dev live http://traefik.traefik.svc.cluster.local/live/health 200
+plane-prod-sim api-db http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/ 404
+plane-prod-sim api-instance http://traefik.traefik.svc.cluster.local/api/instances/ 200
+plane-prod-sim frontend http://traefik.traefik.svc.cluster.local/ 200
+plane-prod-sim frontend http://traefik.traefik.svc.cluster.local/god-mode/ 200
+plane-prod-sim frontend http://traefik.traefik.svc.cluster.local/spaces/ 200
+plane-prod-sim live http://traefik.traefik.svc.cluster.local/live/health 200

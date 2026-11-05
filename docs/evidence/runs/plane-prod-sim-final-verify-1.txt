@@ -1,0 +1,15 @@
+# Final read-back in both environments: sentinel row, attachment, a new work item and its background activity. 2026-11-05T00:04:06Z
+smoke: environment=dev host=plane.dev.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.dev.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: .local/evidence-raw/plane-prod-sim-final-verify-dev-1.json
+RESULT  PASS
+smoke verify dev exit=0
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: .local/evidence-raw/plane-prod-sim-final-verify-prod-sim-1.json
+RESULT  PASS
+smoke verify prod-sim exit=0

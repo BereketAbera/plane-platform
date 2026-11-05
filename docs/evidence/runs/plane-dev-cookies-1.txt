@@ -1,0 +1,8 @@
+# Cookie attributes. Values never printed. 2026-11-04T22:56:14Z
+csrf response: ('csrftoken', 'expires=Wed, 03 Nov 2027 22:56:14 GMT; HttpOnly; Max-Age=31449600; Path=/; SameSite=Lax')
+sign-in status 302 location http://plane.dev.localhost
+sign-in response: ('csrftoken', 'expires=Wed, 03 Nov 2027 22:56:14 GMT; HttpOnly; Max-Age=31449600; Path=/; SameSite=Lax')
+sign-in response: ('session-id', 'expires=Wed, 11 Nov 2026 22:56:14 GMT; HttpOnly; Max-Age=604800; Path=/; SameSite=Lax')
+own host with the session: 200
+prod-sim host with the dev session: 401
+Domain attribute present on any cookie: False

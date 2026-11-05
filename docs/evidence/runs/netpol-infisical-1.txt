@@ -1,0 +1,27 @@
+# 2026-11-04T21:36:16Z
+$ FROM_NS=infisical scripts/test-netpol.sh
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED
+[1;32m ok[0m sentinel: name that does not exist -> DNS
+[1;32m ok[0m sentinel: default-deny blocks a new connection -> TIMEOUT
+[1;32m ok[0m sentinel: allow rule admits only the labelled client -> CONNECTED
+[1;32m ok[0m enforcement is on, and timeouts, refusals and DNS failures are told apart
+[1;34m==>[0m Running 14 rows from 3 source identities
+PASS          allow  CONNECTED  infisical {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  infisical {"app":"infisical-standalone","component":"infisical"} -> infisical-postgres.infisical.svc.cluster.local:5432
+PASS          allow  CONNECTED  infisical {"app":"infisical-standalone","component":"infisical"} -> infisical-redis.infisical.svc.cluster.local:6379
+PASS          allow  CONNECTED  infisical {"app":"infisical-standalone","component":"infisical"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    infisical {"app":"infisical-standalone","component":"infisical"} -> plane-pgdb.plane-dev.svc.cluster.local:5432
+PASS          deny   TIMEOUT    infisical {"app":"infisical-standalone","component":"infisical"} -> plane-api.plane-dev.svc.cluster.local:8000
+PASS          deny   TIMEOUT    infisical {"app":"infisical-standalone","component":"infisical"} -> plane-redis.plane-dev.svc.cluster.local:6379
+INCONCLUSIVE  deny   DNS        infisical {"app":"infisical-standalone","component":"infisical"} -> plane-pgdb.plane-prod-sim.svc.cluster.local:5432
+INCONCLUSIVE  deny   DNS        infisical {"app":"infisical-standalone","component":"infisical"} -> plane-api.plane-prod-sim.svc.cluster.local:8000
+INCONCLUSIVE  deny   DNS        infisical {"app":"infisical-standalone","component":"infisical"} -> plane-redis.plane-prod-sim.svc.cluster.local:6379
+PASS          deny   TIMEOUT    infisical {"app":"infisical-standalone","component":"infisical"} -> 1.1.1.1:443
+PASS          allow  CONNECTED  infisical {"app.kubernetes.io/component":"backup"} -> infisical-postgres.infisical.svc.cluster.local:5432
+PASS          deny   TIMEOUT    infisical {"app.kubernetes.io/component":"backup"} -> infisical-redis.infisical.svc.cluster.local:6379
+PASS          deny   TIMEOUT    infisical {"probe":"unlabelled"} -> infisical-postgres.infisical.svc.cluster.local:5432
+[1;34m==>[0m PASS 11, FAIL 0, INCONCLUSIVE 3. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261104T213616Z.tsv
+[1;31mfail[0m network policy matrix did not pass
+exit 1

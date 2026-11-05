@@ -1,0 +1,9 @@
+# H45: where Valkey's 'Possible SECURITY ATTACK' line comes from. 2026-11-04T23:59:12Z
+## plane-dev Valkey lines, and the netpol runs from evidence: netpol-20261104T230101Z ran 23:01:01 to about 23:02:40, mine from plane-dev ran 23:27:52 to 23:29:40
+11:M 04 Nov 2026 23:01:42.323 # Possible SECURITY ATTACK detected. It 
+11:M 04 Nov 2026 23:28:32.382 # Possible SECURITY ATTACK detected. It 
+## Earlier reading, plane-prod-sim Valkey before the drill replaced the pod: 23:03:27, inside netpol-20261104T230249Z.
+## Direct test in plane-prod-sim: lines before, then one HTTP request to Valkey's port from the api pod, the same thing curl sends in the matrix, then lines after
+reply bytes 0
+lines before 0, after 1
+11:M 04 Nov 2026 23:59:13.043 # Possible SECURITY ATTACK detected. It 

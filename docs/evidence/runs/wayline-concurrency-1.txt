@@ -1,0 +1,41 @@
+== 8 concurrent save-patch runs on disjoint paths, Wed Nov  4 23:35:12 EAT 2026
+[1;32m ok[0m 91-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 94-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 96-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 98-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 92-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 97-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 93-conc.patch: 2 files, 588 bytes
+[1;32m ok[0m 95-conc.patch: 2 files, 588 bytes
+failed runs: 0
+8
+== refuses a file another patch owns
+[1;33mwarn[0m packages/tailwind-config/index.css already belongs to 00-brand-import.patch
+[1;31mfail[0m 1 files are owned elsewhere. Narrow the paths or talk to that patch's owner
+exit=1
+== refuses an overlay file
+[1;33mwarn[0m packages/tailwind-config/brand/space.css is an overlay file: edit it in apps/wayline/overlay, do not patch it
+[1;31mfail[0m 1 files are owned elsewhere. Narrow the paths or talk to that patch's owner
+exit=1
+== bad name
+[1;31mfail[0m bad patch name: Scratch, expected NN-area, for example 20-shell
+exit=1
+== bracket path, literal
+[1;32m ok[0m 97-brackets.patch: 1 files, 447 bytes
+exit=0
+1
+[1;33mwarn[0m no differences for those paths, 97-brackets.patch removed if it existed
+re-save after undo exit=0 patch exists: 0
+== clean apply with all scratch patches
+[1;32m ok[0m 10 patches applied
+00-brand-import.patch
+01-fonts.patch
+== round trip
+[1;34m==>[0m Before: clean apply
+[1;32m ok[0m patchwork tree equals clean apply: 4b8c3e182ade11e60f1dbbeac05d921fa91428af
+[1;34m==>[0m Scratch edit, new file, deletion
+[1;32m ok[0m 99-roundtrip-scratch.patch: 3 files, 5691 bytes
+[1;34m==>[0m Rebuild from clean
+[1;32m ok[0m identical tree after save and rebuild: a216fd620bac9a09e305920a94578b1342c6f170
+[1;34m==>[0m Remove the scratch patch
+[1;32m ok[0m back to 4b8c3e182ade11e60f1dbbeac05d921fa91428af, scratch patch gone

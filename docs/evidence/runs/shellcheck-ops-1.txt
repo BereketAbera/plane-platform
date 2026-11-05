@@ -1,0 +1,18 @@
+--- shellcheck, every touched script, all severities
+scripts/up.sh exit=0
+scripts/test.sh exit=0
+scripts/status.sh exit=0
+scripts/test-netpol.sh exit=0
+scripts/gitops-publish.sh exit=0
+monitoring/ops/lib.sh exit=0
+--- bash 3.2 syntax
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+scripts/up.sh exit=0
+scripts/test.sh exit=0
+scripts/status.sh exit=0
+scripts/test-netpol.sh exit=0
+scripts/gitops-publish.sh exit=0
+monitoring/ops/lib.sh exit=0
+--- ownership.sh
+[1;32m ok[0m 202 Argo CD objects and 7 Terraform objects, no resource has two owners
+ownership exit=0

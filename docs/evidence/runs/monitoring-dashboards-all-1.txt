@@ -1,0 +1,82 @@
+# captured 2026-11-04T22:19:19Z
+
+$ gf_all.py: every dashboard loaded through the API, every target run. Variables resolved to the first value of their own query, so some empties below are that choice, not a broken panel.
+Alertmanager / Overview                                 HTTP 200 panels=4   targets: data=8   empty=0   error=0 vars={'datasource': 'prometheus', 'namespace': 'monitoring', 'service': 'kps-alertmanager', 'integration': 'discord'}
+CoreDNS                                                 HTTP 200 panels=12  targets: data=23  empty=1   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'job': 'coredns', 'instance': '10.244.0.2:9153'}
+Deployments and rollbacks                               HTTP 200 panels=7   targets: data=7   empty=0   error=0 vars={'namespace': 'plane-dev'}
+Grafana Overview                                        HTTP 200 panels=5   targets: data=0   empty=7   error=0 vars={'datasource': 'prometheus', 'job': 'kps-grafana', 'instance': '10.244.0.234:3000'}
+Kubernetes / Compute Resources /  Multi-Cluster         HTTP 200 panels=10  targets: data=18  empty=0   error=0 vars={'datasource': 'prometheus'}
+Kubernetes / Compute Resources / Cluster                HTTP 200 panels=22  targets: data=44  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': ''}
+Kubernetes / Compute Resources / Namespace (Pods)       HTTP 200 panels=18  targets: data=43  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring'}
+Kubernetes / Compute Resources / Namespace (Workloads)  HTTP 200 panels=13  targets: data=32  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring', 'type': 'barepod'}
+Kubernetes / Compute Resources / Node (Pods)            HTTP 200 panels=5   targets: data=22  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'node': 'plane-platform-control-plane'}
+Kubernetes / Compute Resources / Nodes Overview         HTTP 200 panels=5   targets: data=10  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': ''}
+Kubernetes / Compute Resources / Pod                    HTTP 200 panels=16  targets: data=38  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring', 'pod': 'alert-sink-78dcd6dbb4-fxfst'}
+Kubernetes / Compute Resources / Workload               HTTP 200 panels=13  targets: data=24  empty=2   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring', 'type': 'barepod', 'workload': 'alloy-cost-test'}
+Kubernetes / Kubelet                                    HTTP 200 panels=24  targets: data=25  empty=4   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'instance': '172.24.0.2:10250'}
+Kubernetes / Networking / Cluster                       HTTP 200 panels=13  targets: data=20  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': ''}
+Kubernetes / Networking / Namespace (Pods)              HTTP 200 panels=9   targets: data=14  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring'}
+Kubernetes / Networking / Namespace (Workload)          HTTP 200 panels=11  targets: data=18  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring', 'type': 'barepod'}
+Kubernetes / Networking / Pod                           HTTP 200 panels=8   targets: data=8   empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring', 'pod': 'alert-sink-78dcd6dbb4-fxfst'}
+Kubernetes / Networking / Workload                      HTTP 200 panels=10  targets: data=10  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': 'monitoring', 'workload': 'alert-sink', 'type': 'deployment'}
+Kubernetes / Persistent Volumes                         HTTP 200 panels=4   targets: data=0   empty=6   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'namespace': '', 'volume': ''}
+Logs                                                    HTTP 200 panels=4   targets: data=1   empty=3   error=0 vars={'search': ''}
+Node Exporter / Nodes                                   HTTP 200 panels=8   targets: data=17  empty=0   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'instance': '172.24.0.2:9100'}
+Node Exporter / USE Method / Cluster                    HTTP 200 panels=9   targets: data=9   empty=2   error=0 vars={'datasource': 'prometheus', 'cluster': ''}
+Node Exporter / USE Method / Node                       HTTP 200 panels=9   targets: data=9   empty=2   error=0 vars={'datasource': 'prometheus', 'cluster': '', 'instance': '172.24.0.2:9100'}
+Plane data services                                     HTTP 200 panels=15  targets: data=15  empty=1   error=0 vars={'namespace': 'plane-dev'}
+Platform overview                                       HTTP 200 panels=17  targets: data=16  empty=1   error=0 vars={}
+Prometheus / Overview                                   HTTP 200 panels=10  targets: data=0   empty=15  error=0 vars={'datasource': 'prometheus', 'cluster': '', 'job': 'kps-prometheus', 'instance': '10.244.0.46:9090'}
+TOTAL dashboards 26 data 431 empty 44 error 0
+EMPTY CoreDNS | Requests (DO bit) | sum(rate(coredns_dns_request_do_count_total{job=~"coredns",cluster=~"",instance=~"10.244.0.2:9153"}[5m])) or
+sum(rate(coredns_dns_do_requests_total{job=~"coredn
+EMPTY Grafana Overview | Firing Alerts | grafana_alerting_result_total{job=~"kps-grafana", instance=~"10.244.0.234:3000", state="alerting"}
+EMPTY Grafana Overview | Dashboards | sum(grafana_stat_totals_dashboard{job=~"kps-grafana", instance=~"10.244.0.234:3000"})
+EMPTY Grafana Overview | Build Info | grafana_build_info{job=~"kps-grafana", instance=~"10.244.0.234:3000"}
+EMPTY Grafana Overview | RPS | sum by (status_code) (irate(grafana_http_request_duration_seconds_count{job=~"kps-grafana", instance=~"10.244.0.234:3000"}[1m])) 
+EMPTY Grafana Overview | Request Latency | histogram_quantile(0.99, sum(irate(grafana_http_request_duration_seconds_bucket{instance=~"10.244.0.234:3000", job=~"kps-grafana"}[$__rate_interval])) by (le)) 
+EMPTY Grafana Overview | Request Latency | histogram_quantile(0.50, sum(irate(grafana_http_request_duration_seconds_bucket{instance=~"10.244.0.234:3000", job=~"kps-grafana"}[$__rate_interval])) by (le)) 
+EMPTY Grafana Overview | Request Latency | sum(irate(grafana_http_request_duration_seconds_sum{instance=~"10.244.0.234:3000", job=~"kps-grafana"}[$__rate_interval])) * 1 / sum(irate(grafana_http_request_
+EMPTY Kubernetes / Compute Resources / Workload | CPU Quota | sum(
+    max by (cluster, namespace, pod, container)(kube_pod_container_resource_limits{job="kube-state-metrics", cluster="", namespace="monitoring", resource="
+EMPTY Kubernetes / Compute Resources / Workload | CPU Quota | sum(
+    max by (cluster, namespace, pod, container)(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{cluster="", namespace="monitoring
+EMPTY Kubernetes / Kubelet | Config Error Count | sum(rate(kubelet_node_config_error{cluster="", job="kubelet", metrics_path="/metrics", instance=~"172.24.0.2:10250"}[$__rate_interval]))
+EMPTY Kubernetes / Kubelet | Storage Operation Error Rate | sum(rate(storage_operation_errors_total{cluster="",job="kubelet", metrics_path="/metrics",instance=~"172.24.0.2:10250"}[$__rate_interval])) by (instance, operat
+EMPTY Kubernetes / Kubelet | RPC rate | sum(rate(rest_client_requests_total{cluster="",job="kubelet", metrics_path="/metrics", instance=~"172.24.0.2:10250",code=~"3.."}[$__rate_interval]))
+EMPTY Kubernetes / Kubelet | RPC rate | sum(rate(rest_client_requests_total{cluster="",job="kubelet", metrics_path="/metrics", instance=~"172.24.0.2:10250",code=~"5.."}[$__rate_interval]))
+EMPTY Kubernetes / Persistent Volumes | Volume Space Usage | (
+  sum without(instance, node) (topk(1, (kubelet_volume_stats_capacity_bytes{cluster="", job="kubelet", metrics_path="/metrics", namespace="", persistentvolume
+EMPTY Kubernetes / Persistent Volumes | Volume Space Usage | sum without(instance, node) (topk(1, (kubelet_volume_stats_available_bytes{cluster="", job="kubelet", metrics_path="/metrics", namespace="", persistentvolumecla
+EMPTY Kubernetes / Persistent Volumes | Volume Space Usage | max without(instance,node) (
+(
+  topk(1, kubelet_volume_stats_capacity_bytes{cluster="", job="kubelet", metrics_path="/metrics", namespace="", persistentvolumec
+EMPTY Kubernetes / Persistent Volumes | Volume inodes Usage | sum without(instance, node) (topk(1, (kubelet_volume_stats_inodes_used{cluster="", job="kubelet", metrics_path="/metrics", namespace="", persistentvolumeclaim="
+EMPTY Kubernetes / Persistent Volumes | Volume inodes Usage | (
+  sum without(instance, node) (topk(1, (kubelet_volume_stats_inodes{cluster="", job="kubelet", metrics_path="/metrics", namespace="", persistentvolumeclaim=""
+EMPTY Kubernetes / Persistent Volumes | Volume inodes Usage | max without(instance,node) (
+topk(1, kubelet_volume_stats_inodes_used{cluster="", job="kubelet", metrics_path="/metrics", namespace="", persistentvolumeclaim=""
+EMPTY Logs | Log lines by container | sum by (container) (count_over_time({namespace="$namespace", container=~"$container"} |~ "(?i)" [$__auto]))
+EMPTY Logs | Log lines | {namespace="$namespace", container=~"$container"} |~ "(?i)"
+EMPTY Logs | API requests with a 5xx | {namespace="$namespace", container="plane-api"} | json | status_code >= 500
+EMPTY Node Exporter / USE Method / Cluster | Network Saturation (Drops Receive/Transmit) | instance:node_network_receive_drop_excluding_lo:rate5m{job="node-exporter", cluster=~""} != 0
+EMPTY Node Exporter / USE Method / Cluster | Network Saturation (Drops Receive/Transmit) | instance:node_network_transmit_drop_excluding_lo:rate5m{job="node-exporter", cluster=~""} != 0
+EMPTY Node Exporter / USE Method / Node | Network Saturation (Drops Receive/Transmit) | instance:node_network_receive_drop_physical:rate5m{job="node-exporter", instance="172.24.0.2:9100", cluster=~""} != 0
+EMPTY Node Exporter / USE Method / Node | Network Saturation (Drops Receive/Transmit) | instance:node_network_transmit_drop_physical:rate5m{job="node-exporter", instance="172.24.0.2:9100", cluster=~""} != 0
+EMPTY Plane data services | Last backup | time() - max(kube_job_status_completion_time{namespace="plane-dev",job_name=~"plane-backup-.*"})
+EMPTY Platform overview | 5xx ratio by environment | sum by (env) (label_replace(rate(traefik_service_requests_total{service=~"plane-(dev|prod-sim)-.*",code=~"5.."}[5m]), "env", "$1", "service", "plane-(dev|prod-s
+EMPTY Prometheus / Overview | Prometheus Stats | count by (cluster, job, instance, version) (prometheus_build_info{cluster=~"", job=~"kps-prometheus", instance=~"10.244.0.46:9090"})
+EMPTY Prometheus / Overview | Prometheus Stats | max by (cluster, job, instance) (time() - process_start_time_seconds{cluster=~"", job=~"kps-prometheus", instance=~"10.244.0.46:9090"})
+EMPTY Prometheus / Overview | Target Sync | sum(rate(prometheus_target_sync_length_seconds_sum{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[5m])) by (cluster, job, scrape_job, instance)
+EMPTY Prometheus / Overview | Targets | sum by (cluster, job, instance) (prometheus_sd_discovered_targets{cluster=~"", job=~"kps-prometheus",instance=~"10.244.0.46:9090"})
+EMPTY Prometheus / Overview | Average Scrape Interval Duration | rate(prometheus_target_interval_length_seconds_sum{cluster=~"", job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[5m]) / rate(prometheus_target_interval_lengt
+EMPTY Prometheus / Overview | Scrape failures | sum by (cluster, job, instance) (rate(prometheus_target_scrapes_exceeded_body_size_limit_total{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[1
+EMPTY Prometheus / Overview | Scrape failures | sum by (cluster, job, instance) (rate(prometheus_target_scrapes_exceeded_sample_limit_total{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[1m])
+EMPTY Prometheus / Overview | Scrape failures | sum by (cluster, job, instance) (rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}
+EMPTY Prometheus / Overview | Scrape failures | sum by (cluster, job, instance) (rate(prometheus_target_scrapes_sample_out_of_bounds_total{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[1m]))
+EMPTY Prometheus / Overview | Scrape failures | sum by (cluster, job, instance) (rate(prometheus_target_scrapes_sample_out_of_order_total{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[1m]))
+EMPTY Prometheus / Overview | Appended Samples | rate(prometheus_tsdb_head_samples_appended_total{cluster=~"", job=~"kps-prometheus",instance=~"10.244.0.46:9090"}[5m])
+EMPTY Prometheus / Overview | Head Series | prometheus_tsdb_head_series{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}
+EMPTY Prometheus / Overview | Head Chunks | prometheus_tsdb_head_chunks{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090"}
+EMPTY Prometheus / Overview | Query Rate | rate(prometheus_engine_query_duration_seconds_count{cluster=~"",job=~"kps-prometheus",instance=~"10.244.0.46:9090",slice="inner_eval"}[5m])
+EMPTY Prometheus / Overview | Stage Duration | max by (slice) (prometheus_engine_query_duration_seconds{quantile="0.9",cluster=~"", job=~"kps-prometheus",instance=~"10.244.0.46:9090"}) * 1e3

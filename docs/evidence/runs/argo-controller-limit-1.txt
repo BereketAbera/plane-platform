@@ -1,0 +1,22 @@
+# date: 2026-11-05T00:37:05Z
+# command: terraform apply -lock-timeout=10m in infrastructure/terraform/environments/local, started 00:36:20Z, exit 0 at 00:36:49Z
+# plan before: Plan: 0 to add, 1 to change, 0 to destroy. Only module.argocd.helm_release.argocd.
+# plan after: No changes. Your infrastructure matches the configuration.  (terraform plan -detailed-exitcode, exit 0)
+# limit before: controller 768Mi, memory.peak 731.4 MiB in plane-dev-memory-1.txt, 533 MiB on the pod running at 00:16Z. ResourceQuota and LimitRange in argocd: none.
+# pods after:
+NAME                                  RESTARTS   CREATED                READY   MEM
+argocd-application-controller-0       0          2026-11-05T00:36:37Z   true    1Gi
+argocd-redis-ff6755697-jcd8p          0          2026-11-04T20:51:17Z   true    64Mi
+argocd-redis-secret-init-5bv5z        0          2026-11-05T00:36:32Z   false   192Mi
+argocd-repo-server-8464d9c6cc-ssf2f   0          2026-11-04T23:23:37Z   true    512Mi
+argocd-server-5bcf485686-5vhnh        0          2026-11-04T23:23:37Z   true    192Mi
+# workloads after:
+KIND          NAME                               REPLICAS   LIMIT   GEN
+Deployment    argocd-applicationset-controller   0          128Mi   2
+Deployment    argocd-redis                       1          64Mi    1
+Deployment    argocd-repo-server                 1          512Mi   2
+Deployment    argocd-server                      1          192Mi   2
+StatefulSet   argocd-application-controller      1          1Gi     4
+# node:
+MemTotal:       14294756 kB
+MemAvailable:    3988268 kB

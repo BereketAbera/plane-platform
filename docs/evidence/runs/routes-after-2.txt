@@ -1,0 +1,58 @@
+date: 2026-11-04T23:27:51Z
+command: tests/routes/internal-routes.sh
+PASS     host: http://argocd.localhost/healthz                              expected=200       got=200         
+PASS     host: http://grafana.localhost/api/health                          expected=200       got=200         
+PASS     host: http://prometheus.localhost/-/ready                          expected=200       got=200         
+PASS     host: http://alertmanager.localhost/-/ready                        expected=200       got=200         
+PASS     host: http://infisical.localhost/api/status                        expected=200       got=200         
+PASS     kind gateway is inside 172.16.0.0/12, so the host is admitted      expected=yes       got=172.24.0.1  
+PASS     plane-dev: the api pods are not hostNetwork                        expected=none      got=none        
+PASS     plane-dev: admission refuses a hostNetwork pod (server dry run)    expected=refused   got=refused     
+plane-dev PASS     same moment, this pod reaches Traefik: plane.dev.localhost         expected=200       got=200         
+plane-dev PASS     pod via Service: argocd.localhost/api/version                      expected=403       got=403         
+plane-dev PASS     pod via Service: grafana.localhost/api/health                      expected=403       got=403         
+plane-dev PASS     pod via Service: prometheus.localhost/api/v1/query?query=up        expected=403       got=403         
+plane-dev PASS     pod via Service: alertmanager.localhost/api/v2/silences            expected=403       got=403         
+plane-dev PASS     pod via Service: infisical.localhost/api/status                    expected=403       got=403         
+plane-dev PASS     pod spoofs X-Forwarded-For: prometheus.localhost                   expected=403       got=403         
+plane-dev PASS     pod spoofs X-Forwarded-For: alertmanager.localhost                 expected=403       got=403         
+plane-dev PASS     pod spoofs X-Real-Ip: prometheus.localhost                         expected=403       got=403         
+plane-dev PASS     pod spoofs X-Real-Ip: alertmanager.localhost                       expected=403       got=403         
+plane-dev PASS     pod spoofs Forwarded: prometheus.localhost                         expected=403       got=403         
+plane-dev PASS     pod spoofs Forwarded: alertmanager.localhost                       expected=403       got=403         
+plane-dev PASS     pod respells the host: PROMETHEUS.LOCALHOST                        expected=403/404   got=403         
+plane-dev PASS     pod respells the host: prometheus.localhost:80                     expected=403/404   got=403         
+plane-dev PASS     pod respells the host: prometheus.localhost.                       expected=403/404   got=403         
+plane-dev PASS     pod via other door: node NodePort 172.24.0.2:30080                 expected=no data   got=403         
+plane-dev PASS     pod via other door: kind gateway 172.24.0.1:80                     expected=no data   got=timeout     
+plane-dev PASS     pod via other door: host.docker.internal:80                        expected=no data   got=timeout     
+plane-dev PASS     pod via other door: Docker Desktop host 192.168.65.254:80          expected=no data   got=timeout     
+plane-dev PASS     pod via other door: name prometheus.localhost:80                   expected=no data   got=ConnectionRefusedError 
+plane-dev GAP      this pod reaches the other environment's public host: plane.prod-sim.localhost expected=unclosed  got=200         as any browser could
+PASS     plane-dev: operator reconciled in the last 150s, no error lines    expected=>0,0      got=14,0        
+PASS     plane-prod-sim: the api pods are not hostNetwork                   expected=none      got=none        
+PASS     plane-prod-sim: admission refuses a hostNetwork pod (server dry run) expected=refused   got=refused     
+plane-prod-sim PASS     same moment, this pod reaches Traefik: plane.prod-sim.localhost    expected=200       got=200         
+plane-prod-sim PASS     pod via Service: argocd.localhost/api/version                      expected=403       got=403         
+plane-prod-sim PASS     pod via Service: grafana.localhost/api/health                      expected=403       got=403         
+plane-prod-sim PASS     pod via Service: prometheus.localhost/api/v1/query?query=up        expected=403       got=403         
+plane-prod-sim PASS     pod via Service: alertmanager.localhost/api/v2/silences            expected=403       got=403         
+plane-prod-sim PASS     pod via Service: infisical.localhost/api/status                    expected=403       got=403         
+plane-prod-sim PASS     pod spoofs X-Forwarded-For: prometheus.localhost                   expected=403       got=403         
+plane-prod-sim PASS     pod spoofs X-Forwarded-For: alertmanager.localhost                 expected=403       got=403         
+plane-prod-sim PASS     pod spoofs X-Real-Ip: prometheus.localhost                         expected=403       got=403         
+plane-prod-sim PASS     pod spoofs X-Real-Ip: alertmanager.localhost                       expected=403       got=403         
+plane-prod-sim PASS     pod spoofs Forwarded: prometheus.localhost                         expected=403       got=403         
+plane-prod-sim PASS     pod spoofs Forwarded: alertmanager.localhost                       expected=403       got=403         
+plane-prod-sim PASS     pod respells the host: PROMETHEUS.LOCALHOST                        expected=403/404   got=403         
+plane-prod-sim PASS     pod respells the host: prometheus.localhost:80                     expected=403/404   got=403         
+plane-prod-sim PASS     pod respells the host: prometheus.localhost.                       expected=403/404   got=403         
+plane-prod-sim PASS     pod via other door: node NodePort 172.24.0.2:30080                 expected=no data   got=403         
+plane-prod-sim PASS     pod via other door: kind gateway 172.24.0.1:80                     expected=no data   got=timeout     
+plane-prod-sim PASS     pod via other door: host.docker.internal:80                        expected=no data   got=timeout     
+plane-prod-sim PASS     pod via other door: Docker Desktop host 192.168.65.254:80          expected=no data   got=timeout     
+plane-prod-sim PASS     pod via other door: name prometheus.localhost:80                   expected=no data   got=ConnectionRefusedError 
+plane-prod-sim GAP      this pod reaches the other environment's public host: plane.dev.localhost expected=unclosed  got=200         as any browser could
+PASS     plane-prod-sim: operator reconciled in the last 150s, no error lines expected=>0,0      got=12,0        
+SUMMARY failed=0 blocked=0
+routes exit=0

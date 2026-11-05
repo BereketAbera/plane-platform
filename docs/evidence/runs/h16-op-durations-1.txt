@@ -1,0 +1,13 @@
+# date: 2026-11-04T23:17:12Z
+# How long operation="sync" stayed open per Application, from Prometheus: max by (name) (argocd_app_info{operation="sync"}), 30s step, last 6h. Each entry is (start, minutes). Prometheus came up during KPS's own first sync, so that 591s sync (measured by the bootstrap agent) is not in this data.
+oldest data 17:17:12Z now 23:17:12Z
+h16-sync-failure-probe [('22:56', 21)]
+infisical [('21:05', 6)]
+kube-prometheus-stack [('21:29', 0)]
+monitoring-extras [('23:00', 0)]
+plane-dev [('21:12', 34), ('22:40', 0), ('22:51', 0)]
+plane-prod-sim [('21:47', 2), ('22:40', 0), ('22:51', 0)]
+root [('21:05', 41), ('23:00', 0)]
+term-b [('21:07', 0)]
+wave-probe-child-a [('21:10', 0)]
+wave-probe-parent [('21:10', 0)]

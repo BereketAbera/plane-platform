@@ -1,0 +1,73 @@
+=== T1 full form, everything passes
+PASS  rc 0
+PASS  order
+PASS  smoke dev then prod-sim
+PASS  all passed
+PASS  summary holds gates
+PASS  summary holds e2e
+PASS  gates evidence written
+PASS  summary evidence written
+PASS  smoke evidence named per the review
+=== T2 keeps going after a failure
+PASS  gate failure rc 1
+PASS  kept going
+PASS  labelled FAIL
+PASS  netpol failure rc 1
+PASS  kept going after netpol
+PASS  smoke dev failure rc 1
+PASS  prod-sim still ran
+=== T3 BLOCKED is not a pass
+PASS  BLOCKED gives rc 2
+PASS  labelled BLOCKED
+PASS  does not say all passed
+PASS  says so
+PASS  FAIL outranks BLOCKED
+PASS  both labels (1)
+PASS  both labels (2)
+PASS  exit 2 from gates is a FAIL, only smoke uses 2 for BLOCKED
+PASS  gates FAIL
+=== T4 e2e form
+PASS  [e2e dev] rc 0
+PASS  [e2e dev] smoke only, dev
+PASS  [e2e dev] nothing else ran
+PASS  [e2e ENV=dev] rc 0
+PASS  [e2e ENV=dev] smoke only, dev
+PASS  [e2e ENV=dev] nothing else ran
+PASS  e2e prod-sim
+PASS  ENV=prod-sim in the environment
+PASS  no environment means dev
+PASS  evidence path per the review
+PASS  e2e passes smoke's exit 0 through
+PASS  e2e passes smoke's exit 1 through
+PASS  e2e passes smoke's exit 2 through
+PASS  [e2e staging] refused with rc 1
+PASS  [e2e staging] usage
+PASS  [e2e staging] nothing ran
+PASS  [bogus] refused with rc 1
+PASS  [bogus] usage
+PASS  [bogus] nothing ran
+PASS  [e2e dev extra] refused with rc 1
+PASS  [e2e dev extra] usage
+PASS  [e2e dev extra] nothing ran
+PASS  [e2e ENV=staging] refused with rc 1
+PASS  [e2e ENV=staging] usage
+PASS  [e2e ENV=staging] nothing ran
+PASS  ENV=staging refused
+=== T5 no cluster means BLOCKED, not FAIL
+PASS  full form rc 2
+PASS  nothing ran
+PASS  all labelled (1)
+PASS  all labelled (2)
+PASS  says make up
+PASS  e2e form rc 2
+PASS  labelled
+=== T6 through make, positional ENV
+PASS  make test-e2e ENV=prod-sim rc
+PASS  reaches prod-sim
+PASS  make test-e2e default
+PASS  make test ignores ENV and runs both
+PASS  make reports the script's exit 2
+PASS  make reports the script's exit 1
+PASS  make passes a bad env to usage
+
+SUMMARY: 65 passed, 0 failed

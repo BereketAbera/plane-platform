@@ -1,0 +1,61 @@
+# Does an operator restart cause a rollout? plane-prod-sim. Started 2026-11-04T21:52:22Z
+$ auto-reload annotation on workloads, and pod template etag annotations
+Deployment/iso-prod-sim-controller-manager auto-reload=-
+Deployment/plane-admin-wl auto-reload=-
+Deployment/plane-api-wl auto-reload=true
+Deployment/plane-beat-worker-wl auto-reload=true
+Deployment/plane-live-wl auto-reload=true
+Deployment/plane-space-wl auto-reload=-
+Deployment/plane-web-wl auto-reload=-
+Deployment/plane-worker-wl auto-reload=true
+Deployment/postgres-exporter auto-reload=true
+Deployment/redis-exporter auto-reload=-
+StatefulSet/plane-minio-wl auto-reload=-
+StatefulSet/plane-pgdb-wl auto-reload=-
+StatefulSet/plane-rabbitmq-wl auto-reload=-
+StatefulSet/plane-redis-wl auto-reload=-
+
+$ generations before
+Deployment/iso-prod-sim-controller-manager gen=1 etags=0
+Deployment/plane-admin-wl gen=1 etags=0
+Deployment/plane-api-wl gen=1 etags=0
+Deployment/plane-beat-worker-wl gen=1 etags=0
+Deployment/plane-live-wl gen=1 etags=0
+Deployment/plane-space-wl gen=1 etags=0
+Deployment/plane-web-wl gen=1 etags=0
+Deployment/plane-worker-wl gen=1 etags=0
+Deployment/postgres-exporter gen=2 etags=1
+Deployment/redis-exporter gen=1 etags=0
+StatefulSet/plane-minio-wl gen=1 etags=0
+StatefulSet/plane-pgdb-wl gen=1 etags=0
+StatefulSet/plane-rabbitmq-wl gen=1 etags=0
+StatefulSet/plane-redis-wl gen=1 etags=0
+
+$ delete the operator pod
+pod "iso-prod-sim-controller-manager-5cc86cc76-nwhb6" deleted from plane-prod-sim namespace
+Waiting for deployment "iso-prod-sim-controller-manager" rollout to finish: 0 of 1 updated replicas are available...
+deployment "iso-prod-sim-controller-manager" successfully rolled out
+
+$ new operator log, reduced
+  15 INFO AuthStrategyResolver
+  12 INFO Starting EventSource
+  12 INFO Reconciliation successful with 9 secrets synced from Infisical, requeu
+   6 INFO Starting workers
+   6 INFO Starting Controller
+   2 INFO setup
+   2 INFO controller-runtime.metrics
+   1 INFO starting server
+   1 INFO Watching CRDs in namespaces: [plane-prod-sim]
+   1 DEBUG events
+
+$ generations after, compared
+IDENTICAL: no workload's generation or pod template moved
+PASS the same pods are running
+plane-app-env error=false affected=0 deployments were redeployed due to secret changes
+plane-app-keys error=false affected=0 deployments were redeployed due to secret changes
+plane-doc-store error=false affected=0 deployments were redeployed due to secret changes
+plane-live-env error=false affected=0 deployments were redeployed due to secret changes
+plane-pgdb error=false affected=0 deployments were redeployed due to secret changes
+plane-rabbitmq error=false affected=0 deployments were redeployed due to secret changes
+{"sync":"Synced","health":"Healthy"}
+# finished 2026-11-04T21:54:04Z

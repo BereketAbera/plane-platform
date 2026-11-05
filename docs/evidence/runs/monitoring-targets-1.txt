@@ -1,0 +1,44 @@
+# captured 2026-11-04T22:19:18Z
+
+$ curl http://prometheus.localhost/api/v1/targets?state=active
+active targets: 40 {'up': 40}
+up    probe/plane-dev/plane-api-db                         http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/ last=22:19:07 
+up    probe/plane-dev/plane-api-instance                   http://traefik.traefik.svc.cluster.local/api/instances/      last=22:19:05 
+up    probe/plane-dev/plane-frontend                       http://traefik.traefik.svc.cluster.local/                    last=22:19:09 
+up    probe/plane-dev/plane-frontend                       http://traefik.traefik.svc.cluster.local/god-mode/           last=22:19:13 
+up    probe/plane-dev/plane-frontend                       http://traefik.traefik.svc.cluster.local/spaces/             last=22:19:10 
+up    probe/plane-dev/plane-live                           http://traefik.traefik.svc.cluster.local/live/health         last=22:19:09 
+up    probe/plane-prod-sim/plane-api-db                    http://traefik.traefik.svc.cluster.local/api/public/anchor/__probe__/settings/ last=22:19:15 
+up    probe/plane-prod-sim/plane-api-instance              http://traefik.traefik.svc.cluster.local/api/instances/      last=22:19:17 
+up    probe/plane-prod-sim/plane-frontend                  http://traefik.traefik.svc.cluster.local/                    last=22:19:12 
+up    probe/plane-prod-sim/plane-frontend                  http://traefik.traefik.svc.cluster.local/god-mode/           last=22:19:05 
+up    probe/plane-prod-sim/plane-frontend                  http://traefik.traefik.svc.cluster.local/spaces/             last=22:19:10 
+up    probe/plane-prod-sim/plane-live                      http://traefik.traefik.svc.cluster.local/live/health         last=22:19:03 
+up    serviceMonitor/monitoring-agents/kps-node-exporter/0 172.24.0.2:9100                                              last=22:18:55 
+up    serviceMonitor/monitoring/alloy/0                    10.244.0.170:12345                                           last=22:19:13 
+up    serviceMonitor/monitoring/argocd-application-controller/0 10.244.0.168:8082                                            last=22:18:48 
+up    serviceMonitor/monitoring/kps-alertmanager/0         10.244.0.254:9093                                            last=22:18:53 
+up    serviceMonitor/monitoring/kps-alertmanager/1         10.244.0.254:8080                                            last=22:19:15 
+up    serviceMonitor/monitoring/kps-coredns/0              10.244.0.2:9153                                              last=22:19:17 
+up    serviceMonitor/monitoring/kps-coredns/0              10.244.0.4:9153                                              last=22:19:10 
+up    serviceMonitor/monitoring/kps-grafana/0              10.244.0.251:3000                                            last=22:18:59 
+up    serviceMonitor/monitoring/kps-kube-state-metrics/0   10.244.0.41:8080                                             last=22:19:16 
+up    serviceMonitor/monitoring/kps-kubelet/0              172.24.0.2:10250                                             last=22:18:54 
+up    serviceMonitor/monitoring/kps-kubelet/1              172.24.0.2:10250                                             last=22:19:14 
+up    serviceMonitor/monitoring/kps-operator/0             10.244.0.250:8080                                            last=22:18:52 
+up    serviceMonitor/monitoring/kps-prometheus/0           10.244.0.5:9090                                              last=22:19:02 
+up    serviceMonitor/monitoring/kps-prometheus/1           10.244.0.5:8080                                              last=22:18:54 
+up    serviceMonitor/monitoring/loki/0                     10.244.0.71:3100                                             last=22:19:05 
+up    serviceMonitor/monitoring/traefik/0                  10.244.0.34:9100                                             last=22:18:49 
+up    serviceMonitor/plane-dev/plane-minio/0               10.244.0.241:9000                                            last=22:18:59 
+up    serviceMonitor/plane-dev/plane-minio/1               10.244.0.241:9000                                            last=22:19:10 
+up    serviceMonitor/plane-dev/plane-rabbitmq/0            10.244.0.240:15692                                           last=22:19:05 
+up    serviceMonitor/plane-dev/plane-rabbitmq/1            10.244.0.240:15692                                           last=22:18:56 
+up    serviceMonitor/plane-dev/postgres-exporter/0         10.244.0.83:9187                                             last=22:19:00 
+up    serviceMonitor/plane-dev/redis-exporter/0            10.244.0.122:9121                                            last=22:19:14 
+up    serviceMonitor/plane-prod-sim/plane-minio/0          10.244.0.57:9000                                             last=22:18:36 
+up    serviceMonitor/plane-prod-sim/plane-minio/1          10.244.0.57:9000                                             last=22:18:29 
+up    serviceMonitor/plane-prod-sim/plane-rabbitmq/0       10.244.0.59:15692                                            last=22:19:00 
+up    serviceMonitor/plane-prod-sim/plane-rabbitmq/1       10.244.0.59:15692                                            last=22:19:18 
+up    serviceMonitor/plane-prod-sim/postgres-exporter/0    10.244.0.82:9187                                             last=22:19:11 
+up    serviceMonitor/plane-prod-sim/redis-exporter/0       10.244.0.120:9121                                            last=22:18:53 

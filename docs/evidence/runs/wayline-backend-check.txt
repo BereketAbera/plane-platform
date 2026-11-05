@@ -1,0 +1,339 @@
+Wayline backend derived image check. Output is as produced, except step 3 keeps only build-step lines, step 4 drops docker pull progress, and step 5 keeps the first 6 lines.
+2026-11-04T20:59:45Z
+host: Darwin arm64, docker server 29.6.1
+
+######## 1. Base digest: docker buildx imagetools inspect makeplane/plane-backend:v1.4.3
+Name:      docker.io/makeplane/plane-backend:v1.4.3
+MediaType: application/vnd.oci.image.index.v1+json
+Digest:    sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+Dockerfile FROM: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+
+######## 2. Context, same order as scripts/build.sh: upstream templates from .build/plane-src, then backend/assemble.sh
+assemble exit=0
+./templates/admin/base_site.html
+./templates/base.html
+./templates/csrf_failure.html
+./templates/emails/_wayline_base.html
+./templates/emails/auth/forgot_password.html
+./templates/emails/auth/magic_signin.html
+./templates/emails/exports/analytics.html
+./templates/emails/invitations/project_invitation.html
+./templates/emails/invitations/workspace_invitation.html
+./templates/emails/notifications/issue-updates.html
+./templates/emails/notifications/project_addition.html
+./templates/emails/notifications/webhook-deactivate.html
+./templates/emails/test_email.html
+./templates/emails/user/email_updated.html
+./templates/emails/user/user_activation.html
+./templates/emails/user/user_deactivation.html
+./wayline/Logo.png
+./wayline/check_image.py
+./wayline/edit_strings.py
+
+######## 3. docker buildx build --platform linux/arm64 --load --provenance=false --sbom=false -f apps/wayline/runtime/Dockerfile.backend -t wayline-backend-check:local (no push)
+#1 [internal] load build definition from Dockerfile.backend
+#1 DONE 0.0s
+#2 DONE 0.3s
+#4 [internal] load metadata for docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#4 DONE 0.0s
+#5 [internal] load .dockerignore
+#5 DONE 0.0s
+#6 [1/5] FROM docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+#6 DONE 0.0s
+#7 [internal] load build context
+#7 DONE 0.0s
+#8 [2/5] COPY templates/ /code/templates/
+#9 [4/5] COPY wayline/Logo.png /code/plane/static/logos/Logo.png
+#10 [3/5] COPY wayline/ /opt/wayline/
+#11 [5/5] RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", "/opt/wayline/edited-files.txt"]
+#12 exporting manifest sha256:543602b6d4578c566573ab8ed11671a05c2bf94d6a61e97ba6fa2204e239d991 done
+#12 naming to docker.io/library/wayline-backend-check:local done
+#12 DONE 0.0s
+build exit=0
+
+######## 4. apps/wayline/backend/check-image.sh wayline-backend-check:local
+== docker image inspect
+id=sha256:543602b6d4578c566573ab8ed11671a05c2bf94d6a61e97ba6fa2204e239d991 arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+== base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+
+== manage.py check
+System check identified no issues (0 silenced).
+
+== check_image.py
+
+== Image layout
+PASS working directory /code
+PASS uid 1000
+PASS entrypoint /code/bin/docker-entrypoint-api.sh
+PASS entrypoint /code/bin/docker-entrypoint-worker.sh
+PASS entrypoint /code/bin/docker-entrypoint-beat.sh
+PASS entrypoint /code/bin/docker-entrypoint-migrator.sh
+PASS /code/plane/static/logos/Logo.png is Wayline's sha256 16f7b58bae95
+PASS no stale bytecode under /code/plane
+
+== Compile every edited Python file
+PASS compile plane/api/views/issue.py
+PASS compile plane/bgtasks/forgot_password_task.py
+PASS compile plane/bgtasks/issue_activities_task.py
+PASS compile plane/bgtasks/magic_link_code_task.py
+PASS compile plane/bgtasks/project_add_user_email_task.py
+PASS compile plane/bgtasks/project_invitation_task.py
+PASS compile plane/bgtasks/user_activation_email_task.py
+PASS compile plane/bgtasks/user_deactivation_email_task.py
+PASS compile plane/bgtasks/user_email_update_task.py
+PASS compile plane/bgtasks/workspace_invitation_task.py
+PASS compile plane/bgtasks/workspace_seed_task.py
+PASS compile plane/db/management/commands/test_email.py
+PASS compile plane/license/api/views/configuration.py
+PASS compile plane/license/management/commands/register_instance.py
+PASS compile plane/license/utils/instance_value.py
+PASS compile plane/settings/openapi.py
+
+== Parse every edited seed file
+PASS json plane/seeds/data/cycles.json valid, no brand or hotlink
+PASS json plane/seeds/data/issues.json valid, no brand or hotlink
+PASS json plane/seeds/data/pages.json valid, no brand or hotlink
+PASS json plane/seeds/data/projects.json valid, no brand or hotlink
+
+== Telemetry default at registration (static: reads the create() call)
+PASS Instance.objects.create(is_telemetry_enabled=False)
+PASS Instance.objects.create(instance_name='Wayline')
+PASS no migration mentions Wayline 130 files read
+
+DJANGO_SETTINGS_MODULE=plane.settings.production django=5.2.15 TEMPLATES.DIRS=['templates']
+
+== Render every email template with Django's engine, under plane's own settings
+PASS render forgot_password 4242 bytes, 509 bytes text, sha256 8b060b229908
+PASS render magic_signin 3518 bytes, 404 bytes text, sha256 31a801f67b3a
+PASS render analytics 3323 bytes, 452 bytes text, sha256 c8ae7a45faa4
+PASS render project_invitation 3632 bytes, 233 bytes text, sha256 a50c2d952bfa
+PASS render workspace_invitation 4241 bytes, 509 bytes text, sha256 6bc6f1f92f6b
+PASS render issue-updates: one actor, every property 20126 bytes, 861 bytes text, sha256 cb9c34c8af96
+PASS render issue-updates: several actors, else branches 7623 bytes, 469 bytes text, sha256 a68f6e12d0a7
+PASS render issue-updates: comments only 5638 bytes, 398 bytes text, sha256 0c8945053658
+PASS render issue-updates: priority colours 10115 bytes, 437 bytes text, sha256 82a95da0b806
+PASS render project_addition 4299 bytes, 564 bytes text, sha256 addb08657eb9
+PASS render webhook-deactivate 3373 bytes, 192 bytes text, sha256 ed09810184fe
+PASS render test_email 2901 bytes, 219 bytes text, sha256 898618a14d64
+PASS render email_updated 3411 bytes, 359 bytes text, sha256 d205cbdd0edd
+PASS render user_activation 3804 bytes, 426 bytes text, sha256 708a597c5af8
+PASS render user_deactivation 3795 bytes, 419 bytes text, sha256 4ece36f6cbea
+PASS every email template was rendered (12 templates)
+
+== Other edited templates
+PASS render base.html
+     django.contrib.admin installed under plane's settings: False
+PASS render admin/base_site.html against a stub parent
+
+== Template logic against upstream's copy from the pinned base image
+PASS logic emails/auth/forgot_password.html 0 tags in the same order, 2 distinct variables
+PASS logic emails/auth/magic_signin.html 0 tags in the same order, 2 distinct variables
+PASS logic emails/exports/analytics.html 0 tags in the same order, 0 distinct variables
+PASS logic emails/invitations/project_invitation.html 0 tags in the same order, 5 distinct variables
+PASS logic emails/invitations/workspace_invitation.html 0 tags in the same order, 4 distinct variables
+PASS state icon blocks removed from comparison (2)
+PASS logic emails/notifications/issue-updates.html 127 tags in the same order, 47 distinct variables
+PASS logic emails/notifications/project_addition.html 0 tags in the same order, 5 distinct variables
+PASS logic emails/notifications/webhook-deactivate.html 0 tags in the same order, 3 distinct variables
+PASS logic emails/test_email.html 0 tags in the same order, 0 distinct variables
+PASS logic emails/user/email_updated.html 0 tags in the same order, 1 distinct variables
+PASS logic emails/user/user_activation.html 0 tags in the same order, 2 distinct variables
+PASS logic emails/user/user_deactivation.html 0 tags in the same order, 2 distinct variables
+
+== Edited modules import under plane's own settings
+PASS import plane.api.views.issue
+PASS import plane.bgtasks.forgot_password_task
+PASS import plane.bgtasks.issue_activities_task
+PASS import plane.bgtasks.magic_link_code_task
+PASS import plane.bgtasks.project_add_user_email_task
+PASS import plane.bgtasks.project_invitation_task
+PASS import plane.bgtasks.user_activation_email_task
+PASS import plane.bgtasks.user_deactivation_email_task
+PASS import plane.bgtasks.user_email_update_task
+PASS import plane.bgtasks.workspace_invitation_task
+PASS import plane.bgtasks.workspace_seed_task
+PASS import plane.db.management.commands.test_email
+PASS import plane.license.api.views.configuration
+PASS import plane.license.management.commands.register_instance
+PASS import plane.license.utils.instance_value
+PASS import plane.settings.openapi
+
+== Values that reach users
+PASS openapi TITLE = 'The Wayline REST API'
+PASS openapi CONTACT = {'name': 'Wayline', 'url': 'https://github.com/BereketAbera/plane-platform'}
+PASS openapi LICENSE = {'name': 'GNU AGPLv3', 'url': 'https://www.gnu.org/licenses/agpl-3.0.html'}
+PASS openapi SERVERS = [{'url': 'http://localhost:8000', 'description': 'Local'}]
+PASS INSTANCE_CHANGELOG_URL = ''
+
+== Brand left in the backend's code, each with its reason (tests excluded)
+         1  APM app name, off unless SCOUT_MONITOR is set
+         1  TextChoices label: changing it would call for a migration
+         3  code comment
+         3  functional webhook header
+         1  metric description, sent only if telemetry is enabled
+         2  module docstring
+       451  required notice
+         6  telemetry endpoint default, used only if telemetry is enabled
+         1  the permitted credit
+         4  upstream notice, must not be edited
+         4  upstream's manual: same policy as leak-allowlist.txt
+         1  upstream's release check
+PASS brand scan finished 478 explained lines
+
+RESULT PASS: 0 failed
+check-image exit=0
+
+######## 5. Negative: the edit script run a second time, on the image it already edited. Must refuse, listing the mismatches
+edit_strings: upstream changed, nothing was written:
+  plane/bgtasks/forgot_password_task.py: expected 1 of '"A new password to your Plane account has been requested"', found 0
+  plane/bgtasks/magic_link_code_task.py: expected 1 of 'f"Your unique Plane login code is {token}"', found 0
+  plane/bgtasks/project_add_user_email_task.py: expected 1 of '"You have been invited to a Plane project"', found 0
+  plane/bgtasks/project_invitation_task.py: expected 1 of 'invited you to join {project.name} on Plane"', found 0
+  plane/bgtasks/user_activation_email_task.py: expected 1 of 'has been activated on Plane"', found 0
+exit=1 (expected 1)
+
+######## 6. Negative: base image with one upstream string changed. Must fail on that string and write nothing
+edit_strings: upstream changed, nothing was written:
+  plane/db/management/commands/test_email.py: expected 1 of '"Test email from Plane"', found 0
+exit=1 (expected 1)
+forgot_password_task.py unchanged: PASS
+no manifest written: PASS
+
+######## 7. Negative: a new upstream email template that carries the brand. Must fail the scan
+edit_strings: upstream brand left in templates:
+  templates/emails/new.html:1: <p>Welcome to Plane</p>
+exit=1 (expected 1)
+
+######## 8. Repo's leak-scan logic (perl body of checks/leak-scan.sh, allowlist unchanged) over apps/wayline/backend/templates
+leak-scan: 13 files, 14 matches, 14 allowlisted, 0 leaks
+  allowlisted 13x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
+  allowlisted 1x: Built on <<Plane>> Community Edition
+leak-scan exit=0
+
+######## 9. Size added on top of the base image
+Id=sha256:543602b6d4578c566573ab8ed11671a05c2bf94d6a61e97ba6fa2204e239d991 Size=111100835
+base Size=111022455
+
+######## 10. Every file under /code that differs between the base image and the derived image (sha256 of all files)
+files: base=     706 derived=     707
+changed ./plane/api/views/issue.py
+changed ./plane/bgtasks/forgot_password_task.py
+changed ./plane/bgtasks/issue_activities_task.py
+changed ./plane/bgtasks/magic_link_code_task.py
+changed ./plane/bgtasks/project_add_user_email_task.py
+changed ./plane/bgtasks/project_invitation_task.py
+changed ./plane/bgtasks/user_activation_email_task.py
+changed ./plane/bgtasks/user_deactivation_email_task.py
+changed ./plane/bgtasks/user_email_update_task.py
+changed ./plane/bgtasks/workspace_invitation_task.py
+changed ./plane/bgtasks/workspace_seed_task.py
+changed ./plane/db/management/commands/test_email.py
+changed ./plane/license/api/views/configuration.py
+changed ./plane/license/management/commands/register_instance.py
+changed ./plane/license/utils/instance_value.py
+changed ./plane/seeds/data/cycles.json
+changed ./plane/seeds/data/issues.json
+changed ./plane/seeds/data/pages.json
+changed ./plane/seeds/data/projects.json
+changed ./plane/settings/openapi.py
+changed ./plane/static/logos/Logo.png
+changed ./templates/admin/base_site.html
+changed ./templates/base.html
+added   ./templates/emails/_wayline_base.html
+changed ./templates/emails/auth/forgot_password.html
+changed ./templates/emails/auth/magic_signin.html
+changed ./templates/emails/exports/analytics.html
+changed ./templates/emails/invitations/project_invitation.html
+changed ./templates/emails/invitations/workspace_invitation.html
+changed ./templates/emails/notifications/issue-updates.html
+changed ./templates/emails/notifications/project_addition.html
+changed ./templates/emails/notifications/webhook-deactivate.html
+changed ./templates/emails/test_email.html
+changed ./templates/emails/user/email_updated.html
+changed ./templates/emails/user/user_activation.html
+changed ./templates/emails/user/user_deactivation.html
+
+######## 11. Text diff of the edited Python and admin files against the base image (seed JSON and emails left out: see the counts above)
++++ b/plane/api/views/issue.py
+-                        "PQL and structured filters are not supported on this Plane edition. "
++                        "PQL and structured filters are not supported on this edition. "
+-                        "a Plane edition that supports work item query filtering."
++                        "an edition that supports work item query filtering."
++++ b/plane/bgtasks/forgot_password_task.py
+-        subject = "A new password to your Plane account has been requested"
++        subject = "A new password to your Wayline account has been requested"
++++ b/plane/bgtasks/issue_activities_task.py
+-                comment = "Plane has archived the issue"
++                comment = "Wayline has archived the issue"
+-                comment="Plane updated the state to ",
++                comment="Wayline updated the state to ",
++++ b/plane/bgtasks/magic_link_code_task.py
+-        subject = f"Your unique Plane login code is {token}"
++        subject = f"Your unique Wayline login code is {token}"
++++ b/plane/bgtasks/project_add_user_email_task.py
+-        subject = "You have been invited to a Plane project"
++        subject = "You have been invited to a Wayline project"
++++ b/plane/bgtasks/project_invitation_task.py
+-        subject = f"{user.first_name or user.display_name or user.email} invited you to join {project.name} on Plane"
++        subject = f"{user.first_name or user.display_name or user.email} invited you to join {project.name} on Wayline"
++++ b/plane/bgtasks/user_activation_email_task.py
+-        subject = f"{user.first_name or user.display_name or user.email} has been activated on Plane"
++        subject = f"{user.first_name or user.display_name or user.email} has been activated on Wayline"
++++ b/plane/bgtasks/user_deactivation_email_task.py
+-        subject = f"{user.first_name or user.display_name or user.email} has been deactivated on Plane"
++        subject = f"{user.first_name or user.display_name or user.email} has been deactivated on Wayline"
++++ b/plane/bgtasks/user_email_update_task.py
+-        subject = "Plane email address successfully updated"
++        subject = "Wayline email address successfully updated"
++++ b/plane/bgtasks/workspace_invitation_task.py
+-        subject = f"{user.first_name or user.display_name or user.email} has invited you to join them in {workspace.name} on Plane"  # noqa: E501
++        subject = f"{user.first_name or user.display_name or user.email} has invited you to join them in {workspace.name} on Wayline"  # noqa: E501
++++ b/plane/bgtasks/workspace_seed_task.py
+-            display_name="Plane",
+-            first_name="Plane",
++            display_name="Wayline",
++            first_name="Wayline",
+-            email=f"bot_user_{workspace.id}@{urlparse(settings.WEB_URL or 'https://plane.so').hostname or 'plane.so'}",
++            email=f"bot_user_{workspace.id}@{urlparse(settings.WEB_URL or 'https://wayline.invalid').hostname or 'wayline.invalid'}",
++++ b/plane/db/management/commands/test_email.py
+-        subject = "Test email from Plane"
++        subject = "Test email from Wayline"
++++ b/plane/license/api/views/configuration.py
+-        subject = "Email Notification from Plane"
+-        message = "This is a sample email notification sent from Plane application."
++        subject = "Email Notification from Wayline"
++        message = "This is a sample email notification sent from Wayline application."
++++ b/plane/license/management/commands/register_instance.py
+-                instance_name="Plane Community Edition",
++                instance_name="Wayline",
++                is_telemetry_enabled=False,
++++ b/plane/license/utils/instance_value.py
+-                "default": os.environ.get("EMAIL_FROM", "Team Plane <team@mailer.plane.so>"),
++                "default": os.environ.get("EMAIL_FROM", "Wayline <noreply@wayline.invalid>"),
++++ b/plane/settings/openapi.py
+-    "TITLE": "The Plane REST API",
++    "TITLE": "The Wayline REST API",
+-        "The Plane REST API\n\n"
+-        "Visit our quick start guide and full API documentation at "
+-        "[developers.plane.so](https://developers.plane.so/api-reference/introduction)."
++        "The Wayline REST API\n\n"
++        "Built on Plane Community Edition, licensed under AGPL-3.0. "
++        "Source code: [https://github.com/BereketAbera/plane-platform](https://github.com/BereketAbera/plane-platform)."
+-        "name": "Plane",
+-        "url": "https://plane.so",
+-        "email": "support@plane.so",
++        "name": "Wayline",
++        "url": "https://github.com/BereketAbera/plane-platform",
+-        "url": "https://github.com/makeplane/plane/blob/preview/LICENSE.txt",
++        "url": "https://www.gnu.org/licenses/agpl-3.0.html",
+-        {"url": "https://api.plane.so", "description": "Production"},
++++ b/templates/admin/base_site.html
+-{% block title %}{{ title }} | {% trans  'plane Admin' %} {% endblock %}
++{% block title %}{{ title }} | {% trans 'Wayline Admin' %} {% endblock %}
+-    background: #24292e;
++    background: #0F1B2D;
+-<h1 id="site-name">{% trans 'Plane Django Admin'  %} </h1>
++<h1 id="site-name">{% trans 'Wayline Django Admin' %} </h1>
++++ b/templates/base.html
+-    <title>Hello plane!</title>
++    <title>Wayline</title>

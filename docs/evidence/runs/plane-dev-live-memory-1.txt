@@ -1,0 +1,8 @@
+# Real document sessions against /live: auth, sync, one update, disconnect, stored through the api. Memory read from the pod's cgroup. Limit 384Mi.
+# rounds=4 sessions_per_round=25 parallel=5
+{"t": "01:38:08", "round": "start", "current_mi": 284.3, "peak_mi": 308.7, "rest": "VmHWM:\t 211968 kB VmRSS:\t 210120 kB anon 147398656 file 67985408 oom_kill 0"}
+{"t": "01:38:17", "round": 0, "sessions_ok": 25, "errors": 0, "current_mi": 284.4, "peak_mi": 308.7, "rest": "VmHWM:\t 214900 kB VmRSS:\t 210160 kB anon 147374080 file 67985408 oom_kill 0"}
+{"t": "01:38:24", "round": 1, "sessions_ok": 50, "errors": 0, "current_mi": 300.3, "peak_mi": 308.7, "rest": "VmHWM:\t 226132 kB VmRSS:\t 226132 kB anon 163729408 file 67985408 oom_kill 0"}
+{"t": "01:38:33", "round": 2, "sessions_ok": 75, "errors": 0, "current_mi": 302.1, "peak_mi": 308.7, "rest": "VmHWM:\t 233204 kB VmRSS:\t 227952 kB anon 165593088 file 67985408 oom_kill 0"}
+{"t": "01:38:41", "round": 3, "sessions_ok": 100, "errors": 0, "current_mi": 301.7, "peak_mi": 308.7, "rest": "VmHWM:\t 233204 kB VmRSS:\t 227184 kB anon 164806656 file 67985408 oom_kill 0"}
+exit 0

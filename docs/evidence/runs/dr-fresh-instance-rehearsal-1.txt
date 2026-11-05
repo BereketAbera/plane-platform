@@ -1,0 +1,72 @@
+# A brand-new Infisical in a throwaway namespace, restored from the real backup, Terraform against it only. 2026-11-04T23:21:05Z
+
+--- Backup 20261104T231433Z. Docker VM before: 8.416GiB / 13.63GiB (23:21:06)
+
+--- Secrets: the same secret zero, in the new namespace (23:21:06)
+PASS   three Secrets copied without printing them
+
+--- Postgres and Redis on emptyDir (23:21:07)
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+
+--- Server: the live Deployment's spec, first boot on an empty database (23:21:18)
+Waiting for deployment "infisical" rollout to finish: 0 of 1 updated replicas are available...
+deployment "infisical" successfully rolled out
+migrations in the fresh database: 602
+PASS   fresh server: config.initialized=false
+
+--- Exact restore Job from scripts/restore.sh, server stopped (23:21:45)
+/Users/bek/dev/pr/plane-platform/scripts/lib/common.sh: line 34: 90845 Terminated: 15          kubectl -n "$X" port-forward svc/infisical 18080:8080 > /dev/null 2>&1
+[pod/plane-restore-rehearsal-1793834507-2xf7t/postgres] NOTICE:  database "infisical_restoring" does not exist, skipping
+[pod/plane-restore-rehearsal-1793834507-2xf7t/postgres] vacuumdb: vacuuming database "infisical_restoring"
+[pod/plane-restore-rehearsal-1793834507-2xf7t/postgres] GATE1 ok: 785 tables equal the backup
+[pod/plane-restore-rehearsal-1793834507-2xf7t/postgres] ALTER DATABASE
+[pod/plane-restore-rehearsal-1793834507-2xf7t/postgres] swapped in: infisical is now the restored database
+PASS   Redis flushed
+Waiting for deployment "infisical" rollout to finish: 0 of 1 updated replicas are available...
+deployment "infisical" successfully rolled out
+
+--- What the restored instance says, read through the API (23:22:15)
+PASS   restored server: config.initialized=true
+PASS   the old admin token is accepted: HTTP 200
+PASS   every Plane secret decrypts to the recorded value, version and id
+
+--- Terraform: a scratch copy of the root and the backup's state, against this instance only (23:22:16)
+PASS   state from the backup against the restored database, this cluster's CA: no changes
+PASS   control: dev identity logs in with the stored CA, HTTP 200
+INFO   plan with another cluster's CA, exit 2, actions {"no-op":8,"update":2}
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mError updating identity kubernetes auth[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with infisical_identity_kubernetes_auth.reader["prod-sim"],
+[31m│[0m [0m  on main.tf line 67, in resource "infisical_identity_kubernetes_auth" "reader":
+[31m│[0m [0m  67: resource "infisical_identity_kubernetes_auth" "reader" [4m{[0m[0m
+[31m│[0m [0m
+[31m│[0m [0mCouldn't update identity kubernetes auth from Infisical, unexpected error:
+[31m│[0m [0mCallUpdateIdentityKubernetesAuth Unsuccessful response [PATCH
+[31m│[0m [0mhttp://127.0.0.1:18080/api/v1/auth/kubernetes-auth/identities/<redacted>]
+[31m│[0m [0m[status-code=400] [request-id=req-OiwAK5gaMJSWSy] [message="SSL certificate
+[31m│[0m [0mverification failed for Kubernetes host at
+[31m│[0m [0mhttps://kubernetes.default.svc.cluster.local. Verify the CA certificate is
+[31m│[0m [0mcorrect and the server certificate is valid."]
+[31m╵[0m[0m
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mError updating identity kubernetes auth[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with infisical_identity_kubernetes_auth.reader["dev"],
+[31m│[0m [0m  on main.tf line 67, in resource "infisical_identity_kubernetes_auth" "reader":
+[31m│[0m [0m  67: resource "infisical_identity_kubernetes_auth" "reader" [4m{[0m[0m
+[31m│[0m [0m
+[31m│[0m [0mCouldn't update identity kubernetes auth from Infisical, unexpected error:
+[31m│[0m [0mCallUpdateIdentityKubernetesAuth Unsuccessful response [PATCH
+[31m│[0m [0mhttp://127.0.0.1:18080/api/v1/auth/kubernetes-auth/identities/<redacted>]
+[31m│[0m [0m[status-code=400] [request-id=req-un9nRap8Grn8i0] [message="SSL certificate
+[31m│[0m [0mverification failed for Kubernetes host at
+[31m│[0m [0mhttps://kubernetes.default.svc.cluster.local. Verify the CA certificate is
+[31m│[0m [0mcorrect and the server certificate is valid."]
+[31m╵[0m[0m
+/Users/bek/dev/pr/plane-platform/infisical/lib/api.sh: line 30: 91118 Terminated: 15          kubectl -n "$X" port-forward svc/infisical 18080:8080 > /dev/null 2>&1
+namespace dr-rehearsal deleted, scratch Terraform removed, exit 1
+exit=1

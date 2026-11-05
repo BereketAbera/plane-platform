@@ -1,0 +1,89 @@
+# date: 2026-11-04T20:23:39Z
+# PUC Lua 5.1 embedded in the cached redis:8 image, throwaway container, --network none --read-only. NOT gopher-lua, NOT argocd admin settings resource-overrides health.
+# Interpreter
+Redis server v=8.10.3 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=2e99d4bb317442f
+Lua 5.1
+
+# Rendered ConfigMap against the values file
+SAME  argoproj.io_Application
+SAME  secrets.infisical.com_InfisicalAuth
+SAME  secrets.infisical.com_InfisicalConnection
+SAME  secrets.infisical.com_InfisicalStaticSecret
+
+# Compile check: SCRIPT LOAD on each script's exact text
+PASS  argoproj.io_Application  
+PASS  secrets.infisical.com_InfisicalAuth  
+PASS  secrets.infisical.com_InfisicalConnection  
+PASS  secrets.infisical.com_InfisicalStaticSecret  
+
+# Negative control: the checker must reject damaged Lua
+PASS (rejected)  dropped final end  ERR Error compiling script (new function): user_script:21: 'end' expected (to close 'if' at line 4) near '<eof
+PASS (rejected)  '=' for '=='  ERR Error compiling script (new function): user_script:11: 'then' expected near '='
+PASS (rejected)  '!=' for '~='  ERR Error compiling script (new function): user_script:4: 'then' expected near '!'
+
+# Behaviour against the current text, object decoded the way util/lua/lua.go decodes it
+## argoproj.io_Application
+PASS  want Progressing got Progressing      never reconciled, no status  []
+PASS  want Progressing got Progressing      status with no health  []
+PASS  want Progressing got Progressing      health object with no status field  []
+PASS  want Missing     got Missing          nothing live yet, sync requested  []
+PASS  want Progressing got Progressing      between internal waves: Healthy, Running, OutOfSync  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing      through the migrator hook: Healthy, Running, Synced  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing      failed sync in retry backoff: Healthy, Running, finishedAt set  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing      resync requested, not yet started, previous op Succeeded  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing      operation being terminated  [Holding the wave: child sync has not finished]
+PASS  want Progressing got Progressing      one-wave child just applied: stale Healthy, stale OutOfSync, op cleared  [Holding the wave: child is Healthy but not Synced]
+PASS  want Progressing got Progressing      sync status Unknown (repo unreachable)  [Holding the wave: child is Healthy but not Synced]
+PASS  want Progressing got Progressing      no sync block at all  [Holding the wave: child is Healthy but not Synced]
+PASS  want Healthy     got Healthy          done: Healthy, Synced, op Succeeded and cleared  []
+PASS  want Healthy     got Healthy          done: Healthy, Synced, no op ever recorded  []
+PASS  want Healthy     got Healthy          done: operation is JSON null after the controller cleared it  []
+PASS  want Degraded    got Degraded         Degraded while retrying still fails the root  [boom]
+PASS  want Progressing got Progressing      Progressing passes through  [rolling]
+PASS  want Suspended   got Suspended        Suspended passes through  []
+PASS  want Unknown     got Unknown          Unknown passes through  []
+
+## secrets.infisical.com_InfisicalAuth
+PASS  want Progressing got Progressing      no status  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing      no conditions  [Waiting for the operator to reconcile this generation]
+PASS  want Healthy     got Healthy          ready at this generation  [m]
+PASS  want Degraded    got Degraded         not ready at this generation  [m]
+PASS  want Progressing got Progressing      ready but for an older generation  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing      only an unrelated condition  [Waiting for the operator to reconcile this generation]
+
+## secrets.infisical.com_InfisicalConnection
+PASS  want Progressing got Progressing      no status  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing      no conditions  [Waiting for the operator to reconcile this generation]
+PASS  want Healthy     got Healthy          ready at this generation  [m]
+PASS  want Degraded    got Degraded         not ready at this generation  [m]
+PASS  want Progressing got Progressing      ready but for an older generation  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing      only an unrelated condition  [Waiting for the operator to reconcile this generation]
+
+## secrets.infisical.com_InfisicalStaticSecret
+PASS  want Progressing got Progressing      no status  [Waiting for the operator to reconcile this generation]
+PASS  want Progressing got Progressing      older generation  [Waiting for the operator to reconcile this generation]
+PASS  want Healthy     got Healthy          this generation, no error  [Secrets synced]
+PASS  want Healthy     got Healthy          this generation, no error field  [Secrets synced]
+PASS  want Degraded    got Degraded         this generation, error  [Reconcile failed, see the LastReconcileStatus condition]
+
+# Same Application cases against earlier text, to show the cases discriminate
+## before this change: compiles=True, 10/19 match
+  differs: want Progressing got Unknown(invalid) health object with no status field
+  differs: want Progressing got Healthy          between internal waves: Healthy, Running, OutOfSync
+  differs: want Progressing got Healthy          through the migrator hook: Healthy, Running, Synced
+  differs: want Progressing got Healthy          failed sync in retry backoff: Healthy, Running, finishedAt set
+  differs: want Progressing got Healthy          resync requested, not yet started, previous op Succeeded
+  differs: want Progressing got Healthy          operation being terminated
+  differs: want Progressing got Healthy          one-wave child just applied: stale Healthy, stale OutOfSync, op cleared
+  differs: want Progressing got Healthy          sync status Unknown (repo unreachable)
+  differs: want Progressing got Healthy          no sync block at all
+## as the review proposed: compiles=True, 13/19 match
+  differs: want Progressing got Unknown(invalid) health object with no status field
+  differs: want Progressing got Healthy          resync requested, not yet started, previous op Succeeded
+  differs: want Progressing got Healthy          operation being terminated
+  differs: want Progressing got Healthy          one-wave child just applied: stale Healthy, stale OutOfSync, op cleared
+  differs: want Progressing got Healthy          sync status Unknown (repo unreachable)
+  differs: want Progressing got Healthy          no sync block at all
+
+RESULT: PASS, 0 failure(s)
+exit 0

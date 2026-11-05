@@ -1,0 +1,8 @@
+# 2026-11-04T21:59:45Z window 180s, CPU from /proc/<pid>/stat utime+stime, RSS from VmRSS at the end of the window
+alloy-7947f8479-d472p   1/1   Running   0     59m
+one Alloy (baseline)         apiserver cpu  105.9 m  rss  1030.3 Mi | kubelet cpu  101.2 m  rss   159.7 Mi
+second Alloy opened 53 log streams in its first 30s
+two Alloys                   apiserver cpu   72.3 m  rss  1036.0 Mi | kubelet cpu  105.7 m  rss   179.7 Mi
+alloy-cost-test   alloy   3m    200Mi   
+one Alloy again              apiserver cpu   57.9 m  rss   995.7 Mi | kubelet cpu   78.9 m  rss   161.9 Mi
+# 2026-11-04T22:09:46Z done

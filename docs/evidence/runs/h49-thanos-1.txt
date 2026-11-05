@@ -1,0 +1,24 @@
+# date: 2026-11-05T00:44:04Z
+# H49: the digest, the mirror path, the rendered flag and the policy result.
+$ docker buildx imagetools inspect quay.io/thanos/thanos:v0.42.5
+Name:      quay.io/thanos/thanos:v0.42.5
+MediaType: application/vnd.docker.distribution.manifest.list.v2+json
+Digest:    sha256:0a546b98a8dd47735456ab389983675ee363d68127e334937a9fceeea10da5e7
+index digest: sha256:0a546b98a8dd47735456ab389983675ee363d68127e334937a9fceeea10da5e7
+$ from the node, a HEAD through the pull-through cache containerd is configured to use for quay.io (no layer pulled)
+server = "https://quay.io"
+
+[host."http://plane-mirror-quay:5000"]
+  capabilities = ["pull", "resolve"]
+HTTP/1.1 200 OK
+Content-Type: application/vnd.docker.distribution.manifest.list.v2+json
+Docker-Content-Digest: sha256:0a546b98a8dd47735456ab389983675ee363d68127e334937a9fceeea10da5e7
+X-Content-Type-Options: nosniff
+$ the running operator's flag
+"--thanos-default-base-image=quay.io/thanos/thanos:v0.42.5@sha256:0a546b98a8dd47735456ab389983675ee363d68127e334937a9fceeea10da5e7"
+$ SKIP_FLOWS=yes scripts/ci/validate-manifests.sh, exit 0 at 00:31Z, its conftest lines:
+1628 tests, 1628 passed, 0 warnings, 0 failures, 0 exceptions
+2430 tests, 2430 passed, 0 warnings, 0 failures, 0 exceptions
+2910 tests, 2910 passed, 0 warnings, 0 failures, 0 exceptions
+$ conftest verify --policy policy (later run):
+89 tests, 89 passed, 0 warnings, 0 failures, 0 exceptions, 0 skipped

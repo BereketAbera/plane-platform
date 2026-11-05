@@ -1,0 +1,58 @@
+# The four Lua checks' Infisical half on the real CRs, through argocd admin in the real server pod. 2026-11-04T21:55:17Z, pod argocd-server-6879f6c57b-fr2fd
+--- plane-dev infisicalconnection/infisical
+STATUS: Healthy
+MESSAGE: InfisicalConnection is ready to be used.
+--- plane-dev infisicalauth/infisical
+STATUS: Healthy
+MESSAGE: InfisicalAuth is ready to be used.
+--- plane-dev infisicalstaticsecret/plane-app-env
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-dev infisicalstaticsecret/plane-app-keys
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-dev infisicalstaticsecret/plane-doc-store
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-dev infisicalstaticsecret/plane-live-env
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-dev infisicalstaticsecret/plane-pgdb
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-dev infisicalstaticsecret/plane-rabbitmq
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-prod-sim infisicalconnection/infisical
+STATUS: Healthy
+MESSAGE: InfisicalConnection is ready to be used.
+--- plane-prod-sim infisicalauth/infisical
+STATUS: Healthy
+MESSAGE: InfisicalAuth is ready to be used.
+--- plane-prod-sim infisicalstaticsecret/plane-app-env
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-prod-sim infisicalstaticsecret/plane-app-keys
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-prod-sim infisicalstaticsecret/plane-doc-store
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-prod-sim infisicalstaticsecret/plane-live-env
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-prod-sim infisicalstaticsecret/plane-pgdb
+STATUS: Healthy
+MESSAGE: Secrets synced
+--- plane-prod-sim infisicalstaticsecret/plane-rabbitmq
+STATUS: Healthy
+MESSAGE: Secrets synced
+
+--- a real failing CR: secretFrom over a missing key, scratch, removed afterwards
+right after create, before the operator reconciled:
+STATUS: Progressing
+MESSAGE: Waiting for the operator to reconcile this generation
+after the operator's attempt:
+STATUS: Degraded
+MESSAGE: Reconcile failed, see the LastReconcileStatus condition
+infisicalstaticsecret.secrets.infisical.com "scratch-degraded" deleted from plane-prod-sim namespace

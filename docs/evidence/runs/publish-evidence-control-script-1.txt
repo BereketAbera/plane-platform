@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""Negative control for scripts/publish-evidence.sh, on a scratch copy of the tree it runs in.
+
+Plants real values from each source into a scratch raw directory, runs the real script over them, and
+counts what is left. It prints source names and counts, never a value. The scratch tree holds real values
+while it runs, and is removed at the end, whatever happens.
+"""
+import base64, hashlib, json, os, secrets, shutil, string, subprocess, sys, uuid
+from datetime import datetime, timezone
+
+REPO = "/Users/bek/dev/pr/plane-platform"
+SCRATCH = sys.argv[1]
+T = os.path.join(SCRATCH, "tree")
+RAW = T + "/.local/evidence-raw"
+RUNS = T + "/docs/evidence/runs"
+ZERO = REPO + "/.local/secret-zero/"
+failures = 0
+outputs = []
+
+
+def check(ok, text):
+    global failures
+    print("PASS " if ok else "FAIL ", text)
+    failures += 0 if ok else 1
+
+
+def stage(text):
+    print("\n--- " + text)
+
+
+def run():
+    done = subprocess.run(["/bin/bash", "scripts/publish-evidence.sh"], cwd=T, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    text = done.stdout
+    outputs.append(text)
+    for line in text.decode().splitlines():
+        clean = line.replace("\x1b[1;34m", "").replace("\x1b[1;32m", "").replace("\x1b[1;33m", "").replace("\x1b[1;31m", "").replace("\x1b[0m", "")
+        print("    | " + clean)
+    return done.returncode, text.decode()
+
+
+def tree_state():
+    state = {}
+    for directory, _, names in os.walk(RUNS):
+        for name in names:
+            path = os.path.join(directory, name)
+            with open(path, "rb") as handle:
+                state[os.path.relpath(path, RUNS)] = (hashlib.sha256(handle.read()).hexdigest(), os.stat(path).st_mtime_ns)
+    return state
+
+
+def in_runs(value):
+    total = 0
+    for directory, _, names in os.walk(RUNS):
+        for name in names:
+            with open(os.path.join(directory, name), "rb") as handle:
+                total += handle.read().count(value)
+    return total
+
+
+def kubectl_secret(namespace, name, key):
+    env = dict(os.environ, KUBECONFIG=REPO + "/.local/kubeconfig", PATH=REPO + "/.tools/bin:" + os.environ["PATH"])
+    out = subprocess.run(["kubectl", "--context", "kind-plane-platform", "-n", namespace, "get", "secret", name, "-o", "json"],
+                         env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True).stdout
+    return base64.b64decode(json.loads(out)["data"][key])
+
+
+def write(path, data):
+    with open(path, "wb") as handle:
+        handle.write(data)
+
+
+def build_tree():
+    os.makedirs(T + "/scripts/lib")
+    os.makedirs(RAW)
+    os.makedirs(T + "/docs/evidence")
+    shutil.copy(REPO + "/scripts/publish-evidence.sh", T + "/scripts/")
+    shutil.copy(REPO + "/scripts/lib/common.sh", T + "/scripts/lib/")
+    shutil.copy(REPO + "/.gitleaks.toml", T)
+    os.symlink(REPO + "/.tools", T + "/.tools")
+    # The real sources, read through links, so no second copy of them exists.
+    os.symlink(REPO + "/.local/kubeconfig", T + "/.local/kubeconfig")
+    os.symlink(REPO + "/.local/secret-zero", T + "/.local/secret-zero")
+    os.symlink(REPO + "/.local/test-accounts.env", T + "/.local/test-accounts.env")
+
+
+def plant():
+    """Returns {source name: bytes that must be gone}."""
+    gone = {}
+
+    def need(name, value):
+        gone[name] = value
+        return value
+
+    env = {}
+    with open(REPO + "/.local/test-accounts.env", "rb") as handle:
+        for line in handle:
+            line = line.strip()
+            if line and not line.startswith(b"#"):
+                key, _, value = line.partition(b"=")
+                env[key.decode()] = value.strip(b"'\"")
+    lines = [b"password " + need("test-accounts.env PLANE_DEV_ADMIN_PASSWORD", env["PLANE_DEV_ADMIN_PASSWORD"]),
+             b"PLANE_PROD_SIM_API_TOKEN=" + need("test-accounts.env PLANE_PROD_SIM_API_TOKEN", env["PLANE_PROD_SIM_API_TOKEN"]) + b" tail",
+             b"signed in as " + need("test-accounts.env PLANE_DEV_ADMIN_EMAIL", env["PLANE_DEV_ADMIN_EMAIL"]) + b"."]
+    write(RAW + "/planted-accounts.txt", b"\n".join(lines) + b"\n")
+
+    with open(ZERO + "infisical-admin.json") as handle:
+        admin = json.load(handle)
+    with open(ZERO + "infisical-machine.json") as handle:
+        machine = json.load(handle)
+    read = lambda name: open(ZERO + name, "rb").read().strip()
+    lines = [b"db " + need("secret-zero DB_PASSWORD", read("DB_PASSWORD")),
+             b"auth " + need("secret-zero AUTH_SECRET", read("AUTH_SECRET")),
+             b"enc=" + need("secret-zero ENCRYPTION_KEY", read("ENCRYPTION_KEY")),
+             b"jwt " + need("secret-zero infisical-admin.json .token", admin["token"].encode()),
+             b'"identityId": "' + need("secret-zero infisical-machine.json .identity_ids.dev", machine["identity_ids"]["dev"].encode()) + b'"']
+    write(RAW + "/planted-secret-zero.txt", b"\n".join(lines) + b"\n")
+
+    postgres = kubectl_secret("plane-dev", "plane-pgdb", "POSTGRES_PASSWORD")
+    lines = [b"pg " + need("cluster plane-dev/plane-pgdb POSTGRES_PASSWORD", postgres),
+             b"mixed letters " + need("cluster argocd/argocd-redis auth", kubectl_secret("argocd", "argocd-redis", "auth")),
+             b"grafana " + need("cluster monitoring/kps-grafana admin-password", kubectl_secret("monitoring", "kps-grafana", "admin-password")),
+             b"url " + need("cluster plane-dev/plane-app-env DATABASE_URL", kubectl_secret("plane-dev", "plane-app-env", "DATABASE_URL")),
+             b"sa " + need("cluster monitoring/kps-prometheus-token token", kubectl_secret("monitoring", "kps-prometheus-token", "token")),
+             b"argocd " + need("cluster argocd/argocd-initial-admin-secret password", kubectl_secret("argocd", "argocd-initial-admin-secret", "password")),
+             b"base64 form " + need("cluster plane-dev/plane-app-keys SECRET_KEY, in its base64 form", base64.b64encode(kubectl_secret("plane-dev", "plane-app-keys", "SECRET_KEY"))),
+             b"inside another url postgresql://x:" + postgres + b"@elsewhere:5432/db"]
+    write(RAW + "/planted-cluster.txt", b"\n".join(lines) + b"\n")
+
+    record = str(uuid.uuid4()).encode()
+    uid = str(uuid.uuid4()).encode()
+    lines = [b"namespace infisical plane-prod-sim monitoring http://plane-minio:9000 uploads 5242880",
+             b"LIVE_SERVER_SECRET_KEY id=" + need("identifier rule: SECRET_KEY id=<uuid>", record) + b" version=1",
+             b"InfisicalStaticSecret/plane-app-keys uid=" + need("identifier rule: plane-app-keys uid=<uuid>", uid) + b" gen=1"]
+    write(RAW + "/planted-control.txt", b"\n".join(lines) + b"\n")
+    return gone, {"ordinary words, a plain URL and a short number": lines[0]}
+
+
+def main():
+    build_tree()
+    gone, stays = plant()
+    other_uuid = str(uuid.uuid4()).encode()
+    with open(RAW + "/planted-control.txt", "ab") as handle:
+        handle.write(b"project_id=" + other_uuid + b" stays\n")
+    stays["a UUID that gitleaks does not read as a credential"] = other_uuid
+
+    os.makedirs(RAW + "/load-20261105T000000Z")
+    os.makedirs(RAW + "/scan-images-20260101T000000Z")
+    postgres = gone["cluster plane-dev/plane-pgdb POSTGRES_PASSWORD"]
+    write(RAW + "/load-20261105T000000Z/results.json", b'{"pw": "' + postgres + b'"}\n')
+    write(RAW + "/scan-images-20260101T000000Z/run.log", b"a scan directory\n")
+    write(RAW + "/big-1.txt", b"x" * (2 * 1024 * 1024 + 1))
+    write(RAW + "/exactly-2mib.txt", b"x" * (2 * 1024 * 1024))
+    write(RAW + "/blob.bin", b"\x00\x01binary\x00" * 10)
+    picture = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00" + secrets.token_bytes(64)
+    write(RAW + "/shot.jpg", picture)
+    write(RAW + "/.hidden", b"hidden\n")
+    write(RAW + "/planted.env", b"A=not published\n")
+    write(RAW + "/planted.sql", b"select 1;\n")
+    write(RAW + "/empty.txt", b"")
+    os.symlink(RAW + "/planted-control.txt", RAW + "/link.txt")
+
+    stage("1. First run: a value from each source is replaced")
+    code, _ = run()
+    check(code == 0, "exit 0")
+    for name, value in sorted(gone.items()):
+        count = in_runs(value)
+        check(count == 0, "%s: %d left in the copies" % (name, count))
+    for name, value in sorted(stays.items()):
+        count = in_runs(value)
+        check(count > 0, "%s: still there (%d), not over-redacted" % (name, count))
+
+    stage("2. File shapes")
+    exists = lambda name: os.path.exists(os.path.join(RUNS, name))
+    check(not exists("big-1.txt"), "a file over 2 MiB is skipped, with a line naming it")
+    check(exists("exactly-2mib.txt"), "a file of exactly 2 MiB is copied")
+    check(not exists("blob.bin"), "a binary file is skipped")
+    check(exists("shot.jpg") and open(os.path.join(RUNS, "shot.jpg"), "rb").read() == picture, "an image is copied byte for byte")
+    check(not exists(".hidden") and not exists("link.txt"), "a hidden file and a symlink are skipped")
+    check(not exists("planted.env") and not exists("planted.sql"), "file types that .gitignore keeps out are skipped")
+    check(not exists("scan-images-20260101T000000Z"), "a scan directory stays out")
+    check(exists("load-20261105T000000Z/results.json"), "any other directory keeps its path under runs/")
+    check(exists("empty.txt"), "an empty file is copied")
+
+    stage("3. The same input again changes nothing")
+    before, memory = tree_state(), open(T + "/.local/evidence-scrub-values", "rb").read()
+    code, _ = run()
+    check(code == 0, "exit 0")
+    check(tree_state() == before, "every copy keeps its hash and modification time, MANIFEST.tsv included")
+    check(open(T + "/.local/evidence-scrub-values", "rb").read() == memory, "the remembered values are unchanged")
+    mode = os.stat(T + "/.local/evidence-scrub-values").st_mode & 0o777
+    check(mode == 0o600, "the remembered values have mode %o" % mode)
+
+    stage("4. A gitleaks-shaped token in a raw file fails the script")
+    token = ("ghp_" + "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(36))).encode()
+    write(RAW + "/planted-token.txt", b"line one\nleaked: " + token + b"\n")
+    code, text = run()
+    check(code == 1, "exit 1 on a finding (was %d)" % code)
+    check("planted-token.txt:2 github-pat" in text, "it names the file, line and rule")
+    check(token.decode() not in text, "the output does not hold the token")
+    check(in_runs(token) == 1, "the copy stays in place, uncommitted, because nothing in runs/ is deleted")
+    os.remove(RAW + "/planted-token.txt")
+    os.remove(RUNS + "/planted-token.txt")
+    code, _ = run()
+    check(code == 0, "exit 0 once the token is gone from raw and from the copy")
+
+    stage("5. Cluster not reachable, values remembered from the earlier runs")
+    before = tree_state()
+    os.remove(T + "/.local/kubeconfig")
+    write(T + "/.local/kubeconfig", b"")
+    code, text = run()
+    check(code == 0, "exit 0")
+    check("scan was limited to local files" in text, "it says the scan was limited to local files")
+    check(tree_state() == before, "the copies do not change: no cluster value came back")
+
+    stage("6. Cluster not reachable and nothing remembered: what the limit means")
+    os.remove(T + "/.local/evidence-scrub-values")
+    code, text = run()
+    check(code == 1, "exit 1, gitleaks flags the one value it can recognise (was %d)" % code)
+    check("planted-cluster.txt:5 jwt" in text, "that one is the service account token")
+    left = [name for name, value in sorted(gone.items()) if name.startswith("cluster") and in_runs(value)]
+    check(len(left) >= 6, "%d cluster values stay in the copies, so this check can see them. gitleaks flags 1 of them" % len(left))
+    for name, value in sorted(gone.items()):
+        if not name.startswith("cluster") and not name.startswith("identifier"):
+            check(in_runs(value) == 0, "%s: still replaced from local files" % name)
+
+    stage("7. Cluster back: the copies are made again from raw")
+    os.remove(T + "/.local/kubeconfig")
+    os.symlink(REPO + "/.local/kubeconfig", T + "/.local/kubeconfig")
+    code, _ = run()
+    check(code == 0, "exit 0")
+    left = [name for name, value in sorted(gone.items()) if in_runs(value)]
+    check(not left, "no planted value is left (%d)" % len(left))
+
+    stage("8. A copy whose raw file is gone stays, and loses a value learned later")
+    os.remove(RAW + "/planted-accounts.txt")
+    with open(RUNS + "/planted-accounts.txt", "ab") as handle:
+        handle.write(b"appended later " + gone["secret-zero DB_PASSWORD"] + b"\n")
+    code, _ = run()
+    check(code == 0, "exit 0")
+    check(os.path.exists(RUNS + "/planted-accounts.txt"), "the copy is still there")
+    check(in_runs(gone["secret-zero DB_PASSWORD"]) == 0, "the value is gone from it")
+    with open(RUNS + "/MANIFEST.tsv") as handle:
+        check(any(line.startswith("planted-accounts.txt\t") for line in handle), "MANIFEST.tsv keeps its row")
+
+    stage("9. A changed raw file overwrites its copy")
+    write(RAW + "/empty.txt", b"second version\n")
+    code, _ = run()
+    check(code == 0, "exit 0")
+    check(open(RUNS + "/empty.txt", "rb").read() == b"second version\n", "the copy has the new bytes")
+
+    stage("10. Nothing the script printed in any run holds a value")
+    printed = b"".join(outputs)
+    leaked = [name for name, value in gone.items() if value in printed]
+    check(not leaked, "%d of %d planted values in %d runs' output" % (len(leaked), len(gone), len(outputs)))
+
+
+print("# Negative control for scripts/publish-evidence.sh, on a scratch copy of the tree")
+print("# date (UTC): " + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+print("# command: python3 -I control.py <scratch dir>. The script is publish-evidence-control-script-1.txt beside this file")
+print("# commit: " + subprocess.run(["git", "-C", REPO, "rev-parse", "--short=12", "HEAD"], stdout=subprocess.PIPE).stdout.decode().strip())
+with open(REPO + "/scripts/publish-evidence.sh", "rb") as handle:
+    print("# scripts/publish-evidence.sh sha256: " + hashlib.sha256(handle.read()).hexdigest())
+print("# Output below: source names and counts, never a value. Lines starting with | are what the script printed.")
+shutil.rmtree(T, ignore_errors=True)
+try:
+    main()
+finally:
+    shutil.rmtree(T, ignore_errors=True)
+print("\n--- Scratch tree removed: " + str(not os.path.exists(T)))
+print("--- Summary: %d failed" % failures)
+sys.exit(1 if failures else 0)

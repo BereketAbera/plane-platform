@@ -1,0 +1,71 @@
+# make drill-pod-restart ENV=prod-sim, started 2026-11-04T23:35:00Z
+drill pod-restart-prod-sim started 2026-11-04T23:35:00Z by: ./tests/drills/pod-restart-persistence.sh
+
+--- 0. Preflight
+PASS  StatefulSets: plane-minio-wl plane-pgdb-wl plane-rabbitmq-wl plane-redis-wl
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-prod-sim-baseline.json
+RESULT  PASS
+PASS  sentinel is intact before any restart
+
+--- 1. Restart plane-minio-wl
+pod "plane-minio-wl-0" deleted from plane-prod-sim namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-minio-wl-0 was really replaced
+PASS  plane-minio-wl-0 reattached the same claim: pvc-plane-minio-vol-plane-minio-wl-0
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-prod-sim-plane-minio-wl.json
+RESULT  PASS
+PASS  after restarting plane-minio-wl: sentinel row and attachment intact, background jobs run
+
+--- 2. Restart plane-pgdb-wl
+pod "plane-pgdb-wl-0" deleted from plane-prod-sim namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-pgdb-wl-0 was really replaced
+PASS  plane-pgdb-wl-0 reattached the same claim: pvc-plane-pgdb-vol-plane-pgdb-wl-0
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-prod-sim-plane-pgdb-wl.json
+RESULT  PASS
+PASS  after restarting plane-pgdb-wl: sentinel row and attachment intact, background jobs run
+
+--- 3. Restart plane-rabbitmq-wl
+pod "plane-rabbitmq-wl-0" deleted from plane-prod-sim namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-rabbitmq-wl-0 was really replaced
+PASS  plane-rabbitmq-wl-0 reattached the same claim: pvc-plane-rabbitmq-vol-plane-rabbitmq-wl-0
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+FAIL    job-probe  no 'created' activity after 300s: worker or broker is not processing
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-prod-sim-plane-rabbitmq-wl.json
+RESULT  FAIL
+FAIL  after restarting plane-rabbitmq-wl: smoke verify exit 1
+
+--- 4. Restart plane-redis-wl
+pod "plane-redis-wl-0" deleted from plane-prod-sim namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+PASS  plane-redis-wl-0 was really replaced
+PASS  plane-redis-wl-0 reattached the same claim: pvc-plane-redis-vol-plane-redis-wl-0
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=verify
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+FAIL    job-probe  no 'created' activity after 300s: worker or broker is not processing
+evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-prod-sim-plane-redis-wl.json
+RESULT  FAIL
+FAIL  after restarting plane-redis-wl: smoke verify exit 1
+
+RESULT FAIL   2 failure(s). evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-pod-restart-prod-sim-20261104T233500Z.log
+make: *** [drill-pod-restart] Error 1
+make exit=2, finished 2026-11-04T23:45:44Z

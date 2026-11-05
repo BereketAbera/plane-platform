@@ -1,0 +1,7 @@
+render --check exit 0
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+application.argoproj.io/plane-prod-sim annotated
+plane-prod-sim Synced Healthy revision 8e328a06 reconciledAt 2026-11-04T23:59:09Z operation Succeeded
+resources not Synced: []
+published main: 8e328a06  gitops/environments/prod-sim last changed: 2aefba1 fix(plane): keep pods serving for 5s after SIGTERM, so a rollout drops no requests

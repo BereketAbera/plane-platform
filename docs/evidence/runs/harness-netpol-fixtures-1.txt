@@ -1,0 +1,17 @@
+# scripts/test-netpol.sh on three small matrices of known cases, to show each verdict and exit code on real packets. 2026-11-05T00:50:00Z
+
+== fixture a
+cases:
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: deny, note: "fixture: blocked, target up" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: plane-pgdb.plane-dev.svc.cluster.local, port: 5432 }, expect: allow, note: "fixture: an allow row the policy blocks" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 10.255.255.1, port: 80 }, expect: deny, note: "fixture: nothing there, and not outside" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 192.0.2.1, port: 443 }, expect: deny, note: "fixture: outside, nothing answers" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: 192.0.2.1, port: 443 }, expect: allow, note: "fixture: outside, nothing answers" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: offline-check.invalid, port: 443 }, expect: deny, note: "fixture: an internet name with no DNS answer" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: argocd-applicationset-controller.argocd.svc.cluster.local, port: 7000 }, expect: allow, note: "fixture: no ready endpoint, egress blocked" }
+  - { from: { ns: plane-dev, labels: { probe: unlabelled } }, to: { host: argocd-applicationset-controller.argocd.svc.cluster.local, port: 7000 }, expect: deny, note: "fixture: no ready endpoint, egress blocked" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: argocd-applicationset-controller.argocd.svc.cluster.local, port: 7000 }, expect: allow, note: "fixture: no ready endpoint, no egress policy" }
+--- MATRIX=a.yaml scripts/test-netpol.sh
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED

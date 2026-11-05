@@ -1,0 +1,25 @@
+# date: 2026-11-04T21:18:16Z
+# curl 8.7.1, port mapping: 6443/tcp -> 127.0.0.1:49732;30080/tcp -> 127.0.0.1:80;30443/tcp -> 127.0.0.1:443;
+argocd.localhost           rc=0 http=200 ip=127.0.0.1:80 total=0.002806s redirect= body=[<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>Argo CD</title><base hre]
+grafana.localhost          rc=0 http=503 ip=127.0.0.1:80 total=0.001325s redirect= body=[no available server ]
+prometheus.localhost       rc=0 http=302 ip=127.0.0.1:80 total=0.001784s redirect=http://prometheus.localhost/query body=[<a href="/query">Found</a>.  ]
+alertmanager.localhost     rc=0 http=200 ip=127.0.0.1:80 total=0.001862s redirect= body=[<!DOCTYPE html> <html lang="en">     <head>         <meta charset="utf-8">         <meta n]
+infisical.localhost        rc=0 http=200 ip=127.0.0.1:80 total=0.004118s redirect= body=[<!doctype html> <html lang="en">   <head>     <meta charset="UTF-8" />     <link rel="icon]
+plane.dev.localhost        rc=0 http=404 ip=127.0.0.1:80 total=0.001304s redirect= body=[404 page not found ]
+plane.prod-sim.localhost   rc=0 http=404 ip=127.0.0.1:80 total=0.001039s redirect= body=[404 page not found ]
+--- Argo CD paths through the route
+/              http=200 type=text/html; charset=utf-8
+/healthz       http=200 type=text/plain; charset=utf-8
+/api/version   http=200 type=application/json
+version body: {"Version":"v3.5.7","Platform":null,"BuildDate":null}
+--- unknown host through the same door
+nosuch.localhost http=404
+--- loopback only: the published ports must not answer on another interface
+http://192.168.0.101:80/ with Host argocd.localhost: curl: (7) Failed to connect to 192.168.0.101 port 80 after 0 ms: Couldn't connect to server
+http=000
+--- routes Traefik knows
+argocd       argocd-server   31m
+infisical    infisical       7m16s
+monitoring   alertmanager    14m
+monitoring   grafana         14m
+monitoring   prometheus      14m

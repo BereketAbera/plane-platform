@@ -1,0 +1,94 @@
+# plane-dev first boot, read back after the fact. Captured 2026-11-04T22:19:58Z
+## pods and start times
+NAME                                          CREATED                STARTED                READY   RESTARTS
+iso-dev-controller-manager-85dbfbcb5b-vswbn   2026-11-04T21:11:03Z   2026-11-04T21:11:21Z   true    0
+plane-admin-wl-57ff9b4b88-7w5qb               2026-11-04T21:35:15Z   2026-11-04T21:42:43Z   true    0
+plane-api-migrate-1-6hl5z                     2026-11-04T21:46:29Z   <none>                 false   0
+plane-api-wl-655ddd4b88-vwcd4                 2026-11-04T21:35:15Z   2026-11-04T21:35:15Z   true    0
+plane-beat-worker-wl-c5c96d747-7sdk2          2026-11-04T21:35:15Z   2026-11-04T21:35:15Z   true    0
+plane-live-wl-7c74478fc5-2hslp                2026-11-04T21:35:15Z   2026-11-04T21:38:10Z   true    0
+plane-minio-wl-0                              2026-11-04T21:29:03Z   2026-11-04T21:30:42Z   true    0
+plane-pgdb-wl-0                               2026-11-04T21:29:03Z   2026-11-04T21:32:28Z   true    0
+plane-rabbitmq-wl-0                           2026-11-04T21:29:03Z   2026-11-04T21:30:09Z   true    0
+plane-redis-wl-0                              2026-11-04T21:29:03Z   2026-11-04T21:32:35Z   true    0
+plane-space-wl-7c685dc55-v8gsv                2026-11-04T21:35:15Z   2026-11-04T21:41:46Z   true    0
+plane-web-wl-77dd4cf56-7jhnw                  2026-11-04T21:35:15Z   2026-11-04T21:42:38Z   true    0
+plane-worker-wl-55c87f6f94-4mfkj              2026-11-04T21:35:15Z   2026-11-04T21:35:15Z   true    0
+postgres-exporter-79f8bbdffd-p5q9g            2026-11-04T21:56:42Z   2026-11-04T21:56:43Z   true    0
+redis-exporter-5b59d6cb7c-rp2rd               2026-11-04T21:03:37Z   2026-11-04T21:03:54Z   true    0
+
+## pull durations and warnings still in the event log
+2026-11-04T21:28:41Z   Normal    Pulled                  postgres-exporter-565bbf6cb-rlg2k            Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a1191
+2026-11-04T21:28:52Z   Warning   Failed                  postgres-exporter-565bbf6cb-rlg2k            Error: secret "plane-pgdb" not found
+2026-11-04T21:28:59Z   Normal    Pulled                  postgres-exporter-559df864f6-dxfpj           Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a1191
+2026-11-04T21:28:59Z   Warning   Unhealthy               postgres-exporter-559df864f6-dxfpj           Readiness probe failed: Get "http://10.244.0.235:9187/": dial tcp 10.244.0.235:9187: connect: connection refused
+2026-11-04T21:29:07Z   Normal    Pulling                 plane-rabbitmq-wl-0                          Pulling image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5
+2026-11-04T21:29:08Z   Normal    Pulling                 plane-minio-wl-0                             Pulling image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310
+2026-11-04T21:29:09Z   Normal    Pulling                 plane-redis-wl-0                             Pulling image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53
+2026-11-04T21:29:09Z   Normal    Pulling                 plane-pgdb-wl-0                              Pulling image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce0
+2026-11-04T21:30:09Z   Normal    Pulled                  plane-rabbitmq-wl-0                          Successfully pulled image "docker.io/library/rabbitmq:3.13.7-management-alpine@sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a
+2026-11-04T21:30:12Z   Normal    Pulled                  isolation-probe-1793827812                   Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T21:30:17Z   Warning   Unhealthy               plane-rabbitmq-wl-0                          Startup probe failed: dial tcp 10.244.0.240:5672: connect: connection refused
+2026-11-04T21:30:42Z   Normal    Pulled                  plane-minio-wl-0                             Successfully pulled image "docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b8
+2026-11-04T21:32:28Z   Normal    Pulled                  plane-pgdb-wl-0                              Successfully pulled image "docker.io/library/postgres:15.19-alpine@sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6
+2026-11-04T21:32:35Z   Normal    Pulled                  plane-redis-wl-0                             Successfully pulled image "docker.io/valkey/valkey:7.2.15-alpine@sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b979
+2026-11-04T21:32:35Z   Normal    Pulling                 plane-api-migrate-1-bzmqw                    Pulling image "docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c7
+2026-11-04T21:33:44Z   Normal    Pulled                  plane-api-migrate-1-bzmqw                    Successfully pulled image "docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81cef
+2026-11-04T21:35:15Z   Normal    Pulling                 plane-admin-wl-57ff9b4b88-7w5qb              Pulling image "docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cd
+2026-11-04T21:35:15Z   Normal    Pulled                  plane-worker-wl-55c87f6f94-4mfkj             Container image "docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5
+2026-11-04T21:35:15Z   Normal    Pulling                 plane-web-wl-77dd4cf56-7jhnw                 Pulling image "docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2
+2026-11-04T21:35:15Z   Normal    Pulling                 plane-space-wl-7c685dc55-v8gsv               Pulling image "docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a14
+2026-11-04T21:35:15Z   Normal    Pulling                 plane-live-wl-7c74478fc5-2hslp               Pulling image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacd
+2026-11-04T21:35:15Z   Normal    Pulled                  plane-api-wl-655ddd4b88-vwcd4                Container image "docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5
+2026-11-04T21:35:15Z   Normal    Pulled                  plane-beat-worker-wl-c5c96d747-7sdk2         Container image "docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5
+2026-11-04T21:35:20Z   Warning   Unhealthy               plane-worker-wl-55c87f6f94-4mfkj             Startup probe failed: 
+2026-11-04T21:35:35Z   Warning   Unhealthy               plane-beat-worker-wl-c5c96d747-7sdk2         Startup probe failed: 
+2026-11-04T21:35:40Z   Warning   Unhealthy               plane-api-wl-655ddd4b88-vwcd4                Startup probe failed: Get "http://10.244.0.8:8000/": dial tcp 10.244.0.8:8000: connect: connection refused
+2026-11-04T21:38:10Z   Normal    Pulled                  plane-live-wl-7c74478fc5-2hslp               Successfully pulled image "docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840c
+2026-11-04T21:38:25Z   Warning   Unhealthy               plane-live-wl-7c74478fc5-2hslp               Startup probe failed: Get "http://10.244.0.9:3000/live/health": dial tcp 10.244.0.9:3000: connect: connection refused
+2026-11-04T21:39:15Z   Normal    Pulled                  isolation-probe-1793828354                   Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T21:41:46Z   Normal    Pulled                  plane-space-wl-7c685dc55-v8gsv               Successfully pulled image "docker.io/makeplane/plane-space:v1.4.3@sha256:af9b955874a2ea44f5121bc669200074428081301f950
+2026-11-04T21:41:50Z   Warning   Unhealthy               plane-space-wl-7c685dc55-v8gsv               Startup probe failed: Get "http://10.244.0.10:3000/spaces/": dial tcp 10.244.0.10:3000: connect: connection refused
+2026-11-04T21:42:38Z   Normal    Pulled                  plane-web-wl-77dd4cf56-7jhnw                 Successfully pulled image "docker.io/makeplane/plane-frontend:v1.4.3@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad6640187
+2026-11-04T21:42:38Z   Warning   Unhealthy               plane-web-wl-77dd4cf56-7jhnw                 Readiness probe failed: Get "http://10.244.0.11:3000/": dial tcp 10.244.0.11:3000: connect: connection refused
+2026-11-04T21:42:43Z   Normal    Pulled                  plane-admin-wl-57ff9b4b88-7w5qb              Successfully pulled image "docker.io/makeplane/plane-admin:v1.4.3@sha256:45c95253282508a6c8fc633926231d7c0da003275f09c
+2026-11-04T21:42:43Z   Warning   Unhealthy               plane-admin-wl-57ff9b4b88-7w5qb              Readiness probe failed: Get "http://10.244.0.12:3000/god-mode/": dial tcp 10.244.0.12:3000: connect: connection refuse
+2026-11-04T21:46:29Z   Normal    Pulled                  plane-api-migrate-1-6hl5z                    Container image "docker.io/makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5
+2026-11-04T21:56:43Z   Normal    Pulled                  postgres-exporter-79f8bbdffd-p5q9g           Container image "quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a1191
+2026-11-04T21:56:43Z   Warning   Unhealthy               postgres-exporter-79f8bbdffd-p5q9g           Readiness probe failed: Get "http://10.244.0.83:9187/": dial tcp 10.244.0.83:9187: connect: connection refused
+2026-11-04T22:00:21Z   Normal    Pulled                  netpol-215945-3                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:21Z   Normal    Pulled                  netpol-215945-1                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:21Z   Normal    Pulled                  netpol-215945-4                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:21Z   Normal    Pulled                  netpol-215945-2                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:42Z   Normal    Pulled                  netpol-215945-5                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:42Z   Normal    Pulled                  netpol-215945-7                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:42Z   Normal    Pulled                  netpol-215945-6                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:42Z   Normal    Pulled                  netpol-215945-8                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:59Z   Normal    Pulled                  netpol-215945-10                             Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:59Z   Normal    Pulled                  netpol-215945-9                              Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:59Z   Normal    Pulled                  netpol-215945-12                             Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:00:59Z   Normal    Pulled                  netpol-215945-11                             Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:01:16Z   Normal    Pulled                  netpol-215945-13                             Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:01:16Z   Normal    Pulled                  netpol-215945-14                             Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+2026-11-04T22:11:01Z   Normal    Pulled                  isolation-probe-1793830260                   Container image "docker.io/curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3f
+
+## Application status
+Synced Healthy rev=2693d2f6004d34937b33e2d5aef85884b3b22463 opPhase=Succeeded opStart=2026-11-04T21:11:33Z opEnd=2026-11-04T21:46:40Z
+
+## Argo sync history
+2026-11-04T21:11:33Z 2026-11-04T21:46:40Z e95a6f82 {'automated': True}
+
+## Migrations applied: first, last, count (postgres clock)
+2026-11-04 21:33:49.002748+00|2026-11-04 21:35:12.234418+00|164
+
+## Periodic tasks: did beat really send them?
+                         name                         |          last_run_at          | total_run_count 
+------------------------------------------------------+-------------------------------+-----------------
+ check-every-five-minutes-to-send-email-notifications | 2026-11-04 22:15:00.020353+00 |               8
+ check-every-day-to-delete-hard-delete                |                               |               0
+ check-every-day-to-archive-and-close                 |                               |               0
+ check-every-day-to-delete_exporter_history           |                               |               0
+ check-every-day-to-delete-file-asset                 |                               |               0
+ push-instance-metrics                                |                               |               0
+(6 rows)
+

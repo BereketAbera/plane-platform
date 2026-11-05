@@ -1,0 +1,33 @@
+# Exact restore_data Job, scratch database and bucket in plane-dev, 2026-11-04T23:18:15Z
+rehearsal of backup 20261104T231324Z into database rehearse_1793834295 and bucket restore-rehearsal-1793834295
+[pod/plane-restore-rehearsal-1793834295-dztrb/postgres] NOTICE:  database "rehearse_1793834295" does not exist, skipping
+[pod/plane-restore-rehearsal-1793834295-dztrb/postgres] vacuumdb: vacuuming database "rehearse_1793834295"
+[pod/plane-restore-rehearsal-1793834295-dztrb/postgres] GATE1 ok: 110 tables equal the backup
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:19 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:19 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:19 NOTICE: S3 bucket restore-rehearsal-1793834295: 0 differences found
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:19 NOTICE: S3 bucket restore-rehearsal-1793834295: 22 matching files
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] objects: sync and downloading check ok
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:20 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:21 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:21 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:21 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:21 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:21 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] 2026/11/04 23:18:21 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/objects] objects: Content-Type put back on 14 of 22 objects
+[pod/plane-restore-rehearsal-1793834295-dztrb/gate] 2026/11/04 23:18:22 NOTICE: Config file "/work/rclone.conf" not found - using defaults
+[pod/plane-restore-rehearsal-1793834295-dztrb/gate] GATE2 ok: 15 uploaded assets all have an object
+rehearsal job rc=0
+cleanup job: ok
+       2
+exit=0

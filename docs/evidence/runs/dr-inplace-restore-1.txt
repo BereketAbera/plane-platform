@@ -1,0 +1,161 @@
+# In-place Infisical restore from a backup taken moments before. 2026-11-04T23:14:33Z
+Plane data is not touched. No Plane pod may restart.
+
+## backup
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261104T231433Z
+[pod/plane-backup-20261104t231433z-zb9gl/postgres] postgres: 20261104T231433Z complete, 785 tables counted from a scratch restore
+backup 20261104T231433Z: postgres/infisical.dump 4406074 B, postgres/infisical.toc.txt 935955 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261104T231433Z
+exit=0
+
+## scripts/restore.sh infisical latest CONFIRM=yes
+[1;34m==>[0m Verifying 20261104T231433Z
+[1;32m ok[0m checksums: 7 files match
+[1;32m ok[0m key-fingerprint: ENCRYPTION_KEY matches the backup
+[1;32m ok[0m overwrite-guard: target holds 1 users and 0 objects, overwriting on CONFIRM=yes
+[1;34m==>[0m Pausing auto-sync: infisical
+[1;32m ok[0m app-stopped: infisical at zero with auto-sync paused
+[pod/plane-restore-20261104t231453z-t925x/postgres] NOTICE:  database "infisical_restoring" does not exist, skipping
+[pod/plane-restore-20261104t231453z-t925x/postgres] vacuumdb: vacuuming database "infisical_restoring"
+[pod/plane-restore-20261104t231453z-t925x/postgres] GATE1 ok: 785 tables equal the backup
+[pod/plane-restore-20261104t231453z-t925x/postgres] ALTER DATABASE
+[pod/plane-restore-20261104t231453z-t925x/postgres] swapped in: infisical is now the restored database
+[1;32m ok[0m postgres: dump restored into a second database, row counts equal the backup, swapped in
+[1;32m ok[0m redis: flushed, so no cache or queued job from before the restore survives
+[1;32m ok[0m proof-status: /api/status answers 200 through Traefik
+[1;32m ok[0m proof-initialized: the server reads the restored admin config
+[1;32m ok[0m proof-values: every Plane secret decrypts to the value, version and id the backup recorded
+[1;32m ok[0m Next, to refresh the cluster CA and the identity Secrets: INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh
+[1;32m ok[0m auto-sync restored on infisical
+[1;32m ok[0m restore of 20261104T231433Z into infisical complete. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/restore-infisical-20261104T231453Z.json
+scripts/restore.sh infisical latest CONFIRM=yes  1.42s user 0.87s system 4% cpu 47.303 total
+exit=0
+
+## after the restore: infisical/tests/isolation.sh and rendered-secrets.sh, real logins and reads, 2026-11-04T23:17:11Z
+[1;34m==>[0m Logins, through http://infisical.localhost
+PASS     plane-dev SA logs in as the dev reader                         expected=200      got=200  
+PASS     plane-prod-sim SA logs in as the prod-sim reader               expected=200      got=200  
+PASS     plane-dev SA refused as the prod-sim reader                    expected=401|403  got=401  Access denied: K8s namespace not allowed.
+PASS     plane-prod-sim SA refused as the dev reader                    expected=401|403  got=401  Access denied: K8s namespace not allowed.
+PASS     plane-dev/default SA refused as the dev reader                 expected=401|403  got=401  tokenreviews.authentication.k8s.io is forbidden: User "system:serviceaccount:plane-dev:default" cannot create resource "tokenreviews" in API group "authentication.k8s.io" at the cluster scope
+PASS     plane-dev/iso-dev-controller-manager SA refused as the dev reader expected=401|403  got=401  Access denied: K8s name not allowed.
+PASS     a forged token is refused                                      expected=401|403  got=401  Unauthorized
+[1;34m==>[0m Reads: each reader against its own project, then the other one
+PASS     dev reader lists plane-dev                                     expected=200      got=200  9 keys
+PASS     prod-sim reader lists plane-prod-sim                           expected=200      got=200  9 keys
+PASS     dev reader lists plane-prod-sim                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader reads plane-prod-sim PG_PASSWORD                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     dev reader resolves slug plane-prod-sim (operator's first call) expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader lists plane-dev                                expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader reads plane-dev PG_PASSWORD                    expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+PASS     prod-sim reader resolves slug plane-dev                        expected=403      got=403  You are not a member of this project with ID <redacted>. Please assign this identity to the project with the appropriate permissions, then try again.
+[1;34m==>[0m Role limits on the reader's own project and organization
+PASS     dev reader cannot write to its own project                     expected=403      got=403  You are not allowed to create on secrets
+PASS     dev reader cannot list the organization's identities           expected=403      got=403  You are not allowed to read on identity
+PASS     no token at all                                                expected=401      got=401  Token missing
+[1;34m==>[0m The same checks from inside each namespace, over the Service, with a pod-mounted token
+PASS     dev, in-cluster: login-own-identity                            expected=200      got=200  
+PASS     dev, in-cluster: list-own-project                              expected=200      got=200  
+PASS     dev, in-cluster: list-other-project                            expected=403      got=403  
+PASS     dev, in-cluster: read-other-secret                             expected=403      got=403  
+PASS     dev, in-cluster: other-project-slug                            expected=403      got=403  
+PASS     prod-sim, in-cluster: login-own-identity                       expected=200      got=200  
+PASS     prod-sim, in-cluster: list-own-project                         expected=200      got=200  
+PASS     prod-sim, in-cluster: list-other-project                       expected=403      got=403  
+PASS     prod-sim, in-cluster: read-other-secret                        expected=403      got=403  
+PASS     prod-sim, in-cluster: other-project-slug                       expected=403      got=403  
+[1;32m ok[0m isolation: every row passed
+isolation exit=0
+[1;34m==>[0m dev
+PASS     plane-dev/plane-app-env holds exactly the contract's keys          AMQP_URL,DATABASE_URL,REDIS_URL
+PASS     plane-dev/plane-app-env has no empty or '<no value>' value         
+PASS     plane-dev/plane-app-env is owned by its InfisicalStaticSecret      
+PASS     plane-dev/plane-app-env carries no Argo CD tracking data           
+PASS     plane-dev InfisicalStaticSecret/plane-app-env reconciled at this generation 
+PASS     plane-dev/plane-app-keys holds exactly the contract's keys         LIVE_SERVER_SECRET_KEY,SECRET_KEY
+PASS     plane-dev/plane-app-keys has no empty or '<no value>' value        
+PASS     plane-dev/plane-app-keys is owned by its InfisicalStaticSecret     
+PASS     plane-dev/plane-app-keys carries no Argo CD tracking data          
+PASS     plane-dev InfisicalStaticSecret/plane-app-keys reconciled at this generation 
+PASS     plane-dev/plane-live-env holds exactly the contract's keys         REDIS_URL
+PASS     plane-dev/plane-live-env has no empty or '<no value>' value        
+PASS     plane-dev/plane-live-env is owned by its InfisicalStaticSecret     
+PASS     plane-dev/plane-live-env carries no Argo CD tracking data          
+PASS     plane-dev InfisicalStaticSecret/plane-live-env reconciled at this generation 
+PASS     plane-dev/plane-doc-store holds exactly the contract's keys        AWS_ACCESS_KEY_ID,AWS_S3_BUCKET_NAME,AWS_S3_ENDPOINT_URL,AWS_SECRET_ACCESS_KEY,FILE_SIZE_LIMIT,MINIO_ROOT_PASSWORD,MINIO_ROOT_USER,USE_MINIO
+PASS     plane-dev/plane-doc-store has no empty or '<no value>' value       
+PASS     plane-dev/plane-doc-store is owned by its InfisicalStaticSecret    
+PASS     plane-dev/plane-doc-store carries no Argo CD tracking data         
+PASS     plane-dev InfisicalStaticSecret/plane-doc-store reconciled at this generation 
+PASS     plane-dev/plane-pgdb holds exactly the contract's keys             POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER
+PASS     plane-dev/plane-pgdb has no empty or '<no value>' value            
+PASS     plane-dev/plane-pgdb is owned by its InfisicalStaticSecret         
+PASS     plane-dev/plane-pgdb carries no Argo CD tracking data              
+PASS     plane-dev InfisicalStaticSecret/plane-pgdb reconciled at this generation 
+PASS     plane-dev/plane-rabbitmq holds exactly the contract's keys         RABBITMQ_DEFAULT_PASS,RABBITMQ_DEFAULT_USER
+PASS     plane-dev/plane-rabbitmq has no empty or '<no value>' value        
+PASS     plane-dev/plane-rabbitmq is owned by its InfisicalStaticSecret     
+PASS     plane-dev/plane-rabbitmq carries no Argo CD tracking data          
+PASS     plane-dev InfisicalStaticSecret/plane-rabbitmq reconciled at this generation 
+PASS     plane-dev plane-doc-store USE_MINIO=1                              
+PASS     plane-dev plane-doc-store AWS_S3_BUCKET_NAME=uploads               
+PASS     plane-dev plane-doc-store AWS_S3_ENDPOINT_URL=http://plane-minio:9000 
+PASS     plane-dev plane-doc-store FILE_SIZE_LIMIT=5242880, in bytes        
+PASS     plane-dev generated values are all hex                             
+PASS     plane-dev DATABASE_URL matches plane-pgdb and names its own namespace 
+PASS     plane-dev AMQP_URL matches plane-rabbitmq and names its own namespace 
+PASS     plane-dev Silo user is also the S3 access key                      
+PASS     plane-dev Silo password is also the S3 secret key                  
+PASS     plane-dev REDIS_URL names its own namespace                        
+PASS     plane-dev REDIS_URL agrees in plane-app-env and plane-live-env     
+[1;34m==>[0m prod-sim
+PASS     plane-prod-sim/plane-app-env holds exactly the contract's keys     AMQP_URL,DATABASE_URL,REDIS_URL
+PASS     plane-prod-sim/plane-app-env has no empty or '<no value>' value    
+PASS     plane-prod-sim/plane-app-env is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-app-env carries no Argo CD tracking data      
+PASS     plane-prod-sim InfisicalStaticSecret/plane-app-env reconciled at this generation 
+PASS     plane-prod-sim/plane-app-keys holds exactly the contract's keys    LIVE_SERVER_SECRET_KEY,SECRET_KEY
+PASS     plane-prod-sim/plane-app-keys has no empty or '<no value>' value   
+PASS     plane-prod-sim/plane-app-keys is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-app-keys carries no Argo CD tracking data     
+PASS     plane-prod-sim InfisicalStaticSecret/plane-app-keys reconciled at this generation 
+PASS     plane-prod-sim/plane-live-env holds exactly the contract's keys    REDIS_URL
+PASS     plane-prod-sim/plane-live-env has no empty or '<no value>' value   
+PASS     plane-prod-sim/plane-live-env is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-live-env carries no Argo CD tracking data     
+PASS     plane-prod-sim InfisicalStaticSecret/plane-live-env reconciled at this generation 
+PASS     plane-prod-sim/plane-doc-store holds exactly the contract's keys   AWS_ACCESS_KEY_ID,AWS_S3_BUCKET_NAME,AWS_S3_ENDPOINT_URL,AWS_SECRET_ACCESS_KEY,FILE_SIZE_LIMIT,MINIO_ROOT_PASSWORD,MINIO_ROOT_USER,USE_MINIO
+PASS     plane-prod-sim/plane-doc-store has no empty or '<no value>' value  
+PASS     plane-prod-sim/plane-doc-store is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-doc-store carries no Argo CD tracking data    
+PASS     plane-prod-sim InfisicalStaticSecret/plane-doc-store reconciled at this generation 
+PASS     plane-prod-sim/plane-pgdb holds exactly the contract's keys        POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER
+PASS     plane-prod-sim/plane-pgdb has no empty or '<no value>' value       
+PASS     plane-prod-sim/plane-pgdb is owned by its InfisicalStaticSecret    
+PASS     plane-prod-sim/plane-pgdb carries no Argo CD tracking data         
+PASS     plane-prod-sim InfisicalStaticSecret/plane-pgdb reconciled at this generation 
+PASS     plane-prod-sim/plane-rabbitmq holds exactly the contract's keys    RABBITMQ_DEFAULT_PASS,RABBITMQ_DEFAULT_USER
+PASS     plane-prod-sim/plane-rabbitmq has no empty or '<no value>' value   
+PASS     plane-prod-sim/plane-rabbitmq is owned by its InfisicalStaticSecret 
+PASS     plane-prod-sim/plane-rabbitmq carries no Argo CD tracking data     
+PASS     plane-prod-sim InfisicalStaticSecret/plane-rabbitmq reconciled at this generation 
+PASS     plane-prod-sim plane-doc-store USE_MINIO=1                         
+PASS     plane-prod-sim plane-doc-store AWS_S3_BUCKET_NAME=uploads          
+PASS     plane-prod-sim plane-doc-store AWS_S3_ENDPOINT_URL=http://plane-minio:9000 
+PASS     plane-prod-sim plane-doc-store FILE_SIZE_LIMIT=5242880, in bytes   
+PASS     plane-prod-sim generated values are all hex                        
+PASS     plane-prod-sim DATABASE_URL matches plane-pgdb and names its own namespace 
+PASS     plane-prod-sim AMQP_URL matches plane-rabbitmq and names its own namespace 
+PASS     plane-prod-sim Silo user is also the S3 access key                 
+PASS     plane-prod-sim Silo password is also the S3 secret key             
+PASS     plane-prod-sim REDIS_URL names its own namespace                   
+PASS     plane-prod-sim REDIS_URL agrees in plane-app-env and plane-live-env 
+[1;34m==>[0m Across environments
+PASS     dev and prod-sim differ in POSTGRES_PASSWORD                       
+PASS     dev and prod-sim differ in RABBITMQ_DEFAULT_PASS                   
+PASS     dev and prod-sim differ in MINIO_ROOT_USER                         
+PASS     dev and prod-sim differ in MINIO_ROOT_PASSWORD                     
+PASS     dev and prod-sim differ in SECRET_KEY                              
+PASS     dev and prod-sim differ in LIVE_SERVER_SECRET_KEY                  
+[1;32m ok[0m rendered secrets: every row passed
+rendered-secrets exit=0

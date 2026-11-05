@@ -1,0 +1,18 @@
+# date: 2026-11-04T23:16:48Z
+# Every metric that names the throwaway, 21+ minutes into its retry loop
+argocd_app_info series 1
+argocd_app_k8s_request_total series 1
+argocd_app_orphaned_resources_count series 1
+ALERTS series 3
+ALERTS_FOR_STATE series 3
+# argocd_app_k8s_request_total by verb and resource, the only counter that moves: it counts API calls, not failures
+{'verb': 'Get', 'resource_kind': 'networking.k8s.io', 'response_code': '200', 'server': 'https://10.96.0.1:443'} 6
+# argocd_app_condition series in total:
+[]
+# controller flag for it (off unless set):
+['--metrics-port=8082']
+['ARGOCD_APPLICATION_CONTROLLER_METRICS_CACHE_EXPIRATION']
+# status.conditions on the throwaway:
+None
+phase Running retryCount 6 startedAt 2026-11-04T22:55:25Z finishedAt 2026-11-04T23:12:25Z
+one or more synchronization tasks are not valid: resource networking.k8s.io:NetworkPolicy is not permitted in project plane-dev. Retrying attempt #6 at 11:17PM.

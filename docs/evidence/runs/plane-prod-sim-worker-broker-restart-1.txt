@@ -1,0 +1,80 @@
+# plane-prod-sim worker and broker restart. 2026-11-04T23:48:05Z
+# Celery 5.5.3 in the image: cancel_task_queue calls queues.deselect, which empties the selection. add_task_queue takes the 'queue in queues' branch, so it
+# attaches a consumer without select_add. Tasks.start builds the next consumer from queues.consume_from, which is now empty.
+
+== 2026-11-04T23:48:05Z State found after the drill failed. The worker had run cancel_consumer and add_consumer at 23:26 and 23:27, in the --worker-negative-control run.
+2026-11-04T23:26:36.514419342Z [2026-11-04 23:26:36,513: INFO/MainProcess] Canceling queue celery
+2026-11-04T23:27:10.300456677Z [2026-11-04 23:27:10,299: INFO/MainProcess] Started consuming from celery
+queue celery: messages=210 ready=210 unacked=0 consumers=0
+inspect ping:         pong 1 node online. 
+inspect active_queues:
+->  celery@plane-worker-wl-667f56c7f8-lnv72: OK
+    - empty -
+
+== 2026-11-04T23:48:29Z Repair 1: replace the worker pod. No spec changes, so Argo CD sees no drift.
+deleting pod plane-worker-wl-667f56c7f8-lnv72
+pod "plane-worker-wl-667f56c7f8-lnv72" deleted from plane-prod-sim namespace
+deployment "plane-worker-wl" successfully rolled out
+consumer on queue celery: 1, 2026-11-04T23:49:01Z
+inspect active_queues:
+->  celery@plane-worker-wl-667f56c7f8-zxq29: OK
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'arguments': None, 'durable': True, 'passive':
+2026-11-04T23:49:14Z queue celery: messages=0 ready=0 unacked=0 consumers=1
+job-probe work items and their created activity, read from Postgres:
+job-probe 2639e929|1
+job-probe d982a291|1
+job-probe 4ab2bbb9|1
+job-probe b2918ed3|1
+
+== 2026-11-04T23:49:14Z Control: this worker has never had cancel_consumer. Restart the broker.
+pod "plane-rabbitmq-wl-0" deleted from plane-prod-sim namespace
+partitioned roll out complete: 1 new pods have been updated...
+pod/plane-rabbitmq-wl-0 condition met
+broker Ready again after 22.7s
+consumer on queue celery: 1, 2026-11-04T23:49:48Z
+consumer back: rc=0
+inspect active_queues:
+->  celery@plane-worker-wl-667f56c7f8-zxq29: OK
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'arguments': None, 'durable': True, 'passive':
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 0.1s
+RESULT  PASS
+
+== 2026-11-04T23:50:00Z Cause: the same again, after cancel_consumer then add_consumer, what --worker-negative-control does.
+->  celery@plane-worker-wl-667f56c7f8-zxq29: OK
+        no longer consuming from celery
+queue celery: messages=0 ready=0 unacked=0 consumers=0
+->  celery@plane-worker-wl-667f56c7f8-zxq29: OK
+        add consumer celery
+consumer on queue celery: 1, 2026-11-04T23:50:38Z
+inspect active_queues before the broker restart:
+->  celery@plane-worker-wl-667f56c7f8-zxq29: OK
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'arguments': None, 'durable': True, 'passive':
+pod "plane-rabbitmq-wl-0" deleted from plane-prod-sim namespace
+partitioned roll out complete: 1 new pods have been updated...
+pod/plane-rabbitmq-wl-0 condition met
+broker Ready again after 13.1s
+wait 90s, more than the worker needed to reconnect in the control above
+queue celery: messages=0 ready=0 unacked=0 consumers=0
+inspect ping:         pong 1 node online. 
+inspect active_queues after the broker restart:
+->  celery@plane-worker-wl-667f56c7f8-zxq29: OK
+    - empty -
+
+== 2026-11-04T23:52:55Z Repair 2: replace the worker pod again.
+deleting pod plane-worker-wl-667f56c7f8-zxq29
+pod "plane-worker-wl-667f56c7f8-zxq29" deleted from plane-prod-sim namespace
+deployment "plane-worker-wl" successfully rolled out
+consumer on queue celery: 1, 2026-11-04T23:53:27Z
+inspect active_queues:
+->  celery@plane-worker-wl-667f56c7f8-9wrtg: OK
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'arguments': None, 'durable': True, 'passive':
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 3.1s
+RESULT  PASS
+queue celery: messages=0 ready=0 unacked=0 consumers=1
+
+== 2026-11-04T23:53:43Z Done
+exit=0

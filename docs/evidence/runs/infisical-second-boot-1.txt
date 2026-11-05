@@ -1,0 +1,17 @@
+# Second boot: the request change published in e95a6f8, through Argo CD. Started watching 2026-11-04T21:41:32Z
+21:41:32 {"gen":2,"obs":2,"updated":1,"ready":1,"replicas":2,"reqMem":"768Mi"} infisical-567944c58f-vsrl8 0/1 Running; infisical-57bfb89746-n6slc 1/1 Running; 
+21:41:43 {"gen":2,"obs":2,"updated":1,"ready":1,"replicas":1,"reqMem":"768Mi"} infisical-567944c58f-vsrl8 1/1 Running; infisical-57bfb89746-n6slc 1/1 Terminating; 
+21:41:48 {"gen":2,"obs":2,"updated":1,"ready":1,"replicas":1,"reqMem":"768Mi"} infisical-567944c58f-vsrl8 1/1 Running; 
+
+pod infisical-567944c58f-vsrl8 created 2026-11-04T21:41:27Z, started 2026-11-04T21:41:27Z, ready 2026-11-04T21:41:42Z, restarts 0
+$ migration lines in the new pod log
+2026-11-04T21:41:33Z	Running Infisical vv0.167.6
+first-boot-only migration lines repeated: 0
+memory.current 784613376
+memory.peak 861753344
+memory.events low 0 high 0 max 0 oom 0 oom_kill 0 oom_group_kill 0
+
+$ app and API
+{"sync":"Synced","health":"Healthy","gitRevision":"e95a6f82018b2b5fc0087113ee1d34501b91cd64"}
+GET /api/status via Traefik -> 200
+# finished 2026-11-04T21:41:49Z

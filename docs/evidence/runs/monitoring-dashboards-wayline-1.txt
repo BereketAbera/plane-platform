@@ -1,0 +1,100 @@
+# captured 2026-11-04T22:19:18Z
+
+$ gf_panels.py: each target of the four Wayline dashboards through Grafana /api/ds/query, namespace plane-dev
+=== Platform overview (wayline-platform-overview) HTTP 200 schemaVersion=41 panels=20 meta.folder=Platform provisioned=True
+  [DATA] #2 dev: API                       prometheus frames=1 rows=1 
+  [DATA] #3 dev: API and Postgres          prometheus frames=1 rows=1 
+  [DATA] #4 dev: Live                      prometheus frames=1 rows=1 
+  [DATA] #5 dev: Frontends                 prometheus frames=1 rows=1 
+  [DATA] #6 prod-sim: API                  prometheus frames=1 rows=1 
+  [DATA] #7 prod-sim: API and Postgres     prometheus frames=1 rows=1 
+  [DATA] #8 prod-sim: Live                 prometheus frames=1 rows=1 
+  [DATA] #9 prod-sim: Frontends            prometheus frames=1 rows=1 
+  [DATA] #10 Probe history                  prometheus frames=8 rows=968 
+  [DATA] #11 Firing alerts                  prometheus frames=1 rows=1 
+  [DATA] #12 VM memory used                 prometheus frames=1 rows=1 
+  [DATA] #14 Request rate by environment    prometheus frames=2 rows=122 
+  [EMPTY] #15 5xx ratio by environment       prometheus frames=1 rows=0 
+  [DATA] #17 CPU by namespace (cores)       prometheus frames=7 rows=847 
+  [DATA] #18 Memory by namespace            prometheus frames=7 rows=847 
+  [DATA] #19 Container restarts by namespac prometheus frames=7 rows=847 
+  [DATA] #20 Most restarted containers in r prometheus frames=3 rows=3 
+=== Plane data services (wayline-data-services) HTTP 200 schemaVersion=41 panels=20 meta.folder=Plane provisioned=True
+  var namespace query {"query": "label_values(kube_pod_info{namespace=~\"plane-.*\"}, namespace)", "refId": "ns"}
+  [DATA] #2 Postgres                       prometheus frames=1 rows=1 
+  [DATA] #3 Valkey                         prometheus frames=1 rows=1 
+  [DATA] #4 RabbitMQ                       prometheus frames=1 rows=1 
+  [DATA] #5 Silo                           prometheus frames=1 rows=1 
+  [DATA] #6 Celery consumers               prometheus frames=1 rows=1 
+  [EMPTY] #7 Last backup                    prometheus frames=1 rows=0 
+  [DATA] #9 Database size                  prometheus frames=2 rows=92 
+  [DATA] #10 Connections by state           prometheus frames=6 rows=552 
+  [DATA] #12 Memory used                    prometheus frames=1 rows=93 
+  [DATA] #13 Connected clients              prometheus frames=1 rows=93 
+  [DATA] #14 Cache hit ratio                prometheus frames=1 rows=92 
+  [DATA] #16 Celery queue depth             prometheus frames=1 rows=87 
+  [DATA] #16 Celery queue depth             prometheus frames=1 rows=87 
+  [DATA] #17 RabbitMQ memory                prometheus frames=1 rows=97 
+  [DATA] #19 Bucket size                    prometheus frames=1 rows=86 
+  [DATA] #20 Bucket objects                 prometheus frames=1 rows=86 
+=== Deployments and rollbacks (wayline-deployments) HTTP 200 schemaVersion=41 panels=10 meta.folder=Plane provisioned=True
+  var namespace query {"query": "label_values(kube_pod_info{namespace=~\"plane-.*\"}, namespace)", "refId": "ns"}
+  [DATA] #2 Application state              prometheus frames=14 rows=14 
+  [DATA] #3 Sync history in range          prometheus frames=7 rows=7 
+  [DATA] #4 Syncs for this environment     prometheus frames=1 rows=64 
+  [DATA] #6 Which digest ran when          prometheus frames=12 rows=1036 
+  [DATA] #7 Running images                 prometheus frames=15 rows=15 
+  [DATA] #9 Unavailable replicas           prometheus frames=10 rows=972 
+  [DATA] #10 Spec changes                   prometheus frames=1 rows=18 
+=== Logs (wayline-logs) HTTP 200 schemaVersion=41 panels=4 meta.folder=Plane provisioned=True
+  var namespace query "label_values(namespace)"
+  var container query "label_values({namespace=\"$namespace\"}, container)"
+  var search textbox ""
+  [DATA] #1 Log lines by container         loki frames=16 rows=482 
+  [DATA] #2 Log lines                      loki frames=1 rows=100 
+  [EMPTY] #3 API requests with a 5xx        loki frames=1 rows=0 
+  [DATA] #4 Alert deliveries to the sink   loki frames=1 rows=60 
+TOTALS {'ok_data': 41, 'ok_empty': 3, 'error': 0}
+EMPTY: wayline-platform-overview | 5xx ratio by environment | sum by (env) (label_replace(rate(traefik_service_requests_total{service=~"plane-(dev|prod-sim)-.*",code=~"5.."}[5m]), "env", "$1", "service", "plane-(dev|prod-sim)-.*")) / sum by (env) (label_replace(
+EMPTY: wayline-data-services | Last backup | time() - max(kube_job_status_completion_time{namespace="plane-dev",job_name=~"plane-backup-.*"})
+EMPTY: wayline-logs | API requests with a 5xx | {namespace="plane-dev", container="plane-api"} | json | status_code >= 500
+
+$ same, namespace plane-prod-sim
+=== Plane data services (wayline-data-services) HTTP 200 schemaVersion=41 panels=20 meta.folder=Plane provisioned=True
+  var namespace query {"query": "label_values(kube_pod_info{namespace=~\"plane-.*\"}, namespace)", "refId": "ns"}
+  [DATA] #2 Postgres                       prometheus frames=1 rows=1 
+  [DATA] #3 Valkey                         prometheus frames=1 rows=1 
+  [DATA] #4 RabbitMQ                       prometheus frames=1 rows=1 
+  [DATA] #5 Silo                           prometheus frames=1 rows=1 
+  [DATA] #6 Celery consumers               prometheus frames=1 rows=1 
+  [EMPTY] #7 Last backup                    prometheus frames=1 rows=0 
+  [DATA] #9 Database size                  prometheus frames=2 rows=62 
+  [DATA] #10 Connections by state           prometheus frames=6 rows=372 
+  [DATA] #12 Memory used                    prometheus frames=1 rows=64 
+  [DATA] #13 Connected clients              prometheus frames=1 rows=64 
+  [DATA] #14 Cache hit ratio                prometheus frames=1 rows=63 
+  [DATA] #16 Celery queue depth             prometheus frames=1 rows=60 
+  [DATA] #16 Celery queue depth             prometheus frames=1 rows=60 
+  [DATA] #17 RabbitMQ memory                prometheus frames=1 rows=63 
+  [DATA] #19 Bucket size                    prometheus frames=1 rows=58 
+  [DATA] #20 Bucket objects                 prometheus frames=1 rows=58 
+=== Deployments and rollbacks (wayline-deployments) HTTP 200 schemaVersion=41 panels=10 meta.folder=Plane provisioned=True
+  var namespace query {"query": "label_values(kube_pod_info{namespace=~\"plane-.*\"}, namespace)", "refId": "ns"}
+  [DATA] #2 Application state              prometheus frames=14 rows=14 
+  [DATA] #3 Sync history in range          prometheus frames=7 rows=7 
+  [DATA] #4 Syncs for this environment     prometheus frames=1 rows=58 
+  [DATA] #6 Which digest ran when          prometheus frames=12 rows=739 
+  [DATA] #7 Running images                 prometheus frames=15 rows=15 
+  [DATA] #9 Unavailable replicas           prometheus frames=10 rows=783 
+  [DATA] #10 Spec changes                   prometheus frames=1 rows=18 
+=== Logs (wayline-logs) HTTP 200 schemaVersion=41 panels=4 meta.folder=Plane provisioned=True
+  var namespace query "label_values(namespace)"
+  var container query "label_values({namespace=\"$namespace\"}, container)"
+  var search textbox ""
+  [DATA] #1 Log lines by container         loki frames=16 rows=444 
+  [DATA] #2 Log lines                      loki frames=1 rows=100 
+  [EMPTY] #3 API requests with a 5xx        loki frames=1 rows=0 
+  [DATA] #4 Alert deliveries to the sink   loki frames=1 rows=60 
+TOTALS {'ok_data': 25, 'ok_empty': 2, 'error': 0}
+EMPTY: wayline-data-services | Last backup | time() - max(kube_job_status_completion_time{namespace="plane-prod-sim",job_name=~"plane-backup-.*"})
+EMPTY: wayline-logs | API requests with a 5xx | {namespace="plane-prod-sim", container="plane-api"} | json | status_code >= 500

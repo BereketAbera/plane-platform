@@ -1,0 +1,13 @@
+# date: 2026-11-05T00:41:49Z
+# command: scripts/ci/negative-controls.sh allow-list, at 2f7a476
+[1;34m==>[0m baseline: an untouched clone must pass, or the failures below prove nothing
+[1;32m ok[0m lint.sh passes on 2f7a4760a1b7d2fe313e61d6177ce67227b0c9c9
+[1;32m ok[0m validate-manifests.sh passes on 2f7a4760a1b7d2fe313e61d6177ce67227b0c9c9
+[1;32m ok[0m ownership.sh passes on 2f7a4760a1b7d2fe313e61d6177ce67227b0c9c9
+[1;32m ok[0m security.sh passes on 2f7a4760a1b7d2fe313e61d6177ce67227b0c9c9
+[1;34m==>[0m internal-route-without-allow-list
+[1;32m ok[0m internal-route-without-allow-list: ./scripts/ci/validate-manifests.sh exited 1 and printed: so it must name the node-network-only middleware
+[1;34m==>[0m allow-list-opened-to-everyone
+[1;32m ok[0m allow-list-opened-to-everyone: ./scripts/ci/validate-manifests.sh exited 1 and printed: must be an ipAllowList of exactly
+[1;32m ok[0m 2 of 2 planted defects were caught, on 2f7a4760a1b7d2fe313e61d6177ce67227b0c9c9
+# exit 0

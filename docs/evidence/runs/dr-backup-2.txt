@@ -1,0 +1,10 @@
+# make backup ENV=infisical, after dropping --single-transaction, 2026-11-04T22:57:32Z
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261104T225732Z
+[pod/plane-backup-20261104t225732z-7ktqz/postgres] psql:/backups/20261104T225732Z.partial/postgres/rowcounts.sql:2: ERROR:  out of shared memory
+[pod/plane-backup-20261104t225732z-7ktqz/postgres] HINT:  You might need to increase max_locks_per_transaction.
+[pod/plane-backup-20261104t225732z-7ktqz/postgres] CONTEXT:  parallel worker
+NAME                                  READY   STATUS   RESTARTS   AGE   IP            NODE                           NOMINATED NODE   READINESS GATES
+plane-backup-20261104t225732z-7ktqz   0/1     Error    0          25s   10.244.0.21   plane-platform-control-plane   <none>           <none>
+make: *** [backup] Error 1
+make backup ENV=infisical  0.55s user 0.36s system 3% cpu 24.960 total
+exit=2

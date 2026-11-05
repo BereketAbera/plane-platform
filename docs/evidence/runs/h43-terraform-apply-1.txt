@@ -1,0 +1,529 @@
+# date: 2026-11-04T23:23:20Z
+# command: terraform apply -input=false -auto-approve -lock-timeout=10m -no-color, from infrastructure/terraform/environments/local
+module.foundation.kubernetes_namespace_v1.this["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim]
+module.foundation.kubernetes_namespace_v1.this["traefik"]: Refreshing state... [id=traefik]
+module.foundation.kubernetes_namespace_v1.this["monitoring"]: Refreshing state... [id=monitoring]
+module.foundation.kubernetes_namespace_v1.this["monitoring-agents"]: Refreshing state... [id=monitoring-agents]
+module.foundation.kubernetes_namespace_v1.this["plane-dev"]: Refreshing state... [id=plane-dev]
+module.foundation.kubernetes_namespace_v1.this["argocd"]: Refreshing state... [id=argocd]
+module.foundation.kubernetes_config_map_v1_data.coredns[0]: Refreshing state... [id=kube-system/coredns]
+module.foundation.kubernetes_namespace_v1.this["infisical"]: Refreshing state... [id=infisical]
+module.foundation.kubernetes_limit_range_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-defaults]
+module.foundation.kubernetes_resource_quota_v1.plane["plane-prod-sim"]: Refreshing state... [id=plane-prod-sim/plane-budget]
+module.foundation.kubernetes_limit_range_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-defaults]
+module.foundation.kubernetes_resource_quota_v1.plane["plane-dev"]: Refreshing state... [id=plane-dev/plane-budget]
+module.argocd.helm_release.argocd: Refreshing state... [id=argocd]
+module.argocd.helm_release.bootstrap: Refreshing state... [id=argocd-bootstrap]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # module.argocd.helm_release.argocd will be updated in-place
+  ~ resource "helm_release" "argocd" {
+      ~ id                         = "argocd" -> (known after apply)
+      ~ metadata                   = {
+          ~ app_version    = "v3.5.7" -> (known after apply)
+          ~ chart          = "argo-cd" -> (known after apply)
+          ~ first_deployed = 1793824847 -> (known after apply)
+          ~ last_deployed  = 1793827070 -> (known after apply)
+          ~ name           = "argocd" -> (known after apply)
+          ~ namespace      = "argocd" -> (known after apply)
+          ~ notes          = <<-EOT
+                In order to access the server UI you have the following options:
+                
+                1. kubectl port-forward service/argocd-server -n argocd 8080:443
+                
+                    and then open the browser on http://localhost:8080 and accept the certificate
+                
+                2. enable ingress in the values file `server.ingress.enabled` and either
+                      - Add the annotation for ssl passthrough: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-1-ssl-passthrough
+                      - Set the `configs.params."server.insecure"` in the values file and terminate SSL at your ingress: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-2-multiple-ingress-objects-and-hosts
+                
+                
+                After reaching the UI the first time you can login with username: admin and the random password generated during the installation. You can find the password by running:
+                
+                kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+                
+                (You should delete the initial secret afterwards as suggested by the Getting Started Guide: https://argo-cd.readthedocs.io/en/stable/getting_started/#4-login-using-the-cli)
+            EOT -> (known after apply)
+          ~ revision       = 2 -> (known after apply)
+          ~ values         = jsonencode(
+                {
+                  - applicationSet  = {
+                      - replicas = 0
+                    }
+                  - configs         = {
+                      - cm     = {
+                          - "resource.customizations.health.argoproj.io_Application"                     = <<-EOT
+                                hs = {}
+                                hs.status = "Progressing"
+                                hs.message = ""
+                                if obj.status ~= nil then
+                                  if obj.status.health ~= nil and obj.status.health.status ~= nil then
+                                    hs.status = obj.status.health.status
+                                    if obj.status.health.message ~= nil then
+                                      hs.message = obj.status.health.message
+                                    end
+                                  end
+                                  if hs.status == "Healthy" then
+                                    if obj.operation ~= nil then
+                                      hs.status = "Progressing"
+                                      hs.message = "Holding the wave: child sync has not finished"
+                                    elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+                                      hs.status = "Progressing"
+                                      hs.message = "Holding the wave: child is Healthy but not Synced"
+                                    end
+                                  end
+                                end
+                                return hs
+                            EOT
+                          - "resource.customizations.health.secrets.infisical.com_InfisicalAuth"         = <<-EOT
+                                hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                                if obj.status ~= nil and obj.status.conditions ~= nil then
+                                  for _, c in ipairs(obj.status.conditions) do
+                                    if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                                      hs.message = c.message
+                                      if c.status == "True" then
+                                        hs.status = "Healthy"
+                                      else
+                                        hs.status = "Degraded"
+                                      end
+                                    end
+                                  end
+                                end
+                                return hs
+                            EOT
+                          - "resource.customizations.health.secrets.infisical.com_InfisicalConnection"   = <<-EOT
+                                hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                                if obj.status ~= nil and obj.status.conditions ~= nil then
+                                  for _, c in ipairs(obj.status.conditions) do
+                                    if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                                      hs.message = c.message
+                                      if c.status == "True" then
+                                        hs.status = "Healthy"
+                                      else
+                                        hs.status = "Degraded"
+                                      end
+                                    end
+                                  end
+                                end
+                                return hs
+                            EOT
+                          - "resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret" = <<-EOT
+                                hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                                if obj.status ~= nil and obj.status.observedGeneration ~= nil
+                                   and obj.status.observedGeneration == obj.metadata.generation then
+                                  if obj.status.error == true then
+                                    hs.status = "Degraded"
+                                    hs.message = "Reconcile failed, see the LastReconcileStatus condition"
+                                  else
+                                    hs.status = "Healthy"
+                                    hs.message = "Secrets synced"
+                                  end
+                                end
+                                return hs
+                            EOT
+                          - url                                                                          = "http://argocd.localhost"
+                        }
+                      - params = {
+                          - "reposerver.parallelism.limit" = 2
+                          - "server.insecure"              = true
+                        }
+                    }
+                  - controller      = {
+                      - livenessProbe = {
+                          - enabled             = true
+                          - failureThreshold    = 10
+                          - initialDelaySeconds = 60
+                          - periodSeconds       = 30
+                          - timeoutSeconds      = 5
+                        }
+                      - metrics       = {
+                          - enabled = true
+                        }
+                      - replicas      = 1
+                      - resources     = {
+                          - limits   = {
+                              - memory = "768Mi"
+                            }
+                          - requests = {
+                              - cpu    = "100m"
+                              - memory = "192Mi"
+                            }
+                        }
+                    }
+                  - dex             = {
+                      - enabled = false
+                    }
+                  - global          = {
+                      - domain        = "argocd.localhost"
+                      - image         = {
+                          - repository = "quay.io/argoproj/argocd"
+                          - tag        = "v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db"
+                        }
+                      - networkPolicy = {
+                          - create = false
+                        }
+                    }
+                  - notifications   = {
+                      - enabled = false
+                    }
+                  - redis           = {
+                      - automountServiceAccountToken = false
+                      - image                        = {
+                          - repository = "docker.io/library/redis"
+                          - tag        = "8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763"
+                        }
+                      - livenessProbe                = {
+                          - enabled             = true
+                          - initialDelaySeconds = 30
+                          - periodSeconds       = 15
+                          - timeoutSeconds      = 5
+                        }
+                      - readinessProbe               = {
+                          - enabled             = true
+                          - initialDelaySeconds = 5
+                          - periodSeconds       = 10
+                          - timeoutSeconds      = 5
+                        }
+                      - resources                    = {
+                          - limits   = {
+                              - memory = "64Mi"
+                            }
+                          - requests = {
+                              - cpu    = "10m"
+                              - memory = "24Mi"
+                            }
+                        }
+                    }
+                  - redisSecretInit = {
+                      - resources = {
+                          - limits   = {
+                              - memory = "192Mi"
+                            }
+                          - requests = {
+                              - cpu    = "10m"
+                              - memory = "32Mi"
+                            }
+                        }
+                    }
+                  - repoServer      = {
+                      - automountServiceAccountToken = false
+                      - metrics                      = {
+                          - enabled = true
+                        }
+                      - replicas                     = 1
+                      - resources                    = {
+                          - limits   = {
+                              - memory = "512Mi"
+                            }
+                          - requests = {
+                              - cpu    = "50m"
+                              - memory = "96Mi"
+                            }
+                        }
+                      - serviceAccount               = {
+                          - automountServiceAccountToken = false
+                        }
+                    }
+                  - server          = {
+                      - metrics   = {
+                          - enabled = true
+                        }
+                      - replicas  = 1
+                      - resources = {
+                          - limits   = {
+                              - memory = "192Mi"
+                            }
+                          - requests = {
+                              - cpu    = "25m"
+                              - memory = "48Mi"
+                            }
+                        }
+                    }
+                }
+            ) -> (known after apply)
+          ~ version        = "10.11.7" -> (known after apply)
+        } -> (known after apply)
+        name                       = "argocd"
+      ~ values                     = [
+          ~ <<-EOT
+                # argo-cd chart 10.11.7. Applied only by infrastructure/terraform/modules/argocd.
+                # Lean by design: one replica of each component, no Dex, notifications or ApplicationSet.
+                # The admin password is not here. argocd-server generates argocd-initial-admin-secret at first start.
+                
+                global:
+                  domain: argocd.localhost
+                  image:
+                    repository: quay.io/argoproj/argocd
+                    tag: v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+                  # The chart defaults this on. Every NetworkPolicy belongs to the platform project (contract
+                  # section 7), so the argocd rules live with the rest in gitops/platform/network-policies.
+                  networkPolicy:
+                    create: false
+                
+                configs:
+                  cm:
+                    # The chart would default to https://, and nothing terminates TLS locally (contract section 3).
+                    url: http://argocd.localhost
+                
+                    # Argo CD removed this check in 1.8, so without it a child reports no health and the root's
+                    # waves pass straight through. Base text from docs/operator-manual/health.md at v3.5.7.
+                    # A non-hook task waits on anything except Healthy and Degraded (sync_context.go), so Missing
+                    # and Progressing hold the wave, while Degraded fails the root sync and the root's retry reruns it.
+                    #
+                    # The base text alone does not gate. controller/health.go skips hooks and resources not created
+                    # yet, so a child reads Healthy between its own waves and through its migrator. Healthy also needs:
+                    # - No .operation. It clears only when an operation completes (setOperationState), so this covers
+                    #   requested, running, retrying and terminating. With retry limit -1 a failing child never ends.
+                    # - Synced. status.health is only as new as the last refresh. A one-wave child's sync succeeds on
+                    #   apply, so at that moment it can still show a Healthy computed with objects absent, and that
+                    #   same refresh recorded OutOfSync. The post-sync refresh then corrects both.
+                    # Cost: a child that stays OutOfSync holds every later wave. `make up` needs all 14 Synced anyway.
+                    resource.customizations.health.argoproj.io_Application: |
+                      hs = {}
+                      hs.status = "Progressing"
+                      hs.message = ""
+                      if obj.status ~= nil then
+                        if obj.status.health ~= nil and obj.status.health.status ~= nil then
+                          hs.status = obj.status.health.status
+                          if obj.status.health.message ~= nil then
+                            hs.message = obj.status.health.message
+                          end
+                        end
+                        if hs.status == "Healthy" then
+                          if obj.operation ~= nil then
+                            hs.status = "Progressing"
+                            hs.message = "Holding the wave: child sync has not finished"
+                          elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+                            hs.status = "Progressing"
+                            hs.message = "Holding the wave: child is Healthy but not Synced"
+                          end
+                        end
+                      end
+                      return hs
+                
+              +     # Argo CD's built-in check (resource_customizations/monitoring.coreos.com/Prometheus/health.lua at v3.5.7)
+              +     # reads NoPodReady as Degraded, and that is every Prometheus start: while its image pulls through the
+              +     # mirror and through each restart's WAL replay. On the first boot measured, a Degraded child failed the
+              +     # root sync at once, and the root's retry backoff then outlasted the image pull. So not-ready pods read
+              +     # as Progressing, and the wave simply waits. Reconciled False stays Degraded: the operator could not
+              +     # build the pods, so waiting will not help.
+              +     # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Root holds the wave
+              +     # either way, and a stopped Prometheus could not fire ArgoAppDegraded in any case.
+              +     resource.customizations.health.monitoring.coreos.com_Prometheus: |
+              +       local hs = {status = "Progressing", message = "Waiting for initialization"}
+              +       if obj.status == nil or obj.status.conditions == nil then
+              +         return hs
+              +       end
+              +       local available = nil
+              +       local reconcile_failure = nil
+              +       for _, c in ipairs(obj.status.conditions) do
+              +         if c.type == "Available" then
+              +           available = c
+              +         elseif c.type == "Reconciled" and c.status == "False" then
+              +           reconcile_failure = c
+              +         end
+              +       end
+              +       if available == nil then
+              +         return hs
+              +       end
+              +       if available.status == "True" then
+              +         hs.status = "Healthy"
+              +         hs.message = "All instances are available"
+              +       elseif reconcile_failure ~= nil then
+              +         hs.status = "Degraded"
+              +         hs.message = reconcile_failure.message or reconcile_failure.reason
+              +       elseif available.reason == "NoPodReady" or available.reason == "SomePodsNotReady" then
+              +         hs.message = available.reason .. ": " .. (available.message or "")
+              +       else
+              +         hs.status = "Degraded"
+              +         hs.message = available.message or available.reason
+              +       end
+              +       return hs
+              + 
+                    # Field semantics from infisical-k8-operator/v0.11.16. The operator's own comment says to trust
+                    # status.error only once observedGeneration matches, so a stale false must not read as Healthy.
+                    resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.observedGeneration ~= nil
+                         and obj.status.observedGeneration == obj.metadata.generation then
+                        if obj.status.error == true then
+                          hs.status = "Degraded"
+                          hs.message = "Reconcile failed, see the LastReconcileStatus condition"
+                        else
+                          hs.status = "Healthy"
+                          hs.message = "Secrets synced"
+                        end
+                      end
+                      return hs
+                
+                    # These two carry no status.observedGeneration and no status.error, only this condition.
+                    resource.customizations.health.secrets.infisical.com_InfisicalAuth: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.conditions ~= nil then
+                        for _, c in ipairs(obj.status.conditions) do
+                          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                            hs.message = c.message
+                            if c.status == "True" then
+                              hs.status = "Healthy"
+                            else
+                              hs.status = "Degraded"
+                            end
+                          end
+                        end
+                      end
+                      return hs
+                
+                    resource.customizations.health.secrets.infisical.com_InfisicalConnection: |
+                      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+                      if obj.status ~= nil and obj.status.conditions ~= nil then
+                        for _, c in ipairs(obj.status.conditions) do
+                          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+                            hs.message = c.message
+                            if c.status == "True" then
+                              hs.status = "Healthy"
+                            else
+                              hs.status = "Degraded"
+                            end
+                          end
+                        end
+                      end
+                      return hs
+                
+                  params:
+                    # Traefik reaches the server over plain HTTP. The CLI needs --grpc-web --plaintext.
+                    server.insecure: true
+                    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 512Mi limit.
+                    reposerver.parallelism.limit: 2
+                
+                dex:
+                  enabled: false
+                
+                notifications:
+                  enabled: false
+                
+                # The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing.
+                applicationSet:
+                  replicas: 0
+                
+                # Memory below totals 360Mi requests and 1536Mi limits for the four running pods. Peaks measured on the
+                # first real run, with monitoring and Infisical synced and no Plane workloads yet: controller 517Mi,
+                # repo-server 247Mi, server 83Mi, redis 25Mi.
+                # No CPU limits anywhere: throttling a controller on a laptop only slows the first sync.
+                controller:
+                  replicas: 1
+                  # A Service only. tests/network-policy-matrix.yaml dials it, and the ServiceMonitor that selects it
+                  # lives in monitoring/manifests/shared, so the chart's own serviceMonitor stays off.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 100m
+                      memory: 192Mi
+                    # 640Mi left about 120Mi of room at 517Mi, measured before either Plane environment existed.
+                    limits:
+                      memory: 768Mi
+                  # Upstream ships this off because restarting an overloaded controller makes things worse
+                  # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
+                  # thresholds slack enough (5 min) that first-sync load alone should not trip it.
+                  livenessProbe:
+                    enabled: true
+                    initialDelaySeconds: 60
+                    periodSeconds: 30
+                    timeoutSeconds: 5
+                    failureThreshold: 10
+                
+                repoServer:
+                  replicas: 1
+                  # Upstream's own manifest at v3.5.7 sets false. The chart defaults to true.
+                  automountServiceAccountToken: false
+                  serviceAccount:
+                    automountServiceAccountToken: false
+                  # A Service only, as for the controller.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 50m
+                      memory: 96Mi
+                    # Peak 247Mi (cgroup memory.peak) with all 8 chart Applications hard-refreshed at once and
+                    # reposerver.parallelism.limit at 2, so this has room.
+                    limits:
+                      memory: 512Mi
+                
+                server:
+                  replicas: 1
+                  # A Service only, as for the controller.
+                  metrics:
+                    enabled: true
+                  resources:
+                    requests:
+                      cpu: 25m
+                      memory: 48Mi
+                    limits:
+                      memory: 192Mi
+                
+                redis:
+                  image:
+                    # The chart defaults to ecr-public.aws.com. Same index digest on docker.io, which the node
+                    # pulls through the pull-through cache (contract section 5).
+                    repository: docker.io/library/redis
+                    tag: 8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+                  automountServiceAccountToken: false
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 24Mi
+                    limits:
+                      memory: 64Mi
+                  # The chart ships both off.
+                  readinessProbe:
+                    enabled: true
+                    initialDelaySeconds: 5
+                    periodSeconds: 10
+                    timeoutSeconds: 5
+                  livenessProbe:
+                    enabled: true
+                    initialDelaySeconds: 30
+                    periodSeconds: 15
+                    timeoutSeconds: 5
+                
+                # Helm hook that generates the Redis password into Secret argocd-redis at install time.
+                redisSecretInit:
+                  resources:
+                    requests:
+                      cpu: 10m
+                      memory: 32Mi
+                    limits:
+                      memory: 192Mi
+            EOT,
+        ]
+        # (29 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+module.argocd.helm_release.argocd: Modifying... [id=argocd]
+module.argocd.helm_release.argocd: Still modifying... [id=argocd, 00m10s elapsed]
+module.argocd.helm_release.argocd: Still modifying... [id=argocd, 00m20s elapsed]
+module.argocd.helm_release.argocd: Modifications complete after 24s [id=argocd]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+argocd_url = "http://argocd.localhost"
+namespaces = tolist([
+  "argocd",
+  "infisical",
+  "monitoring",
+  "monitoring-agents",
+  "plane-dev",
+  "plane-prod-sim",
+  "traefik",
+])
+apply exit=0
+# date: 2026-11-04T23:23:52Z

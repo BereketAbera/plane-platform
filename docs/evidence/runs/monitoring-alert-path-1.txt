@@ -1,0 +1,15 @@
+# Alert path, non-destructive, 2026-11-04T22:23:26Z. A temporary rule, vector(1), for: 1m, in a 15s group, deleted afterwards. test-alert.sh, which scales the API to zero, was NOT run.
+# 2026-11-04T21:53:32Z proof id p215332
+21:53:32Z rule applied
+21:53:57Z pending in Prometheus (pending 2026-11-04T21:53:56.806336076Z), rule load took 25s
+21:54:57Z firing in Prometheus, 60s after pending
+21:54:57Z in Alertmanager (active), 60s after pending
+21:55:07Z sink received: firing 2026-11-04T21:55:06.876682+00:00, 70s after pending
+21:55:07Z rule deleted
+22:00:37Z sink received: resolved 2026-11-04T22:00:36.888896+00:00, 330s after deletion
+PASS firing path 70s from pending to sink; resolved path 330s from rule deletion to sink
+
+## the same two deliveries through Alloy and Loki
+Q {namespace="monitoring", container="sink"} |= "p215332" | json | line_format "{{.received_at}} {{.payload_status}} {{.payload_commonLabels_alertname}} proof_id={{.payload_commonLabels_proof_id}}" HTTP 200 streams 2 lines 2
+    22:00:36Z 2026-11-04T22:00:36.888896+00:00 resolved AlertPathProof proof_id=p215332
+    21:55:06Z 2026-11-04T21:55:06.876682+00:00 firing AlertPathProof proof_id=p215332

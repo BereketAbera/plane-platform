@@ -1,0 +1,271 @@
+# Snapshot 2026-11-04T23:26:51Z during both smokes
+
+## VM, from the node's /proc
+psi some avg10=0.00 avg60=0.00 avg300=0.00 total=8913914 full avg10=0.00 avg60=0.00 avg300=0.00 total=8334263
+VM used 9.68 GiB of 13.63 (MemTotal minus MemAvailable), available 3.95 GiB, swap used 0.60 of 2.00 GiB
+kind node cgroup: current 9.52 GiB, peak since the node started 10.42 GiB
+
+## kubectl top nodes
+NAME                           CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+plane-platform-control-plane   1488m        12%      8610Mi          61%         
+
+## kubectl top pods, all namespaces, by memory
+NAMESPACE            NAME                                                   CPU(cores)   MEMORY(bytes)   
+kube-system          kube-apiserver-plane-platform-control-plane            63m          1171Mi          
+infisical            infisical-567944c58f-2cgzv                             9m           670Mi           
+monitoring           prometheus-kps-prometheus-0                            19m          559Mi           
+monitoring           kps-grafana-77cb96fc89-v8g6n                           11m          483Mi           
+argocd               argocd-application-controller-0                        103m         446Mi           
+plane-prod-sim       plane-worker-wl-667f56c7f8-lnv72                       36m          346Mi           
+plane-dev            plane-worker-wl-55c87f6f94-gv6lw                       60m          291Mi           
+plane-dev            plane-api-wl-69447b65-7c5rl                            26m          170Mi           
+plane-prod-sim       plane-api-wl-8566bcd789-lc7df                          89m          169Mi           
+plane-dev            plane-live-wl-5744d85f8b-qdb9d                         2m           168Mi           
+monitoring           loki-0                                                 8m           167Mi           
+plane-prod-sim       plane-live-wl-5d5fd749c6-szdzq                         2m           153Mi           
+plane-prod-sim       plane-beat-worker-wl-5c8845c7d5-cqhpz                  2m           147Mi           
+plane-dev            plane-beat-worker-wl-c5c96d747-p9dn8                   3m           146Mi           
+plane-prod-sim       plane-rabbitmq-wl-0                                    72m          139Mi           
+kube-system          kube-controller-manager-plane-platform-control-plane   11m          125Mi           
+plane-dev            plane-rabbitmq-wl-0                                    113m         123Mi           
+plane-prod-sim       plane-pgdb-wl-0                                        39m          110Mi           
+infisical            infisical-postgres-0                                   4m           108Mi           
+plane-dev            plane-minio-wl-0                                       2m           105Mi           
+kube-system          etcd-plane-platform-control-plane                      20m          101Mi           
+plane-prod-sim       plane-minio-wl-0                                       1m           94Mi            
+plane-dev            plane-space-wl-6578687c54-2svs9                        2m           92Mi            
+plane-prod-sim       plane-space-wl-54c66d4dcb-zz2nn                        2m           89Mi            
+argocd               argocd-repo-server-8464d9c6cc-ssf2f                    68m          89Mi            
+monitoring           alloy-68d8ccc746-bm547                                 8m           79Mi            
+plane-dev            plane-pgdb-wl-0                                        62m          67Mi            
+traefik              traefik-6955f98f54-7z9wr                               6m           62Mi            
+argocd               argocd-server-5bcf485686-5vhnh                         1m           54Mi            
+monitoring           alertmanager-kps-alertmanager-0                        2m           52Mi            
+kube-system          kube-scheduler-plane-platform-control-plane            5m           45Mi            
+monitoring           kps-operator-fdc5dfd48-mgtwq                           3m           34Mi            
+kube-system          metrics-server-8f755d95b-dghbn                         3m           34Mi            
+kube-system          kindnet-gqcpb                                          13m          31Mi            
+kube-system          coredns-589f44dc88-7hw97                               7m           31Mi            
+kube-system          coredns-589f44dc88-ldh8b                               13m          29Mi            
+kube-system          kube-proxy-ns4th                                       1m           27Mi            
+monitoring           kps-kube-state-metrics-58c95899dd-s8bb4                2m           25Mi            
+plane-dev            iso-dev-controller-manager-85dbfbcb5b-vswbn            2m           24Mi            
+argocd               argocd-redis-ff6755697-jcd8p                           4m           24Mi            
+plane-prod-sim       iso-prod-sim-controller-manager-5cc86cc76-4r45n        2m           23Mi            
+plane-prod-sim       redis-exporter-5b59d6cb7c-xsw9t                        2m           19Mi            
+monitoring           blackbox-854dd6b7dc-bprdb                              3m           19Mi            
+plane-prod-sim       postgres-exporter-b6f657c47-p65fl                      1m           18Mi            
+monitoring-agents    kps-node-exporter-rtskt                                4m           17Mi            
+local-path-storage   local-path-provisioner-56c4685b7c-8m876                1m           13Mi            
+plane-dev            postgres-exporter-79f8bbdffd-p5q9g                     5m           13Mi            
+plane-dev            redis-exporter-5b59d6cb7c-rp2rd                        1m           12Mi            
+monitoring           alert-sink-78dcd6dbb4-fxfst                            1m           10Mi            
+plane-dev            plane-redis-wl-0                                       3m           9Mi             
+infisical            infisical-redis-0                                      4m           8Mi             
+plane-dev            plane-web-wl-66c4bd5b4f-jwcgm                          1m           4Mi             
+plane-dev            plane-admin-wl-d4dcd654f-vrm8f                         1m           4Mi             
+plane-prod-sim       plane-web-wl-8fb59c6c9-b4nq8                           1m           4Mi             
+plane-prod-sim       plane-admin-wl-5d6489d557-vr62j                        1m           4Mi             
+plane-prod-sim       plane-redis-wl-0                                       2m           4Mi             
+
+## kubectl top, per namespace sum
+kube-system            9 pods   1594 Mi
+monitoring             9 pods   1428 Mi
+plane-prod-sim        14 pods   1319 Mi
+plane-dev             14 pods   1228 Mi
+infisical              3 pods    786 Mi
+argocd                 4 pods    613 Mi
+traefik                1 pods     62 Mi
+monitoring-agents      1 pods     17 Mi
+local-path-storage     1 pods     13 Mi
+
+## docker stats
+plane-registry	20.19MiB / 512MiB	0.00%
+plane-git	932KiB / 64MiB	0.00%
+plane-mirror-docker	33.26MiB / 128MiB	0.00%
+plane-mirror-k8s	25.36MiB / 128MiB	0.00%
+plane-mirror-quay	27.81MiB / 128MiB	0.00%
+plane-platform-control-plane	8.551GiB / 13.63GiB	162.17%
+frameflow-minio-1	239.8MiB / 13.63GiB	0.03%
+wiki-dev-mail	21.46MiB / 13.63GiB	0.00%
+wiki-dev-redis	13.53MiB / 13.63GiB	0.11%
+wiki-dev-db	24.5MiB / 13.63GiB	0.62%
+supabase_studio_scraping-local-supabase	149.1MiB / 13.63GiB	0.03%
+supabase_pg_meta_scraping-local-supabase	41.2MiB / 13.63GiB	0.20%
+supabase_storage_scraping-local-supabase	44.23MiB / 13.63GiB	0.22%
+supabase_rest_scraping-local-supabase	36.7MiB / 13.63GiB	0.05%
+supabase_realtime_scraping-local-supabase	126.8MiB / 13.63GiB	0.17%
+supabase_inbucket_scraping-local-supabase	20.54MiB / 13.63GiB	0.00%
+supabase_auth_scraping-local-supabase	14.29MiB / 13.63GiB	0.03%
+supabase_kong_scraping-local-supabase	9.793MiB / 13.63GiB	0.01%
+supabase_db_scraping-local-supabase	27.06MiB / 13.63GiB	0.02%
+local-r2-minio-1	247MiB / 13.63GiB	0.08%
+acelab-hatchet-workers-hatchet-dashboard-1	4.27MiB / 13.63GiB	0.00%
+acelab-hatchet-workers-hatchet-engine-1	0B / 0B	0.00%
+acelab-hatchet-workers-postgres-1	19.54MiB / 13.63GiB	0.00%
+
+## Peak since each container started, from its cgroup. All namespaces
+NAMESPACE          POD                                                  CONTAINER                     CUR_Mi   PEAK_Mi  LIMIT_Mi  OOM RESTARTS
+argocd             argocd-application-controller-0                      application-controller         453.7     455.2       768    0        0
+argocd             argocd-redis-ff6755697-jcd8p                         redis                           24.5      36.0        64    0        0
+argocd             argocd-repo-server-8464d9c6cc-ssf2f                  repo-server                    118.8     241.5       512    0        0
+argocd             argocd-server-5bcf485686-5vhnh                       server                          54.1      54.6       192    0        0
+infisical          infisical-567944c58f-2cgzv                           infisical-standalone-infis     713.2     818.6      1024    0        0
+infisical          infisical-postgres-0                                 postgres                       169.6     256.0       256    0        0
+infisical          infisical-redis-0                                    redis                            9.8      20.6        96    0        0
+kube-system        coredns-589f44dc88-7hw97                             coredns                         33.2      37.1       170    0        0
+kube-system        coredns-589f44dc88-ldh8b                             coredns                         29.9      35.1       170    0        0
+kube-system        etcd-plane-platform-control-plane                    etcd                           134.0     196.4       max    0        0
+kube-system        kindnet-gqcpb                                        kindnet-cni                     34.6      36.8       max    0        0
+kube-system        kube-apiserver-plane-platform-control-plane          kube-apiserver                1179.2    1298.6       max    0        0
+kube-system        kube-controller-manager-plane-platform-control-plane kube-controller-manager        129.7     139.0       max    0        0
+kube-system        kube-proxy-ns4th                                     kube-proxy                      28.6      34.9       max    0        0
+kube-system        kube-scheduler-plane-platform-control-plane          kube-scheduler                  47.4      48.4       max    0        0
+kube-system        metrics-server-8f755d95b-dghbn                       metrics-server                  35.3      37.5       128    0        0
+local-path-storage local-path-provisioner-56c4685b7c-8m876              local-path-provisioner          15.4      19.6       max    0        0
+monitoring         alert-sink-78dcd6dbb4-fxfst                          sink                            10.3      13.6        48    0        0
+monitoring         alertmanager-kps-alertmanager-0                      alertmanager                    28.4      31.2        96    0        0
+monitoring         alertmanager-kps-alertmanager-0                      config-reloader                 28.0      30.7        48    0        0
+monitoring         alloy-68d8ccc746-bm547                               alloy                           85.5     104.8       256    0        0
+monitoring         blackbox-854dd6b7dc-bprdb                            blackbox                        21.1      29.3        48    0        0
+monitoring         kps-grafana-77cb96fc89-v8g6n                         grafana                        338.7     345.1       384    0        0
+monitoring         kps-grafana-77cb96fc89-v8g6n                         grafana-sc-dashboard            81.8     106.4       160    0        0
+monitoring         kps-grafana-77cb96fc89-v8g6n                         grafana-sc-datasources          77.4     105.5       160    0        0
+monitoring         kps-kube-state-metrics-58c95899dd-s8bb4              kube-state-metrics              26.6      28.3        96    0        0
+monitoring         kps-operator-fdc5dfd48-mgtwq                         kube-prometheus-stack           36.8      40.2       128    0        0
+monitoring         loki-0                                               loki                           197.8     640.0       640    0        1
+monitoring         prometheus-kps-prometheus-0                          config-reloader                 13.4      15.1        48    0        0
+monitoring         prometheus-kps-prometheus-0                          prometheus                     575.1     575.7       768    0        0
+monitoring-agents  kps-node-exporter-rtskt                              node-exporter                   17.8      25.2        48    0        0
+plane-dev          iso-dev-controller-manager-85dbfbcb5b-vswbn          manager                         25.6      28.7       128    0        0
+plane-dev          plane-admin-wl-d4dcd654f-vrm8f                       plane-admin                      4.7      11.8        64    0        0
+plane-dev          plane-api-wl-69447b65-7c5rl                          plane-api                      189.6     247.3       768    0        0
+plane-dev          plane-beat-worker-wl-c5c96d747-p9dn8                 plane-beat-worker              146.6     156.4       256    0        0
+plane-dev          plane-live-wl-5744d85f8b-qdb9d                       plane-live                     170.9     201.1       384    0        0
+plane-dev          plane-minio-wl-0                                     plane-minio                    109.9     149.0       512    0        0
+plane-dev          plane-pgdb-wl-0                                      plane-pgdb                      78.7     118.6       512    0        0
+plane-dev          plane-rabbitmq-wl-0                                  plane-rabbitmq                 123.1     231.3       512    0        0
+plane-dev          plane-redis-wl-0                                     plane-redis                      9.9      19.2        96    0        0
+plane-dev          plane-space-wl-6578687c54-2svs9                      plane-space                     95.1     106.2       256    0        0
+plane-dev          plane-web-wl-66c4bd5b4f-jwcgm                        plane-web                        4.7      11.7        64    0        0
+plane-dev          plane-worker-wl-55c87f6f94-gv6lw                     plane-worker                   281.5     323.9       768    0        0
+plane-dev          postgres-exporter-79f8bbdffd-p5q9g                   postgres-exporter               15.0      19.0        48    0        0
+plane-dev          redis-exporter-5b59d6cb7c-rp2rd                      redis-exporter                  12.9      19.2        32    0        0
+plane-prod-sim     iso-prod-sim-controller-manager-5cc86cc76-4r45n      manager                         27.1      42.8       128    0        0
+plane-prod-sim     plane-admin-wl-5d6489d557-vr62j                      plane-admin                      4.7      10.5        64    0        0
+plane-prod-sim     plane-api-wl-8566bcd789-lc7df                        plane-api                      175.6     293.1       768    0        0
+plane-prod-sim     plane-beat-worker-wl-5c8845c7d5-cqhpz                plane-beat-worker              147.3     162.4       256    0        0
+plane-prod-sim     plane-live-wl-5d5fd749c6-szdzq                       plane-live                     153.6     164.4       384    0        0
+plane-prod-sim     plane-minio-wl-0                                     plane-minio                     98.2     106.1       512    0        0
+plane-prod-sim     plane-pgdb-wl-0                                      plane-pgdb                     139.7     202.3       512    0        0
+plane-prod-sim     plane-rabbitmq-wl-0                                  plane-rabbitmq                 140.2     222.1       512    0        0
+plane-prod-sim     plane-redis-wl-0                                     plane-redis                      5.1      13.9        96    0        0
+plane-prod-sim     plane-space-wl-54c66d4dcb-zz2nn                      plane-space                     90.1      97.9       256    0        0
+plane-prod-sim     plane-web-wl-8fb59c6c9-b4nq8                         plane-web                        4.6      10.3        64    0        0
+plane-prod-sim     plane-worker-wl-667f56c7f8-lnv72                     plane-worker                   350.8     425.7       768    0        0
+plane-prod-sim     postgres-exporter-b6f657c47-p65fl                    postgres-exporter               19.4      23.1        48    0        0
+plane-prod-sim     redis-exporter-5b59d6cb7c-xsw9t                      redis-exporter                  19.5      21.1        32    0        0
+traefik            traefik-6955f98f54-7z9wr                             traefik                         67.1      78.3       192    0        0
+
+## Every pod: restarts, phase, age
+NAMESPACE            POD                                                    PHASE       RESTARTS   START
+argocd               argocd-application-controller-0                        Running     0          2026-11-04T23:23:37Z
+argocd               argocd-redis-ff6755697-jcd8p                           Running     0          2026-11-04T20:51:17Z
+argocd               argocd-repo-server-8464d9c6cc-ssf2f                    Running     0          2026-11-04T23:23:37Z
+argocd               argocd-server-5bcf485686-5vhnh                         Running     0          2026-11-04T23:23:37Z
+infisical            infisical-567944c58f-2cgzv                             Running     0          2026-11-04T23:15:24Z
+infisical            infisical-postgres-0                                   Running     0          2026-11-04T21:43:27Z
+infisical            infisical-redis-0                                      Running     0          2026-11-04T21:43:00Z
+infisical            plane-backup-20261104t225820z-mb74x                    Succeeded   0          2026-11-04T22:58:20Z
+infisical            plane-backup-20261104t231305z-ztdjf                    Succeeded   0          2026-11-04T23:13:05Z
+infisical            plane-backup-20261104t231433z-zb9gl                    Succeeded   0          2026-11-04T23:14:33Z
+infisical            plane-restore-20261104t231453z-t925x                   Succeeded   0          2026-11-04T23:15:09Z
+infisical            plane-restore-guard-20261104t231453z-mnk4d             Succeeded   0          2026-11-04T23:14:54Z
+kube-system          coredns-589f44dc88-7hw97                               Running     0          2026-11-04T18:44:56Z
+kube-system          coredns-589f44dc88-ldh8b                               Running     0          2026-11-04T18:44:56Z
+kube-system          etcd-plane-platform-control-plane                      Running     0          2026-11-04T18:44:37Z
+kube-system          kindnet-gqcpb                                          Running     0          2026-11-04T18:44:45Z
+kube-system          kube-apiserver-plane-platform-control-plane            Running     0          2026-11-04T18:44:37Z
+kube-system          kube-controller-manager-plane-platform-control-plane   Running     0          2026-11-04T18:44:37Z
+kube-system          kube-proxy-ns4th                                       Running     0          2026-11-04T18:44:45Z
+kube-system          kube-scheduler-plane-platform-control-plane            Running     0          2026-11-04T18:44:37Z
+kube-system          metrics-server-8f755d95b-dghbn                         Running     0          2026-11-04T20:46:25Z
+local-path-storage   local-path-provisioner-56c4685b7c-8m876                Running     0          2026-11-04T18:44:56Z
+monitoring-agents    kps-node-exporter-rtskt                                Running     0          2026-11-04T21:35:00Z
+monitoring           alert-sink-78dcd6dbb4-fxfst                            Running     0          2026-11-04T21:03:37Z
+monitoring           alertmanager-kps-alertmanager-0                        Running     0,0        2026-11-04T21:35:11Z
+monitoring           alloy-68d8ccc746-bm547                                 Running     0          2026-11-04T23:18:21Z
+monitoring           blackbox-854dd6b7dc-bprdb                              Running     0          2026-11-04T21:03:37Z
+monitoring           kps-grafana-77cb96fc89-v8g6n                           Running     0,0,0      2026-11-04T21:34:59Z
+monitoring           kps-kube-state-metrics-58c95899dd-s8bb4                Running     0          2026-11-04T20:47:36Z
+monitoring           kps-operator-fdc5dfd48-mgtwq                           Running     0          2026-11-04T21:34:59Z
+monitoring           loki-0                                                 Running     1          2026-11-04T21:51:56Z
+monitoring           prometheus-kps-prometheus-0                            Running     0,0        2026-11-04T23:24:03Z
+plane-dev            iso-dev-controller-manager-85dbfbcb5b-vswbn            Running     0          2026-11-04T21:11:03Z
+plane-dev            plane-admin-wl-d4dcd654f-vrm8f                         Running     0          2026-11-04T22:53:07Z
+plane-dev            plane-api-migrate-1-89fdx                              Succeeded   0          2026-11-04T22:51:07Z
+plane-dev            plane-api-wl-69447b65-7c5rl                            Running     0          2026-11-04T22:53:06Z
+plane-dev            plane-backup-20261104t225855z-6s5fz                    Succeeded   0          2026-11-04T22:58:58Z
+plane-dev            plane-backup-20261104t231324z-98ktf                    Succeeded   0          2026-11-04T23:13:26Z
+plane-dev            plane-beat-worker-wl-c5c96d747-p9dn8                   Running     0          2026-11-04T22:53:06Z
+plane-dev            plane-live-wl-5744d85f8b-qdb9d                         Running     0          2026-11-04T22:54:48Z
+plane-dev            plane-minio-wl-0                                       Running     0          2026-11-04T22:44:25Z
+plane-dev            plane-pgdb-wl-0                                        Running     0          2026-11-04T22:44:36Z
+plane-dev            plane-rabbitmq-wl-0                                    Running     0          2026-11-04T22:44:45Z
+plane-dev            plane-redis-wl-0                                       Running     0          2026-11-04T22:45:16Z
+plane-dev            plane-restore-rehearsal-1793834295-dztrb               Succeeded   0          2026-11-04T23:18:15Z
+plane-dev            plane-restore-rehearsal-clean-1793834308-xc2mv         Succeeded   0          2026-11-04T23:18:28Z
+plane-dev            plane-space-wl-6578687c54-2svs9                        Running     0          2026-11-04T22:53:06Z
+plane-dev            plane-web-wl-66c4bd5b4f-jwcgm                          Running     0          2026-11-04T22:53:06Z
+plane-dev            plane-worker-wl-55c87f6f94-gv6lw                       Running     0          2026-11-04T22:53:06Z
+plane-dev            postgres-exporter-79f8bbdffd-p5q9g                     Running     0          2026-11-04T21:56:42Z
+plane-dev            redis-exporter-5b59d6cb7c-rp2rd                        Running     0          2026-11-04T21:03:37Z
+plane-prod-sim       iso-prod-sim-controller-manager-5cc86cc76-4r45n        Running     0          2026-11-04T21:52:23Z
+plane-prod-sim       plane-admin-wl-5d6489d557-vr62j                        Running     0          2026-11-04T22:51:16Z
+plane-prod-sim       plane-api-migrate-1-65669                              Succeeded   0          2026-11-04T22:51:07Z
+plane-prod-sim       plane-api-wl-8566bcd789-lc7df                          Running     0          2026-11-04T22:51:16Z
+plane-prod-sim       plane-backup-20261104t225926z-csj5f                    Succeeded   0          2026-11-04T22:59:28Z
+plane-prod-sim       plane-backup-20261104t231335z-v9jm5                    Succeeded   0          2026-11-04T23:13:38Z
+plane-prod-sim       plane-beat-worker-wl-5c8845c7d5-cqhpz                  Running     0          2026-11-04T21:48:48Z
+plane-prod-sim       plane-live-wl-5d5fd749c6-szdzq                         Running     0          2026-11-04T22:51:16Z
+plane-prod-sim       plane-minio-wl-0                                       Running     0          2026-11-04T21:46:55Z
+plane-prod-sim       plane-pgdb-wl-0                                        Running     0          2026-11-04T21:46:56Z
+plane-prod-sim       plane-rabbitmq-wl-0                                    Running     0          2026-11-04T21:46:56Z
+plane-prod-sim       plane-redis-wl-0                                       Running     0          2026-11-04T21:46:53Z
+plane-prod-sim       plane-space-wl-54c66d4dcb-zz2nn                        Running     0          2026-11-04T22:51:16Z
+plane-prod-sim       plane-web-wl-8fb59c6c9-b4nq8                           Running     0          2026-11-04T22:51:16Z
+plane-prod-sim       plane-worker-wl-667f56c7f8-lnv72                       Running     0          2026-11-04T21:48:48Z
+plane-prod-sim       postgres-exporter-b6f657c47-p65fl                      Running     0          2026-11-04T21:56:42Z
+plane-prod-sim       redis-exporter-5b59d6cb7c-xsw9t                        Running     0          2026-11-04T21:03:37Z
+traefik              traefik-6955f98f54-7z9wr                               Running     0          2026-11-04T20:45:35Z
+
+## Pods with a restart
+monitoring loki-0 loki restarts 1 last Error 137 2026-11-04T21:58:05Z
+1 containers have restarted
+
+## OOM kills in the kernel log, by process, with the last few
+20336.596387 Memory cgroup out of memory: Killed process 906838 (registry) total-vm:1313476kB, anon-rss:0kB, file-rss:29968kB, shmem-rss:0kB, UID:0 pgtables:220kB oom_sco
+20377.237913 Memory cgroup out of memory: Killed process 916449 (registry) total-vm:1379332kB, anon-rss:0kB, file-rss:29712kB, shmem-rss:0kB, UID:0 pgtables:220kB oom_sco
+20377.533204 Memory cgroup out of memory: Killed process 916493 (sh) total-vm:1700kB, anon-rss:0kB, file-rss:752kB, shmem-rss:0kB, UID:0 pgtables:44kB oom_score_adj:0
+20377.736622 Memory cgroup out of memory: Killed process 917121 (sleep) total-vm:1680kB, anon-rss:0kB, file-rss:716kB, shmem-rss:0kB, UID:0 pgtables:48kB oom_score_adj:0
+4
+      2 registry
+      1 sh
+      1 sleep
+
+## Applications
+NAME                          SYNC     HEALTH    OP          REV                                        REVS
+alloy                         Synced   Healthy   Succeeded   <none>                                     1.15.0
+backup-storage                Synced   Healthy   Succeeded   40403db4786ec7d4d058a07938658a36cabd0861   <none>
+infisical                     Synced   Healthy   Succeeded   <none>                                     1.12.0
+infisical-operator-dev        Synced   Healthy   Succeeded   <none>                                     0.11.16
+infisical-operator-prod-sim   Synced   Healthy   Succeeded   <none>                                     0.11.16
+kube-prometheus-stack         Synced   Healthy   Succeeded   <none>                                     92.18.0
+loki                          Synced   Healthy   Succeeded   <none>                                     20.4.1
+metrics-server                Synced   Healthy   Succeeded   <none>                                     3.14.0
+monitoring-extras             Synced   Healthy   Succeeded   40403db4786ec7d4d058a07938658a36cabd0861   <none>
+network-policies              Synced   Healthy   Succeeded   40403db4786ec7d4d058a07938658a36cabd0861   <none>
+plane-dev                     Synced   Healthy   Succeeded   40403db4786ec7d4d058a07938658a36cabd0861   <none>
+plane-prod-sim                Synced   Healthy   Succeeded   40403db4786ec7d4d058a07938658a36cabd0861   <none>
+root                          Synced   Healthy   Succeeded   <none>                                     40403db4786ec7d4d058a07938658a36cabd0861
+traefik                       Synced   Healthy   Succeeded   <none>                                     42.3.0

@@ -1,0 +1,7 @@
+# make backup ENV=infisical, one count statement per table, 2026-11-04T22:58:20Z
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261104T225820Z
+[pod/plane-backup-20261104t225820z-mb74x/postgres] postgres: 20261104T225820Z complete, 785 tables counted from a scratch restore
+backup 20261104T225820Z: postgres/infisical.dump 4406079 B, postgres/infisical.toc.txt 935955 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261104T225820Z
+make backup ENV=infisical  0.57s user 0.37s system 4% cpu 21.879 total
+exit=0

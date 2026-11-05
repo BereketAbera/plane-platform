@@ -1,0 +1,18 @@
+# date: 2026-11-04T21:09:12Z
+application.argoproj.io/wave-probe-parent created
+21:09:16Z parent[Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a] child-b[uid=- tracking=none sync=- health=- phase=-]
+[21:09:16Z] parent holds on child-a's hook. Now: kubectl apply -f parent/child-b.yaml
+application.argoproj.io/wave-probe-child-b created
+21:09:16Z parent[Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a] child-b[uid=566b24db tracking=none sync= health=- phase=Running]
+21:09:17Z parent[Running | waiting for healthy state of argoproj.io/Application/wave-probe-child-a] child-b[uid=566b24db tracking=none sync=Synced health=Healthy phase=Succeeded]
+21:10:19Z parent[Succeeded | successfully synced (all tasks run)] child-b[uid=566b24db tracking=wave-probe-parent:argoproj.io/Applicatio sync=Synced health=Healthy phase=Succeeded]
+21:10:19Z parent[Succeeded | successfully synced (all tasks run)] child-b[uid=566b24db tracking=wave-probe-parent:argoproj.io/Applicatio sync=Synced health=Healthy phase=Succeeded]
+child-b created 2026-11-04T21:09:16Z, hook finished 2026-11-04T21:10:18Z
+parent sync=Synced health=Healthy op=successfully synced (all tasks run)
+[{"name":"wave-probe-child-a","status":"Synced"},{"name":"wave-probe-child-b","status":"Synced"}]
+== cleanup
+application.argoproj.io "wave-probe-parent" deleted from argocd namespace
+application.argoproj.io "wave-probe-child-a" deleted from argocd namespace
+application.argoproj.io "wave-probe-child-b" deleted from argocd namespace
+namespace "wave-probe" deleted
+scratch repo present after cleanup: no

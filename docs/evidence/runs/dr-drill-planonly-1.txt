@@ -1,0 +1,54 @@
+drill clean-restore started 2026-11-05T00:05:55Z by: ./tests/drills/clean-restore.sh
+
+--- 0. Preflight
+PASS  every Application is Synced and Healthy
+PASS  sentinels and test accounts exist for: dev prod-sim
+host disk: 15 GiB free
+
+--- 1. Baseline
+PASS  38 rendered Secret keys hashed, cluster CA 50ec4e2a8d91d32d, 0 secret-zero archives
+
+--- 2. Backups
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T000557Z
+[pod/plane-backup-20261105t000557z-9kxwg/postgres] postgres: 20261105T000557Z complete, 785 tables counted from a scratch restore
+backup 20261105T000557Z: postgres/infisical.dump 4407319 B, postgres/infisical.toc.txt 942298 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T000557Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261105T000616Z
+[pod/plane-backup-20261105t000616z-2gm22/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t000616z-2gm22/objects] 2026/11/05 00:06:21 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000616z-2gm22/objects] 2026/11/05 00:06:21 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000616z-2gm22/objects] 2026/11/05 00:06:21 NOTICE: Local file system at /backups/20261105T000616Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t000616z-2gm22/objects] 2026/11/05 00:06:21 NOTICE: Local file system at /backups/20261105T000616Z.partial/objects: 34 matching files
+[pod/plane-backup-20261105t000616z-2gm22/objects] 2026/11/05 00:06:21 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000616z-2gm22/objects] objects: 34 checked
+[pod/plane-backup-20261105t000616z-2gm22/finalize] finalize: 20261105T000616Z complete
+backup 20261105T000616Z: postgres/plane.dump 811511 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2114 B, postgres/content.tsv 127 B, objects.lsjson 12983 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261105T000616Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261105T000627Z
+[pod/plane-backup-20261105t000627z-dwm84/finalize] finalize: 20261105T000627Z complete
+[pod/plane-backup-20261105t000627z-dwm84/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t000627z-dwm84/objects] 2026/11/05 00:06:33 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000627z-dwm84/objects] 2026/11/05 00:06:33 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000627z-dwm84/objects] 2026/11/05 00:06:33 NOTICE: Local file system at /backups/20261105T000627Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t000627z-dwm84/objects] 2026/11/05 00:06:33 NOTICE: Local file system at /backups/20261105T000627Z.partial/objects: 23 matching files
+[pod/plane-backup-20261105t000627z-dwm84/objects] 2026/11/05 00:06:33 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t000627z-dwm84/objects] objects: 23 checked
+backup 20261105T000627Z: postgres/plane.dump 714884 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2103 B, postgres/content.tsv 127 B, objects.lsjson 8825 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261105T000627Z
+[1;32m ok[0m all environments backed up
+PASS  scripts/backup.sh all
+
+--- 3. Plan
+[1;34m==>[0m Clean restore plan
+    Infisical  20261105T000557Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim
+    dev        20261105T000616Z, SECRET_KEY 4ceb3f709b196ae0, 34 objects
+    prod-sim   20261105T000627Z, SECRET_KEY 77d617b20fb32955, 23 objects
+[1;32m ok[0m the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment
+[1;33mwarn[0m a real run would refuse right now: cluster plane-platform already holds Plane volumes. Run make destroy first.
+[1;32m ok[0m PLAN_ONLY=yes: nothing was changed
+PASS  the recovery set checks out
+PASS  PLAN_ONLY=yes: stopping before the delete
+
+RESULT PASS   evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/drill-clean-restore-20261105T000555Z.log

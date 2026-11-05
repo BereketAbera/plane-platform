@@ -1,0 +1,19 @@
+# Proposed smoke.py change (plane-prod-sim-smoke-worker-control.patch), run from a copy. The repo file is unchanged. 2026-11-04T23:56:05Z
+patched smoke with --worker-negative-control: exit 0
+PASS    worker-negative-control  With 0 consumers: 4 messages parked, no activity after 15s. Asked the consumer back: activity within 16.3s
+RESULT  PASS
+lines above this one: Canceling queue in the worker that is running now. None means it is a clean pod.
+
+== 2026-11-04T23:57:46Z restart the broker
+pod "plane-rabbitmq-wl-0" deleted from plane-prod-sim namespace
+partitioned roll out complete: 1 new pods have been updated...
+pod/plane-rabbitmq-wl-0 condition met
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    sentinel-reread  sentinel row and attachment intact
+PASS    job-probe  new work item got its activity in 9.2s
+RESULT  PASS
+celery	0	1
+->  celery@plane-worker-wl-667f56c7f8-6m5kr: OK
+    * {'name': 'celery', 'exchange': {'name': 'celery', 'type': 'direct', 'argum
+== 2026-11-04T23:58:31Z done
+exit=0

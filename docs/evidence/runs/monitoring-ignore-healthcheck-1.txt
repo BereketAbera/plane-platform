@@ -1,0 +1,19 @@
+# argocd.argoproj.io/ignore-healthcheck on postgres-exporter: the exporter waits for plane-pgdb while monitoring-extras reads Healthy
+## kube_pod_container_status_waiting_reason, postgres-exporter
+{'namespace': 'plane-dev', 'pod': 'postgres-exporter-565bbf6cb-rlg2k', 'reason': 'ContainerCreating'} from 21:04:00 to 21:04:00 UTC samples 1
+{'namespace': 'plane-dev', 'pod': 'postgres-exporter-565bbf6cb-rlg2k', 'reason': 'CreateContainerConfigError'} from 21:05:00 to 21:29:00 UTC samples 25
+{'namespace': 'plane-prod-sim', 'pod': 'postgres-exporter-565bbf6cb-9qnnd', 'reason': 'ContainerCreating'} from 21:04:00 to 21:04:00 UTC samples 1
+{'namespace': 'plane-prod-sim', 'pod': 'postgres-exporter-565bbf6cb-9qnnd', 'reason': 'CreateContainerConfigError'} from 21:05:00 to 21:29:00 UTC samples 25
+## argocd_app_info{name="monitoring-extras"} by health_status and sync_status
+{'health_status': 'Healthy', 'sync_status': 'Synced', 'pod': 'argocd-application-controller-0'} from 21:19:00 to 22:19:00 UTC samples 61
+{'health_status': 'Healthy', 'sync_status': 'Synced', 'pod': 'argocd-application-controller-0'} from 21:05:00 to 21:18:00 UTC samples 14
+## pods labelled ready=false in monitoring for the Grafana sidecar window, kube_pod_container_status_restarts_total
+kps-grafana-5485666c45-pl472 grafana max restarts 0.0
+kps-grafana-6797b8c945-rfhjg grafana max restarts 0.0
+kps-grafana-77cb96fc89-v8g6n grafana max restarts 0.0
+kps-grafana-5485666c45-pl472 grafana-sc-dashboard max restarts 0.0
+kps-grafana-6797b8c945-rfhjg grafana-sc-dashboard max restarts 9.0
+kps-grafana-77cb96fc89-v8g6n grafana-sc-dashboard max restarts 0.0
+kps-grafana-5485666c45-pl472 grafana-sc-datasources max restarts 0.0
+kps-grafana-6797b8c945-rfhjg grafana-sc-datasources max restarts 9.0
+kps-grafana-77cb96fc89-v8g6n grafana-sc-datasources max restarts 0.0

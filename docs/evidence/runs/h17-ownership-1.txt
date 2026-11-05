@@ -1,0 +1,1 @@
+[1;32m ok[0m 205 Argo CD objects and 7 Terraform objects, no resource has two owners

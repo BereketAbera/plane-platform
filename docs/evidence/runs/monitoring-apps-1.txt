@@ -1,0 +1,18 @@
+# captured 2026-11-04T22:19:18Z
+
+$ kubectl -n argocd get applications
+NAME                          SYNC     HEALTH    OPERATION   GIT                                        GIT2
+alloy                         Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+backup-storage                Synced   Healthy   Succeeded   <none>                                     2693d2f6004d34937b33e2d5aef85884b3b22463
+infisical                     Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+infisical-operator-dev        Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+infisical-operator-prod-sim   Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+kube-prometheus-stack         Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+loki                          Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+metrics-server                Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+monitoring-extras             Synced   Healthy   Succeeded   <none>                                     2693d2f6004d34937b33e2d5aef85884b3b22463
+network-policies              Synced   Healthy   Succeeded   <none>                                     2693d2f6004d34937b33e2d5aef85884b3b22463
+plane-dev                     Synced   Healthy   Succeeded   <none>                                     2693d2f6004d34937b33e2d5aef85884b3b22463
+plane-prod-sim                Synced   Healthy   Succeeded   <none>                                     2693d2f6004d34937b33e2d5aef85884b3b22463
+root                          Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>
+traefik                       Synced   Healthy   Succeeded   2693d2f6004d34937b33e2d5aef85884b3b22463   <none>

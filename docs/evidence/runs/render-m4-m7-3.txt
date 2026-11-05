@@ -1,0 +1,4 @@
+# 2026-11-04T20:11:02Z scripts/render.sh --check, after make render. A second full render compared with the committed-to-be file. Expected: exit 0
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+exit=0

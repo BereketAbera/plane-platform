@@ -1,0 +1,59 @@
+# A brand-new Infisical in a throwaway namespace, restored from the real backup, Terraform against it only. 2026-11-04T23:23:03Z
+
+--- Backup 20261104T231433Z. Docker VM before: 8.238GiB / 13.63GiB (23:23:04)
+
+--- Secrets: the same secret zero, in the new namespace (23:23:05)
+PASS   three Secrets copied without printing them
+
+--- Postgres and Redis on emptyDir (23:23:05)
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+
+--- Server: the live Deployment's spec, first boot on an empty database (23:23:16)
+Waiting for deployment "infisical" rollout to finish: 0 of 1 updated replicas are available...
+deployment "infisical" successfully rolled out
+migrations in the fresh database: 602
+PASS   fresh server: config.initialized=false
+
+--- Exact restore Job from scripts/restore.sh, server stopped (23:23:49)
+/Users/bek/dev/pr/plane-platform/scripts/lib/common.sh: line 34: 92334 Terminated: 15          kubectl -n "$X" port-forward svc/infisical 18080:8080 > /dev/null 2>&1
+[pod/plane-restore-rehearsal-1793834631-lz58c/postgres] NOTICE:  database "infisical_restoring" does not exist, skipping
+[pod/plane-restore-rehearsal-1793834631-lz58c/postgres] vacuumdb: vacuuming database "infisical_restoring"
+[pod/plane-restore-rehearsal-1793834631-lz58c/postgres] GATE1 ok: 785 tables equal the backup
+[pod/plane-restore-rehearsal-1793834631-lz58c/postgres] ALTER DATABASE
+[pod/plane-restore-rehearsal-1793834631-lz58c/postgres] swapped in: infisical is now the restored database
+PASS   Redis flushed
+Waiting for deployment "infisical" rollout to finish: 0 of 1 updated replicas are available...
+deployment "infisical" successfully rolled out
+
+--- What the restored instance says, read through the API (23:24:22)
+PASS   restored server: config.initialized=true
+PASS   the old admin token is accepted: HTTP 200
+PASS   every Plane secret decrypts to the recorded value, version and id
+
+--- Terraform: a scratch copy of the root and the backup's state, against this instance only (23:24:23)
+PASS   state from the backup against the restored database, this cluster's CA: no changes
+PASS   control: dev identity logs in with the stored CA, HTTP 200
+INFO   plan with another cluster's CA, exit 2, actions {"no-op":8,"update":2}
+PASS   the API refuses a CA that does not verify the API server: 
+throwaway database: UPDATE 2
+INFO   restored mode's step: stored CA differs from this cluster's, plan exit 2, actions {"no-op":8,"update":2}
+PASS   plan sees the difference
+PASS   only updates in place, so restored mode would apply this
+PASS   apply of the saved plan: Apply complete! Resources: 0 added, 2 changed, 0 destroyed.
+PASS   dev identity logs in after the refresh, HTTP 200
+PASS   prod-sim identity logs in, HTTP 200
+PASS   second plan: no changes
+
+--- Docker VM after: 9.171GiB / 13.63GiB (23:24:28)
+NAME                                       READY   STATUS      RESTARTS   AGE
+infisical-567944c58f-rknjs                 1/1     Running     0          19s
+infisical-postgres-0                       1/1     Running     0          83s
+infisical-redis-0                          1/1     Running     0          83s
+plane-restore-rehearsal-1793834631-lz58c   0/1     Completed   0          37s
+server memory.peak bytes: 883671040
+/Users/bek/dev/pr/plane-platform/infisical/lib/api.sh: line 30: 93412 Terminated: 15          kubectl -n "$X" port-forward svc/infisical 18080:8080 > /dev/null 2>&1
+namespace dr-rehearsal deleted, scratch Terraform removed, exit 0
+exit=0

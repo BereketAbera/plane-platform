@@ -1,0 +1,33 @@
+# captured 2026-11-04T22:19:25Z
+
+$ curl http://alertmanager.localhost/-/healthy
+200
+$ curl http://alertmanager.localhost/api/v2/status (version, uptime, cluster)
+0.34.2 2026-11-04T21:35:12.296Z disabled
+$ curl http://alertmanager.localhost/api/v2/receivers
+[{"labels":{"name":"null"},"name":"null"},{"labels":{"name":"sink"},"name":"sink"}]
+
+$ curl http://alertmanager.localhost/api/v2/alerts
+1 alerts
+  Watchdog none None active 2026-11-04T21:35:26
+$ kubectl -n monitoring logs deploy/alert-sink, last 12 deliveries, summarised
+2026-11-04T21:50:51 firing PodRestarting monitoring alerts=3
+2026-11-04T21:52:26 firing Watchdog None alerts=1
+2026-11-04T21:55:06 firing AlertPathProof None alerts=1
+2026-11-04T21:57:26 firing Watchdog None alerts=1
+2026-11-04T21:58:21 firing PodRestarting monitoring alerts=2
+2026-11-04T22:00:36 resolved AlertPathProof None alerts=1
+2026-11-04T22:02:26 firing Watchdog None alerts=1
+2026-11-04T22:05:21 firing PodRestarting monitoring alerts=2
+2026-11-04T22:07:26 firing Watchdog None alerts=1
+2026-11-04T22:12:26 firing Watchdog None alerts=1
+2026-11-04T22:12:51 resolved PodRestarting monitoring alerts=2
+2026-11-04T22:18:26 firing Watchdog None alerts=1
+$ Watchdog deliveries in the sink through Loki, last 40m
+Q {namespace="monitoring", container="sink"} | json | payload_commonLabels_alertname="Watchdog" | line_format "{{.received_at}} {{.payload_status}} {{.payload_commonLabels_alertname}}" HTTP 200 stream
+   labels {'container': 'sink', 'detected_level': 'unknown', 'namespace': 'monitoring', 'path': '/alerts', 'payload_commonAnnotations_description': 'This is an alert meant to ensure that the entire al
+    21:40:26Z 2026-11-04T21:40:26.707216+00:00 firing Watchdog
+   labels {'container': 'sink', 'detected_level': 'unknown', 'namespace': 'monitoring', 'path': '/alerts', 'payload_commonAnnotations_description': 'This is an alert meant to ensure that the entire al
+    21:46:26Z 2026-11-04T21:46:26.719080+00:00 firing Watchdog
+   labels {'container': 'sink', 'detected_level': 'unknown', 'namespace': 'monitoring', 'path': '/alerts', 'payload_commonAnnotations_description': 'This is an alert meant to ensure that the entire al
+    21:52:26Z 2026-11-04T21:52:26.726325+00:00 firing Watchdog

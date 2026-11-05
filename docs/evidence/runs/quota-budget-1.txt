@@ -1,0 +1,53 @@
+# date: 2026-11-04T20:25:01Z
+# Plane namespace pods from gitops/environments/<env>/manifests.yaml and kustomize build monitoring/manifests/environments/<env>,
+# against the quota computed by modules/foundation (2732Mi, 7984Mi, 24 pods). Backup and ad-hoc figures are the foundation module's own budget lines.
+
+## dev
+kind        name                         pods    req    lim
+Deployment  plane-admin-wl                  1     16     64
+Deployment  plane-api-wl                    1    256    768
+Deployment  plane-beat-worker-wl            1    128    256
+Deployment  plane-live-wl                   1    128    384
+Deployment  plane-space-wl                  1     96    256
+Deployment  plane-web-wl                    1     16     64
+Deployment  plane-worker-wl                 1    256    768
+Deployment  postgres-exporter               1     16     48
+Deployment  redis-exporter                  1     12     32
+Job         plane-api-migrate-1             1    128    512
+StatefulSet plane-minio-wl                  1    256    512
+StatefulSet plane-pgdb-wl                   1    128    512
+StatefulSet plane-rabbitmq-wl               1    128    512
+StatefulSet plane-redis-wl                  1     16     96
+
+steady, from the renders: 13 pods, 1452Mi requests, 4272Mi limits
+operator and other pods outside the renders: {'infisical-operator': [64, 128], 'backup-job': [128, 256], 'ad-hoc-pod': [64, 256]}
+worst case, every Deployment including exporters surging at once, migrator, backup, ad-hoc: 26 pods, 2760Mi requests, 8064Mi limits
+quota: {'req': 2732, 'lim': 7984, 'pods': 24}
+RESULT: OVER QUOTA at the absolute worst case
+without exporter surges (rollouts of the app tier only): 24 pods
+exit 0
+
+## prod-sim
+kind        name                         pods    req    lim
+Deployment  plane-admin-wl                  1     16     64
+Deployment  plane-api-wl                    1    256    768
+Deployment  plane-beat-worker-wl            1    128    256
+Deployment  plane-live-wl                   1    128    384
+Deployment  plane-space-wl                  1     96    256
+Deployment  plane-web-wl                    1     16     64
+Deployment  plane-worker-wl                 1    256    768
+Deployment  postgres-exporter               1     16     48
+Deployment  redis-exporter                  1     12     32
+Job         plane-api-migrate-1             1    128    512
+StatefulSet plane-minio-wl                  1    256    512
+StatefulSet plane-pgdb-wl                   1    128    512
+StatefulSet plane-rabbitmq-wl               1    128    512
+StatefulSet plane-redis-wl                  1     16     96
+
+steady, from the renders: 13 pods, 1452Mi requests, 4272Mi limits
+operator and other pods outside the renders: {'infisical-operator': [64, 128], 'backup-job': [128, 256], 'ad-hoc-pod': [64, 256]}
+worst case, every Deployment including exporters surging at once, migrator, backup, ad-hoc: 26 pods, 2760Mi requests, 8064Mi limits
+quota: {'req': 2732, 'lim': 7984, 'pods': 24}
+RESULT: OVER QUOTA at the absolute worst case
+without exporter surges (rollouts of the app tier only): 24 pods
+exit 0

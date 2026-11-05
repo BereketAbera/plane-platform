@@ -1,0 +1,14 @@
+# Same measurement as plane-dev-rollout-availability-1.txt, now that the pods being replaced have the 5s preStop. 10 Hz per route.
+## Round 3: rollout restart on all seven, started 22:52:03
+all rollouts complete after 37s
+{"web": {"samples": 577, "failed": 0}, "api": {"samples": 560, "failed": 0}, "live": {"samples": 565, "failed": 0}, "admin": {"samples": 577, "failed": 0}, "space": {"samples": 559, "failed": 0}}
+
+
+## Round 4: annotation removed, back to the Git state, started 22:53:04
+all rollouts complete after 33s
+{"web": {"samples": 625, "failed": 0}, "api": {"samples": 608, "failed": 0}, "live": {"samples": 608, "failed": 0}, "admin": {"samples": 624, "failed": 0}, "space": {"samples": 599, "failed": 0}}
+
+
+Live templates carrying the annotation: 0
+Application: Synced/Healthy
+FailedCreate events: 0

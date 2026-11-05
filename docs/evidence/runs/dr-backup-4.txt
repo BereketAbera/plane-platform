@@ -1,0 +1,32 @@
+# scripts/backup.sh all, with recovery sets, 2026-11-04T23:13:05Z
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261104T231305Z
+[pod/plane-backup-20261104t231305z-ztdjf/postgres] postgres: 20261104T231305Z complete, 785 tables counted from a scratch restore
+backup 20261104T231305Z: postgres/infisical.dump 4406074 B, postgres/infisical.toc.txt 935955 B, postgres/rowcounts.tsv 24975 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261104T231305Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261104T231324Z
+[pod/plane-backup-20261104t231324z-98ktf/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261104t231324z-98ktf/objects] 2026/11/04 23:13:30 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t231324z-98ktf/objects] 2026/11/04 23:13:30 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t231324z-98ktf/objects] 2026/11/04 23:13:30 NOTICE: Local file system at /backups/20261104T231324Z.partial/objects: 0 differences found
+[pod/plane-backup-20261104t231324z-98ktf/objects] 2026/11/04 23:13:30 NOTICE: Local file system at /backups/20261104T231324Z.partial/objects: 22 matching files
+[pod/plane-backup-20261104t231324z-98ktf/objects] 2026/11/04 23:13:30 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t231324z-98ktf/objects] objects: 22 checked
+[pod/plane-backup-20261104t231324z-98ktf/finalize] finalize: 20261104T231324Z complete
+backup 20261104T231324Z: postgres/plane.dump 772584 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2112 B, postgres/content.tsv 127 B, objects.lsjson 8316 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261104T231324Z
+[1;32m ok[0m encrypted sentinel row present
+[1;33mwarn[0m no /Users/bek/dev/pr/plane-platform/.local/test-sentinel-prod-sim.json: run 'make test-e2e ENV=prod-sim' first, or restore reports the sentinel proofs as NOT RUN
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261104T231335Z
+[pod/plane-backup-20261104t231335z-v9jm5/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261104t231335z-v9jm5/objects] 2026/11/04 23:13:42 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t231335z-v9jm5/objects] 2026/11/04 23:13:42 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t231335z-v9jm5/objects] 2026/11/04 23:13:42 NOTICE: Local file system at /backups/20261104T231335Z.partial/objects: 0 differences found
+[pod/plane-backup-20261104t231335z-v9jm5/objects] 2026/11/04 23:13:42 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261104t231335z-v9jm5/objects] objects: 0 checked
+[pod/plane-backup-20261104t231335z-v9jm5/finalize] finalize: 20261104T231335Z complete
+backup 20261104T231335Z: postgres/plane.dump 639156 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2080 B, postgres/content.tsv 127 B, objects.lsjson 4 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261104T231335Z
+[1;32m ok[0m all environments backed up
+make backup ENV=all  1.93s user 1.19s system 7% cpu 42.301 total
+exit=0

@@ -1,0 +1,4 @@
+# 2026-11-04T20:11:02Z make render
+[1;32m ok[0m rendered gitops/environments/dev/manifests.yaml
+[1;32m ok[0m rendered gitops/environments/prod-sim/manifests.yaml
+exit=0

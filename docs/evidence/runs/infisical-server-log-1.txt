@@ -1,0 +1,71 @@
+# Statistics from the Infisical server log, no log lines kept. First pod until 21:35:59 UTC, its first boot included. Second pod from 21:41:27 until 21:50:59. The first pod's last 5 minutes are not covered.
+
+== server.log, 2761 lines
+-- response status codes
+ 494 200
+   1 400
+   5 401
+  14 403
+-- 429 responses: 0
+-- level 50 messages
+   1 connect ECONNREFUSED 127.0.0.1:587
+-- level 40 messages
+  12 client error: ProjectMembershipNotFound
+   3 client error: UnauthorizedError
+   2 client error: ForbiddenError
+   1 usage-reporter: enabled but LICENSE_SERVER_V2_SERVICE_KEY (cloud) is not set; usage reporting disabled
+   1 tokenReviewCallbackRaw: Kubernetes token review request error (request error) [identityId=<id>] [status=403]
+   1 tokenReviewCallbackRaw: Kubernetes token review request error (request error) [identityId=<id>] [status=401]
+   1 license-client: enabled but LICENSE_SERVER_V2_SERVICE_KEY is missing; serving feature fallbacks
+   1 client error: KubernetesTokenReviewerUnauthorized
+-- requests to /api/v4/secrets per client address and minute, last 12 buckets
+   8 2026-11-04T21:30:00Z	172.24.0.1
+   6 2026-11-04T21:31:00Z	10.244.0.137
+   6 2026-11-04T21:31:00Z	10.244.0.138
+   6 2026-11-04T21:32:00Z	10.244.0.137
+   6 2026-11-04T21:32:00Z	10.244.0.138
+  18 2026-11-04T21:33:00Z	10.244.0.137
+   6 2026-11-04T21:33:00Z	10.244.0.138
+   7 2026-11-04T21:34:00Z	10.244.0.137
+   6 2026-11-04T21:34:00Z	10.244.0.138
+   8 2026-11-04T21:34:00Z	172.24.0.1
+   6 2026-11-04T21:35:00Z	10.244.0.137
+   8 2026-11-04T21:35:00Z	172.24.0.1
+
+== server2.log, 4392 lines
+-- response status codes
+ 629 200
+   1 401
+   2 500
+-- 429 responses: 0
+-- level 50 messages
+   2 Failed to execute db ops
+   1 event-outbox: relay tick failed
+   1 connect ECONNREFUSED 127.0.0.1:587
+   1 Redis connection error [client=queue] [error=ENOTFOUND] [suppressedCount=18] [message=getaddrinfo ENOTFOUND infisical-redis.infisical.svc.cl
+   1 Redis connection error [client=queue] [error=ENOTFOUND] [suppressedCount=0] [message=getaddrinfo ENOTFOUND infisical-redis.infisical.svc.clu
+   1 Redis connection error [client=keystore] [error=ENOTFOUND] [suppressedCount=18] [message=getaddrinfo ENOTFOUND infisical-redis.infisical.svc
+   1 Redis connection error [client=keystore] [error=ENOTFOUND] [suppressedCount=0] [message=getaddrinfo ENOTFOUND infisical-redis.infisical.svc.
+   1 Redis connection error [client=event-bus-subscriber] [error=ENOTFOUND] [suppressedCount=18] [message=getaddrinfo ENOTFOUND infisical-redis.i
+-- level 40 messages
+   1 usage-reporter: enabled but LICENSE_SERVER_V2_SERVICE_KEY (cloud) is not set; usage reporting disabled
+   1 license-client: enabled but LICENSE_SERVER_V2_SERVICE_KEY is missing; serving feature fallbacks
+   1 client error: UnauthorizedError
+-- requests to /api/v4/secrets per client address and minute, last 12 buckets
+  18 2026-11-04T21:46:00Z	10.244.0.137
+   6 2026-11-04T21:46:00Z	10.244.0.138
+   6 2026-11-04T21:47:00Z	10.244.0.137
+   6 2026-11-04T21:47:00Z	10.244.0.138
+   6 2026-11-04T21:48:00Z	10.244.0.137
+   6 2026-11-04T21:48:00Z	10.244.0.138
+   6 2026-11-04T21:49:00Z	10.244.0.137
+   6 2026-11-04T21:49:00Z	10.244.0.138
+  61 2026-11-04T21:49:00Z	172.24.0.1
+   6 2026-11-04T21:50:00Z	10.244.0.137
+   6 2026-11-04T21:50:00Z	10.244.0.138
+ 240 2026-11-04T21:50:00Z	172.24.0.1
+
+== client addresses
+plane-dev/iso-dev-controller-manager-85dbfbcb5b-vswbn 10.244.0.138
+plane-prod-sim/iso-prod-sim-controller-manager-5cc86cc76-nwhb6 10.244.0.137
+172.24.0.1 is the kind gateway, where host traffic through Traefik comes from

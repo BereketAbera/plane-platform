@@ -1,0 +1,140 @@
+# date: 2026-11-04T20:23:39Z
+$ helm template argocd <chart argo-cd-10.11.7> --namespace argocd -f helm/values/argocd.yaml
+objects: 43
+
+# metrics Services
+argocd-application-controller-metrics | name=argocd-metrics | component=application-controller | ports=http-metrics:8082->metrics | selector={"app.kubernetes.io/instance": "argocd", "app.kubernetes.io/name": "argocd-application-controller"}
+argocd-repo-server-metrics | name=argocd-repo-server-metrics | component=repo-server | ports=http-metrics:8084->metrics | selector={"app.kubernetes.io/instance": "argocd", "app.kubernetes.io/name": "argocd-repo-server"}
+argocd-server-metrics | name=argocd-server-metrics | component=server | ports=http-metrics:8083->metrics | selector={"app.kubernetes.io/instance": "argocd", "app.kubernetes.io/name": "argocd-server"}
+
+# ServiceMonitors: 0  NetworkPolicies: 0
+
+# Workload memory and pod ports
+Deployment  argocd-applicationset-controller     replicas=0 applicationset-controller  req=None lim=None ports=metrics:8080,probe:8081,webhook:7000
+Deployment  argocd-repo-server                   replicas=1 repo-server                req=96Mi lim=512Mi ports=repo-server:8081,metrics:8084
+Deployment  argocd-server                        replicas=1 server                     req=48Mi lim=192Mi ports=server:8080,metrics:8083
+Deployment  argocd-redis                         replicas=1 redis                      req=24Mi lim=64Mi ports=redis:6379
+StatefulSet argocd-application-controller        replicas=1 application-controller     req=192Mi lim=640Mi ports=metrics:8082
+running total: requests 360Mi, limits 1408Mi
+
+# cmd params, sync and timeout related
+reposerver.parallelism.limit=2
+exit 0
+
+# diff of the render, HEAD values against this change. Secret-free: the chart renders argocd-secret with no data.
+111c111
+<       if obj.status.health ~= nil then
+---
+>       if obj.status.health ~= nil and obj.status.health.status ~= nil then
+114a115,123
+>         end
+>       end
+>       if hs.status == "Healthy" then
+>         if obj.operation ~= nil then
+>           hs.status = "Progressing"
+>           hs.message = "Holding the wave: child sync has not finished"
+>         elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+>           hs.status = "Progressing"
+>           hs.message = "Holding the wave: child is Healthy but not Synced"
+31784a31794,31819
+> # Source: argo-cd/templates/argocd-application-controller/metrics.yaml
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   name: argocd-application-controller-metrics
+>   namespace: argocd
+>   labels:
+>     helm.sh/chart: argo-cd-10.11.7
+>     app.kubernetes.io/name: argocd-metrics
+>     app.kubernetes.io/instance: argocd
+>     app.kubernetes.io/component: application-controller
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: argocd
+>     app.kubernetes.io/version: "v3.5.7-sha256-16df57da6f223808d204cd94c67c929b931fa01670b91b0b3"
+> spec:
+>   type: ClusterIP  
+>   ports:
+>   - name: http-metrics
+>     protocol: TCP
+>     port: 8082
+>     targetPort: metrics
+>   selector:
+>     app.kubernetes.io/name: argocd-application-controller
+>     app.kubernetes.io/instance: argocd
+> 
+> ---
+31809a31845,31870
+> # Source: argo-cd/templates/argocd-repo-server/metrics.yaml
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   name: argocd-repo-server-metrics
+>   namespace: argocd
+>   labels:
+>     helm.sh/chart: argo-cd-10.11.7
+>     app.kubernetes.io/name: argocd-repo-server-metrics
+>     app.kubernetes.io/instance: argocd
+>     app.kubernetes.io/component: repo-server
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: argocd
+>     app.kubernetes.io/version: "v3.5.7-sha256-16df57da6f223808d204cd94c67c929b931fa01670b91b0b3"
+> spec:
+>   type: ClusterIP  
+>   ports:
+>   - name: http-metrics
+>     protocol: TCP
+>     port: 8084
+>     targetPort: metrics
+>   selector:
+>     app.kubernetes.io/name: argocd-repo-server
+>     app.kubernetes.io/instance: argocd
+> 
+> ---
+31834a31896,31921
+> # Source: argo-cd/templates/argocd-server/metrics.yaml
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   name: argocd-server-metrics
+>   namespace: argocd
+>   labels:
+>     helm.sh/chart: argo-cd-10.11.7
+>     app.kubernetes.io/name: argocd-server-metrics
+>     app.kubernetes.io/instance: argocd
+>     app.kubernetes.io/component: server
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: argocd
+>     app.kubernetes.io/version: "v3.5.7-sha256-16df57da6f223808d204cd94c67c929b931fa01670b91b0b3"
+> spec:
+>   type: ClusterIP  
+>   ports:
+>   - name: http-metrics
+>     protocol: TCP
+>     port: 8083
+>     targetPort: metrics
+>   selector:
+>     app.kubernetes.io/name: argocd-server
+>     app.kubernetes.io/instance: argocd
+> 
+> ---
+32218c32305
+<         checksum/cm: 93e35f07bb4d47117a932be93ce9526ed2cd5fb35157a3988da5746f6efeecec
+---
+>         checksum/cm: 8e6a23c58ee0211299d8e9fd901b654805c005f7e63bcf223f3932bc58c8a138
+32550c32637
+<             memory: 384Mi
+---
+>             memory: 512Mi
+32574c32661
+<             memory: 384Mi
+---
+>             memory: 512Mi
+32661c32748
+<         checksum/cm: 93e35f07bb4d47117a932be93ce9526ed2cd5fb35157a3988da5746f6efeecec
+---
+>         checksum/cm: 8e6a23c58ee0211299d8e9fd901b654805c005f7e63bcf223f3932bc58c8a138
+33252c33339
+<         checksum/cm: 93e35f07bb4d47117a932be93ce9526ed2cd5fb35157a3988da5746f6efeecec
+---
+>         checksum/cm: 8e6a23c58ee0211299d8e9fd901b654805c005f7e63bcf223f3932bc58c8a138
+diff exit 1 (1 means they differ, as intended)

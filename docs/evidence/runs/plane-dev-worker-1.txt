@@ -1,0 +1,36 @@
+# Worker facts from the running pods. 2026-11-04T22:36:53Z
+$ celery -A plane inspect stats -t 15 (pool section only)
+celery@plane-worker-wl-55c87f6f94-4mfkj pool celery.concurrency.prefork:TaskPool max-concurrency 2 processes 2 prefetch 8
+broker amqp plane-rabbitmq.plane-dev.svc.cluster.local vhost /
+tasks run per name: {"plane.bgtasks.deletion_task.soft_delete_related_objects": 3, "plane.bgtasks.email_notification_task.stack_email_notification": 12, "plane.bgtasks.event_tracking_task.track_event": 5, "plane.bgtasks.export_task.issue_export_task": 2, "plane.bgtasks.issue_activities_task.issue_activity": 12, "plane.bgtasks.logger_task.process_logs": 56, "plane.bgtasks.notification_task.notifications": 12, "plane.bgtasks.page_transaction_task.page_transaction": 8, "plane.bgtasks.page_version_task.track_page_version": 5, "plane.bgtasks.recent_visited_task.recent_visited_task": 9, "plane.bgtasks.storage_metadata_task.get_asset_object_metadata": 8, "plane.bgtasks.webhook_task.model_activity": 11, "plane.bgtasks.webhook_task.webhook_activity": 11, "plane.bgtasks.workspace_seed_task.workspace_seed": 5, "plane.license.bgtasks.telemetry_metrics.push_instance_metrics": 1}
+
+$ the worker liveness command, timed
+->  celery@plane-worker-wl-55c87f6f94-4mfkj: OK
+        pong
+
+1 node online.
+took 1s against a 60s probe timeout
+
+$ processes in the worker pod
+PID   COMMAND
+    1 {docker-entrypoi} /bin/bash ./bin/docker-entrypoint-worker.sh
+   19 {celery} /usr/local/bin/python3.12 /usr/local/bin/celery -A plane worker -l info
+   32 {celery} /usr/local/bin/python3.12 /usr/local/bin/celery -A plane worker -l info
+   33 {celery} /usr/local/bin/python3.12 /usr/local/bin/celery -A plane worker -l info
+ 1807 cut -c1-90
+
+$ rabbitmqctl list_queues (name messages consumers), and consumers by channel
+name	messages	consumers
+celery	0	1
+celery@plane-worker-wl-55c87f6f94-4mfkj.celery.pidbox	0	1
+celeryev.ca647b34-fdf7-4ee4-8eb1-119e8da74bbf	0	1
+queue_name	channel_pid	ack_required	prefetch_count
+celery	<rabbit@plane-rabbitmq-wl-0.1793827812.1119.0>	true	0
+celery@plane-worker-wl-55c87f6f94-4mfkj.celery.pidbox	<rabbit@plane-rabbitmq-wl-0.1793827812.1175.0>	false	0
+celeryev.ca647b34-fdf7-4ee4-8eb1-119e8da74bbf	<rabbit@plane-rabbitmq-wl-0.1793827812.1150.0>	false	0
+
+$ memory seen by the broker versus the cgroup
+14637830144
+cgroup memory.max 536870912
+{absolute,"256Mi"}
+268435456

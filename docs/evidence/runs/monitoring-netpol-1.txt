@@ -1,0 +1,63 @@
+2026-11-04T22:11:50Z
+$ FROM_NS=monitoring scripts/test-netpol.sh
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED
+[1;32m ok[0m sentinel: name that does not exist -> DNS
+[1;32m ok[0m sentinel: default-deny blocks a new connection -> TIMEOUT
+[1;32m ok[0m sentinel: allow rule admits only the labelled client -> CONNECTED
+[1;32m ok[0m enforcement is on, and timeouts, refusals and DNS failures are told apart
+[1;34m==>[0m Running 50 rows from 9 source identities
+PASS          allow  CONNECTED  monitoring {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-rabbitmq-metrics.plane-dev.svc.cluster.local:15692
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-minio.plane-dev.svc.cluster.local:9000
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> postgres-exporter.plane-dev.svc.cluster.local:9187
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> redis-exporter.plane-dev.svc.cluster.local:9121
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> iso-dev-controller-manager-metrics-service.plane-dev.svc.cluster.local:8443
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-pgdb.plane-dev.svc.cluster.local:5432
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-redis.plane-dev.svc.cluster.local:6379
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-rabbitmq.plane-dev.svc.cluster.local:5672
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-rabbitmq-metrics.plane-prod-sim.svc.cluster.local:15692
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-minio.plane-prod-sim.svc.cluster.local:9000
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> postgres-exporter.plane-prod-sim.svc.cluster.local:9187
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> redis-exporter.plane-prod-sim.svc.cluster.local:9121
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> iso-prod-sim-controller-manager-metrics-service.plane-prod-sim.svc.cluster.local:8443
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-pgdb.plane-prod-sim.svc.cluster.local:5432
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-redis.plane-prod-sim.svc.cluster.local:6379
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-rabbitmq.plane-prod-sim.svc.cluster.local:5672
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> infisical-postgres.infisical.svc.cluster.local:5432
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> argocd-server-metrics.argocd.svc.cluster.local:8083
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> argocd-application-controller-metrics.argocd.svc.cluster.local:8082
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> argocd-repo-server-metrics.argocd.svc.cluster.local:8084
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kubernetes.default.svc.cluster.local:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-platform-control-plane:10250
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-platform-control-plane:9100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-alertmanager.monitoring.svc.cluster.local:9093
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-kube-state-metrics.monitoring.svc.cluster.local:8080
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-operator.monitoring.svc.cluster.local:8080
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-grafana.monitoring.svc.cluster.local:80
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> loki.monitoring.svc.cluster.local:3100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> alloy.monitoring.svc.cluster.local:12345
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> blackbox.monitoring.svc.cluster.local:9115
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> traefik-metrics.traefik.svc.cluster.local:9100
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"prometheus"} -> 1.1.1.1:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> kps-prometheus.monitoring.svc.cluster.local:9090
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> loki.monitoring.svc.cluster.local:3100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> kps-alertmanager.monitoring.svc.cluster.local:9093
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"grafana"} -> 1.1.1.1:443
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"grafana"} -> plane-pgdb.plane-dev.svc.cluster.local:5432
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alloy"} -> loki.monitoring.svc.cluster.local:3100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alloy"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"alloy"} -> 1.1.1.1:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alertmanager"} -> alert-sink.monitoring.svc.cluster.local:8080
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"alertmanager"} -> 1.1.1.1:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"blackbox-exporter"} -> traefik.traefik.svc.cluster.local:80
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"blackbox-exporter"} -> plane-api.plane-dev.svc.cluster.local:8000
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"kube-state-metrics"} -> kubernetes.default.svc.cluster.local:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"kube-prometheus-stack-prometheus-operator"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    monitoring {"app.kubernetes.io/name":"loki"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    monitoring {"probe":"unlabelled"} -> loki.monitoring.svc.cluster.local:3100
+[1;34m==>[0m PASS 50, FAIL 0, INCONCLUSIVE 0. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261104T221150Z.tsv
+[1;32m ok[0m network policy matrix passed
+exit code: 0

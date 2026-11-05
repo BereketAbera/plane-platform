@@ -1,0 +1,33 @@
+=== G1 first publish creates the bare repo, no backup
+PASS  first publish rc
+PASS  published
+PASS  no backup on first publish
+PASS  second publish is a no-op
+=== G2 large diff: the trap, then the fix
+PASS  control: the old script skips the dump on a large diff
+PASS  fixed: takes the dump
+PASS  fixed: rc 0
+PASS  fixed: published
+=== G3 a small digest change, with and without a database
+PASS  database present: dump
+PASS  no database: no dump
+PASS  no database: published
+PASS  no database: says so
+=== G4 kubectl cannot tell: the backup decides, and refuses
+PASS  kubectl failing: backup attempted
+PASS  backup failed: rc 1
+PASS  backup failed: nothing published
+PASS  says the override
+PASS  SKIP_BACKUP=yes publishes
+=== G5 no prod-sim image change, no dump
+PASS  unrelated change: no dump
+PASS  unrelated change: published
+=== N1 test-netpol: a failing-open line in a large kindnet log
+PASS  control: the old script misses it and goes on to create the namespace
+PASS  fixed: rc 1
+PASS  fixed: reports failing open
+PASS  fixed: stops before the sentinel
+PASS  clean log: reaches the sentinel
+PASS  clean log: nft table found, no warning
+
+SUMMARY: 25 passed, 0 failed

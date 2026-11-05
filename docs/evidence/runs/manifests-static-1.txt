@@ -1,0 +1,43 @@
+# date: 2026-11-04T20:24:14Z
+
+$ kubeconform -strict <chart-exact CRD schemas> gitops/applications/*.yaml gitops/bootstrap/argocd-route/*.yaml
+Summary: 14 resources found in 14 files - Valid: 14, Invalid: 0, Errors: 0, Skipped: 0
+exit 0
+
+$ kubeconform -strict <chart-exact CRD schemas> <helm template gitops/bootstrap/chart>
+Summary: 4 resources found in 1 file - Valid: 4, Invalid: 0, Errors: 0, Skipped: 0
+exit 0
+
+$ kubeconform -strict -kubernetes-version 1.36.4 <native schemas> <argo-cd chart, Service and ConfigMap and Deployment and StatefulSet only>
+Summary: 19 resources found in 1 file - Valid: 19, Invalid: 0, Errors: 0, Skipped: 0
+exit 0
+
+$ SKIP_CHARTS=yes scripts/ci/validate-manifests.sh
+[1;34m==>[0m render is up to date
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: rendered Plane
+[1;34m==>[0m kubeconform: platform manifests
+Summary: 132 resources found in 7 files - Valid: 132, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: platform manifests
+[1;34m==>[0m conftest: rendered Plane
+
+814 tests, 814 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: rendered Plane
+[1;34m==>[0m conftest: platform manifests
+
+1056 tests, 1056 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform manifests
+[1;34m==>[0m promotion invariant
+[1;32m ok[0m 9 digest(s) were recorded for dev
+[1;32m ok[0m promotion invariant
+[1;33mwarn[0m SKIP_CHARTS=yes: third-party platform charts were not rendered
+[1;32m ok[0m manifests valid
+exit 0
+
+$ scripts/ci/ownership.sh
+[1;32m ok[0m 202 Argo CD objects and 7 Terraform objects, no resource has two owners
+exit 0

@@ -1,0 +1,5 @@
+# Duplicating a page with text, with LIVE_BASE_URL unset as in the chart and upstream compose. 2026-11-04T23:06:12Z
+duplicate status 201
+duplicate description_html holds the text: True
+duplicate description_binary holds the text: False bytes 0
+opening the duplicate in the editor path, the document holds the text: True

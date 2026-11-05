@@ -1,0 +1,109 @@
+# Cold turbo cache, pnpm store already populated. Wed Nov  4 23:40:04 EAT 2026. Node v22.22.2. Commit b98fa473c1d4a0a422521a0e50531182e04ca7c3 plus uncommitted apps/wayline.
+$ /usr/bin/time -l apps/wayline/scripts/build.sh  (PLANE_SOURCE_MIRROR=local clone, WAYLINE_APPS="web admin space")
+[1;34m==>[0m Node v22.22.2
+[1;32m ok[0m /Users/bek/dev/pr/plane-platform/.build/plane-src at v1.4.3 (37a15d99231042b3ff5a4401fed479fdbec9effe)
+[1;34m==>[0m Overlay
+Applied patch to 'packages/tailwind-config/index.css' cleanly.
+Applied patch to 'apps/admin/app/root.tsx' cleanly.
+Applied patch to 'apps/space/app/root.tsx' cleanly.
+Applied patch to 'apps/web/app/root.tsx' cleanly.
+[1;32m ok[0m 2 patches applied
+[1;34m==>[0m Codemod
+rebrand: 3733 files read, 435 changed, 8 lines dropped
+[1;34m==>[0m Token diff and contrast
+token-diff: 141 names across 6 brand files, 928 upstream tokens, 0 problems
+light: 113 pairs, lowest 4.58
+light [data-shell]: 40 pairs, lowest 5.25
+light: disabled text on surface-1 = 3.70 (exempt, informational)
+dark: 113 pairs, lowest 4.86
+dark [data-shell]: 40 pairs, lowest 5.25
+dark: disabled text on surface-1 = 4.52 (exempt, informational)
+light-contrast: 113 pairs, lowest 4.82
+light-contrast [data-shell]: 40 pairs, lowest 5.25
+light-contrast: disabled text on surface-1 = 3.86 (exempt, informational)
+dark-contrast: 113 pairs, lowest 4.86
+dark-contrast [data-shell]: 40 pairs, lowest 5.25
+dark-contrast: disabled text on surface-1 = 4.52 (exempt, informational)
+612 pairs checked, 0 below AA
+[1;34m==>[0m pnpm 11.10.0
+[1;34m==>[0m pnpm install
+Scope: 16 of 20 workspace projects
+✓ Lockfile passes supply-chain policies (verified 15m ago)
+Lockfile is up to date, resolution step is skipped
+. prepare$ husky
+. prepare: HUSKY=0 skip install
+. prepare: Done
+Done in 1.1s using pnpm v11.10.0
+[1;34m==>[0m turbo build web
+
+   • Packages in scope: web
+   • Running build in 1 packages
+   • Remote caching disabled
+
+
+ Tasks:    11 successful, 11 total
+Cached:    0 cached, 11 total
+  Time:    20.953s 
+
+[1;34m==>[0m turbo build admin
+
+   • Packages in scope: admin
+   • Running build in 1 packages
+   • Remote caching disabled
+
+
+ Tasks:    8 successful, 8 total
+Cached:    0 cached, 8 total
+  Time:    17.137s 
+
+[1;34m==>[0m turbo build space
+
+   • Packages in scope: space
+   • Running build in 1 packages
+   • Remote caching disabled
+
+
+ Tasks:    10 successful, 10 total
+Cached:    7 cached, 10 total
+  Time:    15.912s 
+
+leak-scan: 2109 files, 324 matches, 324 allowlisted, 0 leaks
+  allowlisted 280x: Copyright \(c\) 2023-present <<Plane>> Software, Inc\.
+  allowlisted 1x: https://docs\.<<plane\.so>>/core-concepts/projects/run-project#estimate
+  allowlisted 4x: https://docs\.<<plane\.so>>/
+  allowlisted 2x: https://developers\.<<plane\.so>>/self-hosting/telemetry
+  allowlisted 1x: intake@<<plane\.so>>
+  allowlisted 6x: <<Plane>>(Lockup|Logo|Wordmark|NewIcon)\b
+  allowlisted 3x: focal<<Plane>>(X|Y)?Resolution
+  allowlisted 12x: <<Plane>>s Soportados|y <<Plane>>s|Seleccionar <<Plane>>s
+  allowlisted 6x: <<Plane>>n Sie
+  allowlisted 9x: <<Plane>>jado|<<Plane>>je
+[1;32m ok[0m web: 5 font URLs under /assets/, all files present, brand values present
+[1;32m ok[0m admin: 5 font URLs under /god-mode/assets/, all files present, brand values present
+[1;32m ok[0m space: 5 font URLs under /spaces/assets/, all files present, brand values present
+[1;34m==>[0m Assemble /Users/bek/dev/pr/plane-platform/.build/wayline-dist
+6.2M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/admin
+ 26M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/space
+ 32M	/Users/bek/dev/pr/plane-platform/.build/wayline-dist/web
+[1;32m ok[0m Build complete for: web admin space
+       60.19 real        93.24 user        25.41 sys
+          2079391744  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+             1669370  page reclaims
+                6300  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                 365  messages sent
+                 430  messages received
+                 254  signals received
+               38852  voluntary context switches
+             2457513  involuntary context switches
+           254014445  instructions retired
+           100803179  cycles elapsed
+             3850528  peak memory footprint
+# exit code 0
+# Sum of RSS of build processes, sampled each second: peak 2126 MiB over 59 samples. RSS double-counts shared pages.
+# /usr/bin/time's maximum resident set size is the largest single process, not the total.

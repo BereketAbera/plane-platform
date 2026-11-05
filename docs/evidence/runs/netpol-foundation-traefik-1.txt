@@ -1,0 +1,42 @@
+# 2026-11-04T20:49:25Z
+$ FROM_NS=traefik scripts/test-netpol.sh
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED
+[1;32m ok[0m sentinel: name that does not exist -> DNS
+[1;32m ok[0m sentinel: default-deny blocks a new connection -> TIMEOUT
+[1;32m ok[0m sentinel: allow rule admits only the labelled client -> CONNECTED
+[1;32m ok[0m enforcement is on, and timeouts, refusals and DNS failures are told apart
+[1;34m==>[0m Running 28 rows from 2 source identities
+PASS          allow  CONNECTED  traefik {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-web.plane-dev.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-admin.plane-dev.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-space.plane-dev.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-live.plane-dev.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-api.plane-dev.svc.cluster.local:8000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-minio.plane-dev.svc.cluster.local:9000
+INCONCLUSIVE  deny   DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-pgdb.plane-dev.svc.cluster.local:5432
+INCONCLUSIVE  deny   DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-minio.plane-dev.svc.cluster.local:9090
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-web.plane-prod-sim.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-admin.plane-prod-sim.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-space.plane-prod-sim.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-live.plane-prod-sim.svc.cluster.local:3000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-api.plane-prod-sim.svc.cluster.local:8000
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-minio.plane-prod-sim.svc.cluster.local:9000
+INCONCLUSIVE  deny   DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-pgdb.plane-prod-sim.svc.cluster.local:5432
+INCONCLUSIVE  deny   DNS        traefik {"app.kubernetes.io/name":"traefik"} -> plane-minio.plane-prod-sim.svc.cluster.local:9090
+INCONCLUSIVE  deny   DNS        traefik {"app.kubernetes.io/name":"traefik"} -> infisical-postgres.infisical.svc.cluster.local:5432
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> argocd-server.argocd.svc.cluster.local:80
+FAIL          allow  TIMEOUT    traefik {"app.kubernetes.io/name":"traefik"} -> kps-grafana.monitoring.svc.cluster.local:80
+FAIL          allow  TIMEOUT    traefik {"app.kubernetes.io/name":"traefik"} -> kps-prometheus.monitoring.svc.cluster.local:9090
+FAIL          allow  TIMEOUT    traefik {"app.kubernetes.io/name":"traefik"} -> kps-alertmanager.monitoring.svc.cluster.local:9093
+INCONCLUSIVE  allow  DNS        traefik {"app.kubernetes.io/name":"traefik"} -> infisical.infisical.svc.cluster.local:8080
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> kubernetes.default.svc.cluster.local:443
+INCONCLUSIVE  deny   DNS        traefik {"app.kubernetes.io/name":"traefik"} -> loki.monitoring.svc.cluster.local:3100
+PASS          deny   TIMEOUT    traefik {"app.kubernetes.io/name":"traefik"} -> argocd-repo-server.argocd.svc.cluster.local:8081
+PASS          deny   TIMEOUT    traefik {"app.kubernetes.io/name":"traefik"} -> 1.1.1.1:443
+PASS          deny   TIMEOUT    traefik {"probe":"unlabelled"} -> kubernetes.default.svc.cluster.local:443
+[1;34m==>[0m PASS 6, FAIL 3, INCONCLUSIVE 19. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261104T204925Z.tsv
+[1;31mfail[0m network policy matrix did not pass
+exit=1
+# 2026-11-04T20:50:14Z

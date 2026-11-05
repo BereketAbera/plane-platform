@@ -1,0 +1,18 @@
+# Alerts in Prometheus and Alertmanager. 2026-11-04T23:47:08.908115+00:00
+firing Watchdog None none 2026-11-04T23:24:26.617154565Z | An alert that should always be firing to certify that Alertmanager is working properly.
+firing PlaneWorkerNoConsumer plane-prod-sim critical 2026-11-04T23:36:20.409489239Z | No Celery consumer on queue celery in plane-prod-sim
+-- Alertmanager
+active PlaneWorkerNoConsumer plane-prod-sim 2026-11-04T23:38:20.409Z
+active Watchdog None 2026-11-04T21:35:26.617Z
+# Alerts in Prometheus and Alertmanager. 2026-11-04T23:55:44.007970+00:00
+pending CPUThrottlingHigh plane-prod-sim info 2026-11-04T23:53:13.139282231Z | Processes experience elevated CPU throttling.
+pending CPUThrottlingHigh plane-prod-sim info 2026-11-04T23:49:13.139282231Z | Processes experience elevated CPU throttling.
+pending PlaneCeleryQueueMissing plane-prod-sim critical 2026-11-04T23:54:50.409489239Z | RabbitMQ is up but has no celery queue in plane-prod-sim
+pending TargetDown plane-prod-sim warning 2026-11-04T23:54:56.617154565Z | One or more targets are unreachable.
+firing Watchdog None none 2026-11-04T23:24:26.617154565Z | An alert that should always be firing to certify that Alertmanager is working properly.
+firing InfoInhibitor plane-prod-sim none 2026-11-04T23:53:56.617154565Z | Info-level alert inhibition.
+firing PodRestarting monitoring warning 2026-11-04T23:53:51.341451366Z | monitoring/alloy-68d8ccc746-n2tbr container alloy restarted more than once in 15m
+-- Alertmanager
+suppressed InfoInhibitor plane-prod-sim 2026-11-04T23:53:56.617Z
+active Watchdog None 2026-11-04T21:35:26.617Z
+active PodRestarting monitoring 2026-11-04T23:53:51.341Z

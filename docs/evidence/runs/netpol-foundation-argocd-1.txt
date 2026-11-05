@@ -1,0 +1,33 @@
+# 2026-11-04T20:48:21Z
+$ FROM_NS=argocd scripts/test-netpol.sh
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED
+[1;32m ok[0m sentinel: name that does not exist -> DNS
+[1;32m ok[0m sentinel: default-deny blocks a new connection -> TIMEOUT
+[1;32m ok[0m sentinel: allow rule admits only the labelled client -> CONNECTED
+[1;32m ok[0m enforcement is on, and timeouts, refusals and DNS failures are told apart
+[1;34m==>[0m Running 19 rows from 5 source identities
+PASS          allow  CONNECTED  argocd {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> plane-git:9418
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> traefik.github.io:443
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> 1.1.1.1:443
+PASS          deny   TIMEOUT    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> 1.1.1.1:80
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> argocd-redis.argocd.svc.cluster.local:6379
+PASS          deny   TIMEOUT    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> kubernetes.default.svc.cluster.local:443
+INCONCLUSIVE  deny   DNS        argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> plane-pgdb.plane-dev.svc.cluster.local:5432
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-server"} -> argocd-repo-server.argocd.svc.cluster.local:8081
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-server"} -> argocd-redis.argocd.svc.cluster.local:6379
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-server"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    argocd {"app.kubernetes.io/name":"argocd-server"} -> 1.1.1.1:443
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> argocd-repo-server.argocd.svc.cluster.local:8081
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> argocd-redis.argocd.svc.cluster.local:6379
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> 1.1.1.1:443
+PASS          deny   TIMEOUT    argocd {"app.kubernetes.io/name":"argocd-server"} -> plane-git:9418
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-redis-secret-init"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   TIMEOUT    argocd {"probe":"unlabelled"} -> argocd-redis.argocd.svc.cluster.local:6379
+[1;34m==>[0m PASS 18, FAIL 0, INCONCLUSIVE 1. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-20261104T204822Z.tsv
+[1;31mfail[0m network policy matrix did not pass
+exit=1
+# 2026-11-04T20:49:16Z

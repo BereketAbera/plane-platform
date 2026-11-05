@@ -1,0 +1,18 @@
+# date: 2026-11-04T23:24:01Z  label: after-override
+# override present in argocd-cm: True
+# before: KPS Synced Healthy root Synced Healthy
+pod "prometheus-kps-prometheus-0" deleted from monitoring namespace
+[+  2s] CR Available=('False', 'NoPodReady') KPS health=Progressing | root op_open=False phase=Succeeded retryCount=1 msg=successfully synced (all tasks run)
+[+  2s] requested a sync of root while KPS reads Progressing: application.argoproj.io/root patched 
+[+  4s] CR Available=('False', 'NoPodReady') KPS health=Progressing | root op_open=True phase=Running retryCount=None msg=
+[+  6s] CR Available=('False', 'NoPodReady') KPS health=Progressing | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources
+[+  8s] CR Available=('False', 'NoPodReady') KPS health=Progressing | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/traefik
+[+ 10s] CR Available=('False', 'NoPodReady') KPS health=Progressing | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of traefik.io/IngressRoute/argocd-server and 2 more resources
+[+ 12s] CR Available=('False', 'NoPodReady') KPS health=Progressing | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+[+ 19s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/kube-prometheus-stack
+[+ 21s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/alloy and 1 more resources
+[+ 23s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/monitoring-extras
+[+ 25s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/infisical
+[+ 27s] CR Available=('True', '') KPS health=Healthy | root op_open=True phase=Running retryCount=None msg=waiting for healthy state of argoproj.io/Application/infisical-operator-dev and 1 more resources
+[+ 29s] CR Available=('True', '') KPS health=Healthy | root op_open=False phase=Succeeded retryCount=None msg=successfully synced (all tasks run)
+# summary: Prometheus Available again at +19s; root op closed at +29s; KPS read Degraded=False; root retried=False; root final phase=Succeeded

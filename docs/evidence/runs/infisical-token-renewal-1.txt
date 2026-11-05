@@ -1,0 +1,23 @@
+# Dev operator: first login 21:25:44 UTC, 'caching credentials for 42m0s', access token TTL and max TTL 3600s. Watching from 22:03:14.
+pod iso-dev-controller-manager-85dbfbcb5b-vswbn, restarts 0
+successful logins so far: 1
+22:08:02: login count now 2
+
+$ all login lines
+2026-11-04T21:25:44Z	INFO	AuthStrategyResolver	successful authentication with "kubernetes", caching credentials for 42m0s
+2026-11-04T22:08:01Z	INFO	AuthStrategyResolver	successful authentication with "kubernetes", caching credentials for 42m0s
+
+$ last 4 minutes, reduced
+  25 INFO AuthStrategyResolver
+  24 INFO Reconciliation successful with 9 secrets synced from Infisic
+ERROR lines: 0
+
+plane-app-env error=false lastSuccess=2026-11-04T22:10:01Z
+plane-app-keys error=false lastSuccess=2026-11-04T22:10:13Z
+plane-doc-store error=false lastSuccess=2026-11-04T22:10:01Z
+plane-live-env error=false lastSuccess=2026-11-04T22:10:01Z
+plane-pgdb error=false lastSuccess=2026-11-04T22:10:01Z
+plane-rabbitmq error=false lastSuccess=2026-11-04T22:10:13Z
+[{"status":"True","message":"InfisicalAuth is ready to be used."}]
+{"sync":"Synced","health":"Healthy"}
+# finished 2026-11-04T22:10:32Z

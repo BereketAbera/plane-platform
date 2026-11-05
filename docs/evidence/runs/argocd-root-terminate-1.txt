@@ -1,0 +1,36 @@
+# date: 2026-11-04T21:14:49Z
+alloy=Synced/Healthy backup-storage=Synced/Healthy infisical=Synced/Healthy infisical-operator-dev=Synced/Healthy infisical-operator-prod-sim=Synced/Healthy kube-prometheus-stack=Synced/Progressing loki=Synced/Healthy metrics-server=Synced/Healthy monitoring-extras=Synced/Healthy network-policies=Synced/Healthy plane-dev=OutOfSync/Degraded root=OutOfSync/Degraded traefik=Synced/Healthy 
+== before
+{"t":"21:14:49Z","phase":"Running","retry":5,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"one or more synchronization tasks completed unsuccessfully. Retrying attempt #5 at 9:16PM.","resultRev":"4a49a9c9","syncRev":"4a49a9c9"}
+[21:14:49Z] kubectl -n argocd patch application root --type merge -p '{"status":{"operationState":{"phase":"Terminating"}}}'
+application.argoproj.io/root patched
+== after 2s
+{"t":"21:14:50Z","phase":"Failed","retry":5,"operation":false,"sync":"OutOfSync","health":"Degraded","msg":"Operation terminated (retried 5 times).","resultRev":"4a49a9c9","syncRev":"4a49a9c9"}
+== 45s later, same revision
+{"t":"21:15:35Z","phase":"Failed","retry":5,"operation":false,"sync":"OutOfSync","health":"Degraded","msg":"Operation terminated (retried 5 times).","resultRev":"4a49a9c9","syncRev":"4a49a9c9"}
+2026-11-04T21:14:49Z "Skipping auto-sync: another operation is in progress" app-namespace=argocd application=root project=platform
+2026-11-04T21:14:49Z "Skipping auto-sync: failed previous sync attempt to [4a49a9c9d3614aa0e08888c66a79515e6d2e02c6 4a49a9c9d3614aa0e08888c66a79515e6d2e02c6] and will not retry for [4a49a9c9d3614aa0e08888c66a79
+== publish a newer commit: Argo values and README from this same fix
+committed 88676a0 fix(argocd): raise the controller limit on measured peaks, and record what terminating really does
+[1;32m ok[0m published main 88676a0d8f29 to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+published main: 88676a0d
+application.argoproj.io/root annotated
+{"t":"21:15:36Z","phase":"Failed","retry":5,"operation":false,"sync":"OutOfSync","health":"Degraded","msg":"Operation terminated (retried 5 times).","resultRev":"4a49a9c9","syncRev":"4a49a9c9"}
+{"t":"21:15:38Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"","resultRev":"","syncRev":"88676a0d"}
+{"t":"21:15:40Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:42Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/traefik","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:44Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:46Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/kube-prometheus-stack","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:48Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/alloy and 1 more resources","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:50Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/monitoring-extras","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:52Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/infisical","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:55Z","phase":"Running","retry":null,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/infisical-operator-dev and 1 more resources","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:15:57Z","phase":"Running","retry":1,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:16PM.","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:16:56Z","phase":"Running","retry":1,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"Retrying operation with latest revisions. Attempt #1","resultRev":"","syncRev":"88676a0d"}
+{"t":"21:16:58Z","phase":"Running","retry":1,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/backup-storage and 1 more resources","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:17:00Z","phase":"Running","retry":1,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/traefik","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:17:04Z","phase":"Running","retry":1,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of traefik.io/IngressRoute/argocd-server and 1 more resources","resultRev":"88676a0d","syncRev":"88676a0d"}
+{"t":"21:17:06Z","phase":"Running","retry":1,"operation":true,"sync":"OutOfSync","health":"Degraded","msg":"waiting for healthy state of argoproj.io/Application/kube-prometheus-stack","resultRev":"88676a0d","syncRev":"88676a0d"}
+2026-11-04T21:14:49Z "Skipping auto-sync: failed previous sync attempt to [4a49a9c9d3614aa0e08888c66a79515e6d2e02c6 4a49a9c9d3614aa0e08888c66a79515e6d2e02c6] and will not retry for [4a49a9c9d3614aa0e08888c66a79
+2026-11-04T21:15:36Z "Initiated automated sync to '88676a0d8f298214b4c2bdbbacc6a182ae9e9d19, 88676a0d8f298214b4c2bdbbacc6a182ae9e9d19'" application=root dest-namespace=argocd dest-server="https://kubernetes.def
+2026-11-04T21:15:36Z "Initiated automated sync to '88676a0d8f298214b4c2bdbbacc6a182ae9e9d19, 88676a0d8f298214b4c2bdbbacc6a182ae9e9d19'" app-namespace=argocd application=root project=platform

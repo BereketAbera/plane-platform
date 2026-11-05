@@ -1,0 +1,127 @@
+# Idempotency: secret-zero.sh then infisical-bootstrap.sh a second time. Started 2026-11-04T21:34:44Z
+$ scripts/secret-zero.sh
+[1;32m ok[0m applied Secret infisical/infisical-db
+[1;32m ok[0m applied Secret infisical/infisical-redis
+[1;32m ok[0m applied Secret infisical/infisical-secrets
+[1;32m ok[0m secret zero in place. Back up /Users/bek/dev/pr/plane-platform/.local/secret-zero/ENCRYPTION_KEY outside this machine: nothing can recreate it.
+exit 0
+$ scripts/infisical-bootstrap.sh
+[1;34m==>[0m Waiting for http://infisical.localhost (first boot runs about 600 migrations)
+[1;32m ok[0m Infisical already bootstrapped
+[1;34m==>[0m Applying infisical/terraform
+[0m[1minfisical_project.plane["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["prod-sim"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project.plane["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_identity.reader["dev"]: Refreshing state... [id=<redacted>][0m
+[0m[1minfisical_project_environment.prod["prod-sim"]: Refreshing state... [id=2505453a-9dc6-447a-9668-9684689aa795][0m
+[0m[1minfisical_project_environment.prod["dev"]: Refreshing state... [id=73729bc5-949d-4bda-83d8-35c1ec3db976][0m
+[0m[1minfisical_project_identity.reader["prod-sim"]: Refreshing state...[0m
+[0m[1minfisical_project_identity.reader["dev"]: Refreshing state...[0m
+[0m[1minfisical_identity_kubernetes_auth.reader["dev"]: Refreshing state... [id=731edc0c-4e36-4fb9-973b-3cb12c4121a3][0m
+[0m[1minfisical_identity_kubernetes_auth.reader["prod-sim"]: Refreshing state... [id=8454aefa-8da8-4256-8af3-d8644f4c1327][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0menvironment_slug = "prod"
+identity_ids = {
+  "dev" = "<redacted>"
+  "prod-sim" = "<redacted>"
+}
+project_ids = {
+  "dev" = "<redacted>"
+  "prod-sim" = "<redacted>"
+}
+project_slugs = {
+  "dev" = "plane-dev"
+  "prod-sim" = "plane-prod-sim"
+}
+[1;32m ok[0m machine details in /Users/bek/dev/pr/plane-platform/.local/secret-zero/infisical-machine.json
+[1;32m ok[0m dev: all secrets already exist, nothing written
+[1;32m ok[0m prod-sim: all secrets already exist, nothing written
+[1;32m ok[0m published identity id to Secret plane-dev/plane-infisical-identity
+[1;32m ok[0m published identity id to Secret plane-prod-sim/plane-infisical-identity
+[1;32m ok[0m Infisical is ready. The operators pick up the identity Secrets on their next reconcile.
+exit 0
+
+$ diff of the state snapshot taken before and after (terraform serial, secret ids and versions, data digests, identity resourceVersions, pod uids and restarts)
+DIFFERENT:
+1c1
+< terraform.serial 11
+---
+> terraform.serial 12
+
+# snapshot, with digests removed
+terraform.serial 12
+terraform.lineage af076c58-2ec7-97e5-c523-0622f199f4a0
+machine.json.sha256 <digest>
+admin.json.sha256-of-file <digest>
+infisical.dev.list.status 200
+infisical.dev.secret LIVE_SERVER_SECRET_KEY id=<redacted> version=1
+infisical.dev.secret PG_DB id=<redacted> version=1
+infisical.dev.secret PG_PASSWORD id=<redacted> version=1
+infisical.dev.secret PG_USER id=<redacted> version=1
+infisical.dev.secret RABBITMQ_PASSWORD id=<redacted> version=1
+infisical.dev.secret RABBITMQ_USER id=<redacted> version=1
+infisical.dev.secret SECRET_KEY id=<redacted> version=1
+infisical.dev.secret SILO_ACCESS_KEY id=<redacted> version=1
+infisical.dev.secret SILO_SECRET_KEY id=<redacted> version=1
+infisical.prod-sim.list.status 200
+infisical.prod-sim.secret LIVE_SERVER_SECRET_KEY id=<redacted> version=1
+infisical.prod-sim.secret PG_DB id=<redacted> version=1
+infisical.prod-sim.secret PG_PASSWORD id=<redacted> version=1
+infisical.prod-sim.secret PG_USER id=<redacted> version=1
+infisical.prod-sim.secret RABBITMQ_PASSWORD id=<redacted> version=1
+infisical.prod-sim.secret RABBITMQ_USER id=<redacted> version=1
+infisical.prod-sim.secret SECRET_KEY id=<redacted> version=1
+infisical.prod-sim.secret SILO_ACCESS_KEY id=<redacted> version=1
+infisical.prod-sim.secret SILO_SECRET_KEY id=<redacted> version=1
+plane-dev.identity.rv 21729
+plane-dev.plane-app-env.data-digest <digest> version=W/"secrets-979-7A034C1E"
+plane-dev.plane-app-keys.data-digest <digest> version=W/"secrets-451-1016E086"
+plane-dev.plane-live-env.data-digest <digest> version=W/"secrets-207-275FF22A"
+plane-dev.plane-doc-store.data-digest <digest> version=W/"secrets-678-AB90B2EA"
+plane-dev.plane-pgdb.data-digest <digest> version=W/"secrets-244-544C0B45"
+plane-dev.plane-rabbitmq.data-digest <digest> version=W/"secrets-225-C6A23CB2"
+plane-prod-sim.identity.rv 21730
+plane-prod-sim.plane-app-env.data-digest <digest> version=W/"secrets-1033-185A33B6"
+plane-prod-sim.plane-app-keys.data-digest <digest> version=W/"secrets-455-550C61DC"
+plane-prod-sim.plane-live-env.data-digest <digest> version=W/"secrets-226-E8D8FB9D"
+plane-prod-sim.plane-doc-store.data-digest <digest> version=W/"secrets-676-5D0ABFFD"
+plane-prod-sim.plane-pgdb.data-digest <digest> version=W/"secrets-245-1558E68C"
+plane-prod-sim.plane-rabbitmq.data-digest <digest> version=W/"secrets-221-1CE28CFC"
+infisical.infisical-db.rv 11928 data-digest=<digest>
+infisical.infisical-redis.rv 11929 data-digest=<digest>
+infisical.infisical-secrets.rv 11930 data-digest=<digest>
+infisical.deployment.generation 1
+pod infisical-57bfb89746-n6slc uid=420d4e84-ce7e-47b2-a285-14fc17e15e7b restarts=0
+pod infisical-postgres-0 uid=8192f00f-1a3b-4db9-a493-648a7308cfc1 restarts=0
+pod infisical-redis-0 uid=5e07c5d5-d0ac-40df-91c0-fa9370c4cdc0 restarts=0
+secret-zero.ENCRYPTION_KEY.digest <digest>
+secret-zero.AUTH_SECRET.digest <digest>
+secret-zero.DB_PASSWORD.digest <digest>
+secret-zero.REDIS_PASSWORD.digest <digest>
+secret-zero.infisical-admin-password.digest <digest>
+# finished 2026-11-04T21:34:48Z
+
+# Why the serial moved on the second run: refresh recorded server-side values that appeared after the first apply. jq -S diff of terraform.tfstate.backup (serial 11) against terraform.tfstate (serial 12), serial removed:
+auth_modes: null -> [kubernetes-auth] on both identities
+auth_methods: [] -> [kubernetes-auth] on both project memberships
+kms_secret_manager_key_id: empty -> set on both projects, plus last_updated
+
+# Third run, scripts/infisical-bootstrap.sh, immediately after
+ ok Infisical already bootstrapped
+No changes. Your infrastructure matches the configuration.
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+ ok dev: all secrets already exist, nothing written
+ ok prod-sim: all secrets already exist, nothing written
+ ok published identity id to Secret plane-dev/plane-infisical-identity
+ ok published identity id to Secret plane-prod-sim/plane-infisical-identity
+exit 0
+state serial still 12. Snapshot diff before and after this run: 0 lines differ. State diff, serial removed: 0 lines differ.

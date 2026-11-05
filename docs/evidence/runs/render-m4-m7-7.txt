@@ -1,0 +1,287 @@
+# 2026-11-04T20:11:31Z yq assertions on the rendered files
+## gitops/environments/dev/manifests.yaml
+-- Deployment: deadline, longest startup budget (periodSeconds x failureThreshold), margin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plane-admin-wl	360	0	360
+plane-api-wl	360	300	60
+plane-beat-worker-wl	360	300	60
+plane-live-wl	360	180	180
+plane-space-wl	360	180	180
+plane-web-wl	360	0	360
+plane-worker-wl	360	300	60
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- StatefulSet: progressDeadlineSeconds must be absent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plane-minio-wl	absent
+plane-pgdb-wl	absent
+plane-rabbitmq-wl	absent
+plane-redis-wl	absent
+
+
+
+
+
+
+
+
+
+
+
+
+-- every container env that sets MINIO_PROMETHEUS_AUTH_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plane-minio-wl	plane-minio	public
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- counts: kind Secret, images, images with @sha256
+       0
+      12
+12
+## gitops/environments/prod-sim/manifests.yaml
+-- Deployment: deadline, longest startup budget (periodSeconds x failureThreshold), margin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plane-admin-wl	360	0	360
+plane-api-wl	360	300	60
+plane-beat-worker-wl	360	300	60
+plane-live-wl	360	180	180
+plane-space-wl	360	180	180
+plane-web-wl	360	0	360
+plane-worker-wl	360	300	60
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- StatefulSet: progressDeadlineSeconds must be absent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plane-minio-wl	absent
+plane-pgdb-wl	absent
+plane-rabbitmq-wl	absent
+plane-redis-wl	absent
+
+
+
+
+
+
+
+
+
+
+
+
+-- every container env that sets MINIO_PROMETHEUS_AUTH_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plane-minio-wl	plane-minio	public
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- counts: kind Secret, images, images with @sha256
+       0
+      12
+12
+## render diff against HEAD, whole file
+ gitops/environments/dev/manifests.yaml      | 10 ++++++++++
+ gitops/environments/prod-sim/manifests.yaml | 10 ++++++++++
+ 2 files changed, 20 insertions(+)
+diff --git a/gitops/environments/dev/manifests.yaml b/gitops/environments/dev/manifests.yaml
+index 89becf6..f6ada65 100644
+--- a/gitops/environments/dev/manifests.yaml
++++ b/gitops/environments/dev/manifests.yaml
+@@ -311,0 +312 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -397,0 +399 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -496,0 +499 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -596,0 +600 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -681,0 +686 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -756,0 +762 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -842,0 +849 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -966,0 +974,3 @@ spec:
++        env:
++        - name: MINIO_PROMETHEUS_AUTH_TYPE
++          value: public
+diff --git a/gitops/environments/prod-sim/manifests.yaml b/gitops/environments/prod-sim/manifests.yaml
+index 90947ea..d3fe35e 100644
+--- a/gitops/environments/prod-sim/manifests.yaml
++++ b/gitops/environments/prod-sim/manifests.yaml
+@@ -311,0 +312 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -397,0 +399 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -496,0 +499 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -596,0 +600 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -681,0 +686 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -756,0 +762 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -842,0 +849 @@ spec:
++  progressDeadlineSeconds: 360
+@@ -966,0 +974,3 @@ spec:
++        env:
++        - name: MINIO_PROMETHEUS_AUTH_TYPE
++          value: public

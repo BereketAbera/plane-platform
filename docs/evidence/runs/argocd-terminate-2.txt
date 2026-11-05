@@ -1,0 +1,41 @@
+# date: 2026-11-04T21:07:09Z
+
+=== T1: Terminating while a hook runs
+{"t":"21:07:10Z","phase":"Running","retry":null,"finished":false,"operation":true,"sync":"Synced","health":"Healthy","msg":"waiting for completion of hook batch/Job/hook-a","rev":"de92bfa"}
+hook-a before: hook-a   Running   0/1   0s    0s
+[21:07:10Z] kubectl patch application term-a: phase Terminating
+application.argoproj.io/term-a patched
+{"t":"21:07:10Z","phase":"Failed","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated","rev":"de92bfa"}
+hook-a after: hook-a   Terminating   0/1   2s    2s
+-- 40s later, same revision: does it restart by itself?
+{"t":"21:07:52Z","phase":"Failed","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated","rev":"de92bfa"}
+
+=== T2: Terminating during retry backoff (failed hook, retry -1)
+{"t":"21:07:52Z","phase":"Running","retry":1,"finished":true,"operation":true,"sync":"Synced","health":"Healthy","msg":"one or more synchronization tasks completed unsuccessfully. Retrying attempt #1 at 9:12PM.","rev":"de92bfa"}
+[21:07:53Z] kubectl patch application term-b: phase Terminating
+application.argoproj.io/term-b patched
+after 1s: {"t":"21:07:53Z","phase":"Failed","retry":1,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated (retried 1 times).","rev":"de92bfa"}
+-- 40s later, same revision: does it restart by itself?
+{"t":"21:08:33Z","phase":"Failed","retry":1,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"Operation terminated (retried 1 times).","rev":"de92bfa"}
+
+=== T3: a newer commit after termination
+[21:08:33Z] pushed 23bdb05, hard refresh on both
+after 5s:
+term-a {"t":"21:08:37Z","phase":"Succeeded","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"successfully synced (no more tasks)","rev":"23bdb05"}
+term-b {"t":"21:08:37Z","phase":"Succeeded","retry":null,"finished":true,"operation":false,"sync":"Synced","health":"Healthy","msg":"successfully synced (no more tasks)","rev":"23bdb05"}
+--- controller log lines about these apps
+  25 level=info msg="Resuming in-progress operation. phase: Running, message: waiting for completion of hook batch/Job/hook-b" app-namespace=argocd application=term-b project=default
+  17 level=info msg="Resuming in-progress operation. phase: Running, message: waiting for completion of hook batch/Job/hook-a" app-namespace=argocd application=term-a project=default
+   3 level=info msg="Resuming in-progress operation. phase: Running, message: waiting for completion of hook batch/Job/hook-b and 1 more resources" app-namespace=argocd application=term-b project=default
+   3 level=info msg="Resuming in-progress operation. phase: Running, message: waiting for completion of hook batch/Job/hook-a and 1 more resources" app-namespace=argocd application=term-a project=default
+   2 level=info msg="Updating operation state. phase: Terminating -> Failed, message: 'waiting for completion of hook batch/Job/hook-a' -> 'Operation terminated'" app-namespace=argocd application=term-a pr
+   2 level=info msg="Resuming in-progress operation. phase: Terminating, message: waiting for completion of hook batch/Job/hook-a" app-namespace=argocd application=term-a project=default
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=8.533125ms project=default syncId=00118-NpqHs
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=8.394ms project=default syncId=00070-NkjmT
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=7.319959ms project=default syncId=00132-gMXXW
+   1 level=info msg="sync/terminate complete" app-namespace=argocd application=term-b duration=7.171292ms project=default syncId=00120-LJaFm
+== cleanup
+application.argoproj.io "term-a" deleted from argocd namespace
+application.argoproj.io "term-b" deleted from argocd namespace
+namespace "term-probe" deleted
+scratch repo present after cleanup: no

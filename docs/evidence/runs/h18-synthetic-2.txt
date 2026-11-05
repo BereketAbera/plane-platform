@@ -1,0 +1,22 @@
+# date: 2026-11-04T23:18:23Z
+Waiting for deployment "alloy" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "alloy" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "alloy" rollout to finish: 1 old replicas are pending termination...
+deployment "alloy" successfully rolled out
+[23:19:22Z] running on the published config, Alloy pod alloy-68d8ccc746-bm547
+[23:19:22Z] rule loaded with its corrected expression
+[23:19:22Z] before: counter series [], heartbeat rate/s 0.5870134561546103
+pod/kindnet-failopen-synthetic created
+[23:19:47Z] +25s counter visible in Prometheus: [('kube-system', 'kindnet-failopen-synthetic', 'kindnet-cni', '1')]
+[23:20:18Z] +56s firing in Prometheus
+[23:20:18Z] +56s active in Alertmanager
+[23:20:28Z] +66s reached the sink:
+2026-11-04T23:20:23Z group_status=firing alert_status=firing {"alertname": "KindnetSkippedNetworkPolicies", "component": "network", "namespace": "kube-system", "pod": "kindnet-failopen-synthetic", "prometheus": "monitoring/kps-prometheus", "severity": "critical"} startsAt=2026-11-04T23:20:13 endsAt=0001-01-01T00:00:00
+[23:20:28Z] deleting the scratch pod
+pod "kindnet-failopen-synthetic" force deleted from kube-system namespace
+[23:21:24Z] +56s after delete, resolved reached the sink:
+2026-11-04T23:21:23Z group_status=resolved alert_status=resolved {"alertname": "KindnetSkippedNetworkPolicies", "component": "network", "namespace": "kube-system", "pod": "kindnet-failopen-synthetic", "prometheus": "monitoring/kps-prometheus", "severity": "critical"} startsAt=2026-11-04T23:20:13 endsAt=2026-11-04T23:21:13
+[23:21:24Z] after: ALERTS []
+[23:21:24Z] after: the counter remains, by design: [('kindnet-failopen-synthetic', '1')]
+[23:21:24Z] after: real kindnet untouched: kindnet-gqcpb restarts=0
+# done

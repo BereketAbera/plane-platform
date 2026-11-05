@@ -1,0 +1,13 @@
+# Read-only look at the branded images. Nothing promoted. 2026-11-04T22:44:48Z
+web 283b51ae3e33 sha256:b21c0f6135c04653a0feaaebf3ea053e2a0ddd6d94b283ec3a5b9187aed98d55 User='101' Ports=['3000/tcp', '80/tcp'] Cmd=['nginx', '-g', 'daemon off;'] Entrypoint=['/docker-entrypoint.sh']
+web efb5af9d6e75 sha256:b46eaf5e1652a4d65c93efa67399e8fdfb26d6d95f9357a6a24c0e1e04d360c7 User='101' Ports=['3000/tcp', '80/tcp'] Cmd=['nginx', '-g', 'daemon off;'] Entrypoint=['/docker-entrypoint.sh']
+admin 283b51ae3e33 sha256:06d5898229c3a4f300395b803c25132dc1ee9109e6ed160ef1d62ae2a3058ffc User='101' Ports=['3000/tcp', '80/tcp'] Cmd=['nginx', '-g', 'daemon off;'] Entrypoint=['/docker-entrypoint.sh']
+admin efb5af9d6e75 sha256:3dda83bb7d274aec96f76c019ea206456123dd3e38d09fc98e684d6037017003 User='101' Ports=['3000/tcp', '80/tcp'] Cmd=['nginx', '-g', 'daemon off;'] Entrypoint=['/docker-entrypoint.sh']
+space 283b51ae3e33 sha256:7e5b836392cc616f8cef364edf0cd1ae047fc88095ff860c6e29452fa6d6027a User='1000' Ports=['3000/tcp'] Cmd=['./node_modules/.bin/react-router-serve', './build/server/index.js'] Entrypoint=['docker-entrypoint.sh']
+space efb5af9d6e75 sha256:6cb8cb0a7ca0b36e6fc4fc08dc698f196d7957824d6139c909e0f4edd7d2c59c User='1000' Ports=['3000/tcp'] Cmd=['./node_modules/.bin/react-router-serve', './build/server/index.js'] Entrypoint=['docker-entrypoint.sh']
+backend 283b51ae3e33 sha256:3cc93e1c3ca3214644e6205af99515dd1d8cce26bde3504ae1ad51adf03ef32e User='1000' Ports=['8000/tcp'] Cmd=['./bin/docker-entrypoint-api.sh'] Entrypoint=None
+backend efb5af9d6e75 sha256:e9e571864b1d14e90fa3b7d3c7f7f474803ea1b4f74ffa884b3cc5656ac08615 User='1000' Ports=['8000/tcp'] Cmd=['./bin/docker-entrypoint-api.sh'] Entrypoint=None
+
+## what the running upstream web answers on paths branded nginx adds
+/source 200 text/html
+/licenses/ 200 text/html

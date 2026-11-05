@@ -1,0 +1,19 @@
+# 10 Hz per route through Traefik during a rollout of all seven Deployments. Failed = no answer within 2s, or 5xx.
+# Before any preStop change. This rollout also removes the restartedAt annotation left by the rollout restart in plane-dev-rollout-quota-1.txt.
+## Round 2: annotation removed, started 22:47:33
+all rollouts complete after 32s
+{"web": {"samples": 560, "failed": 2}, "api": {"samples": 544, "failed": 3}, "live": {"samples": 552, "failed": 2}, "admin": {"samples": 559, "failed": 1}, "space": {"samples": 542, "failed": 2}}
+22:47:37 web status=502 err=None took=0.003s
+22:47:37 admin status=None err=TimeoutError took=2.001s
+22:47:37 web status=None err=TimeoutError took=2.002s
+22:47:46 space status=502 err=None took=0.012s
+22:47:46 space status=None err=TimeoutError took=2.002s
+22:47:56 live status=502 err=None took=0.003s
+22:47:56 live status=None err=TimeoutError took=2.001s
+22:48:06 api status=502 err=None took=0.002s
+22:48:07 api status=502 err=None took=0.002s
+22:48:07 api status=None err=TimeoutError took=2.002s
+
+
+Live templates now carry the annotation? 0 Deployments
+Application: Synced/Healthy

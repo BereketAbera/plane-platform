@@ -1,0 +1,51 @@
+# What the accounts can do, asked of the API server. 2026-11-04T21:46:11Z
+# Token minting is asked with --subresource=token. An earlier version of this check used serviceaccounts/token, which kubectl reads as a resource named token, so its answers were meaningless.
+
+== operator plane-dev/iso-dev-controller-manager
+get secrets -n plane-dev --as=system:serviceaccount:plane-dev:iso-dev-controller-manager         -> yes
+get secrets -n plane-prod-sim --as=system:serviceaccount:plane-dev:iso-dev-controller-manager    -> no
+get secrets -n infisical --as=system:serviceaccount:plane-dev:iso-dev-controller-manager         -> no
+create serviceaccounts --subresource=token -n plane-dev --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> yes
+create serviceaccounts --subresource=token -n plane-prod-sim --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> no
+create serviceaccounts --subresource=token -n kube-system --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> no
+list secrets --all-namespaces --as=system:serviceaccount:plane-dev:iso-dev-controller-manager    -> no
+patch deployments -n plane-prod-sim --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> no
+create tokenreviews.authentication.k8s.io --as=system:serviceaccount:plane-dev:iso-dev-controller-manager -> yes
+
+== operator plane-prod-sim/iso-prod-sim-controller-manager
+get secrets -n plane-prod-sim --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> yes
+get secrets -n plane-dev --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+get secrets -n infisical --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+create serviceaccounts --subresource=token -n plane-prod-sim --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> yes
+create serviceaccounts --subresource=token -n plane-dev --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+create serviceaccounts --subresource=token -n kube-system --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+list secrets --all-namespaces --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+patch deployments -n plane-dev --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> no
+create tokenreviews.authentication.k8s.io --as=system:serviceaccount:plane-prod-sim:iso-prod-sim-controller-manager -> yes
+
+== reviewer plane-dev/plane-infisical-auth
+create tokenreviews.authentication.k8s.io --as=system:serviceaccount:plane-dev:plane-infisical-auth -> yes
+create subjectaccessreviews.authorization.k8s.io --as=system:serviceaccount:plane-dev:plane-infisical-auth -> yes
+get secrets -n plane-dev --as=system:serviceaccount:plane-dev:plane-infisical-auth               -> no
+get pods -n plane-dev --as=system:serviceaccount:plane-dev:plane-infisical-auth                  -> no
+create serviceaccounts --subresource=token -n plane-dev --as=system:serviceaccount:plane-dev:plane-infisical-auth -> no
+
+== reviewer plane-prod-sim/plane-infisical-auth
+create tokenreviews.authentication.k8s.io --as=system:serviceaccount:plane-prod-sim:plane-infisical-auth -> yes
+create subjectaccessreviews.authorization.k8s.io --as=system:serviceaccount:plane-prod-sim:plane-infisical-auth -> yes
+get secrets -n plane-prod-sim --as=system:serviceaccount:plane-prod-sim:plane-infisical-auth     -> no
+get pods -n plane-prod-sim --as=system:serviceaccount:plane-prod-sim:plane-infisical-auth        -> no
+create serviceaccounts --subresource=token -n plane-prod-sim --as=system:serviceaccount:plane-prod-sim:plane-infisical-auth -> no
+
+$ ServiceAccount token settings
+plane-dev plane-infisical-auth automount=false
+plane-prod-sim plane-infisical-auth automount=false
+
+$ workloads using plane-infisical-auth (expect none)
+(end of list)
+
+== A CR in plane-dev that reaches for the prod-sim account and identity. 2026-11-04T21:46:26Z
+infisicalauth.secrets.infisical.com/scratch-cross-namespace created
+{"type":"secrets.infisical.com/IsReady","status":"False","message":"infisicalAuth is not ready to be used due to an error: unable to fetch secret for .spec.kubernetes.identityIdRef (secret plane-prod-sim/plane-infisical-identity): unable to get: plane-prod-sim/plane-infisical-identity because of unknown nam"}
+{"type":"secrets.infisical.com/AuthMethod","status":"False","message":"kubernetes"}
+infisicalauth.secrets.infisical.com "scratch-cross-namespace" deleted from plane-dev namespace

@@ -1,0 +1,111 @@
+2026-11-04T22:23:26Z
+pods with no leftovers from the tests
+NAME                                      READY   STATUS    RESTARTS      AGE
+alert-sink-78dcd6dbb4-fxfst               1/1     Running   0             79m
+alertmanager-kps-alertmanager-0           2/2     Running   0             48m
+alloy-7947f8479-kjmxh                     1/1     Running   0             12m
+blackbox-854dd6b7dc-bprdb                 1/1     Running   0             79m
+kps-grafana-77cb96fc89-v8g6n              3/3     Running   0             48m
+kps-kube-state-metrics-58c95899dd-s8bb4   1/1     Running   0             95m
+kps-operator-fdc5dfd48-mgtwq              1/1     Running   0             48m
+loki-0                                    1/1     Running   1 (25m ago)   31m
+prometheus-kps-prometheus-0               2/2     Running   0             48m
+kps-alertmanager.rules                             95m
+kps-config-reloaders                               95m
+kps-general.rules                                  95m
+kps-k8s.rules.container-cpu-usage-seconds-total    95m
+kps-k8s.rules.container-memory-cache               95m
+kps-k8s.rules.container-memory-rss                 95m
+kps-k8s.rules.container-memory-swap                95m
+kps-k8s.rules.container-memory-working-set-bytes   95m
+kps-k8s.rules.container-resource                   95m
+kps-k8s.rules.pod-owner                            95m
+kps-kube-prometheus-general.rules                  95m
+kps-kube-prometheus-node-recording.rules           95m
+kps-kube-state-metrics                             95m
+kps-kubelet.rules                                  95m
+kps-kubernetes-apps                                95m
+kps-kubernetes-resources                           95m
+kps-kubernetes-storage                             95m
+kps-kubernetes-system                              95m
+kps-kubernetes-system-apiserver                    95m
+kps-kubernetes-system-kubelet                      95m
+kps-node-exporter                                  95m
+kps-node-exporter.rules                            95m
+kps-node-network                                   95m
+kps-node.rules                                     95m
+kps-prometheus                                     95m
+kps-prometheus-operator                            95m
+plane                                              79m
+platform                                           79m
+
+NAME                          SYNC     HEALTH    OPERATION
+alloy                         Synced   Healthy   Succeeded
+backup-storage                Synced   Healthy   Succeeded
+infisical                     Synced   Healthy   Succeeded
+infisical-operator-dev        Synced   Healthy   Succeeded
+infisical-operator-prod-sim   Synced   Healthy   Succeeded
+kube-prometheus-stack         Synced   Healthy   Succeeded
+loki                          Synced   Healthy   Succeeded
+metrics-server                Synced   Healthy   Succeeded
+monitoring-extras             Synced   Healthy   Succeeded
+network-policies              Synced   Healthy   Succeeded
+plane-dev                     Synced   Healthy   Succeeded
+plane-prod-sim                Synced   Healthy   Succeeded
+root                          Synced   Healthy   Succeeded
+traefik                       Synced   Healthy   Succeeded
+
+rule groups: 30  rules: 199
+health counts: {'alerting/ok': 146, 'recording/ok': 53}
+not ok: []
+max group evaluation seconds: 0.007851917
+firing (1):
+   ('Watchdog', 'none', None, '', '2026-11-04T21:35:26')
+pending (0):
+
+targets 40 {'up': 40}
+http://grafana.localhost/api/health 200
+http://prometheus.localhost/-/ready 200
+http://alertmanager.localhost/-/healthy 200
+negative control: wrong password -> HTTP 401 Invalid username or password cookies: []
+generated credential -> HTTP 200 Logged in cookies: ['grafana_session', 'grafana_session_expiry']
+GET /api/user -> 200 {'login': 'admin', 'isGrafanaAdmin': True, 'orgId': 1}
+
+## Alloy process on the node: UID and read-only root
+Name:	alloy
+Uid:	473	473	473	473
+Gid:	473	473	473	473
+touch: cannot touch '/proc/205567/root/x': Read-only file system
+
+## OOM kills on the node since boot, with seconds since boot, and uptime now
+18035.76
+[13894.881426] Memory cgroup out of memory: Killed process 42131 (registry) total-vm:1313228kB, anon-rss:232kB
+[13896.610511] Memory cgroup out of memory: Killed process 346144 (registry) total-vm:1312404kB, anon-rss:0kB,
+[13950.083651] Memory cgroup out of memory: Killed process 347049 (python) total-vm:118660kB, anon-rss:95500kB
+[13950.083751] Memory cgroup out of memory: Killed process 347049 (python) total-vm:118660kB, anon-rss:95500kB
+[13950.652290] Memory cgroup out of memory: Killed process 347078 (python) total-vm:120808kB, anon-rss:95752kB
+[13950.652374] Memory cgroup out of memory: Killed process 347078 (python) total-vm:120808kB, anon-rss:95752kB
+[14285.542535] Memory cgroup out of memory: Killed process 373033 (python) total-vm:122308kB, anon-rss:97572kB
+[14285.542746] Memory cgroup out of memory: Killed process 373033 (python) total-vm:122308kB, anon-rss:97572kB
+[14286.720331] Memory cgroup out of memory: Killed process 372999 (python) total-vm:122564kB, anon-rss:97612kB
+[14286.720519] Memory cgroup out of memory: Killed process 372999 (python) total-vm:122564kB, anon-rss:97612kB
+[14630.044040] Memory cgroup out of memory: Killed process 401635 (python) total-vm:120040kB, anon-rss:96756kB
+[14630.044188] Memory cgroup out of memory: Killed process 401635 (python) total-vm:120040kB, anon-rss:96756kB
+[14630.305471] Memory cgroup out of memory: Killed process 401605 (python) total-vm:121064kB, anon-rss:96220kB
+[14630.305569] Memory cgroup out of memory: Killed process 401605 (python) total-vm:121064kB, anon-rss:96220kB
+
+## restarts in the monitoring namespaces
+alert-sink-78dcd6dbb4-fxfst sink restarts=0 last=-/-
+alertmanager-kps-alertmanager-0 alertmanager restarts=0 last=-/-
+alertmanager-kps-alertmanager-0 config-reloader restarts=0 last=-/-
+alloy-7947f8479-kjmxh alloy restarts=0 last=-/-
+blackbox-854dd6b7dc-bprdb blackbox restarts=0 last=-/-
+kps-grafana-77cb96fc89-v8g6n grafana restarts=0 last=-/-
+kps-grafana-77cb96fc89-v8g6n grafana-sc-dashboard restarts=0 last=-/-
+kps-grafana-77cb96fc89-v8g6n grafana-sc-datasources restarts=0 last=-/-
+kps-kube-state-metrics-58c95899dd-s8bb4 kube-state-metrics restarts=0 last=-/-
+kps-operator-fdc5dfd48-mgtwq kube-prometheus-stack restarts=0 last=-/-
+loki-0 loki restarts=1 last=Error/137
+prometheus-kps-prometheus-0 config-reloader restarts=0 last=-/-
+prometheus-kps-prometheus-0 prometheus restarts=0 last=-/-
+kps-node-exporter-rtskt node-exporter restarts=0

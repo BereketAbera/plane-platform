@@ -1,0 +1,37 @@
+# make restore-clean PLAN_ONLY=yes against the live cluster, 2026-11-04T23:14:01Z
+[1;34m==>[0m Clean restore plan
+    Infisical  20261104T231305Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim
+    dev        20261104T231324Z, SECRET_KEY 4ceb3f709b196ae0, 22 objects
+    prod-sim   20261104T231335Z, SECRET_KEY 77d617b20fb32955, 0 objects
+[1;32m ok[0m the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment
+[1;33mwarn[0m a real run would refuse right now: cluster plane-platform already holds Plane volumes. Run make destroy first.
+[1;32m ok[0m PLAN_ONLY=yes: nothing was changed
+exit=0
+
+# make restore-clean with no PLAN_ONLY: the cluster holds data, so it must refuse
+[1;34m==>[0m Clean restore plan
+    Infisical  20261104T231305Z, Terraform state serial 12 with 5 resources, identities dev and prod-sim
+    dev        20261104T231324Z, SECRET_KEY 4ceb3f709b196ae0, 22 objects
+    prod-sim   20261104T231335Z, SECRET_KEY 77d617b20fb32955, 0 objects
+[1;32m ok[0m the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment
+[1;31mfail[0m this is for a clean environment, and cluster plane-platform already holds Plane volumes. Nothing was changed. To replace it: make destroy CONFIRM=yes, then run this again. To restore one environment in place: make restore.
+make: *** [restore-clean] Error 1
+exit=2
+ls: .local/restore-clean.state: No such file or directory
+
+# a backup with no recovery set
+[1;31mfail[0m Infisical backup 20261104T225820Z cannot serve a clean restore: it has no recovery set, so it holds no Terraform state and names no secret zero. Nothing was changed.
+exit=1
+
+# no such backup
+[1;31mfail[0m Infisical backup 20200101T000000Z cannot serve a clean restore: it is not a finished backup. Nothing was changed.
+exit=1
+
+# no Plane backup matches: a dev manifest fingerprint is not what this Infisical set holds. Stubbed by asking for a backup id that does not exist
+[1;33mwarn[0m no backup of dev matches Infisical backup 20261104T231305Z, which holds SECRET_KEY 4ceb3f709b196ae0. Backups of dev: 20261104T225855Z=4ceb3f709b196ae0 20261104T231324Z=4ceb3f709b196ae0 You asked for 20200101T000000Z. Encrypted rows would decrypt silently to nothing. Choose another Infisical backup with BACKUP=<id>, or leave dev out with ENVS=...
+[1;31mfail[0m this clean restore cannot work, for the reasons above. Nothing was changed.
+exit=1
+
+# a bad ENVS
+[1;31mfail[0m ENVS names 'staging': expected dev, prod-sim or both
+exit=1

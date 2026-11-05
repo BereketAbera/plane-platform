@@ -1,0 +1,11 @@
+# Negative control. plane-live-env in plane-prod-sim holds only a Redis URL and no pod consumes it yet. Tamper with it, check the test fails, then wait for the operator to repair it. Started 2026-11-04T21:37:27Z
+secret/plane-live-env patched
+$ infisical/tests/rendered-secrets.sh prod-sim, immediately after tampering
+FAIL     plane-prod-sim/plane-live-env holds exactly the contract's keys    got EXTRA_KEY,REDIS_URL
+FAIL     plane-prod-sim/plane-live-env has no empty or '<no value>' value REDIS_URL 
+FAIL     plane-prod-sim REDIS_URL agrees in plane-app-env and plane-live-env 
+test exit code 1 (1 means FAIL rows were reported)
+operator restored the Secret after 9s (refreshInterval 60s): data identical to before = yes
+$ infisical/tests/rendered-secrets.sh prod-sim, after the repair
+41 PASS, 0 FAIL, exit code 0
+# finished 2026-11-04T21:37:38Z

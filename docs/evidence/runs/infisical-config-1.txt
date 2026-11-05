@@ -1,0 +1,108 @@
+# read back at 2026-11-04T21:35:37Z
+GET /api/v1/admin/config -> 200
+{
+  "initialized": true,
+  "allowSignUp": false
+}
+admin token exp: 1801603532 (2027-02-02T21:25:32Z)
+
+GET organization identity memberships -> 200
+Instance Admin Identity	org role=admin	auth methods=token-auth
+plane-dev-reader	org role=no-access	auth methods=kubernetes-auth
+plane-prod-sim-reader	org role=no-access	auth methods=kubernetes-auth
+
+== dev, project id <redacted>
+GET project -> 200
+{
+  "name": "plane-dev",
+  "slug": "plane-dev",
+  "type": "secret-manager",
+  "environments": [
+    {
+      "name": "prod",
+      "slug": "prod",
+      "position": null
+    }
+  ]
+}
+GET project identity memberships -> 200
+plane-dev-reader	roles=viewer
+Instance Admin Identity	roles=admin
+GET kubernetes auth -> 200
+{
+  "kubernetesHost": "https://kubernetes.default.svc.cluster.local",
+  "tokenReviewMode": "api",
+  "allowedNamespaces": "plane-dev",
+  "allowedNames": "plane-infisical-auth",
+  "allowedAudience": "",
+  "accessTokenTTL": 3600,
+  "accessTokenMaxTTL": 3600,
+  "hasCaCert": true,
+  "hasTokenReviewerJwt": false
+}
+GET folders at / -> 200
+{"folders":[]}
+GET secret names at / -> 200
+["LIVE_SERVER_SECRET_KEY","PG_DB","PG_PASSWORD","PG_USER","RABBITMQ_PASSWORD","RABBITMQ_USER","SECRET_KEY","SILO_ACCESS_KEY","SILO_SECRET_KEY"]
+
+== prod-sim, project id <redacted>
+GET project -> 200
+{
+  "name": "plane-prod-sim",
+  "slug": "plane-prod-sim",
+  "type": "secret-manager",
+  "environments": [
+    {
+      "name": "prod",
+      "slug": "prod",
+      "position": null
+    }
+  ]
+}
+GET project identity memberships -> 200
+plane-prod-sim-reader	roles=viewer
+Instance Admin Identity	roles=admin
+GET kubernetes auth -> 200
+{
+  "kubernetesHost": "https://kubernetes.default.svc.cluster.local",
+  "tokenReviewMode": "api",
+  "allowedNamespaces": "plane-prod-sim",
+  "allowedNames": "plane-infisical-auth",
+  "allowedAudience": "",
+  "accessTokenTTL": 3600,
+  "accessTokenMaxTTL": 3600,
+  "hasCaCert": true,
+  "hasTokenReviewerJwt": false
+}
+GET folders at / -> 200
+{"folders":[]}
+GET secret names at / -> 200
+["LIVE_SERVER_SECRET_KEY","PG_DB","PG_PASSWORD","PG_USER","RABBITMQ_PASSWORD","RABBITMQ_USER","SECRET_KEY","SILO_ACCESS_KEY","SILO_SECRET_KEY"]
+
+== Second POST /api/v1/admin/bootstrap, unauthenticated, must be refused
+status 400, message: Instance has already been set up
+
+== First admin signs in with the generated password, the path infisical/README.md Recovery depends on
+POST /api/v3/auth/login -> 200 
+accessToken
+
+== Terraform state holds no token and no secret value
+PASS admin token not in state
+PASS ENCRYPTION_KEY not in state
+PASS AUTH_SECRET not in state
+PASS DB_PASSWORD not in state
+PASS REDIS_PASSWORD not in state
+PASS infisical-admin-password not in state
+checked 12 Infisical values against state: 0 found
+infisical_identity 1
+infisical_identity_kubernetes_auth 1
+infisical_project 1
+infisical_project_environment 1
+infisical_project_identity 1
+600 infisical-admin.json
+600 infisical-admin-password
+600 infisical-machine.json
+600 terraform.tfstate
+dir 700 secret-zero
+gitignored: secret-zero
+gitignored: terraform state

@@ -1,0 +1,40 @@
+# Memory with both Plane environments running. 2026-11-05T00:06:14Z
+# Sampled every 5s from the node: /proc/meminfo (VM used = MemTotal - MemAvailable, the VM is 13.63 GiB, so 13959 MiB) and each pod's cgroup (working set = memory.current - inactive_file).
+# Raw samples: plane-prod-sim-memory-samples-2.tsv. Its first 3 minutes are in samples-1, where ws_total and ws_other double count, a bug in my sampler fixed in samples-2.
+# ws_other can read high for up to 60s after a pod starts, until the sampler's uid map refreshes. The VM and node columns are not affected.
+# VM used includes the owner's unrelated containers (about 1.02 GiB in the final docker stats) and whatever other agents were doing at the time.
+
+All sampled time                                      562 samples | VM used GiB median  9.56 top 10.49 at 23:23:42 | swap top 0.60 | Plane working set MiB, top of the sum: dev 1282 + prod-sim 1385 = 2667 at 23:26:52
+Separation runs, low load                              85 samples | VM used GiB median  9.76 top 10.49 at 23:23:42 | swap top 0.60 | Plane working set MiB, top of the sum: dev 1326 + prod-sim 1309 = 2635 at 23:17:46
+Both smokes together, then soak and netpol matrices   101 samples | VM used GiB median  9.48 top  9.87 at 23:31:57 | swap top 0.60 | Plane working set MiB, top of the sum: dev 1282 + prod-sim 1385 = 2667 at 23:26:52
+First 60s of both smokes together                      14 samples | VM used GiB median  9.62 top  9.70 at 23:26:42 | swap top 0.60 | Plane working set MiB, top of the sum: dev 1282 + prod-sim 1385 = 2667 at 23:26:52
+Drills and broker restarts in prod-sim                282 samples | VM used GiB median  9.59 top  9.90 at 23:53:09 | swap top 0.60 | Plane working set MiB, top of the sum: dev 1251 + prod-sim 1356 = 2607 at 23:57:29
+Quiet, no test of mine running                         30 samples | VM used GiB median  9.44 top  9.61 at 00:04:05 | swap top 0.60 | Plane working set MiB, top of the sum: dev 1258 + prod-sim 1239 = 2497 at 00:02:50
+
+Highest VM used in all samples: 10743 MiB (10.49 GiB) at 2026-11-04T23:23:42Z, node cgroup 10604 MiB. The Argo CD pods had just been replaced, at 23:23:37, by another agent's change,
+so old and new copies overlapped. My separation script had started 6s earlier and was making a few kubectl exec calls, so that load is in this number too. It was at 9.11 GiB by 23:24:02, and at 10.32 GiB again at 23:24:22 while monitoring pods were replaced.
+Stop line 12.5 GiB: never reached. vm-high flag file: not written.
+Highest memory PSI some avg10 in all samples: 0.18
+
+## Per container, peak since that container started, cgroup memory.peak, read at 23:34:50 right after the concurrent load and before the drills replaced prod-sim's data pods.
+## From plane-prod-sim-snapshot-after-concurrent-1.txt. MiB.
+container               dev cur   dev peak    sim cur   sim peak    limit % of limit, higher peak
+manager                    25.6       28.7       27.5       42.8      128    33%
+plane-admin                 4.7       11.8        6.7       10.5       64    18%
+plane-api                 191.2      247.3      177.2      293.1      768    38%
+plane-beat-worker         146.7      156.4      147.3      162.4      256    63%
+plane-live                172.1      201.1      155.8      164.4      384    52%
+plane-minio               119.3      149.0      102.8      109.1      512    29%
+plane-pgdb                 80.2      118.6      141.1      202.3      512    40%
+plane-rabbitmq            123.4      231.3      141.1      222.1      512    45%
+plane-redis                10.1       19.2        4.8       14.8       96    20%
+plane-space                95.1      106.2       96.9      104.5      256    41%
+plane-web                   4.7       11.7        9.2       10.3       64    18%
+plane-worker              282.9      323.9      352.7      425.7      768    55%
+postgres-exporter          25.0       26.9       22.5       24.3       48    56%
+redis-exporter             13.8       19.2       16.9       21.1       32    66%
+sum                      1294.8     1651.3     1402.5     1807.4
+Peak sums are not one moment: each container peaked at its own time. memory.current includes page cache, so it reads above the working set.
+Worst OOM count, either environment: 0
+
+Final reading, plane-prod-sim-snapshot-final-1.txt, 00:03:44: VM used 9.43 GiB, available 4.20 GiB, swap 0.60 GiB. Unrelated containers 1,039 MiB, local services 113 MiB, kind node 8.155 GiB in docker stats.

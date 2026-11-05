@@ -1,0 +1,163 @@
+
+=== S1. The happy path: nothing left but the host's files
+PASS  exit 0 (got 0)
+PASS  order: up to Traefik, stop the server, restore job, flush, start, full up in restored mode, dev, prod-sim
+PASS  root was never paused for Infisical
+PASS  no admin bootstrap call
+PASS  no secret written
+PASS  terraform never ran with -auto-approve
+PASS  marker removed
+PASS  secret zero unchanged
+PASS  no archive made
+true
+PASS  evidence says PASS
+true
+PASS  every clean step PASS
+
+=== S2. A cluster with data: refuse, change nothing
+PASS  non-zero exit
+PASS  says why
+PASS  marker not written
+PASS  nothing ran
+
+=== S3. No Infisical backup at all, Plane backups exist
+PASS  non-zero exit
+PASS  says Infisical is the source of truth
+PASS  nothing ran
+
+=== S4. Plane backup taken with another SECRET_KEY
+PASS  non-zero exit
+PASS  names the mismatch
+PASS  tells what to do
+PASS  nothing ran
+PASS  leaving dev out passes the plan
+
+=== S5. A tampered dump
+PASS  non-zero exit
+PASS  says which
+PASS  nothing ran
+
+=== S6. Secret zero: ENCRYPTION_KEY gone
+PASS  non-zero exit
+PASS  says unreadable
+PASS  nothing ran
+
+=== S7. A plain make up came first, which archived the credentials. Restore finds them by checksum
+PASS  exit 0 (got 0)
+PASS  credentials are the backup's again
+PASS  what it replaced is kept
+true
+PASS  Terraform state is the backup's
+PASS  the state it replaced is kept
+
+=== S8. Fails partway, then resumes
+PASS  first run fails at dev
+PASS  marker stays
+PASS  Infisical marked done
+PASS  says to run it again
+PASS  second run exit 0 (got 0)
+PASS  Infisical not restored twice
+PASS  dev restored this time
+PASS  marker removed
+
+=== S9. Under way, a plain make up on the fresh instance, and another backup id
+PASS  first run stops in up.sh
+PASS  marker there
+PASS  plain up refuses to bootstrap a fresh instance while a restore is under way
+PASS  and says so
+PASS  no bootstrap call
+PASS  another backup id refused while one is under way
+PASS  the same id resumes, exit 0 (got 0)
+
+=== S10. Restored mode refuses instead of repairing
+PASS  create: non-zero
+PASS  create: names the resource
+PASS  create: nothing applied
+PASS  replace: non-zero
+PASS  replace: names the resource
+PASS  replace: nothing applied
+PASS  no changes: exit 0 (got 0)
+PASS  no changes: says so
+PASS  no changes: identities still published
+PASS  no changes: no write
+PASS  fresh instance: refuses
+PASS  fresh instance: says the restore did not take
+PASS  fresh instance: no bootstrap call
+PASS  fresh instance: nothing archived
+PASS  rejected token: refuses
+PASS  rejected token: says so
+PASS  missing secret: refuses
+PASS  missing secret: names it, generates nothing
+PASS  missing secret: no write
+PASS  no state: refuses before planning
+PASS  no state: no plan
+
+=== S11. Plain make up on a fresh instance works as before, including over old state
+PASS  exit 0 (got 0)
+PASS  bootstrap call
+PASS  old credentials moved to an archive
+PASS  old Terraform state moved aside
+PASS  terraform ran with -auto-approve
+PASS  secrets seeded in both projects
+PASS  identity published
+
+=== S12. destroy.sh keeps what a restore needs
+PASS  exit 0 (got 0)
+PASS  cluster deleted
+PASS  local state removed
+PASS  Infisical state kept, byte for byte
+PASS  secret zero kept
+PASS  points at restore-clean
+
+=== S13. The drill, start to finish
+PASS  PLAN_ONLY: exit 0 (got 0)
+PASS  PLAN_ONLY: deleted nothing
+PASS  no CONFIRM: refuses
+PASS  drill exit 0 (got 0)
+PASS  drill deleted the cluster
+PASS  RESULT PASS
+
+=== S14. Rotation guard on an in-place restore
+PASS  refuses
+PASS  says a rotation happened
+PASS  names the keys
+PASS  nothing stopped
+PASS  the override goes on
+
+=== S15. A restore under way, and the cluster it was working on goes away
+PASS  fails at dev, Infisical marked done
+PASS  run again with the cluster gone: exit 0 (got 0)
+PASS  Infisical restored again, because the new cluster has none
+PASS  fails at dev, marker there
+PASS  destroy clears the marker
+
+=== S16. Retention must be able to remove a backup that has a recovery set, and PLAN_ONLY changes nothing
+PASS  PLAN_ONLY exit 0 (got 0)
+PASS  not one file under .local changed
+
+=== S17. Infisical cannot be read at backup time: the backup says so, and a clean restore passes over it
+PASS  backup exits non-zero (got 1)
+PASS  and says why
+PASS  the dump is kept
+PASS  a newer backup exists
+PASS  latest passes over it, exit 0 (got 0)
+PASS  and names it
+PASS  and uses the good one
+PASS  naming it directly is refused
+PASS  with the reason
+
+=== S18. An older Infisical backup pairs with the Plane backups of its own run
+PASS  two distinct sets
+PASS  older Infisical id takes the dev backup of its own run
+PASS  latest takes the newest
+PASS  BACKUP_DEV overrides
+
+=== S19. Plane restore puts back the accounts and sentinel of its dump, and leaves the other environment's alone
+PASS  exit 0 (got 0)
+PASS  dev token is the dump's
+PASS  prod-sim token untouched
+PASS  file stays 0600
+true
+PASS  sentinel is the dump's
+
+RESULT 119 passed, 0 failed

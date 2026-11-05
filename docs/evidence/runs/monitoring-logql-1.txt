@@ -1,0 +1,47 @@
+# captured 2026-11-04T22:19:24Z
+
+$ LogQL through the Grafana datasource proxy
+200
+labels (200, {'status': 'success', 'data': ['__stream_shard__', 'container', 'instance', 'job', 'namespace', 'pod', 'service_name', 'src', 'synthetic']})
+namespace values 200 {'status': 'success', 'data': ['argocd', 'infisical', 'monitoring', 'plane-dev', 'plane-prod-sim', 'traefik']}
+container values 200 {'status': 'success', 'data': ['alertmanager', 'alloy', 'application-controller', 'blackbox', 'config-reloader', 'grafana', 'grafana-sc-dashboard', 'grafana-sc-datasources', 'infisical-standalone-infisical', 'init-config-reloader', 'kube-prometheus-stack', 'kube-state-metrics', 'load', 'loki', 'manager', 'plane-admin', 'plane-api', 'plane-api-migrate', 'plane-beat-worker', 'pl
+monitoring HTTP 200 streams in page 1 lines 3
+   stream {'container': 'grafana', 'detected_level': 'info', 'instance': 'monitoring/kps-grafana-77cb96fc89-v8g6n:grafana', 'job': 'loki.source.kubernetes.pods', 'namespace': 'monitoring', 'pod': 'kps-grafana-77cb96fc89-v8g6n', 'service_name': 'grafana'}
+    2026-11-04T22:19:23Z logger=plugin.prometheus t=2026-11-04T22:19:23.223242086Z level=info msg="Plugin Request Completed" dsName=Prometheus dsUid=prometheus endpoint=queryData plugin
+argocd HTTP 200 streams in page 1 lines 3
+   stream {'container': 'repo-server', 'detected_level': 'info', 'instance': 'argocd/argocd-repo-server-84d5c84659-jmlnw:repo-server', 'job': 'loki.source.kubernetes.pods', 'namespace': 'argocd', 'pod': 'argocd-repo-server-84d5c84659-jmlnw', 'service_name': 'repo-server'}
+    2026-11-04T22:19:19Z time="2026-11-04T22:19:19Z" level=info msg="finished call" grpc.code=OK grpc.component=server grpc.method=Check grpc.method_type=unary grpc.request.deadline="20
+traefik HTTP 200 streams in page 0 lines 0
+infisical HTTP 200 streams in page 1 lines 3
+   stream {'container': 'infisical-standalone-infisical', 'detected_level': 'info', 'instance': 'infisical/infisical-567944c58f-vsrl8:infisical-standalone-infisical', 'job': 'loki.source.kubernetes.pods', 'namespace': 'infisical', 'pod': 'infisical-567944c58f-vsrl8', 'service_name': 'infisical-standalone-infisical'}
+    2026-11-04T22:19:22Z {"level":30,"time":1793830762542,"pid":1,"hostname":"infisical-567944c58f-vsrl8","reqId":"req-6P16vM5CFjILI6","severity":"INFO","res":{"statusCode":200},"respon
+plane-dev HTTP 200 streams in page 1 lines 3
+   stream {'container': 'plane-redis', 'detected_level': 'unknown', 'instance': 'plane-dev/plane-redis-wl-0:plane-redis', 'job': 'loki.source.kubernetes.pods', 'namespace': 'plane-dev', 'pod': 'plane-redis-wl-0', 'service_name': 'plane-redis'}
+    2026-11-04T22:19:20Z 11:M 04 Nov 2026 22:19:20.583 * Background saving terminated with success
+
+plane-prod-sim HTTP 200 streams in page 3 lines 3
+   stream {'container': 'plane-admin', 'detected_level': 'unknown', 'instance': 'plane-prod-sim/plane-admin-wl-8668568c64-7t66l:plane-admin', 'job': 'loki.source.kubernetes.pods', 'namespace': 'plane-prod-sim', 'pod': 'plane-admin-wl-8668568c64-7t66l', 'service_name': 'plane-admin'}
+    2026-11-04T22:19:19Z 10.244.0.1 - - [04/Nov/2026:22:19:19 +0000] "GET /god-mode/ HTTP/1.1" 200 4470 "-" "kube-probe/1.36"
+
+   stream {'container': 'plane-space', 'detected_level': 'unknown', 'instance': 'plane-prod-sim/plane-space-wl-68c595d665-dfct7:plane-space', 'job': 'loki.source.kubernetes.pods', 'namespace': 'plane-prod-sim', 'pod': 'plane-space-wl-68c595d665-dfct7', 'service_name': 'plane-space'}
+    2026-11-04T22:19:23Z GET /spaces/ 200 - - 3.944 ms
+
+count_over_time 5m 200 [('argocd', '577'), ('infisical', '601'), ('monitoring', '1638'), ('plane-dev', '468'), ('plane-prod-sim', '266')]
+alertmanager via grafana proxy 200 0.34.2
+Q {namespace="plane-dev", container="plane-api"} | json | status_code >= 500 HTTP 200 streams 0 lines 0
+Q {namespace="plane-prod-sim", container="plane-api"} | json | status_code >= 500 HTTP 200 streams 0 lines 0
+Q {namespace="plane-dev", container="plane-api"} | json | status_code >= 400 HTTP 200 streams 8 lines 8
+   labels {'asctime': '2026-11-04 21:48:59,532', 'container': 'plane-api', 'detected_level': 'info', 'duration_ms': '25', 'levelname': 'INFO', 'message': 'GET /api/public/anchor/__probe__/settings/ 404', 'method': 'GET', 'module': 'logger', 'name': 'plane.api.request', 'namespace': 'plane-dev', 'path': '/api/public/anchor/__probe__/settings/', 'pod': 'plane-api-wl-655ddd4b88-vwcd4', 'remote_addr':
+    21:48:59Z {"levelname": "INFO", "asctime": "2026-11-04 21:48:59,532", "module": "logger", "name": "plane.api.request", "message": "GET /api/public/anchor/__probe__/settings/ 404", "path": "/api/public/anchor/__probe__/settings/", "method": "GET", "status_code": 404, "duration_ms": 25, "remote_addr": "172.24.0
+   labels {'asctime': '2026-11-04 21:48:59,554', 'container': 'plane-api', 'detected_level': 'info', 'duration_ms': '11', 'levelname': 'INFO', 'message': 'GET /api/public/anchor/__probe__/settings/ 404', 'method': 'GET', 'module': 'logger', 'name': 'plane.api.request', 'namespace': 'plane-dev', 'path': '/api/public/anchor/__probe__/settings/', 'pod': 'plane-api-wl-655ddd4b88-vwcd4', 'remote_addr':
+    21:48:59Z {"levelname": "INFO", "asctime": "2026-11-04 21:48:59,554", "module": "logger", "name": "plane.api.request", "message": "GET /api/public/anchor/__probe__/settings/ 404", "path": "/api/public/anchor/__probe__/settings/", "method": "GET", "status_code": 404, "duration_ms": 11, "remote_addr": "172.24.0
+   labels {'asctime': '2026-11-04 21:49:38,215', 'container': 'plane-api', 'detected_level': 'info', 'duration_ms': '13', 'levelname': 'INFO', 'message': 'GET /api/public/anchor/__probe__/settings/ 404', 'method': 'GET', 'module': 'logger', 'name': 'plane.api.request', 'namespace': 'plane-dev', 'path': '/api/public/anchor/__probe__/settings/', 'pod': 'plane-api-wl-655ddd4b88-vwcd4', 'remote_addr':
+    21:49:38Z {"levelname": "INFO", "asctime": "2026-11-04 21:49:38,215", "module": "logger", "name": "plane.api.request", "message": "GET /api/public/anchor/__probe__/settings/ 404", "path": "/api/public/anchor/__probe__/settings/", "method": "GET", "status_code": 404, "duration_ms": 13, "remote_addr": "172.24.0
+Q {namespace="monitoring", container="sink"} | json | line_format "{{.payload_status}} {{.payload_commonLabels_alertname}} {{.payload_commonLabels_namespace}}" HTTP 200 streams 8 lines 8
+   labels {'container': 'sink', 'detected_level': 'unknown', 'namespace': 'monitoring', 'path': '/alerts', 'payload_commonAnnotations_description': 'This is an alert meant to ensure that the entire alerting pipeline is functional.\nThis alert is always firing, therefore it should always be firing in Alertmanager\nand always fire against a receiver. There are integrations with various notification\
+    22:02:26Z firing Watchdog 
+   labels {'container': 'sink', 'detected_level': 'unknown', 'namespace': 'monitoring', 'path': '/alerts', 'payload_commonAnnotations_description': 'This is an alert meant to ensure that the entire alerting pipeline is functional.\nThis alert is always firing, therefore it should always be firing in Alertmanager\nand always fire against a receiver. There are integrations with various notification\
+    22:07:26Z firing Watchdog 
+   labels {'container': 'sink', 'detected_level': 'unknown', 'namespace': 'monitoring', 'path': '/alerts', 'payload_commonAnnotations_description': 'This is an alert meant to ensure that the entire alerting pipeline is functional.\nThis alert is always firing, therefore it should always be firing in Alertmanager\nand always fire against a receiver. There are integrations with various notification\
+    22:12:26Z firing Watchdog 
+Q {namespace="plane-dev"} |= "Blackbox" HTTP 200 streams 0 lines 0

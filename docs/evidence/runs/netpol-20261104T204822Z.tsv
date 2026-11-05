@@ -1,0 +1,20 @@
+verdict	expect	observed	from	labels	to	port	note
+PASS	allow	CONNECTED	argocd	{"probe":"unlabelled"}	kube-dns.kube-system.svc.cluster.local	53	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	plane-git	9418	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	traefik.github.io	443	chart repo; DNS failure means inconclusive
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	1.1.1.1	443	any public address on 443; needs internet
+PASS	deny	TIMEOUT	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	1.1.1.1	80	443 only
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	argocd-redis.argocd.svc.cluster.local	6379	
+PASS	deny	TIMEOUT	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	kubernetes.default.svc.cluster.local	443	repo-server reads no Kubernetes API
+INCONCLUSIVE	deny	DNS	argocd	{"app.kubernetes.io/name":"argocd-repo-server"}	plane-pgdb.plane-dev.svc.cluster.local	5432	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-server"}	argocd-repo-server.argocd.svc.cluster.local	8081	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-server"}	argocd-redis.argocd.svc.cluster.local	6379	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-server"}	kubernetes.default.svc.cluster.local	443	
+PASS	deny	TIMEOUT	argocd	{"app.kubernetes.io/name":"argocd-server"}	1.1.1.1	443	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-application-controller"}	argocd-repo-server.argocd.svc.cluster.local	8081	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-application-controller"}	argocd-redis.argocd.svc.cluster.local	6379	
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-application-controller"}	kubernetes.default.svc.cluster.local	443	
+PASS	deny	TIMEOUT	argocd	{"app.kubernetes.io/name":"argocd-application-controller"}	1.1.1.1	443	
+PASS	deny	TIMEOUT	argocd	{"app.kubernetes.io/name":"argocd-server"}	plane-git	9418	only repo-server speaks Git
+PASS	allow	CONNECTED	argocd	{"app.kubernetes.io/name":"argocd-redis-secret-init"}	kubernetes.default.svc.cluster.local	443	Helm hook rerun by terraform apply
+PASS	deny	TIMEOUT	argocd	{"probe":"unlabelled"}	argocd-redis.argocd.svc.cluster.local	6379	

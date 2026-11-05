@@ -1,0 +1,186 @@
+{
+  "counts": {
+    "BLOCKED": 0,
+    "FAIL": 0,
+    "PASS": 17
+  },
+  "environment": "dev",
+  "finished_at": "2026-11-04T22:17:35Z",
+  "host": "plane.dev.localhost",
+  "mode": "full",
+  "result": "PASS",
+  "run_id": "f10a5851",
+  "started_at": "2026-11-04T22:17:30Z",
+  "steps": [
+    {
+      "data": {
+        "instances_status": 200,
+        "web_status": 200
+      },
+      "detail": "web 200, /api/instances/ 200 via plane.dev.localhost",
+      "duration_ms": 12,
+      "name": "reachable",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "is_telemetry_enabled": false,
+        "was_setup_done": false
+      },
+      "detail": "admin created, telemetry off",
+      "duration_ms": 259,
+      "name": "instance-setup",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "status": 200
+      },
+      "detail": "sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)",
+      "duration_ms": 12,
+      "name": "csrf-enforced",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_me_status": 401,
+        "user_id": "81be2f90-8340-4a10-9842-d6ae937f71ae"
+      },
+      "detail": "session established, anonymous request refused",
+      "duration_ms": 186,
+      "name": "sign-in",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "slug": "smoke-f10a5851"
+      },
+      "detail": "smoke-f10a5851",
+      "duration_ms": 60,
+      "name": "workspace",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_status": 401
+      },
+      "detail": "token works on /api/v1, refused without it",
+      "duration_ms": 60,
+      "name": "api-token",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "project_id": "605ff00f-45d6-45d0-bc20-b9b39ecc6b92"
+      },
+      "detail": "605ff00f-45d6-45d0-bc20-b9b39ecc6b92",
+      "duration_ms": 70,
+      "name": "project",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "work_item_id": "e3ebc2e5-9ac8-42aa-aac4-2ea7ef2696c2"
+      },
+      "detail": "e3ebc2e5-9ac8-42aa-aac4-2ea7ef2696c2",
+      "duration_ms": 44,
+      "name": "work-item",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "listed": 1
+      },
+      "detail": "new work item is among 1 listed",
+      "duration_ms": 45,
+      "name": "work-item-list",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_activity": 3.1
+      },
+      "detail": "issue_activity task ran in 3.1s",
+      "duration_ms": 3063,
+      "name": "background-job",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "88b58f26-14f6-4d9a-9d4e-1773e2969064",
+        "sha256": "450951277ee6f7c4b05e546f813dcfa8de0b1716d0dc2c6d7f9dab1176fc371f",
+        "size": 1047
+      },
+      "detail": "1047 bytes stored",
+      "duration_ms": 243,
+      "name": "attachment-upload",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "450951277ee6f7c4b05e546f813dcfa8de0b1716d0dc2c6d7f9dab1176fc371f",
+        "expected_sha256": "450951277ee6f7c4b05e546f813dcfa8de0b1716d0dc2c6d7f9dab1176fc371f"
+      },
+      "detail": "sha256 450951277ee6f7c4... matches",
+      "duration_ms": 52,
+      "name": "attachment-download",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "page_id": "cc10ce52-ff43-4e8f-805a-0f6131ead414"
+      },
+      "detail": "cc10ce52-ff43-4e8f-805a-0f6131ead414",
+      "duration_ms": 47,
+      "name": "realtime-page",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "reason": "read-write",
+        "verdict": "Authenticated"
+      },
+      "detail": "Authenticated (read-write): traefik upgrade, live -> api session check",
+      "duration_ms": 93,
+      "name": "realtime-auth",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "verdict": "PermissionDenied"
+      },
+      "detail": "mismatched user refused: PermissionDenied",
+      "duration_ms": 101,
+      "name": "realtime-denied",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "20cb2851-7915-4023-9373-cb0ead07877c",
+        "created_at": "2026-11-04T22:17:35Z",
+        "environment": "dev",
+        "name": "persistence-sentinel-dev-1a225855-a73c-4f9a-a299-3e63cc5dad74",
+        "project_id": "398df7b7-d9a5-44a7-901a-3caa5d94165c",
+        "sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "slug": "sentinel-f10a5851",
+        "work_item_id": "9732dde3-786e-4fa1-b6af-0b5e791f2314"
+      },
+      "detail": "created 9732dde3-786e-4fa1-b6af-0b5e791f2314",
+      "duration_ms": 254,
+      "name": "sentinel-create",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "expected_sha256": "9010677d5bdbb88f7310b4b91ac93941b0c28b278cdf296d5a8f68c19c5b09b4",
+        "work_item_id": "9732dde3-786e-4fa1-b6af-0b5e791f2314"
+      },
+      "detail": "sentinel row and attachment intact",
+      "duration_ms": 50,
+      "name": "sentinel-reread",
+      "status": "PASS"
+    }
+  ],
+  "tool": "tests/e2e/smoke.py"
+}

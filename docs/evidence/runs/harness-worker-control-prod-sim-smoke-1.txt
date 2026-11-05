@@ -1,0 +1,49 @@
+smoke: environment=prod-sim host=plane.prod-sim.localhost connect=127.0.0.1:80 mode=full
+PASS    reachable  web 200, /api/instances/ 200 via plane.prod-sim.localhost
+PASS    frontends  web, admin and space pages and the assets they name are served
+PASS    routes  bare paths redirect, deep links reach admin, /live/health answers
+PASS    workloads-ready  11 workloads ready, migrator succeeded, Application Synced/Healthy, pods that have restarted: 0
+PASS    instance-setup  already set up, reusing stored admin
+PASS    csrf-enforced  sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)
+PASS    sign-in  session established, anonymous request refused
+PASS    workspace  smoke-367ce1ff
+PASS    api-token  token works on /api/v1, refused without it
+PASS    project  c7c79e7e-f7be-461c-8150-c3a4459b255e
+PASS    work-item  f82bbd96-88bf-4aff-8944-b54b8e88f70f
+PASS    background-job  issue_activity task ran in 3.1s
+PASS    work-item-list  new work item is among 1 listed
+PASS    read-back  workspace, project and work item P1F1CBA-1 all match, by key and by session
+PASS    workspace-seed  seed project present after 0.0s
+PASS    branding-overlay  --branding require: checking every image, whatever the overlay says
+FAIL    branding-web  / title does not name Wayline: 'Plane | Simple, extensible, open-source project management tool.'; / title names upstream as the product: 'Plane | Simple, extensible, open-source project management tool.'; / carries the upstream brand 7 time(s), first: 'e="application-name" content="Plane"/><meta name="apple-mobile-we'; /source answered 200 to '', want a 302 to https://github.com/BereketAbera/plane-platform/tree/<commit>; /licenses/ does not list ['LICENSE.txt', 'COPYRIGHT.txt', 'NOTICE.txt', 'MODIFICATIONS.txt', 'OFL-InstrumentSans.txt', 'OFL-JetBrainsMono.txt']; /licenses/LICENSE.txt answered 200 and is not the AGPL text
+FAIL    branding-admin  /god-mode/ title does not name Wayline: 'Plane | Simple, extensible, open-source project management tool.'; /god-mode/ title names upstream as the product: 'Plane | Simple, extensible, open-source project management tool.'; /god-mode/ carries the upstream brand 3 time(s), first: 'dth, initial-scale=1"/><title>Plane | Simple, extensible, open-so'
+FAIL    branding-space  /spaces/ title does not name Wayline: 'Plane Publish | Make your Plane boards public with one-click'; /spaces/ title names upstream as the product: 'Plane Publish | Make your Plane boards public with one-click'; /spaces/ carries the upstream brand 7 time(s), first: 't="noindex, nofollow"/><title>Plane Publish | Make your Plane boa'
+FAIL    branding-backend  the backend reports upstream's changelog: 'https://sites.plane.so/pages/691ef037bcfe416a902e48cb55f59891/'
+FAIL    branding-seed  want one bot named Wayline in this new workspace, found [('Plane', 'Plane')]; the seed content names upstream 10 time(s), first: " you're getting familiar with Plane, let's explore how you can cu"; the seed content does not name Wayline, so reading it for upstream's name proves little
+SKIP    branding-fresh-install  needs a clean database. This instance was set up before this run, and setup replaces what the image registered with what its form sent, so 'Wayline' now says nothing about the image. The first smoke after a clean install checks the registered name and telemetry default
+PASS    app-shell  all 15 requests answered 200
+PASS    admin-sign-in  37 config rows read, 8 of them encrypted, refused with no session (401)
+PASS    second-user  sign-up works, and that user is refused this workspace: {'workspace': 404, 'work_item': 403}
+PASS    celery-consumers  queue celery has 1 consumer, 0 waiting
+PASS    broker-memory  watermark {absolute,"256Mi"} = 268435456 bytes, no alarms
+PASS    worker-negative-control  With 0 consumers: 4 messages parked, no activity after 15s. Asked the consumer back: activity within 16.7s. Worker pod replaced, so no emptied queue selection is left behind
+PASS    worker-clean  no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect
+PASS    attachment-upload  1047 bytes stored
+PASS    attachment-download  sha256 3566338c1a9a3969... matches
+PASS    object-in-silo  1047 bytes in bucket uploads, sha256 matches, buckets: ['uploads']
+PASS    uploads-private  refused without a valid signature: {'object': 403, 'list': 403, 'tampered_signature': 403}
+PASS    large-upload  4718592 bytes up and back through Traefik, sha256 matches
+PASS    oversize-refused  5 MiB + 1 byte refused by the storage policy with 400
+PASS    asset-duplicate  copy_object through the public host worked: a0b50531-1db4-4c56-89ef-802b43869367 holds the same bytes
+PASS    avatar  avatar stored and read back anonymously through its signed redirect
+PASS    export  export completed, its link downloads, and the 534 byte zip holds the work item
+PASS    public-board  published: api and space serve it anonymously. Unpublished: 404
+PASS    realtime-page  3757aeaf-a94b-467b-afad-a5247818fb14
+PASS    realtime-auth  Authenticated (read-write): traefik upgrade, live -> api session check
+PASS    realtime-denied  mismatched user refused: PermissionDenied
+PASS    realtime-sync  both clients synced, and an update reached the other client in 0 ms
+PASS    realtime-persist  stored as HTML and binary in 2.1s, and a new connection gets it back from the database
+PASS    sentinel-create  reusing existing sentinel test-sentinel-prod-sim.json
+PASS    sentinel-reread  sentinel row and attachment intact
+evidence: .local/evidence-raw/harness-worker-control-prod-sim-smoke-1.json
+RESULT  FAIL

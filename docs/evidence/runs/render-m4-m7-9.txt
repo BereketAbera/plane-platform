@@ -1,0 +1,36 @@
+# 2026-11-04T20:12:10Z post-commit verification
+## commit
+2faaed5 Bereket Abera fix(plane): expose Silo metrics and shorten the rollout deadline
+MINIO_PROMETHEUS_AUTH_TYPE=public on plane-minio: ServiceMonitor plane-minio scrapes without
+credentials, and the default jwt auth answers 403, so critical PlaneMinioDown fired on a healthy
+Silo in both environments.
+
+progressDeadlineSeconds 360 on every Deployment: the default 600s made the failed-deploy drill wait
+up to 12 minutes for the failure report. It stays above the 300s startup budget of api, worker and
+beat.
+
+
+ gitops/environments/dev/manifests.yaml             | 10 ++++++++++
+ gitops/environments/prod-sim/manifests.yaml        | 10 ++++++++++
+ helm/plane/components/hardening/kustomization.yaml |  7 +++++++
+ helm/plane/components/hardening/patches/silo.yaml  |  5 +++++
+ 4 files changed, 32 insertions(+)
+## trailers mentioning Claude in the commit message (expected none)
+0
+## bare repo main vs working main
+2faaed51f6370f4e39abf3797ac11dffc6531875
+2faaed51f6370f4e39abf3797ac11dffc6531875
+## published tree contains the fix
+dev progressDeadlineSeconds lines: 7
+dev MINIO_PROMETHEUS_AUTH_TYPE lines: 1
+prod-sim progressDeadlineSeconds lines: 7
+prod-sim MINIO_PROMETHEUS_AUTH_TYPE lines: 1
+## render.sh --check against the committed tree
+ ok dev is up to date
+ ok prod-sim is up to date
+exit=0
+## Application CRD and Applications (refresh target)
+Error from server (NotFound): customresourcedefinitions.apiextensions.k8s.io "applications.argoproj.io" not found
+exit=1
+error: the server doesn't have a resource type "applications"
+exit=1

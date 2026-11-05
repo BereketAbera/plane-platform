@@ -1,0 +1,5 @@
+before current/peak Mi [255.3, 308.7]
+attempt 0 status 200 type application/pdf bytes 6403 starts b'%PDF-' seconds 2.25 after [263.1, 308.7]
+attempt 1 status 200 type application/pdf bytes 6403 starts b'%PDF-' seconds 0.5 after [264.2, 308.7]
+attempt 2 status 200 type application/pdf bytes 6403 starts b'%PDF-' seconds 0.81 after [264.9, 308.7]
+no cookie: 401 {"message":"Authentication required"}

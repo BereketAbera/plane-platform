@@ -1,0 +1,6 @@
+# date: 2026-11-04T23:13:27Z
+# LogQL {namespace="kube-system"} over the last 30m, through Grafana's Loki datasource. Heartbeat lines must be absent, and the synthetic fail-open line present.
+status success streams 1
+kube-system kindnet-failopen-synthetic kindnet-cni lines 1
+    I1105 00:00:00.000000       1 main.go:261] Error creating network policy controller: SYNTHETIC H18 TEST, skipping network policies
+
