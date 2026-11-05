@@ -42,14 +42,14 @@ curl -s -w '\nanchor %{http_code}\n' "http://$HOST/api/public/anchor/__probe__/s
 curl -s "http://$HOST/live/health"; echo
 ```
 
-Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. On 2026-11-04, on upstream images, each Postgres round of the pod restart drill took Postgres away for under a minute: the anchor route answered 500 for one 15s probe sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)). A longer outage has not been tried.
+Read these two API answers together. **`/api/instances/` is cached in Valkey for two hours** and says nothing about Postgres. On 2026-11-04, on upstream images, each Postgres round of the pod restart drill took Postgres away for under a minute: the anchor route answered 500 for one 15s probe sample while `/api/instances/` stayed 200 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)). On the final images on 2026-11-05 in dev, that round gave seven 500s on a signed-in `GET /api/users/me/`, read once a second, while the four pages stayed 200 (`.local/evidence-raw/PERS-1-20261105T070358Z-timeline.txt`, not yet published). A longer outage has not been tried.
 
 | `/api/instances/` | `/api/public/anchor/__probe__/settings/` | Likely |
 |---|---|---|
 | 200 JSON | 404 "does not exist" | API and database are fine. This 404 is the healthy answer |
 | 200 JSON | 500 | **Postgres is unreachable or empty**, and the first answer is from cache |
 | 200 HTML | any | API has no endpoints, and Traefik fell through to the web route. Not seen so far, see the 503 row |
-| 500 | 500 | Valkey or the API itself. Expected for Valkey down, as `CACHES` does not ignore exceptions. [[VERIFY: with Valkey down /api/instances/ answers 500]] |
+| 500 | 500 | Valkey or the API itself. Expected for Valkey down, as `CACHES` does not ignore exceptions. Not seen so far: in the drills' Valkey rounds the pod is back within seconds, and the `api-instance` probe read no failure, so the outage may have fallen between its 15s samples. [[VERIFY: with Valkey down /api/instances/ answers 500]] |
 | 429 | any | Anonymous rate limit, 30 a minute per IP |
 | 502, 503, 504 | same | No ready API pods. Look at the pods. With the only API pod deleted on 2026-11-04, both answered 503 ([monitoring-history-reads-1.txt](../evidence/runs/monitoring-history-reads-1.txt)) |
 
