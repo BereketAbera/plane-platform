@@ -56,6 +56,11 @@ RENDERED_SECRETS="plane-app-env plane-app-keys plane-live-env plane-doc-store pl
 
 finish_trap() {
   local status=$?
+  # What it says has to reach the evidence with a client that can no longer print, as in on_exit in scripts/restore.sh.
+  set +e
+  trap '' HUP INT TERM PIPE
+  { printf '\n'; } 2>/dev/null || exec >>"$DRILL_EVIDENCE" 2>&1
+  { printf '\n' >&2; } 2>/dev/null || exec 2>>"$DRILL_EVIDENCE"
   rm -rf "$WORK"
   if [[ "$status" -ne 0 ]]; then
     case "$DELETED" in

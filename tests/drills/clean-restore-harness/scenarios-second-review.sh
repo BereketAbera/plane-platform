@@ -1408,3 +1408,127 @@ R22() {
   show_tail
   check "the comparison cannot run: and says it is not recorded" out_has "uploaded rows with no object: not recorded"
 }
+
+# ----- The review of those fixes. V and a number is its MAJOR problem of that number. -----
+
+# On a real terminal, which closes once the pattern shows in that file. Sets RC and OUT.
+run_on_terminal() { # file pattern command...
+  local file="$1" pattern="$2"
+  shift 2
+  OUT="$H/state/terminal.txt"
+  ( cd "$H" && exec python3 -I "$STUBS/close-terminal.py" "$file" "$pattern" "$RUN_LIMIT_SECONDS" "$@" ) > "$OUT" 2>&1
+  RC=$?
+}
+paused_now() { jq -r '[(.paused // {}) | to_entries[] | select(.value) | .key] | join(" ")' "$H/state/cluster.json"; }
+jobs_running_now() { jq -r '[.[] | select(.state == "Running")] | length' "$H/state/jobs.json"; }
+
+# What a stop in dev's data Job has to leave, whatever became of the client's output.
+dead_output_in_a_job() { # label
+  check "$1: not a pass (got $RC)" test "$RC" -ne 0
+  check "$1: no Job is left running" test "$(jobs_running_now)" = 0
+  check "$1: the Job goes first, then auto-sync, root last" order 'kc delete job plane-restore ns=plane-dev' 'kc patch application plane-dev resume' 'kc patch application root resume'
+  check "$1: nothing stays paused" test -z "$(paused_now)"
+  check "$1: nothing started over a running Job" no_log '^ERROR'
+  check "$1: the evidence says FAIL" jq -e '.result == "FAIL" and any(.steps[]; .step == "restore-job-stopped")' "$(newest_evidence restore-dev)"
+}
+# And a stop before any data Job, with the pause already done.
+dead_output_before_a_job() { # label
+  check "$1: not a pass (got $RC)" test "$RC" -ne 0
+  check "$1: no data Job ran" no_log 'kc apply Job plane-restore ns='
+  check "$1: auto-sync comes back, root last" order 'kc patch application plane-dev resume' 'kc patch application root resume'
+  check "$1: nothing stays paused" test -z "$(paused_now)"
+  check "$1: the evidence says FAIL" jq -e '.result == "FAIL"' "$(newest_evidence restore-dev)"
+}
+
+V1() {
+  scenario "V1. The client's output is dead, by a closed terminal or a tee that took the same Ctrl-C: the stop still does all of its work"
+  reset
+  take_backups
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  run_on_terminal "$H/state/jobs.json" '"state": "Running"' scripts/restore.sh dev latest CONFIRM=yes
+  dead_output_in_a_job "a terminal that closes in dev's Job"
+  check "a terminal that closes in dev's Job: what it had to say is in a file beside the evidence" grep -F "its Job was stopped before it finished" "$(newest_evidence restore-dev).log"
+
+  reset
+  take_backups
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached bash -c 'scripts/restore.sh dev latest CONFIRM=yes 2>&1 | tee "$H_STATE/tee.txt"'
+  wait_for_running_job
+  stop_detached INT
+  dead_output_in_a_job "a tee and Ctrl-C in dev's Job"
+
+  # So a person who saw the warning about a 0-user backup and pressed Ctrl-C, through a pipe, keeps the data.
+  reset
+  plane_counts 0
+  take_backups
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  cluster_holds plane-dev 500 777
+  : > "$H/state/calls.log"
+  start_detached bash -c 'scripts/restore.sh dev latest CONFIRM=yes 2>&1 | tee "$H_STATE/tee.txt"'
+  wait_for_running_job
+  stop_detached INT
+  check "the warning about a 0-user backup got through the tee" grep -F "holds 0 users" "$H/state/tee.txt"
+  check "and Ctrl-C after it removes the Job" test "$(jobs_running_now)" = 0
+  check "and the data stays" test "$(cluster_value '.users["plane-dev"]')" = 500
+
+  reset
+  take_backups
+  printf 'plane-dev scale deployment/plane-api-wl --replicas=0' > "$H/state/kubectl-hang"
+  : > "$H/state/calls.log"
+  run_on_terminal "$H/state/calls.log" 'kc hung' scripts/restore.sh dev latest CONFIRM=yes
+  dead_output_before_a_job "a terminal that closes before any Job"
+
+  reset
+  take_backups
+  printf 'plane-dev scale deployment/plane-api-wl --replicas=0' > "$H/state/kubectl-hang"
+  : > "$H/state/calls.log"
+  start_detached bash -c 'scripts/restore.sh dev latest CONFIRM=yes 2>&1 | tee "$H_STATE/tee.txt"'
+  wait_for_log 'kc hung'
+  stop_detached INT
+  dead_output_before_a_job "a tee and Ctrl-C before any Job"
+
+  # Infisical's server has to come back too, in the same order as with a client that can print.
+  reset
+  take_backups
+  printf '[["plane-restore-2","infisical"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  run_on_terminal "$H/state/jobs.json" '"state": "Running"' scripts/restore.sh infisical latest CONFIRM=yes
+  check "a terminal that closes in Infisical's Job: no Job is left running" test "$(jobs_running_now)" = 0
+  check "a terminal that closes in Infisical's Job: the Job, the flush, the server, auto-sync" order 'kc delete job plane-restore ns=infisical' 'kc exec redis FLUSHALL ns=infisical' 'kc scale deployment/infisical --replicas=1 ns=infisical' 'kc patch application infisical resume'
+
+  # The parent of a clean restore: its own trap has evidence to write and a token file to remove, and the resume finishes.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached bash -c 'scripts/restore.sh clean latest 2>&1 | tee "$H_STATE/tee.txt"'
+  wait_for_log 'kc apply Job plane-restore ns=plane-dev'
+  wait_for_running_job
+  stop_detached INT
+  rm -f "$H/state/hang-jobs.json"
+  check "a clean restore through a tee, Ctrl-C: no Job is left running" test "$(jobs_running_now)" = 0
+  check "a clean restore through a tee, Ctrl-C: nothing stays paused" test -z "$(paused_now)"
+  check "a clean restore through a tee, Ctrl-C: its evidence is written, and says FAIL" jq -e '.result == "FAIL"' "$(newest_evidence restore-clean)"
+  check "a clean restore through a tee, Ctrl-C: what it had to say is beside that" grep -F "stopped. Fix the cause" "$(newest_evidence restore-clean).log"
+  check "a clean restore through a tee, Ctrl-C: no steps file is left" test -z "$(ls -a "$H/.local" | grep -F .restore-clean-steps. || true)"
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "and the resume finishes, exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+
+  # The drill has its own tee, which takes the same Ctrl-C, and its RESULT line has to reach the evidence.
+  reset
+  take_backups
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/hang-jobs.json"
+  : > "$H/state/calls.log"
+  start_detached env CONFIRM=yes SKIP_E2E=yes bash -c 'tests/drills/clean-restore.sh 2>&1 | tee "$H_STATE/tee.txt"'
+  wait_for_log 'kc apply Job plane-restore ns=plane-dev'
+  wait_for_running_job
+  stop_detached INT
+  check "the drill through a tee, Ctrl-C: no Job is left running" test "$(jobs_running_now)" = 0
+  check "the drill through a tee, Ctrl-C: its evidence has the RESULT line" grep -F "RESULT FAIL" "$(ls -t "$H"/.local/evidence-raw/drill-clean-restore-*.log | head -1)"
+  check "the drill through a tee, Ctrl-C: and how to go on" grep -F "make restore-clean BACKUP=" "$(ls -t "$H"/.local/evidence-raw/drill-clean-restore-*.log | head -1)"
+}

@@ -116,6 +116,11 @@ clean_record() { # step status detail. Same shape as a single restore's evidence
 clean_on_exit() {
   local rc=$? result
   trap - EXIT
+  # As in on_exit, whose comment says why: this has to get to the end with a client that can no longer print.
+  set +e
+  trap '' HUP INT TERM PIPE
+  { printf '\n'; } 2>/dev/null || exec >>"$CLEAN_EVIDENCE.log" 2>&1
+  { printf '\n' >&2; } 2>/dev/null || exec 2>>"$CLEAN_EVIDENCE.log"
   if [[ -n "$CLEAN_STEPS" && -f "$CLEAN_STEPS" ]]; then
     case "$rc" in
       0) result=PASS ;;
@@ -903,6 +908,9 @@ stop_this_runs_jobs() {
       JOBS_LEFT_RUNNING="$JOBS_LEFT_RUNNING $job"
       continue
     fi
+    # The last line only. If the client's output dies after on_exit's probe, a print that failed since then is still in
+    # stdio's buffer, and a $(...) captures it ahead of the answer. Read as anything but running, the Job would stay.
+    state="${state##*$'\n'}"
     [[ "$state" == running ]] || continue
     log "Removing restore Job $NS/$job, which would otherwise go on without this client (up to 180s)"
     if kc -n "$NS" delete job "$job" --cascade=foreground --timeout=180s >/dev/null; then
@@ -919,7 +927,14 @@ on_exit() {
   trap - EXIT
   # Being stopped halfway through this is what would leave the worst state, so only SIGKILL ends it now. It waits for
   # a Job's removal for 180s at most, and a resume repairs what a SIGKILL leaves.
-  trap '' HUP INT TERM
+  # That includes a client that can no longer print: a terminal that closed, or a tee that took the same Ctrl-C. Under
+  # set -e and a default SIGPIPE its first print would end this, with the Job still running and auto-sync still paused.
+  # So no error stops this, and what it has to say goes to a file beside the evidence. The probes are needed: a failed
+  # print stays in stdio's buffer, and the next $(...) would capture it.
+  set +e
+  trap '' HUP INT TERM PIPE
+  { printf '\n'; } 2>/dev/null || exec >>"$evidence.log" 2>&1
+  { printf '\n' >&2; } 2>/dev/null || exec 2>>"$evidence.log"
   stop_this_runs_jobs
   if [[ -n "$JOBS_LEFT_RUNNING" ]]; then
     warn "COULD NOT REMOVE these restore Jobs in $NS:$JOBS_LEFT_RUNNING. One may still drop or replace a database, so nothing is being started: auto-sync stays paused, and what was stopped stays stopped. When the cluster answers, run these, in this order:"

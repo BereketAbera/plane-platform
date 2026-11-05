@@ -6,7 +6,8 @@
 #   HARNESS_SOURCE=<another checkout> tests/drills/clean-restore-harness.sh
 #                                                the same scenarios against other code, to see them fail
 # S and a number is a scenario of the first review of the clean restore or from before it. R and a number is finding
-# that number of the second review, in clean-restore-harness/scenarios-second-review.sh.
+# that number of the second review, in clean-restore-harness/scenarios-second-review.sh. V and a number is MAJOR problem
+# that number of the review of those fixes, at the end of the same file.
 #
 # macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. Run it in the background: one scenario at a time
 # takes about an hour, an estimate, and in six ONLY= groups at once it took 26 minutes.
@@ -280,11 +281,11 @@ step_status_is() { # evidence-file step status
   jq -e --arg s "$2" --arg st "$3" 'any(.steps[]; .step == $s and .status == $st)' "$1"
 }
 # In a session of its own, so a signal can reach all of it, as Ctrl-C does. A shell starts a background job with SIGINT
-# ignored, nohup ignores SIGHUP, and a script cannot trap what it was started ignoring, so this puts those back as a
-# terminal would have them. Sets DETACHED and OUT.
+# ignored, nohup ignores SIGHUP, Python ignores SIGPIPE, and a script cannot trap what it was started ignoring, so this
+# puts those back as a terminal would have them. Sets DETACHED and OUT.
 start_detached() { # command...
   OUT="$H/state/detached.txt"
-  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGHUP, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
+  ( cd "$H" && exec python3 -I -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGHUP, signal.SIG_DFL); signal.signal(signal.SIGPIPE, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@" ) > "$OUT" 2>&1 &
   DETACHED=$!
 }
 wait_for_log() { # pattern
@@ -1639,7 +1640,7 @@ S36() {
 # shellcheck source=clean-restore-harness/scenarios-second-review.sh
 source "$STUBS/scenarios-second-review.sh"
 
-SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22"
+SCENARIOS="S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24 S25 S26 S27 S28 S29 S30 S31 S32 S33 S34 S35 S36 R1 R2 R3 R4 R5 R6 R7 R8 R8d R9 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R21 R22 V1"
 
 for s in $SCENARIOS; do
   case " ${ONLY:-$SCENARIOS} " in
