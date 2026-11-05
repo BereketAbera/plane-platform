@@ -1,4 +1,4 @@
-# PyJWT in the backend image. Recorded Thu Nov  5 05:03:12 EAT 2026.
+# PyJWT in the backend image. Recorded Thu Nov  5 05:59:43 EAT 2026.
 
 $ # what pins it, in upstream's image
 66-# jwt
@@ -7,12 +7,13 @@ Version: 2.13.0
 Requires: 
 Required-by: 
 
-$ # the same in the published image, localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+$ # the same in the published image, localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
 66-# jwt
 67:PyJWT==2.14.0
 Version: 2.14.0
 Requires: 
 Required-by: 
+WARNING: The directory '/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
 No broken requirements found.
 pip check exit 0
 /usr/local/lib/python3.12/site-packages/jwt

@@ -1,4 +1,4 @@
-# Thu Nov  5 04:58:30 EAT 2026, on the images built from commit ec45e212ee6185d286762a753913c253dac51358, each gate run directly and gated on its exit code. Node v22.22.2
+# Thu Nov  5 05:55:15 EAT 2026, on the images built from commit b2ba58723fe736f2ce56a972f9d396ce24416461, each gate run directly and gated on its exit code. Node v22.22.2. Digests from .build/digests.tsv
 token-diff exit 0
 contrast exit 0
 leak-scan exit 0
@@ -16,12 +16,12 @@ flatten-config exit 0
 smoke-images exit 0
 smoke containers left: 0
 check-image exit 0
-backend-db exit 0
-backend-db containers left: 0
-gates failed so far: 0
 upgrade-check, isolated copy exit 0
 upstream-check-v1.4.2 exit 0
 upstream-check-v1.4.0 exit 0
+backend-db exit 0
+backend-db containers left: 0
+gates failed so far: 0
 upstream-check-v1.3.0 exit 0
 upstream-check-preview exit 0
 lint-shellcheck exit 0
@@ -33,3 +33,17 @@ lint-node-check exit 0
 lint-trivy-config exit 0
 lint-gitleaks exit 0
 lint-gitleaks-files exit 0
+lint-gitleaks-workflow exit 0
+lint-gitleaks-notice exit 0
+scan-images exit 0
+gates failed in this part: 0
+
+# The second part, from upgrade-check on, ran beside backend-db, so their lines are interleaved above. Each exit code is the command's own.
+# Negative controls and records, which must end as stated:
+smoke-images on web and admin from ec45e21 exit 1, must fail: 34 FAIL, all on the new checks
+layer-check-cases, in process and through a scratch registry exit 0
+layer-check-cases, the standard library's zstd hidden exit 0
+layer-check-cases, /usr/bin/python3, 3.9.6 exit 0
+layer-check --report-only on upstream's plane-backend exit 0, with 2 hits
+layer-check on the backend from 1563cbf exit 1, must fail
+flatten-compare, the backend from ec45e21 against the final one exit 1, they differ as stated in that file

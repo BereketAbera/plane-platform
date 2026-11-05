@@ -1,10 +1,10 @@
-# Thu Nov  5 04:58:34 EAT 2026
+# Thu Nov  5 05:55:19 EAT 2026
 $ apps/wayline/checks/cache-names.sh web
 ==> web: 1060 files under assets/, 1060 named as the rule says, 0 in a subdirectory, which the rule does not cover
 a suffix of lower-case letters only, so read it: notification-jgmydpsu.js
 # exit 0
 
-# Thu Nov  5 04:58:40 EAT 2026
+# Thu Nov  5 05:55:25 EAT 2026
 $ apps/wayline/checks/cache-names.sh admin
 ==> admin: 79 files under assets/, 79 named as the rule says, 0 in a subdirectory, which the rule does not cover
 # exit 0

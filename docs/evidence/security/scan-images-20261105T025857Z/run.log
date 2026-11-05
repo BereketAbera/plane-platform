@@ -1,0 +1,23 @@
+# Thu Nov  5 05:58:57 EAT 2026
+$ env SCAN_ONLY=built SCAN_MIN_FREE_GIB=11 SCAN_FLOOR_GIB=10 SCAN_OUTPUT_DIR=<scratch>/scan-images-20261105T025857Z scripts/ci/scan-images.sh
+==> Disk limits for this run: 11 GiB free to start, 10 GiB free to keep going. 13 GiB free now.
+ ok 5 image(s) to scan, listed in <scratch>/scan-images-20261105T025857Z/inventory.tsv
+==> Making sure the vulnerability database is current
+==> [1/5] localhost:5001/wayline/admin@sha256:0480d65f1078e58f6ed75e45396b43d5b69d6e3e37a662903e7a8cc65a2b99cb
+==> [2/5] localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
+==> [3/5] localhost:5001/wayline/space@sha256:79c25c465f331e8a1e1aa7d265aa7af41a8fa8e364aea9b2e13fa56b4f275872
+==> [4/5] localhost:5001/wayline/web@sha256:316d6dd37336593fd9aac63aed2cd2eb2087ef466f46e5cf2288f761f533915b
+==> [5/5] wayline-source-lockfiles
+image                                                                                    CRITICAL         HIGH       MEDIUM    LOW  os
+localhost:5001/wayline/space@79c25c465f33                                               0 (0 fix)  30 (30 fix)  22 (22 fix)      5  alpine 3.24.3
+localhost:5001/wayline/backend@cd44a752e7ee                                             0 (0 fix)    4 (4 fix)  11 (11 fix)      2  alpine 3.23.7
+localhost:5001/wayline/admin@0480d65f1078                                               0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+localhost:5001/wayline/web@316d6dd37336                                                 0 (0 fix)    0 (0 fix)    0 (0 fix)      0  alpine 3.24.3
+wayline-source-lockfiles                                                                1 (1 fix)  31 (31 fix)  24 (24 fix)      7  none
+
+5 of 5 targets scanned, 4 of the scanned ones built here.
+Findings across all images: 1 CRITICAL, 65 HIGH, 57 MEDIUM, 14 LOW, 0 UNKNOWN.
+Reported, not failing: 1 upstream target(s) have a CRITICAL finding with a fix, so a newer version may help:
+  wayline-source-lockfiles
+PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.
+# exit 0

@@ -1,7 +1,7 @@
-# Thu Nov  5 04:59:33 EAT 2026
-$ apps/wayline/backend/check-image.sh localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+# Thu Nov  5 05:56:23 EAT 2026
+$ apps/wayline/backend/check-image.sh localhost:5001/wayline/backend@sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4
 == docker image inspect
-id=sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
+id=sha256:cd44a752e7ee85fbe4a0e296a164af8490bfaece627ae62e9ef616a49783cda4 arch=arm64 user=1000 workdir=/code cmd=[./bin/docker-entrypoint-api.sh]
 == base image: makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
 
 == manage.py check
@@ -104,7 +104,7 @@ PASS style removal matches the old regex on "<STYLE type='text/css'>\n"
 PASS style removal matches the old regex on '<style>a{}</style><style'
 PASS style removal matches the old regex on '<style</style>x</style>'
 PASS style removal matches the old regex on '<p>Hi</p><style<style<st'
-PASS 11000 unclosed style-like tags take under a second 0.017 s
+PASS 11000 unclosed style-like tags take under a second 0.019 s
 
 == PyJWT as Plane uses it
 PASS importers of jwt: ['plane/app/views/project/invite.py', 'plane/app/views/workspace/invite.py']
