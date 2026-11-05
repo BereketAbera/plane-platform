@@ -4,10 +4,12 @@
 Standard library only, so it runs on a clean host and in any CI image. HTTP cannot see inside a
 broker or a bucket, so a few steps also use kubectl. They read BLOCKED when the cluster is out of reach.
 
-Every line of output is PASS, FAIL or BLOCKED. BLOCKED means a step could not run because
-something it depends on did not pass, so it is neither evidence of working nor of broken.
+Every line of output is PASS, FAIL, BLOCKED or SKIP. BLOCKED means a step could not run because
+something it depends on did not pass, so it is neither evidence of working nor of broken. SKIP means a
+step does not apply to this environment as it stands, and its line says why. It proves nothing either
+way, and it is how branding reads until an environment runs the Wayline images.
 
-Exit status: 0 all passed, 1 at least one FAIL, 2 no FAIL but something was BLOCKED.
+Exit status: 0 all passed, 1 at least one FAIL, 2 no FAIL but something was BLOCKED. SKIP does not count.
 
 Generated credentials go only to .local/test-accounts.env (mode 0600). They are never printed
 and never written to the evidence file.
@@ -16,7 +18,9 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import datetime as dt
+import fcntl
 import hashlib
 import http.client
 import io
@@ -63,6 +67,18 @@ CSRF_FAILURE_TITLE = b"CSRF Verification Failed"
 WORKLOADS = [("Deployment", f"plane-{name}-wl") for name in ("web", "admin", "space", "live", "api", "worker", "beat-worker")]
 WORKLOADS += [("StatefulSet", f"plane-{name}-wl") for name in ("pgdb", "redis", "rabbitmq", "minio")]
 MIGRATOR_JOB = "plane-api-migrate-1"
+WORKER_SELECTOR = "app.kubernetes.io/component=worker"
+# What the Wayline images replace, and the Deployments that run each. The backend image serves three.
+BRANDED_WORKLOADS = {"web": ["plane-web-wl"], "admin": ["plane-admin-wl"], "space": ["plane-space-wl"],
+                     "backend": ["plane-api-wl", "plane-worker-wl", "plane-beat-worker-wl"]}
+BRANDED_REPOSITORY = re.compile(r"^localhost:5001/wayline/(\w+)$")
+# The product name as a word, so plane-dev, plane_api and the plane.dev.localhost host do not count.
+UPSTREAM_NAME = re.compile(r"(?<![A-Za-z])Plane(?![A-Za-z])")
+# As apps/wayline/checks/smoke-images.sh reads a page, and the one credit apps/wayline/README.md permits.
+UPSTREAM_BRAND = re.compile(r"Plane|plane\.so|makeplane")
+PERMITTED_CREDIT = "Built on Plane Community Edition"
+LICENCE_FILES = ("LICENSE.txt", "COPYRIGHT.txt", "NOTICE.txt", "MODIFICATIONS.txt", "OFL-InstrumentSans.txt",
+                 "OFL-JetBrainsMono.txt")
 # A 1x1 PNG, because the avatar endpoint accepts images only.
 ONE_PIXEL_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -89,6 +105,10 @@ class StepFailed(Exception):
 
 class StepBlocked(Exception):
     """The step cannot run, which says nothing about the system under test."""
+
+
+class StepSkipped(Exception):
+    """The step does not apply here. Its message says why, and it counts neither for nor against."""
 
 
 class Redactor:
@@ -511,6 +531,14 @@ class Cluster:
         return self.in_namespace("exec", "deploy/plane-worker-wl", "--", "celery", "-A", "plane", "control",
                                  "-t", "15", *args)
 
+    def worker_log(self) -> str:
+        """The running container's log, which starts again with each new container and so each new selection."""
+        return self.in_namespace("logs", "deploy/plane-worker-wl", "--tail=-1")
+
+    def deployments(self) -> dict:
+        listed = json.loads(self.in_namespace("get", "deployments", "-o", "json"))
+        return {item["metadata"]["name"]: item for item in listed["items"]}
+
     def silo_object(self, key: str) -> dict:
         output = self.in_namespace("exec", "deploy/plane-api-wl", "--", "python", "-c", SILO_PROBE, key)
         return json.loads(output.strip().splitlines()[-1])
@@ -535,29 +563,125 @@ def write_private(path: Path, content: str) -> None:
 
 
 class Accounts:
-    """KEY=value file holding generated test credentials for both environments."""
+    """KEY=value file holding generated test credentials for both environments.
+
+    One file for both, and scripts and the load test read it, so a write takes a lock and reads the file again.
+    Without that, a smoke in the other environment that started first would write back what it read then, and
+    this run's new token would be gone. A reader needs no lock, because write_private replaces the file whole.
+    """
 
     def __init__(self, path: Path, env: str) -> None:
         self.path = path
         self.prefix = "PLANE_" + env.upper().replace("-", "_") + "_"
-        self.values: dict[str, str] = {}
-        if path.exists():
-            if path.stat().st_mode & 0o077:
-                os.chmod(path, 0o600)
-            for line in path.read_text().splitlines():
+        self.values = self._read()
+
+    def _read(self) -> dict[str, str]:
+        values: dict[str, str] = {}
+        if self.path.exists():
+            if self.path.stat().st_mode & 0o077:
+                os.chmod(self.path, 0o600)
+            for line in self.path.read_text().splitlines():
                 key, separator, value = line.partition("=")
                 if separator and not key.startswith("#"):
-                    self.values[key] = value
+                    values[key] = value
+        return values
 
     def get(self, key: str) -> str | None:
         return self.values.get(self.prefix + key)
 
     def set(self, **pairs: str) -> None:
-        for key, value in pairs.items():
-            self.values[self.prefix + key] = value
-        lines = ["# Generated by tests/e2e/smoke.py. Test credentials only. Never commit."]
-        lines += [f"{key}={value}" for key, value in sorted(self.values.items())]
-        write_private(self.path, "\n".join(lines) + "\n")
+        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        # A file of its own, because write_private replaces the credentials file, and a lock held on the
+        # replaced file would no longer exclude anyone. The kernel drops it if this process dies.
+        descriptor = os.open(self.path.parent / f".{self.path.name}.lock", os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            self.values = self._read()
+            for key, value in pairs.items():
+                self.values[self.prefix + key] = value
+            lines = ["# Generated by tests/e2e/smoke.py. Test credentials only. Never commit."]
+            lines += [f"{key}={value}" for key, value in sorted(self.values.items())]
+            write_private(self.path, "\n".join(lines) + "\n")
+        finally:
+            os.close(descriptor)
+
+
+# --- What Git says about an environment's images ---------------------------------------------------
+
+
+def overlay_path(env: str) -> Path:
+    return ROOT / "helm" / "plane" / "overlays" / env / "kustomization.yaml"
+
+
+def parse_overlay_images(text: str) -> dict[str, dict[str, str]]:
+    """The images: list of a kustomization, by the name the chart renders. Standard library only, so no YAML
+    parser: `make promote` writes this list as kustomize sorts it, one key per line."""
+    _, _, listed = text.partition("\nimages:\n")
+    entries = {}
+    for block in re.split(r"^- ", listed, flags=re.M):
+        fields = dict(re.findall(r"^\s*(\w+):\s*(\S+)\s*$", block, flags=re.M))
+        if "name" in fields:
+            entries[fields["name"]] = fields
+    return entries
+
+
+def branded_images(text: str) -> dict[str, dict[str, str]]:
+    """Which Wayline images a kustomization names, by component (web, admin, space, backend)."""
+    branded = {}
+    for entry in parse_overlay_images(text).values():
+        match = BRANDED_REPOSITORY.match(entry.get("newName", ""))
+        if match:
+            branded[match.group(1)] = entry
+    return branded
+
+
+def configured_source_repo() -> str:
+    """Where /source points. The Dockerfile holds the default, and scripts/ci/build-images.sh passes the same variable."""
+    override = os.environ.get("WAYLINE_SOURCE_REPO")
+    if override:
+        return override
+    dockerfile = (ROOT / "apps" / "wayline" / "runtime" / "Dockerfile.web").read_text()
+    match = re.search(r"^ARG WAYLINE_SOURCE_REPO=(\S+)$", dockerfile, flags=re.M)
+    if not match:
+        raise StepBlocked("apps/wayline/runtime/Dockerfile.web no longer sets WAYLINE_SOURCE_REPO")
+    return match.group(1)
+
+
+def git(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True, timeout=30, check=False)
+
+
+def branded_backend_since(env: str) -> dt.datetime | None:
+    """When the Wayline backend first reached this environment's overlay. An instance registered earlier was
+    registered by upstream's image. None if Git cannot say, including if it never has."""
+    try:
+        done = git("log", "--reverse", "--format=%ct", "-S", "localhost:5001/wayline/backend", "--",
+                   str(overlay_path(env).relative_to(ROOT)))
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    lines = done.stdout.split() if done.returncode == 0 else []
+    return dt.datetime.fromtimestamp(int(lines[0]), dt.timezone.utc) if lines else None
+
+
+def page_title(html: str) -> str:
+    match = re.search(r"<title[^>]*>(.*?)</title>", html, flags=re.S | re.I)
+    return match.group(1).strip() if match else ""
+
+
+def brand_problems(path: str, html: str) -> list[str]:
+    """What is wrong with a served page: its title must name Wayline and not upstream, and the rest of it
+    may name upstream only in the one permitted credit."""
+    problems = []
+    title = page_title(html)
+    if "Wayline" not in title:
+        problems.append(f"{path} title does not name Wayline: {title!r}")
+    if UPSTREAM_NAME.search(title):
+        problems.append(f"{path} title names upstream as the product: {title!r}")
+    leaks = [hit.group(0) for hit in re.finditer(r".{0,30}(?:" + UPSTREAM_BRAND.pattern + r").{0,30}", html)
+             if PERMITTED_CREDIT not in hit.group(0)]
+    if leaks:
+        problems.append(f"{path} carries the upstream brand {len(leaks)} time(s), first: {leaks[0]!r}")
+    return problems
 
 
 # --- The run -------------------------------------------------------------------------------------
@@ -599,6 +723,8 @@ class Smoke:
             self.passed.add(name)
         except StepBlocked as exc:
             status, detail = "BLOCKED", str(exc)
+        except StepSkipped as exc:
+            status, detail = "SKIP", str(exc)
         except StepFailed as exc:
             status, detail = "FAIL", str(exc)
         except (OSError, http.client.HTTPException, WsClosed, ValueError, KeyError, TypeError, IndexError) as exc:
@@ -618,7 +744,7 @@ class Smoke:
         return "PASS"
 
     def write_evidence(self, started_at: str) -> None:
-        counts = {s: sum(1 for step in self.steps if step["status"] == s) for s in ("PASS", "FAIL", "BLOCKED")}
+        counts = {s: sum(1 for step in self.steps if step["status"] == s) for s in ("PASS", "FAIL", "BLOCKED", "SKIP")}
         document = {
             "tool": "tests/e2e/smoke.py",
             "environment": self.args.env,
@@ -684,6 +810,7 @@ class Smoke:
         instance = self.retrying_get("/api/instances/", session=False)
         expect(instance, 200)
         payload = instance.json()
+        # As this run first found it, which on a new database is before any admin has set it up.
         self.state["instance"] = payload.get("instance", payload)
         data["web_status"], data["instances_status"] = web.status, instance.status
         return f"web 200, /api/instances/ 200 via {self.host}"
@@ -1020,11 +1147,43 @@ class Smoke:
         results = expect(self.http.get(target, session=False, headers=self.api()), 200).json().get("results", [])
         return sum(1 for activity in results if activity.get("verb") == "created")
 
+    def replace_worker(self, data: dict) -> None:
+        """cancel_consumer empties Celery's queue selection, and add_consumer attaches a consumer without putting
+        the queue back in it. Such a worker runs normally until its next broker reconnect. It then builds its
+        consumer from the empty selection and consumes nothing, while inspect ping still answers pong.
+
+        Celery 5.5.3 has no remote control command that restores the selection: add_task_queue reaches select_add
+        only for a queue it has never heard of. A new pod has a clean selection, and deleting a pod is no drift for
+        Argo CD, though the Application reads Progressing until the replacement is ready.
+        """
+        self.cluster.in_namespace("delete", "pod", "-l", WORKER_SELECTOR, "--wait=true", "--timeout=120s", timeout=150)
+        self.cluster.in_namespace("rollout", "status", "deployment/plane-worker-wl", "--timeout=180s", timeout=200)
+        end = time.monotonic() + 120
+        while self.cluster.queues().get("celery", {}).get("consumers", 0) < 1:
+            if time.monotonic() > end:
+                raise StepFailed("the replacement worker has no consumer on queue celery after 120s")
+            time.sleep(2)
+        data["worker_replaced"] = True
+
     def step_worker_negative_control(self, data: dict) -> str:
-        """Stops the worker consuming, with no pod or spec touched, so Argo CD sees nothing.
+        """Stops the worker consuming, then replaces its pod, because the control leaves state a later reconnect
+        would trip on. No spec changes, so Argo CD has nothing to revert.
 
         Without this, an activity that some other path wrote would pass the background-job step.
         """
+        try:
+            detail = self.worker_negative_control(data)
+        except BaseException as exc:
+            # Whatever stopped the control, it may have stopped after the cancel. Its own failure stays the one to read.
+            try:
+                self.replace_worker(data)
+            except (StepFailed, StepBlocked, OSError, subprocess.SubprocessError) as replacing:
+                raise StepFailed(f"{exc}. Then the worker could not be replaced either: {replacing}") from exc
+            raise
+        self.replace_worker(data)
+        return f"{detail}. Worker pod replaced, so no emptied queue selection is left behind"
+
+    def worker_negative_control(self, data: dict) -> str:
         control = self.cluster.celery_control
         control("cancel_consumer", "celery")
         try:
@@ -1055,6 +1214,17 @@ class Smoke:
         data["consumers_after"] = back["consumers"]
         return (f"With 0 consumers: {parked['messages']} messages parked, no activity after 15s. "
                 f"Asked the consumer back: activity within {seconds:.1f}s")
+
+    def step_worker_clean(self, data: dict) -> str:
+        """A worker that has logged this keeps consuming until its next broker reconnect, and then stops. Nothing
+        else shows it: the queue has its consumer and inspect ping answers until the moment it matters."""
+        cancelled = [line for line in self.cluster.worker_log().splitlines() if "Canceling queue" in line]
+        data["canceling_queue_lines"] = len(cancelled)
+        if cancelled:
+            raise StepFailed(f"the worker has been through cancel_consumer ({cancelled[-1][:60]}), so it will consume "
+                             f"nothing after its next broker reconnect. Replace it: kubectl -n {self.cluster.namespace} "
+                             f"delete pod -l {WORKER_SELECTOR}")
+        return "no cancel_consumer in this worker's log, so its queue selection should survive a broker reconnect"
 
     def wait_for_created_activity(self, base: str, work_item_id: str) -> float:
         """Proves API -> RabbitMQ -> worker -> Postgres. The POST alone returns 201 with no worker."""
@@ -1407,6 +1577,177 @@ class Smoke:
                 client.ws.close()
         return f"two connections idle for {seconds}s, pings answered {data['pings_answered']}, then an update got through"
 
+    def require_branded(self, component: str) -> None:
+        if component not in self.state["branded"]:
+            raise StepSkipped(f"this environment's overlay does not put localhost:5001/wayline/{component} in place, "
+                              "so that image does not decide this")
+
+    def step_branding_overlay(self, data: dict) -> str:
+        """Whether there is anything to check, and whether what Git names is what is running. Everything after this
+        checks a running image, so a rollout still on its way must not read as a broken one."""
+        path = overlay_path(self.args.env)
+        branded = branded_images(path.read_text())
+        self.state["branded"] = branded
+        data["branded"] = {component: entry.get("digest") for component, entry in sorted(branded.items())}
+        if self.args.branding == "require":
+            self.state["branded"] = {component: {} for component in BRANDED_WORKLOADS}
+            return "--branding require: checking every image, whatever the overlay says"
+        if not branded:
+            raise StepSkipped(f"{path.relative_to(ROOT)} names no localhost:5001/wayline image, so this environment "
+                              "runs upstream's and has no branding to check. This runs once make promote puts them there")
+        deployments = self.cluster.deployments()
+        problems = []
+        for component, entry in sorted(branded.items()):
+            want = f"{entry['newName']}@{entry.get('digest')}"
+            for name in BRANDED_WORKLOADS.get(component, []):
+                containers = deployments.get(name, {}).get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
+                images = [container["image"] for container in containers]
+                data[name] = images
+                if want not in images:
+                    problems.append(f"{name} runs {images}, and the overlay names {want}")
+        if problems:
+            raise StepBlocked("what is running is not what the overlay names, so a check here would say nothing "
+                              f"about this overlay. Is the rollout finished? {'; '.join(problems)}")
+        return f"{', '.join(sorted(branded))} run the digests in {path.relative_to(ROOT)}"
+
+    def step_branding_web(self, data: dict) -> str:
+        self.require_branded("web")
+        page = expect(self.http.get("/", session=False, headers={"Accept": "text/html"}), 200)
+        html = page.body.decode("utf-8", "replace")
+        data["title"] = page_title(html)
+        problems = brand_problems("/", html)
+
+        # Upstream's image answers /source with the app's page, 200. Not followed: the repository is private for now,
+        # so its answer says nothing about this image. See apps/wayline/README.md.
+        repository = configured_source_repo()
+        source = self.http.get("/source", session=False, headers={"Accept": "*/*"})
+        data.update(source_status=source.status, source_location=source.location)
+        commit = re.fullmatch(re.escape(repository) + r"/tree/([0-9a-f]{40})", source.location)
+        if source.status != 302 or not commit:
+            problems.append(f"/source answered {source.status} to {source.location!r}, want a 302 to {repository}/tree/<commit>")
+        else:
+            try:
+                known = git("cat-file", "-e", f"{commit.group(1)}^{{commit}}").returncode == 0
+            except (OSError, subprocess.TimeoutExpired):
+                known = None
+            data["source_commit_in_this_repository"] = known
+            if known is False:
+                problems.append(f"/source names commit {commit.group(1)}, which this repository does not have")
+
+        listing = self.http.get("/licenses/", session=False, headers={"Accept": "text/html"})
+        data["licenses_status"] = listing.status
+        if listing.status != 200:
+            problems.append(f"/licenses/ answered {listing.status}")
+        missing = [name for name in LICENCE_FILES if f'href="{name}"'.encode() not in listing.body]
+        if missing:
+            problems.append(f"/licenses/ does not list {missing}")
+        licence = self.http.get("/licenses/LICENSE.txt", session=False, headers={"Accept": "*/*"})
+        data["license_status"] = licence.status
+        if licence.status != 200 or b"GNU AFFERO GENERAL PUBLIC LICENSE" not in licence.body:
+            problems.append(f"/licenses/LICENSE.txt answered {licence.status} and is not the AGPL text")
+        if problems:
+            raise StepFailed("; ".join(problems))
+        return (f"title {data['title']!r}, /source 302 to {repository}/tree/{commit.group(1)[:12]}... (not followed: "
+                f"the repository is private for now), /licenses/ lists {len(LICENCE_FILES)} files and serves the AGPL")
+
+    def step_branding_page(self, data: dict, component: str, path: str) -> str:
+        self.require_branded(component)
+        html = expect(self.http.get(path, session=False, headers={"Accept": "text/html"}), 200).body.decode("utf-8", "replace")
+        data["title"] = page_title(html)
+        problems = brand_problems(path, html)
+        if problems:
+            raise StepFailed("; ".join(problems))
+        return f"{path} title {data['title']!r}, and no upstream brand in the page"
+
+    def step_branding_backend(self, data: dict) -> str:
+        """The backend image sets INSTANCE_CHANGELOG_URL empty. An operator may still set their own."""
+        self.require_branded("backend")
+        payload = expect(self.http.get("/api/instances/", session=False), 200).json()
+        if "instance_changelog_url" not in payload.get("config", {}):
+            raise StepFailed("/api/instances/ no longer reports instance_changelog_url, so this check says nothing")
+        changelog = payload["config"]["instance_changelog_url"]
+        data["instance_changelog_url"] = changelog
+        if UPSTREAM_BRAND.search(changelog or ""):
+            raise StepFailed(f"the backend reports upstream's changelog: {changelog!r}")
+        return f"instance_changelog_url is {changelog!r}, so \"What's new\" shows the local fallback"
+
+    def step_branding_seed(self, data: dict) -> str:
+        """What the worker's image writes into a workspace created now. The bot is one user per workspace, named when
+        the workspace is seeded, so this needs no clean database: older workspaces keep their bot, this one does not."""
+        self.require_branded("backend")
+        slug, name = self.state["slug"], self.state["workspace_name"]
+        workspace = f"/api/workspaces/{slug}"
+        projects = expect(self.http.get(f"{workspace}/projects/"), 200).json()
+        projects = projects.get("results", projects) if isinstance(projects, dict) else projects
+        seeded = [project["id"] for project in projects if project.get("name") == name]
+        if not seeded:
+            raise StepFailed(f"no project named after the workspace among {len(projects)}")
+        seed = seeded[0]
+        issues, pages = f"{workspace}/projects/{seed}/issues", f"{workspace}/projects/{seed}/pages/"
+        # The seed task writes pages last, so once one exists the rest is there to read.
+        end = time.monotonic() + self.args.job_timeout
+        while not expect(self.http.get(pages), 200).json():
+            if time.monotonic() > end:
+                raise StepFailed(f"no seed page after {self.args.job_timeout}s")
+            time.sleep(2)
+
+        bots = [row["member"] for row in expect(self.http.get(f"{workspace}/members/"), 200).json()
+                if row.get("member", {}).get("is_bot")]
+        data["bots"] = [(bot.get("display_name"), bot.get("first_name")) for bot in bots]
+        problems = []
+        if [(bot.get("display_name"), bot.get("first_name")) for bot in bots] != [("Wayline", "Wayline")]:
+            problems.append(f"want one bot named Wayline in this new workspace, found {data['bots']}")
+
+        listed = expect(self.http.get(f"{issues}/?per_page=100&cursor=100:0:0&group_by=state_id"), 200).json()
+        identifiers = [item["id"] for group in listed.get("results", {}).values() for item in group.get("results", [])]
+        bodies = [expect(self.http.get(f"{issues}/{identifier}/"), 200).body.decode("utf-8", "replace")
+                  for identifier in identifiers]
+        bodies.append(expect(self.http.get(pages), 200).body.decode("utf-8", "replace"))
+        bodies.append(expect(self.http.get(f"{workspace}/projects/{seed}/cycles/"), 200).body.decode("utf-8", "replace"))
+        text = "\n".join(bodies)
+        data.update(seed_work_items=len(identifiers), wayline_words=text.count("Wayline"), plane_words=len(UPSTREAM_NAME.findall(text)))
+        if not identifiers:
+            problems.append("the seed project has no work items to read")
+        if data["plane_words"]:
+            found = UPSTREAM_NAME.search(text)
+            problems.append(f"the seed content names upstream {data['plane_words']} time(s), first: {text[max(0, found.start() - 30):found.end() + 30]!r}")
+        if not data["wayline_words"]:
+            problems.append("the seed content does not name Wayline, so reading it for upstream's name proves little")
+        if problems:
+            raise StepFailed("; ".join(problems))
+        return (f"the bot of this new workspace is named Wayline, and {len(identifiers)} seed work items, its pages and "
+                f"its cycles name Wayline {data['wayline_words']} times and upstream 0")
+
+    def step_branding_fresh_install(self, data: dict) -> str:
+        """What register_instance writes when no instance exists: the default name, and telemetry off. Admin setup
+        then replaces both with what its form sends, and this test sends company_name=Wayline itself, so afterwards
+        the name proves nothing. So this reads the instance as this run first found it, and only a run that found it
+        not yet set up can check this. The first smoke after a clean install is that run."""
+        self.require_branded("backend")
+        instance = self.state["instance"]
+        data.update(found_setup_done=bool(instance.get("is_setup_done")), found_name=instance.get("instance_name"),
+                    found_telemetry=instance.get("is_telemetry_enabled"), registered_at=instance.get("created_at"))
+        if instance.get("is_setup_done"):
+            raise StepSkipped(
+                f"needs a clean database. This instance was set up before this run, and setup replaces what the image "
+                f"registered with what its form sent, so {instance.get('instance_name')!r} now says nothing about the "
+                "image. The first smoke after a clean install checks the registered name and telemetry default")
+        since = branded_backend_since(self.args.env)
+        registered = dt.datetime.fromisoformat((instance.get("created_at") or "").replace("Z", "+00:00"))
+        if since is None:
+            raise StepBlocked("Git cannot say when the Wayline backend reached this overlay, so this cannot tell who registered the instance")
+        if registered < since:
+            raise StepSkipped(f"needs a clean database. This instance was registered at {registered.isoformat()}, before "
+                              f"the Wayline backend reached the overlay at {since.isoformat()}, so upstream's image registered it")
+        problems = []
+        if instance.get("instance_name") != "Wayline":
+            problems.append(f"a new instance is named {instance.get('instance_name')!r}, want 'Wayline'")
+        if instance.get("is_telemetry_enabled") is not False:
+            problems.append(f"a new instance has telemetry {instance.get('is_telemetry_enabled')!r}, want False")
+        if problems:
+            raise StepFailed("; ".join(problems))
+        return "before setup, the instance this image registered is named Wayline, with telemetry off"
+
     def step_sentinel_create(self, data: dict) -> str:
         """A long-lived record that drills and restores re-read. It is never recreated silently:
         a missing sentinel means data was lost, so that must stay a failure."""
@@ -1485,6 +1826,7 @@ class Smoke:
         self.run("work-item-list", self.step_list, ("work-item",))
         self.run("read-back", self.step_read_back, ("work-item",))
         self.run("workspace-seed", self.step_workspace_seed, ("workspace",))
+        self.run_branding()
         self.run("app-shell", self.step_app_shell, ("project",))
         self.run("admin-sign-in", self.step_admin_sign_in, ("instance-setup",))
         self.run("second-user", self.step_second_user, ("work-item",))
@@ -1492,6 +1834,8 @@ class Smoke:
         self.run("broker-memory", self.step_broker_memory, ("reachable",))
         if self.args.worker_negative_control:
             self.run("worker-negative-control", self.step_worker_negative_control, ("background-job", "celery-consumers"))
+        # After the control, because that replaces a worker this would otherwise fail on.
+        self.run("worker-clean", self.step_worker_clean, ("celery-consumers",))
         self.run("attachment-upload", self.step_attachment_upload, ("work-item",))
         self.run("attachment-download", self.step_attachment_download, ("attachment-upload",))
         self.run("object-in-silo", self.step_object_in_silo, ("attachment-upload",))
@@ -1513,6 +1857,19 @@ class Smoke:
             self.run("realtime-soak", self.step_realtime_soak, ("realtime-sync",))
         self.run("sentinel-create", self.step_sentinel_create, ("api-token",))
         self.run("sentinel-reread", self.step_sentinel_reread, ("sentinel-create",))
+
+    def run_branding(self) -> None:
+        if self.args.branding == "off":
+            return
+        self.run("branding-overlay", self.step_branding_overlay)
+        if "branding-overlay" not in self.passed:
+            return
+        self.run("branding-web", self.step_branding_web, ("reachable",))
+        self.run("branding-admin", lambda data: self.step_branding_page(data, "admin", "/god-mode/"), ("reachable",))
+        self.run("branding-space", lambda data: self.step_branding_page(data, "space", "/spaces/"), ("reachable",))
+        self.run("branding-backend", self.step_branding_backend, ("reachable",))
+        self.run("branding-seed", self.step_branding_seed, ("workspace-seed",))
+        self.run("branding-fresh-install", self.step_branding_fresh_install, ("reachable",))
 
     def run_verify(self) -> None:
         self.run("reachable", self.step_reachable)
@@ -1567,6 +1924,67 @@ def selftest() -> int:
         assert path.stat().st_mode & 0o777 == 0o600
         assert Accounts(path, "prod-sim").get("ADMIN_PASSWORD") == "value"
         assert Accounts(path, "dev").get("ADMIN_PASSWORD") is None
+
+        # Two runs that both read the file before either wrote it, which used to lose the first one's token.
+        first, second = Accounts(path, "dev"), Accounts(path, "prod-sim")
+        first.set(API_TOKEN="from-dev")
+        second.set(API_TOKEN="from-prod-sim")
+        assert Accounts(path, "dev").get("API_TOKEN") == "from-dev"
+        assert Accounts(path, "prod-sim").get("API_TOKEN") == "from-prod-sim"
+        assert Accounts(path, "prod-sim").get("ADMIN_PASSWORD") == "value"
+
+        # The same, really at once. Each thread opens the lock file itself, so they exclude each other as processes do.
+        def write(env: str, number: int) -> None:
+            Accounts(path, env).set(**{f"KEY_{number}": str(number)})
+
+        writers = [threading.Thread(target=write, args=(env, number)) for number in range(25) for env in ("dev", "prod-sim")]
+        for writer in writers:
+            writer.start()
+        for writer in writers:
+            writer.join()
+        for env in ("dev", "prod-sim"):
+            assert all(Accounts(path, env).get(f"KEY_{number}") == str(number) for number in range(25)), env
+        assert path.stat().st_mode & 0o777 == 0o600
+
+    overlay = """images:
+- digest: sha256:aaa
+  name: artifacts.plane.so/makeplane/plane-frontend
+  newName: localhost:5001/wayline/web
+- digest: sha256:bbb
+  name: artifacts.plane.so/makeplane/plane-backend
+  newName: docker.io/makeplane/plane-backend
+  newTag: v1.4.3
+"""
+    assert set(branded_images("kind: Kustomization\n" + overlay)) == {"web"}
+    assert branded_images("kind: Kustomization\n" + overlay)["web"]["digest"] == "sha256:aaa"
+    assert parse_overlay_images("kind: Kustomization\n" + overlay)["artifacts.plane.so/makeplane/plane-backend"]["newTag"] == "v1.4.3"
+    assert branded_images("kind: Kustomization\n") == {}
+    assert configured_source_repo().startswith("https://")
+
+    good = "<head><title>Wayline | Project management</title></head><p>Built on Plane Community Edition</p>"
+    assert brand_problems("/", good) == []
+    assert any("title" in problem for problem in brand_problems("/", "<title>Plane | Project management</title>"))
+    assert any("title" in problem for problem in brand_problems("/", "<title>Wayline, a Plane fork</title>"))
+    assert any("does not name" in problem for problem in brand_problems("/", "<p>no title</p>"))
+    assert any("upstream brand" in problem for problem in brand_problems("/", "<title>Wayline</title><a href=x>https://plane.so</a>"))
+    assert UPSTREAM_NAME.search("plane-dev plane_api plane.dev.localhost Airplane") is None
+
+    # A skipped step counts neither way, and says why.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke = Smoke(parse_args(["--accounts", f"{directory}/a.env", "--sentinel", f"{directory}/s.json"]))
+
+        def skipped(_: dict) -> str:
+            raise StepSkipped("does not apply")
+
+        with contextlib.redirect_stdout(io.StringIO()) as printed:
+            smoke.run("passes", lambda _: "ok")
+            smoke.run("skipped", skipped)
+        assert "SKIP    skipped  does not apply" in printed.getvalue()
+        assert smoke.overall() == "PASS"
+        assert "skipped" not in smoke.passed
+        with contextlib.redirect_stdout(io.StringIO()):
+            smoke.run("blocked", lambda _: (_ for _ in ()).throw(StepBlocked("no")))
+        assert smoke.overall() == "BLOCKED"
 
     # A tiny server that plays Hocuspocus, so the client's framing runs over a real socket. It knows
     # nothing of Plane, and a pass here says nothing about the real server.
@@ -1647,7 +2065,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--soak-seconds", type=int, default=0,
                         help="in full mode, also hold two idle document connections this long, then deliver an update")
     parser.add_argument("--worker-negative-control", action="store_true",
-                        help="in full mode, also stop the worker consuming for about 20s and show the job waits for it")
+                        help="in full mode, also stop the worker consuming for about 20s and show the job waits for it, "
+                             "then replace the worker's pod, because that control leaves it unable to survive a broker reconnect")
+    parser.add_argument("--branding", choices=["auto", "require", "off"], default="auto",
+                        help="auto: check an image's branding if the environment's overlay names the Wayline image, and SKIP "
+                             "otherwise. require: check every image whatever the overlay says, which on upstream's images "
+                             "shows these checks can fail. off: leave them out (default: %(default)s)")
     parser.add_argument("--job-timeout", type=int, default=120, help="seconds to wait for a background job (default: 120)")
     parser.add_argument("--wait-seconds", type=int, default=180,
                         help="seconds to tolerate a restarting backend on reads (default: 180)")
