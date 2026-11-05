@@ -108,6 +108,8 @@ ls -1 .local/backups/prod-sim/
 make restore ENV=prod-sim BACKUP=<id-from-before-the-promotion> CONFIRM=yes
 ```
 
+`make restore` of a Plane environment has not run against its real database and bucket, so this step has not been followed. See [Backup and restore](backup-restore.md).
+
 Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. A prod-sim rollback prints what to do, and read it before you restore:
 
 | What it finds about the promotion | What it prints |
