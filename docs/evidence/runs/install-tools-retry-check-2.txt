@@ -1,0 +1,7 @@
+# 2026-11-05T14:48:15Z the final curl options against a local stub that answers 504 three times, then 200
+curl -fsSL --retry 8 --retry-connrefused
+curl exit 0 in 7s, body: ok
+request 1 answered 504
+request 2 answered 504
+request 3 answered 504
+request 4 answered 200

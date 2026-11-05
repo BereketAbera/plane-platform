@@ -358,6 +358,7 @@ final-harness-f30a7f5/group-2.txt	2026-11-05T14:15:00Z	11195	0
 final-harness-f30a7f5/group-3.txt	2026-11-05T14:18:46Z	11498	0
 final-harness-f30a7f5/group-4.txt	2026-11-05T14:16:48Z	15847	0
 final-harness-f30a7f5/group-5.txt	2026-11-05T14:12:55Z	14076	0
+final-harness-f30a7f5/mutants.txt	2026-11-05T14:54:13Z	14696	0
 final-harness-f30a7f5/total.txt	2026-11-05T14:18:46Z	64	0
 final-prod-sim-smoke-1.txt	2026-11-05T02:22:28Z	4908	0
 final-prod-sim-smoke-2.txt	2026-11-05T02:23:14Z	4828	0
@@ -507,6 +508,8 @@ infisical-server-log-1.txt	2026-11-04T21:50:59Z	3554	0
 infisical-tamper-1.txt	2026-11-04T21:37:38Z	850	0
 infisical-token-renewal-1.txt	2026-11-04T22:10:32Z	1151	0
 infisical-unready-sync-1.txt	2026-11-04T21:55:56Z	19197	0
+install-tools-retry-check-2.txt	2026-11-05T14:48:15Z	267	0
+install-tools-retry-check.txt	2026-11-05T14:31:39Z	282	0
 kindnet-hold-1.txt	2026-11-05T01:09:12Z	4964	0
 kindnet-hold-2.txt	2026-11-05T01:03:36Z	3715	0
 kindnet-hold-script-1.txt	2026-11-05T01:20:28Z	10683	0
