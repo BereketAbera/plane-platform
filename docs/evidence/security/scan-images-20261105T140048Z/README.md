@@ -22,7 +22,7 @@ Five upstream images have a CRITICAL finding with a fix, so a newer version may 
 
 ## What this does not say
 
-- **This run has no lockfile row.** The script scans the lockfiles of the Wayline source only when `.build/plane-src` exists, and it did not exist here. So 31 targets is the images alone, against 36 on 2026-11-04, which held 35 images and that row. The last read of those lockfiles is in `scan-images-20261105T052024Z`, on the same frontends: 1 CRITICAL with a fix, which the policy does not fail.
+- **This run has no lockfile row.** The script scans the lockfiles of the Wayline source only when `.build/plane-src` exists, and it did not exist here. So 31 targets is the images alone, against 36 on 2026-11-04, which held 35 images and that row. The last read of those lockfiles on this Mac is in `scan-images-20261105T052024Z`, on the same frontends: 1 CRITICAL with a fix, which the policy does not fail. A runner read them at 14:28Z, in run 42044273310 of `images.yml`, with the same counts, and only the table in its log remains ([log](../../ci/ci-4-20261105T142148Z-run-42044273310.log)).
 - The zeros for web and admin cover OS packages only. `scan.log` has `Number of language-specific files num=0` for those two images, because their clients are bundled static files with no package metadata.
 - A finding means a package version is listed as affected. Nobody has checked whether any of them can be reached in this platform.
 - Local services outside the cluster manifests were not scanned: the `distribution` registry, `plane-git` and the kind node.
