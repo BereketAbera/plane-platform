@@ -168,7 +168,10 @@ fi
 
 # A publish that failed or was refused leaves its promotion on main, and that is one way to an empty
 # plan. So this publishes before it says anything, and that does nothing if main is published already.
+# An empty plan compares only the overlay, and Argo CD reads the render, so that has to match it first.
 if [[ ! -s "$PLAN" ]]; then
+  "$ROOT/scripts/render.sh" --check >/dev/null ||
+    die "$ENV's overlay already holds these digests, but the rendered manifests do not match the overlays, and Argo CD reads the render. Run make render, look at what moves, and commit it."
   if [[ "$COMMIT" == yes ]]; then
     "$ROOT/scripts/gitops-publish.sh" ||
       die "$ENV's overlay already holds these digests, but main could not be published, so Argo CD has not read them. They leave with the next publish of any kind. Fix the cause and run this again, or withdraw them with make rollback ENV=$ENV."
@@ -253,9 +256,11 @@ fi
 
 git_when_index_free add -- "$OVERLAY" "$RENDERED" || die "could not stage the promotion, so nothing was committed or published"
 git_when_index_free commit --quiet --file "$message_file" -- "$OVERLAY" "$RENDERED" || die "could not commit the promotion, so nothing was published"
+# Before the lock goes, so this names what this run made and not what someone commits next.
+committed="$(git rev-parse HEAD)"
 applied=no
 release_commit_lock
-ok "committed $(git rev-parse --short HEAD): $subject"
+ok "committed $(git rev-parse --short "$committed"): $subject"
 
 # A promotion of prod-sim took its dump above, or was told not to. A promotion of dev took none, and
 # main may hold a merged promotion of prod-sim that leaves with it, so that publish decides for itself.
@@ -268,4 +273,4 @@ else
   "$ROOT/scripts/gitops-publish.sh" || publish_status=$?
 fi
 [[ "$publish_status" -eq 0 ]] ||
-  die "$(git log -1 --format='%h %s') stays on main, and Argo CD has not read it. It leaves with the next publish of any kind. Fix the cause and run this again, which publishes it, or withdraw it with make rollback ENV=$ENV."
+  die "$(git log -1 --format='%h %s' "$committed") stays on main, and Argo CD has not read it. It leaves with the next publish of any kind. Fix the cause and run this again, which publishes it, or withdraw it with make rollback ENV=$ENV."

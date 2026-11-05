@@ -11,7 +11,8 @@
 #   logs that, and the revert commit says so in a trailer.
 # - A rollback of dev needs neither, because a publish that moves no image in prod-sim asks the cluster
 #   nothing. A publish is all of main, though, so if main holds a change that does move one, and Argo CD
-#   has not read it, this stops before reverting and names it. make rollback ENV=prod-sim withdraws it.
+#   has not read it, this stops before reverting and names it. If it is a promotion, make rollback
+#   ENV=prod-sim withdraws it, and if not, git revert it.
 #   OVERRIDE_DEV_CHECK="<reason>" goes on instead and is logged, and that publish still asks plane-dev,
 #   which the same reason gets past, and takes the dump unless SKIP_BACKUP=yes.
 # - prod-sim gets one dump of its own first, which may fail or run out of time without stopping the
@@ -62,7 +63,9 @@ RENDERED="gitops/environments/$ENV/manifests.yaml"
 BARE="$LOCAL_DIR/git/plane-platform.git"
 BACKUPS="$LOCAL_DIR/backups/$ENV"
 REVERT_HEAD_FILE="$(git rev-parse --git-path REVERT_HEAD)"
-if [[ "$ENV" == dev ]]; then OTHER_RENDERED=gitops/environments/prod-sim/manifests.yaml; else OTHER_RENDERED=gitops/environments/dev/manifests.yaml; fi
+if [[ "$ENV" == dev ]]; then OTHER_ENV=prod-sim; else OTHER_ENV=dev; fi
+OTHER_OVERLAY="helm/plane/overlays/$OTHER_ENV"
+OTHER_RENDERED="gitops/environments/$OTHER_ENV/manifests.yaml"
 
 [[ "$(git symbolic-ref --quiet --short HEAD || true)" == main ]] || die "roll back from main: gitops-publish pushes main"
 # So any revert in this checkout from here on is this run's, and stopping can clear it.
@@ -240,6 +243,11 @@ done <<<"$promotions"
 
 [[ -n "$target" ]] || die "no promotion of $ENV left to roll back"
 log "Rolling back: $(git log -1 --format='%h %s' "$target")"
+# The other environment's render is put back after rendering, so a revert of a commit that also changes that
+# environment would leave its overlay and its render disagreeing, and read as a success.
+if [[ -n "$(git diff-tree --no-commit-id --name-only -r "$target" -- "$OTHER_OVERLAY" "$OTHER_RENDERED")" ]]; then
+  die "$(git log -1 --format='%h %s' "$target") also changes $OTHER_ENV, and a rollback of $ENV stays out of that, so this changed nothing. Revert it by hand with git revert, then run this again, which publishes that revert."
+fi
 if [[ "$(reached_argo "$target")" == no ]]; then refuse_sending_what_waits "$target" "$target^"; fi
 
 # What the revert can touch. The render is here because rendering replaces it, whatever the commit did.
@@ -311,18 +319,30 @@ undo_revert() {
   reverting=no
 }
 
+how_to_clear_the_revert() { # For a person, when this script could not. git restore fails on a path HEAD lacks.
+  local path in_head=() not_in_head=()
+  for path in "${revert_paths[@]}"; do
+    if git cat-file -e "HEAD:$path" 2>/dev/null; then in_head+=("$path"); else not_in_head+=("$path"); fi
+  done
+  printf 'git restore --source=HEAD --staged --worktree -- %s, ' "${in_head[*]}"
+  if [[ ${#not_in_head[@]} -gt 0 ]]; then
+    printf 'git rm --force --quiet --cached --ignore-unmatch -- %s, rm -f -- %s, ' "${not_in_head[*]}" "${not_in_head[*]}"
+  fi
+  printf 'then git revert --quit'
+}
+
 stop_revert() { # stop_revert <what happened> <what to do next>
   if undo_revert; then
     die "$1 Nothing changed. $2"
   fi
   reverting=no
-  die "$1 The revert is still in this checkout, because git could not write the index. Once it can, clear it: git restore --source=HEAD --staged --worktree -- ${revert_paths[*]}, then git revert --quit. Then: $2"
+  die "$1 The revert is still in this checkout, because git could not write the index. Once it can, clear it: $(how_to_clear_the_revert). Then: $2"
 }
 
 on_exit() {
   local status=$?
   if [[ "$reverting" == yes && "$status" -ne 0 ]]; then
-    undo_revert || warn "the revert is still in this checkout. Clear it: git restore --source=HEAD --staged --worktree -- ${revert_paths[*]}, then git revert --quit"
+    undo_revert || warn "the revert is still in this checkout. Clear it: $(how_to_clear_the_revert)"
   fi
   release_commit_lock
 }
@@ -351,7 +371,7 @@ if ! revert_errors="$(git revert --no-commit "$target" 2>&1 >/dev/null)"; then
     stop_revert "git could not start the revert of ${target:0:12}." "Run this again once the cause above is gone."
   elif [[ -n "$conflicts" ]]; then
     printf '%s\n' "$revert_errors" >&2
-    stop_revert "the revert conflicts with a later change to ${conflicts//$'\n'/, }." "Resolve it by hand: git revert ${target:0:12}, fix the conflict, then make gitops-publish."
+    stop_revert "the revert conflicts with a later change to ${conflicts//$'\n'/, }." "Resolve it by hand: git revert ${target:0:12}, fix the conflict, then run this again, which publishes that revert."
   fi
   log "The revert conflicts only in $RENDERED, which is generated, so rendering replaces it"
 fi
@@ -386,7 +406,7 @@ fi
 if git diff --cached --quiet -- "${to_commit[@]}"; then
   undo_revert || stop_revert "reverting ${target:0:12} would change nothing." "Run this again."
   release_commit_lock
-  ok "$(git log -1 --format='%h %s' "$target") is already undone: reverting it would change nothing, so there is no new commit. To step back further, revert the promotion before it by hand with git revert, then make gitops-publish."
+  ok "$(git log -1 --format='%h %s' "$target") is already undone: reverting it would change nothing, so there is no new commit. To step back further, revert the promotion before it by hand with git revert, then run this again, which publishes that revert."
   reached="$(reached_argo "$target")"
   # It may have been put back by a commit nobody has published.
   publish "$target" "$(git rev-parse HEAD)"

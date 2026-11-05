@@ -89,7 +89,7 @@ if prod_sim_digests_move "$old" "$new"; then
       log "This publish changes a prod-sim image, so plane-dev must have proven it"
       if ! check_dev_proven "${added[@]}"; then
         if ! git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS"; then
-          warn "A publish is all of main, so the change to dev in this push is held behind what moves prod-sim: ${moving//$'\n'/; }. make rollback ENV=prod-sim withdraws the newest promotion of prod-sim and publishes the rest."
+          warn "A publish is all of main, so the change to dev in this push is held behind what moves prod-sim: ${moving//$'\n'/; }. If that is a promotion, make rollback ENV=prod-sim withdraws it and publishes the rest. If not, git revert it."
         fi
         refuse_unproven_dev "Nothing was published."
       fi
@@ -147,9 +147,18 @@ fi
 
 # Plain push on purpose: a non-fast-forward means history was rewritten, and Argo CD would then
 # follow that rewrite with no record of it. Reverts are the way back. It pushes the commit everything
-# above looked at, because other work commits in this checkout, and a dump takes minutes.
-git push --quiet "$BARE" "$new:refs/heads/main" ||
+# above looked at, because other work commits in this checkout, and a dump takes minutes. So a publish
+# that lands during this one's dump also refuses this push, and what this one came to send has gone out.
+if ! pushed="$(git push --quiet "$BARE" "$new:refs/heads/main" 2>&1)"; then
+  now="$(git --git-dir="$BARE" rev-parse -q --verify refs/heads/main || true)"
+  if [[ -n "$now" ]] && git merge-base --is-ancestor "$new" "$now" 2>/dev/null; then
+    ok "another publish already sent ${new:0:12} while this one ran: Argo CD reads ${now:0:12}, which holds it"
+    exit 0
+  fi
+  printf '%s\n' "$pushed" >&2
   die "push refused. If main was rewritten, restore it or delete $BARE to republish from scratch."
+fi
+if [[ -n "$pushed" ]]; then printf '%s\n' "$pushed" >&2; fi
 ok "published main ${new:0:12} to $BARE"
 # A promotion's dump comes just before the publish that first sends it, and that is not always near its
 # commit, so make rollback ENV=prod-sim reads this to name the right dump. Without it, that goes by the commit.

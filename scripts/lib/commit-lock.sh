@@ -71,12 +71,19 @@ git_when_index_free() { # git_when_index_free <git arguments...>
 }
 
 # Puts these paths back as HEAD has them, in the index and on disk, and touches nothing else. A path
-# with nothing to put back is left out, so a held index cannot fail what has nothing to do.
+# with nothing to put back is left out, so a held index cannot fail what has nothing to do. A path HEAD
+# does not have goes, because git restore calls that an error, which is what a revert leaves behind when
+# the commit it reverts changed a file a later commit removed.
 restore_from_head() { # restore_from_head <path...>
   local path status=0
   for path in "$@"; do
     if [[ -n "$(git status --porcelain -- "$path")" ]]; then
-      git_when_index_free restore --source=HEAD --staged --worktree -- "$path" || status=1
+      if git cat-file -e "HEAD:$path" 2>/dev/null; then
+        git_when_index_free restore --source=HEAD --staged --worktree -- "$path" || status=1
+      else
+        git_when_index_free rm --force --quiet --cached --ignore-unmatch -- "$path" || status=1
+        rm -f -- "$path" || status=1
+      fi
     fi
   done
   return "$status"
