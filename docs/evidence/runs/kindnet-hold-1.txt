@@ -37,3 +37,15 @@ pod/kindnet-failopen-synthetic created
 [00:45:55Z] kindnet alert after both restarts: sink resolved lines 0
 [00:45:55Z] deleting the scratch pod, so the count no longer applies
 pod "kindnet-failopen-synthetic" force deleted from kube-system namespace
+[00:51:16Z] resolved webhook at the sink after 321s
+  counter: component_id=loki.process.pods,component_path=/,container=kindnet-cni,namespace=kube-system,pod=kindnet-failopen-synthetic 1 00:51:16Z 
+  heartbeat:  99 00:51:16Z
+  ALERTS: alertname=PodRestarting,alertstate=firing,component=pod,container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr,severity=warning 1 00:51:16Z;
+  increase(alloy restarts[15m]): container=alloy,namespace=monitoring,pod=alloy-68d8ccc746-n2tbr 2.0688894201592585 00:51:16Z
+[00:51:16Z] every kindnet line at the sink:
+2026-11-05T00:41:13Z group=firing alert=firing KindnetSkippedNetworkPolicies  kube-system kindnet-failopen-synthetic  startsAt=2026-11-05T00:40:43 endsAt=0001-01-01T00:00:00
+2026-11-05T00:51:13Z group=resolved alert=resolved KindnetSkippedNetworkPolicies  kube-system kindnet-failopen-synthetic  startsAt=2026-11-05T00:40:43 endsAt=2026-11-05T00:51:13
+[00:51:16Z] every PodRestarting line at the sink so far:
+2026-11-05T00:45:51Z group=firing alert=firing PodRestarting  monitoring alloy-68d8ccc746-n2tbr alloy startsAt=2026-11-05T00:45:21 endsAt=0001-01-01T00:00:00
+[00:51:16Z] real kindnet: kindnet-gqcpb restarts=0
+# done

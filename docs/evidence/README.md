@@ -157,8 +157,8 @@ with no secret visible.
 **What this does not prove.** A clean run says that no known value and nothing gitleaks recognizes is in the copies. A session
 cookie or a one-off token that is in no source and fits no gitleaks rule would pass. In the negative control, with the cluster
 values unknown to the scrub, gitleaks flagged 1 of 7. A search of the copies on 2026-11-05 for cookies, authorization headers,
-URLs with credentials, private keys and token-like assignments found none with a value. That search is in the check file. It was a
-one-time check, and it is not part of the script.
+URLs with credentials, private keys, token-like assignments and tokens with the shape of a generated secret found no secret.
+That search is in the check file. It was a one-time check, and it is not part of the script.
 
 ## Index
 
@@ -201,6 +201,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | Prefix | What it holds |
 |---|---|
 | `argo-controller-limit-` | A `terraform apply` that raised the Argo CD application controller's memory limit, with the workloads after it. Some of its read commands failed under zsh, and the file shows that |
+| `argo-sync-unknown-` | The alert on an Application Argo CD cannot render, on a throwaway Application, held across a controller replacement |
 | `argocd-` | Argo CD behaviour: Lua health checks, statically and on the real server (`-lua-`), chart render and repo-server memory (`-render-`), wave gating, Terminating operations, a restart under default-deny |
 | `bootstrap-` | First bring-up of the foundation: `scripts/up.sh` stage by stage with `UP_STOP_AFTER` (`-up-`), the Application timeline, memory and `kubectl top` samples |
 | `branded-dev-smoke-` | `make test-e2e ENV=dev` terminal output on the branded images, the run behind `smoke-dev-20261105T001213Z.json` |
@@ -215,7 +216,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `h18-` | H18, the alert on kindnet logging that it skips network policies: a synthetic line, Loki, validation |
 | `h43-` | H43, Argo CD reading a Prometheus with no ready pod as Progressing: reproductions before and after, the Lua check, `terraform plan` and `apply` |
 | `h49-` | H49, the operator's Thanos default: digest, mirror path, rendered flag, policy result |
-| `harness-` | Test harness work on 2026-11-05: smoke in dev, the worker control in prod-sim, `tests/separation/` network and state, Celery's source read from the worker image. Some ran on an uncommitted `smoke.py`, as the file says |
+| `harness-` | Test harness work on 2026-11-05: smoke in dev, the worker control in prod-sim, `tests/separation/` network and state, `scripts/test-netpol.sh` on small fixture matrices, Celery's source read from the worker image. Some ran on an uncommitted `smoke.py`, as the file says |
 | `imagetools-local-` | How `docker buildx imagetools inspect` and `kubectl --ignore-not-found` answer for something absent |
 | `infisical-` | The secrets layer: first boot, bootstrap, idempotency, isolation and rendered Secrets (with a stamp in the name when `scripts/test.sh` wrote them), Kubernetes Auth TLS, RBAC, restarts, tamper, token renewal, rate limit, admin recovery |
 | `kindnet-` | The kindnet alert on a synthetic pod, firing and held across an Alloy restart |
@@ -227,7 +228,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `missing-rule-evaluations-` | Why `PrometheusMissingRuleEvaluations` goes pending on a healthy Prometheus |
 | `monitoring-` | Monitoring: dashboards, targets, rules, probes, LogQL and memory; Loki limit and replay tests; Alloy and Grafana under restart and load; the alert path with a temporary rule; six Grafana screenshots (`monitoring-ui-*.jpg`) |
 | `negative-controls-` | `scripts/ci/negative-controls.sh` for the route allow list and the Thanos rule |
-| `netpol-` | `scripts/test-netpol.sh`: a TSV per run by UTC start, terminal output by source namespace (`-foundation-`, `-infisical-`), and checks from real pods |
+| `netpol-` | `scripts/test-netpol.sh`: a TSV per run by UTC start, terminal output by source namespace (`-foundation-`, `-infisical-`), and checks from real pods. A TSV with `fixture` in its note column comes from `harness-netpol-fixtures-*`, and is not a run of the real matrix |
 | `plane-dev-` | Plane in dev before the branded images were promoted at `4f622e3`: first boot, smoke, PSA dry run, rollouts and quota, startup, memory, worker, `/live`, cookie attributes, public board, PDF export, page duplicate, the pod restart drill, the NetworkPolicy matrix, two screenshots of the upstream UI |
 | `plane-prod-sim-` | Plane in prod-sim on upstream images: first boot, smoke, concurrent load with dev, separation attempts between the environments (network and state, with the scripts saved as `*-script.py.txt`), pod restart drills, worker and broker restart, memory samples, snapshots, and the proposed `smoke.py` patch |
 | `publish-evidence-` | The negative control for `scripts/publish-evidence.sh`, the script that ran it, and the check by hand of what it published |

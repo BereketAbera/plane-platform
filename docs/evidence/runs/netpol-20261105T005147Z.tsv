@@ -1,0 +1,5 @@
+verdict	expect	observed	from	labels	to	port	note
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	plane-pgdb.plane-dev.svc.cluster.local	5432	fixture: blocked, target up; this pod could not resolve a name at the same moment, so it may have had no network at all
+INCONCLUSIVE	deny	TIMEOUT	plane-dev	{"probe":"unlabelled"}	192.0.2.1	443	fixture: outside, nothing answers; this pod could not resolve a name at the same moment, so it may have had no network at all
+INCONCLUSIVE	allow	TIMEOUT	plane-dev	{"probe":"unlabelled"}	192.0.2.1	443	fixture: outside, nothing answers; this pod could not resolve a name at the same moment, so it may have had no network at all
+INCONCLUSIVE	deny	DNS	plane-dev	{"probe":"unlabelled"}	offline-check.invalid	443	fixture: an internet name with no DNS answer; this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run

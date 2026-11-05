@@ -1,5 +1,5 @@
 # Checks by hand on docs/evidence/runs after make publish-evidence. Names, counts and masked text, never a value.
-# date (UTC): 2026-11-05T00:49:50Z
+# date (UTC): 2026-11-05T00:53:29Z
 
 ## The exact values in .local/test-accounts.env
 # command: grep -r -a -F -c -f <values file> <directory>, summed with awk. The values file was mode 0600 in a scratch directory and is removed
@@ -12,7 +12,7 @@ control, the same command on a scratch file holding one value: 1
 ## Every source value and its base64 form against every file in docs/evidence, by a separate script
 # extra: is what the script does not read: the kubeconfig's client key, and the smoke test's sentinel files, whose ids, hash and timestamps the smoke JSON reports by design. They are not secrets.
 values and base64 forms checked: 120 from 4 kinds of source
-files scanned by area: {'(top level)': 7, 'branding': 61, 'security': 69, 'ci': 46, 'runs': 330}
+files scanned by area: {'(top level)': 7, 'branding': 61, 'security': 69, 'ci': 46, 'runs': 336}
 (top level) hits: 0
    not extra: 0  extra: 0
 branding hits: 0
@@ -89,9 +89,15 @@ plane-prod-sim-separation-state-1.txt:194 [cookie/auth] prod-sim's session cooki
 plane-prod-sim-separation-state-2.txt:188 [cookie/auth] dev's session cookie: on <T19> 200, replayed on <T24> 401
 plane-prod-sim-separation-state-2.txt:194 [cookie/auth] prod-sim's session cookie: on <T24> 200, replayed on <T19> 401
 wayline-backend-check.txt:188 [assign]   <T37>: expected 1 of '"A new password to your Plane account has been requested"', found 0
-lines matched: 51
+lines matched: 73
 
 ## Private keys in the copies
 0
 50: -----BEGIN CERTIFICATE-----
 91: -----BEGIN CERTIFICATE-----
+
+## Tokens with the shape of a generated secret, for a value that no source knows any more: 48 hex (openssl rand -hex 24), a Plane API token, 44 base64 (openssl rand -base64 32)
+48 hex characters: 1 in 1 files
+    1 plane-dev-psa-1.txt after: 'cker.io/makeplane/plane-frontend@sha256:'
+plane_api_ token: 0 in 0 files
+44 base64 characters ending in =: 0 in 0 files
