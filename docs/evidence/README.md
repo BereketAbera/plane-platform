@@ -97,13 +97,15 @@ what shows they would be replaced.
 
 | Entry point | Raw output in `.local/evidence-raw/` | Notes |
 |---|---|---|
-| `scripts/test.sh` (`make test`, `make test-e2e`) | `test-<stamp>.txt` | One line per test with its label and evidence path. The full form also writes `gates-<stamp>.txt`, `infisical-isolation-<stamp>.txt` and `infisical-rendered-secrets-<stamp>.txt`, and each e2e run writes `smoke-<env>-<stamp>.json` |
+| `scripts/test.sh` (`make test`, `make test-e2e`) | `test-<stamp>-<pid>.txt` | One line per test with its label and evidence path. The full form also writes `gates-<stamp>-<pid>.txt`, `infisical-isolation-<stamp>-<pid>.txt`, `infisical-rendered-secrets-<stamp>-<pid>.txt`, `routes-<stamp>-<pid>.txt`, `separation-network-<stamp>-<pid>.txt` and `separation-state-<stamp>-<pid>.txt`, and each e2e run writes `smoke-<env>-<stamp>-<pid>.json`. `<pid>` is the process id, since `b8e6c65`, and runs before that have the stamp alone |
 | `tests/gates/day1.sh` (`make gates`) | stdout only | The first lines give the UTC date, command, commit and context. Capture it with a redirect, not a pipe, so the exit status stays its own |
 | `tests/e2e/smoke.py` | `smoke-<env>-<run>.json`, or `--evidence <path>` | Credentials go to `.local/test-accounts.env`, not here |
 | `scripts/test-netpol.sh` (`make test-netpol`) | `netpol-<stamp>.tsv` | One line per matrix row, written only once its sentinel has passed |
 | `scripts/test-alert.sh` (`make test-alert`) | `alert-test-<env>-<stamp>.json` | Timings for each stage |
 | `tests/load/run.sh` (`make test-load`) | `load-<run>/` | `results.json`, `job.yaml`, `k6.log`, `k6-summary.json`, `prometheus.json`, `samples.jsonl` and snapshots. Read `job.yaml`, `k6.log` and `k6-summary.json` before committing them, because `setup_data` held a session in the run of 2026-11-05 |
-| `tests/drills/*.sh` (`make drill-*`) | `drill-<name>-<stamp>.log` | `failed-deploy`, `failed-migrator`, `clean-restore` or `pod-restart-<env>`. The first two also write `<log name>-alerts.tsv`. The pod restart drill also writes `drill-pod-restart-<env>-baseline.json` and one JSON per StatefulSet. Those have no stamp, so each drill overwrites them, and the copies from 2026-11-04 are now only in Git's history |
+| `tests/drills/failed-deploy-rollback.sh`, `failed-migrator.sh`, `clean-restore.sh`, `pod-restart-persistence.sh` (`make drill-*`, and the migrator drill has no target) | `drill-<name>-<stamp>.log` | `failed-deploy`, `failed-migrator`, `clean-restore` or `pod-restart-<env>`. The last line reads `RESULT PASS` or `RESULT FAIL`. The first two also write `<log name>-alerts.tsv`. The pod restart drill also writes `drill-pod-restart-<env>-baseline.json` and one JSON per StatefulSet. Those have no stamp, so each drill overwrites them, and the copies from 2026-11-04 are now only in Git's history |
+| `tests/drills/clean-install.sh` | `clean-install-<stamp>/` | `summary.txt`, which gives each step's exit status and ends with `Steps that failed: N`, one `<step>.txt` per step, and `clone-evidence/`, what the clone's own runs wrote. It writes no drill log and no `RESULT` line, and exits 0 only when no step failed |
+| `tests/drills/clean-restore-harness.sh` (`make drill-clean-restore-harness`), `tests/drills/clean-restore-mutants.sh` | stdout only | With commands stubbed. They end in `RESULT <n> passed, <n> failed` and `RESULT <n> caught, <n> survived, <n> did not apply`. The copies in `runs/`, `dr-harness-*` and `dr-mutants-*`, are what whoever ran them captured |
 | `scripts/rotate.sh` (`make rotate`) | `rotate-<env>-<stamp>.log`, `rotate-<env>-<stamp>.probe` | The script writes results and counts, never values |
 | `scripts/restore.sh` (`make restore`, `make restore-clean`) | `restore-<env>-<stamp>.json`, `restore-smoke-<env>-<stamp>.json` | A clean restore writes `restore-clean-<stamp>.json` and `restore-clean-smoke-<env>-<stamp>.json` |
 | `scripts/ci/scan-images.sh` (`make scan-images`) | `scan-images-<stamp>/` | Not copied by `make publish-evidence`. It goes to `security/` by hand |
@@ -145,6 +147,10 @@ such as `SECRET_KEY id=<uuid>` and `plane-app-keys uid=<uuid>`. So a UUID in the
 keyword, up to 20 characters and then `=`, is redacted too, keeping the rest of the line. Allowlisting that shape would also let a
 real key through in the same position. Any other UUID stays.
 
+**Session fields.** Since `18130d4`, the value of any JSON `"session"` field becomes `<redacted>` too, keeping the field's name, because k6's
+`setup_data` held a session cookie in that shape, as the publishes of 07:40Z below record. The negative control is from
+2026-11-05T00:43Z, before this pattern existed, so it has not covered it.
+
 **Remembered values.** Every value goes into `.local/evidence-scrub-values`. Without that, a stopped cluster, a rotated
 password or a new install would put a value back into its copy the next time the raw file was published. The negative
 control shows both sides of that.
@@ -165,9 +171,10 @@ its output. `7d5ff62` is local, and nothing after `0dde813` has reached GitHub. 
 
 **What this does not prove.** A clean run says that no known value and nothing gitleaks recognizes is in the copies. A session
 cookie or a one-off token that is in no source and fits no gitleaks rule would pass. In the negative control, with the cluster
-values unknown to the scrub, gitleaks flagged 1 of 7. A search of the copies on 2026-11-05 for cookies, authorization headers,
+values unknown to the scrub, gitleaks flagged 1 of 7. A search at 2026-11-05T00:53Z, of the copies that publish had made, for cookies, authorization headers,
 URLs with credentials, private keys, token-like assignments and tokens with the shape of a generated secret found no secret.
-That search is in the check file. It was a one-time check, and it is not part of the script.
+That search is in the check file. It was a one-time check, and it is not part of the script, so it says nothing of the later
+publishes, one of which let a secret through, as the paragraph above records.
 
 ## Index
 
@@ -210,7 +217,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | Prefix | What it holds |
 |---|---|
 | `AUTH-4-`, `AUTH-6-` | Browser readings on 2026-11-05: a dev session on the prod-sim host, with two screenshots, and the rollback half of a returning browser |
-| `BKP-2-`, `BKP-6-` | Transcripts of the restore in dev and the clean restoration. A later pass of validation.md reads them |
+| `BKP-2-`, `BKP-6-` | Transcripts: `BKP-2-20261105T074322Z.txt` is the backup, restore and e2e in dev that row BKP-2 rests on. `BKP-6-` is the clean restoration, none committed yet: a later publish adds it once that run has ended, and a later pass of validation.md reads it |
 | `BR-3-`, `CI-1-`, `CI-2-`, `CI-4-`, `CI-5-`, `CI-6b-` | Raw copies of what `ci/` holds under names with a description, such as `ci-5-20261105T055743Z-pr-1.txt`. The two sampled by `cmp` are the same bytes. Cite `ci/` |
 | `DEP-1-`, `DEP-2-`, `DEP-3-` | The failed deploy drill, the rollback and the failing migrator on 2026-11-05: `make` output, a side watcher's raw lines (`-watch`), what was derived from them (`-timeline`), and the helpers' source (`-source`) |
 | `FINAL-` | Prod-sim's running images and a refused `make test-e2e`, at 06:28Z. `FINAL-e2e-prod-sim-*` is a refusal record |
@@ -221,12 +228,12 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `OPS-7-`, `low-disk-overrides` | `guard_disk` with a raised floor, and the log a lowered floor writes |
 | `PERS-1-`, `PERS-2-` | The pod restart drills on the final images. `PERS-2-20261105T061948Z.txt` and its `-061912Z-watch` are an earlier refusal |
 | `RT-2b-` | `RT-2b-RT-3-20261105T073208Z.txt` is two real tabs, by hand, held and through a `live` restart. `RT-2b-20261105T062912Z.txt` is an earlier refusal |
-| `SEC-2-`, `SEC-3-`, `SEC-4-`, `SEC-6-` | Rotation. The `-072331Z` and later files are the runs, and the `-062` files are refusal records, watchers and a pre-check from before the owner's approval. `SEC-3-BKP-3-*` also holds a backup, a refused restore, a real restore and the e2e after it |
+| `SEC-2-`, `SEC-3-`, `SEC-4-`, `SEC-6-` | Rotation. The `-072331Z` and later files are the runs, and the `-062` files are refusal records, watchers and a pre-check from before the owner's approval, apart from `SEC-2-backup-before-20261105T062141Z.txt`, a real `make backup ENV=dev`, exit 0, which BKP-1 cites. `SEC-3-BKP-3-*` also holds a backup, a refused restore, a real restore and the e2e after it |
 | `alert-` | `make test-alert` JSON by environment and UTC start (`alert-test-`), a census of every rule not inactive, and the figures quoted in alert text |
 | `argo-stuck-progressing-` | `ArgoAppStuckProgressing` firing on a throwaway Application and reaching the sink |
 | `auth-6-`, `browser-cache-` | The promotion half of a returning browser, and the cached page it started from |
 | `ci-actions-` | The repository setting that lets Actions open pull requests, before and after the owner's yes |
-| `clean-install-` | A directory of output from a clean install, published while it ran. A later pass of validation.md reads it |
+| `clean-install-` | One directory per run of `tests/drills/clean-install.sh`, none committed yet. A copy made while the run was going is partial, so a later publish adds the run once it has ended, and a later pass of validation.md reads it |
 | `clock-probe-`, `cluster-readings-`, `collect-other-`, `gitops-publish-`, `hardening-round-`, `image-pins-`, `limits-pod-cgroup-`, `lint-netpol-`, `make-ci-clean-clone-`, `node-kubelet-config-`, `policy-mutations-`, `rollback-generated-`, `rules-unit-`, `stuck-progressing-`, `validate-manifests-alerts-` | Checks and read-only readings from the hardening rounds on 2026-11-05. Each says in its first lines what it ran, and on what |
 | `final-` | `make test-e2e` terminal output on the images each promotion reached, by environment |
 | `gates-` | `tests/gates/day1.sh` inside the full `scripts/test.sh` run |
@@ -246,7 +253,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `cpu-throttling-` | Where `CPUThrottlingHigh` went pending or firing, from `ALERTS` over 3.6 hours |
 | `day1-gates-` | `tests/gates/day1.sh` runs, of which `-1` and `-2` are the same bytes as `../day1-gates-20261104T184733Z.txt` and `../day1-gates.txt`. Also proofs of the script on scratch copies: injected faults and signals (backlog item H46), and a reviewer's logs, which describe the script before `f878bca` (`-adversarial-`) |
 | `dr-` | Disaster recovery work: backups and retention, in-place Infisical restores (`-inplace-restore-`), rehearsals in throwaway places (`-fresh-instance-rehearsal-`, `-plane-restore-rehearsal-`), the plan and its refusals, locks, the harness's stubbed scenarios and source, its mutants and stop sweep. None of these is a full clean restore |
-| `drill-` | `tests/drills/*.sh` logs: pod restart in dev and prod-sim, with a JSON per StatefulSet, failed deploy and failing migrator with their alert files, and clean-restore. A clean-restore log may be `PLAN_ONLY=yes`, which stops before the delete, or a run under way when it was published, so read its last line |
+| `drill-` | Logs of the drills that write one: pod restart in dev and prod-sim, with a JSON per StatefulSet, failed deploy and failing migrator with their alert files, and clean-restore. A clean-restore log may be `PLAN_ONLY=yes`, which stops before the delete, or a run under way when it was published, so read its last line |
 | `foundation-logs-` | Log level counts and errors for Traefik and metrics-server after the bring-up |
 | `h16-` | Backlog item H16, `ArgoSyncFailed` during a retry loop: a throwaway Application on the real controller, when the alert fired, metrics, operation durations, promtool, validation |
 | `h17-` | H17, the allow list on internal routes: what the other doors do with free egress, whether a missing Middleware fails closed, Infisical isolation from the host, the ownership check, validation |
