@@ -7,7 +7,7 @@ a customized Plane Community Edition v1.4.3 deployment, not an original product.
 2026-11-04 and 2026-11-05 with Argo CD v3.5.7. A measured statement links its file under
 [`docs/evidence/runs/`](evidence/README.md), or names it under `.local/evidence-raw/` for the runs of 2026-11-05 that
 `make publish-evidence` has not copied yet. A `VERIFY` or `MEASURE` marker stays on what has not run: a cluster-scoped refusal, a self-heal
-timed on a manual scale, a secret rotation and a restore during a failing sync. A clean install has not run either, and neither has a rollback of prod-sim. Several results come from scratch
+timed on a manual scale and a restore during a failing sync. A clean install has not run either, and neither has a rollback of prod-sim. Several results come from scratch
 Applications on the real controller. They show how Argo CD behaves, not how a first boot from nothing would go.
 
 ## Access
@@ -257,7 +257,7 @@ Two things that look like drift and should not fight:
 
 | Writer | What it changes | Expected |
 |---|---|---|
-| Infisical operator | Pod template annotations, through `auto-reload` | Argo's 3-way diff ignores fields it does not manage. Seen so far: the operator patched `postgres-exporter` once, and restarting the operator moved no generation ([infisical-operator-restart-1.txt](evidence/runs/infisical-operator-restart-1.txt)). No rotation has run. [[VERIFY: no sync loop after an Infisical secret change]] |
+| Infisical operator | Pod template annotations, through `auto-reload` | Argo's 3-way diff ignores fields it does not manage. No sync loop after an Infisical secret change, in the one run: during `make rotate ENV=dev` on 2026-11-05 the operator restarted api, worker and beat, each moved one generation and no further, `plane-dev` stayed `Synced`, read `Progressing` for 41s while they rolled, and opened no new operation (`.local/evidence-raw/SEC-6-20261105T072331Z-application-watch.txt`, `.local/evidence-raw/SEC-2-20261105T072331Z-watch.txt`). Earlier, restarting the operator moved no generation ([infisical-operator-restart-1.txt](evidence/runs/infisical-operator-restart-1.txt)). A rotation in prod-sim has not run |
 | Grafana chart | `checksum/secret` and the admin password differ per render, and nothing else ([kps-render-diff-1.txt](evidence/runs/kps-render-diff-1.txt)) | The `kube-prometheus-stack` Application ignores both. With all 8 chart Applications hard-refreshed at once, Grafana's Deployment stayed at generation 1 with one ReplicaSet ([argocd-render-load-1.txt](evidence/runs/argocd-render-load-1.txt)) |
 
 ## Retry behaviour
@@ -407,8 +407,8 @@ hard refresh and the child's patch held for a minute, and a server dry run of ap
 end, and `argo_pause_child` then checks that the patch held. `argo_resume` puts the saved blocks back in reverse order, from an exit trap, so root sees
 no drift. The two in-place Infisical restores went through this: the server stayed at zero while paused, and auto-sync came back
 ([dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt),
-[restore-infisical-20261105T001834Z.json](evidence/runs/restore-infisical-20261105T001834Z.json)). So did `make test-alert ENV=dev` on 2026-11-05, with `root` and `plane-dev` paused from before the injection until it was over, and both blocks back at the end
-(`.local/evidence-raw/MON-1-20261105T055029Z.txt`).
+[restore-infisical-20261105T001834Z.json](evidence/runs/restore-infisical-20261105T001834Z.json)). So did `make test-alert` in each environment on 2026-11-05, with `root` and that environment's Application paused from before the injection until it was over, and both blocks back at the end
+(`.local/evidence-raw/MON-1-20261105T055029Z.txt`, `.local/evidence-raw/MON-2-20261105T072541Z-run.txt`).
 
 By hand:
 
