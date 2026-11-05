@@ -328,7 +328,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: localhost:5001/wayline/admin@sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
+      - image: localhost:5001/wayline/admin@sha256:ce7adc37b1a7ff2f9f04457f89f7758152c9740be8e7f801b3ff0ae2a7a9c796
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -439,7 +439,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -541,7 +541,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -714,7 +714,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: localhost:5001/wayline/space@sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
+      - image: localhost:5001/wayline/space@sha256:5f0119ff2266a7f0493e5903f1fdf47c022cc5ca86b6f8fa14d8485513cc0039
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -794,7 +794,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+      - image: localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -905,7 +905,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -1414,7 +1414,7 @@ spec:
         - secretRef:
             name: plane-app-keys
             optional: false
-        image: localhost:5001/wayline/backend@sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
+        image: localhost:5001/wayline/backend@sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
         imagePullPolicy: IfNotPresent
         name: plane-api-migrate
         resources:
