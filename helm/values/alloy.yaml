@@ -52,6 +52,9 @@ alloy:
   # Holds tail positions, on an emptyDir, so a new pod re-reads each container's log. Measured over a
   # pod replacement: no line lost or duplicated, peak 91 MiB. Loki answers 400 for lines over an hour
   # behind their stream, and Alloy logs those as dropped. They were stored the first time round.
+  # An in-place container restart is different: the emptyDir survives it, so nothing is re-read, while the
+  # counters below live in memory and start from zero. KindnetSkippedNetworkPolicies holds its count for 3d
+  # because of this (monitoring/manifests/shared/rules-platform.yaml).
   storagePath: /var/lib/alloy
   mounts:
     extra:

@@ -4,8 +4,8 @@ metadata:
   name: plane
 spec:
   groups:
-    # Probes and this group run at 15s, so PlaneApiDown reaches the sink in about 2 minutes
-    # (15s probe + 15s evaluation + 1m for + 10s group_wait, worst case). test-alert.sh allows 180s.
+    # Probes and this group run at 15s, so PlaneApiDown reaches the sink in about 2 minutes (5s preStop on a
+    # scale-down + 15s probe + 15s evaluation + 1m for + 10s group_wait, worst case). test-alert.sh allows 180s.
     - name: plane.availability
       interval: 15s
       rules:

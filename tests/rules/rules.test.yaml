@@ -154,7 +154,7 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: ArgoAppOutOfSync, name: plane-dev, dest_namespace: plane-dev, severity: warning, component: argocd }
             exp_annotations: { summary: Application plane-dev has been out of sync for 15m }
-  - name: kindnet's fail-open line fires at once, and clears when that pod is gone
+  - name: kindnet's fail-open line fires at once, and clears within 5m of that pod being gone
     interval: 30s
     input_series:
       # The labels a real series carries: the chart's ServiceMonitor sets honorLabels.
@@ -175,10 +175,16 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
             exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
-      - eval_time: 15m
+      # The pod's last sample is at 10m, so it still counts at 14m and no longer does at 16m.
+      - eval_time: 14m
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts:
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+      - eval_time: 16m
         alertname: KindnetSkippedNetworkPolicies
         exp_alerts: []
-      - eval_time: 15m
+      - eval_time: 16m
         alertname: KindnetLogsNotRead
         exp_alerts: []
   - name: KindnetLogsNotRead fires when the tail is gone
@@ -195,3 +201,189 @@ tests:
         exp_alerts:
           - exp_labels: { alertname: KindnetLogsNotRead, severity: warning, component: network }
             exp_annotations: { summary: "Alloy has read no kindnet log line for 15m, so KindnetSkippedNetworkPolicies cannot fire" }
+  # What an in-place Alloy restart looks like: the count stops, because it lived in Alloy's memory, and the line
+  # is never read again, because the read position survived on the emptyDir. Measured on the heartbeat counter.
+  - name: kindnet's count going stale does not resolve the alert for 3d, and a gone pod still does
+    interval: 1h
+    input_series:
+      - series: 'loki_process_custom_kindnet_netpol_skipped_total{namespace="kube-system",pod="kindnet-abc",container="kindnet-cni",instance="kube-system/kindnet-abc:kindnet-cni",service="alloy"}'
+        values: '1 1 1 stale'
+      - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-abc",node="n",uid="u"}'
+        values: '1x80'
+      - series: 'loki_process_custom_kindnet_netpol_skipped_total{namespace="kube-system",pod="kindnet-old",container="kindnet-cni",instance="kube-system/kindnet-old:kindnet-cni",service="alloy"}'
+        values: '1 1 1 stale'
+      - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-old",node="n",uid="v"}'
+        values: '1 1 1 1 stale'
+    alert_rule_test:
+      - eval_time: 3h
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts: &kindnet-both
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-old, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-old logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+      # kindnet-old has gone, and kindnet-abc's count is 70h old and still holds.
+      - eval_time: 72h
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts:
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+      # The last count, at 2h, leaves the window at 74h. The limit the rule's comment states.
+      - eval_time: 75h
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts: []
+  - name: kindnet's alert rides out a kube-state-metrics restart, and sticks after kindnet's container restarts
+    interval: 30s
+    input_series:
+      - series: 'loki_process_custom_kindnet_netpol_skipped_total{namespace="kube-system",pod="kindnet-abc",container="kindnet-cni",instance="kube-system/kindnet-abc:kindnet-cni",service="alloy"}'
+        values: '1x60'
+      # kube-state-metrics is gone for 2 minutes.
+      - series: 'kube_pod_info{namespace="kube-system",pod="kindnet-abc",node="n",uid="u"}'
+        values: '1x10 stale _x3 1x60'
+      # The container restarted at 10m, and the count stands for the pod.
+      - series: 'kube_pod_container_status_restarts_total{namespace="kube-system",pod="kindnet-abc",container="kindnet-cni"}'
+        values: '0x20 1x60'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts:
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+      - eval_time: 25m
+        alertname: KindnetSkippedNetworkPolicies
+        exp_alerts:
+          - exp_labels: { alertname: KindnetSkippedNetworkPolicies, namespace: kube-system, pod: kindnet-abc, severity: critical, component: network }
+            exp_annotations: { summary: "kindnet pod kindnet-abc logged that it is skipping network policies, so NetworkPolicies are not enforced" }
+  # increase() extrapolates to the moment of evaluation, so one restart reads just over 1 between scrapes.
+  - name: PodRestarting stays quiet on one restart, and fires on two
+    interval: 30s
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="once-1",container="c",uid="u"}'
+        values: '0x20 1x60'
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="twice-1",container="c",uid="u"}'
+        values: '0x20 1x6 2x60'
+      # A series that has just appeared extrapolates the most: 1.5 from one restart, 45s after it began.
+      - series: 'kube_pod_container_status_restarts_total{namespace="monitoring",pod="young-1",container="c",uid="u"}'
+        values: '_x20 0 1 1x60'
+    alert_rule_test:
+      - eval_time: 10m45s
+        alertname: PodRestarting
+        exp_alerts: []
+      # 15s after a scrape: once-1 reads 1.02 here, as the 1.024 measured on a real restart did.
+      - eval_time: 20m15s
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { alertname: PodRestarting, namespace: monitoring, pod: twice-1, container: c, uid: u, severity: warning, component: pod }
+            exp_annotations: { summary: "monitoring/twice-1 container c restarted more than once in 15m" }
+      # Both restarts have left the window.
+      - eval_time: 30m
+        alertname: PodRestarting
+        exp_alerts: []
+  # Taken from a real one: a throwaway Application with a path that does not exist. Sync Unknown, health Healthy, no
+  # operation label, autosync on, condition ComparisonError. Only this rule can see that.
+  - name: a commit that cannot render fires ArgoAppSyncUnknown at 15m, and no other Argo rule
+    interval: 1m
+    input_series:
+      # The scrape misses one sample at 8m, as when the controller restarts, and health moves at 12m.
+      - series: 'argocd_app_info{name="render-failure",dest_namespace="plane-dev",project="plane-dev",sync_status="Unknown",health_status="Healthy",autosync_enabled="true"}'
+        values: '1x7 stale _ _ _ 1 stale'
+      - series: 'argocd_app_info{name="render-failure",dest_namespace="plane-dev",project="plane-dev",sync_status="Unknown",health_status="Healthy",autosync_enabled="true",pod="argocd-application-controller-0"}'
+        values: '_x9 1x2 stale'
+      - series: 'argocd_app_info{name="render-failure",dest_namespace="plane-dev",project="plane-dev",sync_status="Unknown",health_status="Progressing",autosync_enabled="true",pod="argocd-application-controller-0"}'
+        values: '_x13 1x30'
+      # Unknown for a moment, as when Git restarts, and fixed well before 15m.
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",project="plane-prod-sim",sync_status="Unknown",health_status="Healthy"}'
+        values: '1x4 stale'
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",project="plane-prod-sim",sync_status="Synced",health_status="Healthy"}'
+        values: '_x5 1x40'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: ArgoAppSyncUnknown
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoAppSyncUnknown
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppSyncUnknown, name: render-failure, dest_namespace: plane-dev, severity: warning, component: argocd }
+            exp_annotations:
+              summary: Argo CD has been unable to compare Application render-failure with Git for 15m, so new commits do not reach it
+              description: A commit that cannot render, or a Git that cannot be read, leaves sync Unknown and starts no sync. status.conditions has the ComparisonError; see docs/runbooks/argo-sync-stuck.md.
+      - eval_time: 17m
+        alertname: ArgoAppOutOfSync
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoAppDegraded
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+  # What the wave layout implies for a bad image in a Plane Deployment: wave 3 of 4, so the operation stays open past
+  # the rollout's 600s deadline. tests/drills/failed-deploy-rollback.sh is the second Application here, by reading.
+  - name: a bad image in a Plane Deployment reaches ArgoSyncFailed at 15m, and a revert at the first Degraded beats it
+    interval: 1m
+    input_series:
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '1x9 stale'
+      - series: 'argocd_app_info{name="plane-dev",dest_namespace="plane-dev",sync_status="Synced",health_status="Degraded",operation="sync"}'
+        values: '_x10 1x30'
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '1x9 stale'
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",sync_status="Synced",health_status="Degraded",operation="sync"}'
+        values: '_x10 1x3 stale'
+      - series: 'argocd_app_info{name="plane-prod-sim",dest_namespace="plane-prod-sim",sync_status="Synced",health_status="Healthy"}'
+        values: '_x14 1x30'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: ArgoAppDegraded
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ArgoSyncFailed
+        exp_alerts:
+          - exp_labels: { alertname: ArgoSyncFailed, name: plane-dev, dest_namespace: plane-dev, phase: Running, severity: critical, component: argocd }
+            exp_annotations:
+              summary: Application plane-dev has had a sync Running for 15m
+              description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
+      - eval_time: 17m
+        alertname: ArgoAppDegraded
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppDegraded, name: plane-dev, dest_namespace: plane-dev, health_status: Degraded, severity: critical, component: argocd }
+            exp_annotations: { summary: Application plane-dev is Degraded }
+  # What the timeline of the first boot showed for kube-prometheus-stack: the operation closed on apply, then Synced
+  # and Progressing while root waited. Nothing else in this file reads that state.
+  - name: a child Progressing with its operation closed fires ArgoAppStuckProgressing at 30m, and root does not
+    interval: 1m
+    input_series:
+      # An operation opens at 10m for a while, which is a new series and must not start for: again.
+      - series: 'argocd_app_info{name="kube-prometheus-stack",dest_namespace="monitoring",project="platform",sync_status="Synced",health_status="Progressing"}'
+        values: '1x9 stale _ 1x40'
+      - series: 'argocd_app_info{name="kube-prometheus-stack",dest_namespace="monitoring",project="platform",sync_status="Synced",health_status="Progressing",operation="sync"}'
+        values: '_x10 1 stale'
+      # A rollout that takes a normal 10m, then is Healthy.
+      - series: 'argocd_app_info{name="traefik",dest_namespace="traefik",project="platform",sync_status="Synced",health_status="Progressing"}'
+        values: '1x9 stale'
+      - series: 'argocd_app_info{name="traefik",dest_namespace="traefik",project="platform",sync_status="Synced",health_status="Healthy"}'
+        values: '_x10 1x40'
+      - series: 'argocd_app_info{name="root",dest_namespace="argocd",project="platform",sync_status="Synced",health_status="Progressing"}'
+        values: '1x60'
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: ArgoAppStuckProgressing
+        exp_alerts: []
+      - eval_time: 32m
+        alertname: ArgoAppStuckProgressing
+        exp_alerts:
+          - exp_labels: { alertname: ArgoAppStuckProgressing, name: kube-prometheus-stack, dest_namespace: monitoring, severity: warning, component: argocd }
+            exp_annotations:
+              summary: Application kube-prometheus-stack has read Progressing for 30m
+              description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. The root sync waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
+      - eval_time: 32m
+        alertname: ArgoSyncFailed
+        exp_alerts: []
+      - eval_time: 32m
+        alertname: ArgoAppDegraded
+        exp_alerts: []
+      - eval_time: 32m
+        alertname: ArgoAppOutOfSync
+        exp_alerts: []
