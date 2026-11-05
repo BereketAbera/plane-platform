@@ -91,7 +91,7 @@ backup: ## Back up an environment: make backup ENV=dev|prod-sim|infisical|all [K
 restore: ## Restore: make restore ENV=dev BACKUP=<backup-id|latest> [CONFIRM=yes]
 	@./scripts/restore.sh "$(ENV)" "$(BACKUP)"
 
-restore-clean: ## Bring the whole platform back into a clean environment: make restore-clean BACKUP=<infisical-backup-id|latest> [PLAN_ONLY=yes] [ENVS=dev] [ALLOW_LOW_DISK="<reason>"] [ALLOW_NO_SENTINEL=yes] [ALLOW_NEWER_INFISICAL_BACKUP=yes] [ALLOW_RESUME_OVERWRITE=yes]. The script exits 2 if a proof could not run or a person must sign in. make exits 2 on any failure, and prints which, so read jq '.result, .not_run' on its evidence
+restore-clean: ## Bring the whole platform back into a clean environment: make restore-clean BACKUP=<infisical-backup-id|latest> [PLAN_ONLY=yes] [ENVS=dev] [ALLOW_LOW_DISK="<reason>"] [ALLOW_NO_SENTINEL=yes] [ALLOW_NEWER_INFISICAL_BACKUP=yes] [ALLOW_RESUME_OVERWRITE="dev prod-sim"]. The script exits 2 if a proof could not run or a person must sign in, and 4 if it overwrote what ALLOW_RESUME_OVERWRITE named. make exits 2 on any failure, and prints which, so read jq '.result, .not_run' on its evidence
 	@./scripts/restore.sh clean "$(BACKUP)"
 
 rotate: ## Rotate a database credential through Infisical: make rotate ENV=dev [RESUME=yes|ROLLBACK=yes] [CONFIRM=yes]

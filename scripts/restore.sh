@@ -20,13 +20,17 @@
 #                                stops after the restore with sign-in steps.
 # ALLOW_NO_SENTINEL=yes          accept that a sentinel proof could not run, as with a backup taken before a
 #                                sentinel existed. The step still reads NOT RUN, and the result lists it.
-# ALLOW_RESUME_OVERWRITE=yes     on a clean restore that resumes, overwrite an environment that holds something
-#                                other than this backup. The step reads FAIL, with what it held.
+# ALLOW_RESUME_OVERWRITE="dev"   on a clean restore that resumes, overwrite these environments, out of infisical, dev
+#                                and prod-sim, if they hold something other than this backup. It names them, because a
+#                                refusal names one, and a switch for the whole run would reach others no refusal named.
+#                                yes is refused. The step reads FAIL with what it held, and the run does not read PASS.
 #
 # Exit status: 0 everything proven. 1 something failed. 2 nothing failed, but something could not run or a
 # person has to act, so this is not a pass, as in scripts/test.sh. A proof step recorded as NOT RUN is
 # not a pass, except proof-probes, which says something about monitoring and not about the data.
 # restore.sh infisical alone also has 3: Infisical is back, and a person has to sign in to prove it.
+# 4: everything is proven and nothing is left to resume, and the run overwrote what ALLOW_RESUME_OVERWRITE named. It is
+# not a pass either, and its result reads OVERWROTE.
 # These numbers are this script's. Through make, any of them but 0 is make's own exit 2, and make prints this one.
 #
 # If this client ends while a restore Job runs, by Ctrl-C, SIGTERM, a closed terminal or a kubectl error, it removes
@@ -86,10 +90,16 @@ if [[ ${#positional[@]} -ge 2 && -n "${positional[1]}" ]]; then BACKUP="${positi
 RESTORE_MODE="${RESTORE_MODE:-in-place}"
 # yes: a clean restore that resumed called this with CONFIRM=yes, and no person has looked at this target today.
 RESTORE_RESUME="${RESTORE_RESUME:-no}"
+resume_overwrite_names='^ *((infisical|dev|prod-sim)( +|$))*$'
+if [[ ! "${ALLOW_RESUME_OVERWRITE:-}" =~ $resume_overwrite_names ]]; then
+  die "ALLOW_RESUME_OVERWRITE names the environments to overwrite, as in ALLOW_RESUME_OVERWRITE=dev or ALLOW_RESUME_OVERWRITE=\"dev prod-sim\", and it got '$ALLOW_RESUME_OVERWRITE'. A refusal names one environment, and one switch for the whole run would also overwrite others that no refusal named, with no backup of them. Nothing was changed."
+fi
 
 # What restore.sh infisical exits with when Infisical is back and a person has to sign in. Its parent, a clean
 # restore, marks that step done and stops, and resumes with the replacement token.
 EXIT_NEEDS_SIGN_IN=3
+# What a run exits with when everything is proven and it overwrote what ALLOW_RESUME_OVERWRITE named.
+EXIT_OVERWROTE=4
 # The Deployments a Plane restore stops and starts.
 APP_DEPLOYMENTS="plane-api-wl plane-worker-wl plane-beat-worker-wl plane-live-wl"
 
@@ -103,6 +113,7 @@ CLEAN_IMAGES_NOTE=""
 CLEAN_DISK_REPORT=""
 # Set before an exit 2 that means a person has to act, and not that a proof could not run.
 CLEAN_RESULT_IF_2="NOT RUN"
+CLEAN_OVERWROTE="" # What this restore overwrote on ALLOW_RESUME_OVERWRITE, in this run or an earlier one.
 
 clean_record() { # step status detail. Same shape as a single restore's evidence.
   printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$CLEAN_STEPS"
@@ -125,6 +136,7 @@ clean_on_exit() {
     case "$rc" in
       0) result=PASS ;;
       2) result="$CLEAN_RESULT_IF_2" ;;
+      "$EXIT_OVERWROTE") result=OVERWROTE ;;
       *) result=FAIL ;;
     esac
     jq -Rn --arg backup "$CLEAN_IID" --arg at "$CLEAN_STAMP" --arg result "$result" '
@@ -136,6 +148,7 @@ clean_on_exit() {
     case "$rc" in
       0) ok "clean restore from Infisical backup $CLEAN_IID complete. Evidence: $CLEAN_EVIDENCE" ;;
       2) warn "clean restore from Infisical backup $CLEAN_IID is not finished: $result, as said above. It stays marked as under way, and running the same command again resumes. Evidence: $CLEAN_EVIDENCE" ;;
+      "$EXIT_OVERWROTE") warn "clean restore from Infisical backup $CLEAN_IID has finished and is proven, and this is not a pass: it overwrote what these held, because ALLOW_RESUME_OVERWRITE named them:$CLEAN_OVERWROTE. What they held is gone, unless a backup has it. Nothing is left to resume. Evidence: $CLEAN_EVIDENCE" ;;
       *) warn "clean restore from Infisical backup $CLEAN_IID stopped. Fix the cause and run the same command: it resumes. Evidence: $CLEAN_EVIDENCE" ;;
     esac
   fi
@@ -792,7 +805,7 @@ restore_clean() {
     clean_wait_infisical
     "$restore_script" infisical "$CLEAN_IID" CONFIRM=yes RESTORE_MODE=clean "RESTORE_RESUME=$under_way" || rc=$?
     case "$rc" in
-      0)
+      0 | "$EXIT_OVERWROTE")
         clean_mark infisical
         clean_record restore-infisical PASS "$CLEAN_IID, see restore-infisical-*.json"
         ;;
@@ -828,7 +841,7 @@ restore_clean() {
       rc=0
       "$restore_script" "$env" "${!var}" CONFIRM=yes "RESTORE_RESUME=$under_way" || rc=$?
       case "$rc" in
-        0) clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json" ;;
+        0 | "$EXIT_OVERWROTE") clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json" ;;
         2) printf 'not-run restore-%s\n' "$env" >> "$RESTORE_CLEAN_MARKER" ;;
         *) exit "$rc" ;;
       esac
@@ -838,8 +851,16 @@ restore_clean() {
 
   rc=0
   clean_verify "$set_file" || rc=$?
+  # From the marker, because an earlier run of this restore may be the one that did it.
+  for env in $(sed -n 's/^overwrote //p' "$RESTORE_CLEAN_MARKER" | LC_ALL=C sort -u); do
+    CLEAN_OVERWROTE="$CLEAN_OVERWROTE $env"
+    clean_record "overwrite-$env" FAIL "what $env held was overwritten, because ALLOW_RESUME_OVERWRITE named it. What it held is in overwrite-guard in restore-$env-*.json"
+  done
   case "$rc" in
-    0) rm -f "$RESTORE_CLEAN_MARKER" ;;
+    0)
+      rm -f "$RESTORE_CLEAN_MARKER"
+      if [[ -n "$CLEAN_OVERWROTE" ]]; then exit "$EXIT_OVERWROTE"; fi
+      ;;
     2)
       warn "the platform is back, and at least one proof could not run, so this is not a pass. If that is expected, as with a backup taken before a sentinel existed, run this again with ALLOW_NO_SENTINEL=yes."
       exit 2
@@ -886,6 +907,7 @@ ANYTHING_CHANGED=no # Until a refusal has passed, a failure is a refusal.
 JOBS_STARTED=no     # Set before this run's first Job, so a stop knows there may be one to remove.
 JOB_STOPPED=no
 JOBS_LEFT_RUNNING=""
+OVERWROTE=no             # This run used ALLOW_RESUME_OVERWRITE, so it does not read PASS.
 INFISICAL_REDIS_STALE=no # Set before the database Job, and cleared by the flush after it.
 
 record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contract requires.
@@ -962,10 +984,12 @@ on_exit() {
   # A proof that could not run is not a pass. proof-probes is about monitoring and not the data, as in the drill.
   not_run="$(awk -F '\t' '$2 == "NOT RUN" && $1 != "proof-probes" { printf "%s ", $1 }' "$steps_file")"
   if [[ "$rc" -eq 0 && -n "$not_run" && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then rc=2; fi
+  if [[ "$rc" -eq 0 && "$OVERWROTE" == yes ]]; then rc="$EXIT_OVERWROTE"; fi
   case "$rc" in
     0) result=PASS ;;
     2) result="NOT RUN" ;;
     "$EXIT_NEEDS_SIGN_IN") result=BLOCKED ;;
+    "$EXIT_OVERWROTE") result=OVERWROTE ;;
     *) result=FAIL ;;
   esac
   jq -Rn --arg env "$ENV_NAME" --arg backup "$BACKUP_ID" --arg at "$STAMP" --arg result "$result" '
@@ -984,6 +1008,7 @@ on_exit() {
       fi
       ;;
     "$EXIT_NEEDS_SIGN_IN") warn "the data of $BACKUP_ID is back in $ENV_NAME, and nothing here can log in to prove it, as the steps above say. Evidence: $evidence" ;;
+    "$EXIT_OVERWROTE") warn "restore of $BACKUP_ID into $ENV_NAME is proven, and this is not a pass: it overwrote what $NS held, because ALLOW_RESUME_OVERWRITE named it. Evidence: $evidence" ;;
     *)
       if [[ "$ANYTHING_CHANGED" == no ]]; then
         warn "restore of $BACKUP_ID into $ENV_NAME refused, as said above. Nothing was changed. Evidence: $evidence"
@@ -1150,6 +1175,8 @@ spec:
 YAML
 }
 
+resume_overwrite_names_this() { case " ${ALLOW_RESUME_OVERWRITE:-} " in *" $ENV_NAME "*) return 0 ;; *) return 1 ;; esac; }
+
 # On a resume the CONFIRM=yes is the parent's, and this target may be anything by now, so what it holds decides.
 # The data Job restores Postgres in one transaction and then syncs objects, so this same backup part way through has
 # either no users or all of them, and no more objects than the backup. Anything else has been written since.
@@ -1163,10 +1190,12 @@ refuse_if_not_empty() { # users objects
     held="target holds $users users and $objects objects, and backup $BACKUP_ID $want_users and $want_objects"
     if [[ ("$users" -eq 0 || "$users" == "$want_users") && "$objects" -le "$want_objects" ]]; then
       record overwrite-guard PASS "a resume: $held, so it is this backup part way through, or nothing"
-    elif [[ "${ALLOW_RESUME_OVERWRITE:-}" == yes ]]; then
-      record overwrite-guard FAIL "a resume: $held, overwriting on ALLOW_RESUME_OVERWRITE=yes"
+    elif resume_overwrite_names_this; then
+      record overwrite-guard FAIL "a resume: $held, overwriting on ALLOW_RESUME_OVERWRITE=\"$ALLOW_RESUME_OVERWRITE\""
+      OVERWROTE=yes
+      printf 'overwrote %s\n' "$ENV_NAME" >> "$RESTORE_CLEAN_MARKER"
     else
-      die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. Nothing was changed. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=yes."
+      die "this clean restore is resuming, and $NS holds $users users and $objects objects where backup $BACKUP_ID holds $want_users and $want_objects. So it is not that backup part way through, and something has written there since. Nothing was changed. To keep what is there, back it up first: make backup ENV=$ENV_NAME ALLOW_BACKUP_DURING_RESTORE=yes. To overwrite it: the same command with ALLOW_RESUME_OVERWRITE=$ENV_NAME, which reaches only this environment, and that run does not read PASS."
     fi
   elif [[ "${CONFIRM:-}" == yes ]]; then
     have="$(clean_count "$backup_dir" users)"

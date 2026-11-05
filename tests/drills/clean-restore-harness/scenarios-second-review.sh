@@ -107,7 +107,7 @@ R2() {
   check "500 users and 777 objects where the backup has 23 and 1: refuses (got $RC)" test "$RC" -ne 0
   show_tail 1
   check "with both counts" out_has "plane-prod-sim holds 500 users and 777 objects where backup"
-  check "and the way past it" out_has "ALLOW_RESUME_OVERWRITE=yes"
+  check "and the way past it, for this environment" out_has "ALLOW_RESUME_OVERWRITE=prod-sim"
   check "and how to keep what is there" out_has "make backup ENV=prod-sim ALLOW_BACKUP_DURING_RESTORE=yes"
   check "nothing was stopped" no_log 'kc scale deployment/plane-api-wl --replicas=0 ns=plane-prod-sim'
   check "nothing was replaced" no_log 'kc apply Job plane-restore ns=plane-prod-sim'
@@ -122,9 +122,9 @@ R2() {
   check "other users and no objects: refuses (got $RC)" test "$RC" -ne 0
   cluster_holds plane-prod-sim 500 777
   : > "$H/state/calls.log"
-  run env ALLOW_RESUME_OVERWRITE=yes scripts/restore.sh clean latest
-  check "ALLOW_RESUME_OVERWRITE=yes goes on, exit 0 (got $RC)" test "$RC" -eq 0
-  show_tail
+  run env ALLOW_RESUME_OVERWRITE=prod-sim scripts/restore.sh clean latest
+  check "ALLOW_RESUME_OVERWRITE=prod-sim goes on, and it is not a pass, exit 4 (got $RC)" test "$RC" -eq 4
+  show_tail 4
   check "and overwrites" log_has 'kc apply Job plane-restore ns=plane-prod-sim'
   check "and the evidence says what it held, and does not read as a pass" jq -e 'any(.steps[]; .step == "overwrite-guard" and .status == "FAIL" and (.detail | test("500 users and 777 objects")))' "$(newest_evidence restore-prod-sim)"
   check "and dev, already done, was left alone" no_log 'kc apply Job plane-restore ns=plane-dev'
@@ -1576,4 +1576,102 @@ V2() {
   run scripts/backup.sh prod-sim
   check "with its data back: goes ahead (got $RC)" test "$RC" -eq 0
   check "with its data back: says so" out_has "the data of prod-sim has come back, so this backup goes ahead"
+}
+
+V3() {
+  scenario "V3. ALLOW_RESUME_OVERWRITE reaches only what it names, and a run that used it does not read PASS"
+  local bad
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  check "fixture: dev's Job fails" test "$RC" -ne 0
+  rm -f "$H/state/fail-jobs.json"
+  cluster_holds plane-dev 500 777
+  cluster_holds plane-prod-sim 600 888
+
+  for bad in yes "dev,prod-sim" "dev yes" all; do
+    : > "$H/state/calls.log"
+    run env "ALLOW_RESUME_OVERWRITE=$bad" scripts/restore.sh clean latest
+    check "ALLOW_RESUME_OVERWRITE='$bad': refused (got $RC)" test "$RC" -ne 0
+    check "ALLOW_RESUME_OVERWRITE='$bad': says what it takes" out_has "ALLOW_RESUME_OVERWRITE names the environments to overwrite"
+    check "ALLOW_RESUME_OVERWRITE='$bad': touches nothing" test ! -s "$H/state/calls.log"
+  done
+
+  : > "$H/state/calls.log"
+  run scripts/restore.sh clean latest
+  check "no override: refuses, naming dev (got $RC)" out_has "plane-dev holds 500 users and 777 objects"
+  check "no override: prints the override that reaches dev alone" out_has "ALLOW_RESUME_OVERWRITE=dev,"
+
+  # What the refusal printed, followed: prod-sim, which no refusal has named, stays.
+  : > "$H/state/calls.log"
+  run env ALLOW_RESUME_OVERWRITE=dev scripts/restore.sh clean latest
+  check "naming dev: stops at prod-sim (got $RC)" test "$RC" -eq 1
+  show_tail 1
+  check "naming dev: dev is overwritten" test "$(cluster_value '.users["plane-dev"]')" = 23
+  check "naming dev: its own evidence does not read PASS" jq -e '.result == "OVERWROTE"' "$(newest_evidence restore-dev)"
+  check "naming dev: and says what it held" jq -e 'any(.steps[]; .step == "overwrite-guard" and .status == "FAIL" and (.detail | test("500 users and 777 objects")))' "$(newest_evidence restore-dev)"
+  check "naming dev: prod-sim still holds 600 users" test "$(cluster_value '.users["plane-prod-sim"]')" = 600
+  check "naming dev: and 888 objects" test "$(cluster_value '.objects["plane-prod-sim"]')" = 888
+  check "naming dev: prod-sim was not replaced" no_log 'kc apply Job plane-restore ns=plane-prod-sim'
+  check "naming dev: the refusal now names prod-sim" out_has "plane-prod-sim holds 600 users and 888 objects"
+  check "naming dev: and the override that reaches it" out_has "ALLOW_RESUME_OVERWRITE=prod-sim,"
+  check "naming dev: the marker stays" test -f "$H/.local/restore-clean.state"
+
+  # The next run names only prod-sim, and the overall result remembers dev too.
+  : > "$H/state/calls.log"
+  run env ALLOW_RESUME_OVERWRITE=prod-sim scripts/restore.sh clean latest
+  check "then naming prod-sim: exit 4 (got $RC)" test "$RC" -eq 4
+  show_tail 4
+  check "then naming prod-sim: dev, already done, was left alone" no_log 'kc apply Job plane-restore ns=plane-dev'
+  check "then naming prod-sim: it does not say complete" no_clean_complete
+  check "then naming prod-sim: it says so" out_has "this is not a pass: it overwrote what these held, because ALLOW_RESUME_OVERWRITE named them: dev prod-sim"
+  check "then naming prod-sim: its evidence does not read PASS" jq -e '.result == "OVERWROTE"' "$(newest_evidence restore-prod-sim)"
+  check "then naming prod-sim: the clean restore's does not either" jq -e '.result == "OVERWROTE"' "$(newest_evidence restore-clean)"
+  check "then naming prod-sim: and lists both" jq -e '[.steps[] | select(.status == "FAIL") | .step] == ["overwrite-dev", "overwrite-prod-sim"]' "$(newest_evidence restore-clean)"
+  check "then naming prod-sim: nothing is left to resume" test ! -e "$H/.local/restore-clean.state"
+
+  # Both at once, the way make passes it.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  cluster_holds plane-dev 500 777
+  cluster_holds plane-prod-sim 600 888
+  run scripts/restore.sh clean latest "ALLOW_RESUME_OVERWRITE=dev prod-sim"
+  check "naming both, as an argument: exit 4 (got $RC)" test "$RC" -eq 4
+  show_tail 4
+  check "naming both: dev back to the backup" test "$(cluster_value '.users["plane-dev"]')" = 23
+  check "naming both: prod-sim too" test "$(cluster_value '.users["plane-prod-sim"]')" = 23
+
+  # Named and not needed: nothing was overwritten, so a pass is a pass.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","plane-dev"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  run env ALLOW_RESUME_OVERWRITE=dev scripts/restore.sh clean latest
+  check "named, and the target is only this backup part way through: exit 0 (got $RC)" test "$RC" -eq 0
+  show_tail
+  check "named, and not used: reads PASS" jq -e '.result == "PASS"' "$(newest_evidence restore-clean)"
+
+  # Infisical can be named, as a resume can refuse it too.
+  reset
+  take_backups
+  lose_cluster
+  printf '[["plane-restore-2","infisical"]]' > "$H/state/fail-jobs.json"
+  run scripts/restore.sh clean latest
+  rm -f "$H/state/fail-jobs.json"
+  cluster_holds infisical 7 0
+  run env ALLOW_RESUME_OVERWRITE=dev scripts/restore.sh clean latest
+  check "Infisical holds 7 users, and only dev is named: refuses (got $RC)" test "$RC" -ne 0
+  check "and names the override for it" out_has "ALLOW_RESUME_OVERWRITE=infisical,"
+  run env ALLOW_RESUME_OVERWRITE=infisical scripts/restore.sh clean latest
+  check "naming Infisical: exit 4 (got $RC)" test "$RC" -eq 4
+  show_tail 4
+  check "naming Infisical: its evidence does not read PASS" jq -e '.result == "OVERWROTE"' "$(newest_evidence restore-infisical)"
 }
