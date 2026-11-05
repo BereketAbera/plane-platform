@@ -1,0 +1,40 @@
+[1;34m==>[0m Node
+    plane-platform-control-plane Ready v1.36.4
+[1;34m==>[0m GitOps (Argo CD applications, published main: 7d5ff62d)
+    NAME                           SYNC       HEALTH       REVISION
+    alloy                          Synced     Healthy      7d5ff62d
+    backup-storage                 Synced     Healthy      7d5ff62d
+    infisical                      Synced     Healthy      7d5ff62d
+    infisical-operator-dev         Synced     Healthy      7d5ff62d
+    infisical-operator-prod-sim    Synced     Healthy      7d5ff62d
+    kube-prometheus-stack          Synced     Healthy      7d5ff62d
+    loki                           Synced     Healthy      7d5ff62d
+    metrics-server                 Synced     Healthy      7d5ff62d
+    monitoring-extras              Synced     Healthy      7d5ff62d
+    network-policies               Synced     Healthy      7d5ff62d
+    plane-dev                      Synced     Healthy      7d5ff62d
+    plane-prod-sim                 Synced     Healthy      7d5ff62d
+    root                           Synced     Healthy      7d5ff62d
+    traefik                        Synced     Healthy      7d5ff62d
+[1;34m==>[0m Pods not ready
+    none
+[1;34m==>[0m Endpoints
+    http://plane.dev.localhost/              200
+    http://plane.prod-sim.localhost/         200
+    http://argocd.localhost/                 200
+    http://grafana.localhost/                302
+    http://prometheus.localhost/             302
+    http://alertmanager.localhost/           200
+    http://infisical.localhost/              200
+[1;34m==>[0m Resources
+    plane-platform-control-plane: 8.265GiB / 13.63GiB, CPU 43.60%
+    argocd                    581 MiB
+    infisical                 816 MiB
+    kube-system              1347 MiB
+    local-path-storage         15 MiB
+    monitoring                852 MiB
+    monitoring-agents          16 MiB
+    plane-dev                1132 MiB
+    plane-prod-sim            890 MiB
+    traefik                    37 MiB
+    Host disk free: 19 GiB

@@ -1,0 +1,21 @@
+# 2026-11-05T09:41:46Z command: kubectl -n plane-dev exec plane-pgdb-wl-0 -c plane-pgdb -- psql -d plane -c <SELECT below>. Read-only.
+# select count(*) filter (where i.created_at < '2026-11-05 09:02:59+00') as before_think1, count(*) filter (where i.created_at >= '2026-11-05 09:02:59+00' and i.created_at < '2026-11-05 09:12:18+00') as during_think1, count(*) filter (where i.created_at >= '2026-11-05 09:12:18+00') as during_think0, count(*) as total, min(i.created_at) as first_created, max(i.created_at) as last_created from issues i join projects p on p.id=i.project_id join workspaces w on w.id=p.workspace_id where w.slug='k6-load';
+ before_think1 | during_think1 | during_think0 | total |         first_created         |         last_created          
+---------------+---------------+---------------+-------+-------------------------------+-------------------------------
+           293 |           298 |           476 |  1067 | 2026-11-05 07:33:51.502664+00 | 2026-11-05 09:21:20.031286+00
+(1 row)
+
+# select relname, n_live_tup from pg_stat_user_tables order by n_live_tup desc limit 8;
+          relname           | n_live_tup 
+----------------------------+------------
+ issue_sequences            |       1617
+ issue_activities           |       1422
+ issues                     |       1372
+ issue_subscribers          |       1127
+ issue_description_versions |       1068
+ auth_permission            |        424
+ states                     |        385
+ module_issues              |        385
+(8 rows)
+
+# 2026-11-05T09:41:46Z done

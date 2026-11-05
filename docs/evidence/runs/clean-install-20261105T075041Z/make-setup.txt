@@ -1,0 +1,33 @@
+tools: 0 installed, 17 already current, in /Users/bek/dev/pr/plane-platform-clean-install/.tools/bin
+[1;34m==>[0m Required host commands
+[1;32m ok[0m docker found
+[1;32m ok[0m docker compose found
+[1;32m ok[0m docker buildx found
+[1;32m ok[0m git found
+[1;32m ok[0m make found
+[1;32m ok[0m curl found
+[1;32m ok[0m jq found
+[1;32m ok[0m python3 found
+[1;32m ok[0m openssl found
+[1;32m ok[0m lsof found
+[1;32m ok[0m tar found
+[1;32m ok[0m unzip found
+[1;32m ok[0m shasum found
+[1;32m ok[0m base utilities found (32 checked)
+[1;34m==>[0m Host commands only 'make images' needs (a warning here does not stop the platform)
+[1;32m ok[0m Node 22 found through nvm
+[1;32m ok[0m rsync found
+[1;32m ok[0m perl found
+[1;34m==>[0m Docker daemon
+    Docker VM: 13.6 GiB memory, 12 CPUs
+[1;34m==>[0m Host disk
+    31 GiB free on the host
+[1;33mwarn[0m 31 GiB free works, but 35 GiB is recommended
+[1;34m==>[0m Host ports
+[1;32m ok[0m port 80 available or held by this platform
+[1;32m ok[0m port 443 available or held by this platform
+[1;32m ok[0m port 5001 available or held by this platform
+[1;34m==>[0m Name resolution for *.localhost
+[1;32m ok[0m plane.dev.localhost resolves to 127.0.0.1
+[1;32m ok[0m plane.prod-sim.localhost resolves to 127.0.0.1
+[1;32m ok[0m prerequisites satisfied

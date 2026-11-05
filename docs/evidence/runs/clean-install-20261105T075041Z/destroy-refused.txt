@@ -1,0 +1,39 @@
+[1;34m==>[0m Backing up all environments before deletion
+[1;34m==>[0m Backing up infisical to .local/backups/infisical/20261105T080925Z
+[pod/plane-backup-20261105t080925z-88vtq/postgres] postgres: 20261105T080925Z complete, 785 tables counted from a scratch restore
+backup 20261105T080925Z: postgres/infisical.dump 4404143 B, postgres/infisical.toc.txt 935955 B, postgres/rowcounts.tsv 24973 B
+[1;32m ok[0m backup complete: .local/backups/infisical/20261105T080925Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-dev to .local/backups/dev/20261105T080945Z
+[pod/plane-backup-20261105t080945z-vhqck/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t080945z-vhqck/objects] 2026/11/05 08:09:52 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080945z-vhqck/objects] 2026/11/05 08:09:52 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080945z-vhqck/objects] 2026/11/05 08:09:52 NOTICE: Local file system at /backups/20261105T080945Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t080945z-vhqck/objects] 2026/11/05 08:09:52 NOTICE: Local file system at /backups/20261105T080945Z.partial/objects: 6 matching files
+[pod/plane-backup-20261105t080945z-vhqck/objects] 2026/11/05 08:09:52 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080945z-vhqck/objects] objects: 6 checked
+[pod/plane-backup-20261105t080945z-vhqck/objects] 2026/11/05 08:09:52 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080945z-vhqck/objects] GATE2: 5 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t080945z-vhqck/finalize] finalize: 20261105T080945Z complete
+backup 20261105T080945Z: postgres/plane.dump 668718 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2087 B, postgres/content.tsv 127 B, objects.lsjson 2341 B
+[1;32m ok[0m backup complete: .local/backups/dev/20261105T080945Z
+[1;32m ok[0m encrypted sentinel row present
+[1;34m==>[0m Backing up plane-prod-sim to .local/backups/prod-sim/20261105T080959Z
+[pod/plane-backup-20261105t080959z-8277r/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-20261105t080959z-8277r/objects] 2026/11/05 08:10:05 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080959z-8277r/objects] 2026/11/05 08:10:06 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080959z-8277r/objects] 2026/11/05 08:10:06 NOTICE: Local file system at /backups/20261105T080959Z.partial/objects: 0 differences found
+[pod/plane-backup-20261105t080959z-8277r/objects] 2026/11/05 08:10:06 NOTICE: Local file system at /backups/20261105T080959Z.partial/objects: 6 matching files
+[pod/plane-backup-20261105t080959z-8277r/objects] 2026/11/05 08:10:06 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080959z-8277r/objects] objects: 6 checked
+[pod/plane-backup-20261105t080959z-8277r/objects] 2026/11/05 08:10:06 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-20261105t080959z-8277r/objects] GATE2: 5 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-20261105t080959z-8277r/finalize] finalize: 20261105T080959Z complete
+backup 20261105T080959Z: postgres/plane.dump 668435 B, postgres/plane.toc.txt 123539 B, postgres/rowcounts.tsv 2087 B, postgres/content.tsv 127 B, objects.lsjson 2341 B
+[1;32m ok[0m backup complete: .local/backups/prod-sim/20261105T080959Z
+[1;32m ok[0m all environments backed up
+[1;34m==>[0m Deleting kind cluster plane-platform
+Deleting cluster "plane-platform" ...
+Deleted nodes: ["plane-platform-control-plane"]
+[1;32m ok[0m cluster deleted. Next: 'make restore-clean BACKUP=latest' to bring everything back, or 'make up' for an empty platform.
+[1;34m==>[0m BACKUP=latest now names the backup just taken. If what was deleted held nothing you want, name an older one with BACKUP=<id>, and PLAN_ONLY=yes shows what each holds.

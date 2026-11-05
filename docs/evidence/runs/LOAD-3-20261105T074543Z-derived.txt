@@ -1,0 +1,214 @@
+# LOAD-3 derived tables. 2026-11-05T08:01:27Z command: python3 -I LOAD-3-20261105T074543Z-derive-script.py.txt .local/evidence-raw 20261105T074543Z .local/evidence-raw/load-20261105T073241Z
+# Inputs: the prometheus-windows, prometheus-series, prometheus-steps, traefik-buckets and timeline files with that stamp, and load-20261105T073241Z/results.json. Disk sums use readings printed in LOAD-3-20261105T074440Z-host.txt, LOAD-3-20261105T074543Z-docker-project.txt and LOAD-3-20261105T074543Z-docker-images.txt.
+# k6 Job and pod times, as kubectl printed them at 2026-11-05T07:44:51Z, before the cluster was deleted (kubectl -n plane-dev get job,pods | jq):
+# {"start":"2026-11-05T07:32:49Z","completion":"2026-11-05T07:42:54Z","succeeded":1}
+# {"name":"k6-20261105t073241z-5gplh","created":"2026-11-05T07:32:49Z","started":"2026-11-05T07:33:48Z","finished":"2026-11-05T07:42:51Z","exit":0}
+
+windows: {'quiet': {'start': '2026-11-05T03:40:00Z', 'end': '2026-11-05T04:10:00Z'}, 'load': {'start': '2026-11-05T07:33:48Z', 'end': '2026-11-05T07:42:51Z'}}
+
+== per container, plane-dev and plane-prod-sim, MiB and millicores
+-- plane-dev
+container                    q mem avg q mem max q cpu avg q cpu max | l mem avg l mem max l pod max l cpu avg l cpu max  l podcpu
+k6                                   -         -         -         - |      18.0      21.6      21.6      12.0      16.7      16.7
+manager                           24.7      25.1       1.7       2.4 |      27.5      27.9      27.9       2.9       5.2       5.2
+plane-admin                        3.2       3.2       0.1       0.1 |       3.2       3.2       3.2       0.2       0.6       0.6
+plane-api                        156.6     156.6       3.9       5.7 |     163.2     172.1     172.1     189.7     388.7     388.7
+plane-beat-worker                148.0     148.1       2.8       4.3 |     147.4     147.5     147.5       4.5       7.4       7.4
+plane-live                       145.3     149.6       0.9       1.7 |     145.2     154.2     154.2      11.4     102.6     100.6
+plane-minio                      114.6     114.8       1.3       2.6 |     124.4     136.5     136.5       2.1       5.7       5.7
+plane-pgdb                        65.4      66.4       6.4       9.9 |      45.1      63.1      63.1     199.4     377.4     377.4
+plane-rabbitmq                   128.7     180.9      14.8      32.6 |     123.3     157.9     157.9      23.4      32.1      32.1
+plane-redis                        4.2       4.4       2.7       3.4 |      10.7      11.0      11.0       3.6       4.6       4.6
+plane-space                       95.5      96.0       1.7       5.4 |      90.8      91.8      91.8       7.1      13.5      13.5
+plane-web                          3.2       3.2       0.1       0.1 |       3.2       3.2       3.2       0.3       0.8       0.8
+plane-worker                     278.1     303.7       6.5      23.8 |     251.9     268.7     268.7      66.7     115.6     115.6
+postgres-exporter                 25.1      26.4       1.3       2.5 |      16.3      17.4      17.4       2.0       3.7       3.7
+redis-exporter                    12.4      13.5       0.5       0.8 |      13.5      13.8      13.8       0.7       1.1       1.1
+-- plane-prod-sim
+container                    q mem avg q mem max q cpu avg q cpu max | l mem avg l mem max l pod max l cpu avg l cpu max  l podcpu
+manager                           25.4      25.6       1.9       2.9 |      26.4      26.7      26.7       3.2       6.5       6.5
+plane-admin                        3.1       3.1       0.1       0.1 |       3.1       3.1       3.1       0.1       0.3       0.3
+plane-api                        168.9     169.3       4.2       6.7 |     160.0     317.5     166.2     108.4     377.2     370.5
+plane-api-migrate                    -         -         -         - |       7.3       7.3       7.3         -         -       0.0
+plane-beat-worker                150.1     151.0       2.8       4.0 |     148.3     295.3     148.7      42.1     196.1     189.3
+plane-live                       150.9     155.6       1.3      19.4 |     148.6     160.0     160.0      17.6     129.5     129.5
+plane-minio                       96.8      97.6       1.4       4.0 |     113.2     119.0     119.0       3.7      13.1      13.1
+plane-pgdb                        63.5      64.0       6.5       9.6 |      58.3      64.6      64.6      18.8      72.6      72.6
+plane-rabbitmq                   133.9     182.6      14.2      32.8 |     129.5     178.8     178.8      29.5      97.8      97.8
+plane-redis                        5.0       6.7       2.8       3.7 |       6.4       6.6       6.6       3.5       4.4       4.4
+plane-space                       91.3      91.7       1.8       4.8 |      91.7      92.1      92.1       4.4       7.7       7.7
+plane-web                          3.2       3.2       0.1       0.1 |       3.2       3.2       3.2       0.1       0.2       0.2
+plane-worker                     284.6     295.9       6.4      20.3 |     246.5     510.0     279.3      46.0     266.4     245.6
+postgres-exporter                 15.8      17.7       1.4       2.7 |      10.3      12.4      12.4       1.8       3.6       3.6
+redis-exporter                    18.9      19.8       0.6       1.2 |      18.6      19.2      19.2       0.9       1.3       1.3
+
+== per namespace
+namespace              q mem avg q mem max q cpu avg q cpu max | l mem avg l mem max l cpu avg l cpu max
+argocd                     471.8     593.7      26.7      81.3 |     524.6     644.4      64.2     130.1
+infisical                  732.8     768.1      20.5      58.0 |     753.9     777.6      49.8     265.6
+kube-system               1590.3    1612.9     107.5     147.3 |    1682.3    1710.5     273.5     397.8
+local-path-storage          15.0      15.4       0.3       0.8 |      15.3      15.7       0.5       1.3
+monitoring                1568.5    1580.1      48.3      64.9 |    1643.0    1664.9      90.7     123.1
+monitoring-agents           19.6      20.7       1.5       2.9 |      20.2      21.8       2.3       4.4
+plane-dev                 1204.9    1256.9      44.5      70.5 |    1183.8    1229.2     526.0     915.4
+plane-prod-sim            1211.4    1254.1      45.5      74.5 |    1069.8    1720.7     259.8     822.7
+traefik                     61.4      63.5       2.2       3.4 |      70.3      73.7      16.2      27.1
+
+== cluster and VM
+quiet  pods_total_mem_avg        6875.68 MiB
+quiet  pods_total_mem_max        7033.75 MiB
+quiet  pods_total_cpu_avg         297.04 m
+quiet  pods_total_cpu_max         397.94 m
+quiet  vm_used_avg                 10.01 GiB
+quiet  vm_used_max                 10.64 GiB
+quiet  vm_cpu_busy_avg            913.94 m
+quiet  vm_cpu_busy_max           1880.06 m
+quiet  vm_swap_used_max             0.78 GiB
+load   pods_total_mem_avg        6963.19 MiB
+load   pods_total_mem_max        7570.03 MiB
+load   pods_total_cpu_avg        1282.90 m
+load   pods_total_cpu_max        2022.29 m
+load   vm_used_avg                  9.75 GiB
+load   vm_used_max                 10.33 GiB
+load   vm_cpu_busy_avg           2031.27 m
+load   vm_cpu_busy_max           3079.56 m
+load   vm_swap_used_max             0.76 GiB
+vm_used_max_whole_retention 10.93 GiB
+
+== groups at one moment, from the raw series (quiet step 60 s, load step 15 s)
+-- quiet
+argocd                     ctrs=  4 mem avg    467.7 max    580.4 at 04:03:00 | cpu avg    26.4 max    54.3 at 03:47:00
+control-plane              ctrs=  9 mem avg   1570.7 max   1594.0 at 03:52:00 | cpu avg   109.3 max   141.6 at 04:05:00
+exporters                  ctrs=  4 mem avg     72.2 max     75.2 at 03:49:00 | cpu avg     3.5 max     4.9 at 04:01:00
+infisical                  ctrs=  5 mem avg    785.2 max    801.1 at 04:06:00 | cpu avg    24.5 max    58.2 at 03:46:00
+loki+alloy                 ctrs=  2 mem avg    414.7 max    428.1 at 03:50:00 | cpu avg    11.9 max    14.4 at 04:09:00
+monitoring                 ctrs= 12 mem avg   1173.1 max   1182.7 at 04:06:00 | cpu avg    38.1 max    50.8 at 04:07:00
+plane-plane-dev            ctrs= 11 mem avg   1145.8 max   1194.1 at 04:05:00 | cpu avg    42.8 max    64.6 at 04:07:00
+plane-plane-prod-sim       ctrs= 11 mem avg   1150.6 max   1156.1 at 03:43:00 | cpu avg    47.8 max    68.6 at 03:48:00
+traefik+metrics-server     ctrs=  2 mem avg     95.6 max     97.7 at 03:47:00 | cpu avg     4.9 max     7.2 at 04:02:00
+ALL PODS mem avg 6875.5 max 7003.9 at 04:10:00 | cpu avg 309.3 max 391.1 at 04:07:00
+vm_used avg 10.04 max 10.64 at 04:00:00
+vm_cpu_busy avg 951 max 1880 at 03:48:00
+-- load
+argocd                     ctrs=  4 mem avg    524.5 max    644.4 at 07:35:18 | cpu avg    61.5 max   127.8 at 07:35:33
+control-plane              ctrs=  9 mem avg   1659.5 max   1694.0 at 07:35:03 | cpu avg   265.9 max   389.1 at 07:35:18
+exporters                  ctrs=  5 mem avg     58.8 max     61.6 at 07:36:48 | cpu avg     5.3 max     7.3 at 07:39:33
+infisical                  ctrs=  6 mem avg    807.8 max    831.1 at 07:34:03 | cpu avg    55.1 max   273.2 at 07:34:33
+jobs-plane-prod-sim        ctrs=  1 mem avg      7.3 max      7.3 at 07:35:48 | cpu avg     0.0 max     0.0 at 00:00:00
+k6                         ctrs=  1 mem avg     18.0 max     21.6 at 07:42:03 | cpu avg    12.3 max    16.5 at 07:41:18
+loki+alloy                 ctrs=  2 mem avg    448.9 max    454.7 at 07:37:18 | cpu avg    27.3 max    39.9 at 07:39:33
+monitoring                 ctrs= 12 mem avg   1214.8 max   1240.5 at 07:33:48 | cpu avg    65.3 max    97.2 at 07:39:33
+plane-plane-dev            ctrs= 12 mem avg   1108.1 max   1150.0 at 07:41:48 | cpu avg   502.6 max   878.1 at 07:41:03
+plane-plane-prod-sim       ctrs= 21 mem avg   1032.6 max   1687.4 at 07:39:33 | cpu avg   254.0 max   823.9 at 07:39:33
+traefik+metrics-server     ctrs=  2 mem avg    106.1 max    110.1 at 07:38:18 | cpu avg    20.6 max    33.3 at 07:38:33
+jobs-plane-prod-sim ['plane-restore-migrate-20261105t073438z-lqmvx']
+ALL PODS mem avg 6978.9 max 7598.7 at 07:39:33 | cpu avg 1269.7 max 2077.6 at 07:39:33
+vm_used avg 9.77 max 10.33 at 07:39:33
+vm_cpu_busy avg 2035 max 3080 at 07:39:33
+
+== node container, docker stats samples in results.json during the k6 window
+samples 33 of 39
+node mem avg 8456 MiB max (9114.624, '2026-11-05T07:39:05Z') min (7834.624, '2026-11-05T07:35:32Z')
+node cpu% avg 157.8 max (302.21, '2026-11-05T07:38:48Z') min (55.94, '2026-11-05T07:35:16Z')
+vm_var_used_kib first,last 41433180 41494368 host_free 17 17
+
+== k6 per step
+vus_05 requests 428 per s (180s) 2.38 failed 0 rate 0 p95 146.6 p99 755.1 med 54.1 max 2538.4
+vus_10 requests 873 per s (180s) 4.85 failed 0 rate 0 p95 279.8 p99 667.2 med 60.7 max 1355.1
+vus_20 requests 1576 per s (180s) 8.76 failed 0 rate 0 p95 1109.1 p99 3954.6 med 122.2 max 5064.3
+http_req_duration{name:read} {"p(90)": 405.1296295, "p(95)": 664.0307419499989, "p(99)": 2884.177797359999, "max": 5064.273711, "avg": 207.25489984984532, "med": 72.193375}
+http_req_duration{name:write} {"avg": 214.82573026962461, "med": 83.204, "p(90)": 365.8873084000001, "p(95)": 617.8035169999989, "p(99)": 2348.721992359998, "max": 4622.069711}
+http_req_duration {"p(99)": 2884.652829439999, "max": 5064.273711, "avg": 207.8001743028097, "med": 73.158625, "p(90)": 403.39205860000004, "p(95)": 663.5197377999988}
+http_reqs {"count": 2883, "rate": 5.307052573894001}
+iterations {"count": 2877, "rate": 5.296007719421797}
+checks {"rate": 1, "passes": 2877, "fails": 0}
+throttled {"passes": 0, "fails": 2877, "rate": 0}
+
+== steps from Prometheus
+vus_05 api_throttled_share [0.0288]
+vus_05 ctr_throttled_share {'redis-exporter': 0.116, 'manager': 0.0, 'plane-live': 0.006, 'plane-admin': 0.0, 'plane-space': 0.06, 'plane-web': 0.0, 'plane-minio': 0.006, 'plane-pgdb': 0.07, 'plane-rabbitmq': 0.037, 'plane-redis': 0.057, 'plane-api': 0.029, 'plane-beat-worker': 0.075, 'plane-worker': 0.05, 'k6': 0.0}
+vus_05 celery_ready_peak [0.0]
+vus_05 celery_messages_peak [0.0]
+vus_05 celery_unacked_peak [0.0]
+vus_05 ctr_cpu_avg {'plane-pgdb': 91, 'plane-rabbitmq': 22, 'plane-redis': 4, 'plane-api': 92, 'plane-beat-worker': 5, 'plane-worker': 39, 'k6': 9}
+vus_05 ctr_cpu_max {'plane-pgdb': 107, 'plane-rabbitmq': 28, 'plane-redis': 5, 'plane-api': 153, 'plane-beat-worker': 7, 'plane-worker': 57, 'k6': 12}
+vus_05 ctr_mem_max {'plane-pgdb': 45, 'plane-rabbitmq': 127, 'plane-redis': 11, 'plane-api': 168, 'plane-beat-worker': 147, 'plane-worker': 269, 'k6': 16}
+vus_05 traefik_cpu_max [0.0181]
+vus_05 vm_cpu_busy_avg [1.8569]
+vus_05 vm_cpu_busy_max [2.0645]
+vus_05 vm_used_max [10556620800.0]
+vus_10 api_throttled_share [0.0213]
+vus_10 ctr_throttled_share {'redis-exporter': 0.12, 'manager': 0.0, 'plane-live': 0.587, 'plane-admin': 0.0, 'plane-space': 0.048, 'plane-web': 0.0, 'plane-minio': 0.0, 'plane-pgdb': 0.198, 'plane-rabbitmq': 0.024, 'plane-redis': 0.046, 'plane-api': 0.021, 'plane-beat-worker': 0.11, 'plane-worker': 0.045, 'k6': 0.0}
+vus_10 celery_ready_peak [0.0]
+vus_10 celery_messages_peak [0.0]
+vus_10 celery_unacked_peak [0.0]
+vus_10 ctr_cpu_avg {'plane-pgdb': 184, 'plane-rabbitmq': 24, 'plane-redis': 4, 'plane-api': 169, 'plane-beat-worker': 5, 'plane-worker': 63, 'k6': 13}
+vus_10 ctr_cpu_max {'plane-pgdb': 221, 'plane-rabbitmq': 32, 'plane-redis': 4, 'plane-api': 200, 'plane-beat-worker': 5, 'plane-worker': 94, 'k6': 15}
+vus_10 ctr_mem_max {'plane-pgdb': 51, 'plane-rabbitmq': 125, 'plane-redis': 11, 'plane-api': 159, 'plane-beat-worker': 147, 'plane-worker': 257, 'k6': 18}
+vus_10 traefik_cpu_max [0.0271]
+vus_10 vm_cpu_busy_avg [2.3157]
+vus_10 vm_cpu_busy_max [3.0796]
+vus_10 vm_used_max [11090395136.0]
+vus_20 api_throttled_share [0.1009]
+vus_20 ctr_throttled_share {'redis-exporter': 0.1, 'manager': 0.0, 'plane-admin': 0.0, 'plane-space': 0.025, 'plane-web': 0.0, 'plane-minio': 0.018, 'plane-pgdb': 0.5, 'plane-rabbitmq': 0.024, 'plane-redis': 0.041, 'plane-api': 0.101, 'plane-beat-worker': 0.033, 'plane-worker': 0.019, 'k6': 0.0, 'plane-live': 0.031}
+vus_20 celery_ready_peak [0.0]
+vus_20 celery_messages_peak [1.0]
+vus_20 celery_unacked_peak [1.0]
+vus_20 ctr_cpu_avg {'plane-pgdb': 323, 'plane-rabbitmq': 24, 'plane-redis': 4, 'plane-api': 308, 'plane-beat-worker': 4, 'plane-worker': 98, 'k6': 14}
+vus_20 ctr_cpu_max {'plane-pgdb': 377, 'plane-rabbitmq': 30, 'plane-redis': 4, 'plane-api': 389, 'plane-beat-worker': 5, 'plane-worker': 116, 'k6': 17}
+vus_20 ctr_mem_max {'plane-pgdb': 63, 'plane-rabbitmq': 158, 'plane-redis': 11, 'plane-api': 172, 'plane-beat-worker': 148, 'plane-worker': 252, 'k6': 22}
+vus_20 traefik_cpu_max [0.022]
+vus_20 vm_cpu_busy_avg [1.9212]
+vus_20 vm_cpu_busy_max [2.1551]
+vus_20 vm_used_max [10606829568.0]
+
+== prometheus.json in results
+throttle by pod {'redis-exporter-5b59d6cb7c-rp2rd': 0.11, 'iso-dev-controller-manager-85dbfbcb5b-vswbn': 0.0, 'plane-live-wl-5744d85f8b-qdb9d': 0.018, 'plane-web-wl-748764649d-5swbd': 0.0, 'plane-space-wl-847f88bc46-pchg4': 0.051, 'plane-admin-wl-545f5b8fcd-8prz5': 0.0, 'plane-minio-wl-0': 0.008, 'plane-pgdb-wl-0': 0.261, 'plane-rabbitmq-wl-0': 0.028, 'plane-redis-wl-0': 0.047, 'plane-api-wl-847cc45c84-bdkcb': 0.068, 'plane-worker-wl-66794994cc-jdvpd': 0.043, 'plane-beat-worker-wl-7cd7fd4f44-fnkxm': 0.073, 'k6-20261105t073241z-5gplh': 0.0, 'plane-live-wl-5744d85f8b-mkgv6': 0.452}
+api rps 5.542415844824477 p95 0.9925240384615398 5xx 0
+db growth [('plane', '729631.8170418508')]
+restarts []
+monitoring_peak 1764356096
+
+== both Plane environments at one moment, 11 workloads each (load window, 15 s step)
+quiet mem avg 2296.4 max 2346.3 at 04:05:00 | cpu avg 90.6 max 112.3 at 03:48:00
+load mem avg 2140.7 max 2759.6 at 07:39:33 | cpu avg 756.6 max 1357.0 at 07:39:33
+
+== per step, Traefik on the API route, from the steps and buckets files
+vus_05 GET count 577 p95 rank 548.3 bucket 0.1-0.3 s interpolated 227 ms
+vus_05 POST count 48 p95 rank 45.6 bucket 0.1-0.3 s interpolated 233 ms
+vus_10 GET count 1018 p95 rank 966.7 bucket 0.1-0.3 s interpolated 296 ms
+vus_10 POST count 86 p95 rank 82.1 bucket 0.1-0.3 s interpolated 280 ms
+vus_20 GET count 1492 p95 rank 1417.0 bucket 0.3-1.2 s interpolated 1055 ms
+vus_20 POST count 167 p95 rank 158.5 bucket 1.2-5.0 s interpolated 1227 ms
+API route GET+POST per step {'vus_05': 625, 'vus_10': 1104, 'vus_20': 1658}
+
+== quiet window checks, from the timeline file
+vm_used_bytes in quiet window: n 31 min 10280591360.0 avg 10779482574.452 max 11425443840.0
+pods_cpu_cores in quiet window: n 31 min 0.233 avg 0.309 max 0.391
+pods_mem_bytes in quiet window: n 31 min 7128453120.0 avg 7209493140.645 max 7344111616.0
+traefik_rps in quiet window: n 31 min 0.8 avg 0.835 max 1.3
+vm_cpu_busy in quiet window: n 31 min 0.615 avg 0.951 max 1.88
+running_jobs in quiet window: n 31 min 0.0 avg 0.0 max 0.0
+pods_total in quiet window: n 31 min 83.0 avg 83.0 max 83.0
+pods_cpu_cores, 10-minute buckets, avg m: 00:30=604 00:40=408 00:50=418 01:00=409 01:10=457 01:20=383 01:30=444 01:40=398 01:50=438 02:00=449 02:10=527 02:20=710 02:30=674 02:40=392 02:50=347 03:00=373 03:10=330 03:20=337 03:30=386 03:40=310 03:50=290 04:00=325 04:10=312 04:20=370 04:30=294 04:40=321 04:50=355 05:00=365 05:10=363 05:20=334 05:30=650 05:40=348 05:50=459 06:00=416 06:10=330 06:20=440 06:30=462 06:40=612 06:50=456 07:00=483 07:10=332 07:20=526 07:30=920 07:40=1022
+vm_used top of the 60 s timeline 01:50:00 10.93 GiB
+
+== disk sums
+node /var 12.815 GiB
+registry 1.079 GiB
+mirror-docker 2.347 GiB
+mirror-quay 0.417 GiB
+mirror-k8s 0.035 GiB
+mirrors 2.799
+kindest/node 1.192 GiB
+plane-platform-local-git 0.033 GiB
+ghcr.io/distribution/distribution 0.077 GiB
+.tools 0.916 GiB
+.local 2.046 GiB
+.build 0.224 GiB
+.tools+.local 2.962
+sum of the parts 21.18 GiB
+imagefs 11.01 GiB; /var/log/pods 0.052 GiB; /var/lib/containerd 11.39 GiB; pv sum 2.01 GiB
+host free 17.67 GiB; Docker.raw allocated 39.59 GiB; logical 460.4 GiB; VM fs avail 389.5 GiB; VM fs used 39.56
+docker df total 38.605792 GB 35.95 GiB
+vm /var growth during run MiB 59.8

@@ -1,0 +1,314 @@
+# LOAD-3 capture scripts as run for stamp 20261105T092547Z, in order: capture-host.sh, capture-prom.py, capture-pvc.py, access-summary.py. The after-saturation, window-checks, api-log-browser-tab and k6-project-rows files say their own command.
+
+##### capture-host.sh
+#!/usr/bin/env bash
+# LOAD-3 host capture, read-only. Names only containers called plane-*. Usage: capture-host.sh <evidence-dir> <stamp>
+EV="$1"; ST="$2"; R=/Users/bek/dev/pr/plane-platform; cd "$R"
+export KUBECONFIG="$R/.local/kubeconfig" PATH="$R/.tools/bin:$PATH"
+H="$EV/LOAD-3-$ST-host.txt"; NODE=plane-platform-control-plane
+DR="$HOME/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw"
+run() { echo; echo "# $(date -u +%Y-%m-%dT%H:%M:%SZ) command: $1"; eval "$1" 2>&1 || echo "[exit $?]"; }
+{
+echo "# LOAD-3 host capture, read-only. Filtered to this project's containers and volumes. Taken after the three windows, with no load running."
+run "kubectl top nodes"
+run "kubectl top pods -A --containers"
+NAMES="$(docker ps --format '{{.Names}}' | grep '^plane-' | sort | paste -sd ' ' -)"
+run "docker stats --no-stream --format '{{.Name}} cpu={{.CPUPerc}} mem={{.MemUsage}} pct={{.MemPerc}} net={{.NetIO}} block={{.BlockIO}} pids={{.PIDs}}' $NAMES"
+run "docker info --format 'running_containers_all={{.ContainersRunning}} ncpu={{.NCPU}} mem_total_bytes={{.MemTotal}}'"
+run "docker exec $NODE sh -c 'nproc; cat /proc/meminfo | head -8; cat /proc/pressure/memory; cat /proc/pressure/cpu'"
+run "docker exec $NODE sh -c 'df -k / /var /var/lib/containerd /var/local-path-provisioner 2>/dev/null'"
+run "docker exec $NODE sh -c 'du -sk /var/local-path-provisioner/* 2>/dev/null'"
+run "docker exec $NODE sh -c 'du -sk /var/log/pods /var/log/containers /var/lib/containerd /var/lib/kubelet 2>/dev/null'"
+run "docker exec $NODE crictl imagefsinfo"
+run "docker exec $NODE crictl images"
+run "df -k $R"
+run "df -h $R"
+run "ls -ls '$DR'"
+run "du -sk '$DR'"
+run "docker system df"
+run "docker inspect $NODE --format '{{range .Mounts}}{{.Type}} {{.Name}} {{.Destination}}{{println}}{{end}}'"
+run "du -sk .tools .local .build .local/backups .local/evidence-raw apps 2>/dev/null"
+run "kubectl get pvc -A"
+run "kubectl get applications.argoproj.io -n argocd"
+run "kubectl get nodes -o wide"
+run "kubectl get pods -n plane-dev -o jsonpath='{range .items[*]}{.metadata.name}{\"\t\"}{range .spec.containers[*]}{.name}={.image}{\" \"}{end}{\"\n\"}{end}'"
+run "kubectl get pods -n plane-prod-sim -o jsonpath='{range .items[*]}{.metadata.name}{\"\t\"}{range .spec.containers[*]}{.name}={.image}{\" \"}{end}{\"\n\"}{end}'"
+echo; echo "# $(date -u +%Y-%m-%dT%H:%M:%SZ) done"
+} > "$H" 2>&1
+# This project's Docker volumes and images only. The jq filter keeps every other name out of the file.
+D="$EV/LOAD-3-$ST-docker-project.txt"
+{
+echo "# LOAD-3 Docker storage, this project's volumes and images only. $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "# command: docker inspect <local service and node containers> for volume names"
+VOLS="$(for n in $(docker ps --format '{{.Names}}' | grep '^plane-'); do docker inspect "$n" --format '{{.Name}} {{range .Mounts}}{{if .Name}}{{.Name}}={{.Destination}} {{end}}{{end}}'; done)"
+echo "$VOLS"
+KEEP="$(echo "$VOLS" | tr ' ' '\n' | grep '=' | cut -d= -f1 | jq -R . | jq -cs .)"
+echo "# $(date -u +%Y-%m-%dT%H:%M:%SZ) command: docker system df -v --format json | jq (keep only the volumes above and only images kindest/node, plane-platform-local-*, distribution, localhost:5001/*)"
+docker system df -v --format json | jq --argjson keep "$KEEP" '{volumes: [.Volumes[]|select(.Name as $n|$keep|index($n))|{Name,Size,Links}], images: [.Images[]|select((.Repository|test("^kindest/node$|^plane-platform-local|distribution/distribution|^localhost:5001/")))|{Repository,Tag,ID,Size,SharedSize,UniqueSize,Containers}]}'
+echo "# $(date -u +%Y-%m-%dT%H:%M:%SZ) done"
+} > "$D" 2>&1
+
+##### capture-prom.py
+#!/usr/bin/env python3
+# LOAD-3: raw Prometheus capture for three clean windows on the final images. Read-only.
+# Reuses the query text of the earlier capture (LOAD-3-20261105T074543Z-*), with the window swapped.
+# Usage: python3 -I capture-prom.py <evidence-dir> <stamp>
+import json, subprocess, sys, datetime, os, re
+from concurrent.futures import ThreadPoolExecutor
+EV, ST = sys.argv[1:3]
+OLD = "20261105T074543Z"
+PROM = "http://prometheus.localhost"
+UTC = datetime.timezone.utc
+def ep(s): return int(datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC).timestamp())
+def iso(t): return datetime.datetime.fromtimestamp(t, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+now = lambda: datetime.datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+WIN = {"idle": ("2026-11-05T08:47:35Z", "2026-11-05T09:02:35Z"),
+       "realistic": ("2026-11-05T09:02:59Z", "2026-11-05T09:12:02Z"),
+       "saturation": ("2026-11-05T09:12:18Z", "2026-11-05T09:21:21Z")}
+STEP = {}
+for w in ("realistic", "saturation"):
+    s = ep(WIN[w][0]) + 2
+    for i, name in enumerate(("vus_05", "vus_10", "vus_20")):
+        STEP[f"{w}/{name}"] = (s + 180*i, s + 180*(i+1))
+def q(query, t):
+    r = subprocess.run(["curl", "-sS", "-G", "--max-time", "60", f"{PROM}/api/v1/query", "--data-urlencode", f"query={query}", "--data-urlencode", f"time={t}"], capture_output=True, text=True)
+    try: d = json.loads(r.stdout); return d.get("data", {}).get("result"), d.get("status"), d.get("error")
+    except Exception as e: return None, "curl-failed", (r.stderr or str(e))[:300]
+def qr(query, a, b, step):
+    r = subprocess.run(["curl", "-sS", "-G", "--max-time", "120", f"{PROM}/api/v1/query_range", "--data-urlencode", f"query={query}", "--data-urlencode", f"start={a}", "--data-urlencode", f"end={b}", "--data-urlencode", f"step={step}"], capture_output=True, text=True)
+    try: d = json.loads(r.stdout); return d.get("data", {}).get("result"), d.get("status"), d.get("error")
+    except Exception as e: return None, "curl-failed", (r.stderr or str(e))[:300]
+def instant(e):
+    res, st, err = q(e["query"], e["time"]); e.update(status=st, result=res)
+    if err: e["error"] = err
+    return e
+def ranged(e):
+    res, st, err = qr(e["query"], e["start"], e["end"], e["step"]); e.update(status=st, result=res)
+    if err: e["error"] = err
+    return e
+old_w = json.load(open(f"{EV}/LOAD-3-{OLD}-prometheus-windows.json"))
+old_s = json.load(open(f"{EV}/LOAD-3-{OLD}-prometheus-steps.json"))
+base = [e for e in old_w["entries"] if e.get("window") == "quiet"]
+CT = 'namespace=~"plane-dev|plane-prod-sim",container!="",container!="POD"'
+DEV = 'namespace="plane-dev",container!="",container!="POD"'
+# The API route: run.sh hashes each IngressRoute match that reaches plane-api.
+env = dict(os.environ, KUBECONFIG="/Users/bek/dev/pr/plane-platform/.local/kubeconfig")
+ir = json.loads(subprocess.run(["/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl", "-n", "plane-dev", "get", "ingressroute", "plane-ingress", "-o", "json"], env=env, capture_output=True, text=True, timeout=30).stdout)
+import hashlib
+api = sorted({"plane-dev-plane-ingress-" + hashlib.sha256(r["match"].encode()).hexdigest()[:20] + "@kubernetescrd" for r in ir["spec"]["routes"] if r["services"][0]["name"] == "plane-api"})
+API = "service=~\"" + "|".join(api) + "\""
+extra_w = {
+ "throttled_seconds_by_ctr": lambda d: f'sum by (namespace,container)(increase(container_cpu_cfs_throttled_seconds_total{{{CT}}}[{d}s]))',
+ "throttled_periods_by_ctr": lambda d: f'sum by (namespace,container)(increase(container_cpu_cfs_throttled_periods_total{{{CT}}}[{d}s]))',
+ "cfs_periods_by_ctr": lambda d: f'sum by (namespace,container)(increase(container_cpu_cfs_periods_total{{{CT}}}[{d}s]))',
+ "cpu_limit": lambda d: 'max by (namespace,container)(kube_pod_container_resource_limits{namespace=~"plane-dev|plane-prod-sim",resource="cpu"})',
+ "mem_limit": lambda d: 'max by (namespace,container)(kube_pod_container_resource_limits{namespace=~"plane-dev|plane-prod-sim",resource="memory"})',
+ "cpu_request": lambda d: 'max by (namespace,container)(kube_pod_container_resource_requests{namespace=~"plane-dev|plane-prod-sim",resource="cpu"})',
+ "mem_request": lambda d: 'max by (namespace,container)(kube_pod_container_resource_requests{namespace=~"plane-dev|plane-prod-sim",resource="memory"})',
+ "ctr_restarts_total": lambda d: 'sum by (namespace,container)(kube_pod_container_status_restarts_total{namespace=~"plane-dev|plane-prod-sim"})',
+ "pg_activity_max_by_state": lambda d: f'max_over_time(sum by (namespace,state)(pg_stat_activity_count{{namespace=~"plane-dev|plane-prod-sim"}})[{d}s:15s])',
+ "pg_xact_commit_rate": lambda d: f'sum by (namespace,datname)(rate(pg_stat_database_xact_commit{{namespace=~"plane-dev|plane-prod-sim",datname!~"template.*|postgres"}}[{d}s]))',
+ "pg_db_size": lambda d: 'pg_database_size_bytes{namespace=~"plane-dev|plane-prod-sim",datname!~"template.*|postgres"}',
+ "node_load1_max": lambda d: f'max_over_time(node_load1[{d}s])',
+ "node_cpu_pressure_rate": lambda d: f'rate(node_pressure_cpu_waiting_seconds_total[{d}s])',
+ "node_mem_pressure_rate": lambda d: f'rate(node_pressure_memory_waiting_seconds_total[{d}s])',
+ "node_io_pressure_rate": lambda d: f'rate(node_pressure_io_waiting_seconds_total[{d}s])',
+ "vm_cpu_count": lambda d: 'count(count by (cpu)(node_cpu_seconds_total))',
+ "vm_mem_total": lambda d: 'node_memory_MemTotal_bytes',
+ "vm_swap_used_avg": lambda d: f'avg_over_time((node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes)[{d}s:15s])',
+ "api_route_requests_by_method_code": lambda d: f'sum by (method,code)(increase(traefik_service_requests_total{{{API}}}[{d}s]))',
+ "all_requests_by_service_method_code": lambda d: f'sum by (service,method,code)(increase(traefik_service_requests_total[{d}s])) > 0',
+}
+W = []
+for w, (a, b) in WIN.items():
+    A, B = ep(a), ep(b); d = B - A
+    for e in base:
+        qq = e["query"].replace("1800s", f"{d}s").replace("1793850000", str(A))
+        W.append(dict(window=w, name=e["name"], query=qq, time=B, time_iso=b))
+    for n, fn in extra_w.items():
+        W.append(dict(window=w, name=n, query=fn(d), time=B, time_iso=b))
+W.append(dict(window="idle", name="argocd_sync_ops_20m_before", query='sum by (name)(increase(argocd_app_sync_total[1200s]))', time=ep(WIN["idle"][0]), time_iso=WIN["idle"][0]))
+T = int(datetime.datetime.now(UTC).timestamp())
+for n, qq in (("vm_used_max_whole_retention", 'max_over_time((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)[14400s:15s])'),
+              ("prometheus_lowest_timestamp", 'prometheus_tsdb_lowest_timestamp_seconds'),
+              ("prometheus_head_series", 'prometheus_tsdb_head_series'),
+              ("prometheus_storage_bytes", 'prometheus_tsdb_storage_blocks_bytes'),
+              ("prometheus_wal_bytes", 'prometheus_tsdb_wal_storage_size_bytes'),
+              ("node_fs_avail", 'node_filesystem_avail_bytes{mountpoint="/"}'),
+              ("pod_start_times", 'kube_pod_start_time{namespace=~"plane-dev|plane-prod-sim"}')):
+    W.append(dict(window="now", name=n, query=qq, time=T, time_iso=iso(T)))
+print(now(), "windows", len(W), flush=True)
+with ThreadPoolExecutor(6) as ex: W = list(ex.map(instant, W))
+json.dump({"captured_at": now(), "command": "curl -G http://prometheus.localhost/api/v1/query per entry (query and time in each entry)", "windows": {k: {"start": v[0], "end": v[1]} for k, v in WIN.items()}, "api_route": api, "entries": W}, open(f"{EV}/LOAD-3-{ST}-prometheus-windows.json", "w"))
+print(now(), "windows done; errors", [e["name"] for e in W if e["status"] != "success"], flush=True)
+# Series at a 15-second step, one real moment per step.
+SERQ = {"mem": 'sum by (namespace,pod,container)(container_memory_working_set_bytes{container!="",container!="POD"})',
+        "cpu": 'sum by (namespace,pod,container)(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[1m]))',
+        "vm_used": 'node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes',
+        "vm_cpu_busy": 'sum(rate(node_cpu_seconds_total{mode!="idle"}[1m]))',
+        "vm_swap_used": 'node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes',
+        "node_root_mem": 'container_memory_working_set_bytes{id="/"}',
+        "node_root_cpu": 'rate(container_cpu_usage_seconds_total{id="/"}[1m])',
+        "celery_ready": 'rabbitmq_detailed_queue_messages_ready{namespace=~"plane-dev|plane-prod-sim",queue="celery"}',
+        "api_route_rps": f'sum(rate(traefik_service_requests_total{{{API}}}[1m]))',
+        "throttled_share": f'sum by (container)(rate(container_cpu_cfs_throttled_periods_total{{{DEV}}}[1m])) / sum by (container)(rate(container_cpu_cfs_periods_total{{{DEV}}}[1m]))',
+        "node_cpu_pressure": 'rate(node_pressure_cpu_waiting_seconds_total[1m])'}
+S = []
+for w, (a, b) in WIN.items():
+    for n, qq in SERQ.items():
+        S.append(dict(window=w, name=n, query=qq, start=ep(a), end=ep(b), step=15))
+with ThreadPoolExecutor(4) as ex: S = list(ex.map(ranged, S))
+json.dump({"captured_at": now(), "command": "curl -G http://prometheus.localhost/api/v1/query_range per entry", "entries": S}, open(f"{EV}/LOAD-3-{ST}-prometheus-series.json", "w"))
+print(now(), "series done; errors", [e["name"] for e in S if e["status"] != "success"], flush=True)
+# Per VU step.
+extra_s = {
+ "ctr_cpu_increase_avg": f'sum by (container)(increase(container_cpu_usage_seconds_total{{{DEV}}}[180s])) / 180',
+ "ctr_throttled_periods": f'sum by (container)(increase(container_cpu_cfs_throttled_periods_total{{{DEV}}}[180s]))',
+ "ctr_cfs_periods": f'sum by (container)(increase(container_cpu_cfs_periods_total{{{DEV}}}[180s]))',
+ "ctr_throttled_seconds": f'sum by (container)(increase(container_cpu_cfs_throttled_seconds_total{{{DEV}}}[180s]))',
+ "api_route_requests_by_method_code": f'sum by (method,code)(increase(traefik_service_requests_total{{{API}}}[180s]))',
+ "api_route_rps": f'sum(rate(traefik_service_requests_total{{{API}}}[180s]))',
+ "api_route_p50_by_method": f'histogram_quantile(0.5, sum by (le,method)(increase(traefik_service_request_duration_seconds_bucket{{{API}}}[180s])))',
+ "api_route_p95_by_method": f'histogram_quantile(0.95, sum by (le,method)(increase(traefik_service_request_duration_seconds_bucket{{{API}}}[180s])))',
+ "api_route_mean_duration": f'sum(rate(traefik_service_request_duration_seconds_sum{{{API}}}[180s])) / sum(rate(traefik_service_request_duration_seconds_count{{{API}}}[180s]))',
+ "pg_activity_max_by_state": 'max_over_time(sum by (state)(pg_stat_activity_count{namespace="plane-dev"})[180s:15s])',
+ "pg_xact_commit_rate": 'sum(rate(pg_stat_database_xact_commit{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_rollback_rate": 'sum(rate(pg_stat_database_xact_rollback{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_tup_fetched_rate": 'sum(rate(pg_stat_database_tup_fetched{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_tup_returned_rate": 'sum(rate(pg_stat_database_tup_returned{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_tup_inserted_rate": 'sum(rate(pg_stat_database_tup_inserted{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_blks_read_rate": 'sum(rate(pg_stat_database_blks_read{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_blks_hit_rate": 'sum(rate(pg_stat_database_blks_hit{namespace="plane-dev",datname!~"template.*|postgres"}[180s]))',
+ "pg_numbackends_max": 'max_over_time(sum(pg_stat_database_numbackends{namespace="plane-dev"})[180s:15s])',
+ "node_load1_max": 'max_over_time(node_load1[180s])',
+ "node_cpu_pressure_rate": 'rate(node_pressure_cpu_waiting_seconds_total[180s])',
+ "node_io_pressure_rate": 'rate(node_pressure_io_waiting_seconds_total[180s])',
+ "traefik_open_connections_max": 'max_over_time(sum by (entrypoint,protocol)(traefik_open_connections)[180s:15s])',
+}
+sb = {}
+for e in old_s["entries"]:
+    if e.get("window") == "vus_05": sb[e["name"]] = e["query"]
+P = []
+for k, (a, b) in STEP.items():
+    for n, qq in sb.items():
+        P.append(dict(window=k, name=n, query=qq, time=b, time_iso=iso(b)))
+    for n, qq in extra_s.items():
+        P.append(dict(window=k, name=n, query=qq, time=b, time_iso=iso(b)))
+with ThreadPoolExecutor(6) as ex: P = list(ex.map(instant, P))
+json.dump({"captured_at": now(), "command": "curl -G http://prometheus.localhost/api/v1/query per entry", "steps": {"note": "each step is 3 minutes from two seconds after the k6 container started, the same as the earlier capture", **{k: f"{iso(a)}-{iso(b)}" for k, (a, b) in STEP.items()}}, "api_route": api, "entries": P}, open(f"{EV}/LOAD-3-{ST}-prometheus-steps.json", "w"))
+print(now(), "steps done; errors", [e["name"] for e in P if e["status"] != "success"], flush=True)
+# Latency buckets per method on the API route.
+B = []
+def bucket(args):
+    k, m, b = args
+    qq = f'sum by (le)(increase(traefik_service_request_duration_seconds_bucket{{{API},method="{m}"}}[180s]))'
+    res, st, err = q(qq, b)
+    bs = sorted(({"le": r["metric"]["le"], "count": float(r["value"][1])} for r in (res or [])), key=lambda x: float(x["le"]) if x["le"] != "+Inf" else 1e18)
+    return dict(window=k, method=m, query=qq, time=b, time_iso=iso(b), status=st, buckets=bs)
+with ThreadPoolExecutor(6) as ex: B = list(ex.map(bucket, [(k, m, b) for k, (a, b) in STEP.items() for m in ("GET", "POST", "PATCH", "DELETE")]))
+json.dump({"captured_at": now(), "command": "curl -G http://prometheus.localhost/api/v1/query, sum by (le)(increase(traefik_service_request_duration_seconds_bucket{service=<plane-api route>,method=...}[180s])) at the end of each step", "api_route": api, "entries": B}, open(f"{EV}/LOAD-3-{ST}-traefik-buckets.json", "w"))
+print(now(), "buckets done", flush=True)
+# A 60-second timeline, to check the windows are what they claim.
+A0 = ep("2026-11-05T08:15:00Z"); A1 = int(datetime.datetime.now(UTC).timestamp())
+TLQ = {"pods_cpu_cores": 'sum(rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[1m]))',
+       "pods_mem_bytes": 'sum(container_memory_working_set_bytes{container!="",container!="POD"})',
+       "vm_used_bytes": 'node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes',
+       "vm_cpu_busy": 'sum(rate(node_cpu_seconds_total{mode!="idle"}[1m]))',
+       "argocd_sync_total": 'sum(argocd_app_sync_total)',
+       "argocd_not_synced": 'count(argocd_app_info{sync_status!="Synced"}) or vector(0)',
+       "argocd_not_healthy": 'count(argocd_app_info{health_status!="Healthy"}) or vector(0)',
+       "api_route_rps": f'sum(rate(traefik_service_requests_total{{{API}}}[1m])) or vector(0)',
+       "all_routes_rps": 'sum(rate(traefik_service_requests_total[1m])) or vector(0)',
+       "pods_count": 'count(kube_pod_status_phase{phase="Running"} == 1)',
+       "alerts_firing": 'count(ALERTS{alertstate="firing"}) or vector(0)'}
+TL = []
+for n, qq in TLQ.items():
+    r, st, err = qr(qq, A0, A1, 60)
+    TL.append(dict(name=n, query=qq, start=A0, end=A1, step=60, status=st, values=(r[0]["values"] if r else [])))
+json.dump({"captured_at": now(), "command": "curl -G http://prometheus.localhost/api/v1/query_range, 60-second step", "entries": TL}, open(f"{EV}/LOAD-3-{ST}-timeline.json", "w"))
+print(now(), "timeline done", flush=True)
+
+##### capture-pvc.py
+#!/usr/bin/env python3
+# LOAD-3: df -k and du -sk per PVC mount, from inside each pod that has one. Read-only. Usage: capture-pvc.py <evidence-dir> <stamp>
+import json, subprocess, sys, datetime, os
+from concurrent.futures import ThreadPoolExecutor
+EV, ST = sys.argv[1:3]
+env = dict(os.environ, KUBECONFIG="/Users/bek/dev/pr/plane-platform/.local/kubeconfig")
+K = "/Users/bek/dev/pr/plane-platform/.tools/bin/kubectl"
+now = lambda: datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+pods = json.loads(subprocess.run([K, "get", "pods", "-A", "-o", "json"], env=env, capture_output=True, text=True, timeout=60).stdout)["items"]
+jobs = []
+for p in pods:
+    if p["status"].get("phase") != "Running": continue
+    claims = {v["name"]: v["persistentVolumeClaim"]["claimName"] for v in p["spec"].get("volumes", []) if "persistentVolumeClaim" in v}
+    done = set()
+    for c in p["spec"]["containers"]:
+        for m in c.get("volumeMounts", []):
+            if m["name"] in claims and m["name"] not in done:
+                done.add(m["name"]); jobs.append((p["metadata"]["namespace"], p["metadata"]["name"], c["name"], claims[m["name"]], m["mountPath"]))
+def one(j):
+    ns, pod, c, pvc, mnt = j
+    head = f"--- {ns}/{pod} container={c} pvc={pvc} mount={mnt} at {now()}"
+    out = []
+    for cmd in (["df", "-k", mnt], ["du", "-sk", mnt]):
+        r = subprocess.run([K, "exec", "-n", ns, pod, "-c", c, "--", *cmd], env=env, capture_output=True, text=True, timeout=40)
+        out.append(f"$ {' '.join(cmd)}\n{r.stdout}{r.stderr}" + (f"[could not read: exit {r.returncode}]\n" if r.returncode else ""))
+    return head + "\n" + "".join(out)
+with ThreadPoolExecutor(4) as ex: res = list(ex.map(one, sorted(jobs)))
+with open(f"{EV}/LOAD-3-{ST}-pvc-df.txt", "w") as f:
+    f.write(f"# {now()} command: kubectl exec <pod> -c <container> -- df -k <mount>, then du -sk <mount>, for each running pod with a PVC. Node volumes share one filesystem, so df shows that filesystem and du shows the volume.\n")
+    f.write("\n".join(res) + "\n")
+    f.write(f"# {now()} done\n")
+
+##### access-summary.py
+#!/usr/bin/env python3
+# LOAD-3: per-minute summary of plane-api's request log, to check what reached the API in each window. Paths have ids
+# masked and user ids dropped. Usage: python3 -I access-summary.py <stamp> <out> <dev-log> <prod-sim-log>
+import json, sys, re, collections, datetime
+ST, OUT, DEV, PROD = sys.argv[1:5]
+now = "2026-11-05T09:30:08Z"  # when the logs were read; this script only summarizes the saved copies
+WIN = [("idle", "08:47:35", "09:02:35"), ("realistic", "09:02:59", "09:12:02"), ("saturation", "09:12:18", "09:21:21")]
+STEPS = [("realistic/vus_05", "09:03:01", "09:06:01"), ("realistic/vus_10", "09:06:01", "09:09:01"), ("realistic/vus_20", "09:09:01", "09:12:01"), ("saturation/vus_05", "09:12:20", "09:15:20"), ("saturation/vus_10", "09:15:20", "09:18:20"), ("saturation/vus_20", "09:18:20", "09:21:20")]
+def rows(fn):
+    for line in open(fn, errors="replace"):
+        ts, _, rest = line.partition(" ")
+        if not rest.startswith("{"): continue
+        try: d = json.loads(rest)
+        except Exception: continue
+        if d.get("name") != "plane.api.request": continue
+        m = re.match(r"(\w+) (\S+) (\d+)", d.get("message", ""))
+        if not m: continue
+        p = re.sub(r"[0-9a-f]{8}-[0-9a-f-]{27}", "<id>", m.group(2))
+        yield ts[11:19], m.group(1), p, m.group(3), d.get("user_agent", ""), d.get("remote_addr", ""), bool(d.get("user_id") not in (None, "None"))
+def kind(p, ua):
+    if "__probe__" in p or p == "/api/instances/": return "probe"
+    if "/k6-load" in p or ua.startswith("k6") or ua.startswith("Grafana"): return "k6"
+    return "other"
+with open(OUT, "w") as f:
+    f.write(f"# {now} command: kubectl logs -n <plane-dev|plane-prod-sim> deploy/plane-api-wl --since=60m (dev, read at 09:29:25Z) or --since=70m (prod-sim, read at 09:30:08Z) --timestamps, summarized by access-summary.py. Ids masked, user ids dropped.\n")
+    for env, fn in (("plane-dev", DEV), ("plane-prod-sim", PROD)):
+        R = list(rows(fn))
+        f.write(f"\n== {env}: request log lines {len(R)}, first {R[0][0] if R else '-'} last {R[-1][0] if R else '-'} UTC\n")
+        for w, a, b in WIN:
+            c = collections.Counter(kind(r[2], r[4]) for r in R if a <= r[0] <= b)
+            f.write(f"{w} {a} to {b}: {dict(c)}\n")
+        f.write("-- everything that is not a probe and not k6, with its user agent and client, first and last time, count\n")
+        g = {}
+        for t, me, p, co, ua, ra, signed in R:
+            if t < "08:44:00" or kind(p, ua) != "other": continue
+            k = (me, p, co, ua, ra, signed); x = g.setdefault(k, [t, t, 0]); x[1] = t; x[2] += 1
+        for k, x in sorted(g.items(), key=lambda kv: kv[1][0]):
+            f.write(f"{x[0]} {x[1]} n={x[2]} {k[0]} {k[1]} {k[2]} ua={k[3]!r} client={k[4]} signed_in={k[5]}\n")
+        br = [r[0] for r in R if r[4].startswith("Mozilla")]
+        f.write(f"-- browser user agents in this log: {len(br)} requests, first {br[0] if br else '-'} last {br[-1] if br else '-'}; before 08:44:00 {sum(1 for x in br if x < '08:44:00')}, last of those {max([x for x in br if x < '08:44:00'] or ['-'])}\n")
+        f.write("-- not probe, not k6, requests per minute\n")
+        m = collections.Counter(t[:5] for t, me, p, co, ua, ra, s in R if t >= "08:44:00" and kind(p, ua) == "other")
+        f.write(" ".join(f"{k}={v}" for k, v in sorted(m.items())) + "\n")
+        f.write("-- k6 user agents seen, count\n")
+        u = collections.Counter(ua for t, me, p, co, ua, ra, s in R if kind(p, ua) == "k6")
+        f.write(str(dict(u)) + "\n")
+        f.write("-- per load step: k6, other, probe\n")
+        for st, a, b in STEPS:
+            c = collections.Counter(kind(r[2], r[4]) for r in R if a <= r[0] < b)
+            f.write(f"{st} {a} to {b}: {dict(c)}\n")

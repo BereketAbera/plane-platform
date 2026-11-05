@@ -1,0 +1,37 @@
+# Day-1 gates
+# date (UTC): 2026-11-05T08:34:55Z
+# command: /Users/bek/dev/pr/plane-platform/tests/gates/day1.sh
+# commit: 00126ea84670
+# context: kind-plane-platform
+# run start on the Docker clock: 2026-11-05T08:34:56.188601002Z
+# NetworkPolicies already loaded: 60, default-deny in: argocd infisical monitoring-agents monitoring plane-dev plane-prod-sim traefik
+--- Gate 1: digest pulls through each path
+PASS  docker.io digest pull
+PASS  docker.io digest pull through plane-mirror-docker: containerd asked it for sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec in this run, and it answered 200
+PASS  quay.io digest pull
+PASS  quay.io digest pull through plane-mirror-quay: containerd asked it for sha256:7379672d53c28113469275f2eb48adffa19954f39f8ef20c1e2992278f658e6c in this run, and it answered 200
+PASS  localhost:5001 digest pull (sha256:d82c2ab94640ded77cf76514ce6a84870761105058a4a9e51b05a8a79be97a6c)
+--- Gate 2: kindnet enforces NetworkPolicy
+nftables tables on the node:
+    table ip nat
+    table ip mangle
+    table ip filter
+    table ip6 mangle
+    table ip6 nat
+    table ip6 filter
+    table inet kindnet-network-policies
+PASS  positive control: the unlabelled client reaches the server before any policy (try 2, HTTP 200)
+PASS  positive control: the labelled client reaches the server before any policy (try 1, HTTP 200)
+PASS  positive control: the unlabelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  positive control: the labelled client reaches the reference before any policy (try 1, HTTP 200)
+PASS  default-deny, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  default-deny, labelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  allow rule admits the labelled client (try 1, HTTP 200)
+PASS  allow rule, unlabelled client: a new connection to the target timed out, while at the same moment the reference answered this client and the target answered the node's root curl (try 1, target: curl exit 28, HTTP 000, Connection timed out after 5002 milliseconds; reference: curl exit 0, HTTP 200; node: curl exit 0, HTTP 200)
+PASS  control: with both policies deleted the unlabelled client connects again, so the network and the server still work (try 1, HTTP 200)
+--- Gate 5: git:// from inside the cluster
+PASS  pods resolve the Docker-network name plane-git
+PASS  git:// ls-remote from a pod: 153b1c29de38d21388689f009b23c0e96934b546	HEAD
+--- Cleanup
+PASS  namespace gate-checks and the throwaway gate.git are gone
+--- Summary: 17 passed, 0 failed

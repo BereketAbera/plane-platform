@@ -1,0 +1,84 @@
+{
+  "environment": "dev",
+  "backup": "20261105T074932Z",
+  "started_at": "20261105T082337Z",
+  "result": "PASS",
+  "steps": [
+    {
+      "step": "checksums",
+      "status": "PASS",
+      "detail": "118 files match"
+    },
+    {
+      "step": "version",
+      "status": "PASS",
+      "detail": "backup 1.4.3, running 1.4.3"
+    },
+    {
+      "step": "key-fingerprint",
+      "status": "PASS",
+      "detail": "SECRET_KEY matches the backup"
+    },
+    {
+      "step": "overwrite-guard",
+      "status": "PASS",
+      "detail": "target is empty"
+    },
+    {
+      "step": "apps-stopped",
+      "status": "PASS",
+      "detail": "api, worker, beat and live at zero with auto-sync paused"
+    },
+    {
+      "step": "postgres",
+      "status": "PASS",
+      "detail": "dump restored in one transaction, row counts and content hashes equal the backup"
+    },
+    {
+      "step": "objects",
+      "status": "PASS",
+      "detail": "synced and checked by download, every uploaded asset has its object"
+    },
+    {
+      "step": "valkey",
+      "status": "PASS",
+      "detail": "flushed"
+    },
+    {
+      "step": "rabbitmq",
+      "status": "PASS",
+      "detail": "queue celery purged"
+    },
+    {
+      "step": "migrator",
+      "status": "PASS",
+      "detail": "completed"
+    },
+    {
+      "step": "apps-started",
+      "status": "PASS",
+      "detail": "api, worker, beat and live are ready"
+    },
+    {
+      "step": "proof-encrypted-sentinel",
+      "status": "PASS",
+      "detail": "sentinel row decrypts to its seeded value"
+    },
+    {
+      "step": "proof-no-empty-decrypt",
+      "status": "PASS",
+      "detail": "1 encrypted rows all decrypt"
+    },
+    {
+      "step": "proof-sentinel",
+      "status": "PASS",
+      "detail": "work item read through the API, attachment checksum matches, a worker ran a new job"
+    },
+    {
+      "step": "proof-probes",
+      "status": "PASS",
+      "detail": "API and database probes are green"
+    }
+  ],
+  "not_run": []
+}

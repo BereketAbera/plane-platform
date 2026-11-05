@@ -1,0 +1,2 @@
+[1;33mwarn[0m cluster plane-platform does not exist
+[1;32m ok[0m cluster deleted. Next: 'make restore-clean BACKUP=latest' to bring everything back, or 'make up' for an empty platform.

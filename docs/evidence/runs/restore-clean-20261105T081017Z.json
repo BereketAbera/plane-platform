@@ -1,0 +1,74 @@
+{
+  "kind": "clean-restore",
+  "infisical_backup": "20261105T074912Z",
+  "started_at": "20261105T081017Z",
+  "result": "PASS",
+  "steps": [
+    {
+      "step": "plan",
+      "status": "PASS",
+      "detail": "Infisical 20261105T074912Z; dev 20261105T074932Z; prod-sim 20261105T074950Z; checksums and keys check out"
+    },
+    {
+      "step": "up-to-traefik",
+      "status": "PASS",
+      "detail": "cluster, Terraform, secret zero, Traefik"
+    },
+    {
+      "step": "restore-infisical",
+      "status": "PASS",
+      "detail": "20261105T074912Z, see restore-infisical-*.json"
+    },
+    {
+      "step": "admin-token",
+      "status": "PASS",
+      "detail": "see admin-token in restore-infisical-*.json"
+    },
+    {
+      "step": "up-to-all-applications",
+      "status": "PASS",
+      "detail": "bootstrap in restored mode, all Applications Synced and Healthy"
+    },
+    {
+      "step": "restore-dev",
+      "status": "PASS",
+      "detail": "20261105T074932Z, see restore-dev-*.json"
+    },
+    {
+      "step": "restore-prod-sim",
+      "status": "PASS",
+      "detail": "20261105T074950Z, see restore-prod-sim-*.json"
+    },
+    {
+      "step": "verify-infisical-values",
+      "status": "PASS",
+      "detail": "every Plane secret has the value, version and id the backup recorded"
+    },
+    {
+      "step": "verify-rendered-dev",
+      "status": "PASS",
+      "detail": "the operators rendered the backed-up values"
+    },
+    {
+      "step": "verify-sentinel-dev",
+      "status": "PASS",
+      "detail": "the restored accounts file reads the sentinel work item and its attachment"
+    },
+    {
+      "step": "verify-rendered-prod-sim",
+      "status": "PASS",
+      "detail": "the operators rendered the backed-up values"
+    },
+    {
+      "step": "verify-sentinel-prod-sim",
+      "status": "PASS",
+      "detail": "the restored accounts file reads the sentinel work item and its attachment"
+    },
+    {
+      "step": "verify-applications",
+      "status": "PASS",
+      "detail": "14 Applications Synced and Healthy, none paused"
+    }
+  ],
+  "not_run": []
+}
