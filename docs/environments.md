@@ -144,14 +144,14 @@ On GitHub at `9c8e098`, `promote-prod-sim.yml` refused an invented digest and a 
 
 `make rollback ENV=dev` ran for real at `91ef477`. `plane-dev` read Synced and Healthy 65s after the publish, `prod-sim`'s render and pods did not move, and `make promote ENV=dev` put the final images back at `29316f2` ([DEP-2-20261105T064032Z-rollback.txt](evidence/runs/DEP-2-20261105T064032Z-rollback.txt), [DEP-2-20261105T064032Z-timeline.txt](evidence/runs/DEP-2-20261105T064032Z-timeline.txt)). A rollback of `prod-sim`, and a merged pull request reaching the cluster, have run only against a stubbed `kubectl` ([make ci](evidence/ci/ci-2-20261105T061644Z-make-ci.log)). So `make rollback ENV=prod-sim` on the real cluster, with auto-sync on: not tested in Pass 1.
 
-The failing migrator drill in dev left prod-sim alone: all 83 readings of its page answered 200, and its pod list did not change ([DEP-3-20261105T064517Z-timeline.txt](evidence/runs/DEP-3-20261105T064517Z-timeline.txt)). That is one failure in dev for 14 minutes, not a guarantee.
+The failing migrator drill in dev left prod-sim alone: all 83 readings of its page answered 200, and its pod list did not change ([DEP-3-20261105T064517Z-timeline.txt](evidence/runs/DEP-3-20261105T064517Z-timeline.txt)). That is one failure in dev, watched for 14 minutes, not a guarantee.
 
 **What promotion does not cover.**
 
 - **Only digests are promoted. Configuration is not.** `helm/plane/components/hardening`, the vendored chart, and most of `helm/values/` feed both environments. A change to the hardening component plus `make render` changes both rendered manifests in one commit, and both Applications sync on their own. `make gitops-publish` warns about changed prod-sim lines that are not images, and publishes them. So a bad patch reaches prod-sim with no dev stage. Commit `2aefba1` did exactly that on 2026-11-04, and rolled prod-sim's pods with dev's. Sync waves do not help, because waves only order the root's first creation of each Application.
 - **A publish is all of `main`.** A dev change waits behind a prod-sim digest that is refused, and leaves with it. A rollback of prod-sim publishes with no `plane-dev` check and no dump, so if a promotion that never reached Argo CD has anything else that moves prod-sim waiting under it, the rollback stops and names those (`4664cbd`, by stubs only).
 - **Platform changes have no stage at all.** Traefik, Argo CD, Infisical, monitoring, CoreDNS, and NetworkPolicies exist once. A change goes live for both environments.
-- **Rollback restores images, not data.** Migrations are forward-only, and old code starts against a newer schema with no warning. The dump taken before promotion is the way back, through `make restore`, as a deliberate second step. `make restore` ended PASS in place in both on 2026-11-05, on a backup taken minutes earlier, and with no `CONFIRM` it refused ([BKP-2-20261105T074322Z.txt](evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). No run has restored across a schema change after a rollback.
+- **Rollback restores images, not data.** Migrations are forward-only, and old code starts against a newer schema with no warning. The dump taken before promotion is the way back, through `make restore`, as a deliberate second step. `make restore` ended PASS in place in both on 2026-11-05, on a backup taken just before, and with no `CONFIRM` it refused ([BKP-2-20261105T074322Z.txt](evidence/runs/BKP-2-20261105T074322Z.txt), [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt)). No run has restored across a schema change after a rollback.
 - **Secrets are not promoted.** Each environment has its own values. Adding a key means seeding both projects by hand or by script.
 
 ## Why this is not the same as independent clusters
@@ -195,7 +195,7 @@ Scenario 7, applying a test IngressRoute in `plane-dev` on a disposable cluster:
 
 During an in-place Infisical restore on 2026-11-05, Infisical was at zero for part of a 44s restore, and no Plane pod uid, restart count, workload generation or Secret resourceVersion changed ([dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt)). That shows pods keeping on running for that long. Restarting one with Infisical stopped: not tested in Pass 1.
 
-Scenario 13, deleting the CRDs, and scenario 14, deleting kindnet's pod and reading enforcement while it restarts: not tested in Pass 1. Each describes what the code and the upstream docs imply.
+Scenario 13, deleting the CRDs, and scenario 14, deleting kindnet's pod and reading enforcement while it restarts: not tested in Pass 1. Each describes what the configuration implies.
 
 ## The known gap: api to Traefik to anywhere
 
