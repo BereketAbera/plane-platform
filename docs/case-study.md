@@ -158,7 +158,7 @@ React errors #418 and #423 (hydration mismatch) appear in the console on both th
 
 **Response (D12):** the notice is not edited. The derived image replaces the whole file with upstream's own later AGPL-3.0-only version, pinned by commit and hash. That version fits every caller at `v1.4.3`. The image build stops if any file under `/code` contains the commercial identifier, and removing the `COPY` did stop it. A real mail went through the file to a scratch SMTP server and back ([proof](evidence/branding/email-py.txt), [mail](evidence/branding/backend-db.txt)).
 
-**The limit, stated plainly:** the original is still in the upstream `FROM` layer underneath. A running container cannot see it, and anyone who unpacks that layer can read it. So publishing is gated to private packages under the owner's account (`apps/wayline/scripts/publish-gate.sh`), and a public image is a point to take legal advice on. This is engineering, not legal advice ([details](agpl-compliance.md#the-commercial-header-in-emailpy)).
+**The limit, stated plainly:** the original is still in the upstream `FROM` layer underneath, as a [walk of every layer](evidence/branding/layer-check-deployed-images.txt) confirms. A running container cannot see it, and anyone who unpacks that layer can read it. Prod-sim still runs upstream's image, where the file is in the running filesystem. So publishing is gated to private packages under the owner's account (`apps/wayline/scripts/publish-gate.sh`), and a public image is a point to take legal advice on. This is engineering, not legal advice ([details](agpl-compliance.md#the-commercial-header-in-emailpy)).
 
 ### 10. Smaller traps found by reading upstream code
 
