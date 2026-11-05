@@ -1,6 +1,6 @@
 # 0003. Local registry and pull-through caches instead of `kind load`
 
-**Status:** Accepted, 2026-11-04. Runtime validation pending where marked.
+**Status:** Accepted, 2026-11-04. What the clean rebuild shows is not yet recorded.
 
 ## Context
 
@@ -43,9 +43,9 @@ Digests are what make a mirror safe to trust: containerd verifies content agains
 ## Consequences
 
 - Branded and upstream images share one mechanism, and both environments reference images the same way, by digest.
-- Cached blobs outlive the cluster, so a rebuild should not re-download. [[VERIFY: a second cluster build after kind delete pulls from the local caches rather than upstream]]
-- Disk use grows. The Docker Hub set is 2.28 GiB compressed, summed from registry metadata on 2026-11-04. The four registry volumes held 3.89 GB on 2026-11-05 at 02:01 UTC, with the whole platform up: the Docker cache 2.486, `plane-registry` 0.919, the Quay cache 0.448 and the Kubernetes cache 0.038 (`.local/evidence-raw/dr-disk-1.txt`, raw output that is not published yet). That is this host after staged bring-ups and several builds, not what a clean `make up` leaves.
-- `mirror.gcr.io` is not complete. Blob fetches for `plane-live` and the Infisical operator returned 404 there during research, so a pull depends on falling through to Docker Hub. containerd's fallback was read in source, not run at this level of the stack. [[VERIFY: an image with blobs absent from mirror.gcr.io completes through the Docker Hub fallback]]
+- Cached blobs outlive the cluster, so a rebuild should not re-download. The rebuild that tests this is in progress: `make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` deletes the cluster and keeps the local registry and pull-through caches. Whether it pulled from them rather than upstream is not yet recorded.
+- Disk use grows. The Docker Hub set is 2.28 GiB compressed, summed from registry metadata on 2026-11-04. The four registry volumes held 3.89 GB on 2026-11-05 at 02:01 UTC, with the whole platform up: the Docker cache 2.486, `plane-registry` 0.919, the Quay cache 0.448 and the Kubernetes cache 0.038 ([dr-disk-1.txt](../evidence/runs/dr-disk-1.txt)). That is this host after staged bring-ups and several builds, not what a clean `make up` leaves. [[MEASURE: disk growth of a first install, from the clean install in make drill-clean-restore]]
+- `mirror.gcr.io` is not complete. Blob fetches for `plane-live` and the Infisical operator returned 404 there during research, so a pull depends on falling through to Docker Hub. containerd's fallback was read in source, not run at this level of the stack. An image with blobs absent from `mirror.gcr.io` completing through the Docker Hub fallback: Not tested in Pass 1.
 - **That fallback is anonymous.** No credential is configured, so a blob missing from the mirror can still hit the Hub quota.
 - Gate 1 in `tests/gates/day1.sh` records PASS for digest pulls from `docker.io`, `quay.io` and `localhost:5001`, and, since 2026-11-04, for containerd having asked each mirror for that digest in that run, read from the mirror's access log ([day1-gates-20261104T231136Z.txt](../evidence/day1-gates-20261104T231136Z.txt)). That covers one small image per path. It does not cover the Hub fallback, and for a layer already on the node it shows the route, not the bytes.
 - The registries speak plain HTTP on the `kind` Docker network, with no authentication. Only `plane-registry` is published to the host, and only on loopback.
