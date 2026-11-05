@@ -2,7 +2,7 @@
 
 The security posture of a local, single-node, single-operator platform that runs Wayline, a customized Plane Community Edition v1.4.3 deployment, on kind. This is a learning and portfolio platform. Nothing here is a claim of production readiness.
 
-**Status.** This file describes configuration. `docs/evidence/` holds one result that bears on security: [day1-gates.txt](evidence/day1-gates.txt), covering digest pulls and a basic kindnet default-deny. None of the platform's own NetworkPolicies were loaded in that run. Static checks have run during development, but their output is not in `docs/evidence/` either. Each runtime-dependent statement carries a `VERIFY` marker.
+**Status on 2026-11-05.** This file describes configuration, and links the runs that bear on it: separation attempts between the environments ([environments.md](environments.md#what-real-attempts-showed)), the NetworkPolicy matrix, Infisical isolation, route tests, image scans, and CI ([ci evidence](evidence/ci/README.md), [security evidence](evidence/security/README.md)). A statement nothing has measured yet carries a marker. Secret rotation has not run.
 
 ## Read this first
 
@@ -32,7 +32,7 @@ The security posture of a local, single-node, single-operator platform that runs
 | A mistake by the operator | Yes | Guards on `destroy`, `restore`, `rotate` and prod-sim promotion. Git as source of truth |
 | A secret committed to Git | Yes | gitleaks in `make ci` and CI, zero `kind: Secret` rule |
 | A malicious or hijacked CI dependency | Partly | SHA-pinned actions, no secrets in CI jobs, read-only tokens, no cluster access from CI |
-| Another device on the LAN | Yes | Host ports bind to `127.0.0.1` only. [[VERIFY: lsof on the host shows ports 80, 443 and 5001 listening on loopback only]] |
+| Another device on the LAN | Yes | Host ports bind to `127.0.0.1` only. Docker reported 80 and 443 on `127.0.0.1`, and port 80 on the LAN address refused the connection ([traefik-routes-2.txt](evidence/runs/traefik-routes-2.txt)). `lsof` has not been run, and 443 and 5001 have not been tried from the LAN address. [[VERIFY: lsof on the host shows ports 80, 443 and 5001 listening on loopback only]] |
 | A malicious process running as the same macOS user | **No** | It can read `.local/` and own everything. Nothing here defends against it |
 | Physical theft of the laptop | **No** | Depends on full-disk encryption, which this repository does not check |
 | A container escape to the node | **No** | The node is one container on one Docker VM, holding both environments |
@@ -55,13 +55,13 @@ The security posture of a local, single-node, single-operator platform that runs
 | Grafana | Role over ConfigMaps in `monitoring` only (`rbac.namespaced: true`) | `helm/values/kube-prometheus-stack.yaml` |
 | Prometheus, its operator, kube-state-metrics, Alloy, Argo CD controller, Traefik | Cluster-wide roles from their charts. Not enumerated or narrowed here | `helm/values/*` |
 
-AppProjects are owned by Terraform and not synced from Git, so a commit cannot edit what a project allows. A commit can still set `project: platform` on a Plane Application, and no policy rule checks that. See scenario 10 in [environments.md](environments.md#failure-scenarios). Each cluster-scoped binding above is deployed under `platform`.
+AppProjects are owned by Terraform and not synced from Git, so a commit cannot edit what a project allows. A commit could set `project: platform` on a Plane Application. `policy/gitops.rego` refuses that in CI ([negative control](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)), and on this GitHub plan a failing check cannot block a merge. See scenario 10 in [environments.md](environments.md#failure-scenarios). Each cluster-scoped binding above is deployed under `platform`.
 
 Conftest enforces the token rule. `policy/workloads.rego` denies a workload without `automountServiceAccountToken: false`, except a named allow-list of the two operator Deployments. The allow-list is keyed on name, so a manifest cannot exempt itself through a label.
 
 The operator's Role is broad inside its namespace: it can read every Secret there and mint a token for any ServiceAccount there. So a compromised operator owns its environment. Scoped mode limits that to one environment and goes no further.
 
-[[VERIFY: kubectl auth can-i results for each principal above match this table on the running cluster]]
+Measured with `kubectl auth can-i` on 2026-11-04, for the two operators, `plane-infisical-auth`, `plane` and `default`: each operator reads Secrets and mints tokens at home and gets no in the other namespace, in `infisical` and across all namespaces, and the others cannot read Secrets ([infisical-rbac-1.txt](evidence/runs/infisical-rbac-1.txt), [state 2](evidence/runs/plane-prod-sim-separation-state-2.txt)). The chart-installed principals in the last rows have not been asked. [[VERIFY: kubectl auth can-i results for each principal above match this table on the running cluster]]
 
 ## Pod Security Admission
 
@@ -83,9 +83,7 @@ Terraform creates every namespace and sets these labels.
 
 Read-only root filesystem is not set on Plane application containers. `.trivyignore` accepts `KSV-0014` until 2027-02-01 for that reason. The Infisical data pods, the backup Jobs and the operators do set it.
 
-[[VERIFY: all 12 Plane workloads start and run as their configured non-root UID in both environments]]
-
-[[VERIFY: Plane pods produce no PodSecurity restricted warnings at admission]]
+Measured on 2026-11-04, on upstream images in both environments: each Plane container with a shell reported its configured UID, Silo and the finished migrator were read from their pod specs, and a server-side dry run of `enforce=restricted` gave no warnings ([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). That meets the condition in contract section 2 for tightening `plane-prod-sim`, and the label has not moved. Dev's branded images have not had the dry run repeated.
 
 ## NetworkPolicy model
 
@@ -93,7 +91,8 @@ Every namespace this platform owns has a `default-deny` for ingress and egress, 
 
 | Path | Policy |
 |---|---|
-| Browser to any UI | NodePort to Traefik, from `172.16.0.0/12` or `192.168.65.0/24` on 8000 and 8443 |
+| Browser to any UI | NodePort to Traefik, from `172.16.0.0/12` on 8000 and 8443. Measured source on this host: `172.24.0.1`, the kind gateway ([traefik-nodeport-source-1.txt](evidence/runs/traefik-nodeport-source-1.txt)) |
+| A pod to an internal UI | NetworkPolicy lets the api reach Traefik, and Middleware `node-network-only` answers 403 ([routes-after-3.txt](evidence/runs/routes-after-3.txt)) |
 | Traefik to web, admin, space, live | Allowed on 3000 |
 | Traefik to api, Silo | Allowed on 8000, 9000 |
 | App tier to Postgres, Valkey, RabbitMQ, Silo | api, worker, beat and migrator only, on 5432, 6379, 5672, 9000 |
@@ -110,9 +109,21 @@ Every namespace this platform owns has a `default-deny` for ingress and egress, 
 
 Valkey has no password in this chart (chart issue 113). The `valkey` NetworkPolicy is its only access control.
 
-`tests/network-policy-matrix.yaml` declares the expected reachability: 126 allow rows and 257 deny rows. `make test-netpol` runs it. A deny passes only on a timeout, because connection refused means the packet arrived. A DNS failure is inconclusive and fails the run.
+`tests/network-policy-matrix.yaml` declares the expected reachability: 126 allow rows and 292 deny rows since `01ab74c`. `make test-netpol` runs it. A deny passes only on a timeout, because connection refused means the packet arrived. A row that cannot prove anything, such as a DNS failure, reads INCONCLUSIVE, which is never a pass. Since `01ab74c` each probe also has references at the same moment: the node dials each target, and the pod resolves a cluster name, so a target that is down no longer reads as a block.
 
-[[VERIFY: make test-netpol passes every allow and deny row on the running platform]]
+Results, latest run for each source namespace, by `FROM_NS`. They predate `01ab74c`, so these runs had 383 rows and no node reference on a row.
+
+| Source namespace | Rows then | Result | Evidence |
+|---|---:|---|---|
+| `plane-dev` | 135 | 135 PASS | [netpol-20261104T232752Z.tsv](evidence/runs/netpol-20261104T232752Z.tsv) |
+| `plane-prod-sim` | 134 | 134 PASS | [netpol-20261104T233304Z.tsv](evidence/runs/netpol-20261104T233304Z.tsv) |
+| `monitoring` | 50 | 50 PASS | [netpol-20261104T221150Z.tsv](evidence/runs/netpol-20261104T221150Z.tsv) |
+| `infisical` | 14 | 14 PASS | [netpol-20261104T215857Z.tsv](evidence/runs/netpol-20261104T215857Z.tsv) |
+| `argocd` | 19 | 18 PASS, 1 INCONCLUSIVE, before Plane's Services existed | [netpol-20261104T204822Z.tsv](evidence/runs/netpol-20261104T204822Z.tsv) |
+| `traefik` | 28 | 10 PASS, 18 INCONCLUSIVE, before Plane's Services existed | [netpol-20261104T210010Z.tsv](evidence/runs/netpol-20261104T210010Z.tsv) |
+| `kube-system` | 3 | NOT RUN | none |
+
+No committed evidence yet shows the whole matrix in one run. This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
 
 ### kindnet limits
 
@@ -120,20 +131,20 @@ kindnet enforces NetworkPolicy through kube-network-policies. These limits come 
 
 | Limit | Consequence |
 |---|---|
-| **Fails open and silently.** `FailOpen: true`, errors log `skipping network policies` and traffic continues | A broken dataplane looks like everything working. `scripts/test-netpol.sh` runs a sentinel first: kindnet log check, a positive control, then a denied connection in a throwaway namespace |
+| **Fails open and silently.** `FailOpen: true`, errors log `skipping network policies` and traffic continues | A broken dataplane looks like everything working. `scripts/test-netpol.sh` runs a sentinel first: kindnet log check, a positive control, then a denied connection in a throwaway namespace. Between runs, alert `KindnetSkippedNetworkPolicies` watches that one line. It was proven with a synthetic line, not a real failure ([h18-synthetic-2.txt](evidence/runs/h18-synthetic-2.txt), [kindnet-hold-2.txt](evidence/runs/kindnet-hold-2.txt)) |
 | Only the first packet of a new connection is evaluated | Existing connections survive a new policy. Each test needs a new connection |
 | `meta skuid 0 accept`: root sockets in the node's network namespace skip evaluation | Never test from a `hostNetwork` pod. Kubelet probes bypass policy |
 | Evaluated after DNAT and before SNAT | Policies see pod IP and target port. The API server appears as the node IP on 6443 |
 | `hostNetwork` pods are not treated as pods | The `monitoring-agents` policies do not constrain node-exporter. Prometheus's own egress rule is the control |
 | Host-source CIDR cannot be pinned | Docker picks the kind network per machine, so rules allow Docker's default pool, `172.16.0.0/12`, on named ports. `scripts/cluster-up.sh` fails if the network falls outside it |
-| Host-source address at Traefik is known only at runtime | Both the kind range and Docker Desktop's `192.168.65.0/24` are allowed |
 
 Known gaps that NetworkPolicy cannot see:
 
-- The api may reach Traefik, and Traefik routes by Host header. A compromised api could request the other environment's public hostname. Pod-to-pod paths between the environments do not exist, but this path through Traefik does.
+- The api may reach Traefik, and Traefik routes by Host header. A compromised api could request the other environment's public hostname, and on 2026-11-04 the real api pods did, getting that host's public surface: 200 on `/api/instances/`, 401 on `/api/users/me/`, 403 listing the bucket ([state 2](evidence/runs/plane-prod-sim-separation-state-2.txt)). Pod-to-pod paths between the environments timed out in all 120 rows each way ([network 2](evidence/runs/plane-prod-sim-separation-network-2.txt)), but this path through Traefik exists. The internal UIs on the same Traefik answer such a pod with 403.
+- `node-network-only` reads a source address. A pod with free egress reached Prometheus through `host.docker.internal:80`, which leaves through the Mac and returns as the host ([h17-doors-free-egress-2.txt](evidence/runs/h17-doors-free-egress-2.txt)). Plane pods time out on that door, but only NetworkPolicy holds it.
 - `kube-system` has no namespace default-deny. It holds kind's own components, which this platform does not own.
 
-A day-1 gate recorded a positive control, a default-deny blocking a new connection, and an allow rule admitting a labelled client, in a throwaway namespace ([evidence](evidence/day1-gates.txt)). The output line says "only", but that step does not re-probe an unlabelled client under the allow rule.
+The day-1 gate, on 2026-11-04 with the platform's 60 policies loaded, recorded 17 passed and 0 failed in a throwaway namespace: positive controls, a default-deny and an allow rule that each time out an unlabelled client while a reference answers that client and the node reaches the target ([day1-gates-20261104T231136Z.txt](evidence/day1-gates-20261104T231136Z.txt)). Loss only on the target's own path would read the same as a block, and the script says so.
 
 ## Resource limits
 
@@ -142,7 +153,7 @@ Limits exist for stability first. They are also the only defence against one env
 | Control | Value | Source |
 |---|---|---|
 | Per-workload memory | Contract section 10, for example api 256/768 MiB, Postgres 128/512 MiB | `helm/plane/components/hardening/patches/*` |
-| ResourceQuota per Plane namespace | 2704 Mi requests, 7904 Mi limits, 22 pods, 6 PVCs | `infrastructure/terraform/modules/foundation/main.tf` |
+| ResourceQuota per Plane namespace | 2732 Mi requests, 7984 Mi limits, 24 pods, 6 PVCs | `infrastructure/terraform/modules/foundation/main.tf` |
 | LimitRange per Plane namespace | Default 64/256 Mi, maximum 1 Gi per container | Same |
 | Conftest rule | A rendered workload with no memory limit fails CI. Third-party charts only warn | `policy/workloads.rego`, `policy/charts.rego` |
 | Host disk guard | `guard_disk`, 10 GiB free by default, in scripts | `scripts/lib/common.sh` |
@@ -154,9 +165,9 @@ What this leaves open:
 - Memory limits sum above the VM's memory by design. Estimate: about 107% of a 14 GiB VM, from summing the configured limits of all workloads. A real peak can trigger the OOM killer across environments.
 - Quotas and limits act per namespace or per container. Node pressure does not. kind disables eviction and image GC, so a full disk produces write errors, not evictions.
 - No disk quota exists. kind's `standard` class ignores PVC capacity.
-- The pod quota does not budget the exporters. By static count, 14 steady pods, 7 surges and a backup reach 22 of 22, so one more pod would be rejected. [[VERIFY: a backup Job fits the pod quota while exporters and rolling updates run]]
+- The pod quota budgets the exporters since `bc8bb91`. All seven Plane Deployments surging at once reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](evidence/runs/plane-dev-rollout-quota-1.txt)). Every Deployment surging, exporters included, with the migrator, a backup and an ad-hoc pod would be 26, over the quota, by static count ([quota-budget-1.txt](evidence/runs/quota-budget-1.txt)). [[VERIFY: a backup Job fits the pod quota while exporters and rolling updates run]]
 
-[[MEASURE: peak memory of the whole platform against the VM, from kubectl top and docker stats]]
+Peak so far, with both environments running under both smokes, the matrices and the restart drills: 10.49 GiB of the VM's 13.63 GiB, with 0.60 GiB of swap, and about 1 GiB of that the owner's unrelated containers. A quiet reading on 2026-11-05 was `kubectl top` node 8,331 MiB and `docker stats` node 8.155 GiB ([memory](evidence/runs/plane-prod-sim-memory-1.txt), [snapshot](evidence/runs/plane-prod-sim-snapshot-final-1.txt)). Prometheus, Loki and Infisical's Postgres touched their cgroup limits, with 0 OOM kills ([limits-breakdown-1.txt](evidence/runs/limits-breakdown-1.txt)). The load test has not run, so this says nothing about peak under load.
 
 ## Secret isolation
 
@@ -173,7 +184,7 @@ Full detail in [infisical.md](infisical.md).
 
 Values are visible in more places than Infisical: base64 in etcd, unencrypted at rest, and in the environment of each consuming process. Postgres is a shared superuser role.
 
-[[VERIFY: cross-project read returns 403 or 404, per the evidence plan in infisical.md]]
+A cross-project read returns 403. On 2026-11-04 each reader got 403 on the other project, on list, single read and slug lookup, from the host and from a pod in each namespace, while the same token read its own with 200. 28 rows passed ([infisical-isolation-3.txt](evidence/runs/infisical-isolation-3.txt)). A login as the other environment's identity gets 401.
 
 ## Image pinning
 
@@ -181,7 +192,7 @@ Values are visible in more places than Infisical: base64 in etcd, unencrypted at
 |---|---|
 | Plane workloads by `@sha256:` | `policy/environments.rego` denies otherwise, on rendered manifests |
 | Upstream images from `docker.io` by index digest, never `artifacts.plane.so` | `policy/plane.rego` bans that registry |
-| Platform chart images | Digests in `helm/values/*` by convention. No policy enforces it: `policy/charts.rego` only warns on a missing memory limit |
+| Platform chart images | Digests in `helm/values/*`. `policy/charts.rego` denies a chart image with no digest, including images a Prometheus operator takes on its command line or from a resource, and warns on a missing memory limit |
 | `kindest/node` by digest | `infrastructure/kind/cluster.yaml.tmpl` |
 | Compose services by digest, and the Git daemon's base image | `infrastructure/local-services/compose.yaml`, `infrastructure/local-services/git-daemon/Dockerfile` |
 | Chart versions exact | Argo CD `targetRevision`, Terraform `version`, and the Plane chart vendored byte-identical with its sha256 recorded |
@@ -191,7 +202,7 @@ Values are visible in more places than Infisical: base64 in etcd, unencrypted at
 
 Pulls go through pull-through caches declared in `infrastructure/kind/containerd-certs.d/`. A digest makes the mirror safe to trust for content. It does not make the content safe.
 
-Contract section 5 specifies branded images at `localhost:5001/wayline/*`. At commit f733b87 both overlays still reference `docker.io/makeplane/*` by digest, and the branding layer is being integrated. [[VERIFY: overlays reference localhost:5001/wayline by digest once the branding layer lands]]
+Contract section 5 specifies branded images at `localhost:5001/wayline/*`. Since promotion `4f622e3` on 2026-11-05 the dev overlay references web, admin, space and backend there by digest. The prod-sim overlay still references `docker.io/makeplane/*` by digest, until it is promoted. `live` stays upstream's in both.
 
 The local registry has no authentication and listens on `127.0.0.1:5001`. Anyone local can push a new tag. Pods reference digests, so a new tag changes nothing already pinned.
 
@@ -203,17 +214,24 @@ What `scripts/ci/security.sh` runs in CI and in `make ci`:
 |---|---|
 | `gitleaks git`, `gitleaks dir` | Git history and working tree |
 | `trivy config` | Kubernetes, Terraform and Dockerfile misconfiguration in the repo. HIGH and CRITICAL fail |
-| `trivy fs --scanners vuln,secret` | Lockfiles and secrets in the repo |
+| `trivy fs --scanners vuln,secret` | Lockfiles and secrets in the repo. It found none of the application's lockfiles, because that source lands in `.build`, which it skips |
 
-**What is not scanned: container images.** No script or workflow runs `trivy image` at commit f733b87. Neither the pinned upstream images nor built Wayline images are scanned for CVEs. `scripts/ci/build-images.sh` also sets `--provenance=false --sbom=false`, so built images carry no SBOM or provenance. This is a real gap. [[VERIFY: whether trivy image scanning has been added before this section is finalized]]
+Images are scanned by `scripts/ci/scan-images.sh`, through `make scan-images`, which is not part of `make ci`. It reads every image the platform runs from its registry for arm64, plus the Wayline builds and their source lockfiles. It fails only on a CRITICAL finding with a fix in an image built here, or on an image it could not scan, and reports the rest. `images.yml` has a step that runs it on what was just pushed, and that step has never run.
 
-Known risk the scan would surface: RabbitMQ 3.13 is an end-of-life series, kept because Celery attaches 0 consumers on 4.3 (upstream chart PR 304). Infisical's image is large and carries many packages.
+| Run | Scope | Result |
+|---|---|---|
+| [`scan-images-20261104T215437Z`](evidence/security/README.md) | 36 of 36 targets, the complete run | FAIL on the policy: 5 CRITICAL with a fix, in `wayline/backend` and `wayline/space`, all inherited from upstream's images. 26 CRITICAL, 600 HIGH, 837 MEDIUM across all targets |
+| [`scan-images-20261104T235800Z`](evidence/security/README.md) | The 5 targets built here, from `1563cbf` | PASS, exit 0: no image we build has a CRITICAL with a fix. `wayline/backend` 4 HIGH, `wayline/space` 30 HIGH. The source lockfile row still lists 1 CRITICAL, proxy-addr 2.0.7, which no bundle ships |
+
+The final run did not scan upstream's images again. In the complete run these had a CRITICAL with a fix, reported only: postgres 15.19 and 16.15, rabbitmq 3.13.7, plane-backend, plane-live, plane-space, and argocd v3.5.7. Infisical's image had 5 CRITICAL with no fix. `redis:7.2.17-alpine` is on an end-of-life Alpine, where trivy warns that its OS findings may be incomplete. RabbitMQ 3.13 is an end-of-life series, kept because Celery attaches 0 consumers on 4.3 (upstream chart PR 304).
+
+What this does not cover: local services outside the cluster manifests (the registry, `plane-git`, the kind node), and old package bytes left in `FROM` layers. A finding means a version is listed as affected, and nobody has checked whether any of them can be reached here. `scripts/ci/build-images.sh` sets `--provenance=false --sbom=false`, so built images carry no SBOM or provenance. [The README](evidence/security/README.md) has the detail.
 
 Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`, whose tags were force-pushed with malware in March 2026 (GHSA-69fq-xp46-6x23).
 
 `.trivyignore` holds one accepted finding with an expiry, so it gets reviewed.
 
-[[VERIFY: make ci passes at the final commit, and its output is saved to docs/evidence/]]
+`make ci` exited 0 in a clean clone of `6fc3708` on 2026-11-04 ([log](evidence/ci/ci-2-20261104T225907Z-make-ci.log), [exit code](evidence/ci/ci-2-20261104T225907Z-make-ci.rc)), and 33 of 33 planted defects were caught at `283b51a` ([negative controls](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). Commits are still landing, so the run at the final commit is still to come. [[VERIFY: make ci passes at the final commit, and its output is saved to docs/evidence/]]
 
 ## CI hardening
 
@@ -226,25 +244,32 @@ Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`,
 | No `pull_request_target` | All workflows |
 | Write tokens only in the jobs that open a pull request or push to GHCR | `images.yml`, `promote-prod-sim.yml` |
 | `actionlint`, `zizmor`, `shellcheck`, `hadolint`, `tflint` | `scripts/ci/lint.sh` |
-| Render drift, kubeconform, conftest, promotion invariant | `scripts/ci/validate-manifests.sh` |
+| Render drift, kubeconform, conftest, promtool, promotion invariant, stubbed promotion flows | `scripts/ci/validate-manifests.sh` |
 | One owner per resource | `scripts/ci/ownership.sh` |
 | Workflows call the same scripts as `make` | So a local run and a CI run share one implementation |
 | CI never touches the cluster | Argo CD reads the local Git remote in Pass 1 |
 
-[[VERIFY: the three workflows run green on GitHub, with run URLs recorded in docs/evidence/]]
+On GitHub, recorded in [docs/evidence/ci/](evidence/ci/README.md) with run URLs:
+
+| Workflow | Result on 2026-11-04 | What it does not show |
+|---|---|---|
+| `ci.yml` | PASS on 4 pushes, f733b87 to 5fdf41d. One run with a planted `kind: Secret` went red, and 21 of 21 planted defects were caught on a real runner | Never on `on: pull_request`. The commits since `b19fe26` have not been pushed, so promtool, the new policy rules, the dev check and the scan have run only on this Mac |
+| `images.yml` | One run, success, **building nothing**, because `apps/wayline/images.txt` was not on main | NOT RUN as a build: no image pushed, no digest, no scan, no bump pull request |
+| `promote-prod-sim.yml` | Refused an invented digest. BLOCKED at opening a pull request, because the repository setting that lets workflows do that is off | No promotion pull request has been opened, merged or published |
+| `wayline-upstream-check.yml` | NOT RUN | |
 
 ## GitHub Free limits
 
-The repository is private on the GitHub Free plan. On that plan GitHub provides **no environments with required reviewers, no protected branches, and no artifact attestations** for private repositories.
+The repository is private on the GitHub Free plan. On that plan GitHub provides **no environments with required reviewers, no protected branches, no rulesets, no code owners, and no artifact attestations** for private repositories. The branch protection and ruleset APIs answer 403 here ([plan-facts](evidence/ci/plan-facts-20261104T204023Z.txt)), and the rest comes from GitHub's documentation.
 
 **So prod-sim approval is a process, not a control.**
 
 - `promote-prod-sim.yml` opens a pull request. A person merging it is the approval.
-- GitHub cannot enforce that. Anyone with write access can merge their own pull request, push straight to `main`, or skip CI. `CODEOWNERS` only requests a review.
+- GitHub cannot enforce that. Anyone with write access can merge their own pull request, push straight to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, by GitHub's documentation, so it does not even request a review. That has not been tried on a pull request.
 - A failing check does not block a merge.
 - A pull request opened with `GITHUB_TOKEN` does not trigger `on: pull_request`, so those workflows run validation themselves before opening it.
 
-What is enforced lives in scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim digest never recorded for dev. Someone with shell access can bypass a script too. A script is a safeguard against mistakes, not a security boundary.
+What is enforced lives in scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim digest never recorded for dev under that image, and `scripts/lib/dev-check.sh` refuses one `plane-dev` is not running, Synced and Healthy. `make gitops-publish` warns about commits that are not on `origin/main`, and goes on. Someone with shell access can bypass a script too. A script is a safeguard against mistakes, not a security boundary.
 
 In Pass 1 a merge changes nothing running. It reaches the cluster only when someone pulls `main` and runs `make gitops-publish`.
 
@@ -258,12 +283,12 @@ Plainly, so nobody assumes otherwise.
 | `.local/` | Secret zero, kubeconfig and the admin token are plain files. Permissions stop other users, not the same user |
 | Backups | Plaintext API tokens and password hashes, unencrypted, on the same disk as everything else. No off-machine copy unless done by hand |
 | TLS | None. All HTTP, in the cluster and at the ingress. The operator talks to Infisical in cleartext. Session cookies and tokens cross loopback unencrypted. Pass 2 terminates TLS at Cloudflare and the origin |
-| UIs | Prometheus and Alertmanager have no authentication. They rely on loopback binding. A local process or a page in a local browser may reach `*.localhost` |
+| UIs | Prometheus and Alertmanager have no authentication. They rely on loopback binding, and on a source-address list against pods. A local process or a page in a local browser may reach `*.localhost` |
 | Git remote | `git://` is unauthenticated and unencrypted, with no signature verification. Whoever can write `.local/git` controls what Argo CD deploys |
 | Registry | No authentication on `127.0.0.1:5001` |
 | Audit | Infisical stores no audit logs on this tier. Kubernetes audit logging is not configured |
 | Runtime detection | No Falco or equivalent. No admission control beyond PSA |
-| Image content | No CVE scan of images, no signature check, no SBOM |
+| Image content | A CVE scan runs by hand and fails only on what is built here. Upstream images keep the findings above. No signature check, no SBOM |
 | Tenant isolation | One kernel, one node, one etcd. See [Read this first](#read-this-first) |
 | Availability | One node, one replica of everything. See [disaster-recovery.md](disaster-recovery.md) |
 | Postgres least privilege | One shared superuser role per environment. The exporter connects with it too |
