@@ -2,7 +2,7 @@
 
 CPU, memory, disk and storage for Wayline, a customized Plane Community Edition v1.4.3 deployment on a local kind cluster.
 
-**What is measured.** Measured cells come from one laptop, on 2026-11-04 and 2026-11-05, with Docker Desktop set to 14 GiB and 12 CPUs. This is a local deployment, and nothing here says it is production-ready.
+**What is measured.** Measured cells come from one laptop, on 2026-11-04 and 2026-11-05, with Docker Desktop set to 14 GiB and 12 CPUs. This is a local deployment, and it makes no claim of being ready for production.
 
 **The main numbers are three windows on 2026-11-05**, on the final images, restored into a new cluster. See [the load window](#the-load-window).
 
@@ -92,7 +92,7 @@ the same Prometheus, with `namespace="plane-prod-sim"`, and the load script does
 
 ## The load window
 
-Three windows on 2026-11-05, read back from Prometheus at 09:26Z ([LOAD-3-20261105T092547Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T092547Z-prometheus-windows.json)). They describe one laptop running a local deployment, not a production-ready one.
+Three windows on 2026-11-05, read back from Prometheus at 09:26Z ([LOAD-3-20261105T092547Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T092547Z-prometheus-windows.json)). They describe one laptop running a local deployment.
 
 | Window | When, UTC | What ran | Outcome |
 |---|---|---|---|
