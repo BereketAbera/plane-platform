@@ -86,7 +86,7 @@ The `/source` path and the Plane routing coexist. `source` is a reserved workspa
 
 | Option | Notes |
 |---|---|
-| Make the repository public | Simple, and also unlocks protected branches and environment reviewers on GitHub Free, on a research note alone (`cicd-security.md`). Run `gitleaks` over the full history first, and rewrite `7d5ff62` as well: it holds a session value that fits no gitleaks rule ([the scrub](evidence/README.md#the-scrub), H67 in `.local/hardening-backlog.md`) |
+| Make the repository public | Simple, and also unlocks protected branches and environment reviewers on GitHub Free, on a research note alone (`cicd-security.md`). Run `gitleaks` over the full history first, and a search for session values as well, because they fit no gitleaks rule. One was rewritten out before it was ever pushed ([the rewrite](evidence/history-rewrite.md)) |
 | Serve a source tarball from the deployment | Keeps the infrastructure repository private. Must be complete, must match the running version, and must be rebuilt on each change |
 
 This does not bite in Pass 1, which is local and owner-only. It blocks Pass 2, and is a gate in the [handoff](../PASS2_HANDOFF.md#9-agpl-section-13). Until then, any screenshot or docs statement showing `/source` should say that the target is not yet public.
@@ -222,7 +222,7 @@ An instance that already exists keeps its stored setting. In Pass 2 the API may 
 - [ ] The owner's decision on `email.py` (D12) recorded. Agents applied the replacement and the flattening, and removed the requirement that the repository be private, and `apps/wayline/backend/email-py-decision.txt` names that. The owner has not reviewed it, and no legal reviewer has, [above](#the-commercial-header-in-emailpy).
 - [ ] Each GHCR package's visibility read after its first publish, and again before the repository goes public. After the first publish, with no credentials, all four answer 401 ([who can read them](evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). The API that states visibility has not been read, and the gate does not read it.
 - [ ] Repository public, or a complete source tarball served. `gitleaks` clean over full history.
-- [ ] History of `7d5ff62` rewritten before any push of it. It holds a session value that fits no gitleaks rule, so a clean `gitleaks` run does not clear it ([the scrub](evidence/README.md#the-scrub), H67 in `.local/hardening-backlog.md`).
+- [x] Session value rewritten out of local history before any push of it. It fit no gitleaks rule, so a clean `gitleaks` run could not clear it ([the rewrite](evidence/history-rewrite.md), [the scrub](evidence/README.md#the-scrub)).
 - [ ] A tarball of the patched tree or a mirror of the pinned upstream commit published, and linked from `NOTICE.md`.
 - [x] The commit each running image names is pushed. `84b63d9` is on GitHub ([record](evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)). Check again at each promotion.
 - [ ] `/source` followed logged out from a browser returns 200, on every surface above, and lands on the deployed commit. `WAYLINE_REQUIRE_PUBLIC_SOURCE=yes apps/wayline/checks/smoke-images.sh` checks the redirect's target.

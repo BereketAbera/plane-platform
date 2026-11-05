@@ -94,7 +94,7 @@ On the restored cluster, on the same day, another rotation of prod-sim was kille
 
 Each of those is one stop at one point. A stop between the Infisical write and `ALTER ROLE`: Not tested in Pass 1. Running either one twice: Not tested in Pass 1.
 
-**After a hard stop, check for the probe.** Up to `85bdeb3`, SIGKILL left the script's probe loop running, and it went on spending the anonymous limit once a second. The first killed run's loop was still writing [its probe file](../evidence/runs/rotate-prod-sim-20261105T073843Z.probe) about 15 minutes later: the raw file's last line is at 07:53:32Z, and the copy committed so far reaches 07:48:34Z. The second kill's run stopped its loop by hand ([SEC-4b-20261105T084615Z.txt](../evidence/runs/SEC-4b-20261105T084615Z.txt)). Since `80d38c1` the loop checks that the script is alive, so it should end within a second of a SIGKILL. That has run only on stubs. Make sure no rotation is really running, then stop anything this names:
+**After a hard stop, check for the probe.** Up to `6935b77`, SIGKILL left the script's probe loop running, and it went on spending the anonymous limit once a second. The first killed run's loop was still writing [its probe file](../evidence/runs/rotate-prod-sim-20261105T073843Z.probe) about 15 minutes later: the raw file's last line is at 07:53:32Z, and the copy committed so far reaches 07:48:34Z. The second kill's run stopped its loop by hand ([SEC-4b-20261105T084615Z.txt](../evidence/runs/SEC-4b-20261105T084615Z.txt)). Since `6f4077b` the loop checks that the script is alive, so it should end within a second of a SIGKILL. That has run only on stubs. Make sure no rotation is really running, then stop anything this names:
 
 ```bash
 pgrep -fl rotate.sh
