@@ -5,8 +5,9 @@ CPU, memory, disk and storage for Wayline, a customized Plane Community Edition 
 **What is measured so far.** The measured cells come from the platform running on 2026-11-04 and 2026-11-05, on one
 laptop with Docker Desktop set to 14 GiB. This is a local deployment, and nothing here says it is production-ready.
 **One load test has run, on a machine that was not quiet**: 5, 10 and 20 virtual users with think time, from
-2026-11-05T07:33:48Z to 07:42:51Z. See [the load window](#the-load-window). **No clean install has been measured, and the saturation pass is NOT RUN.**
-Cells that only a clean install can answer are still `MEASURE` markers. A column headed "Highest peak" means a peak under smoke tests,
+2026-11-05T07:33:48Z to 07:42:51Z. See [the load window](#the-load-window). **No clean install has a recorded result, and the saturation pass is NOT RUN.**
+The markers left here wait on different runs: the CPU count and host free disk on the clean-restore drill's evidence, disk used by a first install on a cold install
+with the registry and caches gone (TEAR-4), and `Docker.raw` after a destroy on TEAR-5. A cell the clean install does not read, and no later run is set to read, says Not tested in Pass 1. A column headed "Highest peak" means a peak under smoke tests,
 drills and restarts. The load columns say so in their heading.
 
 The quiet and "Highest peak" columns are older than the load test, and both Plane environments ran upstream images for them. The last
@@ -57,7 +58,7 @@ setting leaves no margin at the high estimate. That is an estimate too.
 
 **Idle** means: every Application Synced and Healthy, no test or drill running, unrelated containers stopped or
 recorded, and at least 10 minutes since the last sync. **Load** means the window of `make test-load ENV=dev`: 5, 10 and 20
-virtual users, 3 minutes each, with 1 second of think time unless `THINK=0` is set.
+virtual users, 3 minutes each, with `THINK=1`, which sleeps 1 to 3 seconds between requests, unless `THINK=0` is set.
 
 Idle capture has no script, and these commands have not been run under this definition. They write it to
 `.local/evidence-raw/`, and row LOAD-3 in [validation.md](validation.md#8-basic-load-and-resource-measurements) tracks it.
@@ -92,15 +93,18 @@ the same Prometheus, with `namespace="plane-prod-sim"`, and the load script does
 
 ## The load window
 
+**Four files this page links are not committed yet.** `LOAD-3-20261105T074543Z-derived.txt`, its `-derive-script.py.txt`, `-docker-images.txt` and `-quiet-window-syncs.json` were written by 2026-11-05T08:01Z and wait for the next `make publish-evidence`. Until that is committed those links break in a clone, and by [the evidence rules](evidence/README.md#rules) what rests on one of them alone has no result: the quiet window's sync count, the build-bases note, and the 0.11 GiB of local service images in the 21.18 GiB sum. The other derived figures come from inputs that are committed: the `prometheus-windows`, `prometheus-series`, `prometheus-steps`, `traefik-buckets` and `timeline` files with that stamp, the host and Docker captures, and `results.json`.
+
 `make test-load ENV=dev` ran at commit `4aa0640` with `THINK=1`, which sleeps 1 to 3 seconds between requests ([LOAD-1-20261105T073240Z-run.txt](evidence/runs/LOAD-1-20261105T073240Z-run.txt)). The Job was created at
-2026-11-05T07:32:49Z, and the k6 container ran from 07:33:48Z to 07:42:51Z ([LOAD-3-20261105T074543Z-derived.txt](evidence/runs/LOAD-3-20261105T074543Z-derived.txt)). The load columns on this page use that window. k6's thresholds
+2026-11-05T07:32:49Z, and the k6 container ran from 07:33:48Z to 07:42:51Z ([LOAD-3-20261105T074543Z-derived.txt](evidence/runs/LOAD-3-20261105T074543Z-derived.txt), and the same window in [LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). The load columns on this page use that window. k6's thresholds
 passed: 2,883 requests, none failed and none answered 429 ([results.json](evidence/runs/load-20261105T073241Z/results.json)). This describes one laptop running a local deployment, not a production-ready one.
 
 **The machine was not quiet.** These ran in the same minutes:
 
 | Time, 2026-11-05 UTC | What else ran | Evidence |
 |---|---|---|
-| 07:32:08 to 07:41:19 | Two browser tabs editing a page in `plane-dev`, by hand. At 07:38:02 the dev `live` pod was deleted on purpose. That and the probes are why Traefik counted 625, 1,104 and 1,658 GET and POST requests on the API route across the three steps, against k6's 428, 873 and 1,576 | [RT-2b-RT-3-20261105T073208Z.txt](evidence/runs/RT-2b-RT-3-20261105T073208Z.txt), [LOAD-3-20261105T074543Z-traefik-buckets.json](evidence/runs/LOAD-3-20261105T074543Z-traefik-buckets.json) |
+| 07:23:31 to 07:40:19 | The SEC-2 watcher: a signed-in `GET /api/users/me/` on dev about once a second, with 178, 178 and 29 samples in the three steps. Traefik counted 625, 1,104 and 1,658 GET and POST requests on the API route across those steps, against k6's 428, 873 and 1,576, and this watcher is 385 of those 510 extra requests. In the first step it added about 42% to k6's API rate. Probes on that route, at about 24 per 180 s in the quiet window, and the browser tabs below are in the rest | [SEC-2-20261105T072331Z-watch.txt](evidence/runs/SEC-2-20261105T072331Z-watch.txt), [LOAD-3-20261105T074543Z-traefik-buckets.json](evidence/runs/LOAD-3-20261105T074543Z-traefik-buckets.json), [LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json) |
+| 07:32:08 to 07:41:19 | Two browser tabs editing a page in `plane-dev`, by hand, with no script. At 07:38:02 the dev `live` pod was deleted on purpose | [RT-2b-RT-3-20261105T073208Z.txt](evidence/runs/RT-2b-RT-3-20261105T073208Z.txt) |
 | 07:32:40 to 07:38:00 | prod-sim: `make rotate`, a backup, a refused restore at 07:34:28, a real restore at 07:34:38, then e2e. The restored pods started between 07:35:52 and 07:37:09 | [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), [LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json) |
 | 07:38:43 to 07:39:45 | prod-sim: a rotation stopped with SIGKILL, then resumed. It replaced pods at 07:38:44. Old and new pods overlapping is why the cluster's memory and CPU sums both top out at 07:39:33 | [SEC-4-20261105T073843Z.txt](evidence/runs/SEC-4-20261105T073843Z.txt), [LOAD-3-20261105T074543Z-derived.txt](evidence/runs/LOAD-3-20261105T074543Z-derived.txt) |
 | Whole window | Docker counted 23 running containers, 6 of them this project's. The others stayed up and were not recorded | [LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt) |
@@ -220,13 +224,13 @@ k6 figures are from [results.json](evidence/runs/load-20261105T073241Z/results.j
 
 | Load step | Requests/s | p95 all requests ms, k6 | p95 read ms, Traefik GET (its bucket) | p95 write ms, Traefik POST (its bucket) | Error rate | CPU throttling on api | Peak Celery queue |
 |---|---|---|---|---|---|---|---|
-| 5 VUs, think 1s, 07:33:50Z to 07:36:50Z | 2.38 (428 in 180 s) | 147 | about 227 (100-300) | about 233 (100-300) | 0 of 428 | 2.9% | 0 ready, 0 in all |
-| 10 VUs, think 1s, 07:36:50Z to 07:39:50Z | 4.85 (873 in 180 s) | 280 | about 296 (100-300) | about 280 (100-300) | 0 of 873 | 2.1% | 0 ready, 0 in all |
-| 20 VUs, think 1s, 07:39:50Z to 07:42:50Z | 8.76 (1,576 in 180 s) | 1,109 | about 1,055 (300-1,200) | about 1,227 (1,200-5,000) | 0 of 1,576 | 10.1% | 0 ready, 1 in all |
+| 5 VUs, `THINK=1`, 07:33:50Z to 07:36:50Z | 2.38 (428 in 180 s) | 147 | about 227 (100-300) | about 233 (100-300) | 0 of 428 | 2.9% | 0 ready, 0 in all |
+| 10 VUs, `THINK=1`, 07:36:50Z to 07:39:50Z | 4.85 (873 in 180 s) | 280 | about 296 (100-300) | about 280 (100-300) | 0 of 873 | 2.1% | 0 ready, 0 in all |
+| 20 VUs, `THINK=1`, 07:39:50Z to 07:42:50Z | 8.76 (1,576 in 180 s) | 1,109 | about 1,055 (300-1,200) | about 1,227 (1,200-5,000) | 0 of 1,576 | 10.1% | 0 ready, 1 in all |
 | 20 VUs, `THINK=0` | NOT RUN | NOT RUN | NOT RUN | NOT RUN | NOT RUN | NOT RUN | NOT RUN |
 
 k6's summary splits read from write only across the whole run: p95 read 664 ms and p95 write 618 ms. Per step it has all requests together. So the two per-step p95 columns come from
-Traefik's histogram on the API route, interpolated inside its default buckets of 0.1, 0.3, 1.2 and 5 seconds, and they include the browser test and the probes. Read each as its bucket.
+Traefik's histogram on the API route, interpolated inside its default buckets of 0.1, 0.3, 1.2 and 5 seconds, and they include the SEC-2 watcher, the browser test and the probes. Read each as its bucket.
 
 The script's Prometheus queries cover the whole run, so a per-step figure for throttling and queue depth needs a
 narrower query window. `results.json` holds per-step k6 figures only. So throttling here is throttled CFS periods over all CFS periods for the api containers in each step, and the queue is the
@@ -259,14 +263,14 @@ Git pod, in the Traefik row, and it has not been updated for the changes since.
 | Infisical: server 768/1,024, its Postgres 64/256, its Redis 16/96, operators 64/128 x2 | 976 / 1,632 | 610-990 | 818 | 24 | 831 at 07:34:03Z | 273 at 07:34:33Z |
 | Plane x2, from the tables above | 2,848 / 8,384 | 2,480-4,160 | 2,295 | 104 | 2,760 at 07:39:33Z, with prod-sim's rollout overlap | 1,357 at 07:39:33Z |
 | **Cluster total** | **5,766 / 15,812** | **5,590-9,490** | **8,331, `kubectl top node`. Pods alone: 6,806** | **468, the same reading. Pods alone: 304** | **9,115, `docker stats` on the node at 07:39:05Z. Pods alone: 7,599 at 07:39:33Z** | **3,022, `docker stats` on the node at 07:38:48Z. Pods alone: 2,078 at 07:39:33Z** |
-| Local services, outside the cluster, Compose `mem_limit`: registry 512, three caches at 128 each, `plane-git` at 64 | no request / 960 | none | 113 | about 1 (0.12% of one CPU in `docker stats`) | [[MEASURE: local services peak RAM during image pulls]] | |
+| Local services, outside the cluster, Compose `mem_limit`: registry 512, three caches at 128 each, `plane-git` at 64 | no request / 960 | none | 113 | about 1 (0.12% of one CPU in `docker stats`) | During image pulls: Not tested in Pass 1 | |
 
 Quiet figures are [plane-prod-sim-snapshot-final-1.txt](evidence/runs/plane-prod-sim-snapshot-final-1.txt). The largest single quiet figure is the API server, at 1,168 MiB, against a research estimate of 350 to 600
 MiB. It has read above 1 GiB since before Plane was deployed ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt)).
 
 Load figures are each group summed at every 15-second step, then its top ([LOAD-3-20261105T074543Z-prometheus-series.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-series.json), through [LOAD-3-20261105T074543Z-derived.txt](evidence/runs/LOAD-3-20261105T074543Z-derived.txt)). Each group peaked at its own time, so the rows do not add up to the cluster. The tops for the control plane, Argo CD and
 Infisical at 07:34 to 07:35 line up with the prod-sim restore, and those for both Plane environments with its rotation at 07:39:33, so they are not k6's doing. The `docker stats` figures are 15-second samples in [results.json](evidence/runs/load-20261105T073241Z/results.json). `kubectl top node` read
-7,800 MiB and 1,035 m at 07:44:40Z, during the dev restore ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)), and Prometheus does not keep the node's root cgroup. Local services read 108 MiB together in `docker stats` at the same moment, not during image pulls, so their marker stays.
+7,800 MiB and 1,035 m at 07:44:40Z, during the dev restore ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)), and Prometheus does not keep the node's root cgroup. Local services read 108 MiB together in `docker stats` at the same moment, not during image pulls, which no run samples.
 
 The chart runs a config reloader beside both Prometheus and Alertmanager, each with a 48 MiB limit
 ([monitoring-memory-1.txt](evidence/runs/monitoring-memory-1.txt)).
@@ -299,7 +303,7 @@ Highest `memory.peak` readings outside Plane, and what they changed. Evidence: [
 | VM overhead | 0.4 | Research reading of `/proc/meminfo` less `docker stats`, before this platform existed | 0.15, what is left of VM used after the node, local services and unrelated containers | |
 | Unrelated containers on this host | 2.0 | Research sum of `docker stats` across 16 containers, before this platform existed | 1.01: 1,039 MiB across 17 containers, in the final `docker stats` | |
 | **Idle on VM** | **7.9-11.7** | Sum of the above | **9.44 median of 30 samples, top 9.61** | |
-| Bursts: both migrators, API first boot, repo-server render, a backup or k6 Job | +2 | Judgement, from the Railway first-boot figure of about +0.5 GiB per environment | | [[MEASURE: largest memory burst during first install]] |
+| Bursts: both migrators, API first boot, repo-server render, a backup or k6 Job | +2 | Judgement, from the Railway first-boot figure of about +0.5 GiB per environment | | During a first install: Not tested in Pass 1, because the clean install does not sample VM memory |
 | **Peak on VM** | **9.9-13.7** | Sum of the above | | **10.93 at 2026-11-05T01:50:00Z, in 60-second readings from 00:35Z ([LOAD-3-20261105T074543Z-timeline.json](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)). The 5-second samples topped out at 10.49 at 2026-11-04T23:23:42Z. The load window topped out at 10.33 at 07:39:33Z ([LOAD-3-20261105T074543Z-derived.txt](evidence/runs/LOAD-3-20261105T074543Z-derived.txt)). No clean install has been measured** |
 
 VM used is `MemTotal` less `MemAvailable`, sampled every 5 seconds from the node, and it includes the unrelated containers and any
@@ -314,7 +318,7 @@ other work on the cluster at the time. Tests barely move it ([plane-prod-sim-mem
 | All sampled time | 562 | 9.56 | 10.49 | 2,667 |
 
 The 10.49 GiB reading came 5 seconds after a change replaced the Argo CD pods, so old and new copies overlapped. By 23:24:02 the VM
-was at 9.11 GiB, then at 10.32 GiB again at 23:24:22 while monitoring pods were replaced. Swap reached 0.60 GiB and stayed there. The
+was at 9.11 GiB, then at 10.32 GiB again at 23:24:22 while monitoring pods were replaced. Swap reached 0.60 GiB and stayed there in these samples, and Prometheus later read 0.78 GiB in the quiet window and 0.76 GiB in the load window ([LOAD-3-20261105T074543Z-prometheus-windows.json](evidence/runs/LOAD-3-20261105T074543Z-prometheus-windows.json)). The
 12.5 GiB line the deploy work had set as its stop was never reached, and memory pressure stall (`some avg10`) peaked at 0.18.
 
 **First boots, from node-exporter at a 15-second step** ([plane-prod-sim-memory-history-1.txt](evidence/runs/plane-prod-sim-memory-history-1.txt)). These
@@ -331,7 +335,7 @@ Stopping unrelated containers would take about 1 GiB from these figures.
 
 ### Boot and start times
 
-Staged, on 2026-11-04, on this laptop, with fixes landing between steps. A single `make up` from nothing has not run, so these do not
+Staged, on 2026-11-04, on this laptop, with fixes landing between steps. A single `make up` from nothing has no recorded result, so these do not
 predict one. Cold image pulls through the mirror dominate the first-boot figures.
 
 | What | Measured | Evidence |
@@ -346,9 +350,9 @@ predict one. Cold image pulls through the mirror dominate the first-boot figures
 
 ## Disk
 
-The VM cannot see the host's real limit. Research reads its filesystem as reporting far more free space than the Mac
-has, so `NodeFilesystem*` alerts should not be trusted to warn before the Mac runs out. That is why every expensive
-script calls `guard_disk`. [[VERIFY: VM filesystem free space reported against host free space on this machine]]
+The VM cannot see the host's real limit. At 2026-11-05T07:44:42Z `/dev/vda1` in the node reported 408,458,512 KiB available, 389.5 GiB, and at 07:44:45Z the
+host reported 18,529,668 KiB, 17.67 GiB ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)). Pods read that same filesystem ([LOAD-3-20261105T074543Z-pvc-df.txt](evidence/runs/LOAD-3-20261105T074543Z-pvc-df.txt)). So
+`NodeFilesystem*` alerts should not be trusted to warn before the Mac runs out, and that is why every expensive script calls `guard_disk`. That is a reading of those numbers, because no run has filled the disk.
 node-exporter also excludes the `/backups` mount of the Mac, because its `statfs` gave a wrong size and the percentage rules went
 critical (`helm/values/kube-prometheus-stack.yaml`).
 
@@ -369,10 +373,10 @@ registries during research. They were not read from a running node, and the imag
 |---|---:|---|---|
 | Images on the kind node, unpacked | 8.56 | Registry layer sizes, 33 images, deduplicated | 11.01: `crictl imagefsinfo` at 2026-11-05T07:44:44Z, on a node with 63 image IDs, 16 of them Wayline builds ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) |
 | `kindest/node` in Docker's store | 1.18 | Registry layer sizes, compressed plus unpacked | 1.19: 1.28 GB in Docker's decimal units, at 2026-11-05T07:46:46Z ([LOAD-3-20261105T074543Z-docker-project.txt](evidence/runs/LOAD-3-20261105T074543Z-docker-project.txt)) |
-| Node `/var` volume seed | 0.6 | Judgement | [[MEASURE: node volume size before workloads, GiB]] |
+| Node `/var` volume seed | 0.6 | Judgement | Not tested in Pass 1 |
 | Pull-through caches: Docker Hub, quay.io, `registry.k8s.io` | up to 2.76 | Compressed total of all 33 images, as an upper bound. The research note priced only an optional Hub cache at 2.28 GiB, but the code always runs all three, so the note's totals leave this out | 2.80: Docker Hub 2.35, quay.io 0.42, `registry.k8s.io` 0.04, at 2026-11-05T07:46:46Z ([LOAD-3-20261105T074543Z-docker-project.txt](evidence/runs/LOAD-3-20261105T074543Z-docker-project.txt)) |
 | Local registry, Wayline blobs | 0.5 | Judgement, from before the images existed | 0.69: 705 MiB and 111 blobs on 2026-11-04T23:05Z, holding several Wayline builds ([registry-memory-1.txt](evidence/runs/registry-memory-1.txt)). 1.08 on 2026-11-05T07:46:46Z ([LOAD-3-20261105T074543Z-docker-project.txt](evidence/runs/LOAD-3-20261105T074543Z-docker-project.txt)) |
-| Build bases for Wayline images | 1.63 | Registry layer sizes, nginx by judgement | [[MEASURE: build bases in Docker's store, GiB]] |
+| Build bases for Wayline images | 1.63 | Registry layer sizes, nginx by judgement | Not tested in Pass 1 |
 | PVs, all environments | 1.5-4 | Judgement, see [storage](#persistent-storage) | 1.23 on 2026-11-04T22:19Z, of which 0.86 is Loki, most of it from stress tests ([monitoring-memory-1.txt](evidence/runs/monitoring-memory-1.txt)). 2.02 at 2026-11-05T07:42:58Z, of which 0.87 is Loki and 0.64 Prometheus ([pv-after.txt](evidence/runs/load-20261105T073241Z/pv-after.txt)) |
 | Container logs | 0.3-1 | Judgement. Cap about 3.2 GiB, at 10 MiB x 5 files x about 65 containers | 0.05: `/var/log/pods` at 2026-11-05T07:44:43Z ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) |
 | Native Wayline build outputs | 1.3 | Judgement from research on branding | 0.22: `.build` at 2026-11-05T07:44:48Z ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) |
@@ -385,12 +389,12 @@ working figure until the install is measured. A cache only holds what is actuall
 | Reading | Before first install | After first install | After load test | After `make destroy` |
 |---|---|---|---|---|
 | Host free disk | [[MEASURE: host free before install]] | [[MEASURE: host free after install]] | 17.67 GiB at 2026-11-05T07:44:45Z ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) | [[MEASURE: host free after destroy]] |
-| `Docker.raw` allocated | [[MEASURE: Docker.raw before install]] | [[MEASURE: Docker.raw after install]] | 39.59 GiB at 2026-11-05T07:44:45Z, with a logical size of 460.4 GiB ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) | [[MEASURE: Docker.raw after destroy]] |
-| `docker system df` total | [[MEASURE: docker df before install]] | [[MEASURE: docker df after install]] | 38.6 GB at 2026-11-05T07:44:45Z: images 17.91, volumes 20.69, containers 0.006, build cache 0. This counts unrelated work too ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) | [[MEASURE: docker df after destroy]] |
+| `Docker.raw` allocated | Not tested in Pass 1 | Not tested in Pass 1 | 39.59 GiB at 2026-11-05T07:44:45Z, with a logical size of 460.4 GiB ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) | [[MEASURE: Docker.raw after destroy]] |
+| `docker system df` total | Not tested in Pass 1 | Not tested in Pass 1 | 38.6 GB at 2026-11-05T07:44:45Z: images 17.91, volumes 20.69, containers 0.006, build cache 0. This counts unrelated work too ([LOAD-3-20261105T074440Z-host.txt](evidence/runs/LOAD-3-20261105T074440Z-host.txt)) | Not tested in Pass 1 |
 
-The after-load column is the running platform, about 12 hours after its cluster was created, not a clean install. It was read with a dev restore under way. During the load run itself, the whole-number free reading stayed at 17 GiB ([results.json](evidence/runs/load-20261105T073241Z/results.json)). At 17.67 GiB the host sat under the 25 GiB floor in `scripts/prereqs.sh`.
+The after-load column is the running platform, about 13 hours after its cluster was created, not a clean install. It was read with a dev restore under way. During the load run itself, the whole-number free reading stayed at 17 GiB ([results.json](evidence/runs/load-20261105T073241Z/results.json)). At 17.67 GiB the host sat under the 25 GiB floor in `scripts/prereqs.sh`.
 
-The build-bases marker above stays because Docker's store did not hold them: at 2026-11-05T07:57:09Z, of the three, only the nginx base was there, at 94.1 MB, and the Plane backend and space bases were gone ([LOAD-3-20261105T074543Z-docker-images.txt](evidence/runs/LOAD-3-20261105T074543Z-docker-images.txt)). A clean install is what can read this.
+The build-bases cell above has no reading because Docker's store did not hold them: at 2026-11-05T07:57:09Z, of the three, only the nginx base was there, at 94.1 MB, and the Plane backend and space bases were gone ([LOAD-3-20261105T074543Z-docker-images.txt](evidence/runs/LOAD-3-20261105T074543Z-docker-images.txt)). The clean install does not read them either.
 
 ### Persistent storage
 
