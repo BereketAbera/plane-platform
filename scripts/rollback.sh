@@ -80,7 +80,7 @@ publish() { # publish <the commit being reverted>
   else
     "$ROOT/scripts/gitops-publish.sh" || status=$?
   fi
-  [[ "$status" -eq 0 ]] || die "the revert $(git rev-parse --short HEAD) is on main but did not reach Argo CD. Fix the cause and run this again: it publishes that revert and reverts nothing else."
+  [[ "$status" -eq 0 ]] || die "$(git log -1 --format='%h %s') is on main but did not reach Argo CD. Fix the cause and run this again: it publishes that and reverts nothing else."
 }
 
 reverted_by() { # reverted_by <commit>: the commit it reverts, if any
@@ -226,6 +226,10 @@ on_exit() {
   release_commit_lock
 }
 trap on_exit EXIT
+# bash does not run an EXIT trap on a signal it has no trap for, and from here this may hold the commit
+# lock and a revert under way.
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # One commit holding the revert and any re-render. A later commit may have changed what the overlay
 # renders to, so the reverted file can be stale, or conflict when that change sits beside an image line.

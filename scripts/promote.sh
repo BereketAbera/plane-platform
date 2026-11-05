@@ -84,6 +84,9 @@ cleanup() {
   release_commit_lock
 }
 trap cleanup EXIT
+# bash does not run an EXIT trap on a signal it has no trap for, and this may hold the commit lock.
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # name repo tag digest, one image per line. "-" stands for no tag, so `read` cannot shift columns.
 entries() { yq -r '.images[] | [.name, (.newName // .name), (.newTag // "-"), .digest] | join(" ")' "$1"; }
