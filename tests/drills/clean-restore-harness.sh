@@ -750,7 +750,7 @@ S16() {
   check "PLAN_ONLY exit 0 (got $RC)" test "$RC" -eq 0
   show_tail
   check "not one file under .local changed" test "$a" = "$(sum_tree)"
-  check "the disk line is in the plan (finding 4)" out_has "kind volume 11.4 GiB"
+  check "the disk line is in the plan (finding 4)" out_has "kind volume 11.38 GiB"
   lose_cluster
   write_marker infisical
   a="$(sum_tree)"
@@ -1162,7 +1162,7 @@ S28() {
   run env CONFIRM=yes SKIP_E2E=yes tests/drills/clean-restore.sh
   check "14 GiB + 93% of 11.4: under 25, the drill refuses" test "$RC" -ne 0
   check "before the delete" no_log 'kind delete cluster'
-  check "and shows the arithmetic" out_has "about 24.6 GiB would be free after the delete: 14.0 GiB now plus 93% of the 11.4 GiB kind volume"
+  check "and shows the arithmetic" out_has "about 24.58 GiB would be free after the delete: 14.00 GiB now plus 93% of the 11.38 GiB kind volume"
   check "and how to go on" out_has 'ALLOW_LOW_DISK="<reason>"'
 
   reset
