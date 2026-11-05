@@ -60,10 +60,12 @@ recovery_cluster_id() { docker inspect -f '{{.Id}}' "$NODE_CONTAINER" 2>/dev/nul
 # True if the cluster the marker's lines were written on is no longer here, with no cluster at all or another of the
 # same name, as a plain make up leaves after a loss. What that restore finished went with it. A marker that names no
 # cluster, or a Docker that will not say, cannot tell, and then the lines stand: nothing is replaced on their word, and
-# whatever is not done still has the guard in front of it.
+# whatever is not done still has the guard in front of it. kind is read by itself, and not through cluster_exists, where
+# a read that failed looks like no cluster, which here would delete what came back from the marker and replace it.
 recovery_marker_cluster_gone() {
-  local was now
-  cluster_exists || return 0
+  local was now list
+  list="$(kind get clusters 2>/dev/null)" || return 1
+  grep -qx "$CLUSTER_NAME" <<<"$list" || return 0
   was="$(sed -n 's/^cluster=//p' "$RESTORE_CLEAN_MARKER")"
   [[ -n "$was" ]] || return 1
   now="$(recovery_cluster_id)"
