@@ -137,8 +137,8 @@ Rule: if `git grep` finds the same resource under two owners, it is a bug. CI ch
   to 300s. Dev needs neither, because a publish that moves no prod-sim image asks the cluster nothing. A publish is all of `main`, so a
   rollback of dev stops and names any change on `main` that would move a prod-sim image and has not gone out, and `OVERRIDE_DEV_CHECK`
   goes on. A rollback of prod-sim stops the same way on anything else waiting under a promotion that never reached Argo CD. A conflict
-  in a rendered file is settled by rendering, and a conflict anywhere else stops the rollback. Images roll back, and schemas do not. The
-  output names the dump to restore, from what `make gitops-publish` records, or says there is nothing to restore if the promotion never
+  in a rendered file is settled by rendering, and a conflict anywhere else stops the rollback, as does a commit that touches both
+  environments. Images roll back, and schemas do not. The output names the dump to restore, from what `make gitops-publish` records, or says there is nothing to restore if the promotion never
   went out.
 
 ## 6. Sync waves
@@ -218,7 +218,7 @@ also refuses a `.yml`, `.json` or `.jsonnet` file in a plain directory Argo CD r
 
 Both Plane environments sync automatically with self-heal. The prod-sim control point is the Git change,
 not the sync button. A drill that changes live objects behind Git's back must pause self-heal first, or Argo CD reverts the change within
-seconds. A failure delivered through a commit keeps self-heal on, because the bad state is then what Git asks for.
+seconds: a replica change on `plane-admin-wl` was put back in 3s ([GITOPS-4](evidence/runs/GITOPS-4-20261105T073240Z.txt)). A failure delivered through a commit keeps self-heal on, because the bad state is then what Git asks for.
 
 ## 8. Secret contract
 
@@ -307,6 +307,8 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
 `test-load`, `scan-images`, `publish-evidence`, `drill-failed-deploy`, `drill-pod-restart`, `drill-clean-restore`,
 `drill-clean-restore-harness`, `wayline-upgrade-check`, `wayline-upstream-check`.
 `make help` lists them. Options are passed as `make <target> NAME=value`. `tests/drills/failed-migrator.sh` has no target and runs directly.
+`make drill-clean-restore CONFIRM=yes CLEAN_INSTALL_FIRST=yes` deletes the cluster, runs `tests/drills/clean-install.sh` from a fresh clone with
+new secrets, deletes that, and restores from backup into a new cluster. It keeps the local registry and the pull-through caches, and copies `.tools`.
 
 - `make down` stops the cluster and **keeps all data**. `make up` resumes it.
 - `make up` is idempotent, so it is also how to continue after a failure. It refuses uncommitted changes under
@@ -314,16 +316,18 @@ reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](ev
   `UP_STOP_AFTER=<cluster|publish|terraform|secret-zero|traefik|infisical>` stops it after that step.
 - `make test` keeps going after a failure and labels each test PASS, FAIL or BLOCKED. `scripts/test.sh` exits 0,
   1 or 2 for those, as `tests/e2e/smoke.py` does. `make` itself exits 2 on any failure, and prints which.
-- `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`. It removes
+- `make destroy` deletes the cluster, refuses without `CONFIRM=yes`, and takes a backup unless `SKIP_BACKUP=yes`. That backup refuses an
+  environment an unfinished clean restore has not reached, unless `ALLOW_BACKUP_DURING_RESTORE=yes`. It removes
   `.local/terraform/local` and keeps backups, secret zero and `.local/terraform/infisical`, because a clean restore needs them.
   `PURGE=yes` also removes the local services and their volumes.
 - `make restore` refuses to overwrite a non-empty environment without `CONFIRM=yes`. `make restore-clean` brings the whole platform
-  back into a clean environment, Infisical first. `scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2
+  back into a clean environment, Infisical first, and a resume refuses an environment that does not match this backup part way through,
+  unless `ALLOW_RESUME_OVERWRITE=yes`, which is recorded as FAIL. `scripts/restore.sh` exits 0 when everything is proven, 1 when something failed, and 2
   when nothing failed but something could not run or a person has to act, which is not a pass. `scripts/restore.sh infisical` alone also has 3:
   Infisical is back, and a person has to sign in to prove it. Through `make`, any of these but 0 is make's own exit 2, and make prints the script's.
 - Scripts that write to the cluster, a registry or the disk check free host disk through `guard_disk`, because the Docker VM
   cannot see the real limit. The default is 10 GiB (`MIN_FREE_DISK_GIB`). `up.sh` asks for 25 and `cluster-up.sh` for 15 when
-  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
+  creating a cluster, and `ALLOW_LOW_DISK="<reason>"` goes past those two and is logged, but not past the 10 GiB, and it refuses a reason with no words. `MIN_FREE_DISK_GIB` below the default is the way past that, and is logged too. `scan-images.sh`
   asks for 15, and scripts that write little ask for 1 or 2, such as `promote.sh`, `rollback.sh` and `gitops-publish.sh`.
   `down.sh`, `destroy.sh`, `logs.sh`, `status.sh`, `copy-to-local-registry.sh` and the CI checks do not call it, so the first four
   still work on a full disk. `destroy.sh` reaches it through `backup.sh` unless `SKIP_BACKUP=yes`. `prereqs.sh` has its own floor of 25 GiB.
@@ -400,3 +404,5 @@ Each line settles a place where the code and this file disagreed, by changing th
 | 2026-11-05 | 11 | `MIN_FREE_DISK_GIB` below the default is logged | `e1c12a1`, `scripts/lib/common.sh` |
 | 2026-11-05 | 11 | `scripts/restore.sh` has a documented exit 2, and `failed-migrator.sh` has no make target | `scripts/restore.sh`, `1c6adbe` |
 | 2026-11-05 | 13 | `scripts/lib/up-checks.sh` is named | `scripts/lib/up-checks.sh` |
+| 2026-11-05 | 5 | A rollback of a commit touching both environments stops | `53aab26`, `scripts/rollback.sh` |
+| 2026-11-05 | 11 | `make drill-clean-restore` takes `CLEAN_INSTALL_FIRST=yes`. A backup refuses an environment a clean restore has not finished, a resume refuses to overwrite, and `ALLOW_LOW_DISK` needs words | `tests/drills/clean-install.sh`, `scripts/backup.sh`, `scripts/restore.sh`, `scripts/lib/up-checks.sh` |
