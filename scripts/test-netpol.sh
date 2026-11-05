@@ -544,6 +544,7 @@ run_matrix() {
   done <"$WORK/cases"
 
   log "PASS $passed, FAIL $failed, INCONCLUSIVE $((inconclusive + free)), of which $free need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: $unreferenced. Evidence: $EVIDENCE"
+  log "A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target."
   if [[ "$failed" -ne 0 ]]; then return 1; fi
   if [[ "$inconclusive" -ne 0 ]]; then return 2; fi
   return 0
