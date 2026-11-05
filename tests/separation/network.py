@@ -7,16 +7,18 @@ and an error class. Every line printed is also scanned for the environments' Sec
 For each direction:
   1. Every source pod that has a shell or an interpreter dials the other environment's postgres, valkey, rabbitmq (AMQP
      and management) and silo (S3 and console), by Service name and by pod IP.
-  2. The same pod dials its own environment's data tier in the same batch, so a dead network stack or a broken probe
-     cannot pass as isolation.
-  3. A pod in the target environment dials the same targets in the same moment, so a target that is down cannot pass
-     as isolation.
-  4. The real clients the app uses (psycopg, redis-py, amqp, boto3), with the source environment's own credentials,
+  2. In the same batch, the same pod dials DNS over TCP, the one thing allow-dns opens to every pod. Six of the ten sources
+     have no rule to any data port, so this is what they can all be asked. If it does not connect, that pod's timeouts
+     read BLOCKED, so a dead network stack or a broken probe cannot pass as isolation.
+  3. At the same time, a pod in the target environment dials the same targets, so a target that is down cannot pass as
+     isolation.
+  4. Then api, worker and beat dial their own environment's data tier, which their policy allows on four of those ports.
+  5. The real clients the app uses (psycopg, redis-py, amqp, boto3), with the source environment's own credentials,
      dial their own and the other environment's servers.
 
-A deny counts only as a TIMEOUT: refused means the packet arrived. A failed exec or a failed DNS lookup says nothing
-either way, so it reads BLOCKED. Exit status: 0 everything passed, 1 something failed, 2 nothing failed but something
-could not run.
+A deny counts only as a TIMEOUT: refused means the packet arrived. A failed exec, a target the probe returned nothing for
+and a failed DNS lookup say nothing either way, so each reads BLOCKED. Exit status: 0 everything passed, 1 something failed,
+2 nothing failed but something could not run.
 """
 from __future__ import annotations
 
@@ -31,6 +33,8 @@ TARGETS = [("postgres", "plane-pgdb", 5432), ("valkey", "plane-redis", 6379), ("
            ("rabbitmq-mgmt", "plane-rabbitmq", 15672), ("silo-s3", "plane-minio", 9000), ("silo-console", "plane-minio", 9090)]
 POD_OF_SERVICE = {"plane-pgdb": "plane-pgdb-wl-0", "plane-redis": "plane-redis-wl-0", "plane-rabbitmq": "plane-rabbitmq-wl-0",
                   "plane-minio": "plane-minio-wl-0"}
+# What every source pod can be asked to reach, in each source's own batch: policy allow-dns, UDP and TCP, in both namespaces.
+POSITIVE_CONTROL = {"name": "dns-tcp", "host": "kube-dns.kube-system.svc.cluster.local", "port": 53, "via": "service-dns"}
 # Ports the app tier may use in its own environment, per the app-tier-to-data policy.
 OWN_ALLOWED = {"postgres", "valkey", "rabbitmq-amqp", "silo-s3"}
 SOURCES = [("plane-api-wl", "plane-api", "python"), ("plane-worker-wl", "plane-worker", "python"),
@@ -88,7 +92,7 @@ let raw = ""; process.stdin.on("data", d => raw += d); process.stdin.on("end", a
 
 # busybox nc. -w bounds the connect, and the elapsed time and message separate timeout from refused.
 SH_PROBE = r"""
-tmp=$(mktemp -d)
+tmp=$(mktemp -d) || exit 125
 i=0
 while read -r name host port via; do
   [ -n "$name" ] || continue
@@ -102,7 +106,9 @@ while read -r name host port via; do
 done
 wait
 cat "$tmp"/*
+status=$?
 rm -rf "$tmp"
+exit $status
 """ % {"timeout": TIMEOUT}
 
 # The clients the app itself uses, with this pod's own credentials from its environment. argv[1] is the target namespace.
@@ -186,11 +192,33 @@ def probe(namespace: str, pod: str, container: str, kind: str, targets: list[dic
         done = kubectl("-n", namespace, "exec", "-i", pod, "-c", container, "--", "sh", "-c", SH_PROBE, stdin=lines, timeout=90)
     if done.returncode != 0:
         return [{**t, "ip": None, "verdict": f"EXEC-FAILED rc={done.returncode}", "seconds": 0, "detail": done.stderr.strip()[:120]} for t in targets]
-    if kind != "shell":
-        return json.loads(done.stdout)
+    results = shell_results(done.stdout) if kind == "shell" else json_results(done.stdout)
+    # An exec can exit 0 and return less than it was asked, and a target with no result must not just vanish from the run.
+    answered = {target_key(result) for result in results}
+    detail = done.stderr.strip()[:120] or "the probe exited 0 and returned nothing for this target"
+    return results + [{**t, "ip": None, "verdict": "EXEC-FAILED no result", "seconds": 0, "detail": detail}
+                      for t in targets if target_key(t) not in answered]
+
+
+def target_key(item: dict) -> tuple:
+    return item["name"], item["host"], item["port"], item["via"]
+
+
+def json_results(stdout: str) -> list[dict]:
+    try:
+        return json.loads(stdout)
+    except ValueError:
+        return []
+
+
+def shell_results(stdout: str) -> list[dict]:
     results = []
-    for line in done.stdout.splitlines():
-        name, host, port, via, rc, seconds, message = (line.split(" ", 6) + [""])[:7]
+    for line in stdout.splitlines():
+        try:
+            name, host, port, via, rc, seconds, message = (line.split(" ", 6) + [""])[:7]
+            port, seconds = int(port), int(seconds)
+        except ValueError:
+            continue
         text = message.lower()
         if rc == "0":
             verdict = "CONNECTED"
@@ -198,11 +226,11 @@ def probe(namespace: str, pod: str, container: str, kind: str, targets: list[dic
             verdict = "REFUSED"
         elif "bad_address" in text:
             verdict = "DNS-FAILED"
-        elif int(seconds) >= TIMEOUT - 1:
+        elif seconds >= TIMEOUT - 1:
             verdict = "TIMEOUT"
         else:
             verdict = f"ERROR:{message}"
-        results.append({"name": name, "host": host, "port": int(port), "via": via, "verdict": verdict, "seconds": int(seconds), "ip": host if via == "pod-ip" else "-"})
+        results.append({"name": name, "host": host, "port": port, "via": via, "verdict": verdict, "seconds": seconds, "ip": host if via == "pod-ip" else "-"})
     return results
 
 
@@ -227,25 +255,33 @@ def direction(source_env: str, target_env: str) -> None:
     other_targets = targets_for(target_ns, target_ips)
     own_targets = targets_for(source_ns, source_ips)
     label = f"{source_env}->{target_env}"
-    report.say(f"\n## {label}: every source pod dials the other environment. A pass is a TIMEOUT and nothing else. {now()}")
+    report.say(f"\n## {label}: every source pod dials the other environment. A pass is a TIMEOUT and nothing else, beside each pod's own {POSITIVE_CONTROL['name']}, which must connect. {now()}")
     report.say(f"verdict {HEADER}")
 
     def run_source(entry):
         prefix, container, kind = entry
         pod = named(source_pods, prefix)
         moment = now()
-        return pod, moment, probe(source_ns, pod, container, kind, other_targets), source_pods[pod]
+        return pod, moment, probe(source_ns, pod, container, kind, [POSITIVE_CONTROL, *other_targets]), source_pods[pod]
 
-    with concurrent.futures.ThreadPoolExecutor(len(SOURCES)) as pool:
+    reference = named(target_pods, "plane-api-wl")
+    with concurrent.futures.ThreadPoolExecutor(len(SOURCES) + 1) as pool:
+        from_the_target_side = pool.submit(probe, target_ns, reference, "plane-api", "python", other_targets)
         batches = list(pool.map(run_source, SOURCES))
     for pod, moment, results, spec in batches:
+        control = next(result for result in results if result["name"] == POSITIVE_CONTROL["name"])
         for result in results:
-            judge(result, "TIMEOUT", row(moment, label, source_ns, pod, source_ips[pod], bool(spec["spec"].get("hostNetwork")), result))
+            line = row(moment, label, source_ns, pod, source_ips[pod], bool(spec["spec"].get("hostNetwork")), result)
+            if result is control:
+                judge(result, "CONNECTED", line)
+            elif result["verdict"] == "TIMEOUT" and control["verdict"] != "CONNECTED":
+                report.block(f"{line}\tthis pod's own positive control did not connect, so its timeout proves nothing")
+            else:
+                judge(result, "TIMEOUT", line)
 
     # Same moment: the targets answer a pod in their own environment.
-    report.say(f"\n## {label}: reference, a pod inside {target_ns} dials the same targets in the same moment. {now()}")
-    reference = named(target_pods, "plane-api-wl")
-    for result in probe(target_ns, reference, "plane-api", "python", other_targets):
+    report.say(f"\n## {label}: reference, a pod inside {target_ns} dialled the same targets at the same time. {now()}")
+    for result in from_the_target_side.result():
         want = "CONNECTED" if result["name"] in OWN_ALLOWED else "TIMEOUT"
         judge(result, want, row(now(), f"{target_env}->{target_env}", target_ns, reference, target_ips[reference],
                                 bool(target_pods[reference]["spec"].get("hostNetwork")), result))

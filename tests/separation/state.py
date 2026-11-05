@@ -19,7 +19,7 @@ import subprocess
 import sys
 from urllib.parse import parse_qs, urlsplit
 
-from common import ENVS, NOT_CREDENTIALS as SAME_BY_DESIGN, OTHER, ROOT, SECRET_NAMES, Blocked, Report, kubectl, must, now, read_secrets, require_environments
+from common import ENVS, NOT_CREDENTIALS as SAME_BY_DESIGN, OTHER, ROOT, SECRET_NAMES, Blocked, Report, credential_values, kubectl, must, now, read_secrets, require_environments
 
 sys.path.insert(0, str(ROOT / "tests" / "e2e"))
 import smoke  # noqa: E402  the project's own client: real HTTP through Traefik, no new protocol code
@@ -485,7 +485,8 @@ def main() -> int:
     say("# command: tests/separation/state.py")
     try:
         require_environments()
-        # Known before anything is printed, and not only from section 3 on.
+        # Known before any section prints, and not only from section 3 on, so the scan's last line covers every line.
+        report.add_secrets(credential_values(read_secrets()))
         envs_accounts = [smoke.Accounts(ACCOUNTS, env) for env in ENVS]
         report.add_secrets(v for accounts in envs_accounts for v in (accounts.get("ADMIN_PASSWORD"), accounts.get("API_TOKEN")))
         identity()
