@@ -4,10 +4,11 @@
 #
 # Both paths run the same native build through scripts/ci/build-images.sh as `make images` does. Old versions are
 # pruned as a precaution: GitHub's billing page says Container registry storage and bandwidth are currently free,
-# and nothing has been stored there yet to confirm it. See apps/wayline/README.md.
+# and no bill has been read to confirm it. See apps/wayline/README.md.
 #
-# Not exercised yet. No run has contained apps/wayline. A pull request is what runs the build-only job for the
-# first time. checks/smoke-images.sh is manual: it needs the images and is not run here.
+# The push path has run: run 41975430939 built, walked and pushed all four images and opened pull request 1. The
+# build-only job for a pull request has not: no pull request has changed these paths yet. checks/smoke-images.sh is
+# manual: it needs the images and is not run here.
 #
 # Publishing is gated on D12 (apps/wayline/backend/email-py-decision.txt, apps/wayline/MODIFICATIONS.md). The backend
 # image replaces upstream's commercially headed email.py and is flattened, so no layer holds the original, and
