@@ -15,6 +15,34 @@ test_configmap_accepted if {
 	count(gitops.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "x"}}
 }
 
+wrapped_route := {
+	"apiVersion": "traefik.io/v1alpha1",
+	"kind": "IngressRoute",
+	"metadata": {"name": "x", "namespace": "monitoring"},
+	"spec": {"routes": [{"match": "Host(`prometheus.localhost`)", "services": [{"name": "kps-prometheus", "port": 9090}]}]},
+}
+
+test_a_list_of_any_kind_rejected if {
+	count(gitops.deny) == 1 with input as {"apiVersion": "v1", "kind": "List", "items": [wrapped_route]}
+	count(gitops.deny) == 1 with input as {"apiVersion": "v1", "kind": "ConfigMapList", "items": []}
+	count(gitops.deny) == 1 with input as {"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRouteList", "metadata": {"name": "x"}, "items": [wrapped_route]}
+	count(gitops.deny) == 1 with input as {"apiVersion": "v1", "kind": "List", "items": null}
+}
+
+# Argo CD goes by the items array alone, so this one's good outer route would never be applied.
+test_items_under_any_other_kind_rejected if {
+	count(gitops.deny) == 1 with input as object.union(wrapped_route, {"items": [wrapped_route]})
+	count(gitops.deny) == 1 with input as {"apiVersion": "example.com/v1", "kind": "Whatever", "items": []}
+	count(gitops.deny) == 1 with input as {"items": [wrapped_route]}
+}
+
+test_items_lower_down_and_list_inside_a_kind_accepted if {
+	count(gitops.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "x"}, "data": {"items": "[1]"}}
+	count(gitops.deny) == 0 with input as {"kind": "Thing", "metadata": {"name": "x"}, "spec": {"items": [1]}}
+	count(gitops.deny) == 0 with input as {"kind": "ListenerSet", "metadata": {"name": "x"}}
+	count(gitops.deny) == 0 with input as wrapped_route
+}
+
 application(name, project, namespace, source) := {
 	"kind": "Application",
 	"metadata": {"name": name, "namespace": "argocd"},
