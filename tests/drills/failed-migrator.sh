@@ -105,7 +105,7 @@ alerts_report() {
   printf 'Prometheus %s/api/v1/alerts, every %ss since %s. Raw: %s\n' "$PROM_URL" "$ALERTS_EVERY" "$ALERTS_FROM" "$ALERTS_FILE"
   awk -F'\t' '$2 == "no-reading" { print "GAP   " $1 }' "$ALERTS_FILE"
   awk -F'\t' '
-    $2 == "application" || $2 == "none" || $2 == "no-reading" { next }
+    /^#/ || $2 == "application" || $2 == "none" || $2 == "no-reading" { next }
     {
       if (start == "") start = $1
       key = $3 FS $6
