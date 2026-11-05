@@ -17,7 +17,9 @@ copied=0
 while read -r repository digest; do
   [[ "$repository" == localhost:5001/* ]] || continue
   name="${repository##*/}"
-  docker buildx imagetools create -t "$repository:${digest:7:12}" "$SOURCE/$name@$digest"
+  # --prefer-index=false, as in build-images.sh. The default wraps a single image in a new index, and the tag named after
+  # this digest would then answer with the index's digest instead.
+  docker buildx imagetools create --prefer-index=false -t "$repository:${digest:7:12}" "$SOURCE/$name@$digest"
   # Trust the registry's answer, not the copy command's exit status.
   docker buildx imagetools inspect "$repository@$digest" >/dev/null || die "$repository did not end up with $digest"
   ok "$repository@$digest"
