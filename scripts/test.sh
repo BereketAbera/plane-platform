@@ -41,8 +41,10 @@ guard_disk 2
 command -v python3 >/dev/null 2>&1 || die "python3 not found. Run: make setup"
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+# With the process id, because two runs started in the same second would otherwise share every file named after it.
+RUN_NAME="$STAMP-$$"
 EVIDENCE_DIR="$LOCAL_DIR/evidence-raw"
-SUMMARY="$EVIDENCE_DIR/test-$STAMP.txt"
+SUMMARY="$EVIDENCE_DIR/test-$RUN_NAME.txt"
 mkdir -p "$EVIDENCE_DIR"
 printf 'scripts/test.sh %s, started %s\n' "$ARGUMENTS" "$STAMP" >"$SUMMARY"
 
@@ -57,7 +59,7 @@ record() { # record <PASS|FAIL|BLOCKED> <test> <detail>
 }
 
 run_gates() {
-  local evidence="$EVIDENCE_DIR/gates-$STAMP.txt" status=0
+  local evidence="$EVIDENCE_DIR/gates-$RUN_NAME.txt" status=0
   log "Day-1 gates"
   "$ROOT/tests/gates/day1.sh" > >(tee "$evidence") 2>&1 || status=$?
   if [[ "$status" -eq 0 ]]; then record PASS gates "evidence: $evidence"; else record FAIL gates "exit $status, evidence: $evidence"; fi
@@ -83,7 +85,7 @@ run_infisical() {
   local script label evidence status
   for script in isolation rendered-secrets; do
     label="infisical $script"
-    evidence="$EVIDENCE_DIR/infisical-$script-$STAMP.txt"
+    evidence="$EVIDENCE_DIR/infisical-$script-$RUN_NAME.txt"
     status=0
     log "Infisical: $script"
     "$ROOT/infisical/tests/$script.sh" > >(tee "$evidence") 2>&1 || status=$?
@@ -92,7 +94,7 @@ run_infisical() {
 }
 
 run_routes() {
-  local evidence="$EVIDENCE_DIR/routes-$STAMP.txt" status=0
+  local evidence="$EVIDENCE_DIR/routes-$RUN_NAME.txt" status=0
   log "Internal routes"
   "$ROOT/tests/routes/internal-routes.sh" > >(tee "$evidence") 2>&1 || status=$?
   record_status "$status" routes "$evidence"
@@ -101,7 +103,7 @@ run_routes() {
 run_separation() {
   local script evidence status
   for script in network state; do
-    evidence="$EVIDENCE_DIR/separation-$script-$STAMP.txt"
+    evidence="$EVIDENCE_DIR/separation-$script-$RUN_NAME.txt"
     status=0
     log "Separation of dev and prod-sim: $script"
     python3 -B "$ROOT/tests/separation/$script.py" > >(tee "$evidence") 2>&1 || status=$?
@@ -110,7 +112,7 @@ run_separation() {
 }
 
 run_e2e() { # run_e2e <env>
-  local env="$1" evidence="$EVIDENCE_DIR/smoke-$1-$STAMP.json" status=0 control=""
+  local env="$1" evidence="$EVIDENCE_DIR/smoke-$1-$RUN_NAME.json" status=0 control=""
   # Dev only: it pauses background jobs for about 20s to show the job check can fail, then replaces the
   # worker's pod, because that control leaves the worker unable to survive its next broker reconnect.
   [[ "$env" != dev ]] || control="--worker-negative-control"
