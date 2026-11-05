@@ -566,8 +566,8 @@ token's CR, then the API, the worker and the CronJobs, and the upload route.
    make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow
    make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow
    ```
-   Once that backup has sealed, a pull request adds `frameflow` to `BACKUP_NAMESPACES` in `scripts/hosted/lib-restic.sh`, and only then
-   does `make remote-pull-backups` take an off-server copy of it: [backups and restore](#frameflow-backups-and-restore).
+   `frameflow` joined `BACKUP_NAMESPACES` in `scripts/hosted/lib-restic.sh` once that first backup had sealed (2026-11-08), so
+   `make remote-pull-backups` takes an off-server copy of it too: [backups and restore](#frameflow-backups-and-restore).
 
 ### Frameflow: the owner access key
 
@@ -803,9 +803,9 @@ make remote-backup-dest TARGET=plane-prod VERB=verify                          #
 ```
 
 The restore test proves the files against their hashes, restores Hatchet's dump into an empty Postgres, reads the SQLite copy's recorded
-check, finds every object its rows name, and compares the keyset's fingerprint with the live one. Frameflow joins the pull's list,
-`BACKUP_NAMESPACES` in `scripts/hosted/lib-restic.sh`, only once its first backup has sealed, through a pull request. Until then the pull and
-`VERB=verify` skip it, and there is no off-server copy of it.
+check, finds every object its rows name, and compares the keyset's fingerprint with the live one. Frameflow is in the pull's list,
+`BACKUP_NAMESPACES` in `scripts/hosted/lib-restic.sh`, since its first backup sealed (2026-11-08), so the pull and `VERB=verify` copy and
+check it beside Plane's and Infisical's. A rebuilt VPS whose Frameflow has not sealed a backup yet has no repository there to pull.
 
 **Restoring.** This puts Hatchet's database, Frameflow's database and the bucket back to one snapshot, so a video and its run agree.
 Everything written since that snapshot is lost, so a person decides to do it. Objects uploaded since stay in the bucket, where nothing
