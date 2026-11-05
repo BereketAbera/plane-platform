@@ -1,0 +1,117 @@
+date: 2026-11-05T13:30:19Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="M2 M3" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== M2. A marker's lines belong to a cluster: on a new one, nothing that run finished counts
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  up.sh refuses at bootstrap: fixture: dev is done
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  up.sh refuses at bootstrap: fixture: the marker names the cluster
+PASS  up.sh refuses at bootstrap: it does (got 1)
+FAIL  up.sh refuses at bootstrap: and names the command to run
+FAIL  up.sh refuses at bootstrap: and a new cluster is here, empty
+FAIL  up.sh refuses at bootstrap: a plan says it will start again
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  up.sh refuses at bootstrap: and changes nothing
+FAIL  up.sh refuses at bootstrap: the command it names finishes, exit 0 (got 1)
+    | [1;31mfail[0m yq not found. Run: make setup
+FAIL  up.sh refuses at bootstrap: says the cluster is gone
+PASS  up.sh refuses at bootstrap: and nothing that run finished counts
+PASS  up.sh refuses at bootstrap: and it is no sign-in dead end
+FAIL  up.sh refuses at bootstrap: Infisical comes back
+FAIL  up.sh refuses at bootstrap: dev's data comes back
+FAIL  up.sh refuses at bootstrap: with what the backup holds
+FAIL  up.sh refuses at bootstrap: and so does prod-sim
+PASS  up.sh refuses at bootstrap: nothing started over anything
+PASS  up.sh refuses at bootstrap: finished
+ls: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/evidence-raw/restore-clean-*.json: No such file or directory
+jq: error: Could not open file : No such file or directory
+FAIL  up.sh refuses at bootstrap: a pass
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  up.sh UP_STOP_AFTER=cluster: fixture: dev is done
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  up.sh UP_STOP_AFTER=cluster: fixture: the marker names the cluster
+FAIL  up.sh UP_STOP_AFTER=cluster: goes through (got 1)
+FAIL  up.sh UP_STOP_AFTER=cluster: and a new cluster is here, empty
+FAIL  up.sh UP_STOP_AFTER=cluster: a plan says it will start again
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  up.sh UP_STOP_AFTER=cluster: and changes nothing
+FAIL  up.sh UP_STOP_AFTER=cluster: the command it names finishes, exit 0 (got 1)
+    | [1;31mfail[0m yq not found. Run: make setup
+FAIL  up.sh UP_STOP_AFTER=cluster: says the cluster is gone
+PASS  up.sh UP_STOP_AFTER=cluster: and nothing that run finished counts
+PASS  up.sh UP_STOP_AFTER=cluster: and it is no sign-in dead end
+FAIL  up.sh UP_STOP_AFTER=cluster: Infisical comes back
+FAIL  up.sh UP_STOP_AFTER=cluster: dev's data comes back
+FAIL  up.sh UP_STOP_AFTER=cluster: with what the backup holds
+FAIL  up.sh UP_STOP_AFTER=cluster: and so does prod-sim
+PASS  up.sh UP_STOP_AFTER=cluster: nothing started over anything
+PASS  up.sh UP_STOP_AFTER=cluster: finished
+ls: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/evidence-raw/restore-clean-*.json: No such file or directory
+jq: error: Could not open file : No such file or directory
+FAIL  up.sh UP_STOP_AFTER=cluster: a pass
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/restore-clean.state: No such file or directory
+FAIL  fixture: dev's data came back
+PASS  a data-back line from the old cluster: a plan makes no promise about what came back
+PASS  a data-back line from the old cluster: a backup of dev is refused, as of what it has not finished (got 1)
+FAIL  a data-back line from the old cluster: says so
+FAIL  a data-back line from the old cluster: the resume finishes, exit 0 (got 1)
+    | [1;31mfail[0m yq not found. Run: make setup
+FAIL  a data-back line from the old cluster: dev's data comes back
+PASS  a done line from the old cluster: a backup of dev is refused (got 1)
+PASS  a done line from the old cluster: no Job ran
+tests/drills/clean-restore-harness.sh: line 201: 83378 Terminated: 15          python3 -I "$STUBS/fakeapi.py" "$H/state/api-port"
+cat: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/backup.out: No such file or directory
+FAIL  fixture: backup.sh all failed
+ls: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/backups/dev: No such file or directory
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/cluster.json'
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5/tests/drills/clean-restore-harness/scenarios-second-review.sh: line 2144: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/fail-jobs.json: No such file or directory
+tests/drills/clean-restore-harness.sh: line 194: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/out.txt: No such file or directory
+tests/drills/clean-restore-harness.sh: line 284: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/plane-counts.json: No such file or directory
+ls: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/.local/backups/dev: No such file or directory
+FAIL  fixture: a newer backup of dev
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/cluster.json'
+/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5/tests/drills/clean-restore-harness/scenarios-second-review.sh: line 2154: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/calls.log: No such file or directory
+tests/drills/clean-restore-harness.sh: line 194: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/out.txt: No such file or directory
+PASS  a new cluster, and a newer Plane backup: BACKUP=latest refuses (got 1)
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.VnkFDU/state/out.txt: No such file or directory
+FAIL  a new cluster, and a newer Plane backup: names both
+PASS  a new cluster, and a newer Plane backup: and nothing ran
+PASS  its node stopped and started: the resume finishes, exit 0 (got 0)
+PASS  its node stopped and started: the node first
+PASS  its node stopped and started: what it finished still counts
+PASS  its node stopped and started: dev is left alone
+PASS  its node stopped and started: it does not start again
+PASS  Docker will not say which cluster: it cannot tell, and the resume finishes, exit 0 (got 0)
+PASS  Docker will not say which cluster: dev is left alone
+PASS  a marker naming no cluster: its lines stand
+PASS  a marker naming no cluster: and now it names this one
+
+=== M3. One kubectl error after a run's last Job has finished does not read as a Job that may still run
+PASS  a passed restore: exit 0 (got 0)
+PASS  a passed restore: it does not say a Job may still run
+PASS  a passed restore: nothing stays paused
+PASS  a passed restore: reads PASS
+PASS  a passed restore: says complete
+PASS  Infisical: exit 0 (got 0)
+PASS  Infisical: it does not say a Job may still run
+PASS  Infisical: nothing stays paused
+PASS  Infisical: the server is back
+PASS  a proof fails: not a pass (got 1)
+PASS  a proof fails: it does not say a Job may still run
+PASS  a proof fails: nothing stays paused
+PASS  a stop in the migrator's Job: not a pass (got 143)
+PASS  a stop in the migrator's Job: it cannot tell, and says so
+PASS  a stop in the migrator's Job: auto-sync stays paused
+PASS  a stop in the migrator's Job: nothing started over it
+PASS  a clean restore: exit 0 (got 0)
+PASS  a clean restore: nothing stays paused
+
+RESULT 42 passed, 33 failed
+exit: 1
+ended: 2026-11-05T13:35:26Z

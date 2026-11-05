@@ -1,0 +1,271 @@
+started: 2026-11-05T14:00:05Z
+commit: f30a7f5cd7ee57b991190c7e79adbfb48f871c8f
+status: 0 paths changed
+command: ONLY="S5 S11 S17 S23 S29 S35 R5 R10 R16 V1 M2 D2" /bin/bash tests/drills/clean-restore-harness.sh, in a fresh clone, with TMPDIR set
+
+=== S5. A tampered dump
+PASS  non-zero exit
+PASS  says which
+PASS  nothing ran
+
+=== S11. Plain make up on a fresh instance works as before, including over old state
+PASS  exit 0 (got 0)
+PASS  bootstrap call
+PASS  old credentials moved to an archive
+PASS  old Terraform state moved aside
+PASS  terraform ran with -auto-approve
+PASS  secrets seeded in both projects
+PASS  identity published
+
+=== S17. Infisical cannot be read at backup time: the backup says so, and a clean restore passes over it
+PASS  backup exits non-zero (got 1)
+PASS  and says why
+PASS  the dump is kept
+PASS  a newer backup exists
+PASS  latest passes over it, exit 0 (got 0)
+PASS  and names it
+PASS  and uses the good one
+PASS  naming it directly is refused
+PASS  with the reason
+
+=== S23. Finding 1: in place, what stops a restore comes before the server stops
+PASS  expired and no password: refuses
+PASS  before anything was stopped
+PASS  and before the database was touched
+PASS  says what to do while it can
+PASS  and that a token made now would not help
+PASS  the override restores it, for an instance with nothing to sign in to
+PASS  the override then stops, with a blocked exit, not a pass (got 3)
+PASS  the override: its evidence says BLOCKED
+PASS  the override: with the steps
+PASS  expired, password here: goes through and mints, exit 0 (got 0)
+PASS  expired, password here: order
+PASS  expired, password here: proof-values PASS
+PASS  a token newer than the dump, the old file gone: mints, exit 0 (got 0)
+PASS  a token newer than the dump: the server was asked first
+PASS  a token newer than the dump: proof-values PASS with the token the restored server takes
+PASS  the named file in an archive: exit 0 (got 0)
+PASS  the named file in an archive: no login
+PASS  the named file in an archive: it is back in place
+PASS  a password newer than the dump: exit 0 (got 0)
+PASS  a password newer than the dump: the one the dump goes with is back
+PASS  a password newer than the dump: the newer one is kept
+
+=== S29. Finding 5: digests the registry cannot serve are listed before anything is touched
+PASS  PLAN_ONLY refuses
+PASS  and lists the digest
+PASS  and gives the way from GHCR
+PASS  and the way by rebuilding
+PASS  and by promoting
+PASS  and says the data is left alone
+PASS  and how to get a registry to copy into
+PASS  and rebuilds nothing to find out
+PASS  a real run refuses
+PASS  before anything ran
+PASS  before the marker
+PASS  the drill refuses
+PASS  the drill deletes nothing
+PASS  no cluster, the registry merely stopped, its volume there: no refusal, nothing is lost by finding out later (got 0)
+PASS  and it says up.sh will check
+PASS  the registry and its volume gone, as after PURGE=yes: refuses
+PASS  and lists what it cannot serve
+
+=== S35. Finding 11: an Infisical backup from a newer server than Git deploys or the cluster runs
+PASS  fixture: the backup is from the newer server
+PASS  in place: refuses
+PASS  in place: says why
+PASS  in place: before anything stopped
+PASS  in place: and says nothing was changed
+PASS  in place: the override goes on
+PASS  clean: the plan refuses, from Git
+PASS  clean: says why
+PASS  clean: a real run refuses
+PASS  clean: before anything ran
+PASS  clean: the override passes the plan (got 0)
+PASS  a backup from an older server is fine: migrations go forward (got 0)
+
+=== R5. What protects a live platform does not fail open on a kubectl error
+PASS  the plan says a real run would refuse (got 0)
+PASS  and why
+PASS  a real run refuses (got 1)
+PASS  and why
+PASS  says it changed nothing
+PASS  no marker
+PASS  nothing was overwritten
+PASS  not complete
+PASS  prod-sim's listing alone fails: refuses (got 1)
+PASS  prod-sim's listing alone fails: names it
+PASS  Infisical's listing fails, and it does not answer: refuses (got 1)
+PASS  Infisical's listing fails: says so
+PASS  Infisical's volume there, and it does not answer: refuses (got 1)
+PASS  Infisical's volume there: says it cannot tell
+PASS  truly no volumes: an empty cluster goes through, exit 0 (got 0)
+
+=== R10. The floor can be lowered, and that leaves a line. A reason has to say something
+PASS  7 GiB: stops at the floor (got 1)
+PASS  7 GiB: says so
+PASS  7 GiB: nothing logged, since nothing went past it
+PASS  MIN_FREE_DISK_GIB=5 lowers it, exit 0 (got 0)
+PASS  and says so
+PASS  and logs it, with the script and what was free
+PASS  above the default: nothing to log
+PASS  not a number: refuses (got 1)
+PASS  not a number: says so
+PASS  the README no longer says the floor has no override
+PASS  the README says what lowers it
+PASS  up.sh's header says what lowers it
+PASS  ALLOW_LOW_DISK=' ': the drill refuses (got 1)
+PASS  ALLOW_LOW_DISK=' ': before the delete
+PASS  ALLOW_LOW_DISK=' ': says what it wants
+PASS  ALLOW_LOW_DISK='   ': the drill refuses (got 1)
+PASS  ALLOW_LOW_DISK='   ': before the delete
+PASS  ALLOW_LOW_DISK='   ': says what it wants
+PASS  ALLOW_LOW_DISK='	': the drill refuses (got 1)
+PASS  ALLOW_LOW_DISK='	': before the delete
+PASS  ALLOW_LOW_DISK='	': says what it wants
+PASS  ALLOW_LOW_DISK=' one': the drill refuses (got 1)
+PASS  ALLOW_LOW_DISK=' one': before the delete
+PASS  ALLOW_LOW_DISK=' one': says what it wants
+PASS  ALLOW_LOW_DISK=' ': up.sh refuses too (got 1)
+PASS  ALLOW_LOW_DISK=' ': up.sh says what it wants
+
+=== R16. A resume sees an in-place restore however it was started, and only one of this checkout
+PASS  ./scripts/restore.sh running in place: the resume refuses (got 1)
+PASS  ./scripts/restore.sh running in place: says so
+PASS  ./scripts/restore.sh running in place: names the pid
+PASS  ./scripts/restore.sh running in place: repairs nothing under it
+PASS  another checkout's restore and a command that names one: the resume goes on, exit 0 (got 0)
+
+=== V1. The client's output is dead, by a closed terminal or a tee that took the same Ctrl-C: the stop still does all of its work
+PASS  a terminal that closes in dev's Job: not a pass (got 129)
+PASS  a terminal that closes in dev's Job: no Job is left running
+PASS  a terminal that closes in dev's Job: the Job goes first, then auto-sync, root last
+PASS  a terminal that closes in dev's Job: nothing stays paused
+PASS  a terminal that closes in dev's Job: nothing started over a running Job
+PASS  a terminal that closes in dev's Job: the evidence says FAIL
+PASS  a terminal that closes in dev's Job: what it had to say is in a file beside the evidence
+PASS  a tee and Ctrl-C in dev's Job: not a pass (got 130)
+PASS  a tee and Ctrl-C in dev's Job: no Job is left running
+PASS  a tee and Ctrl-C in dev's Job: the Job goes first, then auto-sync, root last
+PASS  a tee and Ctrl-C in dev's Job: nothing stays paused
+PASS  a tee and Ctrl-C in dev's Job: nothing started over a running Job
+PASS  a tee and Ctrl-C in dev's Job: the evidence says FAIL
+PASS  stderr alone through a tee, Ctrl-C: not a pass (got 130)
+PASS  stderr alone through a tee, Ctrl-C: no Job is left running
+PASS  stderr alone through a tee, Ctrl-C: the Job goes first, then auto-sync, root last
+PASS  stderr alone through a tee, Ctrl-C: nothing stays paused
+PASS  stderr alone through a tee, Ctrl-C: nothing started over a running Job
+PASS  stderr alone through a tee, Ctrl-C: the evidence says FAIL
+PASS  stderr alone through a tee, Ctrl-C: what it warned is beside the evidence
+PASS  the warning about a 0-user backup got through the tee
+PASS  and Ctrl-C after it removes the Job
+PASS  and the data stays
+PASS  a terminal that closes before any Job: not a pass (got 129)
+PASS  a terminal that closes before any Job: no data Job ran
+PASS  a terminal that closes before any Job: auto-sync comes back, root last
+PASS  a terminal that closes before any Job: nothing stays paused
+PASS  a terminal that closes before any Job: the evidence says FAIL
+PASS  a tee and Ctrl-C before any Job: not a pass (got 130)
+PASS  a tee and Ctrl-C before any Job: no data Job ran
+PASS  a tee and Ctrl-C before any Job: auto-sync comes back, root last
+PASS  a tee and Ctrl-C before any Job: nothing stays paused
+PASS  a tee and Ctrl-C before any Job: the evidence says FAIL
+PASS  a terminal that closes in Infisical's Job: no Job is left running
+PASS  a terminal that closes in Infisical's Job: the Job, the flush, the server, auto-sync
+PASS  a clean restore through a tee, Ctrl-C: no Job is left running
+PASS  a clean restore through a tee, Ctrl-C: nothing stays paused
+PASS  a clean restore through a tee, Ctrl-C: its evidence is written, and says FAIL
+PASS  a clean restore through a tee, Ctrl-C: what it had to say is beside that
+PASS  a clean restore through a tee, Ctrl-C: no steps file is left
+PASS  and the resume finishes, exit 0 (got 0)
+PASS  the drill through a tee, Ctrl-C: no Job is left running
+PASS  the drill through a tee, Ctrl-C: its evidence has the RESULT line
+PASS  the drill through a tee, Ctrl-C: and how to go on
+
+=== M2. A marker's lines belong to a cluster: on a new one, nothing that run finished counts
+PASS  up.sh refuses at bootstrap: fixture: dev is done
+PASS  up.sh refuses at bootstrap: fixture: the marker names the cluster
+PASS  up.sh refuses at bootstrap: it does (got 1)
+PASS  up.sh refuses at bootstrap: and names the command to run
+PASS  up.sh refuses at bootstrap: and a new cluster is here, empty
+PASS  up.sh refuses at bootstrap: a plan says it will start again
+PASS  up.sh refuses at bootstrap: and changes nothing
+PASS  up.sh refuses at bootstrap: the command it names finishes, exit 0 (got 0)
+PASS  up.sh refuses at bootstrap: says the cluster is gone
+PASS  up.sh refuses at bootstrap: and nothing that run finished counts
+PASS  up.sh refuses at bootstrap: and it is no sign-in dead end
+PASS  up.sh refuses at bootstrap: Infisical comes back
+PASS  up.sh refuses at bootstrap: dev's data comes back
+PASS  up.sh refuses at bootstrap: with what the backup holds
+PASS  up.sh refuses at bootstrap: and so does prod-sim
+PASS  up.sh refuses at bootstrap: nothing started over anything
+PASS  up.sh refuses at bootstrap: finished
+PASS  up.sh refuses at bootstrap: a pass
+PASS  up.sh UP_STOP_AFTER=cluster: fixture: dev is done
+PASS  up.sh UP_STOP_AFTER=cluster: fixture: the marker names the cluster
+PASS  up.sh UP_STOP_AFTER=cluster: goes through (got 0)
+PASS  up.sh UP_STOP_AFTER=cluster: and a new cluster is here, empty
+PASS  up.sh UP_STOP_AFTER=cluster: a plan says it will start again
+PASS  up.sh UP_STOP_AFTER=cluster: and changes nothing
+PASS  up.sh UP_STOP_AFTER=cluster: the command it names finishes, exit 0 (got 0)
+PASS  up.sh UP_STOP_AFTER=cluster: says the cluster is gone
+PASS  up.sh UP_STOP_AFTER=cluster: and nothing that run finished counts
+PASS  up.sh UP_STOP_AFTER=cluster: and it is no sign-in dead end
+PASS  up.sh UP_STOP_AFTER=cluster: Infisical comes back
+PASS  up.sh UP_STOP_AFTER=cluster: dev's data comes back
+PASS  up.sh UP_STOP_AFTER=cluster: with what the backup holds
+PASS  up.sh UP_STOP_AFTER=cluster: and so does prod-sim
+PASS  up.sh UP_STOP_AFTER=cluster: nothing started over anything
+PASS  up.sh UP_STOP_AFTER=cluster: finished
+PASS  up.sh UP_STOP_AFTER=cluster: a pass
+PASS  fixture: dev's data came back
+PASS  a data-back line from the old cluster: a plan makes no promise about what came back
+PASS  a data-back line from the old cluster: a backup of dev is refused, as of what it has not finished (got 1)
+PASS  a data-back line from the old cluster: says so
+PASS  a data-back line from the old cluster: the resume finishes, exit 0 (got 0)
+PASS  a data-back line from the old cluster: dev's data comes back
+PASS  a done line from the old cluster: a backup of dev is refused (got 1)
+PASS  a done line from the old cluster: no Job ran
+PASS  fixture: a newer backup of dev
+PASS  a new cluster, and a newer Plane backup: BACKUP=latest refuses (got 1)
+PASS  a new cluster, and a newer Plane backup: names both
+PASS  a new cluster, and a newer Plane backup: and nothing ran
+PASS  its node stopped and started: the resume finishes, exit 0 (got 0)
+PASS  its node stopped and started: the node first
+PASS  its node stopped and started: what it finished still counts
+PASS  its node stopped and started: dev is left alone
+PASS  its node stopped and started: it does not start again
+PASS  Docker will not say which cluster: it cannot tell, and the resume finishes, exit 0 (got 0)
+PASS  Docker will not say which cluster: dev is left alone
+PASS  a marker naming no cluster: its lines stand
+PASS  a marker naming no cluster: and now it names this one
+
+=== D2. The output dies after the trap's first probe: the Job goes, auto-sync comes back, and what it says lands beside the evidence
+PASS  terminal, dev: not a pass (got 130)
+PASS  terminal, dev: the Job is gone
+PASS  terminal, dev: auto-sync came back
+PASS  terminal, dev: nothing started over the Job
+PASS  terminal, dev: the evidence reads FAIL, and holds only steps
+PASS  terminal, dev: what it has to say lands beside the evidence
+PASS  terminal, dev: and that auto-sync is back
+PASS  pipe, dev: not a pass (got 130)
+PASS  pipe, dev: the Job is gone
+PASS  pipe, dev: auto-sync came back
+PASS  pipe, dev: nothing started over the Job
+PASS  pipe, dev: the evidence reads FAIL, and holds only steps
+PASS  pipe, dev: what it has to say lands beside the evidence
+PASS  pipe, dev: and that auto-sync is back
+PASS  terminal, infisical: not a pass (got 130)
+PASS  terminal, infisical: the Job is gone
+PASS  terminal, infisical: auto-sync came back
+PASS  terminal, infisical: nothing started over the Job
+PASS  terminal, infisical: the evidence reads FAIL, and holds only steps
+PASS  terminal, infisical: what it has to say lands beside the evidence
+PASS  terminal, infisical: and that auto-sync is back
+PASS  terminal, infisical: the server came back
+PASS  terminal, infisical: and its cache was flushed
+PASS  an output that stays alive: it prints to it
+PASS  an output that stays alive: nothing beside the evidence
+
+RESULT 240 passed, 0 failed
+exit: 0 ended: 2026-11-05T14:12:55Z

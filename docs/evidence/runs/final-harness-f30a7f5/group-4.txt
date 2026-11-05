@@ -1,0 +1,335 @@
+started: 2026-11-05T14:00:05Z
+commit: f30a7f5cd7ee57b991190c7e79adbfb48f871c8f
+status: 0 paths changed
+command: ONLY="S4 S10 S16 S22 S28 S34 R4 R9 R15 R22 M1 D1 D7" /bin/bash tests/drills/clean-restore-harness.sh, in a fresh clone, with TMPDIR set
+
+=== S4. Plane backup taken with another SECRET_KEY
+PASS  non-zero exit
+PASS  names the mismatch
+PASS  tells what to do
+PASS  nothing ran
+PASS  leaving dev out passes the plan
+
+=== S10. Restored mode refuses instead of repairing
+PASS  create: non-zero
+PASS  create: names the resource
+PASS  create: nothing applied
+PASS  replace: non-zero
+PASS  replace: names the resource
+PASS  replace: nothing applied
+PASS  no changes: exit 0 (got 0)
+PASS  no changes: says so
+PASS  no changes: identities still published
+PASS  no changes: no write
+PASS  fresh instance: refuses
+PASS  fresh instance: says the restore did not take
+PASS  fresh instance: no bootstrap call
+PASS  fresh instance: nothing archived
+PASS  rejected token: refuses
+PASS  rejected token: says so
+PASS  rejected token: does not mint its way past it
+PASS  missing secret: refuses
+PASS  missing secret: names it, generates nothing
+PASS  missing secret: no write
+PASS  no state: refuses before planning
+PASS  no state: no plan
+
+=== S16. PLAN_ONLY changes nothing, on a live cluster or with a restore under way
+PASS  PLAN_ONLY exit 0 (got 0)
+PASS  not one file under .local changed
+PASS  the disk line is in the plan (finding 4)
+PASS  with a marker and no cluster: exit 0 (got 0)
+PASS  with a marker and no cluster: not one file changed
+PASS  with a marker and no cluster: still says done
+PASS  the plan says the stale state would move, and moves nothing (finding 6)
+PASS  the state is where it was
+
+=== S22. Finding 1: no token and no password: restore Infisical, stop with steps, resume with the replacement
+PASS  the plan goes through and warns, exit 0 (got 0)
+PASS  the plan says it will stop for a sign-in
+PASS  the run stops with exit 2 (got 2)
+PASS  after restoring Infisical
+PASS  and no Plane restore began
+PASS  the steps name where a sign-in happens
+PASS  the steps name the file for the token
+PASS  the steps name the file for a password
+PASS  the steps name what to run next, with the backup id
+PASS  marker stays, with Infisical done
+PASS  evidence says BLOCKED
+PASS  something that is not a token: stops again, exit 2 (got 2)
+PASS  and says so
+PASS  a token the server does not know: stops again, exit 2 (got 2)
+PASS  and says so
+PASS  and it is not moved into place
+PASS  and Infisical was not restored again
+PASS  with a real replacement, it resumes and finishes, exit 0 (got 0)
+PASS  Infisical was not restored again
+PASS  Plane was restored
+PASS  the token file is the replacement
+PASS  the file a person left is gone
+PASS  the ledger says a person did it
+PASS  marker removed
+PASS  the file lost and no password: the same stop, exit 2 (got 2)
+PASS  the file lost and no password: Infisical is back
+PASS  writing the password, as the steps say, lets it go on, exit 0 (got 0)
+PASS  it signed in by itself
+
+=== S28. Finding 4: the disk check before a delete, and agreement with up.sh
+PASS  14 GiB + 93% of 11.4: under 25, the drill refuses
+PASS  before the delete
+PASS  and shows the arithmetic
+PASS  and how to go on
+PASS  ALLOW_LOW_DISK=yes is refused: it says nothing
+PASS  before the delete
+PASS  and it says what it wants
+PASS  a reason goes past it, exit 0 (got 0)
+PASS  deleted and restored
+PASS  the drill logged it
+PASS  up.sh logged it
+PASS  cluster-up.sh did not need to: 24 GiB clears its 15
+PASS  15 GiB + 93% of 11.4: 25.6 clears 25, and the run goes through, exit 0 (got 0)
+PASS  with no override
+PASS  passes the check, and only 60% comes back: it does not stop at up.sh, exit 0 (got 0)
+PASS  the run says what happened
+PASS  and up.sh logs it, with that reason
+PASS  up.sh with no cluster and 12 GiB: refuses
+PASS  up.sh says how to go on
+PASS  up.sh created nothing
+PASS  up.sh with a reason goes on (got 0)
+PASS  up.sh logs it
+PASS  and cluster-up.sh, past its own 15
+PASS  cluster-up.sh alone with no cluster and 12 GiB: refuses
+PASS  cluster-up.sh alone: says how to go on
+PASS  up.sh on a cluster that exists asks only for the floor, exit 0 (got 0)
+PASS  an empty cluster that stays, 12 GiB: refused, it still has 12.94 GiB to pull (got 1)
+PASS  and the plan says so
+PASS  22 GiB: refused, 12.94 plus the 10 GiB floor is 22.94 (got 1)
+PASS  23 GiB: goes through (got 0)
+PASS  and the disk line is about this cluster, and not a delete
+PASS  restore-clean with no cluster and 20 GiB: refuses
+PASS  before the marker
+PASS  before anything ran
+PASS  with a reason it goes through, exit 0 (got 0)
+
+=== S34. Finding 10: a plan shows what a backup holds, and warns when it looks like the wrong one
+PASS  0 users: warned
+PASS  0 users: names the backup that has them
+PASS  0 users: names the way to it
+PASS  a sentinel with 0 workspaces in the dump: warned
+PASS  a plan on a live cluster says what a real run would
+PASS  and the advice skips a backup, which would take over BACKUP=latest
+PASS  and says why
+PASS  and not the advice that makes BACKUP=latest name the empty set
+
+=== R4. The client ends while a restore Job runs: the Job goes first, and nothing starts over it
+PASS  Infisical, SIGTERM: not a pass (got 143)
+PASS  Infisical, SIGTERM: no Job is left running
+PASS  Infisical, SIGTERM: the Job goes first, then the flush, then the server, then auto-sync
+PASS  Infisical, SIGTERM: nothing started over a running Job
+PASS  Infisical, SIGTERM: it says what state that leaves
+PASS  Infisical, SIGTERM: and that running it again restores it
+PASS  Infisical, SIGTERM: the evidence says FAIL
+PASS  Infisical, SIGTERM: and the server is back
+PASS  Infisical, SIGINT: not a pass (got 130)
+PASS  Infisical, SIGINT: no Job is left running
+PASS  Infisical, SIGINT: the Job goes first, then the flush, then the server, then auto-sync
+PASS  Infisical, SIGINT: nothing started over a running Job
+PASS  Infisical, SIGINT: it says what state that leaves
+PASS  Infisical, SIGINT: and that running it again restores it
+PASS  Infisical, SIGINT: the evidence says FAIL
+PASS  Infisical, SIGINT: and the server is back
+PASS  Infisical, SIGHUP: not a pass (got 129)
+PASS  Infisical, SIGHUP: no Job is left running
+PASS  Infisical, SIGHUP: the Job goes first, then the flush, then the server, then auto-sync
+PASS  Infisical, SIGHUP: nothing started over a running Job
+PASS  Infisical, SIGHUP: it says what state that leaves
+PASS  Infisical, SIGHUP: and that running it again restores it
+PASS  Infisical, SIGHUP: the evidence says FAIL
+PASS  Infisical, SIGHUP: and the server is back
+PASS  dev: not a pass (got 143)
+PASS  dev: no Job is left running
+PASS  dev: the Job goes first, then auto-sync, root last
+PASS  dev: nothing started over a running Job
+PASS  the migrator's Job: no Job is left running
+PASS  the migrator's Job: removed before auto-sync
+PASS  the migrator's Job: nothing started over it
+PASS  a kubectl error while it polls: not a pass (got 1)
+PASS  a kubectl error while it polls: the Job goes first
+PASS  a kubectl error while it polls: nothing started over it
+PASS  kubectl fails on 'delete job': not a pass (got 143)
+PASS  kubectl fails on 'delete job': the server stays down
+PASS  kubectl fails on 'delete job': auto-sync stays paused
+PASS  kubectl fails on 'delete job': nothing started over it
+PASS  kubectl fails on 'delete job': it says so
+PASS  kubectl fails on 'delete job': and what to run, Job first
+PASS  kubectl fails on 'delete job': the server next
+PASS  kubectl fails on 'delete job': then auto-sync
+PASS  kubectl fails on 'delete job': and it does not say auto-sync is back
+PASS  kubectl fails on 'get job .*--ignore-not-found': not a pass (got 143)
+PASS  kubectl fails on 'get job .*--ignore-not-found': the server stays down
+PASS  kubectl fails on 'get job .*--ignore-not-found': auto-sync stays paused
+PASS  kubectl fails on 'get job .*--ignore-not-found': nothing started over it
+PASS  kubectl fails on 'get job .*--ignore-not-found': it says so
+PASS  kubectl fails on 'get job .*--ignore-not-found': and what to run, Job first
+PASS  kubectl fails on 'get job .*--ignore-not-found': the server next
+PASS  kubectl fails on 'get job .*--ignore-not-found': then auto-sync
+PASS  kubectl fails on 'get job .*--ignore-not-found': and it does not say auto-sync is back
+PASS  a clean restore, stopped in dev's Job: not a pass (got 143)
+PASS  a clean restore: no Job is left running
+PASS  a clean restore: the Job goes first
+PASS  a clean restore: nothing started over it
+PASS  a clean restore: the resume finishes, exit 0 (got 0)
+PASS  SIGKILL in the migrator's Job: the resume finishes, exit 0 (got 0)
+PASS  SIGKILL in the migrator's Job: the resume removes it first
+PASS  SIGKILL in the migrator's Job: nothing started over it
+PASS  a resume that cannot list the Jobs: stops (got 1)
+PASS  a resume that cannot list the Jobs: says so
+PASS  a resume that cannot list the Jobs: starts nothing
+PASS  a resume that cannot list the Jobs: the marker stays
+
+=== R9. Disk: the plan counts what a new cluster still has to pull, plus the floor later scripts check
+PASS  no registry or mirror volumes, 25 GiB: the plan refuses (got 1)
+PASS  and shows the sum
+PASS  and what it asks for
+PASS  27 GiB: refuses
+PASS  28 GiB: the plan passes (got 0)
+PASS  28 GiB: and the run goes through, past the floor, exit 0 (got 0)
+PASS  26 GiB: a real run refuses before anything (got 1)
+PASS  26 GiB: nothing ran
+PASS  26 GiB with a reason: goes on, and stops at the floor, as said
+PASS  26 GiB with a reason: says so
+PASS  26 GiB with a reason: logged
+PASS  the volumes there, 25 GiB: the plan passes (got 0)
+PASS  the volumes there: it asks what up.sh asks
+PASS  an empty cluster, no volumes, 27 GiB: refuses (got 1)
+PASS  an empty cluster, no volumes: says what it still has to pull
+PASS  an empty cluster, no volumes, 28 GiB: passes (got 0)
+PASS  a resume on its own cluster at 11 GiB: goes on, exit 0 (got 0)
+
+=== R15. A marker whose backups have since been removed: a clear refusal, and the way to start over
+PASS  a Plane backup gone: refuses, exit 1 (got 1)
+PASS  a Plane backup gone: names it
+PASS  a Plane backup gone: says how to start over
+PASS  a Plane backup gone: no raw cd error
+PASS  a Plane backup gone: no raw jq error
+PASS  a Plane backup gone: nothing ran
+PASS  a Plane backup gone: the plan refuses the same (got 1)
+PASS  a Plane backup gone: the plan names it
+PASS  having started over, the marker is gone
+PASS  and a plan speaks of what is here now: that backup was dev's only one
+PASS  the Infisical set gone: refuses, exit 1 (got 1)
+PASS  the Infisical set gone: names it
+PASS  the Infisical set gone: says how to start over
+PASS  the Infisical set gone: no raw error
+PASS  the Infisical set damaged: refuses, exit 1 (got 1)
+PASS  the Infisical set damaged: says so
+PASS  the Infisical set damaged: says how to start over
+PASS  fixture: retention took the set the marker names
+PASS  retention took it: refuses, exit 1 (got 1)
+PASS  retention took it: names it
+PASS  retention took it: and says what removes them
+PASS  retention took it: a cluster is here, so what the way over costs
+PASS  a marker with no ids: refuses, exit 1 (got 1)
+PASS  a marker with no ids: says so
+
+=== R22. A row marked uploaded with no object: the backup says so, and a plan refuses before a delete
+PASS  the backup still succeeds, since it holds everything else
+PASS  and says so
+PASS  the manifest records it
+PASS  and the backup lists which
+PASS  the Job's working files are gone
+PASS  and the checksums cover the list
+PASS  a plan refuses (got 1)
+PASS  and says why
+PASS  and what to do
+PASS  the drill refuses (got 1)
+PASS  before the delete
+PASS  in place: refuses (got 1)
+PASS  in place: says why
+PASS  in place: before anything stops, or the guard Jobs
+PASS  in place: says nothing was changed
+PASS  in place: and what to do
+PASS  with every object there: the manifest says none is missing
+PASS  with every object there: a plan passes (got 0)
+PASS  with every object there: and shows it
+PASS  the newest fails it: the plan refuses (got 1)
+PASS  and BACKUP_DEV=<another> goes through (got 0)
+PASS  a backup from before this: goes through (got 0)
+PASS  a backup from before this: and says it is not recorded
+PASS  the comparison cannot run: the backup still succeeds
+PASS  the comparison cannot run: the manifest records no result
+PASS  the comparison cannot run: nothing half-written is left
+PASS  the comparison cannot run: a plan goes on (got 0)
+PASS  the comparison cannot run: and says it is not recorded
+
+=== M1. A resume refuses an environment only after its repair and make up, says so, and does not walk the state back
+PASS  fixture: Infisical is done
+PASS  refuses, exit 1 (got 1)
+PASS  says the target was not changed
+PASS  and it was not
+PASS  says what had run by then
+PASS  and does not say nothing was changed
+PASS  the child's last word speaks for the target alone
+PASS  what it says had run did run: the repair
+PASS  what it says had run did run: make up
+PASS  the state stays where make up left it, serial 99
+PASS  and nothing replaced it, so no copy
+PASS  fixture: nothing says Infisical's data is back
+PASS  Infisical holds 7 users: refuses, exit 1 (got 1)
+PASS  Infisical holds 7 users: says it was not changed
+PASS  Infisical holds 7 users: and does not say nothing was changed
+PASS  Infisical not back yet: the resume finishes, exit 0 (got 0)
+PASS  Infisical not back yet: the state is the backup's
+PASS  Infisical not back yet: what it replaced is kept
+PASS  fixture: Infisical's data is back, with no done line
+PASS  fixture: and it has no done line
+PASS  its data back, no done line: the resume finishes, exit 0 (got 0)
+PASS  its data back, no done line: the state stays
+PASS  Infisical done, the state gone: the resume finishes, exit 0 (got 0)
+PASS  Infisical done, the state gone: it is put back
+
+=== D1. A refusal names one environment, a backup of it, and the plan then says how to use that backup: following it all keeps the other one
+PASS  the refusal names dev
+PASS  and only dev
+PASS  the backup it prints: exit 0 (got 0)
+PASS  the plan names the delete with its backup, and then that backup
+PASS  and not the delete with no backup
+PASS  as printed, make destroy: exit 0 (got 0)
+PASS  as printed: prod-sim's 600 are in a backup
+PASS  as printed, make restore-clean: exit 0 (got 0)
+PASS  dev is what was backed up
+PASS  prod-sim too
+PASS  reads PASS
+PASS  fixture: a newer backup than 20261105T141503Z
+PASS  no cluster: it does not promise a backup
+
+=== D7. A resume that keeps the data keeps a copy of the test files it replaces, and its messages say the data was kept
+PASS  fixture: prod-sim's data is back
+PASS  the resume finishes (got 0)
+PASS  the resume keeps the data
+PASS  the accounts it replaced are kept
+PASS  at mode 600
+PASS  and it says where
+PASS  the file now holds the backup's
+PASS  the sentinel it replaced is kept
+PASS  at mode 600
+PASS  dev's sentinel did not change, so no copy
+PASS  nothing changed since: finishes (got 0)
+PASS  nothing changed since: no copy
+PASS  a stop in the migrator: not a pass (got 143)
+PASS  a stop in the migrator: the Job is gone
+PASS  a stop in the migrator: it says the data was kept
+PASS  a stop in the migrator: not that it may hold a part of the backup
+PASS  a stop in the migrator: nor that running again restores it
+PASS  a stop in the migrator: what it held is there
+PASS  a stop in the data Job: it may hold a part
+PASS  a stop in the data Job: and running again restores it
+PASS  Infisical: fixture: its data is back
+PASS  Infisical: not a pass (got 1)
+PASS  Infisical: it kept the data
+PASS  Infisical: it says the data was kept
+PASS  Infisical: and names the override, with what it costs
+PASS  Infisical: and not the words for a restore that replaced it
+
+RESULT 302 passed, 0 failed
+exit: 0 ended: 2026-11-05T14:16:48Z

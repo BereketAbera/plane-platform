@@ -1,0 +1,48 @@
+date: 2026-11-05T13:30:19Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D7" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D7. A resume that keeps the data keeps a copy of the test files it replaces, and its messages say the data was kept
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.2rMVdh/.local/restore-clean.state: No such file or directory
+FAIL  fixture: prod-sim's data is back
+FAIL  the resume finishes (got 1)
+    | [1;31mfail[0m yq not found. Run: make setup
+PASS  the resume keeps the data
+grep: : No such file or directory
+FAIL  the accounts it replaced are kept
+stat: : stat: No such file or directory
+FAIL  at mode 600
+FAIL  and it says where
+FAIL  the file now holds the backup's
+jq: error: Could not open file : No such file or directory
+FAIL  the sentinel it replaced is kept
+stat: : stat: No such file or directory
+FAIL  at mode 600
+PASS  dev's sentinel did not change, so no copy
+FAIL  nothing changed since: finishes (got 1)
+PASS  nothing changed since: no copy
+tests/drills/clean-restore-harness.sh: line 298: 65720 Terminated: 15          python3 -I "$STUBS/fakeapi.py" "$H/state/api-port"
+PASS  a stop in the migrator: not a pass (got 1)
+jq: error: Could not open file /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.2rMVdh/state/jobs.json: No such file or directory
+FAIL  a stop in the migrator: the Job is gone
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.2rMVdh/state/detached.txt: No such file or directory
+FAIL  a stop in the migrator: it says the data was kept
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.2rMVdh/state/detached.txt: No such file or directory
+PASS  a stop in the migrator: not that it may hold a part of the backup
+grep: /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.2rMVdh/state/detached.txt: No such file or directory
+PASS  a stop in the migrator: nor that running again restores it
+jq: error: Could not open file /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp/clean-restore-harness.2rMVdh/state/cluster.json: No such file or directory
+FAIL  a stop in the migrator: what it held is there
+PASS  a stop in the data Job: it may hold a part
+PASS  a stop in the data Job: and running again restores it
+PASS  Infisical: fixture: its data is back
+PASS  Infisical: not a pass (got 1)
+PASS  Infisical: it kept the data
+PASS  Infisical: it says the data was kept
+PASS  Infisical: and names the override, with what it costs
+PASS  Infisical: and not the words for a restore that replaced it
+
+RESULT 14 passed, 12 failed
+exit: 1
+ended: 2026-11-05T13:38:05Z

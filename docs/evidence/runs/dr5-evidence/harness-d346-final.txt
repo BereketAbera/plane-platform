@@ -1,0 +1,44 @@
+date: 2026-11-05T13:38:02Z
+commit: ba2c4642b12aa89a795d2424b054b8107c1eb380 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D3 D4 D6" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D3. One read of kind that goes wrong does not read as a lost cluster, and a real loss still does
+PASS  fail: fixture: the marker has lines
+PASS  fail: it does not say the cluster is gone
+PASS  fail: nothing that came back is replaced
+PASS  fail: it finishes (got 0)
+PASS  gap: fixture: the marker has lines
+PASS  gap: it does not say the cluster is gone
+PASS  gap: nothing that came back is replaced
+PASS  gap: it finishes (got 0)
+PASS  a real loss: it says so
+PASS  a real loss: it finishes (got 0)
+
+=== D4. A restore into a new cluster forgets what it overwrote on the lost one
+PASS  fixture: the marker holds the overwrite
+PASS  the plan says it starts again
+PASS  on a new cluster: exit 0 (got 0)
+PASS  on a new cluster: reads PASS
+PASS  on a new cluster: it does not say it overwrote anything
+PASS  the earlier run's evidence still records it
+PASS  the only line it has: exit 0 (got 0)
+PASS  the only line it has: reads PASS
+
+=== D6. Once the guard Jobs have returned none can run, so a refusal raises no alarm. One still running is still removed
+PASS  Plane, a refusal: not a pass (got 1)
+PASS  Plane, a refusal: it says nothing changed
+PASS  Plane, a refusal: no alarm about a Job
+PASS  Plane, a refusal: it did not need to ask
+PASS  Infisical, a refusal: not a pass (got 1)
+PASS  Infisical, a refusal: it says nothing changed
+PASS  Infisical, a refusal: no alarm about a Job
+PASS  a stop in a guard Job: not a pass (got 143)
+PASS  a stop in a guard Job: it is removed
+PASS  a stop in a guard Job: none left
+PASS  a stop in the migrator's Job: it is removed
+PASS  a stop in the migrator's Job: none left
+
+RESULT 30 passed, 0 failed
+exit: 0
+ended: 2026-11-05T13:42:31Z

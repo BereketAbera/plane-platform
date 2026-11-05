@@ -1,0 +1,4 @@
+2026-11-05T17:02:01+03:00	INFO	[javadb] Downloading Java DB...
+2026-11-05T17:02:01+03:00	INFO	[javadb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-java-db:1"
+2026-11-05T17:09:18+03:00	INFO	[javadb] Artifact successfully downloaded	repo="mirror.gcr.io/aquasec/trivy-java-db:1"
+2026-11-05T17:09:18+03:00	INFO	[javadb] Java DB is cached for 3 days. If you want to update the database more frequently, "trivy clean --java-db" command clears the DB cache.

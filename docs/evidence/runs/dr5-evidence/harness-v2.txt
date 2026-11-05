@@ -1,0 +1,49 @@
+date: 2026-11-05T13:38:22Z
+commit: ba2c4642b12aa89a795d2424b054b8107c1eb380 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="V2 M1" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== V2. make destroy under a kept marker backs up first, and a person is not sent past that backup
+PASS  fixture: prod-sim is not finished
+PASS  make destroy, with prod-sim holding 500 users: exit 0 (got 0)
+PASS  it says it goes past the refusal
+PASS  a backup of prod-sim comes first
+PASS  and there is one more backup of it
+PASS  and of everything else
+PASS  a backup that fails: refuses (got 1)
+PASS  a backup that fails: deletes nothing
+PASS  a backup that fails: says what SKIP_BACKUP=yes loses
+PASS  a plain backup under a marker: refuses (got 1)
+PASS  a plain backup under a marker: no Job
+PASS  with its data back: goes ahead (got 0)
+PASS  with its data back: says so
+
+=== M1. A resume refuses an environment only after its repair and make up, says so, and does not walk the state back
+PASS  fixture: Infisical is done
+PASS  refuses, exit 1 (got 1)
+PASS  says the target was not changed
+PASS  and it was not
+PASS  says what had run by then
+PASS  and does not say nothing was changed
+PASS  the child's last word speaks for the target alone
+PASS  what it says had run did run: the repair
+PASS  what it says had run did run: make up
+PASS  the state stays where make up left it, serial 99
+PASS  and nothing replaced it, so no copy
+PASS  fixture: nothing says Infisical's data is back
+PASS  Infisical holds 7 users: refuses, exit 1 (got 1)
+PASS  Infisical holds 7 users: says it was not changed
+PASS  Infisical holds 7 users: and does not say nothing was changed
+PASS  Infisical not back yet: the resume finishes, exit 0 (got 0)
+PASS  Infisical not back yet: the state is the backup's
+PASS  Infisical not back yet: what it replaced is kept
+PASS  fixture: Infisical's data is back, with no done line
+PASS  fixture: and it has no done line
+PASS  its data back, no done line: the resume finishes, exit 0 (got 0)
+PASS  its data back, no done line: the state stays
+PASS  Infisical done, the state gone: the resume finishes, exit 0 (got 0)
+PASS  Infisical done, the state gone: it is put back
+
+RESULT 37 passed, 0 failed
+exit: 0
+ended: 2026-11-05T13:42:28Z

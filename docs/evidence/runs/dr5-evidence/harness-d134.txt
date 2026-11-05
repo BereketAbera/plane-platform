@@ -1,0 +1,45 @@
+date: 2026-11-05T13:31:32Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D1 D3 D4" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D1. A refusal names one environment, a backup of it, and the plan then says how to use that backup: following it all keeps the other one
+PASS  the refusal names dev
+PASS  and only dev
+PASS  the backup it prints: exit 0 (got 0)
+PASS  the plan names the delete with its backup, and then that backup
+PASS  and not the delete with no backup
+PASS  as printed, make destroy: exit 0 (got 0)
+PASS  as printed: prod-sim's 600 are in a backup
+PASS  as printed, make restore-clean: exit 0 (got 0)
+PASS  dev is what was backed up
+PASS  prod-sim too
+PASS  reads PASS
+PASS  fixture: a newer backup than 20261105T133311Z
+FAIL  no cluster: it does not promise a backup
+
+=== D3. One read of kind that goes wrong does not read as a lost cluster, and a real loss still does
+PASS  fail: fixture: the marker has lines
+PASS  fail: it does not say the cluster is gone
+PASS  fail: nothing that came back is replaced
+PASS  fail: it finishes (got 0)
+PASS  gap: fixture: the marker has lines
+PASS  gap: it does not say the cluster is gone
+PASS  gap: nothing that came back is replaced
+PASS  gap: it finishes (got 0)
+PASS  a real loss: it says so
+PASS  a real loss: it finishes (got 0)
+
+=== D4. A restore into a new cluster forgets what it overwrote on the lost one
+PASS  fixture: the marker holds the overwrite
+PASS  the plan says it starts again
+PASS  on a new cluster: exit 0 (got 0)
+PASS  on a new cluster: reads PASS
+PASS  on a new cluster: it does not say it overwrote anything
+PASS  the earlier run's evidence still records it
+PASS  the only line it has: exit 0 (got 0)
+PASS  the only line it has: reads PASS
+
+RESULT 30 passed, 1 failed
+exit: 1
+ended: 2026-11-05T13:37:28Z

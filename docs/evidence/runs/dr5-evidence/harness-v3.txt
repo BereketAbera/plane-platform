@@ -1,0 +1,52 @@
+date: 2026-11-05T13:38:22Z
+commit: ba2c4642b12aa89a795d2424b054b8107c1eb380 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="V3" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== V3. ALLOW_RESUME_OVERWRITE reaches only what it names, and a run that used it does not read PASS
+PASS  fixture: dev's Job fails
+PASS  ALLOW_RESUME_OVERWRITE='yes': refused (got 1)
+PASS  ALLOW_RESUME_OVERWRITE='yes': says what it takes
+PASS  ALLOW_RESUME_OVERWRITE='yes': touches nothing
+PASS  ALLOW_RESUME_OVERWRITE='dev,prod-sim': refused (got 1)
+PASS  ALLOW_RESUME_OVERWRITE='dev,prod-sim': says what it takes
+PASS  ALLOW_RESUME_OVERWRITE='dev,prod-sim': touches nothing
+PASS  ALLOW_RESUME_OVERWRITE='dev yes': refused (got 1)
+PASS  ALLOW_RESUME_OVERWRITE='dev yes': says what it takes
+PASS  ALLOW_RESUME_OVERWRITE='dev yes': touches nothing
+PASS  ALLOW_RESUME_OVERWRITE='all': refused (got 1)
+PASS  ALLOW_RESUME_OVERWRITE='all': says what it takes
+PASS  ALLOW_RESUME_OVERWRITE='all': touches nothing
+PASS  no override: refuses, naming dev (got 1)
+PASS  no override: prints the override that reaches dev alone
+PASS  naming dev: stops at prod-sim (got 1)
+PASS  naming dev: dev is overwritten
+PASS  naming dev: its own evidence does not read PASS
+PASS  naming dev: and says what it held
+PASS  naming dev: prod-sim still holds 600 users
+PASS  naming dev: and 888 objects
+PASS  naming dev: prod-sim was not replaced
+PASS  naming dev: the refusal now names prod-sim
+PASS  naming dev: and the override that reaches it
+PASS  naming dev: the marker stays
+PASS  then naming prod-sim: exit 4 (got 4)
+PASS  then naming prod-sim: dev, already done, was left alone
+PASS  then naming prod-sim: it does not say complete
+PASS  then naming prod-sim: it says so
+PASS  then naming prod-sim: its evidence does not read PASS
+PASS  then naming prod-sim: the clean restore's does not either
+PASS  then naming prod-sim: and lists both
+PASS  then naming prod-sim: nothing is left to resume
+PASS  naming both, as an argument: exit 4 (got 4)
+PASS  naming both: dev back to the backup
+PASS  naming both: prod-sim too
+PASS  named, and the target is only this backup part way through: exit 0 (got 0)
+PASS  named, and not used: reads PASS
+PASS  Infisical holds 7 users, and only dev is named: refuses (got 1)
+PASS  and names the override for it
+PASS  naming Infisical: exit 4 (got 4)
+PASS  naming Infisical: its evidence does not read PASS
+
+RESULT 42 passed, 0 failed
+exit: 0
+ended: 2026-11-05T13:41:49Z

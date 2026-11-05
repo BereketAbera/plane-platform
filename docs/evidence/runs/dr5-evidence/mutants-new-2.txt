@@ -1,0 +1,10 @@
+date: 2026-11-05T13:40:17Z
+commit: 187340793ad1b43818ff9d81412da7f3ed9542cf
+command: MUTANTS=<3 looks> JOBS=3 TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp tests/drills/clean-restore-mutants.sh
+CAUGHT       no-look-before-the-infisical-data-job [D2] 4 failed, first: terminal, infisical: the Job is gone
+CAUGHT       no-look-before-the-plane-data-job [D2] 7 failed, first: terminal, dev: the Job is gone
+CAUGHT       no-look-before-a-kept-resume-migrator [D7] 2 failed, first: a stop in the migrator: the Job is gone
+
+RESULT 3 caught, 0 survived, 0 did not apply
+exit: 0
+ended: 2026-11-05T13:42:46Z

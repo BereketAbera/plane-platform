@@ -1,0 +1,42 @@
+date: 2026-11-05T13:31:32Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D5 D6" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D5. A stop just after a pause took effect, before kubectl returned: auto-sync comes back, as it says
+PASS  root: fixture: the stop came there
+PASS  root: the pause took effect
+PASS  root: not a pass (got 143)
+PASS  root: nothing stays paused
+FAIL  root: and it said so
+PASS  plane-dev: fixture: the stop came there
+PASS  plane-dev: the pause took effect
+PASS  plane-dev: not a pass (got 143)
+PASS  plane-dev: nothing stays paused
+FAIL  plane-dev: and it said so
+PASS  infisical: fixture: the stop came there
+PASS  infisical: the pause took effect
+PASS  infisical: not a pass (got 143)
+PASS  infisical: nothing stays paused
+FAIL  infisical: and it said so
+PASS  a pause that fails: not a pass (got 1)
+PASS  a pause that fails: nothing stays paused
+PASS  a pause that fails: it is not left to a person
+
+=== D6. Once the guard Jobs have returned none can run, so a refusal raises no alarm. One still running is still removed
+PASS  Plane, a refusal: not a pass (got 1)
+PASS  Plane, a refusal: it says nothing changed
+PASS  Plane, a refusal: no alarm about a Job
+PASS  Plane, a refusal: it did not need to ask
+PASS  Infisical, a refusal: not a pass (got 1)
+PASS  Infisical, a refusal: it says nothing changed
+PASS  Infisical, a refusal: no alarm about a Job
+PASS  a stop in a guard Job: not a pass (got 143)
+PASS  a stop in a guard Job: it is removed
+PASS  a stop in a guard Job: none left
+PASS  a stop in the migrator's Job: it is removed
+PASS  a stop in the migrator's Job: none left
+
+RESULT 27 passed, 3 failed
+exit: 1
+ended: 2026-11-05T13:33:42Z

@@ -1,0 +1,241 @@
+started: 2026-11-05T14:00:05Z
+commit: f30a7f5cd7ee57b991190c7e79adbfb48f871c8f
+status: 0 paths changed
+command: ONLY="S2 S8 S14 S20 S26 S32 R2 R8 R13 R19 V4 M5 D5" /bin/bash tests/drills/clean-restore-harness.sh, in a fresh clone, with TMPDIR set
+
+=== S2. A cluster with data: refuse, change nothing, and say which backup and how to keep it the newest
+PASS  non-zero exit
+PASS  says why
+PASS  the advice skips a backup, which would take over BACKUP=latest (finding 10)
+PASS  and names the backup to come back to
+PASS  marker not written
+PASS  nothing ran
+
+=== S8. Fails partway, then resumes
+PASS  first run fails at dev
+PASS  marker stays
+PASS  Infisical marked done
+PASS  the wait for all Applications is marked done
+PASS  says to run it again
+PASS  second run exit 0 (got 0)
+PASS  Infisical not restored twice
+PASS  dev restored this time
+PASS  marker removed
+PASS  says it did not wait for everything again until the end
+
+=== S14. Rotation guard on an in-place restore
+PASS  refuses
+PASS  says a rotation happened
+PASS  names the keys
+PASS  nothing stopped
+PASS  the override goes on
+
+=== S20. Finding 1: the token a backup names has expired, and the password is here. A password login mints another
+PASS  the plan goes through, exit 0 (got 0)
+PASS  and warns
+PASS  and says what happens
+PASS  the restore goes through, exit 0 (got 0)
+PASS  the login comes after the database is back, and before anything reads a value
+PASS  evidence says PASS
+PASS  the Infisical restore records that it was replaced
+PASS  the file now holds another token
+PASS  and it has not expired
+PASS  the ledger links the old file to the new
+PASS  the set still names the old file, and the archive still holds it
+PASS  marker removed
+
+=== S26. Finding 1: writing a token over the file does not pass as the file the checksum names
+PASS  the plan does not call it the file this backup names
+PASS  the restored server refuses it, and a password login takes over, exit 0 (got 0)
+PASS  the server was asked
+PASS  the ledger says why
+PASS  a token the restored server accepts goes through, exit 0 (got 0)
+PASS  with no login
+PASS  and is on record, from the file this backup names to this one
+
+=== S32. Finding 8: retention, on real folders. Five failed Infisical backups keep the last complete one
+PASS  the last complete one is still there, after 6 that could not finish
+PASS  and the failures are kept too: nothing pruned
+PASS  and a clean restore still has it
+PASS  a complete backup with KEEP=1 succeeds, exit 0 (got 0)
+PASS  the newest complete set stays
+PASS  the older complete one goes
+PASS  and the failure older than it
+PASS  a backup with no complete set, KEEP=1: both complete ones stay
+PASS  KEEP=2 counts complete sets only, exit 0 (got 0)
+PASS  KEEP=2: two complete, and the failure between them is kept for an in-place restore
+PASS  KEEP=2: the failure is the one kept
+PASS  the Plane Job's own retention lines still run, on real folders (got 0)
+
+=== R2. A resume does not overwrite what an environment holds, unless that is this backup part way through
+PASS  fixture: prod-sim's Job fails, and dev is done
+PASS  500 users and 777 objects where the backup has 23 and 1: refuses (got 1)
+PASS  with both counts
+PASS  and the way past it, for this environment
+PASS  and how to keep what is there
+PASS  nothing was stopped
+PASS  nothing was replaced
+PASS  it still holds 500
+PASS  the marker stays
+PASS  the evidence of that step says it failed
+PASS  the same users and more objects than the backup: refuses (got 1)
+PASS  other users and no objects: refuses (got 1)
+PASS  ALLOW_RESUME_OVERWRITE=prod-sim goes on, and it is not a pass, exit 4 (got 4)
+PASS  and overwrites
+PASS  and the evidence says what it held, and does not read as a pass
+PASS  and dev, already done, was left alone
+PASS  23 users and 1 objects, this backup part way through: resumes, exit 0 (got 0)
+PASS  23 users and 1 objects: restored
+PASS  23 users and 1 objects: the guard says what it saw
+PASS  23 users and 0 objects, this backup part way through: resumes, exit 0 (got 0)
+PASS  23 users and 0 objects: restored
+PASS  23 users and 0 objects: the guard says what it saw
+PASS  0 users and 1 objects, this backup part way through: resumes, exit 0 (got 0)
+PASS  0 users and 1 objects: restored
+PASS  0 users and 1 objects: the guard says what it saw
+PASS  fixture: Infisical's Job fails
+PASS  Infisical holds 7 users where the backup has 1: refuses (got 1)
+PASS  and did not stop the server
+PASS  Infisical holds what the backup does: resumes, exit 0 (got 0)
+PASS  in place, with CONFIRM=yes: overwrites as it always did, exit 0 (got 0)
+
+=== R8. What the harness did not look at: the guard, a proof that fails, each comparison in verify and in the drill
+PASS  the guard: refuses with no CONFIRM (got 1)
+PASS  the guard: says what is there
+PASS  the guard: says how
+PASS  the guard: nothing was stopped
+PASS  the guard: nothing was paused
+PASS  the guard: nothing was replaced
+PASS  the guard: says nothing changed
+PASS  the guard: asked the database and the bucket
+PASS  the guard: objects alone count as data
+PASS  the guard: users alone count as data
+PASS  the guard: an empty target needs no CONFIRM, exit 0 (got 0)
+PASS  the guard: and the evidence says so
+PASS  the guard, Infisical: refuses with no CONFIRM (got 1)
+PASS  the guard, Infisical: says what is there
+PASS  the guard, Infisical: nothing was stopped
+PASS  the decrypt proof finds the sentinel wrong: fails (got 1)
+PASS  the decrypt proof: its step says so
+PASS  rows that decrypt to nothing: fails (got 1)
+PASS  rows that decrypt to nothing: says which
+PASS  the sentinel proof fails: fails (got 1)
+PASS  the sentinel proof: its step says so
+PASS  no queue to purge: fine, exit 0 (got 0)
+PASS  no queue to purge: nothing purged
+PASS  a rendered Secret differs at verify: exit 1 (got 1)
+PASS  a rendered Secret differs at verify: says which
+PASS  a rendered Secret differs at verify: the other environment passes
+PASS  a rendered Secret differs at verify: the marker stays
+PASS  a rendered Secret differs at verify: not complete
+PASS  a rendered Secret differs at verify: never prints a value
+PASS  a rendered Secret differs at verify: with that gone, the same command passes (got 0)
+PASS  a value rewritten after the restore: exit 1 (got 1)
+PASS  a value rewritten after the restore: verify says which
+PASS  a value rewritten after the restore: the marker stays
+PASS  the sentinel fails at verify: exit 1 (got 1)
+PASS  the sentinel fails at verify: its step says so
+
+=== R13. In place, Terraform's state and the machine file change when the database does, and not before
+PASS  the Job fails: not a pass (got 1)
+PASS  the Job fails: the state is still what it was
+PASS  the Job fails: the machine file is too
+PASS  the Job fails: it does not say the state matches
+PASS  the Job passes: exit 0 (got 0)
+PASS  the Job passes: the state is the backup's
+PASS  the Job passes: the one it replaced is kept
+PASS  the Job passes: and the state came after the swap, by the output's order
+
+=== R19. A stop during kind create: the resume says what is wrong, and what to do
+PASS  the resume stops (got 1)
+PASS  with kind's own error
+PASS  and what that means
+PASS  and how to go on
+PASS  and what that costs if the cluster ever ran
+PASS  cluster-up.sh alone says the same (got 1)
+PASS  cluster-up.sh alone: the cause
+PASS  when it works, kind's noise stays out of it (got 0)
+
+=== V4. A resume does not replace data that came back, and goes on from the migrator
+PASS  fixture: prod-sim's migrator fails (got 1)
+PASS  the marker says its data is back
+PASS  and that it has not finished it
+PASS  dev's data came back too
+PASS  a plan says what a resume will do
+PASS  the same counts: the resume finishes, exit 0 (got 0)
+PASS  the same counts: the data is not replaced
+PASS  the same counts: it stops the apps, runs the migrator, starts the apps
+PASS  the same counts: the proofs run
+PASS  the same counts: nothing started over anything
+PASS  the same counts: the evidence says so
+PASS  the same counts: nothing was overwritten, so a pass is a pass
+PASS  the same counts: finished
+PASS  500 users since: the resume finishes, exit 0 (got 0)
+PASS  500 users since: they stay
+PASS  500 users since: and the objects
+PASS  500 users since: not replaced
+PASS  500 users since: the evidence says what it held
+PASS  the override, and the same counts: exit 4 (got 4)
+PASS  the override: replaced
+PASS  the override: recorded as a FAIL
+PASS  the override on prod-sim: dev stays as it was
+PASS  the line, and an empty target: restores it, exit 0 (got 0)
+PASS  the line, and an empty target: the data Job runs
+PASS  the line, and an empty target: no override was needed, so it reads PASS
+PASS  fixture: only a data-back line, for dev
+PASS  the cluster lost: starts again, exit 0 (got 0)
+PASS  the cluster lost: says so
+PASS  the cluster lost: dev's data comes back
+PASS  SIGTERM in the migrator's Job: the resume finishes, exit 0 (got 0)
+PASS  SIGTERM in the migrator's Job: the data is not replaced
+PASS  SIGTERM in the migrator's Job: the migrator runs
+PASS  a proof fails on what it kept: not a pass (got 1)
+PASS  a proof fails on what it kept: says it kept it, and the way on
+PASS  a proof fails on what it kept: names the override
+PASS  fixture: Infisical's flush fails after the swap (got 1)
+PASS  Infisical: the marker says its data is back
+PASS  Infisical: the resume finishes, exit 0 (got 0)
+PASS  Infisical: its database is not replaced
+PASS  Infisical: the server comes back
+PASS  Infisical: nothing started over anything
+PASS  in place under a marker: goes on as asked (got 0)
+PASS  in place under a marker: writes no line
+
+=== M5. A plan that refuses does not show the same number twice, because of how it rounds
+PASS  10 MB short of 25 GiB after a delete: refuses (got 1)
+PASS  and says 24.99, not 25.0
+PASS  and the plan's disk line says it too
+PASS  beside the limit
+PASS  exactly 25 GiB after a delete: passes (got 0)
+PASS  and prints 25.00
+PASS  no cluster, 10 MB short: refuses (got 1)
+PASS  no cluster, 10 MB short: says 24.99, not 25.0
+PASS  no cluster, 10 MB short: the disk line too
+PASS  an empty cluster, 1 MB short of 22.94: refuses (got 1)
+PASS  an empty cluster, 1 MB short of 22.94: says 22.93
+
+=== D5. A stop just after a pause took effect, before kubectl returned: auto-sync comes back, as it says
+PASS  root: fixture: the stop came there
+PASS  root: the pause took effect
+PASS  root: not a pass (got 143)
+PASS  root: nothing stays paused
+PASS  root: the trap put it back
+PASS  root: and it says so
+PASS  plane-dev: fixture: the stop came there
+PASS  plane-dev: the pause took effect
+PASS  plane-dev: not a pass (got 143)
+PASS  plane-dev: nothing stays paused
+PASS  plane-dev: the trap put it back
+PASS  plane-dev: and it says so
+PASS  infisical: fixture: the stop came there
+PASS  infisical: the pause took effect
+PASS  infisical: not a pass (got 143)
+PASS  infisical: nothing stays paused
+PASS  infisical: the trap put it back
+PASS  infisical: and it says so
+PASS  a pause that fails: not a pass (got 1)
+PASS  a pause that fails: nothing stays paused
+PASS  a pause that fails: it is not left to a person
+
+RESULT 208 passed, 0 failed
+exit: 0 ended: 2026-11-05T14:15:00Z

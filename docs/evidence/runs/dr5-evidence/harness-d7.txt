@@ -1,0 +1,36 @@
+date: 2026-11-05T13:31:32Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="D7" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== D7. A resume that keeps the data keeps a copy of the test files it replaces, and its messages say the data was kept
+PASS  fixture: prod-sim's data is back
+PASS  the resume finishes (got 0)
+PASS  the resume keeps the data
+PASS  the accounts it replaced are kept
+PASS  at mode 600
+PASS  and it says where
+PASS  the file now holds the backup's
+PASS  the sentinel it replaced is kept
+PASS  at mode 600
+PASS  dev's sentinel did not change, so no copy
+PASS  nothing changed since: finishes (got 0)
+PASS  nothing changed since: no copy
+PASS  a stop in the migrator: not a pass (got 143)
+PASS  a stop in the migrator: the Job is gone
+PASS  a stop in the migrator: it says the data was kept
+PASS  a stop in the migrator: not that it may hold a part of the backup
+PASS  a stop in the migrator: nor that running again restores it
+PASS  a stop in the migrator: what it held is there
+PASS  a stop in the data Job: it may hold a part
+PASS  a stop in the data Job: and running again restores it
+PASS  Infisical: fixture: its data is back
+PASS  Infisical: not a pass (got 1)
+PASS  Infisical: it kept the data
+PASS  Infisical: it says the data was kept
+PASS  Infisical: and names the override, with what it costs
+PASS  Infisical: and not the words for a restore that replaced it
+
+RESULT 26 passed, 0 failed
+exit: 0
+ended: 2026-11-05T13:35:08Z

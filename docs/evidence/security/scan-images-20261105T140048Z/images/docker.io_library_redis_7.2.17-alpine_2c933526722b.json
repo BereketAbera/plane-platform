@@ -1,0 +1,199 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.1"
+  },
+  "ReportID": "01a1ac0b-20c9-77a5-9956-8246cbdc7110",
+  "CreatedAt": "2026-11-05T17:09:32.873502+03:00",
+  "ArtifactID": "sha256:63fa481de95bd9c683ddc51e564732deebf3a8e48fae3593ab5184bf3eceb42f",
+  "ArtifactName": "docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "Size": 39924224,
+    "OS": {
+      "Family": "alpine",
+      "Name": "3.21.9",
+      "EOSL": true
+    },
+    "ImageID": "sha256:4683386011b063c80d98ccc0bf1a3ccbbec15d875f97ff15dbdb9e569b30ba8f",
+    "DiffIDs": [
+      "sha256:ef97815dec74d93f38e45f1cd002d4892d65e2e4eadf7fc57ece9510f5a42d7d",
+      "sha256:b85b81fbdf2ce3b123cdc55854e18cc03c94b63b6609319f5ade0eb05aaf085c",
+      "sha256:72a14d5613b50568574b1d6d55e6f7c9e697f57d88b86bc3e11f402186687b6b",
+      "sha256:cfa69aaa5e9c6e42f19b559ad2d9e6f687221109f7b5f06767cccbaaf0f9bf22",
+      "sha256:d019d925872f36f1268971acdb960ee1fb954b176d1d208398e1e69a22316211",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:5e017c2cb23bd65c157aeb0869b1d95e801a325a6bd5ff2771f0ca292d80cb4c"
+    ],
+    "RepoDigests": [
+      "redis@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84"
+    ],
+    "Reference": "redis@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84",
+    "ImageConfig": {
+      "architecture": "arm64",
+      "created": "2026-10-26T16:41:25.380557127Z",
+      "history": [
+        {
+          "created": "2026-10-21T20:47:37.063958294Z",
+          "created_by": "ADD alpine-minirootfs-3.21.9-aarch64.tar.gz / # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-21T20:47:37.063958294Z",
+          "created_by": "CMD [\"/bin/sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:39:44.556841824Z",
+          "created_by": "RUN /bin/sh -c set -eux; \taddgroup -S -g 1000 redis; \tadduser -S -G redis -u 999 redis # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-26T16:39:45.172659679Z",
+          "created_by": "RUN /bin/sh -c set -eux; \tapk add --no-cache \t\ttzdata \t\tsetpriv \t; # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-26T16:41:25.210449912Z",
+          "created_by": "ENV REDIS_VERSION=7.2.17",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:41:25.210449912Z",
+          "created_by": "ARG REDIS_DOWNLOAD_URL=https://github.com/redis/redis/archive/refs/tags/7.2.17.tar.gz",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:41:25.210449912Z",
+          "created_by": "ARG REDIS_DOWNLOAD_SHA=c4a315a3ab32d864624605a7faf70df906f05a186054bfb84997c78440660748",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:41:25.210449912Z",
+          "created_by": "RUN |2 REDIS_DOWNLOAD_URL=https://github.com/redis/redis/archive/refs/tags/7.2.17.tar.gz REDIS_DOWNLOAD_SHA=c4a315a3ab32d864624605a7faf70df906f05a186054bfb84997c78440660748 /bin/sh -c set -eux; \t\tapk add --no-cache --virtual .build-deps \t\tcoreutils \t\tdpkg-dev dpkg \t\tgcc \t\tlinux-headers \t\tmake \t\tmusl-dev \t\topenssl-dev \t\twget \t; \twget -O redis.tar.gz \"$REDIS_DOWNLOAD_URL\"; \techo \"$REDIS_DOWNLOAD_SHA *redis.tar.gz\" | sha256sum -c -; \tmkdir -p /usr/src/redis; \ttar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1; \trm redis.tar.gz; \t\tgrep -E '^ *createBoolConfig[(]\"protected-mode\",.*, *1 *,.*[)],$' /usr/src/redis/src/config.c; \tsed -ri 's!^( *createBoolConfig[(]\"protected-mode\",.*, *)1( *,.*[)],)$!\\10\\2!' /usr/src/redis/src/config.c; \tgrep -E '^ *createBoolConfig[(]\"protected-mode\",.*, *0 *,.*[)],$' /usr/src/redis/src/config.c; \t\tgnuArch=\"$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)\"; \textraJemallocConfigureFlags=\"--build=$gnuArch\"; \tdpkgArch=\"$(dpkg --print-architecture)\"; \tcase \"${dpkgArch##*-}\" in \t\tamd64 | i386 | x32) extraJemallocConfigureFlags=\"$extraJemallocConfigureFlags --with-lg-page=12\" ;; \t\t*) extraJemallocConfigureFlags=\"$extraJemallocConfigureFlags --with-lg-page=16\" ;; \tesac; \textraJemallocConfigureFlags=\"$extraJemallocConfigureFlags --with-lg-hugepage=21\"; \tgrep -F 'cd jemalloc \u0026\u0026 ./configure ' /usr/src/redis/deps/Makefile; \tsed -ri 's!cd jemalloc \u0026\u0026 ./configure !\u0026'\"$extraJemallocConfigureFlags\"' !' /usr/src/redis/deps/Makefile; \tgrep -F \"cd jemalloc \u0026\u0026 ./configure $extraJemallocConfigureFlags \" /usr/src/redis/deps/Makefile; \t\texport BUILD_TLS=yes; \tmake -C /usr/src/redis -j \"$(nproc)\" all; \tmake -C /usr/src/redis install; \t\trm -r /usr/src/redis; \t\trunDeps=\"$( \t\tscanelf --needed --nobanner --format '%n#p' --recursive /usr/local \t\t\t| tr ',' '\\n' \t\t\t| sort -u \t\t\t| awk 'system(\"[ -e /usr/local/lib/\" $1 \" ]\") == 0 { next } { print \"so:\" $1 }' \t)\"; \tapk add --no-network --virtual .redis-rundeps $runDeps; \tapk del --no-network .build-deps; \t\tredis-cli --version; \tredis-server --version; # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-26T16:41:25.295477978Z",
+          "created_by": "RUN |2 REDIS_DOWNLOAD_URL=https://github.com/redis/redis/archive/refs/tags/7.2.17.tar.gz REDIS_DOWNLOAD_SHA=c4a315a3ab32d864624605a7faf70df906f05a186054bfb84997c78440660748 /bin/sh -c mkdir /data \u0026\u0026 chown redis:redis /data # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-26T16:41:25.295477978Z",
+          "created_by": "VOLUME [/data]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:41:25.337718837Z",
+          "created_by": "WORKDIR /data",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-26T16:41:25.380557127Z",
+          "created_by": "COPY docker-entrypoint.sh /usr/local/bin/ # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-10-26T16:41:25.380557127Z",
+          "created_by": "ENTRYPOINT [\"docker-entrypoint.sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:41:25.380557127Z",
+          "created_by": "EXPOSE map[6379/tcp:{}]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-10-26T16:41:25.380557127Z",
+          "created_by": "CMD [\"redis-server\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:ef97815dec74d93f38e45f1cd002d4892d65e2e4eadf7fc57ece9510f5a42d7d",
+          "sha256:b85b81fbdf2ce3b123cdc55854e18cc03c94b63b6609319f5ade0eb05aaf085c",
+          "sha256:72a14d5613b50568574b1d6d55e6f7c9e697f57d88b86bc3e11f402186687b6b",
+          "sha256:cfa69aaa5e9c6e42f19b559ad2d9e6f687221109f7b5f06767cccbaaf0f9bf22",
+          "sha256:d019d925872f36f1268971acdb960ee1fb954b176d1d208398e1e69a22316211",
+          "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+          "sha256:5e017c2cb23bd65c157aeb0869b1d95e801a325a6bd5ff2771f0ca292d80cb4c"
+        ]
+      },
+      "config": {
+        "Cmd": [
+          "redis-server"
+        ],
+        "Entrypoint": [
+          "docker-entrypoint.sh"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "REDIS_VERSION=7.2.17"
+        ],
+        "Volumes": {
+          "/data": {}
+        },
+        "WorkingDir": "/data",
+        "ExposedPorts": {
+          "6379/tcp": {}
+        }
+      },
+      "variant": "v8"
+    },
+    "Layers": [
+      {
+        "Size": 8417792,
+        "Digest": "sha256:7d46ac86a55c03b040c4ce8f9078c3eefe1830e2ec8d99bee5b984e224182102",
+        "DiffID": "sha256:ef97815dec74d93f38e45f1cd002d4892d65e2e4eadf7fc57ece9510f5a42d7d"
+      },
+      {
+        "Size": 10752,
+        "Digest": "sha256:a033cd1240e2fe406e2037fc031d0b01cfd9f35d8756861ba8ede915213fe41c",
+        "DiffID": "sha256:b85b81fbdf2ce3b123cdc55854e18cc03c94b63b6609319f5ade0eb05aaf085c"
+      },
+      {
+        "Size": 1138176,
+        "Digest": "sha256:4918c7f44bed477470aac20a6b4aee06f02037c776a88dc3ae119a2536ea6d55",
+        "DiffID": "sha256:72a14d5613b50568574b1d6d55e6f7c9e697f57d88b86bc3e11f402186687b6b"
+      },
+      {
+        "Size": 30350848,
+        "Digest": "sha256:07a0189528bd4bc4c697eedf96d1e6dc55a45d8fc5ee7a01ec76e25ba186e5a4",
+        "DiffID": "sha256:cfa69aaa5e9c6e42f19b559ad2d9e6f687221109f7b5f06767cccbaaf0f9bf22"
+      },
+      {
+        "Size": 1536,
+        "Digest": "sha256:8988c5ba91728dbb443858f184264ec96c616e2b88f2ad69cabfd29668d1cc0a",
+        "DiffID": "sha256:d019d925872f36f1268971acdb960ee1fb954b176d1d208398e1e69a22316211"
+      },
+      {
+        "Size": 1024,
+        "Digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+        "DiffID": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+      },
+      {
+        "Size": 4096,
+        "Digest": "sha256:614cdbb73d50df1cb11d86890eb0e3c044a38b3569c229d53bb2659e999e19e8",
+        "DiffID": "sha256:5e017c2cb23bd65c157aeb0869b1d95e801a325a6bd5ff2771f0ca292d80cb4c"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Target": "docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84 (alpine 3.21.9)",
+      "Class": "os-pkgs",
+      "Type": "alpine"
+    }
+  ]
+}

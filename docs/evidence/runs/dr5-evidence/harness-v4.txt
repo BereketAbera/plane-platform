@@ -1,0 +1,96 @@
+date: 2026-11-05T13:31:32Z
+commit: aeadd9609e5a79e98868d1ba06a8668ca89dab23 plus uncommitted: 0 files
+bash: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+command: cd /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/wt-dr5 && TMPDIR=/private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/dr5-evidence/tmp ONLY="V4 V4b" /bin/bash tests/drills/clean-restore-harness.sh
+
+=== V4. A resume does not replace data that came back, and goes on from the migrator
+PASS  fixture: prod-sim's migrator fails (got 1)
+PASS  the marker says its data is back
+PASS  and that it has not finished it
+PASS  dev's data came back too
+PASS  a plan says what a resume will do
+PASS  the same counts: the resume finishes, exit 0 (got 0)
+PASS  the same counts: the data is not replaced
+PASS  the same counts: it stops the apps, runs the migrator, starts the apps
+PASS  the same counts: the proofs run
+PASS  the same counts: nothing started over anything
+PASS  the same counts: the evidence says so
+PASS  the same counts: nothing was overwritten, so a pass is a pass
+PASS  the same counts: finished
+PASS  500 users since: the resume finishes, exit 0 (got 0)
+PASS  500 users since: they stay
+PASS  500 users since: and the objects
+PASS  500 users since: not replaced
+PASS  500 users since: the evidence says what it held
+PASS  the override, and the same counts: exit 4 (got 4)
+PASS  the override: replaced
+PASS  the override: recorded as a FAIL
+PASS  the override on prod-sim: dev stays as it was
+PASS  the line, and an empty target: restores it, exit 0 (got 0)
+PASS  the line, and an empty target: the data Job runs
+PASS  the line, and an empty target: no override was needed, so it reads PASS
+PASS  fixture: only a data-back line, for dev
+PASS  the cluster lost: starts again, exit 0 (got 0)
+PASS  the cluster lost: says so
+PASS  the cluster lost: dev's data comes back
+PASS  SIGTERM in the migrator's Job: the resume finishes, exit 0 (got 0)
+PASS  SIGTERM in the migrator's Job: the data is not replaced
+PASS  SIGTERM in the migrator's Job: the migrator runs
+PASS  a proof fails on what it kept: not a pass (got 1)
+PASS  a proof fails on what it kept: says it kept it, and the way on
+PASS  a proof fails on what it kept: names the override
+PASS  fixture: Infisical's flush fails after the swap (got 1)
+PASS  Infisical: the marker says its data is back
+PASS  Infisical: the resume finishes, exit 0 (got 0)
+PASS  Infisical: its database is not replaced
+PASS  Infisical: the server comes back
+PASS  Infisical: nothing started over anything
+PASS  in place under a marker: goes on as asked (got 0)
+PASS  in place under a marker: writes no line
+
+=== V4b. A stop between the data Job's end and its data-back line: the finished Job says so
+PASS  SIGTERM: fixture: no line
+PASS  SIGTERM: fixture: and the data Job finished
+PASS  SIGTERM: the resume finishes, exit 0 (got 0)
+PASS  SIGTERM: dev's data is not replaced
+PASS  SIGTERM: it goes on from the migrator
+PASS  SIGTERM: the evidence says why
+PASS  SIGTERM: and dev's says what it kept
+PASS  SIGTERM: nothing started over anything
+PASS  SIGTERM: a pass is a pass
+PASS  SIGKILL: fixture: no line
+PASS  SIGKILL: fixture: and the data Job finished
+PASS  SIGKILL: the resume finishes, exit 0 (got 0)
+PASS  SIGKILL: dev's data is not replaced
+PASS  SIGKILL: it goes on from the migrator
+PASS  SIGKILL: the evidence says why
+PASS  SIGKILL: and dev's says what it kept
+PASS  SIGKILL: nothing started over anything
+PASS  SIGKILL: a pass is a pass
+PASS  Infisical: fixture: no line
+PASS  Infisical: the resume finishes, exit 0 (got 0)
+PASS  Infisical: its database is not replaced
+PASS  Infisical: the evidence says why
+PASS  fixture: an in-place restore under the marker finished (got 0)
+PASS  a finished Job the marker does not name: exit 0 (got 0)
+PASS  a finished Job the marker does not name: it does not count, and the data Job runs
+PASS  fixture: the marker names dev's data Job, which failed
+PASS  the data Job failed: exit 0 (got 0)
+PASS  the data Job failed: no line for it
+PASS  the data Job failed: it runs again
+PASS  fixture: prod-sim's data is back
+PASS  the override in its Job: the line has gone
+PASS  fixture: the earlier data Job is still there, finished
+PASS  the override stopped in its Job: a resume is not a pass, exit 4 (got 4)
+PASS  the override stopped in its Job: it does not keep what is there
+PASS  the override stopped in its Job: the data Job runs again
+PASS  an emptied target whose second data Job fails: stops (got 1)
+PASS  an emptied target whose second data Job fails: the line has gone
+PASS  an emptied target whose second data Job fails: a resume finishes, exit 0 (got 0)
+PASS  an emptied target whose second data Job fails: and restores it
+PASS  the finished Job, and an empty target: restores it, exit 0 (got 0)
+PASS  the finished Job, and an empty target: the data Job runs
+
+RESULT 84 passed, 0 failed
+exit: 0
+ended: 2026-11-05T13:43:25Z
