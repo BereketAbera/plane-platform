@@ -2,7 +2,7 @@
 
 How secret values reach the two Plane environments of Wayline, a customized Plane Community Edition v1.4.3 deployment, and what happens when the secret store is lost.
 
-**Status: run on the real cluster on 2026-11-04 and 2026-11-05, except `scripts/rotate.sh` and the destroying end of a clean restore.** A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. Prose with no file and no marker describes configuration in the repository, not observed behaviour. All of this is one local kind node, and it says nothing about Infisical on another host. [`infisical/README.md`](../infisical/README.md) holds the full list of measurements.
+**Status: run on the real cluster on 2026-11-04 and 2026-11-05, except `make rotate` in prod-sim, the recovery of a stopped rotation, and the destroying end of a clean restore.** A result links to its file under `docs/evidence/runs/`. A file name in code with no link is a raw run in `.local/evidence-raw/`, not yet published. Each `VERIFY` or `MEASURE` marker left here waits on a run that has not happened. Prose with no file and no marker describes configuration in the repository, not observed behaviour. All of this is one local kind node, and it says nothing about Infisical on another host. [`infisical/README.md`](../infisical/README.md) holds the full list of measurements.
 
 | Component | Version | Where it is pinned |
 |---|---|---|
@@ -192,11 +192,9 @@ From the operator source at v0.11.16: when a target Secret really changes, the o
 | api, worker, beat, live | Yes | Read connection strings from env at start |
 | Postgres, RabbitMQ | No, on purpose | `POSTGRES_PASSWORD` and `RABBITMQ_DEFAULT_*` act only on an empty data directory, so a restart achieves nothing and causes an outage |
 | Migrator Job | Not supported | A Job is not restarted. It reads the current Secret on its next run |
-| `postgres-exporter` | Yes, in `monitoring/manifests/environments/base/exporters.yaml` | Reads `plane-pgdb` at start, so without a restart it would keep the old password after a rotation, and `PlanePostgresDown` could fire on a healthy Postgres. The running pod template carries the operator's mark (`SEC-2-20261105T062211Z-state-before.txt`). No rotation has shown it restart |
+| `postgres-exporter` | Yes, in `monitoring/manifests/environments/base/exporters.yaml` | Reads `plane-pgdb` at start, so without a restart it would keep the old password after a rotation, and `PlanePostgresDown` could fire on a healthy Postgres. In the dev rotation the operator restarted it at 07:23:47Z, `pg_up` stayed 1 at every 15 s reading, and `PlanePostgresDown` did not fire in dev (`SEC-2-20261105T072331Z-watch.txt`) |
 
-At the first sync the operator patched `postgres-exporter` once when `plane-pgdb` appeared and not again, and `monitoring-extras` stayed Synced. That says nothing yet about a rotation.
-
-[[VERIFY: the operator's template annotation does not cause a sync loop with Argo CD self-heal]]
+The operator's template annotation did not cause a sync loop in the dev rotation. `plane-dev` stayed Synced, went Progressing at 07:23:47Z and Healthy at 07:24:28Z, and started no new sync operation (`SEC-6-20261105T072331Z-application-watch.txt`). Workload generations then held still for the 20 s the script watches (`rotate-dev-20261105T072345Z.log`). At the first sync the operator patched `postgres-exporter` once when `plane-pgdb` appeared and not again, and `monitoring-extras` stayed Synced.
 
 `rotate.sh` tests that loop by comparing workload generations for 20 s after the rollout. If the operator did not mark every pod template within 120 s, the script restarts the workloads itself and records it.
 
@@ -209,7 +207,7 @@ scripts/rotate.sh ENV=dev RESUME=yes
 scripts/rotate.sh ENV=dev ROLLBACK=yes
 ```
 
-**`make rotate` has not run, in either environment.** The attempt in dev was refused by the session's permission system before anything ran, and no password changed (`SEC-2-20261105T062211Z-refused.txt`). Prod-sim stopped at the backup that comes first (`SEC-3-20261105T062127Z.txt`). So this section is read from `scripts/rotate.sh`, and the dev rotation needs the owner to run or approve it.
+**`make rotate` has run once, in dev, on 2026-11-05 at 07:23Z, with the owner's approval, and every proof reads PASS** (`SEC-2-20261105T072331Z.txt`, `rotate-dev-20261105T072345Z.log`). An earlier attempt was refused by the session's permission system before anything ran (`SEC-2-20261105T062211Z-refused.txt`). It has not run in prod-sim, and a stopped rotation has not been recovered.
 
 **Why it is a script.** Secret rotation is a paid feature (`secretRotation: false` for unlicensed self-hosted, `license-fns.ts` at v0.167.6). So this is scripted rotation of one value, `PG_PASSWORD`. It is not native rotation, scheduled rotation, or per-pod credentials. Dynamic secrets are paid too. `PG_PASSWORD` was chosen because the role can be changed in place and the old value can be shown to fail.
 
@@ -222,7 +220,7 @@ scripts/rotate.sh ENV=dev ROLLBACK=yes
 5. Wait for the rollouts, then record the proofs.
 6. Take an Infisical backup, because an older dump holds the old `PG_PASSWORD`. `SKIP_BACKUP=yes` skips it. If it fails, the rotation stands and the script exits 3.
 
-Step 3 precedes step 4 because the operator owns the restart. New pods crash-loop until the role has the new password, which is the error window.
+Step 3 precedes step 4 because the operator owns the restart. From `ALTER ROLE` until the new api pod is ready, Plane has no pod that can log in, which is the error window.
 
 **Proofs written to `.local/evidence-raw/rotate-<env>-<stamp>.log`, which holds no values:**
 
@@ -234,16 +232,14 @@ Step 3 precedes step 4 because the operator owns the restart. New pods crash-loo
 | Plane rolled | Pod template names the Secret's new version, `rollout status` finishes | |
 | Postgres untouched | Pod start time compared before and after | |
 | `SECRET_KEY` unchanged | Value compared before and after | |
-| Error window | A probe every second | |
+| Error window | A probe every second | It is anonymous, so Plane's throttle can count as failure. See below |
 | No fight with Argo CD | Generations stable after the rollout | |
 
-[[VERIFY: make rotate ENV=dev completes against real Postgres and every proof above records PASS]]
+**What the dev rotation showed.** `PG_PASSWORD` went from version 1 to 2 and the operator synced both Secrets in 4 s. The rollouts finished at 07:24:28Z, with no restart by hand. Postgres was not restarted, `SECRET_KEY` did not change, and the Infisical backup at the end succeeded. An independent check, which held the old password in memory, found it refused over the pod IP and over the Service, the new one accepted, a random one refused, and all three Deployments holding the new value (`SEC-2-20261105T072331Z-old-value.txt`). `plane-live-wl` does not consume `plane-app-env`, so it was not restarted. Prod-sim served throughout. The same run does not prove anything about a rotation that stops partway.
 
-A random password is refused over the pod IP and over the Service, while the current one is accepted, so passwords are checked on those routes (`SEC-2-20261105T062211Z-old-value.txt`). Trust on the socket and on 127.0.0.1 has not been shown apart from that.
+The image's `pg_hba.conf`, read from the running dev pod on 2026-11-05, trusts `local all all`, `127.0.0.1/32` and `::1/128`, and ends with `host all all all scram-sha-256`. So a login over the socket or 127.0.0.1 accepts any password, and the proofs use the pod IP. The rotation's own `ALTER ROLE` ran over the socket with no password.
 
-[[VERIFY: the socket and 127.0.0.1 are trusted while the pod IP requires scram-sha-256 in postgres:15.19-alpine]]
-
-[[MEASURE: error window in seconds during make rotate ENV=dev, from the probe log]]
+**The error window in dev was about 38 s, not the 60 s the script printed.** A signed-in request once a second, outside the anonymous limit, answered 500 from 07:23:51Z to 07:24:29Z, 38 failures, and 200 otherwise (`SEC-2-20261105T072331Z-watch.txt`). So the window is the new api pod's start, after the role changed. The script reported 60 s from first to last failed probe, 39 of 62 (`rotate-dev-20261105T072345Z.probe`). Its first 36 failures match that window. Its last three, at 07:24:48Z to 07:24:50Z, came while the signed-in request answered 200, which fits the anonymous throttle: the 31st request in a minute to this route got 429 (`SEC-2-throttle-precheck-20261105T061924Z.txt`). The probe log keeps no status code, so that cause is not proven. No Plane alert reached firing in dev: `PlaneApiDatabaseProbeFailing` and `PlaneApiDown` stayed pending.
 
 [[MEASURE: error window in seconds during make rotate ENV=prod-sim, from the probe log]]
 
