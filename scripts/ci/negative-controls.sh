@@ -107,6 +107,25 @@ plant_ui_route_in_a_list() {
 plant_ui_route_in_items_of_a_good_route() {
   printf 'apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: planted\n  namespace: monitoring\nspec:\n  entryPoints: [web]\n  routes:\n    - match: Host(`prometheus.localhost`)\n      kind: Rule\n      middlewares:\n        - name: node-network-only\n      services:\n        - { name: kps-prometheus, port: 9090 }\nitems:\n  - apiVersion: traefik.io/v1alpha1\n    kind: IngressRoute\n    metadata:\n      name: planted-inside\n      namespace: monitoring\n    spec:\n      entryPoints: [web]\n      routes:\n        - match: Host(`prometheus.localhost`)\n          kind: Rule\n          services:\n            - { name: kps-prometheus, port: 9090 }\n' >gitops/platform/network-policies/planted.yaml
 }
+# Argo CD reads the whole directory, and every check here reads manifests.yaml by name.
+plant_secret_beside_the_render() {
+  printf 'apiVersion: v1\nkind: Secret\nmetadata:\n  name: planted\n  namespace: plane-prod-sim\nstringData:\n  note: planted\n' >gitops/environments/prod-sim/planted.yaml
+}
+plant_secret_beside_the_render_as_yml() {
+  printf 'apiVersion: v1\nkind: Secret\nmetadata:\n  name: planted\n  namespace: plane-prod-sim\nstringData:\n  note: planted\n' >gitops/environments/prod-sim/planted.yml
+}
+# Argo CD starts a document at each of these, and conftest would read one document and none of the route.
+plant_ui_route_after_a_separator() { # plant_ui_route_after_a_separator <the separator line> <line end>
+  printf 'apiVersion: v1%bkind: ConfigMap%bmetadata:%b  name: planted%b  namespace: monitoring%b%b%bapiVersion: traefik.io/v1alpha1%bkind: IngressRoute%bmetadata:%b  name: planted-route%b  namespace: monitoring%bspec:%b  entryPoints: [web]%b  routes:%b    - match: Host(`prometheus.localhost`)%b      kind: Rule%b      services:%b        - { name: kps-prometheus, port: 9090 }%b' \
+    "$2" "$2" "$2" "$2" "$2" "$1" "$2" "$2" "$2" "$2" "$2" "$2" "$2" "$2" "$2" "$2" "$2" "$2" "$2" >gitops/platform/network-policies/planted.yaml
+}
+plant_ui_route_after_a_commented_separator() { plant_ui_route_after_a_separator '--- # a comment' '\n'; }
+plant_ui_route_after_a_separator_with_a_space() { plant_ui_route_after_a_separator '--- ' '\n'; }
+plant_ui_route_in_a_file_with_crlf() { plant_ui_route_after_a_separator '---' '\r\n'; }
+# A chart's values reach a render through extraObjects, and Argo CD flattens a List there as it does anywhere.
+plant_ui_route_in_a_list_through_chart_values() {
+  yq -i '.extraObjects = [{"apiVersion": "v1", "kind": "List", "items": [{"apiVersion": "traefik.io/v1alpha1", "kind": "IngressRoute", "metadata": {"name": "planted", "namespace": "monitoring"}, "spec": {"entryPoints": ["web"], "routes": [{"match": "Host(`prometheus.localhost`)", "kind": "Rule", "services": [{"name": "kps-prometheus", "port": 9090}]}]}}]}]' helm/values/traefik.yaml
+}
 plant_allow_list_opened() { replace_first gitops/bootstrap/argocd-route/ingressroute.yaml '172\.16\.0\.0/12' '0.0.0.0/0'; }
 plant_thanos_base_image_without_digest() { yq -i '.prometheus.prometheusSpec.thanos.baseImage = "quay.io/thanos/thanos"' helm/values/kube-prometheus-stack.yaml; }
 # The expression before this one read nearly 2 on one restart, at an offset the 30s tests did not reach.
@@ -233,6 +252,12 @@ control tcp-route-to-a-ui validate-manifests.sh "is not allowed beside an intern
 control route-with-a-blank-namespace validate-manifests.sh "so it must name the node-network-only middleware" plant_route_with_a_blank_namespace
 control ui-route-in-a-list validate-manifests.sh "wraps other objects" plant_ui_route_in_a_list
 control ui-route-in-items-of-a-good-route validate-manifests.sh "wraps other objects" plant_ui_route_in_items_of_a_good_route
+control secret-beside-the-render validate-manifests.sh "every check reads only manifests.yaml" plant_secret_beside_the_render
+control secret-beside-the-render-as-yml validate-manifests.sh "Argo CD would read these and no check here does" plant_secret_beside_the_render_as_yml
+control ui-route-after-a-commented-separator validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_after_a_commented_separator
+control ui-route-after-a-separator-with-a-space validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_after_a_separator_with_a_space
+control ui-route-in-a-file-with-crlf validate-manifests.sh "so it must name the node-network-only middleware" plant_ui_route_in_a_file_with_crlf
+CONTROL_SKIP_CHARTS=no control ui-route-in-a-list-through-chart-values validate-manifests.sh "wraps other objects" plant_ui_route_in_a_list_through_chart_values
 control allow-list-opened-to-everyone validate-manifests.sh "must be an ipAllowList of exactly" plant_allow_list_opened
 control invalid-alert-expression validate-manifests.sh "promtool: platform rules FAILED" plant_invalid_alert_expression
 control alert-that-fires-late validate-manifests.sh "promtool: rule unit tests FAILED" plant_alert_that_fires_late

@@ -11,21 +11,7 @@ deny contains msg if {
 	msg := sprintf("%s: kind Secret must never be committed under gitops/", [kube.label(input)])
 }
 
-# Argo CD applies the items of a document with a top-level items array and drops the document itself, whatever its kind
-# says (reposerver/repository/repository.go:1788 at v3.5.7, and Unstructured.IsList reads only items). Conftest reads only
-# the outer document, so nothing inside would meet a rule here, and kubeconform passes both a kind: List and a route with
-# items beside its spec. Nothing in this repository uses one. A List has no metadata, so this cannot use kube.label.
-deny contains msg if {
-	wraps_other_objects
-	msg := sprintf("kind %v wraps other objects, which these rules would not read, so write each as its own document", [object.get(input, "kind", "")])
-}
-
-wraps_other_objects if {
-	is_string(input.kind)
-	endswith(input.kind, "List")
-}
-
-wraps_other_objects if is_array(input.items)
+deny contains kube.wrapper_denied(input) if kube.wraps_other_objects(input)
 
 # Contract section 7: a Plane environment syncs under its own project, which cannot create a
 # NetworkPolicy or leave its namespace. Under project platform or default it could do both.

@@ -14,6 +14,10 @@ warn contains msg if {
 	msg := sprintf("%s: container %q has no memory limit, so set one in helm/values", [kube.label(input), c.name])
 }
 
+# A chart's values can add objects of their own, extraObjects in Traefik's, and a List there would take a route past
+# policy/plane.rego, which runs on these renders too. See kube.wraps_other_objects.
+deny contains kube.wrapper_denied(input) if kube.wraps_other_objects(input)
+
 digest_pinned := `@sha256:[a-f0-9]{64}$`
 
 deny contains msg if {
