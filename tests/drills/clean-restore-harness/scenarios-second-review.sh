@@ -1446,6 +1446,8 @@ V1() {
   run_on_terminal "$H/state/jobs.json" '"state": "Running"' scripts/restore.sh dev latest CONFIRM=yes
   dead_output_in_a_job "a terminal that closes in dev's Job"
   check "a terminal that closes in dev's Job: what it had to say is in a file beside the evidence" grep -F "its Job was stopped before it finished" "$(newest_evidence restore-dev).log"
+  # warn goes to stderr, so that line says nothing about stdout. This one is log's, which only the first line of client_probe saves.
+  check "a terminal that closes in dev's Job: what it printed to stdout is in that file too" grep -F "Removing restore Job" "$(newest_evidence restore-dev).log"
 
   reset
   take_backups
