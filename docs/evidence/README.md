@@ -27,7 +27,8 @@ docs/evidence/
   cluster-up-*.log    the first cluster creation log
   runs/               published copies of .local/evidence-raw/, under the names the runs gave them
     MANIFEST.tsv      per file: when the raw file was last written, bytes published, replacements
-  branding/           Wayline image builds, checks and screens. live-dev/ is the first real browser session
+  branding/           Wayline image builds, checks and screens. live-dev/ is the first real browser session,
+                      and live-final/ is a real browser on the final images after a full restore
   ci/                 GitHub Actions runs and make ci
   security/           image scans
 ```
@@ -104,10 +105,11 @@ what shows they would be replaced.
 | `scripts/test-alert.sh` (`make test-alert`) | `alert-test-<env>-<stamp>.json` | Timings for each stage |
 | `tests/load/run.sh` (`make test-load`) | `load-<run>/` | `results.json`, `job.yaml`, `k6.log`, `k6-summary.json`, `prometheus.json`, `samples.jsonl` and snapshots. Read `job.yaml`, `k6.log` and `k6-summary.json` before committing them, because `setup_data` held a session in the run of 2026-11-05 |
 | `tests/drills/failed-deploy-rollback.sh`, `failed-migrator.sh`, `clean-restore.sh`, `pod-restart-persistence.sh` (`make drill-*`, and the migrator drill has no target) | `drill-<name>-<stamp>.log` | `failed-deploy`, `failed-migrator`, `clean-restore` or `pod-restart-<env>`. The last line reads `RESULT PASS` or `RESULT FAIL`. The first two also write `<log name>-alerts.tsv`. The pod restart drill also writes `drill-pod-restart-<env>-baseline.json` and one JSON per StatefulSet. Those have no stamp, so each drill overwrites them, and the copies from 2026-11-04 are now only in Git's history |
-| `tests/drills/clean-install.sh` | `clean-install-<stamp>/` | `summary.txt`, which gives each step's exit status and ends with `Steps that failed: N`, one `<step>.txt` per step, and `clone-evidence/`, what the clone's own runs wrote. It writes no drill log and no `RESULT` line, and exits 0 only when no step failed |
+| `tests/drills/alert-rules.sh`, with no make target | `alert-rules-<env>-<stamp>.txt` | One data service at a time at 0 replicas, what Prometheus and the sink read, and a last line of `RESULT failures=<n>`. A rule that does not fire is a FAIL about that rule |
+| `tests/drills/clean-install.sh` | `clean-install-<stamp>/` | `summary.txt`, which gives each step's exit status and ends with `Steps that failed: N`, one `<step>.txt` per step, and `clone-evidence/`, what the clone's own runs wrote. It writes no drill log and no `RESULT` line, and exits 0 only when no step failed. A row takes its status from its own step. In `clean-install-20261105T075041Z/`, the step named `destroy-refused` inherited `CONFIRM=yes` and really ran `make destroy`, so its file is a delete and not a refusal, as its first lines show |
 | `tests/drills/clean-restore-harness.sh` (`make drill-clean-restore-harness`), `tests/drills/clean-restore-mutants.sh` | stdout only | With commands stubbed. They end in `RESULT <n> passed, <n> failed` and `RESULT <n> caught, <n> survived, <n> did not apply`. The copies in `runs/`, `dr-harness-*` and `dr-mutants-*`, are what whoever ran them captured |
-| `scripts/rotate.sh` (`make rotate`) | `rotate-<env>-<stamp>.log`, `rotate-<env>-<stamp>.probe` | The script writes results and counts, never values |
-| `scripts/restore.sh` (`make restore`, `make restore-clean`) | `restore-<env>-<stamp>.json`, `restore-smoke-<env>-<stamp>.json` | A clean restore writes `restore-clean-<stamp>.json` and `restore-clean-smoke-<env>-<stamp>.json` |
+| `scripts/rotate.sh` (`make rotate`) | `rotate-<env>-<stamp>.log`, `rotate-<env>-<stamp>.probe` | The script writes results and counts, never values. A killed run and what follows it each write a pair, as in SEC-4 and SEC-4b |
+| `scripts/restore.sh` (`make restore`, `make restore-clean`) | `restore-<env>-<stamp>.json`, `restore-smoke-<env>-<stamp>.json` | A clean restore writes `restore-clean-<stamp>.json` and `restore-clean-smoke-<env>-<stamp>.json`, beside one `restore-<env>-<stamp>.json` for Infisical and each environment |
 | `scripts/ci/scan-images.sh` (`make scan-images`) | `scan-images-<stamp>/` | Not copied by `make publish-evidence`. It goes to `security/` by hand |
 | `scripts/lib/dev-check.sh`, through `make promote`, `make rollback` and `make gitops-publish` | `promotion-overrides.log` | A line for each `OVERRIDE_DEV_CHECK` or `SKIP_DEV_CHECK`, with the digests and the reason. A local promotion with an override writes two lines, one from `promote.sh` and one from its publish |
 | `apps/wayline/assets/generate.mjs` | `wayline-assets-sheet.png` | Contact sheet of the generated images |
@@ -147,9 +149,14 @@ such as `SECRET_KEY id=<uuid>` and `plane-app-keys uid=<uuid>`. So a UUID in the
 keyword, up to 20 characters and then `=`, is redacted too, keeping the rest of the line. Allowlisting that shape would also let a
 real key through in the same position. Any other UUID stays.
 
-**Session fields.** Since `18130d4`, the value of any JSON `"session"` field becomes `<redacted>` too, keeping the field's name, because k6's
-`setup_data` held a session cookie in that shape, as the publishes of 07:40Z below record. The negative control is from
-2026-11-05T00:43Z, before this pattern existed, so it has not covered it.
+**Session fields.** Since `18130d4`, the value of any JSON `"session"` field becomes `<redacted>`, keeping the field's name, because k6's
+`setup_data` held a session cookie in that shape, as the publishes below record. Since `ec6aa89` the same pattern also reads `session_id` and
+`session-id`, JSON inside a JSON string, and the cookie form `session=...`, for a value that starts with at least 16 letters, digits, `_` or `-`. Anything
+else in that position stays. The negative control for this rule is [publish-evidence-session-control-1.txt](runs/publish-evidence-session-control-1.txt),
+with [its script](runs/publish-evidence-session-control-script-1.txt), at 2026-11-05T10:03:07Z, 0 failed: the three spellings of the JSON form are replaced, and
+with the substitution taken out of a copy of the script they stay and gitleaks still exits 0, so this rule is all that stands in their way. By its
+sha256 it ran on the script before `ec6aa89`, and it lists the cookie form and JSON inside a JSON string as outside the pattern, so the wider
+pattern has no control of its own yet.
 
 **Remembered values.** Every value goes into `.local/evidence-scrub-values`. Without that, a stopped cluster, a rotated
 password or a new install would put a value back into its copy the next time the raw file was published. The negative
@@ -164,17 +171,22 @@ with no secret visible.
 
 **The publishes of 2026-11-05T07:40Z and later.** [publish-evidence-final-1.txt](runs/publish-evidence-final-1.txt) records the first: 693 files in
 `runs/`, 382 new or changed, gitleaks with no findings, and 43 files changed by the scrub with 238 replacements, by its own count. Two new images were read by
-eye, `AUTH-4-20261105T062750Z-dev.jpg` and `-prod-sim.jpg`: a signed-in home page with a display name, and a sign-in form, with no secret visible. One
-secret got through. k6's `setup_data` held a session value, in `load-20261105T073241Z/k6.log` and `k6-summary.json`, in no source of the
-scrub and fitting no gitleaks rule, as the next paragraph warns. Commit `7d5ff62` holds it, and `18130d4` scrubbed it and keeps k6's session out of
-its output. `7d5ff62` is local, and nothing after `0dde813` has reached GitHub. Handle that value before any push of that history.
+eye, `AUTH-4-20261105T062750Z-dev.jpg` and `-prod-sim.jpg`: a signed-in home page with a display name, and a sign-in form, with no secret visible. The next
+are [publish-evidence-final-2.txt](runs/publish-evidence-final-2.txt), 718 files and 33 new or changed, and [publish-evidence-final-3.txt](runs/publish-evidence-final-3.txt),
+830 files, 109 new or changed, 56 files changed by the scrub with 316 replacements, each with gitleaks reading no findings.
+
+One secret got through. k6's `setup_data` held a plane-dev session value, in `load-20261105T073241Z/k6.log` and `k6-summary.json`, in no source of the scrub and
+fitting no gitleaks rule, as the next paragraph warns. Gitleaks did not catch it. A colleague reading the evidence did. `18130d4` added the rule above, scrubbed the two
+copies and keeps k6's session out of its output. It reached local evidence only: nothing after `0dde813` has reached GitHub, read at 11:00Z with 246 local commits past
+it. A scrub changes the working tree and not history, so commit `7d5ff62` still holds the value, as `git show` read at 11:00Z with nothing printed. Pushing `main` as it stands
+would publish it, and no check would stop that. Whether that session still works has not been read. Handle the value before any push of that history.
 
 **What this does not prove.** A clean run says that no known value and nothing gitleaks recognizes is in the copies. A session
 cookie or a one-off token that is in no source and fits no gitleaks rule would pass. In the negative control, with the cluster
 values unknown to the scrub, gitleaks flagged 1 of 7. A search at 2026-11-05T00:53Z, of the copies that publish had made, for cookies, authorization headers,
 URLs with credentials, private keys, token-like assignments and tokens with the shape of a generated secret found no secret.
 That search is in the check file. It was a one-time check, and it is not part of the script, so it says nothing of the later
-publishes, one of which let a secret through, as the paragraph above records.
+publishes, one of which let a secret through, as the paragraph above records. So reading the evidence stays part of publishing it, as step 2 above asks.
 
 ## Index
 
@@ -202,6 +214,7 @@ from a search domain, and the fix was a trailing dot on the name.
 |---|---|
 | [branding/](branding/README.md) | The Wayline image builds, digests, checks and rendered screens |
 | [branding/live-dev/](branding/live-dev/README.md) | The first real browser session on the branded images in plane-dev |
+| [branding/live-final/](branding/live-final/README.md) | A real browser on the final images after a full restore, in both environments: a work item typed before the delete, a published board, the first sign-in on prod-sim, and both sessions at once |
 | [ci/](ci/README.md) | GitHub Actions runs, `make ci`, negative controls and promotion flow tests, by row |
 | [security/](security/README.md) | `scripts/ci/scan-images.sh` runs: one complete, one stopped early, and four runs of what is built here, the last on the final images |
 
@@ -217,24 +230,27 @@ file nor the line below names the command, it is not recorded, so say that when 
 | Prefix | What it holds |
 |---|---|
 | `AUTH-4-`, `AUTH-6-` | Browser readings on 2026-11-05: a dev session on the prod-sim host, with two screenshots, and the rollback half of a returning browser |
-| `BKP-2-`, `BKP-6-` | Transcripts: `BKP-2-20261105T074322Z.txt` is the backup, restore and e2e in dev that row BKP-2 rests on. `BKP-6-` is the clean restoration, none committed yet: a later publish adds it once that run has ended, and a later pass of validation.md reads it |
+| `BKP-2-`, `BKP-6-` | Transcripts: `BKP-2-20261105T074322Z.txt` is the backup, restore and e2e in dev that row BKP-2 rests on. `BKP-6-20261105T074858Z-make.txt` is `make drill-clean-restore` with the clean install, the first whole run, which ends `RESULT FAIL` on one step of its clean install, with every restore step PASS |
 | `BR-3-`, `CI-1-`, `CI-2-`, `CI-4-`, `CI-5-`, `CI-6b-` | Raw copies of what `ci/` holds under names with a description, such as `ci-5-20261105T055743Z-pr-1.txt`. The two sampled by `cmp` are the same bytes. Cite `ci/` |
 | `DEP-1-`, `DEP-2-`, `DEP-3-` | The failed deploy drill, the rollback and the failing migrator on 2026-11-05: `make` output, a side watcher's raw lines (`-watch`), what was derived from them (`-timeline`), and the helpers' source (`-source`) |
 | `FINAL-` | Prod-sim's running images and a refused `make test-e2e`, at 06:28Z. `FINAL-e2e-prod-sim-*` is a refusal record |
 | `GITOPS-4-` | Self-heal. `-073240Z` is the result. `-072541Z` holds a script error and proves nothing, and `-062155Z` is a refusal record, with its watcher (`-062127Z-watch`) |
-| `INST-3-` | `./scripts/prereqs.sh`, exit 1 on disk |
-| `LOAD-1-`, `LOAD-3-` | `make test-load ENV=dev` terminal output, with its results in `load-20261105T073241Z/`, and read-only captures for the resource tables: Prometheus series and windows, `df` per volume, Docker storage. `LOAD-3-20261105T074440Z-pvc-df.txt` holds a script error on its `df` lines, repeated correctly at `074543Z` |
+| `INST-3-` | `./scripts/prereqs.sh`, exit 1 on disk with the cluster up. The later exit 0, with no cluster, is `clean-install-20261105T075041Z/make-setup.txt` |
+| `LOAD-1-`, `LOAD-1b-`, `LOAD-3-` | `make test-load ENV=dev` terminal output and read-only captures for the resource tables: Prometheus series and windows, `df` per volume, Docker storage. `LOAD-1b-20261105T090247Z-run.txt` is the quiet run behind LOAD-1 and LOAD-2, with its results in `load-20261105T090247Z/` and `load-20261105T091213Z/`, and `LOAD-3-20261105T092547Z-*` and `LOAD-3-idle-*` go with it. `LOAD-1-20261105T073240Z-run.txt` and `LOAD-3-20261105T07*` are the earlier run on a busy machine, with its results in `load-20261105T073241Z/`. `LOAD-3-20261105T074440Z-pvc-df.txt` holds a script error on its `df` lines, repeated correctly at `074543Z` |
+| `MAKE-TEST-` | `make test` terminal output in full. `MAKE-TEST-20261105T083455Z.txt` is the run on the restored platform, exit 0. The parts' own files carry the same stamp: `gates-`, `infisical-`, `routes-`, `separation-`, `smoke-` and `test-`, and its matrix is `netpol-20261105T083542Z.tsv` |
 | `MON-1-`, `MON-2-`, `MON-side-watcher-` | `make test-alert`. `MON-1-*` is the dev run with Alertmanager, sink, Prometheus and event captures, a raw watcher and a timeline. `MON-2-20261105T072541Z-run.txt` is the prod-sim run, and `MON-2-20261105T060633Z*` is an earlier refusal with its watchers. `MON-side-watcher-*` is the helpers' source |
 | `OPS-7-`, `low-disk-overrides` | `guard_disk` with a raised floor, and the log a lowered floor writes |
-| `PERS-1-`, `PERS-2-` | The pod restart drills on the final images. `PERS-2-20261105T061948Z.txt` and its `-061912Z-watch` are an earlier refusal |
+| `PERS-1-`, `PERS-2-`, `PERS-3-` | The pod restart drills on the final images, and `make down` then `make up`. `PERS-2-20261105T061948Z.txt` and its `-061912Z-watch` are an earlier refusal. `PERS-3-20261105T083304Z.txt` names `make test-e2e` in its first line and holds none: that ran in `MAKE-TEST-20261105T083455Z.txt` |
 | `RT-2b-` | `RT-2b-RT-3-20261105T073208Z.txt` is two real tabs, by hand, held and through a `live` restart. `RT-2b-20261105T062912Z.txt` is an earlier refusal |
-| `SEC-2-`, `SEC-3-`, `SEC-4-`, `SEC-6-` | Rotation. The `-072331Z` and later files are the runs, and the `-062` files are refusal records, watchers and a pre-check from before the owner's approval, apart from `SEC-2-backup-before-20261105T062141Z.txt`, a real `make backup ENV=dev`, exit 0, which BKP-1 cites. `SEC-3-BKP-3-*` also holds a backup, a refused restore, a real restore and the e2e after it |
-| `alert-` | `make test-alert` JSON by environment and UTC start (`alert-test-`), a census of every rule not inactive, and the figures quoted in alert text |
+| `SEC-2-`, `SEC-3-`, `SEC-4-`, `SEC-4b-`, `SEC-6-` | Rotation. `SEC-4b-20261105T084615Z.txt` is a killed rotation undone with `ROLLBACK=yes`. The `-072331Z` and later files are the runs, and the `-062` files are refusal records, watchers and a pre-check from before the owner's approval, apart from `SEC-2-backup-before-20261105T062141Z.txt`, a real `make backup ENV=dev`, exit 0, which BKP-1 cites. `SEC-3-BKP-3-*` also holds a backup, a refused restore, a real restore and the e2e after it |
+| `TEAR-1-`, `TEAR-4-` | `TEAR-1-20261105T083304Z.txt` is `make destroy` refusing. `TEAR-4-20261105T105346Z-make.txt` is `make drill-clean-restore` with the cold install, in progress at this writing, so read its last line |
+| `alert-` | `make test-alert` JSON by environment and UTC start (`alert-test-`), a census of every rule not inactive, the figures quoted in alert text, and `tests/drills/alert-rules.sh` (`alert-rules-`): the FAIL at `100605Z`, the PASS after the fix at `101707Z`, and `alert-rules-validate-1.txt`, `scripts/ci/validate-manifests.sh` after that fix, with no date of its own |
 | `argo-stuck-progressing-` | `ArgoAppStuckProgressing` firing on a throwaway Application and reaching the sink |
 | `auth-6-`, `browser-cache-` | The promotion half of a returning browser, and the cached page it started from |
 | `ci-actions-` | The repository setting that lets Actions open pull requests, before and after the owner's yes |
-| `clean-install-` | One directory per run of `tests/drills/clean-install.sh`, none committed yet. A copy made while the run was going is partial, so a later publish adds the run once it has ended, and a later pass of validation.md reads it |
+| `clean-install-` | One directory per run of `tests/drills/clean-install.sh`. `clean-install-20261105T075041Z/` kept the local registry and caches, and read 1 failed step, `destroy-refused`. A run that has `make-up-stops-on-new-digests.txt` is the cold form. A copy made while a run was going is partial, so read the last line of its `summary.txt`, which ends `Steps that failed: N` only when the run has ended |
 | `clock-probe-`, `cluster-readings-`, `collect-other-`, `gitops-publish-`, `hardening-round-`, `image-pins-`, `limits-pod-cgroup-`, `lint-netpol-`, `make-ci-clean-clone-`, `node-kubelet-config-`, `policy-mutations-`, `rollback-generated-`, `rules-unit-`, `stuck-progressing-`, `validate-manifests-alerts-` | Checks and read-only readings from the hardening rounds on 2026-11-05. Each says in its first lines what it ran, and on what |
+| `copy-to-local-registry-` | `scripts/ci/copy-to-local-registry.sh` with a stub docker, on a mixed-case owner, so nothing was copied and no registry was read |
 | `final-` | `make test-e2e` terminal output on the images each promotion reached, by environment |
 | `gates-` | `tests/gates/day1.sh` inside the full `scripts/test.sh` run |
 | `load-` | One directory per `make test-load` run. See [what each entry point writes](#what-each-entry-point-writes) |
@@ -253,7 +269,7 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `cpu-throttling-` | Where `CPUThrottlingHigh` went pending or firing, from `ALERTS` over 3.6 hours |
 | `day1-gates-` | `tests/gates/day1.sh` runs, of which `-1` and `-2` are the same bytes as `../day1-gates-20261104T184733Z.txt` and `../day1-gates.txt`. Also proofs of the script on scratch copies: injected faults and signals (backlog item H46), and a reviewer's logs, which describe the script before `f878bca` (`-adversarial-`) |
 | `dr-` | Disaster recovery work: backups and retention, in-place Infisical restores (`-inplace-restore-`), rehearsals in throwaway places (`-fresh-instance-rehearsal-`, `-plane-restore-rehearsal-`), the plan and its refusals, locks, the harness's stubbed scenarios and source, its mutants and stop sweep. None of these is a full clean restore |
-| `drill-` | Logs of the drills that write one: pod restart in dev and prod-sim, with a JSON per StatefulSet, failed deploy and failing migrator with their alert files, and clean-restore. A clean-restore log may be `PLAN_ONLY=yes`, which stops before the delete, or a run under way when it was published, so read its last line |
+| `drill-` | Logs of the drills that write one: pod restart in dev and prod-sim, with a JSON per StatefulSet, failed deploy and failing migrator with their alert files, and clean-restore. A clean-restore log may be `PLAN_ONLY=yes`, which stops before the delete, or a run under way when it was published, so read its last line. `drill-clean-restore-20261105T074859Z.log` is the first whole run, `RESULT FAIL` on one step of its clean install, and `-105347Z` is the cold run, in progress at this writing |
 | `foundation-logs-` | Log level counts and errors for Traefik and metrics-server after the bring-up |
 | `h16-` | Backlog item H16, `ArgoSyncFailed` during a retry loop: a throwaway Application on the real controller, when the alert fired, metrics, operation durations, promtool, validation |
 | `h17-` | H17, the allow list on internal routes: what the other doors do with free egress, whether a missing Middleware fails closed, Infisical isolation from the host, the ownership check, validation |
@@ -275,14 +291,14 @@ file nor the line below names the command, it is not recorded, so say that when 
 | `netpol-` | `scripts/test-netpol.sh`: a TSV per run by UTC start, terminal output by source namespace (`-foundation-`, `-infisical-`), and checks from real pods. A TSV with `fixture` in its note column comes from `harness-netpol-fixtures-*`, and is not a run of the real matrix |
 | `plane-dev-` | Plane in dev before the branded images were promoted at `4f622e3`: first boot, smoke, PSA dry run, rollouts and quota, startup, memory, worker, `/live`, cookie attributes, public board, PDF export, page duplicate, the pod restart drill, the NetworkPolicy matrix, two screenshots of the upstream UI. `plane-dev-final-*` is later: `make test-e2e` and the running state on the final images |
 | `plane-prod-sim-` | Plane in prod-sim on upstream images, before `0af8956`: first boot, smoke, concurrent load with dev, separation attempts between the environments (network and state, with the scripts saved as `*-script.py.txt`), pod restart drills, worker and broker restart, memory samples, snapshots, and the proposed `smoke.py` patch |
-| `publish-evidence-` | The negative control for `scripts/publish-evidence.sh`, the script that ran it, and the check by hand of what it published |
+| `publish-evidence-` | The negative control for `scripts/publish-evidence.sh`, the script that ran it, and the check by hand of what it published (`-control-`, `-check-`), the session rule's own control and script (`-session-control-`), and what each later publish printed (`-final-`) |
 | `quota-budget-` | Plane pods' requests against the quota in `modules/foundation`, from rendered manifests |
 | `registry-memory-` | H39, how much memory `plane-registry` needs during a push, on scratch containers |
 | `render-m4-m7-` | `make render`, `render.sh --check`, kubeconform, conftest and negative controls from the render fixes |
-| `restore-` | JSON from `scripts/restore.sh`: each step with its status, for the in-place Infisical restores and for Plane in prod-sim and dev. A refusal reads `result: FAIL` and stops early, as `restore-prod-sim-20261105T073428Z.json` does. `restore-smoke-*` is the proof step's smoke |
+| `restore-` | JSON from `scripts/restore.sh`: each step with its status, for the in-place Infisical restores, for Plane in prod-sim and dev, and for the clean restore (`restore-clean-`). A refusal reads `result: FAIL` and stops early, as `restore-prod-sim-20261105T073428Z.json` does. `restore-smoke-*` is the proof step's smoke |
 | `routes-` | `tests/routes/internal-routes.sh` before and after the allow list (H17) |
 | `shellcheck-ops-` | shellcheck and bash 3.2 syntax on the entry-point scripts |
-| `smoke-` | JSON from `tests/e2e/smoke.py`, by environment and UTC start, with the process id when `scripts/test.sh` ran it. `smoke-dev-20261104T225624Z.json` is a FAIL, 37 of 38 |
+| `smoke-` | JSON from `tests/e2e/smoke.py`, by environment and UTC start, with the process id when `scripts/test.sh` ran it, or by the run's own id when it ran directly, such as PERS-3's `smoke-dev-d751a926.json`. `smoke-dev-20261104T225624Z.json` is a FAIL, 37 of 38 |
 | `status-real-` | `make status` on the cluster, before Argo CD was installed |
 | `terraform-` | Terraform and TFLint static checks, and mock-provider tests on a throwaway copy |
 | `test-` | `scripts/test.sh` summaries: one line per test with its label and evidence path, by UTC start |
