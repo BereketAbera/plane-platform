@@ -176,6 +176,9 @@ class ZstdStream(io.RawIOBase):
     def readinto(self, buffer):
         data = self.process.stdout.read(len(buffer))
         buffer[: len(data)] = data
+        # Without this, a stream zstd could not read would end early and look like a short, clean one.
+        if not data and self.process.wait() != 0:
+            raise OSError(f"zstd exited {self.process.returncode}")
         return len(data)
 
 
