@@ -48,20 +48,20 @@ The security posture of a local, single-node, single-operator platform that runs
 | Argo CD project `plane-prod-sim` | As above, for `plane-prod-sim` | Same |
 | Operator `iso-dev-controller-manager` | Role in `plane-dev`: Secrets and ConfigMaps read and write, `serviceaccounts/token` create, patch workloads, Infisical CRs | Chart with `scopedRBAC: true` |
 | Operator `iso-prod-sim-controller-manager` | Same, in `plane-prod-sim` | Same |
-| Both operators, cluster-wide | `tokenreviews` and `subjectaccessreviews` create, `/metrics` get. Three cluster-scoped objects the chart renders in scoped mode | Same |
+| Both operators, cluster-wide | `tokenreviews` and `subjectaccessreviews` create, through ClusterRole `iso-*-metrics-auth-role` and its binding. The third object the chart renders in scoped mode, ClusterRole `iso-*-metrics-reader`, grants `/metrics` get and is bound to nobody, so the operators answer no to it ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)) | Same |
 | `plane-infisical-auth` in each Plane namespace | `system:auth-delegator`. No pod runs as it | `infisical/manifests/token-reviewer.yaml` |
 | `plane` ServiceAccount, every Plane pod | No role bindings, no mounted token | `helm/plane/components/hardening/serviceaccounts.yaml` |
-| `infisical-server` | No role bindings, no mounted token. Kubernetes Auth reviews use the caller's token | `infisical/manifests/serviceaccount.yaml` |
-| Grafana | Role over ConfigMaps in `monitoring` only (`rbac.namespaced: true`) | `helm/values/kube-prometheus-stack.yaml` |
-| Prometheus, its operator, kube-state-metrics, Alloy, Argo CD controller, Traefik | Cluster-wide roles from their charts. Not enumerated or narrowed here | `helm/values/*` |
+| `infisical-server` | The chart's Role over `jobs` read in `infisical`, and no mounted token, so the pod cannot use it. Kubernetes Auth reviews use the caller's token | `infisical/manifests/serviceaccount.yaml` |
+| Grafana | Role over ConfigMaps and Secrets in `monitoring` only (`rbac.namespaced: true`): get, watch and list. Those Secrets include `kps-grafana`, `alertmanager-kps-alertmanager` and `kps-prometheus-token`. It gets no in the Plane namespaces ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)) | `helm/values/kube-prometheus-stack.yaml` |
+| Prometheus, its operator, kube-state-metrics, Alloy, Argo CD controller and server, Traefik | Cluster-wide roles from their charts, not narrowed here. The Argo CD controller can do anything. Traefik and the Prometheus operator can list Secrets in every namespace, and the Argo CD server can get them. Prometheus, kube-state-metrics and Alloy can list pods everywhere, and not Secrets ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)) | `helm/values/*` |
 
 AppProjects are owned by Terraform and not synced from Git, so a commit cannot edit what a project allows. A commit could set `project: platform` on a Plane Application. `policy/gitops.rego` refuses that in CI ([negative control](evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)), and on this GitHub plan a failing check cannot block a merge. See scenario 10 in [environments.md](environments.md#failure-scenarios). Each cluster-scoped binding above is deployed under `platform`.
 
 Conftest enforces the token rule. `policy/workloads.rego` denies a workload without `automountServiceAccountToken: false`, except a named allow-list of the two operator Deployments. The allow-list is keyed on name, so a manifest cannot exempt itself through a label.
 
-The operator's Role is broad inside its namespace: it can read every Secret there and mint a token for any ServiceAccount there. So a compromised operator owns its environment. Scoped mode limits that to one environment and goes no further.
+The operator's Role is broad inside its namespace: it can read every Secret there and mint a token for any ServiceAccount there. So a compromised operator owns its environment. Scoped mode limits that to one environment and goes no further. It does nothing about the chart accounts in the last row: a compromised Traefik, Prometheus operator or Argo CD controller reads both environments' Secrets.
 
-Measured with `kubectl auth can-i` on 2026-11-04, for the two operators, `plane-infisical-auth`, `plane` and `default`: each operator reads Secrets and mints tokens at home and gets no in the other namespace, in `infisical` and across all namespaces, and the others cannot read Secrets ([infisical-rbac-1.txt](evidence/runs/infisical-rbac-1.txt), [state 2](evidence/runs/plane-prod-sim-separation-state-2.txt)). The chart-installed principals in the last rows have not been asked. [[VERIFY: kubectl auth can-i results for each principal above match this table on the running cluster]]
+Measured with `kubectl auth can-i` on 2026-11-04, for the two operators, `plane-infisical-auth`, `plane` and `default`: each operator reads Secrets and mints tokens at home and gets no in the other namespace, in `infisical` and across all namespaces, and the others cannot read Secrets ([infisical-rbac-1.txt](evidence/runs/infisical-rbac-1.txt), [state 2](evidence/runs/plane-prod-sim-separation-state-2.txt)). On 2026-11-05 the kubeconfig and every ServiceAccount in the table were asked again, and the table now says what the API server answered, which corrected Grafana's Secrets, the operators' `/metrics` and `infisical-server`'s Role ([cluster-readings-2.txt](evidence/runs/cluster-readings-2.txt)). `can-i` reads an account's rights, not what its process does with them.
 
 ## Pod Security Admission
 
@@ -74,8 +74,8 @@ Terraform creates every namespace and sets these labels.
 | `monitoring` | `baseline` | `restricted` | Same |
 | `monitoring-agents` | `privileged` | `restricted` | node-exporter needs `hostNetwork` and `hostPID`. It is the only workload here |
 | `infisical` | `baseline` | `restricted` | Chart-rendered server |
-| `plane-dev` | `baseline` | `restricted` | Hardening targets `restricted`, enforcement waits for a per-workload test |
-| `plane-prod-sim` | `baseline` | `restricted` | Contract: tighten only after a per-workload non-root test passes |
+| `plane-dev` | `baseline` | `restricted` | Hardening targets `restricted`. The per-workload test passed on upstream images, the label has not moved, and the test has not been repeated on the branded images |
+| `plane-prod-sim` | `baseline` | `restricted` | Contract: tighten only after a per-workload non-root test passes. It passed on upstream images, and the label has not moved |
 
 `kube-system` is kind's and carries no PSA label from this repository.
 
@@ -83,7 +83,7 @@ Terraform creates every namespace and sets these labels.
 
 Read-only root filesystem is not set on Plane application containers. `.trivyignore` accepts `KSV-0014` until 2027-02-01 for that reason. The Infisical data pods, the backup Jobs and the operators do set it.
 
-Measured on 2026-11-04, on upstream images in both environments: each Plane container with a shell reported its configured UID, Silo and the finished migrator were read from their pod specs, and a server-side dry run of `enforce=restricted` gave no warnings ([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). That meets the condition in contract section 2 for tightening `plane-prod-sim`, and the label has not moved. Dev's branded images have not had the dry run repeated.
+Measured on 2026-11-04, on upstream images in both environments: each Plane container with a shell reported its configured UID, Silo was read from its pod spec, and a server-side dry run of `enforce=restricted` gave no warnings ([dev](evidence/runs/plane-dev-psa-1.txt), [prod-sim](evidence/runs/plane-prod-sim-host-and-identity-1.txt)). The finished migrator was read from its pod spec too, in dev that day and in prod-sim on 2026-11-05, still on upstream's image ([cluster-readings-1.txt](evidence/runs/cluster-readings-1.txt)). That meets the condition in contract section 2 for tightening `plane-prod-sim`, and the label has not moved. The branded images, which both environments now run, have not had the dry run repeated.
 
 ## NetworkPolicy model
 
@@ -123,7 +123,7 @@ Results, latest run for each source namespace, by `FROM_NS`. They predate `01ab7
 | `traefik` | 28 | 10 PASS, 18 INCONCLUSIVE, before Plane's Services existed | [netpol-20261104T210010Z.tsv](evidence/runs/netpol-20261104T210010Z.tsv) |
 | `kube-system` | 3 | NOT RUN | none |
 
-No committed evidence yet shows the whole matrix in one run. This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
+No published evidence yet shows the whole matrix in one run. One such run exists: `netpol-20261105T010838Z.tsv`, from `scripts/test.sh` at `aaf5fb1` on 2026-11-05, with 418 PASS, 0 FAIL and 0 INCONCLUSIVE from all seven namespaces, and all 292 deny rows ending in a timeout. It is still in `.local/evidence-raw/`, so it does not count as a result here yet. [[VERIFY: make test-netpol passes every allow and deny row on the running platform]] This shows policy behaviour inside one cluster, and it does not make namespaces equivalent to independent clusters.
 
 ### kindnet limits
 
@@ -162,12 +162,12 @@ The quota counts each Deployment twice, because a rolling update surges one extr
 
 What this leaves open:
 
-- Memory limits sum above the VM's memory by design. Estimate: about 107% of a 14 GiB VM, from summing the configured limits of all workloads. A real peak can trigger the OOM killer across environments.
+- Memory limits sum above the VM's memory by design. On 2026-11-05 the limits of the 56 running pods summed to 15,812 MiB, 113% of the 13.63 GiB the VM reports, with etcd, the API server and the other control plane containers unlimited on top ([cluster-readings-1.txt](evidence/runs/cluster-readings-1.txt)). A real peak can trigger the OOM killer across environments.
 - Quotas and limits act per namespace or per container. Node pressure does not. kind disables eviction and image GC, so a full disk produces write errors, not evictions.
 - No disk quota exists. kind's `standard` class ignores PVC capacity.
 - The pod quota budgets the exporters since `bc8bb91`. All seven Plane Deployments surging at once reached 21 of 24 pods with no `FailedCreate` ([plane-dev-rollout-quota-1.txt](evidence/runs/plane-dev-rollout-quota-1.txt)). Every Deployment surging, exporters included, with the migrator, a backup and an ad-hoc pod would be 26, over the quota, by static count ([quota-budget-1.txt](evidence/runs/quota-budget-1.txt)). [[VERIFY: a backup Job fits the pod quota while exporters and rolling updates run]]
 
-Peak so far, with both environments running under both smokes, the matrices and the restart drills: 10.49 GiB of the VM's 13.63 GiB, with 0.60 GiB of swap, and about 1 GiB of that the owner's unrelated containers. A quiet reading on 2026-11-05 was `kubectl top` node 8,331 MiB and `docker stats` node 8.155 GiB ([memory](evidence/runs/plane-prod-sim-memory-1.txt), [snapshot](evidence/runs/plane-prod-sim-snapshot-final-1.txt)). Prometheus, Loki and Infisical's Postgres touched their cgroup limits, with 0 OOM kills ([limits-breakdown-1.txt](evidence/runs/limits-breakdown-1.txt)). The load test has not run, so this says nothing about peak under load.
+Highest VM use so far, with both environments running: 10.49 GiB of the 13.63 GiB, at 23:23:42 on 2026-11-04, in a low-load separation run while replaced Argo CD pods overlapped. Under both smokes and the matrices the top was 9.87 GiB, and under the restart drills 9.90 GiB. Swap reached 0.60 GiB, and about 1 GiB of each figure is the owner's unrelated containers. A quiet reading on 2026-11-05 was `kubectl top` node 8,331 MiB and `docker stats` node 8.155 GiB ([memory](evidence/runs/plane-prod-sim-memory-1.txt), [snapshot](evidence/runs/plane-prod-sim-snapshot-final-1.txt)). Prometheus, Loki and Infisical's Postgres touched their cgroup limits, with 0 OOM kills ([limits-breakdown-1.txt](evidence/runs/limits-breakdown-1.txt)). The load test has not run, so this says nothing about peak under load.
 
 ## Secret isolation
 
@@ -198,11 +198,11 @@ A cross-project read returns 403. On 2026-11-04 each reader got 403 on the other
 | Chart versions exact | Argo CD `targetRevision`, Terraform `version`, and the Plane chart vendored byte-identical with its sha256 recorded |
 | CLI tools by checksum | `tools.lock`, `scripts/install-tools.sh` |
 | GitHub Actions by commit SHA | Workflows. `zizmor` audits them |
-| `kind load` | Forbidden. It cannot work with this host's containerd image store (kind issue 3795) |
+| `kind load` | Forbidden. It is reported to fail on this host's containerd image store (kind issue 3795), and that was not reproduced here, because nothing calls it |
 
 Pulls go through pull-through caches declared in `infrastructure/kind/containerd-certs.d/`. A digest makes the mirror safe to trust for content. It does not make the content safe.
 
-Contract section 5 specifies branded images at `localhost:5001/wayline/*`. Since promotion `4f622e3` on 2026-11-05 the dev overlay references web, admin, space and backend there by digest. The prod-sim overlay still references `docker.io/makeplane/*` by digest, until it is promoted. `live` stays upstream's in both.
+Contract section 5 specifies branded images at `localhost:5001/wayline/*`. The dev overlay has referenced web, admin, space and backend there by digest since promotion `4f622e3` on 2026-11-05, and the prod-sim overlay since `0af8956`, with the same digests. `live` stays upstream's in both.
 
 The local registry has no authentication and listens on `127.0.0.1:5001`. Anyone local can push a new tag. Pods reference digests, so a new tag changes nothing already pinned.
 
@@ -222,10 +222,11 @@ Images are scanned by `scripts/ci/scan-images.sh`, through `make scan-images`, w
 |---|---|---|
 | [`scan-images-20261104T215437Z`](evidence/security/README.md) | 36 of 36 targets, the complete run | FAIL on the policy: 5 CRITICAL with a fix, in `wayline/backend` and `wayline/space`, all inherited from upstream's images. 26 CRITICAL, 600 HIGH, 837 MEDIUM across all targets |
 | [`scan-images-20261104T235800Z`](evidence/security/README.md) | The 5 targets built here, from `1563cbf` | PASS, exit 0: no image we build has a CRITICAL with a fix. `wayline/backend` 4 HIGH, `wayline/space` 30 HIGH. The source lockfile row still lists 1 CRITICAL, proxy-addr 2.0.7, which no bundle ships |
+| [`scan-images-20261105T020423Z`](evidence/security/scan-images-20261105T020423Z/README.md) | The same 5 targets, from `ec45e21`, the build both environments run | PASS, exit 0, with the same findings: none added and none gone |
 
-The final run did not scan upstream's images again. In the complete run these had a CRITICAL with a fix, reported only: postgres 15.19 and 16.15, rabbitmq 3.13.7, plane-backend, plane-live, plane-space, and argocd v3.5.7. Infisical's image had 5 CRITICAL with no fix. `redis:7.2.17-alpine` is on an end-of-life Alpine, where trivy warns that its OS findings may be incomplete. RabbitMQ 3.13 is an end-of-life series, kept because Celery attaches 0 consumers on 4.3 (upstream chart PR 304).
+The two later runs did not scan upstream's images again. In the complete run these had a CRITICAL with a fix, reported only: postgres 15.19 and 16.15, rabbitmq 3.13.7, plane-backend, plane-live, plane-space, and argocd v3.5.7. Of the three from Plane, only plane-live still runs here. Infisical's image had 5 CRITICAL with no fix. `redis:7.2.17-alpine` is on an end-of-life Alpine, where trivy warns that its OS findings may be incomplete. RabbitMQ 3.13 is an end-of-life series, kept because Celery attaches 0 consumers on 4.3 (upstream chart PR 304).
 
-What this does not cover: local services outside the cluster manifests (the registry, `plane-git`, the kind node), and old package bytes left in `FROM` layers. A finding means a version is listed as affected, and nobody has checked whether any of them can be reached here. `scripts/ci/build-images.sh` sets `--provenance=false --sbom=false`, so built images carry no SBOM or provenance. [The README](evidence/security/README.md) has the detail.
+What this does not cover: local services outside the cluster manifests (the registry, `plane-git`, the kind node), and old package bytes left in the `FROM` layers of `wayline/space`, the backend having none since it was flattened. The zeros for web and admin cover OS packages only, because their clients are bundles with no package metadata. A finding means a version is listed as affected, and nobody has checked whether any of them can be reached here. `scripts/ci/build-images.sh` sets `--provenance=false --sbom=false`, so built images carry no SBOM or provenance. [The README](evidence/security/README.md) has the detail.
 
 Trivy runs from the pinned binary in `tools.lock`, never through `trivy-action`, whose tags were force-pushed with malware in March 2026 (GHSA-69fq-xp46-6x23).
 
@@ -253,7 +254,7 @@ On GitHub, recorded in [docs/evidence/ci/](evidence/ci/README.md) with run URLs:
 
 | Workflow | Result on 2026-11-04 | What it does not show |
 |---|---|---|
-| `ci.yml` | PASS on 4 pushes, f733b87 to 5fdf41d. One run with a planted `kind: Secret` went red, and 21 of 21 planted defects were caught on a real runner | Never on `on: pull_request`. The commits since `b19fe26` have not been pushed, so promtool, the new policy rules, the dev check and the scan have run only on this Mac |
+| `ci.yml` | PASS on 4 pushes, f733b87 to 5fdf41d. One run with a planted `kind: Secret` went red, and 21 of 21 planted defects were caught on a real runner | Never on `on: pull_request`. Nothing after `da7a4c9` has reached GitHub, so promtool, the new policy rules, the dev check, the Wayline pipeline and the scan have run only on this Mac |
 | `images.yml` | One run, success, **building nothing**, because `apps/wayline/images.txt` was not on main | NOT RUN as a build: no image pushed, no digest, no scan, no bump pull request |
 | `promote-prod-sim.yml` | Refused an invented digest. BLOCKED at opening a pull request, because the repository setting that lets workflows do that is off | No promotion pull request has been opened, merged or published |
 | `wayline-upstream-check.yml` | NOT RUN | |
