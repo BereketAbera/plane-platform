@@ -218,7 +218,7 @@ If a new one appears, read the diff from the UI at `http://argocd.localhost`, or
 
 ### Auto-sync was left paused
 
-Scripts save the `automated` block and restore it in a trap. That trap cannot run after `kill -9`, a crash, or a reboot. The script prints the exact command when a restore fails. `make restore-clean` puts back any it finds on a later run (`argo_unpause_all` in `monitoring/ops/lib.sh`). Other scripts do not.
+Scripts save the `automated` block and restore it in a trap. That trap cannot run after `kill -9`, a crash, or a reboot. The script prints the exact command when a restore fails. A re-run of `make restore-clean` after a hard stop puts back any it finds (`argo_unpause_all` in `monitoring/ops/lib.sh`). Other scripts do not.
 
 Check for a pause with the overview command above. `false` in the `AUTO` column means paused, and `<none>` is the normal state.
 
