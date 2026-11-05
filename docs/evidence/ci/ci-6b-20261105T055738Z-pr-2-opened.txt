@@ -1,0 +1,40 @@
+UTC date: 2026-11-05T05:57:38Z
+commit: 9c8e098
+command: pr-read.sh CI-6b 2, which runs each command shown below after its $ line. First read, right after the dispatch that opened it.
+
+$ gh pr view 2 --repo BereketAbera/plane-platform --json number,title,state,isDraft,mergeable,mergeStateStatus,baseRefName,baseRefOid,headRefName,headRefOid,author,createdAt,updatedAt,closedAt,mergedAt,url,commits,files,statusCheckRollup,body,reviewDecision,changedFiles,additions,deletions,comments
+{"additions":2,"author":{"is_bot":true,"login":"app/github-actions"},"baseRefName":"main","baseRefOid":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6","body":"Promotion to prod-sim, requested by @BereketAbera. Every digest here was already recorded\nfor dev, and `scripts/promote.sh` refused anything else. Nothing was rebuilt.\n\n**Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free\nplan, so there are no environment reviewers and no protected branches. Review it as the control it\nstands in for.\n\nAfter merging:\n\n1. `git pull`\n2. `make gitops-publish`, which first checks that plane-dev runs these digests and takes the prod-sim backup, because this workflow cannot reach the cluster","changedFiles":2,"closedAt":null,"comments":[],"commits":[{"authoredDate":"2026-11-05T05:56:59Z","authors":[{"email":"19558685+BereketAbera@users.noreply.github.com","id":"MDQ6VXNlcjE5NTU4Njg1","login":"BereketAbera","name":"BereketAbera"}],"committedDate":"2026-11-05T05:56:59Z","messageBody":"Promote-Env: prod-sim\nPromote-Image: plane-frontend=localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5\nPromote-Dev-Check: skipped: no cluster in reach, so nothing checked that plane-dev is healthy or runs these digests","messageHeadline":"promote(prod-sim): plane-frontend 96841278d02a","oid":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a"}],"createdAt":"2026-11-05T05:57:01Z","deletions":2,"files":[{"path":"gitops/environments/prod-sim/manifests.yaml","additions":1,"deletions":1,"changeType":"MODIFIED"},{"path":"helm/plane/overlays/prod-sim/kustomization.yaml","additions":1,"deletions":1,"changeType":"MODIFIED"}],"headRefName":"promote/prod-sim","headRefOid":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a","isDraft":false,"mergeStateStatus":"UNSTABLE","mergeable":"MERGEABLE","mergedAt":null,"number":2,"reviewDecision":"","state":"OPEN","statusCheckRollup":[],"title":"promote(prod-sim): plane-frontend 96841278d02a","updatedAt":"2026-11-05T05:57:01Z","url":"https://github.com/BereketAbera/plane-platform/pull/2"}
+[exit 0]
+
+$ gh pr diff 2 --repo BereketAbera/plane-platform
+diff --git a/gitops/environments/prod-sim/manifests.yaml b/gitops/environments/prod-sim/manifests.yaml
+index 3d3edd1..8643caa 100644
+--- a/gitops/environments/prod-sim/manifests.yaml
++++ b/gitops/environments/prod-sim/manifests.yaml
+@@ -794,7 +794,7 @@ spec:
+     spec:
+       automountServiceAccountToken: false
+       containers:
+-      - image: localhost:5001/wayline/web@sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
++      - image: localhost:5001/wayline/web@sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+         imagePullPolicy: IfNotPresent
+         lifecycle:
+           preStop:
+diff --git a/helm/plane/overlays/prod-sim/kustomization.yaml b/helm/plane/overlays/prod-sim/kustomization.yaml
+index c20d362..d25f385 100644
+--- a/helm/plane/overlays/prod-sim/kustomization.yaml
++++ b/helm/plane/overlays/prod-sim/kustomization.yaml
+@@ -29,7 +29,7 @@ images:
+ - digest: sha256:8c04bd18bb0823f5740881cbed2f8759a98729a9c687b4009f0a3641c853adbe
+   name: artifacts.plane.so/makeplane/plane-backend
+   newName: localhost:5001/wayline/backend
+-- digest: sha256:3d7575a1b9341b24dc882356b24d3d45126a4f5ccfb6abc72b07699668543747
++- digest: sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
+   name: artifacts.plane.so/makeplane/plane-frontend
+   newName: localhost:5001/wayline/web
+ - digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/branches?per_page=100 --jq [.[]|{name,sha:.commit.sha}]
+[{"name":"bump/dev-images","sha":"33b9109e495cf45e743d691f6a92739cf8d23eee"},{"name":"main","sha":"9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6"},{"name":"promote/prod-sim","sha":"4bdb73cad1b3f6d7d7ab8de7466c822f9c33ba5a"}]
+[exit 0]

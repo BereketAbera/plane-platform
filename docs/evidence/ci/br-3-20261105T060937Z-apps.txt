@@ -1,0 +1,35 @@
+UTC date: 2026-11-05T06:09:37Z
+commit: 0bd3e2d
+command: br3-apps.sh, which runs each command shown below after its $ line
+
+$ gh api user/installations --jq {total_count,installations:[.installations[]|{app_slug,target:.account.login,repository_selection,permissions,events,suspended_at}]}
+{"message":"You must authenticate with an access token authorized to a GitHub App in order to list installations","documentation_url":"https://docs.github.com/rest/apps/installations#list-app-installations-accessible-to-the-user-access-token","status":"403"}gh: You must authenticate with an access token authorized to a GitHub App in order to list installations (HTTP 403)
+[exit 1]
+
+$ gh api repos/BereketAbera/plane-platform/hooks --jq [.[]|{id,name,active,events,url:.config.url}]
+[]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/33b9109e495cf45e743d691f6a92739cf8d23eee/check-suites --jq [.check_suites[]|{app:.app.slug,app_owner:.app.owner.login,status,conclusion,created_at}]
+[{"app":"netlify","app_owner":"netlify","conclusion":null,"created_at":"2026-11-05T05:47:18Z","status":"queued"},{"app":"builder-io-integration","app_owner":"BuilderIO","conclusion":null,"created_at":"2026-11-05T05:47:18Z","status":"queued"},{"app":"github-actions","app_owner":"github","conclusion":"action_required","created_at":"2026-11-05T05:47:21Z","status":"completed"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/9c8e09828be34b7f1f9c240e9e5c3f6f746eccf6/check-suites --jq [.check_suites[]|{app:.app.slug,app_owner:.app.owner.login,status,conclusion,created_at}]
+[{"app":"netlify","app_owner":"netlify","conclusion":null,"created_at":"2026-11-05T05:39:51Z","status":"queued"},{"app":"builder-io-integration","app_owner":"BuilderIO","conclusion":null,"created_at":"2026-11-05T05:39:51Z","status":"queued"},{"app":"github-actions","app_owner":"github","conclusion":"success","created_at":"2026-11-05T05:39:55Z","status":"completed"},{"app":"github-actions","app_owner":"github","conclusion":"success","created_at":"2026-11-05T05:39:55Z","status":"completed"},{"app":"github-actions","app_owner":"github","conclusion":"failure","created_at":"2026-11-05T05:54:35Z","status":"completed"},{"app":"github-actions","app_owner":"github","conclusion":"failure","created_at":"2026-11-05T05:55:20Z","status":"completed"},{"app":"github-actions","app_owner":"github","conclusion":"success","created_at":"2026-11-05T05:56:12Z","status":"completed"},{"app":"github-actions","app_owner":"github","conclusion":"success","created_at":"2026-11-05T05:57:58Z","status":"completed"}]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/commits/84b63d9b6294319787276f303e354a66b945558b/check-suites --jq [.check_suites[]|{app:.app.slug,app_owner:.app.owner.login,status,conclusion,created_at}]
+[]
+[exit 0]
+
+$ gh api repos/BereketAbera/plane-platform/deployments?per_page=10 --jq [.[]|{environment,creator:.creator.login,created_at}]
+[]
+[exit 0]
+
+$ gh api apps/netlify --jq {slug,owner:.owner.login,permissions}
+{"owner":"netlify","permissions":{"checks":"write","contents":"read","emails":"read","issues":"write","metadata":"read","pull_requests":"write","statuses":"write"},"slug":"netlify"}
+[exit 0]
+
+$ gh api apps/builder-io-integration --jq {slug,owner:.owner.login,permissions}
+{"owner":"BuilderIO","permissions":{"actions":"read","administration":"write","checks":"write","contents":"write","emails":"read","issues":"read","members":"read","metadata":"read","pull_requests":"write","repository_hooks":"write","statuses":"read","workflows":"write"},"slug":"builder-io-integration"}
+[exit 0]
