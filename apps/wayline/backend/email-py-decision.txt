@@ -1,1 +1,1 @@
-replace-with-upstream-agpl-private-ghcr-only
+replace-with-upstream-agpl-flattened

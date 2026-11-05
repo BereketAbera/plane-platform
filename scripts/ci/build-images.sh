@@ -20,8 +20,13 @@
 #   <name> <dockerfile> <context>
 # With no images.txt there is nothing to build yet, which is not a failure.
 #
+# After pushing each image it walks every layer as the registry serves it, and stops if a layer holds the identifier on
+# upstream's commercially licensed files. It also stops if the flattened backend dropped anything from its base's config.
+# Those two read what was pushed, so PUSH=no runs neither, and a failure leaves that image in the registry it was just
+# pushed to, with no digest recorded for it. The backend's build also stops on that identifier before any push.
+#
 # Writes .build/digests.tsv as: <name> TAB <repository> TAB <sha256 digest>, only once every image has
-# been pushed, and never with PUSH=no, so a failed run leaves the last good file. scripts/promote.sh
+# been pushed and checked, and never with PUSH=no, so a failed run leaves the last good file. scripts/promote.sh
 # reads it. Environment: PUSH (yes), TAG (short git commit), DIGESTS_FILE, SKIP_NATIVE_BUILD (no),
 # WAYLINE_SOURCE_REPO (where /source points, default the BereketAbera/plane-platform repository).
 # shellcheck source=../lib/common.sh
@@ -37,14 +42,14 @@ LIST="$ROOT/apps/wayline/images.txt"
 
 cd "$ROOT"
 mkdir -p "$(dirname "$DIGESTS_FILE")"
-require_tools git docker yq
+require_tools git docker yq python3
 
 if [[ ! -f "$LIST" ]]; then
   warn "apps/wayline/images.txt does not exist yet, nothing to build"
   exit 0
 fi
 
-# D12 in PASS2_HANDOFF.md decides where images may go. PUSH=no publishes nothing, so it needs no decision.
+# D12 in apps/wayline/MODIFICATIONS.md decides where images may go. PUSH=no publishes nothing, so it needs no decision.
 [[ "$PUSH" != yes ]] || apps/wayline/scripts/publish-gate.sh "$PREFIX" || die "not publishing to $PREFIX"
 
 guard_disk
@@ -112,6 +117,12 @@ while read -r name dockerfile context _; do
     [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || die "no digest recorded for $repository"
     # Prove the registry serves that digest, independently of what the builder reported.
     docker buildx imagetools inspect "$repository@$digest" >/dev/null
+    python3 -B apps/wayline/checks/layer-check.py "$repository@$digest" \
+      || die "$repository@$digest failed the layer check, so no digest is recorded. It is already in that registry"
+    if [[ "$name" == backend ]]; then
+      python3 -B apps/wayline/checks/flatten-config.py "$repository@$digest" \
+        || die "$repository@$digest dropped config from its base, so no digest is recorded. Restate it in runtime/Dockerfile.backend"
+    fi
     printf '%s\t%s\t%s\n' "$name" "$repository" "$digest" >>"$WORK/digests.tsv"
     ok "$repository@$digest"
   fi

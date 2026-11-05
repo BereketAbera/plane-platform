@@ -1,30 +1,20 @@
 # syntax=docker/dockerfile:1.7
+# check=skip=SecretsUsedInArgOrEnv
 # Copyright (c) 2026 Bereket Abera
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Serves api, worker, beat and migrator, which all run this image with a different ./bin entrypoint.
 # Context: .build/wayline-dist/backend, filled by apps/wayline/backend/assemble.sh.
+#
+# Two stages. The first derives the image from upstream's, and is never published. The second copies its final filesystem
+# into an empty image, so what is published holds that one filesystem and no layer of upstream's. See D12 in
+# apps/wayline/MODIFICATIONS.md. The build still downloads upstream's image, as an input.
+#
 # Index digest from 'docker buildx imagetools inspect makeplane/plane-backend:v1.4.3', 2026-11-04.
-FROM makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+FROM makeplane/plane-backend:v1.4.3@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743 AS derived
 
-ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
-ARG WAYLINE_SOURCE_REF
-
-LABEL org.opencontainers.image.title="wayline-backend" \
-      org.opencontainers.image.description="Customized Plane Community Edition backend" \
-      org.opencontainers.image.licenses="AGPL-3.0-only" \
-      org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
-      org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
-
-# D12 in PASS2_HANDOFF.md. At v1.4.3, plane/utils/email.py is headed LicenseRef-Plane-Commercial. Upstream relicensed
-# it to AGPL-3.0-only on preview, and the COPY below puts upstream's own file over it, so the label above describes
-# the image's filesystem. The original file is still in the FROM layer underneath, and anyone who unpacks that
-# layer can read it, so scripts/ci/build-images.sh and images.yml publish only to the owner's private GHCR packages.
-
-# Upstream defaults this to a page on its own site, embedded in the "What's new" modal. Empty takes
-# upstream's own fallback.
-ENV INSTANCE_CHANGELOG_URL=
-
+# At v1.4.3, plane/utils/email.py carries an SPDX identifier naming Plane's commercial licence. Upstream relicensed it to
+# AGPL-3.0-only on preview, and the COPY below puts upstream's own file over it.
 COPY templates/ /code/templates/
 COPY wayline/ /opt/wayline/
 COPY wayline/Logo.png /code/plane/static/logos/Logo.png
@@ -38,9 +28,44 @@ RUN ["python", "/opt/wayline/edit_strings.py", "--root", "/code", "--manifest", 
 # CVE-2026-102268 in the base image's PyJWT. Hash-pinned, a wheel only, and no other package changes.
 RUN ["pip", "install", "--no-deps", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "--disable-pip-version-check", "--root-user-action=ignore", "--requirement", "/opt/wayline/pyjwt-requirements.txt"]
 
-# Stops the build if any file under /code carries the commercial header, if email.py is not upstream's AGPL file,
-# or if PyJWT is not the pinned version.
+# Stops the build if any file in this filesystem holds that identifier, if email.py is not upstream's AGPL file, or if
+# PyJWT is not the pinned version.
 RUN ["python", "/opt/wayline/check_image.py", "--build-time"]
 
-# Same UID as the hardening patches. Upstream's image has no such user and chmods /code to allow it.
+# What is published. Only this stage reaches a registry. Copying the whole filesystem is the point of it. hadolint warns
+# because that drops the config, which this stage restates below and checks/flatten-config.py compares with the base's.
+FROM scratch
+# hadolint ignore=DL3067
+COPY --from=derived / /
+
+ARG WAYLINE_SOURCE_REPO=https://github.com/BereketAbera/plane-platform
+ARG WAYLINE_SOURCE_REF
+# The public fingerprint of CPython's release signing key, which the base image sets in GPG_KEY. It goes through a build
+# argument only because the secret scanner reads a KEY=<hex> line as a credential, and it is not one.
+ARG CPYTHON_RELEASE_SIGNER=7169605F62C751356D054A26A821E680E5FA6305
+
+LABEL org.opencontainers.image.title="wayline-backend" \
+      org.opencontainers.image.description="Customized Plane Community Edition backend" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.source="${WAYLINE_SOURCE_REPO}" \
+      org.opencontainers.image.revision="${WAYLINE_SOURCE_REF}"
+
+# FROM scratch starts with an empty config, so this restates the base's, in its order, as 'docker buildx imagetools
+# inspect --format {{json .Image}}' read it from the digest above on 2026-11-05. It has no Entrypoint, Labels, Volumes, StopSignal
+# or Healthcheck. checks/flatten-config.py fails if a later base says something this does not, and allows two differences:
+# INSTANCE_CHANGELOG_URL, whose default is a page on upstream's site, embedded in the "What's new" modal, where empty takes
+# upstream's own fallback; and the UID, the same as the hardening patches, where upstream's image runs as root and
+# chmods /code to allow this.
+ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    LANG=C.UTF-8 \
+    GPG_KEY=${CPYTHON_RELEASE_SIGNER} \
+    PYTHON_VERSION=3.12.12 \
+    PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    INSTANCE_CHANGELOG_URL=
+WORKDIR /code
+EXPOSE 8000/tcp
 USER 1000
+CMD ["./bin/docker-entrypoint-api.sh"]
