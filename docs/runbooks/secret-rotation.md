@@ -115,7 +115,7 @@ make test-e2e ENV=dev
 
 You want a final `PASS` line, "Infisical backed up", and no journal. The evidence also records "Postgres rejects the replaced password", "SECRET_KEY unchanged" and "workload generations stable".
 
-In dev every line read PASS, no journal was left, `make test-e2e` was not part of that run, and an independent check found the old password refused, the new one accepted and the three Deployments holding the new value (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`, `.local/evidence-raw/SEC-2-20261105T072331Z-old-value.txt`).
+In dev every line read PASS and no journal was left. An independent check found the old password refused, the new one accepted and the three Deployments holding the new value (`.local/evidence-raw/rotate-dev-20261105T072345Z.log`, `.local/evidence-raw/SEC-2-20261105T072331Z-old-value.txt`).
 
 [[VERIFY: ROLLBACK=yes returns a deliberately interrupted rotation to the old password]]
 
