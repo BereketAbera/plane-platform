@@ -93,7 +93,8 @@ if [[ -n "$foreign" ]]; then
 fi
 
 # TEAR-1: refused with no confirmation, and nothing changes.
-step destroy-refused bash -c '! make destroy' || true
+# The drill that calls this runs with CONFIRM=yes in its environment, which make destroy would obey, so clear it here.
+step destroy-refused env -u CONFIRM bash -c '! make destroy' || true
 step destroy make destroy CONFIRM=yes SKIP_BACKUP=yes
 cleanup_clone
 trap - EXIT
