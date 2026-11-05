@@ -42,7 +42,7 @@ log "What the backend image replaces in upstream"
 if grep -q 'LicenseRef-Plane-Commercial' "$SRC/apps/api/plane/utils/email.py"; then
   ok "this tag's email.py still has the commercial header, so backend/vendor/email.py is still needed"
 else
-  warn "this tag's email.py has no commercial header. Drop backend/vendor/ and its COPY in runtime/Dockerfile.backend, and revisit D12"
+  warn "this tag's email.py has no commercial header. Drop backend/vendor/ and its COPY in runtime/Dockerfile.backend, revisit D12, and see whether the image still needs flattening"
   status=1
 fi
 # The only thing any caller at v1.4.3 takes from it. check_image.py proves it again in the image.
@@ -50,6 +50,16 @@ others="$(grep -rhE '^[[:space:]]*(from plane\.utils\.email import|import plane\
 [[ -z "$others" ]] || { warn "callers of email.py now take something else, so check it against backend/vendor/email.py: $others"; status=1; }
 grep -qx 'PyJWT==2.13.0' "$SRC/apps/api/requirements/base.txt" \
   || { warn "upstream moved its PyJWT pin. Read backend/pyjwt-requirements.txt and the edit in backend/edit_strings.py"; status=1; }
+
+log "What nginx may keep for a year"
+for app in web admin; do
+  if [[ -e "$SRC/apps/$app/public/assets" ]]; then
+    warn "apps/$app/public/assets exists, so unhashed files land under assets/. Read the rule in runtime/nginx-$app.conf and checks/cache-names.sh"
+    status=1
+  else
+    ok "apps/$app/public has no assets directory, so everything under assets/ is the bundler's"
+  fi
+done
 
 if [[ "$status" -eq 0 ]]; then
   ok "upgrade check clean. Now build, then run scripts/ci/build-images.sh and checks/smoke-images.sh, and look at the app"

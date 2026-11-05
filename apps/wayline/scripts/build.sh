@@ -126,6 +126,9 @@ for app in web admin space; do
   wants "$app" && "$WAYLINE/checks/font-urls.sh" "$app"
   wants "$app" && "$WAYLINE/checks/bundle-art.sh" "$app"
 done
+for app in web admin; do
+  wants "$app" && "$WAYLINE/checks/cache-names.sh" "$app"
+done
 
 # ---- assemble -----------------------------------------------------------------------------------
 log "Assemble $DIST"
