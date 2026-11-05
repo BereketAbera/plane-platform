@@ -236,7 +236,7 @@ Images are scanned by `scripts/ci/scan-images.sh`, through `make scan-images`, w
 
 | Run | Scope | Result |
 |---|---|---|
-| [`scan-images-20261105T140048Z`](evidence/security/scan-images-20261105T140048Z/README.md) | All 31 targets, the complete run at `f30a7f5`, on the build both environments run, with no lockfile row | PASS, exit 0: no image we build has a CRITICAL with a fix, and nothing was missed. 15 CRITICAL, 515 HIGH, 768 MEDIUM, 378 LOW, 120 UNKNOWN across all targets |
+| [`scan-images-20261105T140048Z`](evidence/security/scan-images-20261105T140048Z/README.md) | All 31 targets, the complete run at `f30a7f5`, on the build both environments run, with no lockfile row | PASS, exit 0: no image we build has a CRITICAL with a fix, and every target on its list was scanned. 15 CRITICAL, 515 HIGH, 768 MEDIUM, 378 LOW, 120 UNKNOWN across all targets |
 | [`scan-images-20261104T215437Z`](evidence/security/README.md) | 36 of 36 targets, the first complete run | FAIL on the policy: 5 CRITICAL with a fix, in `wayline/backend` and `wayline/space`, all inherited from upstream's images. 26 CRITICAL, 600 HIGH, 837 MEDIUM across all targets |
 | [`scan-images-20261104T235800Z`](evidence/security/README.md) | The 5 targets built here, from `1563cbf` | PASS, exit 0: no image we build has a CRITICAL with a fix. `wayline/backend` 4 HIGH, `wayline/space` 30 HIGH. The source lockfile row still lists 1 CRITICAL, proxy-addr 2.0.7, which no bundle ships |
 | [`scan-images-20261105T020423Z`](evidence/security/scan-images-20261105T020423Z/README.md) | The same 5 targets, from `ec45e21` | PASS, exit 0, with the same findings: none added and none gone |
