@@ -30,7 +30,7 @@ while IFS=$'\t' read -r name version platform url want member; do
   file="$tmp/download"
   echo "fetching $name $version"
   # A gateway error can outlast a few seconds: run 42044273346 lost a job to four 504s in 6 s, before any check ran.
-  curl -fsSL --retry 5 --retry-delay 5 --retry-connrefused -o "$file" "$url"
+  curl -fsSL --retry 5 --retry-delay 5 --retry-connrefused -o "$file" "$url" || { echo "could not download $name $version from $url" >&2; exit 1; }
   got="$(sha256 "$file")"
   if [[ "$got" != "$want" ]]; then
     echo "CHECKSUM MISMATCH for $name $version: want $want got $got" >&2; exit 1
