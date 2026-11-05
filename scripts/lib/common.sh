@@ -16,7 +16,10 @@ export KUBECONFIG="$LOCAL_DIR/kubeconfig"
 
 # Refuse to run if the host is about to run out of space. The Docker VM reports hundreds of
 # free GiB on its sparse disk, so nothing inside the cluster can see this limit.
-MIN_FREE_DISK_GIB="${MIN_FREE_DISK_GIB:-10}"
+MIN_FREE_DISK_DEFAULT_GIB=10
+MIN_FREE_DISK_GIB="${MIN_FREE_DISK_GIB:-$MIN_FREE_DISK_DEFAULT_GIB}"
+# One line for each time a disk check was gone past or lowered, and why.
+LOW_DISK_LOG="$LOCAL_DIR/evidence-raw/low-disk-overrides.log"
 
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m ok\033[0m %s\n' "$*"; }
@@ -25,9 +28,20 @@ die()  { printf '\033[1;31mfail\033[0m %s\n' "$*" >&2; exit 1; }
 
 free_disk_gib() { df -g "$ROOT" 2>/dev/null | awk 'NR==2{print $4}' || df -BG --output=avail "$ROOT" | tail -1 | tr -dc 0-9; }
 
+# MIN_FREE_DISK_GIB lowers the floor for this script and everything it runs, so a value below the default leaves
+# a line in the same log as ALLOW_LOW_DISK, once per script. A caller that names its own limit is not asking for
+# the floor, so that limit is not touched by it.
+FLOOR_LOWERED_LOGGED=no
 guard_disk() {
   local need="${1:-$MIN_FREE_DISK_GIB}" free
+  [[ "$MIN_FREE_DISK_GIB" =~ ^[0-9]+$ ]] || die "MIN_FREE_DISK_GIB takes a whole number of GiB, and got '$MIN_FREE_DISK_GIB'"
   free="$(free_disk_gib)"
+  if [[ $# -eq 0 && "$MIN_FREE_DISK_GIB" -lt "$MIN_FREE_DISK_DEFAULT_GIB" && "$FLOOR_LOWERED_LOGGED" == no ]]; then
+    FLOOR_LOWERED_LOGGED=yes
+    mkdir -p "${LOW_DISK_LOG%/*}"
+    printf '%s %s: MIN_FREE_DISK_GIB=%s lowers the %s GiB floor, with %s GiB free\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${0##*/}" "$MIN_FREE_DISK_GIB" "$MIN_FREE_DISK_DEFAULT_GIB" "$free" >>"$LOW_DISK_LOG"
+    warn "MIN_FREE_DISK_GIB=$MIN_FREE_DISK_GIB lowers the $MIN_FREE_DISK_DEFAULT_GIB GiB floor, with $free GiB free. Logged in ${LOW_DISK_LOG#"$ROOT"/}."
+  fi
   [[ "$free" -ge "$need" ]] || die "only ${free} GiB free on the host, need at least ${need} GiB. Free space first."
 }
 
