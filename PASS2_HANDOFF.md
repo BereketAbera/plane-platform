@@ -126,7 +126,7 @@ Left on GitHub for the owner: branch `promote/prod-sim`, and run 41976206674, he
 - That dev and prod are independent. Pass 1's two namespaces share one API server, etcd, kernel, ingress, Argo CD and Infisical.
 - A cold install, with the local registry and caches gone, and recreation after them. See [Still in progress](#still-in-progress). A new machine's tool downloads, which that drill copies instead.
 - Off-host backups, encrypted backups and a backup schedule. Backups are manual and on the laptop.
-- A clean restore that stops and resumes for real. Four off-path ways to lose data were fixed and merged at `18af97a`: the exit trap with dead output, `make destroy`'s backup under a kept marker, `ALLOW_RESUME_OVERWRITE` naming environments, and the `data-back` marker. [infisical/README.md](infisical/README.md#not-yet-proven) lists what has run only on stubs.
+- A clean restore that stops and resumes for real. Four off-path ways to lose data were fixed and merged at `18af97a`: the exit trap with dead output, `make destroy`'s backup under a kept marker, `ALLOW_RESUME_OVERWRITE` naming environments, and the `data-back` marker. The real restore ran on the script from before them, and it did not stop. [infisical/README.md](infisical/README.md#not-yet-proven) lists what has run only on stubs.
 - An alert reaching a person, or any receiver but the in-cluster sink.
 - Growth over time and retention. Pass 1 has run for under two days on test data.
 - Legal questions. No legal review has happened.
