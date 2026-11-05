@@ -286,9 +286,9 @@ tests:
     input_series:
       # The scrape misses one sample at 8m, as when the controller restarts, and health moves at 12m.
       - series: 'argocd_app_info{name="render-failure",dest_namespace="plane-dev",project="plane-dev",sync_status="Unknown",health_status="Healthy",autosync_enabled="true"}'
-        values: '1x7 stale _ _ _ 1 stale'
+        values: '1x7 stale'
       - series: 'argocd_app_info{name="render-failure",dest_namespace="plane-dev",project="plane-dev",sync_status="Unknown",health_status="Healthy",autosync_enabled="true",pod="argocd-application-controller-0"}'
-        values: '_x9 1x2 stale'
+        values: '_x9 1x3 stale'
       - series: 'argocd_app_info{name="render-failure",dest_namespace="plane-dev",project="plane-dev",sync_status="Unknown",health_status="Progressing",autosync_enabled="true",pod="argocd-application-controller-0"}'
         values: '_x13 1x30'
       # Unknown for a moment, as when Git restarts, and fixed well before 15m.

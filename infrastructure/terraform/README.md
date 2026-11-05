@@ -108,7 +108,9 @@ kubectl --context kind-plane-platform -n argocd get application <child> \
 Fix the cause in Git and publish it. Whether that lands by itself depends on what is waiting:
 
 - A fix to a child's values or manifests reaches the child at its next automated sync or retry. A child waiting on something
-  that never turns Degraded, such as a StatefulSet or a Prometheus with no ready pod, gets neither, so end that child's operation.
+  that never turns Degraded, such as a StatefulSet or a Prometheus with no ready pod, gets neither while its operation is open, so
+  end that operation. A single-wave chart child has already closed its own, so a new commit starts its automated sync as usual
+  (measured on a throwaway stuck Progressing: synced within a second of a hard refresh).
 - A fix to a child's Application manifest only reaches the cluster through the root, so end the root's operation.
 
 To end an operation, set its phase. The controller answers within seconds, deletes any running hook, and clears `.operation`:

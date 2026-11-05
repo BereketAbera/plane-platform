@@ -141,7 +141,7 @@ prometheus:
     ruleSelectorNilUsesHelmValues: false
     scrapeConfigSelectorNilUsesHelmValues: false
     # Anonymous memory, not page cache, reached 652 MiB of the old 768Mi at the first head compaction, with 241k
-    # head series (84k of them cAdvisor's, which churn with every test pod). Prometheus sets GOMEMLIMIT to 90% of
+    # head series. About half are cAdvisor's, which churn with every test pod. Prometheus sets GOMEMLIMIT to 90% of
     # this by itself, so that left 39 MiB before the collector starts burning this 1 CPU, and then the OOM killer.
     # With GOGC 75 the heap only reaches that once about 395 MiB is live, so 1024Mi costs nothing until then.
     resources:
