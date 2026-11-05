@@ -14,6 +14,7 @@ The application here is a customized deployment of open-source Plane Community E
 | `MEASURE`, in double square brackets | The number has to be measured on a real run |
 | "estimate" | A planning number. The text says how it was derived |
 | "research, 2026-11-04" | Read from an upstream source, registry or issue on that date, not re-checked since. Upstream status can change |
+| A path under `.local/evidence-raw/` | Raw output from a real run that is not published yet. `make publish-evidence` copies it to `evidence/runs/` under the same name |
 
 Where source code and research disagreed, the code wins, and the record says so.
 
