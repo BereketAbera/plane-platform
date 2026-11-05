@@ -1,6 +1,6 @@
 # 0007. Self-hosted Infisical with one project per environment
 
-**Status:** Accepted, 2026-11-04. The layer has run on the real cluster since then, and what that changed is in the last section. Runtime validation pending where still marked.
+**Status:** Accepted, 2026-11-04. The layer has run on the real cluster since then, and what that changed is in the last section.
 
 ## Context
 
