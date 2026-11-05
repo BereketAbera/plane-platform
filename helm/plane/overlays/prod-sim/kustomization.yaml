@@ -23,26 +23,22 @@ components:
 # Contract section 13: digests live here, and only `make promote` changes these lines. `name` is
 # the reference the chart renders, so it never changes. Index digests, never platform-specific ones.
 images:
-- digest: sha256:45c95253282508a6c8fc633926231d7c0da003275f09c492bc60ed3cdab83208
+- digest: sha256:c24ead5a02a18f4cd452c1b3650e57136352ed6b49102de2bbe491d2649432f1
   name: artifacts.plane.so/makeplane/plane-admin
-  newName: docker.io/makeplane/plane-admin
-  newTag: v1.4.3
-- digest: sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+  newName: localhost:5001/wayline/admin
+- digest: sha256:9c7130942d90a4920f59fb4e92bd2dc1bf7a70cf035d560a0cdac5caf02c839e
   name: artifacts.plane.so/makeplane/plane-backend
-  newName: docker.io/makeplane/plane-backend
-  newTag: v1.4.3
-- digest: sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+  newName: localhost:5001/wayline/backend
+- digest: sha256:96841278d02af51d83c0a5886530961dd330e11ae55f8d0b784d94f811f3dcc5
   name: artifacts.plane.so/makeplane/plane-frontend
-  newName: docker.io/makeplane/plane-frontend
-  newTag: v1.4.3
+  newName: localhost:5001/wayline/web
 - digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
   name: artifacts.plane.so/makeplane/plane-live
   newName: docker.io/makeplane/plane-live
   newTag: v1.4.3
-- digest: sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+- digest: sha256:0a4ca742292d635eb0a894efff20858baf3a3667e35f08d0a650208d185a32a2
   name: artifacts.plane.so/makeplane/plane-space
-  newName: docker.io/makeplane/plane-space
-  newTag: v1.4.3
+  newName: localhost:5001/wayline/space
 - digest: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
   name: docker.io/pgsty/silo
   newName: docker.io/pgsty/silo
