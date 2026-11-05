@@ -1232,7 +1232,7 @@ promote_refuses_while_a_revert_is_under_way() {
   git -C "$CLONE" revert --no-commit HEAD
   in_clone env SKIP_REGISTRY_CHECK=yes SKIP_BACKUP=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
   expect "a refusal" [ "$status" -ne 0 ]
-  expect "the reason" said "a revert is under way"
+  expect "the reason" said "REVERT_HEAD says a git operation is under way"
   expect "no commit" equal "$(head_commit)" "$before"
   expect "the revert is still as it was" [ -e "$CLONE/.git/REVERT_HEAD" ]
 }
@@ -1815,6 +1815,24 @@ rollback_says_when_the_revert_cannot_start() {
   expect "the revert is gone" nothing_in_progress
   expect "helm and gitops are clean" helm_and_gitops_clean
 }
+rollback_leaves_someones_merge_alone() {
+  # A revert commit cannot be made beside a merge, and clearing a revert would forget the merge too.
+  local status=0 before
+  promote_dev "$DIGEST_A"
+  before="$(head_commit)"
+  git -C "$CLONE" checkout --quiet -B someones-branch "$BASE"
+  echo "someone's edit" >>"$CLONE/README.md"
+  git -C "$CLONE" commit --quiet -am 'a commit to merge'
+  git -C "$CLONE" checkout --quiet main
+  git -C "$CLONE" merge --quiet --no-commit --no-ff someones-branch >/dev/null
+  in_clone ./scripts/rollback.sh dev || status=$?
+  expect "a refusal" [ "$status" -ne 0 ]
+  expect "the reason" said "MERGE_HEAD says a git operation is under way"
+  expect "no commit" equal "$(head_commit)" "$before"
+  expect "the merge is still under way" [ -e "$CLONE/.git/MERGE_HEAD" ]
+  expect "with what it staged" equal "$(staged_names)" "README.md "
+  expect "helm and gitops are clean" helm_and_gitops_clean
+}
 rollback_says_a_promotion_put_back_by_hand_is_undone() {
   local status=0 before
   promote_prod_sim_committed
@@ -2171,6 +2189,7 @@ scenario rollback-ended-halfway-puts-the-revert-back rollback_ended_halfway_puts
 scenario rollback-waits-out-a-git-add rollback_waits_out_a_git_add
 scenario rollback-says-what-to-do-when-the-index-stays-held rollback_says_what_to_do_when_the_index_stays_held
 scenario rollback-says-when-the-revert-cannot-start rollback_says_when_the_revert_cannot_start
+scenario rollback-leaves-someones-merge-alone rollback_leaves_someones_merge_alone
 scenario rollback-says-a-promotion-put-back-by-hand-is-undone rollback_says_a_promotion_put_back_by_hand_is_undone
 scenario rollback-promotion-that-added-a-file rollback_promotion_that_added_a_file
 scenario rollback-promotion-whose-added-file-is-gone rollback_promotion_whose_added_file_is_gone
