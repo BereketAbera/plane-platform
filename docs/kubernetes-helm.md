@@ -282,7 +282,7 @@ All of this ran through Traefik in both environments, on the final images from `
 the `/live` WebSocket through the buffering middleware, and `attachment-upload` and `object-in-silo` cover presigned uploads with the bucket Job
 deleted. The smoke drives HTTP and WebSocket with its own client. A full real browser session is recorded in
 [live-dev](evidence/branding/live-dev/README.md), for dev only, on the build from `1563cbf`. On the final images, in dev and in Chromium only, two real tabs synced one page through
-`/live` for about 5 minutes, and text typed during a restart of `live` reached the other tab after it reconnected, and survived a reload ([RT-2b-RT-3](evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)).
+`/live` for about 5 minutes, and text typed during a restart of `live` reached the other tab after the tabs reconnected, and survived a reload ([RT-2b-RT-3](evidence/runs/RT-2b-RT-3-20261105T073208Z.txt)).
 
 ## How to change a value safely
 
@@ -365,7 +365,7 @@ scripts/render.sh --check
 
 **Where it runs.**
 
-- `scripts/ci/validate-manifests.sh`, through `make ci` and on every pull request.
+- `scripts/ci/validate-manifests.sh`, through `make ci` and on every push to `main`. `ci.yml` also names `pull_request`, and no job has run there: GitHub holds a pull request opened with `GITHUB_TOKEN` at `action_required` ([runs](evidence/ci/ci-1-20261105T060416Z-pull-request-runs.txt)).
 - `scripts/promote.sh`, before it edits anything, so unrelated drift cannot fold into a promotion commit.
 
 `scripts/rollback.sh` renders instead of checking: a later change beside an image line makes the revert conflict in the rendered file, and
@@ -413,7 +413,7 @@ Traefik, monitoring and Infisical use Argo CD Helm sources with exact versions i
 
 | Goal | Do this | Consequence |
 |---|---|---|
-| Stop everything | `make down` | No data loss |
+| Stop everything | `make down` | Keeps the volumes, by design. Not tested in Pass 1 |
 | Delete everything | `make destroy CONFIRM=yes` | See [install.md](install.md#teardown) |
 | Remove Plane from Argo CD management only | Delete `gitops/applications/plane-<env>.yaml`, commit, publish | Workloads are orphaned, not deleted, because the Application has no finalizer. PVCs stay |
 | Reset one environment's data | No make target exists | Restore a backup with `make restore ENV=<env> BACKUP=<id> CONFIRM=yes`, or `make destroy` |
