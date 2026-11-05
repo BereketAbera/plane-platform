@@ -12,6 +12,18 @@
 #                                exits non-zero even though the data is back.
 # ALLOW_STALE_PLANE_SECRETS=yes  restore Infisical in place from a dump older than the last rotation.
 #                                The operators then render a password Plane's Postgres no longer takes.
+# ALLOW_NEWER_INFISICAL_BACKUP=yes  restore a dump from a newer Infisical than the one that will run on it.
+#                                Its migrations go forward only, so that server refuses to start until a
+#                                newer image is deployed.
+# ALLOW_NO_ADMIN_TOKEN=yes       restore Infisical in place with nothing here that can log in afterwards, as
+#                                when its Postgres is lost. It stops after the restore with sign-in steps.
+# ALLOW_NO_SENTINEL=yes          accept that a sentinel proof could not run, as with a backup taken before a
+#                                sentinel existed. The step still reads NOT RUN, and the result lists it.
+#
+# Exit status: 0 everything proven. 1 something failed. 2 nothing failed, but something could not run or a
+# person has to act, so this is not a pass, as in scripts/test.sh. A proof step recorded as NOT RUN is
+# not a pass, except proof-probes, which says something about monitoring and not about the data.
+# restore.sh infisical alone also has 3: Infisical is back, and a person has to sign in to prove it.
 #
 # Every refusal comes before anything is touched. Order for a Plane environment:
 #   verify checksums and fingerprint, refuse, pause auto-sync (root first), stop the apps, restore
@@ -19,26 +31,34 @@
 #   start the apps, prove. Auto-sync comes back at the end, including on failure.
 # Order for Infisical:
 #   verify checksums and fingerprint, refuse, pause auto-sync on infisical only, stop the server, restore
-#   into a second database and check its counts, swap it in, flush Redis, start the server, prove.
+#   into a second database and check its counts, swap it in, flush Redis, start the server, make sure
+#   something here can log in, prove.
 #
 # Clean restore, for when the cluster and everything in it are gone. Infisical comes first, because it
 # is the source of truth for every Plane secret:
-#   1. Check the recovery set: every checksum, the secret zero it names, that each Plane backup was
-#      taken with the SECRET_KEY this Infisical backup holds. Refuse if the environment is not clean.
+#   1. Check the recovery set: every checksum, the keys it names, that each Plane backup was taken with
+#      the SECRET_KEY this Infisical backup holds. Check what scripts/up.sh would stop on: uncommitted
+#      changes, digests the local registry cannot serve, free disk. Refuse if the environment is not clean.
 #   2. make up as far as Traefik: cluster, Terraform, secret zero. Plane cannot start, because it has
 #      no identity Secret yet, so nothing can read or render a value.
 #   3. Wait for the fresh Infisical server to finish its migrations, then replace its database, as above.
+#      An admin token that has expired, or a file that is lost, is replaced here, once the database is back:
+#      see "How a restore logs in" in infisical/lib/recovery.sh.
 #   4. make up from there, with bootstrap in restored mode: same credentials, new cluster CA through
 #      Terraform, identity Secrets published, no value written. The operators render the old values and
 #      Plane's data services initialize with them. It waits for all Applications.
 #   5. Restore each Plane environment's database and objects, as above, then check it all again.
-# It can resume: run it again after any failure. Options:
+# It can resume: run it again after any failure, including a hard stop that ran no trap. With the marker still
+# there, a new run first puts back any auto-sync left paused and any Deployment left at zero. Options:
 #   PLAN_ONLY=yes                  do step 1 and print the plan. Changes nothing, and works on a live cluster
 #   ENVS="dev"                     restore only these Plane environments. Default: dev prod-sim
 #   BACKUP_DEV=<id> BACKUP_PROD_SIM=<id>  instead of the Plane backup step 1 would pick
+#   ALLOW_LOW_DISK="<reason>"      go past the disk check for a new cluster here and in scripts/up.sh. Logged
 #
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# shellcheck source=lib/up-checks.sh
+source "$ROOT/scripts/lib/up-checks.sh"
 # shellcheck source=../monitoring/ops/lib.sh
 source "$ROOT/monitoring/ops/lib.sh"
 # shellcheck source=../infisical/lib/api.sh
@@ -46,7 +66,7 @@ source "$ROOT/infisical/lib/api.sh"
 # shellcheck source=../infisical/lib/recovery.sh
 source "$ROOT/infisical/lib/recovery.sh"
 
-accept_assignments "ENV BACKUP CONFIRM ALLOW_SECRET_KEY_MISMATCH ALLOW_STALE_PLANE_SECRETS RESTORE_MODE PLAN_ONLY ENVS BACKUP_DEV BACKUP_PROD_SIM" "$@"
+accept_assignments "ENV BACKUP CONFIRM ALLOW_SECRET_KEY_MISMATCH ALLOW_STALE_PLANE_SECRETS ALLOW_NEWER_INFISICAL_BACKUP ALLOW_NO_ADMIN_TOKEN ALLOW_NO_SENTINEL ALLOW_LOW_DISK RESTORE_MODE PLAN_ONLY ENVS BACKUP_DEV BACKUP_PROD_SIM" "$@"
 positional=()
 for arg in "$@"; do case "$arg" in *=*) ;; *) positional+=("$arg") ;; esac; done
 if [[ ${#positional[@]} -ge 1 && -n "${positional[0]}" ]]; then ENV="${positional[0]}"; fi
@@ -55,11 +75,21 @@ if [[ ${#positional[@]} -ge 2 && -n "${positional[1]}" ]]; then BACKUP="${positi
 # clean: this run is step 3 of a clean restore, which needs the recovery set and has no live Plane to guard.
 RESTORE_MODE="${RESTORE_MODE:-in-place}"
 
+# What restore.sh infisical exits with when Infisical is back and a person has to sign in. Its parent, a clean
+# restore, marks that step done and stops, and resumes with the replacement token.
+EXIT_NEEDS_SIGN_IN=3
+# The Deployments a Plane restore stops and starts.
+APP_DEPLOYMENTS="plane-api-wl plane-worker-wl plane-beat-worker-wl plane-live-wl"
+
 # ----- Clean restore ----------------------------------------------------------------------------
 
 CLEAN_IID=""
 CLEAN_ENVS=""
 CLEAN_STEPS=""
+CLEAN_PROBLEMS=""
+CLEAN_IMAGES_NOTE=""
+# Set before an exit 2 that means a person has to act, and not that a proof could not run.
+CLEAN_RESULT_IF_2="NOT RUN"
 
 clean_record() { # step status detail. Same shape as a single restore's evidence.
   printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$CLEAN_STEPS"
@@ -71,20 +101,25 @@ clean_record() { # step status detail. Same shape as a single restore's evidence
 }
 
 clean_on_exit() {
-  local rc=$?
+  local rc=$? result
   trap - EXIT
   if [[ -n "$CLEAN_STEPS" && -f "$CLEAN_STEPS" ]]; then
-    jq -Rn --arg backup "$CLEAN_IID" --arg at "$CLEAN_STAMP" --argjson rc "$rc" '
-      { kind: "clean-restore", infisical_backup: $backup, started_at: $at,
-        result: (if $rc == 0 then "PASS" else "FAIL" end),
-        steps: [inputs | split("\t") | {step: .[0], status: .[1], detail: .[2]}] }' \
+    case "$rc" in
+      0) result=PASS ;;
+      2) result="$CLEAN_RESULT_IF_2" ;;
+      *) result=FAIL ;;
+    esac
+    jq -Rn --arg backup "$CLEAN_IID" --arg at "$CLEAN_STAMP" --arg result "$result" '
+      { kind: "clean-restore", infisical_backup: $backup, started_at: $at, result: $result,
+        steps: [inputs | split("\t") | {step: .[0], status: .[1], detail: .[2]}] }
+      | .not_run = [.steps[] | select(.status == "NOT RUN") | .step]' \
       < "$CLEAN_STEPS" > "$CLEAN_EVIDENCE" || true
     rm -f "$CLEAN_STEPS"
-    if [[ $rc -eq 0 ]]; then
-      ok "clean restore from Infisical backup $CLEAN_IID complete. Evidence: $CLEAN_EVIDENCE"
-    else
-      warn "clean restore from Infisical backup $CLEAN_IID stopped. Fix the cause and run the same command: it resumes. Evidence: $CLEAN_EVIDENCE"
-    fi
+    case "$rc" in
+      0) ok "clean restore from Infisical backup $CLEAN_IID complete. Evidence: $CLEAN_EVIDENCE" ;;
+      2) warn "clean restore from Infisical backup $CLEAN_IID is not finished: $result, as said above. It stays marked as under way, and running the same command again resumes. Evidence: $CLEAN_EVIDENCE" ;;
+      *) warn "clean restore from Infisical backup $CLEAN_IID stopped. Fix the cause and run the same command: it resumes. Evidence: $CLEAN_EVIDENCE" ;;
+    esac
   fi
   ia_cleanup
   exit "$rc"
@@ -116,12 +151,48 @@ clean_environment_problem() {
   fi
 }
 
-# The checks of step 1, all of them, so one run names every problem. Sets CLEAN_IID and CLEAN_ENVS,
-# and each Plane backup's id in the variable clean_plane_<env>.
 clean_plane_var() { printf 'clean_plane_%s' "$(printf '%s' "$1" | tr '-' '_')"; }
 
+clean_add_problem() { CLEAN_PROBLEMS+="$1"$'\n'; }
+
+# The digests Git deploys that the local registry cannot serve, by the same check as scripts/up.sh. They are in no
+# backup, so this is the one thing a clean restore needs that its recovery set cannot bring: see "What a clean
+# restore cannot bring back" in infisical/README.md. A registry that is merely not running yet is up.sh's to start.
+clean_check_images() {
+  local missing env envs="" owner way1 way2
+  [[ -n "$(up_referenced_local_images)" ]] || return 0
+  if ! curl -fsS -o /dev/null --max-time 3 http://localhost:5001/v2/ 2>/dev/null; then
+    if docker volume inspect plane-platform-local_registry-data >/dev/null 2>&1; then
+      CLEAN_IMAGES_NOTE="the local registry is not running, and its volume is there. scripts/up.sh starts it and checks the digests then"
+      return 0
+    fi
+    missing="$(up_referenced_local_images | sed 's/^/    /')"
+  else
+    missing="$(up_missing_local_images)"
+  fi
+  [[ -n "$missing" ]] || return 0
+  for env in dev prod-sim; do
+    if grep -F 'localhost:5001/' "$ROOT/gitops/environments/$env/manifests.yaml" >/dev/null; then envs="$envs $env"; fi
+  done
+  owner="$(git -C "$ROOT" remote get-url origin 2>/dev/null | sed -E 's#.*[:/]([^/]+)/[^/]+$#\1#' | tr '[:upper:]' '[:lower:]' || true)"
+  way1=""
+  way2="    make images"$'\n'
+  for env in $envs; do
+    way1+="    scripts/ci/copy-to-local-registry.sh ghcr.io/${owner:-<owner>}/wayline $env"$'\n'
+    if [[ "$env" == dev ]]; then way2+="    make promote ENV=dev"$'\n'; else way2+="    make promote ENV=$env CONFIRM=yes SKIP_BACKUP=yes"$'\n'; fi
+  done
+  clean_add_problem "the local registry cannot serve these images, which Git deploys, and no backup holds them:
+$missing
+Two ways out, and neither touches the data. Both need the registry running, and make up UP_STOP_AFTER=cluster starts it and publishes nothing.
+  If GHCR has these digests, which keeps them exact, after docker login ghcr.io:
+$way1  Otherwise rebuild and promote, which commits new digests, because a rebuild does not reproduce a digest:
+$way2  Then run this again."
+}
+
+# The checks of step 1, all of them, so one run names every problem. Sets CLEAN_IID and CLEAN_ENVS,
+# each Plane backup's id in the variable clean_plane_<env>, and what stops it in CLEAN_PROBLEMS.
 clean_resolve() {
-  local env explicit id var problems="" line dir set_file fingerprints git_version backup_version newest
+  local env explicit id var line dir set_file fingerprints git_version backup_version newest dirty git_image disk
   local requested="$1"
   if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
     CLEAN_IID="$(clean_marker_value infisical)"
@@ -130,12 +201,6 @@ clean_resolve() {
       die "a clean restore of Infisical backup $CLEAN_IID is under way ($RESTORE_CLEAN_MARKER). Finish it with BACKUP=$CLEAN_IID. To start over with another backup, run make destroy CONFIRM=yes SKIP_BACKUP=yes first."
     fi
     log "Resuming the clean restore of Infisical backup $CLEAN_IID"
-    # The cluster it was restoring into is gone, so nothing it finished still counts.
-    if ! cluster_exists && grep -q '^done ' "$RESTORE_CLEAN_MARKER"; then
-      warn "the cluster that restore was working on is gone, so it starts again from the beginning"
-      sed '/^done /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
-      mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
-    fi
   else
     CLEAN_ENVS="${ENVS:-dev prod-sim}"
     if [[ "$requested" == latest ]]; then
@@ -151,7 +216,19 @@ clean_resolve() {
   set_file="$(recovery_set_file "$dir")"
   recovery_set_complete "$dir" || die "Infisical backup $CLEAN_IID no longer checks out: $(recovery_why_incomplete "$dir")"
 
-  if ! line="$(recovery_check_zero "$set_file")"; then problems+="$line"$'\n'; fi
+  if ! line="$(recovery_check_zero "$set_file")"; then clean_add_problem "$line"; fi
+
+  # An older image refuses a newer schema, so a newer dump would leave the new server down, past the delete.
+  backup_version="$(recovery_image_version "$(jq -r '.server_image // ""' "$dir/manifest.json")")"
+  git_image="$(recovery_git_infisical_image)"
+  git_version="$(recovery_image_version "$git_image")"
+  if recovery_version_newer "$backup_version" "$git_version"; then
+    if [[ "${ALLOW_NEWER_INFISICAL_BACKUP:-}" == yes ]]; then
+      warn "Infisical backup $CLEAN_IID is from v$backup_version, and Git deploys v$git_version. Going on, because ALLOW_NEWER_INFISICAL_BACKUP=yes. The server will refuse to start on it until Git deploys that version."
+    else
+      clean_add_problem "Infisical backup $CLEAN_IID is from v$backup_version, and Git deploys v$git_version. Its migrations go forward only, so that server would refuse to start on it. Deploy v$backup_version or newer first, or pass ALLOW_NEWER_INFISICAL_BACKUP=yes."
+    fi
+  fi
 
   for env in $CLEAN_ENVS; do
     case "$env" in dev | prod-sim) ;; *) die "ENVS names '$env': expected dev, prod-sim or both" ;; esac
@@ -162,13 +239,14 @@ clean_resolve() {
       if [[ "$env" == dev ]]; then explicit="${BACKUP_DEV:-}"; else explicit="${BACKUP_PROD_SIM:-}"; fi
       if ! id="$(recovery_pick_plane "$env" "$CLEAN_IID" "$explicit")"; then
         fingerprints="$(for i in $(recovery_ids "$env"); do printf '%s=%s ' "$i" "$(jq -r .secret_key_fp "$LOCAL_DIR/backups/$env/$i/manifest.json")"; done)"
-        problems+="no backup of $env matches Infisical backup $CLEAN_IID, which holds SECRET_KEY $(jq -r --arg e "$env" '.plane_secrets[$e].SECRET_KEY.fp // "unknown"' "$set_file"). ${fingerprints:+Backups of $env: $fingerprints}${explicit:+You asked for $explicit. }Encrypted rows would decrypt silently to nothing. Choose another Infisical backup with BACKUP=<id>, or leave $env out with ENVS=..."$'\n'
+        clean_add_problem "no backup of $env matches Infisical backup $CLEAN_IID, which holds SECRET_KEY $(jq -r --arg e "$env" '.plane_secrets[$e].SECRET_KEY.fp // "unknown"' "$set_file"). ${fingerprints:+Backups of $env: $fingerprints}${explicit:+You asked for $explicit. }Encrypted rows would decrypt silently to nothing. Choose another Infisical backup with BACKUP=<id>, or leave $env out with ENVS=..."
+        printf -v "$var" '%s' ""
         continue
       fi
     fi
     printf -v "$var" '%s' "$id"
     if ! (cd "$LOCAL_DIR/backups/$env/$id" && shasum -a 256 -c SHA256SUMS >/dev/null 2>&1); then
-      problems+="backup $env/$id does not match its SHA256SUMS"$'\n'
+      clean_add_problem "backup $env/$id does not match its SHA256SUMS"
     fi
     # Django cannot migrate backwards, so the check restore.sh makes later can already be made from Git.
     backup_version="$(jq -r .plane_version "$LOCAL_DIR/backups/$env/$id/manifest.json")"
@@ -176,32 +254,113 @@ clean_resolve() {
       | awk 'NF && !found { found = $0 } END { print found }')"
     newest="$(printf '%s\n%s\n' "${backup_version#v}" "${git_version#v}" | sort -V | tail -1)"
     if [[ "$newest" != "${git_version#v}" ]]; then
-      problems+="backup $env/$id is from Plane $backup_version, and Git deploys $git_version. Migrations do not run backwards."$'\n'
+      clean_add_problem "backup $env/$id is from Plane $backup_version, and Git deploys $git_version. Migrations do not run backwards."
     fi
   done
 
-  [[ -z "$problems" ]] || { printf '%s' "$problems" | while IFS= read -r line; do warn "$line"; done; die "this clean restore cannot work, for the reasons above. Nothing was changed."; }
+  # What scripts/up.sh would stop on, asked here so the answer comes before a delete.
+  dirty="$(up_uncommitted)"
+  if [[ -n "$dirty" ]]; then
+    clean_add_problem "uncommitted changes under paths Argo CD reads, and scripts/up.sh refuses to run with them. Commit or stash them, and keep those paths still until this finishes:
+$(printf '%s\n' "$dirty" | sed 's/^/    /')"
+  fi
+  clean_check_images
+  # This asks only about a cluster yet to be created. A resume, or an empty cluster that stays, creates nothing.
+  if ! cluster_exists || { [[ ! -f "$RESTORE_CLEAN_MARKER" ]] && [[ -n "$(clean_environment_problem)" ]]; }; then
+    disk="$(up_disk_problem)"
+    if [[ -n "$disk" ]]; then
+      if [[ -n "${ALLOW_LOW_DISK:-}" && "${PLAN_ONLY:-}" == yes ]]; then
+        warn "$disk. ALLOW_LOW_DISK says to go on anyway: $ALLOW_LOW_DISK"
+      elif [[ -n "${ALLOW_LOW_DISK:-}" ]]; then
+        low_disk_log restore.sh "$disk"
+      else
+        clean_add_problem "$disk. Free space, or say why to go on with ALLOW_LOW_DISK=\"<reason>\", which is logged. See scripts/lib/up-checks.sh for what those numbers are based on."
+      fi
+    fi
+  fi
+}
+
+clean_count() { # backup-dir table. Rows in that table of that dump, ? if it does not say.
+  awk -F '\t' -v t="$2" '$1 == t { print $2; found = 1 } END { if (!found) print "?" }' "$1/postgres/rowcounts.tsv"
+}
+
+# What a Plane backup holds is the only way to see, before anything happens, that it is not the one meant. A
+# make destroy after a mistaken make up backs up an empty platform, and that set is then the newest.
+clean_warn_plane_content() { # env id
+  local env="$1" id="$2" dir="$LOCAL_DIR/backups/$1/$2" users workspaces slug other name="" option
+  users="$(clean_count "$dir" users)"
+  workspaces="$(clean_count "$dir" workspaces)"
+  slug="$(jq -r '.sentinel.slug // ""' "$dir/manifest.json")"
+  if [[ "$users" == 0 ]]; then
+    for other in $(recovery_ids "$env"); do
+      if [[ "$other" != "$id" && "$(clean_count "$LOCAL_DIR/backups/$env/$other" users)" != 0 ]]; then name="$other"; fi
+    done
+    if [[ "$env" == dev ]]; then option=BACKUP_DEV; else option=BACKUP_PROD_SIM; fi
+    warn "backup $env/$id holds 0 users, so it looks like a backup of an empty platform.${name:+ $env/$name holds $(clean_count "$LOCAL_DIR/backups/$env/$name" users) users: with an Infisical backup that matches it, $option=$name picks it, and BACKUP=<id> picks that Infisical backup.}"
+  fi
+  if [[ -n "$slug" && "$workspaces" == 0 ]]; then
+    warn "backup $env/$id records sentinel workspace $slug, and its dump counts 0 workspaces. The sentinel file says what was on this machine, not what is in the dump, so the sentinel proof will fail."
+  elif [[ -z "$slug" && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then
+    warn "backup $env/$id records no sentinel, so its proof cannot run and this exits 2 at the end, unless ALLOW_NO_SENTINEL=yes accepts that."
+  fi
 }
 
 clean_print_plan() {
-  local env var set_file
-  set_file="$(recovery_set_file "$LOCAL_DIR/backups/infisical/$CLEAN_IID")"
+  local env var set_file dir id
+  dir="$LOCAL_DIR/backups/infisical/$CLEAN_IID"
+  set_file="$(recovery_set_file "$dir")"
   log "Clean restore plan"
-  printf '    Infisical  %s, Terraform state serial %s with %s resources, identities %s\n' "$CLEAN_IID" \
+  printf '    Infisical  %s, Terraform state serial %s with %s resources, identities %s, %s users, %s projects, %s secrets, server %s\n' "$CLEAN_IID" \
     "$(jq -r '.terraform_state.serial' "$set_file")" "$(jq -r '.terraform_state.resources' "$set_file")" \
-    "$(jq -r '.identity.identity_ids | [to_entries[] | .key] | join(" and ")' "$set_file")"
+    "$(jq -r '.identity.identity_ids | [to_entries[] | .key] | join(" and ")' "$set_file")" \
+    "$(clean_count "$dir" users)" "$(clean_count "$dir" projects)" "$(clean_count "$dir" secrets_v2)" \
+    "v$(recovery_image_version "$(jq -r '.server_image // ""' "$dir/manifest.json")")"
   for env in $CLEAN_ENVS; do
     var="$(clean_plane_var "$env")"
-    printf '    %-10s %s, SECRET_KEY %s, %s objects\n' "$env" "${!var}" \
-      "$(jq -r .secret_key_fp "$LOCAL_DIR/backups/$env/${!var}/manifest.json")" \
-      "$(jq -r .objects.count "$LOCAL_DIR/backups/$env/${!var}/manifest.json")"
+    id="${!var:-}"
+    if [[ -z "$id" ]]; then
+      printf '    %-10s no backup matches\n' "$env"
+      continue
+    fi
+    printf '    %-10s %s, SECRET_KEY %s, %s users, %s workspaces, %s projects, %s work items, %s file rows, %s objects, sentinel %s\n' "$env" "$id" \
+      "$(jq -r .secret_key_fp "$LOCAL_DIR/backups/$env/$id/manifest.json")" \
+      "$(clean_count "$LOCAL_DIR/backups/$env/$id" users)" "$(clean_count "$LOCAL_DIR/backups/$env/$id" workspaces)" \
+      "$(clean_count "$LOCAL_DIR/backups/$env/$id" projects)" "$(clean_count "$LOCAL_DIR/backups/$env/$id" issues)" \
+      "$(clean_count "$LOCAL_DIR/backups/$env/$id" file_assets)" \
+      "$(jq -r .objects.count "$LOCAL_DIR/backups/$env/$id/manifest.json")" \
+      "$(jq -r '.sentinel.slug // "none"' "$LOCAL_DIR/backups/$env/$id/manifest.json")"
+    clean_warn_plane_content "$env" "$id"
   done
-  ok "the recovery set checks out: checksums, secret zero by checksum, a Plane backup for each environment"
+  recovery_admin_plan "$set_file"
+  if [[ "$RECOVERY_ADMIN_MODE" == token ]]; then
+    printf '    %-10s %s\n' "admin" "$(recovery_admin_plan_text)"
+    recovery_warn_token_horizon "$RECOVERY_ADMIN_EXP" "$RECOVERY_ADMIN_PASSWORD_FILE"
+  else
+    warn "$(recovery_admin_plan_text)"
+  fi
+  if [[ -n "$CLEAN_IMAGES_NOTE" ]]; then
+    printf '    %-10s %s\n' "images" "$CLEAN_IMAGES_NOTE"
+  else
+    printf '    %-10s %s localhost:5001 digests in Git\n' "images" "$(up_referenced_local_images | wc -l | tr -d ' ')"
+  fi
+  printf '    %-10s %s\n' "disk" "$(up_disk_report)"
+  if ! cluster_exists && [[ -e "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then
+    printf '    %-10s no cluster exists, so .local/terraform/local describes one that is gone, and a real run moves it aside\n' "terraform"
+  fi
+}
+
+clean_refuse_problems() {
+  local line
+  [[ -n "$CLEAN_PROBLEMS" ]] || return 0
+  while IFS= read -r line; do
+    if [[ -n "$line" ]]; then warn "$line"; fi
+  done <<<"$CLEAN_PROBLEMS"
+  die "this clean restore cannot work, for the reasons above. Nothing was changed."
 }
 
 clean_wait_infisical() {
   local started=$SECONDS timeout="${UP_WAIT_INFISICAL_SECONDS:-2400}" reported=$SECONDS state
-  log "Waiting for the fresh Infisical server: its migrations run before it answers (up to ${timeout}s)"
+  log "Waiting for the Infisical server: on a fresh one, its migrations run before it answers (up to ${timeout}s)"
   while :; do
     state="$(kc -n argocd get application infisical -o jsonpath='{.status.sync.status}/{.status.health.status}' 2>/dev/null || true)"
     if [[ "$state" == Synced/Healthy ]] && curl -fsS -o /dev/null --max-time 5 "$INFISICAL_URL/api/status" 2>/dev/null; then break; fi
@@ -215,9 +374,112 @@ clean_wait_infisical() {
   ok "Infisical answers, after $((SECONDS - started))s"
 }
 
-# Step 5's last part: everything once more from outside the restore that made it.
+# A run stopped by SIGKILL or a power cut ran no trap, and then both of these are possible. Another run, or the
+# child of one that was killed alone, would be undone by the repair below, so refuse first.
+clean_refuse_another_run() {
+  local pid="" ppid cmd processes others=""
+  if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then pid="$(clean_marker_value pid)"; fi
+  if [[ -n "$pid" && "$pid" != "$$" ]] && kill -0 "$pid" 2>/dev/null; then
+    case "$(ps -o command= -p "$pid" 2>/dev/null || true)" in
+      *restore.sh*) die "another clean restore is running here, as pid $pid. Wait for it, or stop it, and run this again." ;;
+    esac
+  fi
+  processes="$(ps -ax -o pid=,ppid=,command= 2>/dev/null || true)"
+  while read -r pid ppid cmd; do
+    [[ "$pid" != "$$" && "$ppid" != "$$" && "$pid" != "$PPID" ]] || continue
+    case "$cmd" in
+      *"$ROOT/scripts/restore.sh"*) others="$others $pid" ;;
+    esac
+  done <<<"$processes"
+  [[ -z "$others" ]] || die "a restore from an earlier run is still going here, as pid$others. Wait for it, or stop it, and run this again."
+}
+
+clean_claim_marker() { # So the next run can tell whether this one is still alive.
+  sed '/^pid=/d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+  printf 'pid=%s\n' "$$" >> "$RESTORE_CLEAN_MARKER.tmp"
+  mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+}
+
+clean_scale_to_git() { # namespace deployment replicas
+  local have
+  have="$(kc -n "$1" get deployment "$2" -o jsonpath='{.spec.replicas}' 2>/dev/null || true)"
+  [[ -n "$have" && "$have" != "$3" ]] || return 0
+  kc -n "$1" scale "deployment/$2" --replicas="$3" >/dev/null
+  clean_record "repair-$2" PASS "$1/$2 was at $have replicas after a hard stop, and Git says $3"
+}
+
+# What a hard stop can leave, with the marker still there: a restore Job with no client, auto-sync paused, and
+# Infisical or Plane at zero. A clean-path wait would then run out on a state only this can change. Runs before
+# anything waits. A Job is removed and not awaited, since nothing it finished counts until the marker says so,
+# and the step starts over.
+clean_repair_after_hard_stop() {
+  local ns job name env deployment replicas leftover
+  cluster_exists || return 0
+  # After a power cut the node may be stopped, and what it left behind waits for it.
+  if ! kc get --raw /readyz >/dev/null 2>&1; then
+    log "cluster $CLUSTER_NAME does not answer, so starting it first"
+    "$ROOT/scripts/cluster-up.sh"
+  fi
+  for ns in infisical plane-dev plane-prod-sim; do
+    for job in $(kc -n "$ns" get jobs -l app.kubernetes.io/name=plane-restore -o json 2>/dev/null | jq -r '.items[] | select((.status.active // 0) > 0) | .metadata.name' 2>/dev/null || true); do
+      kc -n "$ns" delete job "$job" --cascade=foreground --timeout=180s >/dev/null || die "could not remove $ns/$job, left running by an earlier run"
+      clean_record "repair-$job" PASS "$ns/$job was left running by an earlier run. Removed, and its step starts over"
+    done
+  done
+  for name in $(argo_unpause_all); do
+    clean_record "repair-auto-sync-$name" PASS "auto-sync on $name was left paused by an earlier run"
+  done
+  if kc -n infisical get deployment infisical >/dev/null 2>&1; then
+    clean_scale_to_git infisical infisical "$(yq -r '.infisical.replicaCount // 1' "$ROOT/helm/values/infisical.yaml")"
+  fi
+  for env in dev prod-sim; do
+    for deployment in $APP_DEPLOYMENTS; do
+      # shellcheck disable=SC2016 # strenv reads the variable, in yq.
+      replicas="$(D="$deployment" yq -N 'select(.kind == "Deployment" and .metadata.name == strenv(D)) | .spec.replicas // 1' "$ROOT/gitops/environments/$env/manifests.yaml")"
+      clean_scale_to_git "plane-$env" "$deployment" "$replicas"
+    done
+  done
+  # Anything a killed run held open. Some hold credentials, and nothing is reading them now.
+  for leftover in "$LOCAL_DIR"/.restore-accounts.* "$LOCAL_DIR"/.restore-sentinel.* "$LOCAL_DIR"/.restore-steps.* "$LOCAL_DIR"/.restore-clean-steps.*; do
+    if [[ -e "$leftover" && "$leftover" != "$CLEAN_STEPS" ]]; then rm -f "$leftover"; fi
+  done
+  find "$SECRET_ZERO_DIR" -maxdepth 1 -type d -name '.tmp.*' -mmin +10 -exec rm -rf {} + 2>/dev/null || true
+}
+
+# Infisical's database is back. Something here has to be able to log in before anything else reads a value.
+clean_admin_step() { # set-file
+  local rc=0
+  ia_init
+  recovery_admin_after_restore "$1" || rc=$?
+  ia_cleanup
+  case "$rc" in
+    0) clean_record admin-token PASS "$RECOVERY_ADMIN_OUTCOME" ;;
+    *) clean_stop_for_sign_in ;;
+  esac
+}
+
+clean_stop_for_sign_in() {
+  clean_record admin-token "NOT RUN" "nothing on this machine can log in to the restored instance, so a person has to"
+  ia_print_sign_in_steps "make restore-clean BACKUP=$CLEAN_IID"
+  CLEAN_RESULT_IF_2=BLOCKED
+  exit 2
+}
+
+clean_wait_applications() {
+  local deadline=$((SECONDS + ${CLEAN_WAIT_APPS_SECONDS:-600})) json
+  log "Waiting for every Application to settle after the restores"
+  while [[ $SECONDS -lt $deadline ]]; do
+    json="$(kc -n argocd get applications -o json 2>/dev/null || true)"
+    if [[ -n "$json" ]] && jq -e 'all(.items[]; .status.sync.status == "Synced" and .status.health.status == "Healthy")' <<<"$json" >/dev/null; then return 0; fi
+    sleep 5
+  done
+  return 0 # verify-applications records what is wrong, with the names.
+}
+
+# Step 5's last part: everything once more from outside the restore that made it. Returns 0, 1 if something failed,
+# 2 if nothing failed and a proof could not run, as the exit status means for the whole script.
 clean_verify() {
-  local set_file="$1" env var problems failed=0 rc sentinel paused apps_json
+  local set_file="$1" env var problems failed=0 not_run=0 rc paused apps_json sentinel step
   ia_init
   ia_load_admin
   if problems="$(recovery_compare_values "$set_file")"; then
@@ -238,13 +500,17 @@ clean_verify() {
     var="$(clean_plane_var "$env")"
     if [[ "$(jq -r '.sentinel // empty | .slug' "$LOCAL_DIR/backups/$env/${!var}/manifest.json")" == "" ]]; then
       clean_record "verify-sentinel-$env" "NOT RUN" "backup ${!var} was taken before tests/e2e/smoke.py created a sentinel"
+      not_run=1
     else
       rc=0
       python3 -B "$ROOT/tests/e2e/smoke.py" --env "$env" --mode verify --wait-seconds 300 \
         --sentinel "$sentinel" --evidence "$LOCAL_DIR/evidence-raw/restore-clean-smoke-$env-$CLEAN_STAMP.json" || rc=$?
       case "$rc" in
         0) clean_record "verify-sentinel-$env" PASS "the restored accounts file reads the sentinel work item and its attachment" ;;
-        2) clean_record "verify-sentinel-$env" "NOT RUN" "tests/e2e/smoke.py was blocked, which usually means no accounts in this backup" ;;
+        2)
+          clean_record "verify-sentinel-$env" "NOT RUN" "tests/e2e/smoke.py was blocked, which usually means no accounts in this backup"
+          not_run=1
+          ;;
         *)
           clean_record "verify-sentinel-$env" FAIL "tests/e2e/smoke.py exited $rc"
           failed=1
@@ -252,6 +518,14 @@ clean_verify() {
       esac
     fi
   done
+  # Proofs an earlier step of this restore could not run, which a resume must not forget.
+  while read -r step; do
+    if [[ -n "$step" ]]; then
+      clean_record "$step" "NOT RUN" "a proof in that restore could not run. See restore-*.json"
+      not_run=1
+    fi
+  done <<<"$(sed -n 's/^not-run //p' "$RESTORE_CLEAN_MARKER")"
+  clean_wait_applications
   apps_json="$(kc -n argocd get applications -o json)"
   paused="$(jq -r '[.items[] | select(.spec.syncPolicy.automated.enabled == false) | .metadata.name] | join(" ")' <<<"$apps_json")"
   if [[ -z "$paused" ]] && jq -e 'all(.items[]; .status.sync.status == "Synced" and .status.health.status == "Healthy")' <<<"$apps_json" >/dev/null; then
@@ -261,13 +535,18 @@ clean_verify() {
     failed=1
   fi
   ia_cleanup
-  return "$failed"
+  if [[ "$failed" -ne 0 ]]; then return 1; fi
+  if [[ "$not_run" -ne 0 && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then return 2; fi
+  return 0
 }
 
 restore_clean() {
-  local env var problem dir set_file restore_script="$ROOT/scripts/restore.sh"
+  local env var problem dir set_file restore_script="$ROOT/scripts/restore.sh" rc=0 under_way=no aside_note=""
   guard_disk
-  need_commands curl docker jq kind kubectl openssl python3 shasum terraform yq
+  low_disk_check_value
+  need_commands curl docker git jq kind kubectl openssl python3 shasum terraform yq
+  # With Docker down, kind lists no clusters, and everything below would take that for a cluster that is gone.
+  docker info >/dev/null 2>&1 || die "Docker is not running, so what exists cannot be told. Nothing was changed."
   umask 077
   CLEAN_STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
   mkdir -p "$LOCAL_DIR/evidence-raw"
@@ -278,6 +557,7 @@ restore_clean() {
 
   clean_resolve "$BACKUP"
   clean_print_plan
+  clean_refuse_problems
   dir="$LOCAL_DIR/backups/infisical/$CLEAN_IID"
   set_file="$(recovery_set_file "$dir")"
 
@@ -288,9 +568,18 @@ restore_clean() {
     return 0
   fi
 
-  if [[ ! -f "$RESTORE_CLEAN_MARKER" ]]; then
+  clean_refuse_another_run
+  if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
+    under_way=yes
+    # The cluster it was restoring into is gone, so nothing it finished still counts.
+    if ! cluster_exists && grep -q '^done ' "$RESTORE_CLEAN_MARKER"; then
+      warn "the cluster that restore was working on is gone, so it starts again from the beginning"
+      sed -e '/^done /d' -e '/^not-run /d' "$RESTORE_CLEAN_MARKER" > "$RESTORE_CLEAN_MARKER.tmp"
+      mv "$RESTORE_CLEAN_MARKER.tmp" "$RESTORE_CLEAN_MARKER"
+    fi
+  else
     problem="$(clean_environment_problem)"
-    [[ -z "$problem" ]] || die "this is for a clean environment, and $problem. Nothing was changed. To replace it: make destroy CONFIRM=yes, then run this again. To restore one environment in place: make restore."
+    [[ -z "$problem" ]] || die "this is for a clean environment, and $problem. Nothing was changed. To replace it: make destroy CONFIRM=yes SKIP_BACKUP=yes, then make restore-clean BACKUP=$CLEAN_IID. Without SKIP_BACKUP=yes, make destroy backs up what is there now, and BACKUP=latest would then name that set. To restore one environment in place: make restore."
     {
       printf 'infisical=%s\nenvs=%s\n' "$CLEAN_IID" "$CLEAN_ENVS"
       for env in $CLEAN_ENVS; do
@@ -300,12 +589,23 @@ restore_clean() {
     } > "$RESTORE_CLEAN_MARKER"
     chmod 600 "$RESTORE_CLEAN_MARKER"
   fi
+  clean_claim_marker
   CLEAN_STEPS="$(mktemp "$LOCAL_DIR/.restore-clean-steps.XXXXXX")"
-  clean_record plan PASS "Infisical $CLEAN_IID; $(for env in $CLEAN_ENVS; do var="$(clean_plane_var "$env")"; printf '%s %s; ' "$env" "${!var}"; done)checksums and secret zero check out"
+  clean_record plan PASS "Infisical $CLEAN_IID; $(for env in $CLEAN_ENVS; do var="$(clean_plane_var "$env")"; printf '%s %s; ' "$env" "${!var}"; done)checksums and keys check out"
+
+  if [[ "$under_way" == yes ]]; then clean_repair_after_hard_stop; fi
+
+  # The disaster this is for is a cluster lost with no make destroy, which leaves state about it behind.
+  if ! cluster_exists && [[ -e "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then
+    up_move_stale_local_state
+    aside_note="$(find "$LOCAL_DIR/terraform" -maxdepth 1 -name 'local.stale-*' | LC_ALL=C sort | tail -1)"
+    clean_record terraform-local-state PASS "no cluster existed, so the state describing the old one moved to ${aside_note#"$ROOT"/}"
+  fi
 
   # Before anything reads them: secret-zero.sh applies these files, and bootstrap reads the state.
   recovery_reinstate_zero "$set_file"
   recovery_install_tf_state "$dir"
+  recovery_rebuild_machine_file "$dir"
 
   log "make up as far as Traefik. Plane waits for an identity Secret that does not exist yet."
   UP_STOP_AFTER=traefik "$ROOT/scripts/up.sh"
@@ -313,30 +613,66 @@ restore_clean() {
 
   if clean_done infisical; then
     clean_record restore-infisical PASS "already restored by an earlier run"
+    clean_wait_infisical
+    clean_admin_step "$set_file"
   else
     clean_wait_infisical
-    "$restore_script" infisical "$CLEAN_IID" CONFIRM=yes RESTORE_MODE=clean
-    clean_mark infisical
-    clean_record restore-infisical PASS "$CLEAN_IID, see restore-infisical-*.json"
+    "$restore_script" infisical "$CLEAN_IID" CONFIRM=yes RESTORE_MODE=clean || rc=$?
+    case "$rc" in
+      0)
+        clean_mark infisical
+        clean_record restore-infisical PASS "$CLEAN_IID, see restore-infisical-*.json"
+        ;;
+      "$EXIT_NEEDS_SIGN_IN")
+        clean_mark infisical
+        clean_record restore-infisical PASS "$CLEAN_IID, see restore-infisical-*.json. Its values are checked at the end, since nothing could log in yet"
+        clean_stop_for_sign_in
+        ;;
+      *) exit "$rc" ;;
+    esac
+    clean_record admin-token PASS "see admin-token in restore-infisical-*.json"
   fi
 
-  log "make up from there, with bootstrap in restored mode"
-  INFISICAL_RESTORED=yes "$ROOT/scripts/up.sh"
-  clean_record up-to-all-applications PASS "bootstrap in restored mode, all Applications Synced and Healthy"
+  # The wait for all Applications passes once, on the first way through. After that a Plane environment may be
+  # part way through its restore, which that wait cannot get past, and the restore itself needs only what comes
+  # before it. Each restore brings its apps back, and clean_verify waits for all of them at the end.
+  if clean_done up-all; then
+    log "make up from there, with bootstrap in restored mode. The wait for all Applications comes at the end this time."
+    UP_STOP_AFTER=infisical INFISICAL_RESTORED=yes "$ROOT/scripts/up.sh"
+    clean_record up-to-infisical PASS "bootstrap in restored mode. All Applications were Synced and Healthy on an earlier run"
+  else
+    log "make up from there, with bootstrap in restored mode"
+    INFISICAL_RESTORED=yes "$ROOT/scripts/up.sh"
+    clean_mark up-all
+    clean_record up-to-all-applications PASS "bootstrap in restored mode, all Applications Synced and Healthy"
+  fi
 
   for env in $CLEAN_ENVS; do
     var="$(clean_plane_var "$env")"
     if clean_done "$env"; then
       clean_record "restore-$env" PASS "already restored by an earlier run"
     else
-      "$restore_script" "$env" "${!var}" CONFIRM=yes
+      rc=0
+      "$restore_script" "$env" "${!var}" CONFIRM=yes || rc=$?
+      case "$rc" in
+        0) clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json" ;;
+        2) printf 'not-run restore-%s\n' "$env" >> "$RESTORE_CLEAN_MARKER" ;;
+        *) exit "$rc" ;;
+      esac
       clean_mark "$env"
-      clean_record "restore-$env" PASS "${!var}, see restore-$env-*.json"
     fi
   done
 
-  clean_verify "$set_file" || die "the platform is back, but at least one check failed. It stays marked as under way: fix the cause and run this again."
-  rm -f "$RESTORE_CLEAN_MARKER"
+  rc=0
+  clean_verify "$set_file" || rc=$?
+  case "$rc" in
+    0) rm -f "$RESTORE_CLEAN_MARKER" ;;
+    2)
+      warn "the platform is back, and at least one proof could not run, so this is not a pass. If that is expected, as with a backup taken before a sentinel existed, run this again with ALLOW_NO_SENTINEL=yes."
+      exit 2
+      ;;
+    *) die "the platform is back, but at least one check failed. It stays marked as under way: fix the cause and run this again." ;;
+  esac
 }
 
 if [[ "$ENV" == clean ]]; then
@@ -384,7 +720,7 @@ record() { # step status detail. Status is PASS, FAIL or NOT RUN, as the contrac
 }
 
 on_exit() {
-  local rc=$?
+  local rc=$? result not_run
   trap - EXIT
   if [[ "$INFISICAL_STOPPED" == yes ]]; then
     kc -n "$NS" scale deployment/infisical --replicas=1 >/dev/null \
@@ -394,17 +730,27 @@ on_exit() {
   ia_cleanup
   [[ -z "$secret_tmp" ]] || rm -f "$secret_tmp"
   [[ -z "$sentinel_tmp" ]] || rm -f "$sentinel_tmp"
-  jq -Rn --arg env "$ENV_NAME" --arg backup "$BACKUP_ID" --arg at "$STAMP" --argjson rc "$rc" '
-    { environment: $env, backup: $backup, started_at: $at,
-      result: (if $rc == 0 then "PASS" else "FAIL" end),
-      steps: [inputs | split("\t") | {step: .[0], status: .[1], detail: .[2]}] }' \
+  # A proof that could not run is not a pass. proof-probes is about monitoring and not the data, as in the drill.
+  not_run="$(awk -F '\t' '$2 == "NOT RUN" && $1 != "proof-probes" { printf "%s ", $1 }' "$steps_file")"
+  if [[ "$rc" -eq 0 && -n "$not_run" && "${ALLOW_NO_SENTINEL:-}" != yes ]]; then rc=2; fi
+  case "$rc" in
+    0) result=PASS ;;
+    2) result="NOT RUN" ;;
+    "$EXIT_NEEDS_SIGN_IN") result=BLOCKED ;;
+    *) result=FAIL ;;
+  esac
+  jq -Rn --arg env "$ENV_NAME" --arg backup "$BACKUP_ID" --arg at "$STAMP" --arg result "$result" '
+    { environment: $env, backup: $backup, started_at: $at, result: $result,
+      steps: [inputs | split("\t") | {step: .[0], status: .[1], detail: .[2]}] }
+    | .not_run = [.steps[] | select(.status == "NOT RUN") | .step]' \
     < "$steps_file" > "$evidence" || true
   rm -f "$steps_file"
-  if [[ $rc -eq 0 ]]; then
-    ok "restore of $BACKUP_ID into $ENV_NAME complete. Evidence: $evidence"
-  else
-    warn "restore of $BACKUP_ID into $ENV_NAME FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: $evidence"
-  fi
+  case "$rc" in
+    0) ok "restore of $BACKUP_ID into $ENV_NAME complete. Evidence: $evidence" ;;
+    2) warn "the data of $BACKUP_ID is back in $ENV_NAME, and these proofs could not run, so this is not a pass: $not_run. ALLOW_NO_SENTINEL=yes accepts that. Evidence: $evidence" ;;
+    "$EXIT_NEEDS_SIGN_IN") warn "the data of $BACKUP_ID is back in $ENV_NAME, and nothing here can log in to prove it, as the steps above say. Evidence: $evidence" ;;
+    *) warn "restore of $BACKUP_ID into $ENV_NAME FAILED. Auto-sync is back on, so Argo CD restarts the apps against whatever was restored, unless the warnings above say it was terminated. Evidence: $evidence" ;;
+  esac
   exit "$rc"
 }
 trap on_exit EXIT
@@ -573,8 +919,6 @@ live_image() { # kind name container
 }
 
 # ----- Plane ------------------------------------------------------------------------------------
-
-APP_DEPLOYMENTS="plane-api-wl plane-worker-wl plane-beat-worker-wl plane-live-wl"
 
 no_app_pods() {
   [[ -z "$(kc -n "$NS" get pods -l 'app.kubernetes.io/component in (api,worker,beat,live)' -o name 2>/dev/null)" ]]
@@ -987,8 +1331,19 @@ spec:
               psql -XAt -F "$TAB" -v ON_ERROR_STOP=1 -d "$T" -f "$B/postgres/rowcounts.sql" > /work/rowcounts.tsv
               diff "$B/postgres/rowcounts.tsv" /work/rowcounts.tsv
               echo "GATE1 ok: $(wc -l < /work/rowcounts.tsv) tables equal the backup"
-              dropdb --maintenance-db=postgres --force --if-exists "$POSTGRES_DB"
-              psql -X -v ON_ERROR_STOP=1 -d postgres -c "ALTER DATABASE \"$T\" RENAME TO \"$POSTGRES_DB\""
+              # Two renames in one transaction, so that wherever this stops, a database of the right name exists
+              # and is whole. Only then is the old one dropped. The server is at zero, and this ends any other session.
+              O="${POSTGRES_DB}_replaced"
+              dropdb --maintenance-db=postgres --force --if-exists "$O"
+              psql -XAt -v ON_ERROR_STOP=1 -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$POSTGRES_DB'" > /dev/null
+              if [ "$(psql -XAt -d postgres -c "SELECT count(*) FROM pg_database WHERE datname = '$POSTGRES_DB'")" = 0 ]; then
+                psql -X -v ON_ERROR_STOP=1 -d postgres -c "ALTER DATABASE \"$T\" RENAME TO \"$POSTGRES_DB\""
+              else
+                psql -X -v ON_ERROR_STOP=1 --single-transaction -d postgres \
+                  -c "ALTER DATABASE \"$POSTGRES_DB\" RENAME TO \"$O\"" \
+                  -c "ALTER DATABASE \"$T\" RENAME TO \"$POSTGRES_DB\""
+                dropdb --maintenance-db=postgres --force --if-exists "$O"
+              fi
               echo "swapped in: $POSTGRES_DB is now the restored database"
 YAML
 }
@@ -1017,7 +1372,7 @@ no_server_pods() {
 }
 
 restore_infisical() {
-  local pg_image server_image backup_image inspect users status set_file="" problems initialized flushed
+  local pg_image server_image backup_image inspect users status set_file="" problems initialized flushed backup_version live_version stopped_at started_seconds admin_rc=0
   pg_image="$(live_image statefulset infisical-postgres postgres)"
   [[ -n "$pg_image" ]] || die "cannot read infisical-postgres. Is the infisical Application synced?"
   # The dump is useless without the key that encrypted its root key. Infisical cannot run on a wrong
@@ -1032,14 +1387,40 @@ restore_infisical() {
     warn "backup $BACKUP_ID has no complete recovery set: $(recovery_why_incomplete "$backup_dir"). The Terraform state and Plane secrets on this machine will not be checked against it."
   fi
 
-  # Migrations only go forward, so an older image than the dump's will refuse to start on it.
+  # Migrations only go forward, so an older image than the dump's will refuse to start on it, which in place would
+  # replace a working database and leave the server down.
   server_image="$(live_image deployment infisical infisical-standalone-infisical)"
   backup_image="$(jq -r '.server_image // ""' "$manifest")"
-  if [[ -n "$backup_image" && "$backup_image" != "$server_image" ]]; then
-    warn "this backup was taken on $backup_image and the server runs $server_image. Its migrations go forward only: an older image refuses a newer schema."
+  backup_version="$(recovery_image_version "$backup_image")"
+  live_version="$(recovery_image_version "$server_image")"
+  if recovery_version_newer "$backup_version" "$live_version"; then
+    if [[ "${ALLOW_NEWER_INFISICAL_BACKUP:-}" != yes ]]; then
+      die "this backup is from Infisical v$backup_version, and the server runs v$live_version. Its migrations go forward only, so that server would refuse to start on it. Deploy v$backup_version or newer first, or pass ALLOW_NEWER_INFISICAL_BACKUP=yes."
+    fi
+    record version FAIL "backup v$backup_version, running v$live_version, proceeding on ALLOW_NEWER_INFISICAL_BACKUP=yes"
+  elif [[ -n "$backup_image" && "$backup_image" != "$server_image" ]]; then
+    warn "this backup was taken on $backup_image and the server runs $server_image."
+    record version PASS "backup v${backup_version:-unknown}, running v${live_version:-unknown}"
+  else
+    record version PASS "backup v${backup_version:-unknown}, running v${live_version:-unknown}"
   fi
 
   if [[ -n "$set_file" && "$RESTORE_MODE" != clean ]]; then refuse_stale_plane_secrets "$set_file"; fi
+
+  # After the swap a token has to log in to prove anything, and the time to find out there is none is now.
+  if [[ -n "$set_file" ]]; then
+    recovery_admin_plan "$set_file"
+    case "$RECOVERY_ADMIN_MODE" in
+      token) ;;
+      mint) warn "$(recovery_admin_plan_text)" ;;
+      *)
+        if [[ "$RESTORE_MODE" != clean && "${ALLOW_NO_ADMIN_TOKEN:-}" != yes ]]; then
+          die "$RECOVERY_ADMIN_WHY, and no password is on this machine, so nothing could log in after this restore. Nothing was changed. Write the password of $INFISICAL_ADMIN_EMAIL to ${ADMIN_PASSWORD_FILE#"$ROOT"/}, mode 0600, and run this again: it signs in afterwards and mints a token. A token made now would not help, because this dump does not hold it. If this instance's Postgres is lost there is nothing to sign in to now, and ALLOW_NO_ADMIN_TOKEN=yes restores it and then stops with the steps. With no copy of the password, see \"Admin token and password both gone\" in infisical/README.md."
+        fi
+        warn "$(recovery_admin_plan_text)"
+        ;;
+    esac
+  fi
 
   kc -n "$NS" rollout status statefulset/infisical-postgres --timeout=300s >/dev/null || die "infisical-postgres is not ready"
   kc -n "$NS" rollout status statefulset/infisical-redis --timeout=300s >/dev/null || die "infisical-redis is not ready"
@@ -1050,11 +1431,14 @@ restore_infisical() {
 
   # ----- Past this line the environment is being changed. -----
   recovery_install_tf_state "$backup_dir"
+  if [[ -n "$set_file" ]]; then recovery_rebuild_machine_file "$backup_dir"; fi
 
   # This one Application: root may be busy for as long as Plane waits, and its waves do not depend on
   # this pause. See argo_pause_child.
   argo_pause_child "$APP"
   INFISICAL_STOPPED=yes
+  stopped_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  started_seconds=$SECONDS
   kc -n "$NS" scale deployment/infisical --replicas=0 >/dev/null
   wait_for 180 "the Infisical server to exit" no_server_pods
   record app-stopped PASS "infisical at zero with auto-sync paused"
@@ -1080,6 +1464,7 @@ restore_infisical() {
   done
   if [[ "$status" == 200 ]]; then
     record proof-status PASS "/api/status answers 200 through Traefik"
+    record server-downtime PASS "told to stop at $stopped_at, answering by $(date -u +%Y-%m-%dT%H:%M:%SZ), $((SECONDS - started_seconds))s"
   else
     record proof-status FAIL "/api/status answered $status"
     die "Infisical did not answer after the restore"
@@ -1095,6 +1480,15 @@ restore_infisical() {
   if [[ -n "$set_file" ]]; then
     # Decrypting them needs ENCRYPTION_KEY, and being let in needs AUTH_SECRET and the token row.
     ia_init
+    recovery_admin_after_restore "$set_file" || admin_rc=$?
+    if [[ "$admin_rc" -ne 0 ]]; then
+      record admin-token "NOT RUN" "nothing on this machine can log in to the restored instance"
+      record proof-values "NOT RUN" "nothing could log in to read them"
+      if [[ "$RESTORE_MODE" == clean ]]; then exit "$EXIT_NEEDS_SIGN_IN"; fi
+      ia_print_sign_in_steps "INFISICAL_RESTORED=yes scripts/infisical-bootstrap.sh"
+      exit "$EXIT_NEEDS_SIGN_IN"
+    fi
+    record admin-token PASS "$RECOVERY_ADMIN_OUTCOME"
     ia_load_admin
     if problems="$(recovery_compare_values "$set_file")"; then
       record proof-values PASS "every Plane secret decrypts to the value, version and id the backup recorded"

@@ -10,6 +10,11 @@
 # republishes the identity Secrets and writes no secret value. It refuses instead of repairing: a
 # fresh instance, a token the server rejects, Terraform wanting to create or delete anything, or a
 # missing secret all mean this database and these local files are not a pair. Idempotent.
+#
+# A token that has expired, or a file that is gone, is another matter: it says nothing about the pair. On an
+# initialized instance this signs in with the first admin's password and mints another, or takes one a person
+# made (.local/secret-zero/infisical-admin-token.new), and records it. RENEW_ADMIN_TOKEN=yes does so
+# ahead of time, before a token ends. See infisical/README.md, section Recovery.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../infisical/lib/api.sh
@@ -20,7 +25,7 @@ need_commands curl jq kubectl openssl terraform yq
 ia_init
 trap ia_cleanup EXIT
 
-ADMIN_EMAIL="admin@wayline.localhost"
+ADMIN_EMAIL="$INFISICAL_ADMIN_EMAIL"
 ADMIN_ORG="wayline"
 TF_ROOT="$ROOT/infisical/terraform"
 TF_STATE_DIR="$LOCAL_DIR/terraform/infisical"
@@ -162,8 +167,12 @@ case "$initialized" in
     bootstrap_instance
     ;;
   true)
-    [[ -s "$ADMIN_FILE" ]] \
-      || die "Infisical is initialized but $ADMIN_FILE is missing, and bootstrap works only once. See infisical/README.md, section Recovery."
+    ensure_rc=0
+    ia_ensure_admin "$(jq -r '.organization.id // empty' "$MACHINE_FILE" 2>/dev/null || true)" || ensure_rc=$?
+    if [[ "$ensure_rc" -ne 0 ]]; then
+      ia_print_sign_in_steps "scripts/infisical-bootstrap.sh"
+      die "Infisical is initialized, and bootstrap works only once, so $(ia_admin_problem) has to be fixed by signing in."
+    fi
     ok "Infisical already bootstrapped"
     ;;
   *) die "GET /api/v1/admin/config answered without config.initialized" ;;

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Stub curl for tests/drills/clean-restore-harness.sh. The scripts name some hosts outright, and on this machine those
+# would reach the real cluster. Each goes to the fake API instead. Anything else outside 127.0.0.1 is refused.
+args=()
+for a in "$@"; do
+  case "$a" in
+    http://infisical.localhost*) a="$INFISICAL_URL${a#http://infisical.localhost}" ;;
+    http://argocd.localhost*) a="$INFISICAL_URL/fake/argocd" ;;
+    http://prometheus.localhost*) a="$INFISICAL_URL/fake/prometheus${a#http://prometheus.localhost}" ;;
+    http://localhost:5001*) a="$INFISICAL_URL/fake/registry" ;;
+    http://127.0.0.1:*) ;;
+    http://* | https://*)
+      printf 'stub curl: refusing to reach %s\n' "$a" >&2
+      exit 7
+      ;;
+  esac
+  args+=("$a")
+done
+exec /usr/bin/curl "${args[@]}"

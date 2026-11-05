@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Stub terraform for tests/drills/clean-restore-harness.sh. Records what is asked. $H_STATE/tf-scenario says what a plan
+of infisical/terraform finds. The local root records the state it applied over, so a test can see state from a cluster
+that is gone. The Infisical root takes the admin token as the real provider does, and fails on one the server refuses."""
+import json, os, sys
+
+S = os.environ["H_STATE"]
+ROOT = os.environ["H_ROOT"]
+
+
+def log(line):
+    with open(f"{S}/calls.log", "a") as f:
+        f.write(line + "\n")
+
+
+def cluster():
+    with open(f"{S}/cluster.json") as f:
+        return json.load(f)
+
+
+local = any(x.startswith("-chdir") and x.endswith("environments/local") for x in sys.argv[1:])
+a = [x for x in sys.argv[1:] if not x.startswith("-chdir")]
+cmd = a[0]
+
+if local:
+    state = f"{ROOT}/.local/terraform/local/terraform.tfstate"
+    if cmd == "init":
+        sys.exit(0)
+    if cmd == "apply":
+        c = cluster()
+        if os.path.exists(state):
+            with open(state) as f:
+                old = json.load(f)
+            if old.get("generation") != c.get("generation"):
+                log(f"tf local apply over stale state, of cluster generation {old.get('generation')}")
+        log("tf local apply")
+        c["namespaces"] = True
+        with open(f"{S}/cluster.json", "w") as f:
+            json.dump(c, f)
+        os.makedirs(os.path.dirname(state), exist_ok=True)
+        with open(state, "w") as f:
+            json.dump({"generation": c.get("generation")}, f)
+        sys.exit(0)
+    print("stub terraform: unhandled local", a, file=sys.stderr)
+    sys.exit(99)
+
+sc = open(f"{S}/tf-scenario").read().strip() if os.path.exists(f"{S}/tf-scenario") else "update"
+state = f"{ROOT}/.local/terraform/infisical/terraform.tfstate"
+if cmd == "init":
+    sys.exit(0)
+with open(f"{S}/api.json") as f:
+    api = json.load(f)
+if cmd in ("plan", "apply") and os.environ.get("INFISICAL_TOKEN", "") not in api.get("tokens", []):
+    print("Error: the server refused the provider's token", file=sys.stderr)
+    log(f"tf {cmd} refused: token not accepted")
+    sys.exit(1)
+if cmd == "plan":
+    log(f"tf plan scenario={sc}")
+    if sc == "fail":
+        sys.exit(1)
+    if sc == "none":
+        print("No changes.")
+        sys.exit(0)
+    out = [x.split("=", 1)[1] for x in a if x.startswith("-out=")][0]
+    open(out, "w").write(sc)
+    print(f"Plan: scenario {sc}")
+    sys.exit(2)
+if cmd == "show":
+    sc2 = open(a[-1]).read().strip()
+    upd = {"address": 'infisical_identity_kubernetes_auth.reader["dev"]', "change": {"actions": ["update"]}}
+    extra = []
+    if sc2 == "create":
+        extra = [{"address": 'infisical_project.plane["dev"]', "change": {"actions": ["create"]}}]
+    if sc2 == "replace":
+        extra = [{"address": 'infisical_identity.reader["dev"]', "change": {"actions": ["delete", "create"]}}]
+    print(json.dumps({"resource_changes": [{"address": "x", "change": {"actions": ["no-op"]}}, upd] + extra}))
+    sys.exit(0)
+if cmd == "apply":
+    log("tf apply " + ("saved-plan" if "-auto-approve" not in a else "auto-approve"))
+    open(f"{S}/tf-scenario", "w").write("none")
+    if "-auto-approve" in a and not os.path.exists(state):
+        os.makedirs(os.path.dirname(state), exist_ok=True)
+        json.dump({"serial": 1, "lineage": "new", "resources": [1, 2, 3, 4, 5]}, open(state, "w"))
+    sys.exit(0)
+if cmd == "output":
+    print(json.dumps({"environment_slug": {"value": "prod"}, "project_ids": {"value": api["project_ids"]}, "project_slugs": {"value": {"dev": "plane-dev", "prod-sim": "plane-prod-sim"}}, "identity_ids": {"value": api["identity_ids"]}}))
+    sys.exit(0)
+print("stub terraform: unhandled", a, file=sys.stderr)
+sys.exit(99)

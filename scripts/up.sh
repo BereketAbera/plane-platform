@@ -24,8 +24,12 @@
 # UP_WAIT_TRAEFIK_SECONDS, UP_WAIT_ROUTE_SECONDS, UP_WAIT_INFISICAL_SECONDS and UP_WAIT_APPS_SECONDS
 # override the waits, for a slow first image pull. Nothing here prints a secret: credentials stay
 # in .local/secret-zero and .local/test-accounts.env.
+# ALLOW_LOW_DISK="<reason>" goes past the check for a new cluster, and the reason is logged in
+# .local/evidence-raw/low-disk-overrides.log. It does not go past the 10 GiB floor every script checks.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# shellcheck source=lib/up-checks.sh
+source "$(dirname "$0")/lib/up-checks.sh"
 
 STOP_AFTER="${UP_STOP_AFTER:-}"
 case "$STOP_AFTER" in
@@ -44,21 +48,25 @@ for tool in docker git curl jq kind kubectl terraform yq; do
   command -v "$tool" >/dev/null 2>&1 || die "$tool not found. Run: make setup"
 done
 docker info >/dev/null 2>&1 || die "Docker is not running"
+low_disk_check_value
 
-# Every Application source sits under these paths. With changes here, Argo CD would deploy something
-# other than this working tree, and nothing would say so. Stopping after the cluster step publishes
-# nothing, so a dirty tree cannot mislead that run.
+# With changes under the paths Argo CD reads, it would deploy something other than this working tree, and
+# nothing would say so. Stopping after the cluster step publishes nothing, so a dirty tree cannot mislead
+# that run. scripts/restore.sh and the clean-restore drill ask the same before they delete anything.
 refuse_uncommitted() {
   local dirty line
-  dirty="$(git -C "$ROOT" status --porcelain -- gitops helm monitoring infisical)"
+  dirty="$(up_uncommitted)"
   [[ -n "$dirty" ]] || return 0
   while IFS= read -r line; do printf '    %s\n' "$line" >&2; done <<<"$dirty"
   die "uncommitted changes above, under paths Argo CD reads. It reads only commits, so it would never see them. Commit or stash them, then run this again."
 }
 if [[ "$STOP_AFTER" != cluster ]]; then refuse_uncommitted; fi
 
-# A first install grows Docker storage by about 20 GiB (critique section 5). Resuming does not.
-if ! cluster_exists; then guard_disk 25; fi
+# Resuming grows nothing, so only a new cluster is asked for this. scripts/lib/up-checks.sh says why 25 GiB.
+if ! cluster_exists; then
+  guard_new_cluster "$UP_NEW_CLUSTER_GIB" up.sh
+  up_move_stale_local_state
+fi
 guard_disk
 
 # ------ Helpers ---------------------------------------------------------------------------------
@@ -123,24 +131,18 @@ wait_until() { # wait_until <seconds> <what> <what to check on timeout> <command
   ok "$what, after $((SECONDS - started))s"
 }
 
-# After promotion the overlays name digests in the local registry, and a new machine has none of
-# them. Today they name upstream images only, so this finds nothing and does nothing.
-missing_local_images() { # Prints each localhost:5001 reference the registry cannot serve.
-  local ref
-  for ref in $(grep -hoE 'localhost:5001/[^[:space:]"@]+@sha256:[a-f0-9]{64}' "$ROOT"/gitops/environments/*/manifests.yaml | sort -u || true); do
-    docker buildx imagetools inspect "$ref" >/dev/null 2>&1 || printf '    %s\n' "$ref"
-  done
-}
-
+# Since promotion the overlays name digests only the local registry holds, and no backup does. So a new
+# machine, or make destroy PURGE=yes, reaches this. See "What a clean restore cannot bring back" in
+# infisical/README.md.
 ensure_local_images() {
   local missing
-  missing="$(missing_local_images)"
+  missing="$(up_missing_local_images)"
   [[ -n "$missing" ]] || return 0
   warn "The local registry cannot serve these images, which the overlays reference:"
   printf '%s\n' "$missing" >&2
   log "Rebuilding the images, in case the build reproduces those digests"
   "$ROOT/scripts/ci/build-images.sh" "$LOCAL_REGISTRY_PREFIX"
-  missing="$(missing_local_images)"
+  missing="$(up_missing_local_images)"
   if [[ -z "$missing" ]]; then
     ok "the local registry now serves every referenced image"
     return 0
@@ -158,6 +160,7 @@ Or keep the exact digests, by copying them from the registry that has them:
     scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev
     scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline prod-sim
     make up
+If make restore-clean brought you here, run that again instead of the last make up. Neither way touches data.
 MSG
   exit 1
 }

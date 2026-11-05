@@ -1,0 +1,435 @@
+#!/usr/bin/env python3
+"""Stub kubectl for tests/drills/clean-restore-harness.sh. Just enough of the API, with its state in $H_STATE.
+
+It keeps the state a real cluster would keep, and reads it back, so the scripts see what they did:
+Deployments have replicas, pods exist only while replicas are above zero, Applications read Synced and Healthy
+only when what they own matches Git, self-heal reverts a scale unless auto-sync is paused, and a rendered Secret
+holds what the fake Infisical holds, once that environment's identity is published. Anything it has no answer
+for exits 99, so a new call in a script shows up as a failure and not as a quiet success.
+"""
+import base64, json, os, re, subprocess, sys
+
+S = os.environ["H_STATE"]
+ROOT = os.environ["H_ROOT"]
+STUBS = os.environ["H_STUBS"]
+
+
+def log(line):
+    with open(f"{S}/calls.log", "a") as f:
+        f.write(line + "\n")
+
+
+def jload(name, default):
+    try:
+        with open(f"{S}/{name}") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return default
+
+
+def jsave(name, data):
+    with open(f"{S}/{name}.tmp", "w") as f:
+        json.dump(data, f)
+    os.replace(f"{S}/{name}.tmp", f"{S}/{name}")
+
+
+a = sys.argv[1:]
+ns = None
+args = []
+i = 0
+while i < len(a):
+    if a[i] == "--context":
+        i += 2
+        continue
+    if a[i] == "-n":
+        ns = a[i + 1]
+        i += 2
+        continue
+    if a[i].startswith("--namespace"):
+        if "=" in a[i]:
+            ns = a[i].split("=")[1]
+            i += 1
+        else:
+            ns = a[i + 1]
+            i += 2
+        continue
+    if a[i].startswith("--request-timeout"):
+        i += 1
+        continue
+    args.append(a[i])
+    i += 1
+
+cl = jload("cluster.json", {"exists": False})
+if not cl.get("exists") or cl.get("stopped"):
+    print("The connection to the server was refused", file=sys.stderr)
+    sys.exit(1)
+cmd = " ".join(args)
+api = jload("api.json", {})
+b64 = lambda s: base64.b64encode(s.encode()).decode()
+PLANE_APPS = ["plane-api-wl", "plane-worker-wl", "plane-beat-worker-wl", "plane-live-wl"]
+NOT_FOUND = 1
+
+
+def workloads():
+    return cl.setdefault("workloads", {})
+
+
+def app_for(namespace, name):
+    if namespace == "infisical" and name == "infisical":
+        return "infisical"
+    if namespace in ("plane-dev", "plane-prod-sim"):
+        return namespace
+    return None
+
+
+def paused(app):
+    return cl.setdefault("paused", {}).get(app, False)
+
+
+def env_of(namespace):
+    return namespace.replace("plane-", "")
+
+
+def rendered(env):
+    """What the operator would render for an environment: nothing until its identity is published."""
+    if f"plane-{env}" not in cl.get("identities", {}) or not api.get("initialized"):
+        return None
+    project = api.get("project_ids", {}).get(env)
+    secrets = api.get("projects", {}).get(project)
+    return {k: v["value"] for k, v in secrets.items()} if secrets else None
+
+
+def app_status(name):
+    if name == "infisical":
+        ok = "infisical-secrets" in cl.get("zero", {}) and workloads().get("infisical/infisical") == 1
+        return ("Synced", "Healthy") if ok else ("OutOfSync", "Progressing")
+    if name in ("plane-dev", "plane-prod-sim"):
+        if rendered(env_of(name)) is None:
+            return ("OutOfSync", "Degraded")
+        ok = all(workloads().get(f"{name}/{d}", 1) == 1 for d in PLANE_APPS)
+        return ("Synced", "Healthy") if ok else ("OutOfSync", "Progressing")
+    return ("Synced", "Healthy")
+
+
+def app_names():
+    names = ["root"]
+    for f in sorted(os.listdir(f"{ROOT}/gitops/applications")):
+        with open(f"{ROOT}/gitops/applications/{f}") as fh:
+            for m in re.finditer(r"^kind: Application\nmetadata:\n  name: (\S+)", fh.read(), re.M):
+                names.append(m.group(1))
+    return names
+
+
+def app_object(name):
+    auto = {"prune": True, "selfHeal": True}
+    if paused(name):
+        auto["enabled"] = False
+    sync, health = app_status(name)
+    return {
+        "metadata": {"name": name},
+        "spec": {"syncPolicy": {"automated": auto}},
+        "status": {"sync": {"status": sync}, "health": {"status": health}, "operationState": {"phase": "Succeeded"}},
+    }
+
+
+def server_image():
+    try:
+        with open(f"{S}/server-image") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        with open(f"{ROOT}/helm/values/infisical.yaml") as f:
+            text = f.read()
+        repo = re.search(r"^\s*repository: (\S*infisical\S*)", text, re.M).group(1)
+        tag = re.search(r'^\s*tag: "?([^"\s]+)', text, re.M).group(1)
+        return f"{repo}:{tag}"
+
+
+if args[:2] == ["get", "--raw"]:
+    print("ok")
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "application":
+    if not cl.get("namespaces"):
+        print(f'applications.argoproj.io "{args[2]}" not found', file=sys.stderr)
+        sys.exit(NOT_FOUND)
+    o = app_object(args[2])
+    if "jsonpath" in cmd:
+        print(f'{o["status"]["sync"]["status"]}/{o["status"]["health"]["status"]}', end="")
+    else:
+        print(json.dumps(o))
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "applications":
+    if not cl.get("namespaces"):
+        print(json.dumps({"items": []}))
+        sys.exit(0)
+    print(json.dumps({"items": [app_object(n) for n in app_names()]}))
+    sys.exit(0)
+
+if args[0] == "patch" and args[1] == "application":
+    name = args[2]
+    p = " ".join(args)
+    if '"enabled":false' in p:
+        cl.setdefault("paused", {})[name] = True
+        log(f"kc patch application {name} pause")
+    elif '"op":"replace"' in p:
+        if '"enabled":false' in p:
+            print("a resume must not keep enabled:false", file=sys.stderr)
+            sys.exit(1)
+        cl.setdefault("paused", {})[name] = False
+        log(f"kc patch application {name} resume")
+    else:
+        log(f"kc patch application {name} other")
+    jsave("cluster.json", cl)
+    sys.exit(0)
+
+if args[0] == "annotate":
+    sys.exit(0)
+
+if args[0] == "wait":
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "secret":
+    name = args[2]
+    data = None
+    if ns == "infisical":
+        data = cl.get("zero", {}).get(name)
+    elif ns and ns.startswith("plane-"):
+        if name == "plane-infisical-identity" and ns in cl.get("identities", {}):
+            data = {"identityId": cl["identities"][ns]}
+        ren = rendered(env_of(ns))
+        if ren:
+            m = {
+                "plane-pgdb": {"POSTGRES_USER": "PG_USER", "POSTGRES_PASSWORD": "PG_PASSWORD", "POSTGRES_DB": "PG_DB"},
+                "plane-rabbitmq": {"RABBITMQ_DEFAULT_USER": "RABBITMQ_USER", "RABBITMQ_DEFAULT_PASS": "RABBITMQ_PASSWORD"},
+                "plane-doc-store": {"MINIO_ROOT_USER": "SILO_ACCESS_KEY", "MINIO_ROOT_PASSWORD": "SILO_SECRET_KEY", "AWS_ACCESS_KEY_ID": "SILO_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY": "SILO_SECRET_KEY"},
+                "plane-app-keys": {"SECRET_KEY": "SECRET_KEY", "LIVE_SERVER_SECRET_KEY": "LIVE_SERVER_SECRET_KEY"},
+                "plane-app-env": {"DATABASE_URL": "PG_PASSWORD"},
+                "plane-live-env": {"REDIS_URL": "PG_DB"},
+            }
+            if name in m:
+                data = {k: ren[v] for k, v in m[name].items() if v in ren}
+    if data is None:
+        print(f'secret "{name}" not found', file=sys.stderr)
+        sys.exit(NOT_FOUND)
+    print(json.dumps({"metadata": {"name": name, "annotations": {}}, "data": {k: b64(v) for k, v in data.items()}}))
+    sys.exit(0)
+
+if args[0] == "get" and args[1] in ("deployment", "deploy", "statefulset", "sts"):
+    n = args[2]
+    key = f"{ns}/{n}"
+    if n in PLANE_APPS and rendered(env_of(ns)) is None:
+        print(f'deployments.apps "{n}" not found', file=sys.stderr)
+        sys.exit(NOT_FOUND)
+    if n == "infisical" and key not in workloads():
+        print(f'deployments.apps "{n}" not found', file=sys.stderr)
+        sys.exit(NOT_FOUND)
+    images = {
+        "infisical-postgres": ("postgres", "docker.io/library/postgres:16.15-alpine@sha256:aa"),
+        "infisical": ("infisical-standalone-infisical", server_image()),
+        "plane-pgdb-wl": ("plane-pgdb", "docker.io/library/postgres:15.19-alpine@sha256:cc"),
+        "plane-api-wl": ("plane-api", "docker.io/makeplane/plane-backend:v1.4.3@sha256:dd"),
+        "plane-worker-wl": ("plane-worker", "docker.io/makeplane/plane-backend:v1.4.3@sha256:dd"),
+        "plane-beat-worker-wl": ("plane-beat-worker", "docker.io/makeplane/plane-backend:v1.4.3@sha256:dd"),
+        "plane-live-wl": ("plane-live", "docker.io/makeplane/plane-live:v1.4.3@sha256:ee"),
+    }
+    if n not in images:
+        print(f"stub kubectl: no such workload {n}", file=sys.stderr)
+        sys.exit(99)
+    replicas = workloads().get(key, 1)
+    if "jsonpath" in cmd:
+        print(replicas, end="")
+        sys.exit(0)
+    img = images[n]
+    print(json.dumps({"metadata": {"labels": {}}, "spec": {"replicas": replicas, "template": {"metadata": {"labels": {"app.kubernetes.io/version": "1.4.3"}}, "spec": {"containers": [{"name": img[0], "image": img[1]}]}}}}))
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "pvc":
+    if len(args) > 2 and args[2] == "backups":
+        print("persistentvolumeclaim/backups")
+        sys.exit(0)
+    if len(args) > 2 and args[2] == "data-infisical-postgres-0":
+        sys.exit(0 if cl.get("infisical_pvc") else NOT_FOUND)
+    print("persistentvolumeclaim/backups")
+    if ns and ns.startswith("plane-") and cl.get("plane_pvcs"):
+        print("persistentvolumeclaim/data-plane-pgdb-wl-0")
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "pods":
+    # Pods go away a read or two after the scale that ended them, so a script has to wait for it.
+    selector = next((x for x in args if "=" in x or " in " in x), "")
+    if "infisical-standalone" in selector:
+        keys = ["infisical/infisical"]
+    elif "component in" in selector:
+        keys = [f"{ns}/{d}" for d in PLANE_APPS]
+    else:
+        keys = []
+    alive = [k for k in keys if workloads().get(k, 1) > 0]
+    lingering = cl.setdefault("lingering", {})
+    going = [k for k in keys if lingering.get(k, 0) > 0]
+    for k in going:
+        lingering[k] -= 1
+    jsave("cluster.json", cl)
+    for k in alive + going:
+        print("pod/" + k.split("/")[1] + "-0")
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "jobs":
+    jobs = jload("jobs.json", {})
+    items = []
+    for name, state in jobs.items():
+        if state.get("ns") != ns:
+            continue
+        status = {"active": 1} if state["state"] == "Running" else ({"failed": 1} if state["state"] == "Failed" else {"succeeded": 1})
+        items.append({"metadata": {"name": name, "labels": {"app.kubernetes.io/name": state.get("label", "")}}, "status": status})
+    selector = next((x for x in args if x.startswith("app.kubernetes.io/name=")), None)
+    if selector:
+        want = selector.split("=")[1]
+        items = [i for i in items if i["metadata"]["labels"]["app.kubernetes.io/name"] == want]
+    print(json.dumps({"items": items}))
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "job":
+    state = jload("jobs.json", {}).get(args[2], {"state": "Complete"})["state"]
+    conditions = [] if state == "Running" else [{"type": state, "status": "True"}]
+    print(json.dumps({"status": {"conditions": conditions}}))
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "configmap":
+    ca = f"-----BEGIN CERTIFICATE-----cluster-{cl.get('generation', 1)}-----END CERTIFICATE-----"
+    print(ca if "jsonpath" in cmd else json.dumps({"data": {"ca.crt": ca}}), end="")
+    sys.exit(0)
+
+if args[0] == "get" and args[1] == "namespace":
+    sys.exit(0 if cl.get("namespaces") else NOT_FOUND)
+
+if args[0] == "logs":
+    job = args[1].split("/")[1]
+    if "guard-objects" in job:
+        print("OBJECTS=" + str(cl.get("objects", {}).get(ns, 0)))
+    elif "guard" in job:
+        print("USERS=" + str(cl.get("users", {}).get(ns, 0)))
+    else:
+        print("job logs ok")
+    sys.exit(0)
+
+if args[0] == "scale":
+    # scale deployment/<name> --replicas=<n>
+    name = args[1].split("/")[1]
+    n = int(args[2].split("=")[1])
+    key = f"{ns}/{name}"
+    log(f"kc scale {args[1]} {args[2]} ns={ns}")
+    app = app_for(ns, name)
+    if app and not paused(app) and n != 1:
+        log(f"self-heal reverted the scale of {key}, because auto-sync on {app} is on")
+        sys.exit(0)
+    old = workloads().get(key, 1)
+    workloads()[key] = n
+    if n == 0 and old > 0:
+        cl.setdefault("lingering", {})[key] = 2
+    jsave("cluster.json", cl)
+    if key == "infisical/infisical" and n > 0 and os.path.exists(f"{S}/restored-pending"):
+        # The restored database, seen once the server starts on it.
+        jsave("api.json", jload("restored-pending", {}))
+        os.remove(f"{S}/restored-pending")
+    sys.exit(0)
+
+if args[0] == "rollout":
+    log("kc " + " ".join(args[:3]) + f" ns={ns}")
+    if "deployment/infisical" in cmd and os.path.exists(f"{S}/fail-server-start"):
+        sys.exit(1)
+    sys.exit(0)
+
+if args[0] == "exec":
+    joined = " ".join(args)
+    if "redis-cli FLUSHALL" in joined:
+        log(f"kc exec redis FLUSHALL ns={ns}")
+        if workloads().get("infisical/infisical", 1) > 0:
+            log("ERROR Redis flushed with the Infisical server still up")
+        print("OK")
+        sys.exit(0)
+    if "valkey-cli FLUSHALL" in joined:
+        log(f"kc exec valkey FLUSHALL ns={ns}")
+        print("OK")
+        sys.exit(0)
+    if "rabbitmqctl" in joined:
+        print("celery")
+        sys.exit(0)
+    if "manage.py shell" in joined:
+        if "SENTINEL=" in joined:
+            print("@@SENTINEL=ok\n@@ROWS=1\n@@UNDECRYPTABLE=")
+        elif "APIToken" in joined:
+            print("@@faketoken")
+        else:
+            print("@@ok")
+        sys.exit(0)
+    print(f"stub kubectl: unhandled exec: {joined}", file=sys.stderr)
+    sys.exit(99)
+
+if args[0] == "create":
+    # create secret generic NAME --from-env-file=/dev/stdin --dry-run=client -o yaml
+    name = args[3]
+    pairs = dict(line.split("=", 1) for line in sys.stdin.read().splitlines() if "=" in line)
+    print(f"apiVersion: v1\nkind: Secret\nmetadata:\n  name: {name}\n  namespace: {ns}\ndata:")
+    for k, v in pairs.items():
+        print(f"  {k}: {b64(v)}")
+    sys.exit(0)
+
+if args[0] == "apply":
+    doc = sys.stdin.read()
+    kind = (re.search(r"^kind: (\S+)", doc, re.M) or [None, "?"])[1]
+    name = (re.search(r"^  name: (\S+)", doc, re.M) or [None, "?"])[1]
+    target = (re.search(r"^  namespace: (\S+)", doc, re.M) or [None, ns])[1]
+    if kind == "Secret":
+        data = {m.group(1): base64.b64decode(m.group(2)).decode() for m in re.finditer(r"^  (\w+): (\S+)$", doc.split("\ndata:", 1)[1], re.M)}
+        if target == "infisical":
+            cl.setdefault("zero", {})[name] = data
+            cl["infisical_pvc"] = True
+        if name == "plane-infisical-identity":
+            cl.setdefault("identities", {})[target] = data["identityId"]
+            log(f"kc publish identity ns={target} id={data['identityId']}")
+        jsave("cluster.json", cl)
+        sys.exit(0)
+    if kind == "Job":
+        log(f"kc apply Job {re.sub(r'-[0-9]{8}t[0-9]{6}z$', '', name)} ns={target}")
+        jobs = jload("jobs.json", {})
+        state = "Complete"
+        if any(f in name and (not fl or fl in str(target)) for f, fl in jload("fail-jobs.json", [])):
+            state = "Failed"
+        if any(f in name and (not fl or fl in str(target)) for f, fl in jload("hang-jobs.json", [])):
+            state = "Running"
+        label = "plane-backup" if name.startswith("plane-backup") else "plane-restore"
+        jobs[name] = {"state": state, "ns": target, "label": label}
+        jsave("jobs.json", jobs)
+        if name.startswith("plane-backup") and state == "Complete":
+            subprocess.run([sys.executable, os.path.join(STUBS, "fakejob.py"), doc], check=True)
+        if name.startswith("plane-restore-") and "guard" not in name and "migrate" not in name and state != "Failed":
+            if target == "infisical":
+                if workloads().get("infisical/infisical", 1) > 0:
+                    log("ERROR the database was replaced with the Infisical server still up")
+                # The dump comes back: the fake API serves what the backup recorded once the server restarts.
+                bid = re.search(r'name: BACKUP_ID, value: "([^"]+)"', doc).group(1)
+                with open(f"{ROOT}/.local/backups/infisical/{bid}/fake-api-dump.json") as f:
+                    jsave("restored-pending", json.load(f))
+            elif target and target.startswith("plane-"):
+                if any(workloads().get(f"{target}/{d}", 1) > 0 for d in PLANE_APPS):
+                    log(f"ERROR the database of {target} was replaced with its apps still up")
+                bid = re.search(r'name: BACKUP_ID, value: "([^"]+)"', doc).group(1)
+                with open(f"{ROOT}/.local/backups/{env_of(target)}/{bid}/postgres/rowcounts.tsv") as f:
+                    counts = dict(line.rstrip("\n").split("\t") for line in f)
+                cl.setdefault("users", {})[target] = int(counts.get("users", 0))
+                jsave("cluster.json", cl)
+        sys.exit(0)
+    log(f"kc apply {kind} {name}")
+    sys.exit(0)
+
+if args[0] == "delete":
+    if args[1] == "job":
+        jobs = jload("jobs.json", {})
+        jobs.pop(args[2], None)
+        jsave("jobs.json", jobs)
+        log(f"kc delete job {re.sub(r'-[0-9]{8}t[0-9]{6}z$', '', args[2])} ns={ns}")
+    sys.exit(0)
+
+print("stub kubectl: unhandled: " + cmd, file=sys.stderr)
+sys.exit(99)

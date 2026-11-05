@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Create the kind cluster and the local services around it. Idempotent.
 source "$(dirname "$0")/lib/common.sh"
+# shellcheck source=lib/up-checks.sh
+source "$(dirname "$0")/lib/up-checks.sh"
 
+low_disk_check_value
 # Resuming grows nothing, so it needs only the default. Refusing a resume at 15 GiB would strand a
-# platform whose first install has already used the space. up.sh makes the 25 GiB check for a new one.
-if cluster_exists; then guard_disk; else guard_disk 15; fi
+# platform whose first install has already used the space. up.sh makes its own check for a new one, and
+# scripts/lib/up-checks.sh says what both are based on and how ALLOW_LOW_DISK="<reason>" goes past them.
+if cluster_exists; then guard_disk; else guard_new_cluster "$CLUSTER_UP_NEW_CLUSTER_GIB" cluster-up.sh; fi
 mkdir -p "$LOCAL_DIR/backups" "$LOCAL_DIR/git" "$LOCAL_DIR/rendered"
+# Dumps hold password hashes and plaintext API tokens.
+chmod 700 "$LOCAL_DIR/backups"
 
 NODE_IMAGE="$(grep -E 'image: kindest/node' "$ROOT/infrastructure/kind/cluster.yaml.tmpl" | awk '{print $2}')"
 NODE_DIGEST="${NODE_IMAGE#*@}"

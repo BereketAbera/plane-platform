@@ -1,0 +1,40 @@
+#!/bin/bash
+# Stub docker for tests/drills/clean-restore-harness.sh. Bash 3.2. Exits 99 on anything it has no answer for.
+exists() { grep -F '"exists": true' "$H_STATE/cluster.json" >/dev/null 2>&1; }
+case "$1" in
+  info) [[ ! -e "$H_STATE/docker-down" ]] ;;
+  inspect)
+    exists || exit 1
+    case "$*" in
+      *Mounts*) printf 'kind-var-volume\n' ;;
+      *State.Status*) if grep -F '"stopped": true' "$H_STATE/cluster.json" >/dev/null; then printf 'exited\n'; else printf 'running\n'; fi ;;
+      *) exit 99 ;;
+    esac
+    ;;
+  system)
+    size="$(cat "$H_STATE/kind-volume-size" 2>/dev/null || echo 12.22GB)"
+    if exists; then printf '[{"Name":"kind-var-volume","Size":"%s"}]\n' "$size"; else printf '[]\n'; fi
+    ;;
+  network) printf '172.24.0.0/16 fc00:f853:ccd:e793::/64\n' ;;
+  compose) printf 'docker compose %s\n' "$*" >>"$H_STATE/calls.log" ;;
+  start)
+    printf 'docker start\n' >>"$H_STATE/calls.log"
+    S="$H_STATE" python3 -I -c '
+import json, os
+s = os.environ["S"]; c = json.load(open(f"{s}/cluster.json")); c["stopped"] = False
+json.dump(c, open(f"{s}/cluster.json", "w"))'
+    ;;
+  image | pull | tag) exit 0 ;;
+  volume) [[ ! -e "$H_STATE/registry-volume-gone" ]] ;;
+  buildx)
+    # docker buildx imagetools inspect <ref>
+    [[ ! -e "$H_STATE/registry-down" ]] || exit 1
+    if [[ -e "$H_STATE/registry-missing" ]] && grep -F "${*: -1}" "$H_STATE/registry-missing" >/dev/null; then exit 1; fi
+    exit 0
+    ;;
+  stats) printf '1GiB / 14GiB\n' ;;
+  *)
+    printf 'stub docker: unhandled: %s\n' "$*" >&2
+    exit 99
+    ;;
+esac

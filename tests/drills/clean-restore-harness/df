@@ -1,0 +1,8 @@
+#!/bin/bash
+# Stub df for tests/drills/clean-restore-harness.sh: free disk comes from a file a scenario controls, 100 GiB if none.
+free="$(cat "$H_STATE/free-kib" 2>/dev/null || echo 104857600)"
+case "$1" in
+  -g) printf 'Filesystem 1G-blocks Used Available\nstub 1000 1 %s\n' "$((free / 1048576))" ;;
+  -k) printf 'Filesystem 1024-blocks Used Available\nstub 1000 1 %s\n' "$free" ;;
+  *) exec /bin/df "$@" ;;
+esac

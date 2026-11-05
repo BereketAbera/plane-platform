@@ -13,6 +13,8 @@
 # Recovery set: after the Job, this script adds recovery/ to the backup from the host, because that is
 # where those files live. See infisical/lib/recovery.sh. Infisical exits non-zero if its set is not
 # whole, and keeps the dump: an in-place restore can use it, a clean restore cannot.
+# Retention: Plane's runs in the Job. Infisical's runs from here, once its set is complete, and only a
+# complete set counts toward KEEP, so a run of failures cannot remove the backup a clean restore needs.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # shellcheck source=../monitoring/ops/lib.sh
@@ -330,7 +332,7 @@ backup_infisical() {
   [[ -n "$pg_image" && -n "$server_image" ]] || die "cannot read the Infisical workloads. Is the infisical Application synced?"
 
   log "Backing up $NS to .local/backups/$ENV_NAME/$ID"
-  fill "JOB=$JOB" "NS=$NS" "ID=$ID" "ENV_NAME=$ENV_NAME" "KEEP=$KEEP" "PG_IMAGE=$pg_image" "SERVER_IMAGE=$server_image" <<'YAML' | run_job "$NS" "$JOB" 1800
+  fill "JOB=$JOB" "NS=$NS" "ID=$ID" "ENV_NAME=$ENV_NAME" "PG_IMAGE=$pg_image" "SERVER_IMAGE=$server_image" <<'YAML' | run_job "$NS" "$JOB" 1800
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -369,7 +371,6 @@ spec:
           env:
             - { name: BACKUP_ID, value: "__ID__" }
             - { name: ENV_NAME, value: "__ENV_NAME__" }
-            - { name: KEEP, value: "__KEEP__" }
             - { name: PG_IMAGE, value: "__PG_IMAGE__" }
             - { name: SERVER_IMAGE, value: "__SERVER_IMAGE__" }
             - { name: PGHOST, value: infisical-postgres }
@@ -433,15 +434,17 @@ spec:
               sha256sum -c SHA256SUMS > /dev/null
               cd /backups
               mv "$D" "$F"
-              ls -1 | grep -E '^[0-9]{8}T[0-9]{6}Z$' | sort -r | awk -v k="$KEEP" 'NR > k' | while read -r old; do
-                if [ -f "$old/manifest.json" ]; then rm -rf -- "/backups/$old"; echo "retention: removed $old"; fi
-              done
               find /backups -maxdepth 1 -type d -name '*.partial' -mtime +1 -exec rm -rf {} +
               echo "postgres: $BACKUP_ID complete, $(wc -l < "$F/postgres/rowcounts.tsv") tables counted from a scratch restore"
 YAML
 }
 
-if [[ "$ENV_NAME" == infisical ]]; then backup_infisical; else backup_plane; fi
+if [[ "$ENV_NAME" == infisical ]]; then
+  recovery_prepare_admin
+  backup_infisical
+else
+  backup_plane
+fi
 
 # Verified again from the host, because that is where a restore will read it.
 final="$LOCAL_DIR/backups/$ENV_NAME/$ID"
@@ -461,5 +464,10 @@ kc -n "$NS" get jobs -l app.kubernetes.io/name=plane-backup -o json \
   | while read -r old_job; do kc -n "$NS" delete job "$old_job" >/dev/null; done
 
 jq -r '"backup \(.id): " + ([.files[] | "\(.path) \(.bytes) B"] | join(", "))' "$final/manifest.json"
-[[ "$recovery_failed" == no ]] || die "the dump in .local/backups/$ENV_NAME/$ID is good, but its recovery set is not whole, as the warnings above say. An in-place restore can use it, and make restore-clean will refuse it."
+[[ "$recovery_failed" == no ]] || die "the dump in .local/backups/$ENV_NAME/$ID is good, but its recovery set is not whole, as the warnings above say. An in-place restore can use it, and make restore-clean will refuse it. Retention did not run, so no older backup was removed."
+if [[ "$ENV_NAME" == infisical ]]; then
+  recovery_admin_plan "$(recovery_set_file "$final")"
+  recovery_warn_token_horizon "$RECOVERY_ADMIN_EXP" "$RECOVERY_ADMIN_PASSWORD_FILE"
+  recovery_prune_infisical "$KEEP"
+fi
 ok "backup complete: .local/backups/$ENV_NAME/$ID"

@@ -11,13 +11,22 @@
 # CONFIRM=yes        needed for the part that deletes
 # BACKUP=<id>        use this Infisical backup, with SKIP_BACKUP=yes, instead of taking a fresh set
 # SKIP_E2E=yes       skip the full smoke test and the Infisical tests at the end
-# ALLOW_LOW_DISK=yes delete although the host has under 25 GiB free. make up refuses a new cluster below
-#                    25 GiB, so the drill then stops after the delete until the space comes back or is freed
+# LOSE_CLUSTER=yes   delete the cluster with kind and nothing else, as a disaster would, which leaves
+#                    .local/terraform/local behind. The restore then has to move it aside
+# ALLOW_LOW_DISK="<reason>"  go on although the check before the delete says up.sh would refuse. Logged
+#
+# Before the delete it checks what scripts/up.sh would stop on, with the same code: uncommitted changes,
+# digests the registry cannot serve, and disk, as free space plus the share of the kind volume a delete brings
+# back. So a run that passes here does not stop at up.sh's check for a new cluster. If less comes back than
+# measured, the drill says so and passes that to up.sh as a logged reason, since the cluster is gone by then and
+# a stop there would protect nothing. Other work must keep off gitops, helm, monitoring and infisical until it ends.
 #
 # Everything compared across the delete is a truncated hash or an id, so the evidence log holds no secret.
 #
 # shellcheck source=../../scripts/lib/common.sh
 source "$(dirname "$0")/../../scripts/lib/common.sh"
+# shellcheck source=../../scripts/lib/up-checks.sh
+source "$(dirname "$0")/../../scripts/lib/up-checks.sh"
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
 # shellcheck source=../../infisical/lib/api.sh
@@ -26,11 +35,12 @@ source "$ROOT/infisical/lib/api.sh"
 source "$ROOT/infisical/lib/recovery.sh"
 
 BACKUP="${BACKUP:-latest}"
-accept_args CONFIRM BACKUP SKIP_BACKUP PLAN_ONLY SKIP_E2E ALLOW_LOW_DISK -- "$@"
+accept_args CONFIRM BACKUP SKIP_BACKUP PLAN_ONLY SKIP_E2E LOSE_CLUSTER ALLOW_LOW_DISK -- "$@"
 if [[ "${CONFIRM:-}" != yes && "${PLAN_ONLY:-}" != yes ]]; then
   die "this deletes the cluster and everything in it, then restores them. Run: make drill-clean-restore CONFIRM=yes. To check everything up to that point: make drill-clean-restore PLAN_ONLY=yes"
 fi
 
+low_disk_check_value
 umask 077
 guard_disk
 cd "$ROOT"
@@ -66,13 +76,22 @@ rendered_fingerprints() {
   done
 }
 
-# Not infisical-machine.json: bootstrap rewrites it, and identifiers below compares what it holds.
+# Not infisical-machine.json: bootstrap rewrites it, and identifiers below compares what it holds. The admin file
+# is compared by itself, because a run may replace its token, as long as that is on record.
 secret_zero_checksums() {
   local name
   for name in $RECOVERY_ZERO_REQUIRED $RECOVERY_ZERO_OPTIONAL; do
-    [[ "$name" != infisical-machine.json ]] || continue
+    [[ "$name" != infisical-machine.json && "$name" != infisical-admin.json ]] || continue
     if [[ -f "$SECRET_ZERO_DIR/$name" ]]; then printf '%s %s\n' "$name" "$(recovery_sha256 "$SECRET_ZERO_DIR/$name")"; fi
   done
+}
+
+stale_local_states() { find "$LOCAL_DIR/terraform" -maxdepth 1 -name 'local.stale-*' | wc -l | tr -d ' '; }
+
+# Archives bootstrap or secret-zero.sh made, which mean a fresh start. Not archive-token-*, which a replaced token
+# leaves, or archive-pre-restore-*, which a restore leaves.
+fresh_start_archives() {
+  find "$SECRET_ZERO_DIR" -maxdepth 1 -name 'archive-[0-9]*' | wc -l | tr -d ' '
 }
 
 identifiers() { jq -S '{organization: .organization.id, project_ids, identity_ids}' "$MACHINE_FILE"; }
@@ -110,17 +129,29 @@ for env in $ENVIRONMENTS; do
 done
 [[ -z "$prefix_missing" ]] || abort "no API token in .local/test-accounts.env for:$prefix_missing. Run make test-e2e for each."
 pass "sentinels and test accounts exist for: $ENVIRONMENTS"
-if [[ "${CONFIRM:-}" == yes && "$(free_disk_gib)" -lt 25 && "${ALLOW_LOW_DISK:-}" != yes ]]; then
-  abort "only $(free_disk_gib) GiB free on the host. scripts/up.sh refuses to create a cluster below 25 GiB, so the drill would stop right after the delete. Deleting returns some of it only if Docker trims its disk, which is unmeasured here. Free space, or pass ALLOW_LOW_DISK=yes to accept that risk."
+DIRTY="$(up_uncommitted)"
+[[ -z "$DIRTY" ]] || abort "scripts/up.sh refuses uncommitted changes under the paths Argo CD reads, so the drill would stop right after the delete. Commit or stash these, and keep those paths still until the drill ends:
+$DIRTY"
+pass "no uncommitted changes under the paths Argo CD reads"
+printf 'host disk: %s\n' "$(up_disk_report)"
+DISK_PROBLEM="$(up_disk_problem)"
+AFTER_DELETE_GIB="$(kib_as_gib "$(disk_after_delete_kib)")"
+if [[ -z "$DISK_PROBLEM" ]]; then
+  pass "disk: about $AFTER_DELETE_GIB GiB free after the delete clears the $UP_NEW_CLUSTER_GIB GiB that up.sh asks for"
+elif [[ -n "${ALLOW_LOW_DISK:-}" ]]; then
+  if [[ "${CONFIRM:-}" == yes ]]; then low_disk_log clean-restore-drill "$DISK_PROBLEM"; else warn "$DISK_PROBLEM"; fi
+  pass "disk: below the check, going on with the reason given in ALLOW_LOW_DISK"
+else
+  abort "$DISK_PROBLEM, so the drill would stop right after the delete. Free space, or say why to go on with ALLOW_LOW_DISK=\"<reason>\", which is logged."
 fi
-printf 'host disk: %s GiB free\n' "$(free_disk_gib)"
 
 stage "1. Baseline"
 rendered_fingerprints > "$WORK/rendered.before"
 secret_zero_checksums > "$WORK/zero.before"
 identifiers > "$WORK/identifiers.before"
+ADMIN_BEFORE="$(recovery_sha256 "$ADMIN_FILE")"
 BEFORE_CA="$(cluster_ca_fp)"
-ARCHIVES_BEFORE="$(find "$SECRET_ZERO_DIR" -maxdepth 1 -name 'archive-*' | wc -l | tr -d ' ')"
+ARCHIVES_BEFORE="$(fresh_start_archives)"
 pass "$(wc -l < "$WORK/rendered.before" | tr -d ' ') rendered Secret keys hashed, cluster CA $BEFORE_CA, $ARCHIVES_BEFORE secret-zero archives"
 
 stage "2. Backups"
@@ -145,23 +176,42 @@ fi
 stage "4. Delete the cluster"
 DELETED=yes
 STARTED=$SECONDS
-CONFIRM=yes SKIP_BACKUP=yes "$ROOT/scripts/destroy.sh" || abort "scripts/destroy.sh failed"
+FREE_BEFORE_DELETE="$(free_disk_kib)"
+STALE_BEFORE="$(stale_local_states)"
+if [[ "${LOSE_CLUSTER:-}" == yes ]]; then
+  kind delete cluster --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG" || abort "kind delete cluster failed"
+else
+  CONFIRM=yes SKIP_BACKUP=yes "$ROOT/scripts/destroy.sh" || abort "scripts/destroy.sh failed"
+fi
 if cluster_exists; then fail "the cluster still exists"; else pass "cluster gone"; fi
-if [[ -f "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then fail "the local Terraform state survived, and it describes a cluster that is gone"; else pass "local Terraform state removed"; fi
+if [[ "${LOSE_CLUSTER:-}" == yes ]]; then
+  if [[ -f "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then pass "the local Terraform state was left behind, as a disaster leaves it"; else fail "the local Terraform state is gone, so this did not test a disaster"; fi
+else
+  if [[ -f "$LOCAL_DIR/terraform/local/terraform.tfstate" ]]; then fail "the local Terraform state survived, and it describes a cluster that is gone"; else pass "local Terraform state removed"; fi
+fi
 if [[ -s "$RECOVERY_TF_STATE" ]]; then pass "Infisical Terraform state kept"; else fail "Infisical Terraform state was deleted"; fi
 secret_zero_checksums > "$WORK/zero.deleted"
 if cmp -s "$WORK/zero.before" "$WORK/zero.deleted"; then pass "secret zero unchanged"; else fail "secret zero changed in the delete"; fi
 
-# Docker Desktop may or may not trim its disk. Measured here because up.sh depends on the answer.
+# What the host got back, against what the check before the delete counted on. This run's own measurement of the
+# reclaim on a real kind volume.
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
-  [[ "$(free_disk_gib)" -lt 25 ]] || break
+  [[ "$(free_disk_kib)" -lt $((UP_NEW_CLUSTER_GIB * 1048576)) ]] || break
   sleep 15
 done
-printf 'host disk after the delete: %s GiB free\n' "$(free_disk_gib)"
+printf 'host disk after the delete: %s GiB free, %s GiB came back, the check counted on about %s GiB free\n' \
+  "$(kib_as_gib "$(free_disk_kib)")" "$(kib_as_gib "$(($(free_disk_kib) - FREE_BEFORE_DELETE))")" "$AFTER_DELETE_GIB"
+# A run that passed the check must not stop at the same check for lack of a few hundred MB. Nothing is protected by
+# stopping now: the cluster is gone, and the node's freed space that has not reached the host is space it will reuse.
+if [[ "$(free_disk_gib)" -lt "$UP_NEW_CLUSTER_GIB" && -z "${ALLOW_LOW_DISK:-}" ]]; then
+  ALLOW_LOW_DISK="the drill's check counted on about $AFTER_DELETE_GIB GiB after the delete, and $(kib_as_gib "$(free_disk_kib)") GiB is free now"
+  export ALLOW_LOW_DISK
+  warn "$ALLOW_LOW_DISK. Passing that to scripts/up.sh as the reason to go on."
+fi
 
 stage "5. Restore into the clean environment"
 RESTORE_LOG_MARK="$(date -u +%Y%m%dT%H%M%SZ)"
-"$ROOT/scripts/restore.sh" clean "$IID" || abort "the clean restore failed"
+"$ROOT/scripts/restore.sh" clean "$IID" || abort "the clean restore failed or could not finish, with exit status $?"
 pass "scripts/restore.sh clean $IID finished in $((SECONDS - STARTED))s, counting from the delete"
 
 stage "6. Same data and secrets, new cluster"
@@ -170,9 +220,24 @@ if [[ "$AFTER_CA" != "$BEFORE_CA" ]]; then pass "the cluster CA is new ($AFTER_C
 identifiers > "$WORK/identifiers.after"
 if cmp -s "$WORK/identifiers.before" "$WORK/identifiers.after"; then pass "organization, project and identity ids are the old ones"; else fail "organization, project or identity ids changed"; fi
 secret_zero_checksums > "$WORK/zero.after"
-if cmp -s "$WORK/zero.before" "$WORK/zero.after"; then pass "secret zero and the admin credentials are the old ones"; else fail "secret zero or the admin credentials changed"; fi
-ARCHIVES_AFTER="$(find "$SECRET_ZERO_DIR" -maxdepth 1 -name 'archive-*' | wc -l | tr -d ' ')"
+if cmp -s "$WORK/zero.before" "$WORK/zero.after"; then pass "secret zero and the admin password are the old ones"; else fail "secret zero or the admin password changed"; fi
+ADMIN_AFTER="$(recovery_sha256 "$ADMIN_FILE")"
+if [[ "$ADMIN_AFTER" == "$ADMIN_BEFORE" ]]; then
+  pass "the admin token file is the old one"
+elif recovery_admin_descends "$ADMIN_BEFORE" "$ADMIN_AFTER"; then
+  pass "the admin token was replaced, and ${ADMIN_TOKEN_LEDGER##*/} records that"
+else
+  fail "the admin token file changed, and nothing records it"
+fi
+ARCHIVES_AFTER="$(fresh_start_archives)"
 if [[ "$ARCHIVES_AFTER" == "$ARCHIVES_BEFORE" ]]; then pass "nothing was archived, so bootstrap never treated this as a fresh instance"; else fail "$((ARCHIVES_AFTER - ARCHIVES_BEFORE)) new secret-zero archives"; fi
+if [[ "${LOSE_CLUSTER:-}" == yes ]]; then
+  if [[ "$(stale_local_states)" -gt "$STALE_BEFORE" ]]; then
+    pass "the state of the lost cluster was moved aside, not applied over"
+  else
+    fail "no sign that the state of the lost cluster was moved aside"
+  fi
+fi
 rendered_fingerprints > "$WORK/rendered.after"
 if cmp -s "$WORK/rendered.before" "$WORK/rendered.after"; then
   pass "all $(wc -l < "$WORK/rendered.after" | tr -d ' ') rendered Secret keys hold the old values"
