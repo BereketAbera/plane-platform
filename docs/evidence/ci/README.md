@@ -9,8 +9,8 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 | Row | Result | Basis |
 |---|---|---|
 | CI-1, `ci.yml` on a real runner | PASS | Runs 41903137276, 41907667785, 41907841985, 41909741166, 41975431001 at 9c8e098, and 41978707479 at 0dde813: Lint, Manifests and Security all green, on `push`. No job has run on `on: pull_request`: GitHub holds those runs with no jobs, see `ci-1-20261105T060416Z-pull-request-runs.txt` |
-| CI-2, `make ci` locally | PASS | Exit 0 every time, see the `ci-2` files. The newest two are clean clones from GitHub, of 9c8e098 at 2026-11-05T05:54Z and of 0dde813 at 06:16Z, each with 132 stubbed scenarios |
-| CI-3, a failing check goes red | PASS, by another route than the row names | Run 41907873100, 21 controls on a real runner. No pull request: the defect was planted in the runner's checkout. Not run on `on: pull_request`. The current 33 controls ran only on this Mac |
+| CI-2, `make ci` locally | PASS | Exit 0 every time, see the `ci-2` files. The newest two are clean clones from GitHub, of 9c8e098 at 2026-11-05T05:54Z and of 0dde813 at 06:16Z, each with 132 stubbed scenarios. The stubbed flows alone stood at 149 of 149 at 53aab26 ([hardening-round-5-flows-1.txt](../runs/hardening-round-5-flows-1.txt)), which no runner has seen |
+| CI-3, a failing check goes red | PASS, by another route than the row names | Run 41907873100, 21 controls on a real runner. No pull request: the defect was planted in the runner's checkout. Not run on `on: pull_request`. The later controls, 45 of 45 at cc88450 ([negative-controls-alerts-track-3.txt](../runs/negative-controls-alerts-track-3.txt)), ran only on this Mac |
 | CI-4, `images.yml` builds and pushes | PASS | Run 41975430939 at 9c8e098 on `ubuntu-24.04-arm`: four images built, walked clean before and after publishing, four digests recorded. Run 41903137226 built nothing, because `apps/wayline/images.txt` was not on main |
 | CI-5, `images.yml` opens a dev bump | PASS | The same run opened [pull request 1](https://github.com/BereketAbera/plane-platform/pull/1), with the four digests it published. Not merged. Nothing has copied those digests to the local registry |
 | CI-6, refuses an unrecorded digest | PASS | Runs 41976950402, an invented digest, and 41977025314, another image's digest, at 9c8e098. Both exit 1 at `promote.sh`, and no branch is pushed. Run 41905513020 was the first, at f733b87 |
@@ -22,7 +22,7 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 
 Everything up to 9c8e098 reached GitHub at 2026-11-05T05:39Z, and runs 41975431001 and 41975430939 cover that commit, so the policy
 rules, promtool on Linux, the digest binding, the stubbed promotion scenarios and the image scan have now run on real runners. A commit
-after 0dde813 is covered by no run here. Run 41978707479 covers 0dde813, and `images.yml` did not run on it, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner
+after 0dde813 is covered by no run here, and `origin/main` was still at 0dde813 at 2026-11-05T07:59Z, with well over 100 local commits after it, the drills and fixes among them. Run 41978707479 covers 0dde813, and `images.yml` did not run on it, because nothing it watches changed. `scripts/ci/negative-controls.sh` has not run on a real runner
 since run 41907873100: no job failed on the 9c8e098 push, so nothing new shows a check going red there.
 
 ## Files
@@ -117,7 +117,7 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 | May `GITHUB_TOKEN` push to GHCR? | Yes | Run 41975430939 pushed four images, and read every layer back from GHCR with the same login |
 | Are the packages private? | Yes, to anyone who can test it from outside | With no credentials the token endpoint answers 401 for all four names, 200 for a public image and 403 for a name with no package. The API that states a package's visibility needs `read:packages`, which the local token lacks |
 | What is the GHCR quota? | Documented only | [Packages billing](https://docs.github.com/en/billing/concepts/product-billing/github-packages) gives Free 500 MB and 1 GB a month, shared with Actions artifacts, and says Container registry storage and bandwidth are free for now. The four images hold 401.8 MiB, counting each distinct layer once. November's usage summary showed no packages row after the push. Nothing has met the limit |
-| Can `promote-prod-sim.yml` open a pull request? | Yes, with the setting on, as it has been since 2026-11-05 | Run 41977114312. `can_approve_pull_request_reviews` is `true` in `plan-facts-20261105T060710Z.txt`. With it off, run 41905611391 shows the refusal |
+| Can `promote-prod-sim.yml` open a pull request? | Yes, with the setting on, as it has been since 2026-11-05T02:32:59Z, when the owner said yes in chat ([ci-actions-pr-setting-1.txt](../runs/ci-actions-pr-setting-1.txt)) | Run 41977114312. `can_approve_pull_request_reviews` is `true` in `plan-facts-20261105T060710Z.txt`. With it off, run 41905611391 shows the refusal |
 | Is approval enforceable? | No | Branch protection and rulesets answer 403. [Environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments), [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) and [attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations) are documented as unavailable on this plan and visibility |
 
 ## Not run yet
