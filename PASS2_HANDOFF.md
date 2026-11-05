@@ -146,7 +146,7 @@ Read [`docs/validation.md`](docs/validation.md) before relying on any row of sec
 The run before it, the cold drill, answered the rest:
 
 - **Disk growth of a first install.** Host free went from 31 to 13 GiB by `df`, 18 GiB, and `Docker.raw` then read 40,060,992 KiB ([summary](docs/evidence/runs/clean-install-20261105T105546Z/summary.txt), [disk](docs/evidence/runs/clean-install-20261105T105546Z/disk-after-install.txt)). The defect made it build twice, so both builds' images and the second build's files are in that, and the same with no defect: Not measured in Pass 1 ([what it holds](docs/resource-utilization.md#host-and-docker-storage)).
-- **Time of a `make up` from nothing.** 955 s with the registry and caches kept ([summary](docs/evidence/runs/clean-install-20261105T075041Z/summary.txt)). With them gone, 1,008 s to build and stop, then 5,238 s, which holds the defect, so a full cold install with no defect has not been timed end to end ([what is timed](docs/resource-utilization.md#boot-and-start-times)).
+- **Time of a `make up` from a fresh clone.** 955 s with the registry and caches kept ([summary](docs/evidence/runs/clean-install-20261105T075041Z/summary.txt)). With them gone, 1,008 s to build and stop, then 5,238 s, which holds the defect, so a full cold install with no defect has not been timed end to end ([what is timed](docs/resource-utilization.md#boot-and-start-times)).
 - **Data across the rebuild.** The full restore passed on the merged recovery code, in about 1,092 s on test data ([result](docs/evidence/runs/restore-clean-20261105T124518Z.json), [log](docs/evidence/runs/drill-clean-restore-20261105T105347Z.log)).
 
 ## 2. Target topology and how to choose

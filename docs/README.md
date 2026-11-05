@@ -36,7 +36,7 @@ What the last markers asked, and where the answers are:
 | Question | Answer |
 |---|---|
 | Disk growth of a first install, and host free disk around it | Host free went from 31 to 13 GiB on the cold install, in whole GiB by `df`, and [resource-utilization.md](resource-utilization.md#host-and-docker-storage) says what its defect added. The same with no defect: Not measured in Pass 1 |
-| Time of a `make up` from nothing | 955 s with the registry and caches kept. A full cold install with no defect has not been timed end to end, and [install.md](install.md#first-run) says what the one cold run did time, and why its 5,238 s is not a good figure |
+| Time of a `make up` from a fresh clone | 955 s with the registry and caches kept. A full cold install with no defect has not been timed end to end, and [install.md](install.md#first-run) says what the one cold run did time, and why its 5,238 s is not a good figure |
 | The CPU count of a first install | 12, the count the cold install ran at ([make-setup.txt](evidence/runs/clean-install-20261105T105546Z/make-setup.txt)). The floor of 4: Not measured in Pass 1 |
 | `Docker.raw` before and after a delete | 38,276,744 KiB before that run's delete and 38,301,404 KiB after its restore, with a cluster back on the disk, at the top and bottom of [its output](evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt). Directly after a delete: Not measured in Pass 1 ([TEAR-5b](validation.md#10-clean-teardown-and-recreation)). After the cold install it read 40,060,992 KiB ([disk](evidence/runs/clean-install-20261105T105546Z/disk-after-install.txt)) |
 | OPS-2b, OPS-4 and OPS-5 in [validation.md](validation.md) | No run is planned, so they stay open |
