@@ -8,7 +8,7 @@ The platform should show that a credential can change through the secret store a
 
 Which secret to rotate matters more than it first appears.
 
-**`SECRET_KEY` must not be rotated.** It derives the key that encrypts secret-class instance configuration rows, 7 of them per the contract. `decrypt_data` logs and returns `""` on failure, so after a rotation those rows read as empty with no visible error. Sessions are invalidated too. A failure that quiet is the worst outcome for a demonstration of good practice.
+**`SECRET_KEY` must not be rotated.** It derives the key that encrypts secret-class instance configuration rows, 7 of them per the contract, and 7 by count on a real instance ([smoke-dev-20261104T225856Z.json](../evidence/runs/smoke-dev-20261104T225856Z.json)). `make backup` then adds an eighth, its own sentinel. `decrypt_data` logs and returns `""` on failure, so after a rotation those rows read as empty with no visible error. Sessions are invalidated too. A failure that quiet is the worst outcome for a demonstration of good practice.
 
 **`LIVE_SERVER_SECRET_KEY` proves nothing.** In v1.4.3, `requireSecretKey` in `apps/live/src/lib/auth-middleware.ts` appears only as a definition and in a comment. No route uses it, so an old value cannot be shown to fail (CRITIQUE.md C22).
 

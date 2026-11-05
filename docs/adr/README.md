@@ -17,6 +17,8 @@ The application here is a customized deployment of open-source Plane Community E
 
 Where source code and research disagreed, the code wins, and the record says so.
 
+A record may end with a dated section, **What we found when we ran it**. The decision text above it stays as it was written, so the reasoning at the time stays readable, and that section says what the first real runs on 2026-11-04 and 2026-11-05 changed. A marker that a run has answered becomes a plain statement with its evidence. A marker that nothing has measured stays.
+
 ## Index
 
 | # | Decision | Depends on a runtime result? |
@@ -42,7 +44,7 @@ Numbers are stable and are referenced from code: `infrastructure/kind/cluster.ya
 
 ## Format
 
-`NNNN-title.md`, with a status line and four sections: Context, Decision, Alternatives considered, Consequences.
+`NNNN-title.md`, with a status line and four sections: Context, Decision, Alternatives considered, Consequences. A fifth, What we found when we ran it, follows where a run changed the reasoning.
 
 ## Scope
 
