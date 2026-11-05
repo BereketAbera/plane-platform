@@ -8,8 +8,8 @@
 # security settings, with the database on tmpfs, and all of it is removed on exit. It needs no cluster and touches none.
 #
 # With WAYLINE_BASE_CONTROL=yes it also runs check_db.py on the upstream base image, on its own database. That run
-# must fail on the telemetry and text-part checks, which shows they can fail. Exits non-zero if the image's run
-# fails, or if the control does not.
+# must fail on the telemetry, text-part and message-column checks, which shows they can fail. Exits non-zero if the
+# image's run fails, or if the control does not.
 #
 #   apps/wayline/checks/backend-db.sh [image]     default: the backend in .build/digests.tsv
 # shellcheck source=../scripts/lib.sh
@@ -122,7 +122,7 @@ if [[ "${WAYLINE_BASE_CONTROL:-no}" == yes ]]; then
   in_app "$base" control python - <"$WAYLINE/backend/check_db.py" >"$BUILD_DIR/tmp/$run_id-control.log" 2>&1 || control_rc=$?
   cat "$BUILD_DIR/tmp/$run_id-control.log"
   control_problems=0
-  for expected in 'FAIL telemetry is off' 'FAIL a request that leaves the field out leaves it off' 'FAIL the text part holds the invitation link whole'; do
+  for expected in 'FAIL telemetry is off' 'FAIL a request that leaves the field out leaves it off' 'FAIL the text part holds the invitation link whole' 'FAIL the column holds decoded raw markup'; do
     grep -qF "$expected" "$BUILD_DIR/tmp/$run_id-control.log" || { warn "the control did not report: $expected"; control_problems=1; }
   done
   rm -f "$BUILD_DIR/tmp/$run_id-control.log"
