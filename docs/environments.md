@@ -167,7 +167,7 @@ None of these failures has been forced on the real platform. Each describes what
 | # | Trigger | What happens to `prod-sim` | With a separate cluster |
 |---|---|---|---|
 | 1 | The Docker VM restarts, or the kind node container stops | Down, with `dev` | Unaffected |
-| 2 | A `dev` load test or migration uses a lot of memory | The node's OOM killer does not respect namespaces, so prod-sim pods can die. Each ResourceQuota allows 7984Mi of limits: two together are 15,968Mi, above the 13.63 GiB the VM reports. Under the tests run so far the VM peaked at 10.49 GiB and no Plane container passed 66% of its limit ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)), but the load test has not run | Unaffected |
+| 2 | A `dev` load test or migration uses a lot of memory | The node's OOM killer does not respect namespaces, so prod-sim pods can die. Each ResourceQuota allows 7984Mi of limits: two together are 15,968Mi, above the 13.63 GiB the VM reports. Under the tests run so far the VM peaked at 10.49 GiB ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)), with no Plane container OOM-killed, but the load test has not run | Unaffected |
 | 3 | `dev` uses a lot of CPU | Each Plane workload has its own CPU limit, but the ResourceQuota has no CPU line, so nothing caps a namespace's total against the node. Prod-sim's `100m` requests give it weight, not a guarantee, and API server latency rises for both | Unaffected |
 | 4 | Dev data, images, or logs fill the disk | kind sets no eviction and no image GC, and the VM reports hundreds of free GiB while the Mac runs out. Writes fail for both, with no alert. `guard_disk` only checks at script entry | Unaffected |
 | 5 | The API server or etcd is overloaded or corrupted | Both lose scheduling, reconciliation, and log collection, since Alloy reads through the API. Corrupted etcd means both environments' objects and Secrets | Unaffected |
@@ -189,7 +189,7 @@ None of these failures has been forced on the real platform. Each describes what
 
 [[VERIFY: scenario 7 is possible as described, by applying a test IngressRoute in plane-dev on a disposable cluster]]
 
-[[VERIFY: scenario 11, existing Plane pods keep running and restart cleanly with Infisical stopped]]
+During an in-place Infisical restore on 2026-11-05, Infisical was at zero for part of a 44s restore, and no Plane pod uid, restart count, workload generation or Secret resourceVersion changed ([dr-inplace-restore-2.txt](evidence/runs/dr-inplace-restore-2.txt)). That shows pods keeping on running for that long. Restarting one with Infisical stopped has not been tried. [[VERIFY: scenario 11, existing Plane pods keep running and restart cleanly with Infisical stopped]]
 
 [[VERIFY: scenario 13, CR and Secret deletion follows CRD deletion, on a disposable cluster only]]
 
