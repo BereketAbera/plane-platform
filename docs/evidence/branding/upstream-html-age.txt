@@ -1,0 +1,39 @@
+# The figure in apps/wayline/MODIFICATIONS.md, in the row on what web and admin tell browsers: for upstream's index.html, about 17.5 h at the time of writing.
+# Upstream's image, at the digest the manifests named before the Wayline images and layer-check-deployed.txt reads. A browser given no Cache-Control may reuse a response for a fraction of the time since its Last-Modified, and RFC 9111 section 4.2.2 gives 10% as a typical setting. The figure assumes 10%: this file does not measure how long a browser kept it. cache-browser.txt shows one not asking again.
+# Recorded Thu Nov  5 07:32:02 EAT 2026. Nothing here was deployed. The container below ran on loopback and was removed.
+
+# Thu Nov  5 07:32:02 EAT 2026
+$ docker run --rm --network none --entrypoint stat makeplane/plane-frontend@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5 -c '%y %n' /usr/share/nginx/html/index.html
+2026-10-28 19:33:51.000000000 +0000 /usr/share/nginx/html/index.html
+# exit 0
+
+# What nginx sends for that file, from upstream's own config, with no change to the image
+$ docker run -d --rm --name wl3-upstream-web --publish 127.0.0.1:18310:3000 makeplane/plane-frontend@sha256:95ce1418b7b92ba5ce64e6f6d8a1c8bf7ad664018786bd79fc40a2e5094cf0c5
+$ curl -sS -I http://127.0.0.1:18310/
+HTTP/1.1 200 OK
+Server: nginx/1.31.8
+Date: Thu, 05 Nov 2026 04:32:04 GMT
+Content-Type: text/html
+Content-Length: 6604
+Last-Modified: Wed, 28 Oct 2026 19:33:51 GMT
+Connection: keep-alive
+ETag: "6ae24e1f-19cc"
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-XSS-Protection: 1; mode=block
+Accept-Ranges: bytes
+
+# curl and tr, exits 0 0
+
+# A tenth of the file's age, when the sentence was written (commit b2ba587, 2026-11-05T05:51:53+03:00) and now
+$ python3 -I -c '<the code below>' 2026-11-05T05:51:53+03:00
+#   import sys
+#   from datetime import datetime, timezone
+#   modified = datetime(2026, 10, 28, 19, 33, 51, tzinfo=timezone.utc)
+#   for label, moment in (("at the commit", datetime.fromisoformat(sys.argv[1])), ("now", datetime.now(timezone.utc))):
+#       hours = (moment - modified).total_seconds() / 3600
+#       print(f"{label}, {moment.astimezone(timezone.utc):%Y-%m-%dT%H:%M:%SZ}: age {hours:.2f} h, a tenth {hours / 10:.2f} h")
+at the commit, 2026-11-05T02:51:53Z: age 175.30 h, a tenth 17.53 h
+now, 2026-11-05T04:32:04Z: age 176.97 h, a tenth 17.70 h
+# exit 0

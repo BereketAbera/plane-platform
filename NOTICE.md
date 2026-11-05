@@ -7,14 +7,14 @@ project management software by Plane Software, Inc. and contributors, licensed u
 - **Upstream:** <https://github.com/makeplane/plane>, tag `v1.4.3`, commit
   `37a15d99231042b3ff5a4401fed479fdbec9effe`.
 - **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), from
-  2026-11-04. His name on the work does not mean he reviewed each change.
+  2026-11-04. His name on the work does not mean he reviewed any of it.
   [`apps/wayline/MODIFICATIONS.md`](apps/wayline/MODIFICATIONS.md) is the dated, per-file-group record.
 - **Modified version's name:** Wayline. It is a customized Plane Community Edition deployment, not an
   original product. "Plane" and its logos belong to their owners, and nothing here implies endorsement.
 - **License of the modifications:** AGPL-3.0-only, the same as upstream.
 - **Source:** <https://github.com/BereketAbera/plane-platform>. Every running web image also answers
   `/source` with a redirect to the repository at the commit that built it (AGPL section 13).
-  The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. This must be fixed before anyone else uses an instance.
+  The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. The owner must do both before anyone else uses an instance.
 - **Licence texts:** every image carries `LICENSE`, `COPYRIGHT.txt`, this notice, the record of changes and the font
   licences in `/usr/share/licenses/wayline/`, and the web image serves the same files at `/licenses/`.
 

@@ -1,3 +1,4 @@
+# Superseded by layer-check-deployed.txt, the same walk with a later version of the script. The raw output below is kept as it was.
 # Every layer blob of the images this platform deploys, walked for the identifier on upstream's commercially licensed
 # files. Tool: the first version of apps/wayline/checks/layer-check.py, written for this run at 03:51 on 2026-11-05. It read
 # each manifest and blob by digest from the registry, checked each against its digest, and read every tar entry in every

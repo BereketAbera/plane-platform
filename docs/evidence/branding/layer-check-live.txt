@@ -1,0 +1,31 @@
+# plane-live, the image of the `live` service, which stays upstream's and unmodified, at the digest helm/plane/overlays/{dev,prod-sim}/kustomization.yaml pin, read with the current layer-check.py: any case, UTF-16, the original's sha256, bytecode at its path, and archives opened by their first bytes. layer-check-deployed.txt read the same digest with an earlier version, which looked for less. Information, not a gate. The image was read through mirror.gcr.io, and nothing here read the cluster or ran a container.
+# Thu Nov  5 07:27:53 EAT 2026
+$ python3 -B apps/wayline/checks/layer-check.py --report-only docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+searching 1 image(s) on linux/arm64 for 27 bytes in any case, also as UTF-16: LicenseRef-Plane-Commercial
+and for sha256 5ad017bf6559780a25b0c2a5871e45c5c77673a912b149391db1314202765ccc and entries at code/**/__pycache__/email*.pyc
+report only: a hit is information, and does not fail
+
+== docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+read from mirror.gcr.io/makeplane/plane-live
+index, linux/arm64 manifest sha256:93c8e9528194d4ec8e7929cbcbb43b5924298d5431813832b4c06361341d7c52
+config sha256:bc81a4da4256c4d3b9841a335b2264a905bbb7faf008991b1012a899f22148fb: clean
+15 layers
+layer  1/15 sha256:d3531b7a4f21      4.0 MiB    514 entries, 2 archives opened: clean
+layer  2/15 sha256:5c8e282ceef7     53.1 MiB   3070 entries, 6 archives opened: clean
+layer  3/15 sha256:e51951d495a7      1.2 MiB     36 entries, 2 archives opened: clean
+layer  4/15 sha256:f04c63730cb3      0.0 MiB      4 entries, 0 archives opened: clean
+layer  5/15 sha256:1b9c87270887      0.0 MiB     11 entries, 0 archives opened: clean
+layer  6/15 sha256:dc65df7e4976      0.0 MiB      1 entries, 0 archives opened: clean
+layer  7/15 sha256:775138835702      2.9 MiB     16 entries, 6 archives opened: clean
+layer  8/15 sha256:21e95f68a206      0.0 MiB     12 entries, 2 archives opened: clean
+layer  9/15 sha256:6469a0b96738      0.0 MiB      8 entries, 0 archives opened: clean
+layer 10/15 sha256:941e27a97e9d      2.3 MiB   1917 entries, 0 archives opened: clean
+layer 11/15 sha256:c0c6ee800f34      0.0 MiB      5 entries, 0 archives opened: clean
+layer 12/15 sha256:9e0ca41bf63a      0.0 MiB     67 entries, 0 archives opened: clean
+layer 13/15 sha256:dbceabc7a5ae    225.1 MiB  98663 entries, 0 archives opened: clean
+layer 14/15 sha256:8e8b2d54a314      0.0 MiB      4 entries, 0 archives opened: clean
+layer 15/15 sha256:a41c07a57264      0.0 MiB     61 entries, 0 archives opened: clean
+
+== Summary
+clean        0 hit(s)   0 not opened docker.io/makeplane/plane-live:v1.4.3@sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
+# exit 0

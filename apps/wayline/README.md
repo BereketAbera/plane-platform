@@ -86,7 +86,7 @@ uncommitted source, or one whose source has changed since, and warns when the co
 routes `/` to web, so the path works from `/god-mode/` and `/spaces/` too. The target can be overridden at image build time
 with `WAYLINE_SOURCE_REPO`.
 
-**The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. This must be fixed before anyone else uses an instance.**
+**The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. The owner must do both before anyone else uses an instance.**
 
 The licence texts are in every image at `/usr/share/licenses/wayline/`, and at `/licenses/` on the web image.
 
@@ -140,7 +140,7 @@ Upstream's backend image stays on any machine that builds this one, because it i
 
 **Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the repository's owner, Bereket Abera, has not reviewed that. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
 
-What the owner should confirm, before the first push that carries `apps/wayline`, because that push publishes:
+What the owner should confirm, before the first push of this directory to main, because that push publishes:
 
 - [ ] D12 in `MODIFICATIONS.md`, all of it: `email.py` replaced with upstream's later AGPL-3.0-only version, the backend flattened, and publishing with no requirement that the repository be private. Agents did all three, the owner has not reviewed any of them, and no lawyer or other legal reviewer has looked at them.
 
