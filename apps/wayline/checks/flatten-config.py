@@ -21,6 +21,9 @@ import os
 import re
 import sys
 
+# A __pycache__ beside this file would make the source read as changed, and scripts/ci/build-images.sh would refuse it.
+sys.dont_write_bytecode = True
+
 from oci_read import EMPTY_LAYER, Image, Unreadable
 
 DOCKERFILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runtime", "Dockerfile.backend")
