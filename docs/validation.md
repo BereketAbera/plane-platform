@@ -6,29 +6,15 @@ running under this platform's configuration.
 
 ## Read this first
 
-This page records what ran up to 2026-11-05T00:53Z, the newest entry in [`runs/MANIFEST.tsv`](evidence/runs/MANIFEST.tsv).
-Work is still landing, so a later commit may not be covered here. Newer runs wait in `.local/evidence-raw/` until
-`make publish-evidence` copies them. A row names such a run where it matters and keeps its status, because
-[a run with no file here has no result](evidence/README.md#rules).
+This page was set at about 2026-11-05T08:00Z, from evidence committed by then. The newest run a row rests on is the dev e2e that ended at 07:48:21Z. Work is still landing. A restore in dev has run, and the clean install, clean restoration and teardown runs are under way, so their rows stay NOT RUN here and a later pass sets them: INST-1, INST-2, INST-4, BKP-2, BKP-6, TEAR-1 to TEAR-5, PERS-3. Newer runs wait in `.local/evidence-raw/` until `make publish-evidence` copies them, because [a run with no file here has no result](evidence/README.md#rules).
 
-**What has a result.** Plane runs on this platform. All 14 Argo CD Applications read Synced and Healthy
-([2026-11-04T23:29Z](evidence/runs/plane-prod-sim-status-1.txt), and again at
-[2026-11-05T00:05Z](evidence/runs/drill-clean-restore-20261105T000555Z.log)). `make test-e2e` passes in plane-dev on the
-branded images, 38 steps ([2026-11-05T00:12Z](evidence/runs/branded-dev-smoke-1.txt)), and in plane-prod-sim on upstream
-images, 37 steps ([2026-11-04T23:59Z](evidence/runs/plane-prod-sim-smoke-2.txt)). The NetworkPolicy matrix passes from both
-Plane namespaces. Real attempts to cross between the environments all failed, as they should. A real browser has signed in
-on dev once.
+**What has a result.** Plane runs on this platform, in both environments on the final images, built from `84b63d9`. All 14 Argo CD Applications read Synced and Healthy ([2026-11-05T07:10Z](evidence/runs/plane-dev-final-state-20261105T070735Z.txt)). `make test-e2e` passes in plane-dev, 45 PASS and 1 SKIP ([07:46Z](evidence/runs/smoke-dev-20261105T074635Z-6532.json)), and in plane-prod-sim, 44 PASS and 1 SKIP ([07:37Z](evidence/runs/smoke-prod-sim-20261105T073741Z-73161.json)), each after a rotation. On the final images these now have real runs: the failed deploy drill, a rollback and a failing migrator in dev; pod restarts in both; rotation in both, with a killed rotation finished; `make test-alert` in both; self-heal on a Deployment; a Plane restore in prod-sim and its refusal; a returning browser across a promotion and a rollback; two real tabs held open and through a `live` restart; and the load test in dev. The NetworkPolicy matrix passes all 418 rows, on the images before these. Real attempts to cross between the environments all failed, as they should, on earlier images still. On GitHub, `images.yml` built and published the images, and both kinds of pull request opened.
 
-**What failed.** Three rows read FAIL. AUTH-6: a returning browser keeps the old page after a promotion. CI-7: the last
-complete image scan failed its policy. BR-3: `/source` answers 404 logged out while the repository is private. Two rows read
-BLOCKED: NET-2c and CI-6b.
+**What failed.** Two rows read FAIL. CI-7: the last complete image scan failed its policy, and none has run since. BR-3: `/source` answers 404 logged out while the repository is private. One row reads BLOCKED: INST-3, because this host has less free disk than `prereqs.sh` requires.
 
-**What has no result.** A clean install, teardown and recreation, a full restoration, secret rotation, the failed-deploy
-drill, the load test and `make test-alert` have not run. Those rows say NOT RUN. The platform came up stage by stage on one
-cluster, with some steps by hand, so nothing here shows that one `make up` works from nothing.
+**What has no result.** A clean install, teardown and recreation, a full restoration, a restore in dev and `make down` then `make up` wait for the later pass. Undoing a stopped rotation (SEC-4b), a restore refused for another `SECRET_KEY` (BKP-5), both browser sessions at once and Safari (AUTH-4b), API saturation and idle measurements (LOAD-2, LOAD-3), 12 of the 23 alert rule names (MON-6b), read-only roots, RabbitMQ 4.2.9 and the Docker Hub window have no result either. Up to this page, the platform came up stage by stage on one cluster, with some steps by hand, so nothing here shows that one `make up` works from nothing.
 
-**What ran on what.** plane-prod-sim has not run the branded images yet. Many dev results also come from before the branded
-images were promoted. Each row says which.
+**What ran on what.** Both environments have run the final images since 2026-11-05T05:34Z. Separation, routes and the NetworkPolicy matrix have not been repeated since then, and some older rows ran on upstream images. Both environments' passwords rotated after their pod restart drills. Each row says which.
 
 A full column of PASS would not change these limits:
 
@@ -72,9 +58,12 @@ A note on a result starts with its date in UTC and what it ran on, in these word
 
 | Words | Meaning |
 |---|---|
-| upstream images | `docker.io/makeplane/plane-{frontend,admin,space,backend,live}:v1.4.3` by digest. plane-dev ran these until 2026-11-05T00:09Z. plane-prod-sim still does |
-| branded images | `localhost:5001/wayline/{web,admin,space,backend}`, built from `1563cbf`, digests in `helm/plane/overlays/dev/kustomization.yaml`: web `73a48d643f87`, admin `279dfd7f06cc`, space `a8c49151ee94`, backend `4add277ce63e`. In plane-dev since promotion `4f622e3` at 2026-11-05T00:09Z. `plane-live` stays upstream's in both environments. Images rebuilt on the code since `e885fc0` and `5adbc78` are in the local registry and deployed nowhere, so these words do not cover them |
-| a commit on a Plane row | The last commit to change that environment's rendered manifests at that moment, from `git log`, because the smoke JSON records no commit. `2aefba1` in both from 2026-11-04T22:50Z, and `4f622e3` in dev after it. A file that names its own commit is quoted instead |
+| upstream images | `docker.io/makeplane/plane-{frontend,admin,space,backend,live}:v1.4.3` by digest. plane-dev ran these until 2026-11-05T00:09Z, and plane-prod-sim until 02:20Z. `plane-live` stays upstream's in both environments, whatever else the row says |
+| branded images, or the first branded images | `localhost:5001/wayline/{web,admin,space,backend}`, built from `1563cbf`: web `73a48d643f87`, admin `279dfd7f06cc`, space `a8c49151ee94`, backend `4add277ce63e`. In plane-dev from promotion `4f622e3` at 2026-11-05T00:09Z until 02:15Z. Never in plane-prod-sim |
+| images of `ec45e21` | The same names: web `96841278d02a`, admin `c24ead5a02a1`, space `0a4ca742292d`, backend `9c7130942d90`. In plane-dev from `62699c9` at 02:15Z until 05:29Z, and for about 2 minutes during DEP-2 from 06:40:59Z. In plane-prod-sim from `0af8956` at 02:20Z until 05:34Z |
+| final images | The same names, built from `84b63d9`: web `3d7575a1b934`, admin `ce7adc37b1a7`, space `5f0119ff2266`, backend `8c04bd18bb08`, as in [branding/README.md](evidence/branding/README.md) and both overlays. In plane-dev from `1fc9fbe` at 05:29:47Z, apart from DEP-1, DEP-2 and DEP-3, which each ended back on them. In plane-prod-sim from `9c8e098` at 05:34:06Z. The digests built on the GitHub runner from `9c8e098` (CI-4) are another build, and run nowhere |
+| render, or a commit on a Plane row | The last commit to change that environment's rendered manifests at that moment, from `git log`. `9891630` in dev from 06:55:44Z, and `9c8e098` in prod-sim from 05:34:06Z |
+| HEAD | The repository's commit when a file was captured, as the file names it. It is often later than the render, because most commits change nothing Argo CD reads |
 
 Commands that use `kubectl` assume `export KUBECONFIG=.local/kubeconfig`, and run from the repository root.
 
@@ -83,47 +72,48 @@ Commands that use `kubectl` assume `export KUBECONFIG=.local/kubeconfig`, and ru
 | Item | State | Effect |
 |---|---|---|
 | `scripts/up.sh` | Exists since `e25468e`. It has run stage by stage with `UP_STOP_AFTER`: [terraform](evidence/runs/bootstrap-up-terraform-1.txt), [secret-zero](evidence/runs/bootstrap-up-secret-zero-1.txt), [traefik](evidence/runs/bootstrap-up-traefik-1.txt) | A whole `make up` from nothing is INST-1, NOT RUN. [[VERIFY: scripts/up.sh exists and make up runs]] |
-| `scripts/test.sh` | Exists since `ec9201f`. `make test-e2e` runs `smoke.py`: [test-20261105T001213Z.txt](evidence/runs/test-20261105T001213Z.txt). Also `make test-infisical`, `make test-routes` and `make test-separation` | The full form, `make test`, has no published run. `scripts/test.sh` with no arguments ran from 2026-11-05T01:07:51Z to 01:18:23Z at `aaf5fb1`, with all 9 parts PASS. Its output, `test-20261105T010751Z.txt`, is still in `.local/evidence-raw/` |
-| `drill-*` make targets | `drill-failed-deploy`, `drill-pod-restart` and `drill-clean-restore` are in the Makefile. `make drill-pod-restart ENV=prod-sim` has run: [plane-prod-sim-drill-pod-restart-2.txt](evidence/runs/plane-prod-sim-drill-pod-restart-2.txt) | Contract section 11 names all three |
-| `apps/wayline/` | Exists. `images.txt` names web, admin, space and backend, each pushed to the local registry and confirmed by digest: [digests-confirmed.txt](evidence/branding/digests-confirmed.txt), which names the newest build | plane-dev runs the build from `1563cbf`. plane-prod-sim runs none of them yet |
+| `scripts/test.sh` | Exists since `ec9201f`. `make test-e2e` runs `smoke.py`: [test-20261105T073741Z-73161.txt](evidence/runs/test-20261105T073741Z-73161.txt). Also `make test-infisical`, `make test-routes` and `make test-separation` | The full form ran from 2026-11-05T01:07:51Z to 01:18:23Z at `aaf5fb1`, with all 9 parts PASS: [test-20261105T010751Z.txt](evidence/runs/test-20261105T010751Z.txt), [its output](evidence/runs/harness-test-full-1.txt). That was before the final images, and it has not run on them |
+| `drill-*` make targets | `drill-failed-deploy`, `drill-pod-restart` and `drill-clean-restore` are in the Makefile. `make drill-failed-deploy` ran on the final images ([DEP-1](evidence/runs/DEP-1-20261105T062323Z-make-drill.txt)), and `make drill-pod-restart` in [dev](evidence/runs/PERS-1-20261105T070358Z-make-drill.txt) and [prod-sim](evidence/runs/PERS-2-20261105T072331Z.txt). `drill-clean-restore` has a result only with [`PLAN_ONLY=yes`](evidence/runs/dr-drill-planonly-2.txt) | Contract section 11 names all three. `tests/drills/failed-migrator.sh`, DEP-3, has no target |
+| `apps/wayline/` | Exists. `images.txt` names web, admin, space and backend, each pushed to the local registry and confirmed by digest: [digests-confirmed.txt](evidence/branding/digests-confirmed.txt), which names the newest build | Both environments run the build from `84b63d9`. The build from `9c8e098` in GHCR runs nowhere |
 
 ## Summary
 
 | Status | Rows |
 |---|---:|
-| PASS | 64 |
-| FAIL | 3 |
-| BLOCKED | 2 |
-| NOT RUN | 41 |
+| PASS | 89 |
+| FAIL | 2 |
+| BLOCKED | 1 |
+| NOT RUN | 20 |
 
 The owner's required list maps to these sections:
 
-| Owner's item | Rows | State on 2026-11-05 |
+| Owner's item | Rows | State at about 2026-11-05T08:00Z |
 |---|---|---|
-| 1. Clean local installation | [INST](#1-clean-local-installation) | NOT RUN |
-| 2. Plane auth and basic workflows | [AUTH](#2-plane-auth-and-basic-workflows) | PASS in dev on branded images and in prod-sim on upstream images. One real browser session on dev. AUTH-6 FAIL: a returning browser keeps the old page after a promotion. Safari, and both hosts at once in a browser, NOT RUN |
-| 3. Persistent data after Pod restarts | [PERS](#3-persistent-data-after-pod-restarts) | Pod restarts PASS in both, on upstream images. `make down` then `make up` NOT RUN |
-| 4. GitOps sync | [GITOPS](#4-gitops-sync) | PASS, except self-heal on a Deployment, NOT RUN |
-| 5. Secret sync and rotation | [SEC](#5-secret-sync-and-rotation) | Sync and project isolation PASS. Rotation NOT RUN |
-| 6. Failed deployment and rollback | [DEP](#6-failed-deployment-and-rollback) | Refusing an unrecorded digest PASS. The drill and rollback NOT RUN |
-| 7. Backup and restoration, including one full restoration into a clean environment | [BKP](#7-backup-and-restoration), row BKP-6 | Backups PASS, Infisical restored in place PASS. A Plane restore and the full restoration NOT RUN |
-| 8. Basic load and resource measurements | [LOAD](#8-basic-load-and-resource-measurements) | NOT RUN. Memory has been measured outside these rows, see [resource-utilization.md](resource-utilization.md) |
-| 9. Monitoring and alert verification | [MON](#9-monitoring-and-alert-verification) | Targets, logs and dashboards PASS. 7 of this repository's 23 rule names fired when their condition was made true on the cluster, one of them on a synthetic line. `make test-alert` NOT RUN |
-| 10. Clean teardown and recreation | [TEAR](#10-clean-teardown-and-recreation) | NOT RUN |
-| Background jobs | [JOB](#background-jobs) | PASS |
-| Real-time collaboration | [RT](#real-time-collaboration) | PASS by protocol client and briefly in a browser. A 5 minute browser soak, and a `live` restart with tabs open, NOT RUN |
-| File uploads surviving restarts | [UP](#file-uploads), row UP-2 | PASS in both, on upstream images |
-| NetworkPolicy matrix | [NET](#networkpolicy-matrix) | PASS from plane-dev, plane-prod-sim, monitoring and infisical. BLOCKED from traefik and argocd. NOT RUN from kube-system, or as one whole run, because neither has a published run. One whole run is still unpublished, see NET-2 |
-| Separation between the environments | [SEP](#separation-between-the-environments) | PASS, inside one cluster |
-| Real GitHub Actions runs | [CI](#real-github-actions-runs) | `ci.yml` PASS up to `5fdf41d`. `origin/main` is at `da7a4c9`, with no captured run on it, and nothing pushed since. `images.yml` NOT RUN. Promotion pull requests BLOCKED by a repository setting. CI-7 FAIL: last complete image scan |
-| Branded images | [BR](#branded-images) | Gates PASS. The running images in dev PASS. `/source` FAIL while the repository is private |
+| 1. Clean local installation | [INST](#1-clean-local-installation) | INST-3 BLOCKED by host disk. INST-1, INST-2 and INST-4 NOT RUN, for the later pass |
+| 2. Plane auth and basic workflows | [AUTH](#2-plane-auth-and-basic-workflows) | PASS in both on final images. In a real browser, sign-in on dev, a dev session not honoured on prod-sim, and a returning browser across a promotion and a rollback. Both hosts at once, and Safari, NOT RUN |
+| 3. Persistent data after Pod restarts | [PERS](#3-persistent-data-after-pod-restarts) | Pod restarts PASS in both, on final images. `make down` then `make up` NOT RUN, for the later pass |
+| 4. GitOps sync | [GITOPS](#4-gitops-sync) | PASS, including self-heal on a Deployment in dev, within 3s |
+| 5. Secret sync and rotation | [SEC](#5-secret-sync-and-rotation) | Sync, project isolation and rotation in both PASS, with a 38s error window seen in dev and no sync loop. A killed rotation was finished. The undo NOT RUN |
+| 6. Failed deployment and rollback | [DEP](#6-failed-deployment-and-rollback) | PASS. Dev on real drills: a bad image, a failing migrator, a rollback. Prod-sim: an unrecorded digest refused, and a dump before a promotion |
+| 7. Backup and restoration, including one full restoration into a clean environment | [BKP](#7-backup-and-restoration), row BKP-6 | Backups PASS, Infisical restored in place PASS, a Plane restore in prod-sim and its refusal PASS. A restore in dev and the full restoration NOT RUN, for the later pass, and a refusal on another key NOT RUN |
+| 8. Basic load and resource measurements | [LOAD](#8-basic-load-and-resource-measurements) | LOAD-1 PASS, one sample on a busy machine. Saturation and idle rows NOT RUN. Memory has also been measured outside these rows, see [resource-utilization.md](resource-utilization.md) |
+| 9. Monitoring and alert verification | [MON](#9-monitoring-and-alert-verification) | Targets, logs and dashboards PASS, on upstream images. `make test-alert` PASS in both, on final images. 11 of this repository's 23 rule names have fired on the cluster, one of them on a synthetic line and one read only in Prometheus. The sink ends the path, so no person is told |
+| 10. Clean teardown and recreation | [TEAR](#10-clean-teardown-and-recreation) | NOT RUN, for the later pass |
+| Background jobs | [JOB](#background-jobs) | PASS, JOB-1 and JOB-2 on final images |
+| Real-time collaboration | [RT](#real-time-collaboration) | PASS by protocol client in both. PASS in two real tabs on dev, held 5m54s and through a `live` restart, under load, with no reload after it |
+| File uploads surviving restarts | [UP](#file-uploads), row UP-2 | PASS in both, on final images |
+| NetworkPolicy matrix | [NET](#networkpolicy-matrix) | PASS, all 418 rows from all 7 namespaces at 2026-11-05T04:19Z, on the images of `ec45e21`. Not repeated on final images |
+| Separation between the environments | [SEP](#separation-between-the-environments) | PASS, inside one cluster, at 2026-11-05T01:28Z with dev on the first branded images and prod-sim on upstream's. Not repeated on final images |
+| Real GitHub Actions runs | [CI](#real-github-actions-runs) | `ci.yml`, `images.yml` and both pull request flows PASS, up to `0dde813`, where `origin/main` is. No job on `on: pull_request`, and no promotion pull request merged. CI-7 FAIL: last complete image scan |
+| Branded images | [BR](#branded-images) | Gates PASS at `84b63d9`. The running images in both environments PASS. `/source` FAIL while the repository is private |
 
 ## Test matrix
 
 ### Day-1 gates
 
-Cheap checks of low-level assumptions, which also run with the platform up. The rows below come from the newest run, 17 checks
-stamped 2026-11-04T23:11:37Z at `fbfd7c5c87c6`, with 60 NetworkPolicies loaded. Failed and earlier runs stay in
+Cheap checks of low-level assumptions, which also run with the platform up. The rows below come from the run of 17 checks
+stamped 2026-11-04T23:11:37Z at `fbfd7c5c87c6`, with 60 NetworkPolicies loaded. A later run, inside the full `scripts/test.sh` at
+2026-11-05T01:07:51Z, also read 17 passed at `aaf5fb1` ([gates-20261105T010751Z.txt](evidence/runs/gates-20261105T010751Z.txt)). Failed and earlier runs stay in
 [`docs/evidence/`](evidence/README.md#index): 8 PASS and 1 FAIL, then 9, 14 and 17 PASS. The namespace and throwaway repository
 were gone afterwards, and that is a check too. What the script can and cannot show on injected faults is in
 [day1-gates-faults-1.txt](evidence/runs/day1-gates-faults-1.txt).
@@ -153,7 +143,7 @@ were gone afterwards, and that is a check too. What the script can and cannot sh
 
 | ID | What it proves | How to run | Status | Evidence | Notes |
 |---|---|---|---|---|---|
-| AUTH-1 | Dev is reachable through Traefik, instance setup completes, CSRF is enforced, and sign-in works | `make test-e2e ENV=dev`, steps `reachable`, `instance-setup`, `csrf-enforced`, `sign-in` | PASS | [plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [smoke-dev-20261105T070735Z-94252.json](evidence/runs/smoke-dev-20261105T070735Z-94252.json), [first setup](evidence/runs/smoke-dev-20261104T221730Z.json) | 2026-11-05T07:07:35Z, final images, render `9891630`, HEAD `f1ff355`: 45 PASS and 1 SKIP, `branding-fresh-install`, which needs a clean database. Setup itself ran once, at 2026-11-04T22:17Z on upstream images, and later runs reuse the stored admin, so no image built here has run it. HTTP only, as `smoke.py` drives the API rather than a browser. AUTH-5 is the browser. Dev's password rotated after this run (SEC-2), and no e2e on dev has been published since |
+| AUTH-1 | Dev is reachable through Traefik, instance setup completes, CSRF is enforced, and sign-in works | `make test-e2e ENV=dev`, steps `reachable`, `instance-setup`, `csrf-enforced`, `sign-in` | PASS | [plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [smoke-dev-20261105T070735Z-94252.json](evidence/runs/smoke-dev-20261105T070735Z-94252.json), [first setup](evidence/runs/smoke-dev-20261104T221730Z.json) | 2026-11-05T07:07:35Z, final images, render `9891630`, HEAD `f1ff355`: 45 PASS and 1 SKIP, `branding-fresh-install`, which needs a clean database. Setup itself ran once, at 2026-11-04T22:17Z on upstream images, and later runs reuse the stored admin, so no image built here has run it. HTTP only, as `smoke.py` drives the API rather than a browser. AUTH-5 is the browser. Again at 07:46:35Z, after dev's rotation (SEC-2), the same counts ([smoke-dev-20261105T074635Z-6532.json](evidence/runs/smoke-dev-20261105T074635Z-6532.json)) |
 | AUTH-2 | Dev creates and lists a workspace, API token, project and work item | `make test-e2e ENV=dev`, steps `workspace`, `api-token`, `project`, `work-item`, `work-item-list` | PASS | [plane-dev-final-e2e-20261105T070735Z.txt](evidence/runs/plane-dev-final-e2e-20261105T070735Z.txt), [smoke-dev-20261105T070735Z-94252.json](evidence/runs/smoke-dev-20261105T070735Z-94252.json), [upstream, 38 of 38](evidence/runs/plane-dev-smoke-final-2.txt), [FAIL, 37 of 38](evidence/runs/smoke-dev-20261104T225624Z.json) | 2026-11-05T07:07:35Z, final images, render `9891630`. `read-back` also compares each record by field, with the key and with the session, and `second-user` shows another account refused that workspace (404) and work item (403). The FAIL at 2026-11-04T22:56Z was two guessed API paths in the test |
 | AUTH-3 | The same flow works in prod-sim | `make test-e2e ENV=prod-sim` | PASS | [SEC-3-BKP-3-20261105T073240Z.txt](evidence/runs/SEC-3-BKP-3-20261105T073240Z.txt), [smoke-prod-sim-20261105T073741Z-73161.json](evidence/runs/smoke-prod-sim-20261105T073741Z-73161.json), [first on final images](evidence/runs/final-prod-sim-smoke-3.txt), [upstream images](evidence/runs/plane-prod-sim-smoke-2.txt) | 2026-11-05T07:37:41Z, final images, render `9c8e098`, HEAD `4aa0640`: 44 PASS and 1 SKIP, just after a rotation and a restore (SEC-3, BKP-3). At 05:35:33Z, the first run on final images, the same counts. On 2026-11-04T23:59Z on upstream images, 37 steps. Now 45 steps: dev's 46 without `worker-negative-control`, which `make test-e2e` passes only in dev. It was also run by hand in prod-sim, see MON-7. SEC-4's second rotation came after this run |
 | AUTH-4 | In Chromium, a session on the dev host is not honoured on the prod-sim host | No script. Signed in at `http://plane.dev.localhost`, open `http://plane.prod-sim.localhost` in the same browser | PASS | [browser-cache-seed-1.txt](evidence/runs/browser-cache-seed-1.txt), [AUTH-4-20261105T062750Z.txt](evidence/runs/AUTH-4-20261105T062750Z.txt), with its [dev](evidence/runs/AUTH-4-20261105T062750Z-dev.jpg) and [prod-sim](evidence/runs/AUTH-4-20261105T062750Z-prod-sim.jpg) screenshots, [auth-6-browser-promotion-dev-1.txt](evidence/runs/auth-6-browser-promotion-dev-1.txt) | 2026-11-05. At 04:16Z, images from `ec45e21`, navigating to `/sign-in/` landed signed in on dev and on the signed-out page on prod-sim. At 05:36Z, final images, the same signed-out page on prod-sim. At 06:25:47Z, final images, Chrome/152 in the desktop app's pane, `/api/users/me/` answered 200 on dev and 401 on prod-sim. One direction only: no browser has held a prod-sim session, so nothing shows one staying separate. The cookies are HttpOnly, and this browser tool cannot list them. Over HTTP, by script, cookies are host-only ([plane-dev-cookies-1.txt](evidence/runs/plane-dev-cookies-1.txt)). AUTH-4b is the rest |
@@ -179,7 +169,7 @@ were gone afterwards, and that is a check too. What the script can and cannot sh
 | GITOPS-4 | Self-heal reverts a manual change | `.tools/bin/kubectl -n plane-dev scale deployment/plane-admin-wl --replicas=2`, then watch the replica count | PASS | [GITOPS-4-20261105T073240Z.txt](evidence/runs/GITOPS-4-20261105T073240Z.txt), [the Application in those seconds](evidence/runs/SEC-6-20261105T072331Z-application-watch.txt), [script error, no result](evidence/runs/GITOPS-4-20261105T072541Z.txt), [refusal at 06:21Z](evidence/runs/GITOPS-4-20261105T062155Z.txt), [a NetworkPolicy, earlier](evidence/runs/traefik-nodeport-source-1.txt) | 2026-11-05T07:32:40Z, dev, final images, HEAD `4aa0640`. The replica count of `plane-admin-wl` was set from 1 to 2 by hand, and read 1 again at the next reading, +3s, with no second command. Readings are 3s apart, so 3s is a ceiling. The Application shows an operation starting at 07:32:41Z. One field on one Deployment in dev: not prod-sim, not an image, not a deleted object. The file at 07:25:41Z holds an error in the coordinating session's script: every `kubectl` call failed with `command not found`, so no change was made and that file proves nothing. The file at 06:21Z records a refused command. Earlier, at 2026-11-04T20:54Z, a live edit to a NetworkPolicy was put back about 6s after self-heal was turned back on, which is a smaller question |
 | GITOPS-5 | The `plane-dev` project refuses what the contract says it may not create | No script. A throwaway Application in project `plane-dev` that points at a NetworkPolicy, then delete it | PASS | [h16-throwaway-1.txt](evidence/runs/h16-throwaway-1.txt), [h16-fire-1.txt](evidence/runs/h16-fire-1.txt) | 2026-11-04T22:55Z. Argo CD answered `resource networking.k8s.io:NetworkPolicy is not permitted in project plane-dev`, retried for 30 minutes, and the NetworkPolicy's resourceVersion did not move. `policy/` checks this statically in CI as well |
 | GITOPS-6 | Rendering is deterministic, and rendered manifests hold zero `kind: Secret` and only digest-pinned images | `make render` twice, then `git diff --exit-code gitops/environments`, then `./scripts/ci/validate-manifests.sh` | PASS | [ci-2-20261104T225907Z-make-ci.log](evidence/ci/ci-2-20261104T225907Z-make-ci.log), [plane-prod-sim-sync-check-1.txt](evidence/runs/plane-prod-sim-sync-check-1.txt) | 2026-11-04T22:59Z, clean clone of `6fc3708`: render up to date, kubeconform and conftest clean. `render.sh --check` exit 0 again at 23:59Z on `8e328a06`, and `make ci` passed again in [a clean clone of `0dde813`](evidence/ci/ci-2-20261105T061644Z-make-ci.log) at 2026-11-05T06:16Z. A static check, and it says nothing about the running cluster |
-| GITOPS-7 | A rollout drops no requests | No script. Sample each route at 10 Hz through Traefik while all seven Deployments roll | PASS | [plane-dev-rollout-availability-2.txt](evidence/runs/plane-dev-rollout-availability-2.txt), [before, with failures](evidence/runs/plane-dev-rollout-availability-1.txt) | 2026-11-04, dev, upstream images. At 22:47Z before `2aefba1`, 10 of 2,757 samples failed, as 502s and hung requests. After its 5s `preStop` at 22:52Z, 0 of 5,902 across two full rollouts. Failed means no answer in 2s, or a 5xx. Not repeated at this rate on branded images. DEP-2's rollback and promotion, on those images, sampled about once a second: 239 of 239 signed-in samples good |
+| GITOPS-7 | A rollout drops no requests | No script. Sample each route at 10 Hz through Traefik while all seven Deployments roll | PASS | [plane-dev-rollout-availability-2.txt](evidence/runs/plane-dev-rollout-availability-2.txt), [before, with failures](evidence/runs/plane-dev-rollout-availability-1.txt) | 2026-11-04, dev, upstream images. At 22:47Z before `2aefba1`, 10 of 2,757 samples failed, as 502s and hung requests. After its 5s `preStop` at 22:52Z, 0 of 5,902 across two full rollouts. Failed means no answer in 2s, or a 5xx. Not repeated at this rate on any image built here. DEP-2's rollback and promotion, between two such builds, sampled about once a second: 239 of 239 signed-in samples good |
 
 ### 5. Secret sync and rotation
 
@@ -223,7 +213,7 @@ Numbers from these rows go in [resource-utilization.md](resource-utilization.md)
 
 | ID | What it proves | How to run | Status | Evidence | Notes |
 |---|---|---|---|---|---|
-| LOAD-1 | The dev environment's behaviour at 5, 10 and 20 virtual users, 3 minutes each, with think time | `make test-load ENV=dev` | PASS | [LOAD-1-20261105T073240Z-run.txt](evidence/runs/LOAD-1-20261105T073240Z-run.txt), [results.json](evidence/runs/load-20261105T073241Z/results.json), [k6-summary.json](evidence/runs/load-20261105T073241Z/k6-summary.json), [prometheus.json](evidence/runs/load-20261105T073241Z/prometheus.json) | 2026-11-05T07:32:49Z to 07:42:57Z, dev, final images, HEAD `4aa0640`, exit 0, every k6 threshold PASS. 2,883 requests, 0 failed, 0 throttled. 5 VUs: 428 requests, about 2.4 a second, p95 147 ms. 10 VUs: 873, about 4.9 a second, p95 280 ms. 20 VUs: 1,576, about 8.8 a second, p95 1,109 ms, slowest 5,064 ms. The rates are counts over 3 minutes. Peak memory of the busiest pods: worker 269 MiB, api 172 MiB. 0 API answers of 5xx by Prometheus. Host disk 17 GiB free before and after. Not a quiet machine: prod-sim was rotated and restored in the same minutes, and GITOPS-4 and RT-3 touched dev during it, so read this as one sample of one laptop, which predicts no other host. A session value from k6's setup is in `k6.log` and `k6-summary.json`, see [the note on the scrub](evidence/README.md#the-scrub). Dev only, and it refuses prod-sim. Needs a prior `make test-e2e ENV=dev` |
+| LOAD-1 | The dev environment's behaviour at 5, 10 and 20 virtual users, 3 minutes each, with think time | `make test-load ENV=dev` | PASS | [LOAD-1-20261105T073240Z-run.txt](evidence/runs/LOAD-1-20261105T073240Z-run.txt), [results.json](evidence/runs/load-20261105T073241Z/results.json), [k6-summary.json](evidence/runs/load-20261105T073241Z/k6-summary.json), [prometheus.json](evidence/runs/load-20261105T073241Z/prometheus.json) | 2026-11-05T07:32:49Z to 07:42:57Z, dev, final images, HEAD `4aa0640`, exit 0, every k6 threshold PASS. 2,883 requests, 0 failed, 0 throttled. 5 VUs: 428 requests, about 2.4 a second, p95 147 ms. 10 VUs: 873, about 4.9 a second, p95 280 ms. 20 VUs: 1,576, about 8.8 a second, p95 1,109 ms, slowest 5,064 ms. The rates are counts over 3 minutes. Peak memory of the busiest pods: worker 269 MiB, api 172 MiB. 0 API answers of 5xx by Prometheus. Host disk 17 GiB free before and after. Not a quiet machine: prod-sim was rotated and restored in the same minutes, and GITOPS-4 and RT-3 touched dev during it, so read this as one sample of one laptop, which predicts no other host. Dev only, and it refuses prod-sim. Needs a prior `make test-e2e ENV=dev` |
 | LOAD-2 | Where the single API worker saturates | `make test-load ENV=dev THINK=0` | NOT RUN | none | Run after LOAD-1. [[MEASURE: load step and request rate at which p95 or error rate crosses its threshold]] |
 | LOAD-3 | Idle CPU, memory and disk per component in both environments | Commands in [resource-utilization.md](resource-utilization.md#how-to-measure) | NOT RUN | none | Partial: `kubectl top` per pod in a quiet moment at 2026-11-05T00:03Z, on upstream images in both ([plane-prod-sim-snapshot-final-1.txt](evidence/runs/plane-prod-sim-snapshot-final-1.txt)), and peaks per container ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)). Disk per component is not captured. `tests/load/run.sh` samples only `plane-dev` during a run, plus before and after snapshots of all namespaces ([before](evidence/runs/load-20261105T073241Z/top-before.txt) and [after](evidence/runs/load-20261105T073241Z/top-after.txt) LOAD-1, on final images, not idle). [[VERIFY: idle capture exists for every row of the resource tables]] |
 
@@ -297,8 +287,8 @@ other environment's public hostname. NetworkPolicy cannot see that. NET-5 prints
 ### Separation between the environments
 
 These are real attempts inside one cluster, which is what they say something about. Namespace separation is not equivalent to
-independent production clusters. The newest runs were dev on branded images and prod-sim on upstream images. Earlier runs had
-upstream images in both.
+independent production clusters. The newest runs, at 2026-11-05T01:28Z, were dev on the first branded images and prod-sim on
+upstream images. Earlier runs had upstream images in both. None has run on the final images.
 
 | ID | What it proves | How to run | Status | Evidence | Notes |
 |---|---|---|---|---|---|
@@ -308,9 +298,9 @@ upstream images in both.
 
 ### Real GitHub Actions runs
 
-Raw output is in [`docs/evidence/ci/`](evidence/ci/README.md). `origin/main` is at `da7a4c9`, because pushes are on hold until
-branding has been reviewed. So GitHub has seen nothing after `da7a4c9`: `apps/wayline/`, the newer policy rules, promtool, the digest binding, the
-plane-dev checks, the rollback changes and the image scan have run only on this Mac.
+Raw output is in [`docs/evidence/ci/`](evidence/ci/README.md). `origin/main` is at `0dde813`, pushed at 2026-11-05T06:10Z, as the local
+ref read at 07:58Z. So GitHub has seen nothing after `0dde813`, and the 122 local commits after it by then, with the drills and fixes among them, have
+run only on this Mac. A person has not opened or merged a pull request. The images in GHCR are a build of `9c8e098` on the runner, and run nowhere.
 
 | ID | What it proves | How to run | Status | Evidence | Notes |
 |---|---|---|---|---|---|
@@ -365,8 +355,8 @@ only part of an unknown, the row is split, so the rest stays visible. Design cha
 | 5b | Argo CD syncs an application over `git://` | resolved | GITOPS-1 |
 | 6 | Render determinism and values | resolved | GITOPS-6 |
 | 7a | Sync hook in wave 2, health gating, custom Lua | resolved | GITOPS-2, [argocd-lua-runtime-1.txt](evidence/runs/argocd-lua-runtime-1.txt) |
-| 7b | Bad digest and failing migrator | unresolved | DEP-1, DEP-3 |
-| 8 | Operator pod-template annotations against Argo diff and self-heal | unresolved | SEC-6 |
+| 7b | Bad digest and failing migrator | resolved | DEP-1, DEP-3 |
+| 8 | Operator pod-template annotations against Argo diff and self-heal | resolved | SEC-6, in dev |
 | 9 | Infisical on arm64: first boot under its limits, Kubernetes Auth on kind, cross-project 403, seeding under the rate limit | resolved | SEC-1, SEC-5. The rate limit in the research is not enforced on this self-hosted instance: [240 reads in 4s all answered 200](evidence/runs/infisical-rate-limit-1.txt), so the `Retry-After` handling has never run |
 | 10 | Plane boot time under CPU and memory limits | resolved | OPS-1 |
 | 11a | Non-root per workload | resolved | OPS-2 |
@@ -375,10 +365,10 @@ only part of an unknown, the row is split, so the rest stays visible. Design cha
 | 13 | Celery on RabbitMQ 4.2.9 with CE | unresolved | OPS-4 |
 | 14 | Uploads with no bucket Job: presigned POST, avatars, public space page, export | resolved | UP-1, UP-4 |
 | 15 | `copy_object` from the API pod through the CoreDNS rewrite | resolved | UP-3 |
-| 16 | `/live` WebSocket through `buffering`, with Hocuspocus auth | resolved | RT-1, RT-2. A 5 minute browser soak is RT-2b |
+| 16 | `/live` WebSocket through `buffering`, with Hocuspocus auth | resolved | RT-1, RT-2, and RT-2b for a browser held 5m54s |
 | 17 | Postgres on the chosen storage: `initdb`, restart, data check; xattrs and UIDs on the backup mount | resolved | PERS-1, BKP-1. The backup mount keeps no xattrs ([dr-backup-dev-1.txt](evidence/runs/dr-backup-dev-1.txt)), so a restore puts `Content-Type` back itself ([dr-plane-restore-rehearsal-1.txt](evidence/runs/dr-plane-restore-rehearsal-1.txt)) |
-| 18a | Cookie separation between the two hosts | resolved over HTTP | [plane-dev-cookies-1.txt](evidence/runs/plane-dev-cookies-1.txt), SEP-2. In a browser it is AUTH-4 |
-| 18b | `*.localhost` in Safari | unresolved | AUTH-4 |
+| 18a | Cookie separation between the two hosts | resolved over HTTP, and one way in Chromium | [plane-dev-cookies-1.txt](evidence/runs/plane-dev-cookies-1.txt), SEP-2, AUTH-4. Both sessions at once is AUTH-4b |
+| 18b | `*.localhost` in Safari | unresolved | AUTH-4b |
 | 19a | Real RSS | resolved | [plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt), [resource-utilization.md](resource-utilization.md) |
 | 19b | Disk growth, and `Docker.raw` after the cluster is deleted | unresolved | LOAD-3, TEAR-5 |
 | 20 | Load effect of `loki.source.kubernetes` on apiserver and kubelet | resolved | OPS-6 |
