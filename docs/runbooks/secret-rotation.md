@@ -17,7 +17,7 @@ NS=plane-dev
 |---|---|---|
 | `PG_PASSWORD` (Plane Postgres role) | `make rotate ENV=<env>` | The only scripted rotation |
 | `SECRET_KEY` | **Never** | Derives the key for encrypted config rows. `decrypt_data` fails silently to `""`, so nothing errors and configuration just disappears |
-| `LIVE_SERVER_SECRET_KEY` | Not worth rotating | Nothing in Plane v1.4.3 reads it, so a rotation demonstrates nothing |
+| `LIVE_SERVER_SECRET_KEY` | Not worth rotating | In Plane v1.4.3 `live` requires it to be set, and no route uses the check, so a rotation demonstrates nothing |
 | `RABBITMQ_PASSWORD` | No script. Separate procedure | The broker's user must change with the value |
 | `SILO_ACCESS_KEY`, `SILO_SECRET_KEY` | No script. Separate procedure | Silo root credentials and every consumer must change together |
 | Infisical `ENCRYPTION_KEY`, `AUTH_SECRET`, DB password | No procedure | Secret zero, in `.local/secret-zero/`. Losing `ENCRYPTION_KEY` loses all secrets |
@@ -88,9 +88,9 @@ make rotate ENV=dev ROLLBACK=yes   # undo it
 Both run the same steps aimed at a different password, so either is meant to be safe to run twice. The journal is removed only when one succeeds. Prod-sim also
 needs `CONFIRM=yes`.
 
-What has run: in prod-sim, a rotation with `SKIP_BACKUP=yes` was killed with SIGKILL 4 s in, after `ALTER ROLE`, while it waited for the operator's restart. `RESUME=yes` finished it and exited 0. Postgres took the new password and refused the replaced one, `SECRET_KEY` did not change, and the rollouts finished 33 s after the resume began ([SEC-4-20261105T073843Z.txt](../evidence/runs/SEC-4-20261105T073843Z.txt)). That is one stop at one point. A stop between the Infisical write and `ALTER ROLE`: Not tested in Pass 1. Running either one twice: Not tested in Pass 1.
+What has run: in prod-sim, a rotation was killed with SIGKILL 4 s in, after `ALTER ROLE`, while it waited for the operator's restart. `RESUME=yes` finished it and exited 0. Postgres took the new password and refused the replaced one, `SECRET_KEY` did not change, and the rollouts finished 33 s after the resume began. The resume ran with `SKIP_BACKUP=yes`, so it took no Infisical backup, and the newest dump held the previous password until `20261105T074912Z` ([SEC-4-20261105T073843Z.txt](../evidence/runs/SEC-4-20261105T073843Z.txt)). So three rotations have finished, two with that backup and this one without. That is one stop at one point. A stop between the Infisical write and `ALTER ROLE`: Not tested in Pass 1. Running either one twice: Not tested in Pass 1.
 
-**After a hard stop, also stop the probe.** SIGKILL leaves the script's probe loop running, and it goes on spending the anonymous limit once a second. The killed run's loop was still in `ps` at 07:52Z, 14 minutes later. Make sure no rotation is really running, then stop what this names:
+**After a hard stop, also stop the probe.** SIGKILL leaves the script's probe loop running, and it goes on spending the anonymous limit once a second. The killed run's loop was still writing [its probe file](../evidence/runs/rotate-prod-sim-20261105T073843Z.probe) about 15 minutes later: the raw file's last line is at 07:53:32Z, and the copy committed so far reaches 07:48:34Z. Make sure no rotation is really running, then stop what this names:
 
 ```bash
 pgrep -fl rotate.sh
@@ -100,7 +100,7 @@ pgrep -fl rotate.sh
 accept the current Infisical value. Restore the previous value from Infisical's version history, so that Infisical matches the role again, then wait for the
 operator to sync and run a normal rotation. Restoring a version in the UI, the Secret following it and the preflight then passing: Not tested in Pass 1.
 
-**postgres-exporter after a rotation.** The exporter reads `plane-pgdb` through environment variables, so at its next reconnection after a rotation `pg_up` could go to 0 and critical `PlanePostgresDown` could fire on a healthy database. It carries `secrets.infisical.com/auto-reload: "true"` (`monitoring/manifests/environments/base/exporters.yaml`). In the dev rotation the operator restarted it at 07:23:47Z, `pg_up` stayed 1 at every 15 s reading, and `PlanePostgresDown` did not fire in dev ([SEC-2-20261105T072331Z-watch.txt](../evidence/runs/SEC-2-20261105T072331Z-watch.txt)). `scripts/rotate.sh` checks and waits for consumers of `plane-app-env` only, so it neither waits for the exporter nor restarts it.
+**postgres-exporter after a rotation.** The exporter reads `plane-pgdb` through environment variables, so at its next reconnection after a rotation `pg_up` could go to 0 and critical `PlanePostgresDown` could fire on a healthy database. It carries `secrets.infisical.com/auto-reload: "true"` (`monitoring/manifests/environments/base/exporters.yaml`). In the dev rotation the operator restarted it by 07:23:49Z, `pg_up` stayed 1 at every 15 s reading, and `PlanePostgresDown` did not fire in dev ([SEC-2-20261105T072331Z-watch.txt](../evidence/runs/SEC-2-20261105T072331Z-watch.txt)). `scripts/rotate.sh` checks and waits for consumers of `plane-app-env` only, so it neither waits for the exporter nor restarts it.
 
 If it still happens, restart it. A rollout restart adds only a template annotation, which Argo CD's three-way diff does not revert:
 
@@ -138,7 +138,7 @@ Restoring a Plane backup taken before a rotation: Not tested in Pass 1. Both rea
 | Rotate or reseed `SECRET_KEY` | Silent loss of encrypted config. `make restore` also compares its fingerprint and refuses a mismatch |
 | Change `PG_PASSWORD` in the UI and stop | The role keeps the old value, and Plane fails on its next restart |
 | `kubectl edit secret plane-pgdb` | The operator owns it and overwrites it. Infisical is the source |
-| Delete the journal to clear an error | It holds the only copy of the other password. Use `RESUME=yes` or `ROLLBACK=yes` |
+| Delete the journal to clear an error | It holds the only copy of the other password outside Infisical's version history. Use `RESUME=yes` or `ROLLBACK=yes` |
 | Commit or paste anything from `.local/secret-zero/` | Mode 0600 and gitignored for a reason |
 | Test the password over `127.0.0.1` | Trust authentication accepts anything there |
 | Rotate during a backup | In-flight Jobs keep the old value and can fail at their next connection |
