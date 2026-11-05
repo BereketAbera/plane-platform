@@ -538,6 +538,19 @@ publish_warns_when_only_prod_sim_changes() {
   expect "the warning" said "that are not images"
   expect "dev is not in it" said "they reach prod-sim with this push"
 }
+publish_warns_and_checks_a_mixed_push() {
+  # A shared change committed and not published, then a promotion, which publishes all of main.
+  local status=0
+  promote_dev "$DIGEST_A" || status=$?
+  printf -- '---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: flow-test\nautomountServiceAccountToken: false\n' >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml"
+  commit_a_change_to_helm 'a change to the hardening component'
+  in_clone env SKIP_REGISTRY_CHECK=yes CONFIRM=yes ./scripts/promote.sh prod-sim || status=$?
+  expect "it publishes" [ "$status" -eq 0 ]
+  expect "the image is checked on dev" said "passed: plane-dev was Synced and Healthy"
+  expect "the promotion took its dump" equal "$(backup_calls)" 1
+  expect "the rest is still called out" said "they reach dev and prod-sim together"
+  expect "published" equal "$(published)" "$(head_commit)"
+}
 publish_quiet_when_a_shared_change_renders_to_nothing() {
   local status=0
   printf '# only a comment\n' >>"$CLONE/helm/plane/components/hardening/serviceaccounts.yaml"
@@ -981,6 +994,7 @@ scenario publish-still-backs-up-prod-sim-change publish_still_backs_up_prod_sim_
 scenario publish-warns-when-a-shared-change-reaches-prod-sim publish_warns_when_a_shared_change_reaches_prod_sim
 scenario publish-warns-when-the-chart-reaches-prod-sim publish_warns_when_the_chart_reaches_prod_sim
 scenario publish-warns-when-only-prod-sim-changes publish_warns_when_only_prod_sim_changes
+scenario publish-warns-and-checks-a-mixed-push publish_warns_and_checks_a_mixed_push
 scenario publish-quiet-when-a-shared-change-renders-to-nothing publish_quiet_when_a_shared_change_renders_to_nothing
 scenario publish-quiet-when-only-dev-changes publish_quiet_when_only_dev_changes
 scenario publish-merged-promotion-dev-proven merged_dev_proven

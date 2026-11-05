@@ -87,15 +87,15 @@ if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null &&
 fi
 
 # Everything above asks about image lines, because those are what make promote moves. Any other line in
-# the rendered prod-sim file goes straight to prod-sim with this push: no plane-dev check, no dump, and
-# when it comes from what the overlays share, no time in dev first. That is how those paths work, so this
+# the rendered prod-sim file goes straight to prod-sim with this push, unchecked on plane-dev, and when it
+# comes from what the overlays share, with no time in dev first. That is how those paths work, so this
 # says so and goes on. It reads the render and not the paths, so a comment in the component stays quiet.
 if [[ -n "$old" ]] && git cat-file -e "$old" 2>/dev/null; then
   beyond_images="$(git diff -U0 "$old" "$new" -- "$PROD_SIM_MANIFESTS" | grep -E '^[-+]' | grep -vE '^(---|\+\+\+) |^[-+][[:space:]-]*image: ' || true)"
   if [[ -n "$beyond_images" ]]; then
     reach=prod-sim
     git diff --quiet "$old" "$new" -- "$DEV_MANIFESTS" || reach="dev and prod-sim together"
-    warn "publishing $(wc -l <<<"$beyond_images" | tr -d ' ') changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them: they reach $reach with this push, with no plane-dev check and no dump. Changed under helm/plane:"
+    warn "publishing $(wc -l <<<"$beyond_images" | tr -d ' ') changed line(s) in prod-sim's manifests that are not images. Promotion does not cover them, so nothing checks them on plane-dev or takes a dump for them: they reach $reach with this push. Changed under helm/plane:"
     # sed reads to the end, for the same reason as the grep above.
     git diff --name-only "$old" "$new" -- helm/plane | sed -n '1,10s/^/       /p' >&2
   fi
