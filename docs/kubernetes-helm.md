@@ -6,8 +6,8 @@ is upstream's `plane-ce` 1.8.6, unmodified.
 
 **Status of this page.** It describes configuration in the code, and says so where a real run has settled something. On
 2026-11-05 Plane ran in both namespaces on the final branded images from `84b63d9`, and the runs below on those images say so. A full restore from backup into
-a new cluster then read PASS on every restore step, and `make test` passed on the restored platform ([restore-clean-20261105T081017Z.json](evidence/runs/restore-clean-20261105T081017Z.json), [MAKE-TEST-20261105T083455Z.txt](evidence/runs/MAKE-TEST-20261105T083455Z.txt)). A second drill, with the
-registry and caches removed as well, was in progress when this was written, and its results are not recorded here. This is a local and
+a new cluster then read PASS on every restore step, and `make test` passed on the restored platform ([restore-clean-20261105T081017Z.json](evidence/runs/restore-clean-20261105T081017Z.json), [MAKE-TEST-20261105T083455Z.txt](evidence/runs/MAKE-TEST-20261105T083455Z.txt)). Two later drills, one with the
+registry and caches removed as well and one on a cluster lost to kind alone, restored with every restore step PASS, and the last log reads `RESULT PASS` ([log](evidence/runs/drill-clean-restore-20261105T130633Z.log)). This is a local and
 production-inspired platform.
 
 **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one
