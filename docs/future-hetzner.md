@@ -50,13 +50,15 @@ Roots pass values through `terraform_remote_state` or by outputs fed to variable
 | `environment` | string | no | none | `dev` or `prod`. Validated |
 | `location` | string | no | none | Hetzner location |
 | `server_type` | string | no | none | From the [sizing method](../PASS2_HANDOFF.md#7-sizing-method). No default, so a guess is visible |
-| `control_plane_count`, `worker_count` | number | no | 1, 0 | Must reflect the owner's availability target, not a preference for more nodes |
+| `control_plane_count`, `worker_count` | number | no | none | From the sizing method and the owner's availability target, not a preference for more nodes. No default, so a guess is visible |
 | `ssh_public_key` | string | no | none | Admin access |
 | `admin_cidrs` | list(string) | no | none | SSH and Kubernetes API. No default, so it cannot silently be open. `0.0.0.0/0` fails validation |
 | `kubernetes_version` | string | no | none | Exact version, as contract section 1 does for kind |
 | `image` | string | no | none | Pinned OS image |
 
 `INTERFACE.md` lists all variables in one flat table, including `hcloud_token` and `cloudflare_api_token`. This split assigns each to the one root that needs it, so the platform root never holds a Hetzner token.
+
+This root passes its inputs to [`modules/hetzner-cluster`](../PASS2_HANDOFF.md#moduleshetzner-cluster), whose inputs are finer. `server_type` sets both `control_plane_server_type` and `worker_server_type`, and `ssh_public_key` is the one entry of `ssh_public_keys`. A root that needs a different worker type or a second key adds an input for it. Both shapes are proposals.
 
 ### Outputs
 
@@ -145,11 +147,11 @@ If locking does not work, the choices are another backend, or a documented singl
 
 ## Invariants
 
-These carry from [contract section 4](platform-contract.md) and must stay true in any implementation:
+Invariants 1 and 2 carry from [contract section 4](platform-contract.md#4-ownership-exactly-one-owner-per-resource). The rest are proposed for Pass 2. All of them must hold in any implementation:
 
 1. **Exactly one owner per resource.** Terraform creates namespaces. Argo CD never does. CI's ownership check extends to new resources.
-2. **Secret values never enter state.** Use `*_wo` attributes or scripts, as `infisical/terraform` does. A token Terraform cannot avoid storing is listed in that root's README.
-3. **No defaults that open access.** `admin_cidrs` and `server_type` have no default.
+2. **Secret values never enter state.** Use scripts, as `infisical/terraform` does: that root never handles a secret value. Use `*_wo` attributes where a root must take a value. A token Terraform cannot avoid storing is listed in that root's README.
+3. **No defaults that open access.** `admin_cidrs`, `server_type` and the node counts have no default.
 4. **Exact versions.** Providers pinned, `.terraform.lock.hcl` committed, for every platform that runs Terraform.
 5. **Dev and prod differ in values only.** A diff of `environments/dev` and `environments/prod` shows backend keys and nothing structural. Pass 1's `INTERFACE.md` and `README.md` already differ only in name and key.
 6. **No secrets in `terraform.tfvars` in Git.** Provide `terraform.tfvars.example`, as `environments/local` does.
@@ -171,17 +173,17 @@ A larger prod is fine. A dev too small to run the same workloads would stop dev 
 
 An implementation meets this contract when each passes, with evidence in `docs/evidence/`. None has run, and Pass 1 has nothing to run them on, because none of these roots exists. Pass 1's own drills on kind do not count toward any row. Set up each check at the start of Pass 2.
 
-| # | Test | State |
+| # | Test | Status |
 |---|---|---|
-| 1 | `terraform fmt -check` and `validate` on every root, in CI, without credentials | Unverified: CI validates all new roots with no credentials |
-| 2 | Fresh apply of cluster, platform, and edge from an empty project | Unverified: a full apply from empty succeeds and records its duration |
-| 3 | A second `plan` on each root reports no changes | Unverified: plans are clean immediately after apply |
-| 4 | Dev credentials are refused on prod state and prod resources | Unverified: dev Terraform credentials are refused against prod |
-| 5 | `git grep` finds no secret value, and state holds only what the root README lists | Unverified: state contents reviewed for secrets |
-| 6 | `admin_cidrs = ["0.0.0.0/0"]` fails validation, and a port scan from outside matches the firewall | Unverified: an external scan shows only intended ports |
-| 7 | Internal UI hostnames are unreachable without auth from a browser with no session | Unverified: internal UIs refuse an anonymous browser |
-| 8 | `environments/local` still works after module changes | Unverified: `make up` on kind after module changes matches the Pass 1 result |
-| 9 | Destroy then re-create, then restore from off-host backup | Unverified: recreate and restore passes `tests/e2e/smoke.py` |
+| 1 | `terraform fmt -check` and `validate` on every root, in CI, without credentials | NOT RUN. Unverified: CI validates all new roots with no credentials |
+| 2 | Fresh apply of cluster, platform, and edge from an empty project | NOT RUN. Unverified: a full apply from empty succeeds and records its duration |
+| 3 | A second `plan` on each root reports no changes | NOT RUN. Unverified: plans are clean immediately after apply |
+| 4 | Dev credentials are refused on prod state and prod resources | NOT RUN. Unverified: dev Terraform credentials are refused against prod |
+| 5 | `git grep` finds no secret value, and state holds only what the root README lists | NOT RUN. Unverified: state contents reviewed for secrets |
+| 6 | `admin_cidrs = ["0.0.0.0/0"]` fails validation, and a port scan from outside matches the firewall | NOT RUN. Unverified: an external scan shows only intended ports |
+| 7 | Internal UI hostnames are unreachable without auth from a browser with no session | NOT RUN. Unverified: internal UIs refuse an anonymous browser |
+| 8 | `environments/local` still works after module changes | NOT RUN. Unverified: `make up` on kind after module changes matches the Pass 1 result |
+| 9 | Destroy then re-create, then restore from off-host backup | NOT RUN. Unverified: recreate and restore passes `tests/e2e/smoke.py` |
 
 ## Hetzner and Cloudflare facts to confirm before writing code
 
