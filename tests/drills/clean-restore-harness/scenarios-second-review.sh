@@ -2486,7 +2486,8 @@ D1() {
   b="$(ls "$H/.local/backups/dev" | tail -1)"
   check "fixture: a newer backup than $first" test "$b" != "$first"
   lose_cluster
-  run scripts/restore.sh clean latest PLAN_ONLY=yes
+  # BACKUP=latest refuses here, as a lost cluster's choice of Plane backups no longer stands, and names this way on.
+  run scripts/restore.sh clean "$(sed -n 's/^infisical=//p' "$H/.local/restore-clean.state")" PLAN_ONLY=yes
   check "no cluster: it does not promise a backup" out_has "To use it, start over: make destroy CONFIRM=yes, then make restore-clean BACKUP=latest BACKUP_DEV=$b."
 }
 
