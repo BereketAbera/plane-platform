@@ -87,6 +87,8 @@ default), and a failure there does not stop it. It then publishes with `SKIP_BAC
 asks the cluster nothing. The skipped plane-dev check is logged in `.local/evidence-raw/promotion-overrides.log`. `make rollback ENV=prod-sim SKIP_BACKUP=yes CONFIRM=yes`
 leaves the dump out.
 
+Because that publish carries no check, it will not send a refused promotion by accident. If the promotion it would withdraw never reached Argo CD, and `main` holds more that moves prod-sim and has not gone out, it stops and names them. Take them all off with `git revert`, newest first, then run it again, which publishes those reverts.
+
 A rollback of dev needs neither, because a publish that moves no prod-sim image asks the cluster nothing. A publish is all of `main`, though. If `main` holds a prod-sim image change that
 Argo CD has not read, `make rollback ENV=dev` stops before reverting and names the commit. Withdraw it first, with `make rollback ENV=prod-sim` if it is a promotion and `git revert` if not.
 Or set `OVERRIDE_DEV_CHECK="<reason>"` to send it along, which is logged, and that publish still asks plane-dev and takes the dump.
@@ -106,17 +108,15 @@ ls -1 .local/backups/prod-sim/
 make restore ENV=prod-sim BACKUP=<id-from-before-the-promotion> CONFIRM=yes
 ```
 
-Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. A prod-sim rollback prints a dump to use, and picks it by the promotion
-commit's time, not by whether or when the promotion reached Argo CD. So read it before you restore:
+Do not use `BACKUP=latest`: the rollback's own dump holds the newer schema, and `latest` may name it. A prod-sim rollback prints what to do, and read it before you restore:
 
-| What happened to the promotion | What to do with the dump it names |
+| What it finds about the promotion | What it prints |
 |---|---|
-| Its publish was refused, so it never reached Argo CD | Nothing moved, so nothing needs restoring. That restore would only discard every write since the dump |
-| Its publish was refused, and a second `make promote` sent it | Use the dump the second run took, which is later than the one named |
-| It was merged on GitHub | The dump was taken at the publish, so the right one can be the first after that time |
-| The rollback's own publish failed, and the re-run published the revert | The re-run names no dump. Pick the one from before the promotion by hand |
+| It never reached Argo CD | There is nothing to restore, and no dump is named, because prod-sim's images and schema did not move |
+| `.local/publishes.log` records the publish that first sent it | The newest finished dump from before that publish |
+| No record of that publish, as for any promotion older than that log | The newest finished dump from before its commit, and the dumps since. A promotion merged on GitHub, or sent by a later run after a refusal, took its dump at the publish, so for one of those use the one from just before it. Real prod-sim promotions so far have no record, and `9c8e098`'s dump, `20261105T053351Z`, comes before its commit |
 
-This comes from a review on stubs (`.local/evidence-raw/review-promotion-4-scenarios-1.txt`). No real prod-sim rollback has run.
+A re-run that publishes a revert says the same. This has run against stubs only (`scripts/ci/test-promotion-flows.sh`), and no real prod-sim rollback has run.
 
 Roll back the image first, because `scripts/restore.sh` refuses a backup from a newer Plane version than the one running. Dev takes no automatic dump on
 promotion, so run `make backup ENV=dev` yourself before a risky one. See [Backup and restore](backup-restore.md).
