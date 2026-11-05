@@ -4,7 +4,9 @@ Wayline is a customized deployment of open-source Plane Community Edition v1.4.3
 
 This is Pass 1. Everything runs on one laptop, on one kind node. Nothing in the cloud is provisioned or configured. Pass 2 is described in [future-hetzner.md](future-hetzner.md).
 
-**How to read this page.** It describes configuration: what the code asks the system to do. It does not say the system does it. Results live in [validation.md](validation.md) and [evidence/](evidence/README.md). A statement that depends on a runtime result carries a `VERIFY` marker until evidence exists. Nothing here is a claim of production readiness.
+**How to read this page.** It describes configuration: what the code asks the system to do. Results live in [validation.md](validation.md) and [evidence/](evidence/README.md). Where a real run has settled a statement, the text says so and links the file. A statement that nothing has measured yet carries a `VERIFY` or `MEASURE` marker. The platform is local and production-inspired, and nothing here is a claim of production readiness.
+
+**State on 2026-11-05.** All 14 Argo CD Applications read Synced and Healthy ([drill-clean-restore preflight](evidence/runs/drill-clean-restore-20261105T000555Z.log)). `make test-e2e` passes in `plane-dev`, 38 steps on the branded images ([smoke](evidence/runs/smoke-dev-20261105T001213Z.json)), and in `plane-prod-sim`, 37 steps on upstream images ([smoke](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). This platform was brought up stage by stage, with fixes along the way. A clean install, teardown and recreate, full restore, secret rotation, failed deploy drill, load test and `make test-alert` have not run.
 
 Names, ownership, and ordering are binding in [platform-contract.md](platform-contract.md). Decision records are in [adr/](adr/). Tradeoffs for each tool are in [technology-choices.md](technology-choices.md). What the two environments share is in [environments.md](environments.md).
 
@@ -93,7 +95,7 @@ Three groups of things run outside the cluster, for specific reasons.
 
 All of it is one failure domain. The node, the kernel, the API server, and the Docker VM are single instances. [environments.md](environments.md) spells out what that means for the two environments.
 
-Exposure is loopback only. kind binds host ports 80 and 443 to `127.0.0.1` (`infrastructure/kind/cluster.yaml.tmpl`), and those map to Traefik's NodePorts 30080 and 30443. kind's default of `0.0.0.0` would put unauthenticated UIs on the LAN. There is no TLS locally: all routes use Traefik's `web` entry point, and nothing listens with a certificate.
+Exposure is loopback only. kind binds host ports 80 and 443 to `127.0.0.1` (`infrastructure/kind/cluster.yaml.tmpl`), and those map to Traefik's NodePorts 30080 and 30443. kind's default of `0.0.0.0` would put unauthenticated UIs on the LAN. On 2026-11-04 Docker reported the mappings on `127.0.0.1`, and port 80 on the Mac's LAN address refused the connection ([traefik-routes-2.txt](evidence/runs/traefik-routes-2.txt)). There is no TLS locally: all routes use Traefik's `web` entry point, and nothing listens with a certificate.
 
 ## 2. Request flow
 
@@ -127,18 +129,18 @@ The routes come from the Plane chart's `IngressRoute` template, rendered into `g
 |---|---|---|
 | `/` | `plane-web:3000` | React Router 7 with `ssr: false`, served by nginx. The pod has no reason to dial anything, and its policy has no egress beyond DNS |
 | `/god-mode` | `plane-admin:3000` | Same, for the instance admin UI |
-| `/spaces` | `plane-space:3000` | The only server-rendered frontend. Its build has an empty API base URL, and its policy gives it no route to the api, so its one server-side fetch should fail with only cosmetic effect |
+| `/spaces` | `plane-space:3000` | The only server-rendered frontend. Its build has an empty API base URL, so its one server-side fetch fails with `ERR_INVALID_URL` before any connection, and its policy gives it no route to the api anyway. Only the page's metadata is lost |
 | `/api`, `/auth`, `/static/` | `plane-api:8000` | Django. One gunicorn worker per pod, by the memory budget in contract section 10 |
 | `/live` | `plane-live:3000` | Collaborative editing over WebSocket. The chart routes it through the same buffering Middleware as everything else |
 | `/uploads` | `plane-minio:9000` | Presigned S3 requests go straight from the browser to Silo. The path must stay `/uploads`, because `export_task.py` hardcodes it (policy `plane.rego` checks the route) |
 
-The space fetch failure is read from source, not observed. [[VERIFY: public space pages render with the api unreachable from the space pod]]
+The space fetch failure was seen on 2026-11-04, on upstream images. A public board rendered signed out in a real browser, with its work items, because the browser makes those calls, while the space pod logged `ERR_INVALID_URL` for the metadata fetch ([plane-dev-public-board-1.txt](evidence/runs/plane-dev-public-board-1.txt)). On the branded images the smoke step `public-board` passes ([smoke](evidence/runs/smoke-dev-20261105T001213Z.json)). No browser has opened a board with real content there.
 
-WebSocket upgrades through the `buffering` Middleware are read from Traefik's source only. [[VERIFY: two browser tabs editing one document through /live, with a soak of at least 5 minutes]]
+WebSocket upgrades pass the `buffering` Middleware. On 2026-11-05, on the branded images, text typed in one real browser tab showed in a second tab on the same page within 2 seconds, and came back after a reload ([live-dev](evidence/branding/live-dev/README.md)). On 2026-11-04, on upstream images, the smoke's own client held two connections idle for 330s through Traefik, with pings answered on both, and an update then got through ([plane-dev-smoke-soak-1.txt](evidence/runs/plane-dev-smoke-soak-1.txt)). Those are separate runs, so two browser tabs held open for five minutes has not been run.
 
-Traefik's `traefik-ingress` policy admits NodePort traffic from `172.16.0.0/12` and `192.168.65.0/24`. The source address reaching the pod depends on Docker's port publishing, so both ranges are listed. The second range is in the code and not in the contract. [[VERIFY: which source address NodePort traffic presents at the Traefik pod on this host]]
+Traefik's `traefik-ingress` policy admits NodePort traffic from `172.16.0.0/12`. The source reaching the pod is the kind gateway: `172.24.0.1` on this host on 2026-11-04, read from conntrack on the node. With that block removed, a request from the host timed out ([traefik-nodeport-source-1.txt](evidence/runs/traefik-nodeport-source-1.txt)). So the `192.168.65.0/24` the policy also allowed until then was removed.
 
-`externalTrafficPolicy: Local` removes kube-proxy's SNAT, but expect Docker's gateway as the client address rather than the browser's. Plane's anonymous throttle keys on the `X-Forwarded-For` that Traefik builds from that address. [[VERIFY: client address seen in Traefik access logs]]
+`externalTrafficPolicy: Local` removes kube-proxy's SNAT, but that gateway is still the client address, not the browser's. Traefik writes no access log here ([plane-dev-copy-object-path-1.txt](evidence/runs/plane-dev-copy-object-path-1.txt)), so conntrack is the record of it. Plane's anonymous throttle keys on the `X-Forwarded-For` that Traefik builds from that address, so every browser on the host should share one bucket. That has not been measured.
 
 ### Other hosts
 
@@ -150,7 +152,7 @@ Traefik's `traefik-ingress` policy admits NodePort traffic from `172.16.0.0/12` 
 | `prometheus.localhost` | `kps-prometheus:9090` | **None** |
 | `alertmanager.localhost` | `kps-alertmanager:9093` | **None** |
 
-Prometheus and Alertmanager have no login of their own. Loopback binding is what protects them from the LAN. It does not protect them from pods, because the api may reach Traefik (see below).
+Prometheus and Alertmanager have no login of their own. Loopback binding is what protects them from the LAN. Pods are a different door, because the api may reach Traefik (see below), and before 2026-11-04 a Plane api pod could read metrics and alert silences that way with 200 ([routes-before-1.txt](evidence/runs/routes-before-1.txt)). So all five hosts now carry Middleware `node-network-only`, an `ipAllowList` of `172.16.0.0/12`. From an api pod each answers Traefik's 403, through the Service and the NodePort, and with a spoofed `X-Forwarded-For`. From the host each answers 200 ([routes-after-3.txt](evidence/runs/routes-after-3.txt)). It checks a source address, not a login, and it trusts everything on the node network.
 
 ### Requests that start inside the cluster
 
@@ -178,9 +180,9 @@ sequenceDiagram
   Traefik->>Silo: forward
 ```
 
-Both paths are source reading only. [[VERIFY: copy_object from the api pod returns 200 through the CoreDNS rewrite, with the S3 signature valid]]
+Both paths ran in each environment, and again in dev on the branded images on 2026-11-05 ([dev](evidence/runs/smoke-dev-20261105T001213Z.json), [prod-sim](evidence/runs/smoke-prod-sim-20261104T235926Z.json)). Step `asset-duplicate` reads the same bytes back from the copy. The api resolves its public host to Traefik's Service, Traefik counted the `copy_object` PUTs, and a worker, with no policy route, times out on the same host ([plane-dev-copy-object-path-1.txt](evidence/runs/plane-dev-copy-object-path-1.txt)).
 
-[[VERIFY: presigned upload through /uploads succeeds with no bucket Job, because the hardening component deletes the chart's bucket Job and relies on the api's create_bucket]]
+Presigned upload works with no bucket Job. Steps `attachment-upload` and `object-in-silo` store bytes and read them straight from Silo in bucket `uploads` with a matching sha256, and `uploads-private` gets 403 without a valid signature.
 
 This path has a side effect. The same Traefik serves every host, so the api can ask for any of them by Host header, including the other environment's. That gap is documented in [environments.md](environments.md#the-known-gap-api-to-traefik-to-anywhere).
 
@@ -203,9 +205,9 @@ Each namespace starts from default-deny for ingress and egress, plus DNS. These 
 
 Nothing in a Plane namespace has a route to the internet, so Plane's telemetry to `telemetry.plane.so` has none. Valkey has no password (chart issue 113), so its policy is its only access control. RabbitMQ's management port and Silo's console stay closed.
 
-These rules only mean something if kindnet enforces them. kindnet evaluates new connections only and fails open with a log line on errors. Day-1 gate 2 recorded a default-deny blocking a new connection in a throwaway namespace, with no platform deployed ([evidence](evidence/day1-gates.txt)). [[VERIFY: default-deny blocks a new connection on the final cluster]]
+These rules only mean something if kindnet enforces them. kindnet evaluates new connections only and fails open with a log line on errors. Default-deny blocks a new connection on this cluster with the platform's 60 policies loaded: the day-1 gate on 2026-11-04 saw a timeout while a reference answered the same client and the node reached the target ([day1-gates-20261104T231136Z.txt](evidence/day1-gates-20261104T231136Z.txt)), and `scripts/test-netpol.sh` repeats a sentinel in a throwaway namespace before each run. Since 2026-11-04 the log line has an alert, `KindnetSkippedNetworkPolicies`, proven with a synthetic line and not a real failure ([h18-synthetic-2.txt](evidence/runs/h18-synthetic-2.txt)).
 
-[[VERIFY: full allow and deny matrix in tests/network-policy-matrix.yaml run by make test-netpol]]
+The matrix in `tests/network-policy-matrix.yaml` has been run by source namespace, and not yet as one whole. Both Plane namespaces pass with 0 FAIL and 0 INCONCLUSIVE, and rows from `argocd`, `traefik` and `kube-system` have not been rerun on the complete platform. [security.md](security.md#networkpolicy-model) has the table.
 
 ## 3. Secret flow
 
@@ -262,11 +264,11 @@ flowchart TB
 - **Two namespace-scoped operators, not one cluster-wide.** With `scopedRBAC` unset, an operator could mint a token for any ServiceAccount and read every Secret, and nothing would stop an `InfisicalAuth` in `plane-dev` from naming the prod-sim identity.
 - **The admin token never enters the cluster.** Bootstrap runs on the host and reaches Infisical through `infisical.localhost`, which is why it is a script and not an Argo CD step.
 
-**How login works.** The operator mints a short-lived token for `plane-infisical-auth` and presents it to Infisical. Infisical calls TokenReview using that same token as the credential, so no long-lived reviewer JWT exists anywhere. That is why `plane-infisical-auth` holds `system:auth-delegator`, through ClusterRoleBinding `infisical-token-reviewer` in `infisical/manifests/token-reviewer.yaml`. Each identity's Kubernetes Auth config allows one namespace and one ServiceAccount. Access tokens last 3600 seconds. [[VERIFY: operator login succeeds on kind, and the dev identity gets 403 when reading the plane-prod-sim project]]
+**How login works.** The operator mints a short-lived token for `plane-infisical-auth` and presents it to Infisical. Infisical calls TokenReview using that same token as the credential, so no long-lived reviewer JWT exists anywhere. That is why `plane-infisical-auth` holds `system:auth-delegator`, through ClusterRoleBinding `infisical-token-reviewer` in `infisical/manifests/token-reviewer.yaml`. Each identity's Kubernetes Auth config allows one namespace and one ServiceAccount. Access tokens last 3600 seconds, and the dev operator logged in again after 42 minutes with no errors ([infisical-token-renewal-1.txt](evidence/runs/infisical-token-renewal-1.txt)). Operators log in on kind, and on 2026-11-04 each reader got 403 on the other project, on list, single read and slug lookup, in both directions, while the same tokens read their own with 200 ([infisical-isolation-3.txt](evidence/runs/infisical-isolation-3.txt)).
 
-**How values change.** Each `InfisicalStaticSecret` has `refreshInterval: 60s`. Deployments `plane-api-wl`, `plane-worker-wl`, `plane-beat-worker-wl`, and `plane-live-wl` carry `secrets.infisical.com/auto-reload: "true"`, so the operator restarts them when a Secret changes. StatefulSets do not carry it, so a value change does not restart Postgres. [[VERIFY: changing a value in Infisical rolls the four Deployments and does not start a fight with Argo CD self-heal]]
+**How values change.** Each `InfisicalStaticSecret` has `refreshInterval: 60s`. Deployments `plane-api-wl`, `plane-worker-wl`, `plane-beat-worker-wl`, `plane-live-wl` and `postgres-exporter` carry `secrets.infisical.com/auto-reload: "true"`, so the operator restarts them when a Secret changes. StatefulSets do not carry it, so a value change does not restart Postgres. A rotation has not been run. [[VERIFY: changing a value in Infisical rolls the four Deployments and does not start a fight with Argo CD self-heal]]
 
-**How it fails.** Templates use `secretFrom`, not `.KEY.Value`, because the latter renders a literal `<no value>` and reports success, and a database would accept that as a password. With `secretFrom`, a missing key fails the reconcile and the custom Lua health check in `helm/values/argocd.yaml` reports Degraded. Chart references are `optional: false`, so a pod waits in `CreateContainerConfigError` until its Secret exists. [[VERIFY: a missing key marks the InfisicalStaticSecret Degraded and blocks the Plane sync at wave -1]]
+**How it fails.** Templates use `secretFrom`, not `.KEY.Value`, because the latter renders a literal `<no value>` and reports success, and a database would accept that as a password. Measured on scratch CRs on 2026-11-04: with `secretFrom`, a missing key sets `error: true` and creates no Secret ([infisical-no-value-1.txt](evidence/runs/infisical-no-value-1.txt)), and the Lua check reads that CR as Degraded ([argocd-lua-infisical-live-1.txt](evidence/runs/argocd-lua-infisical-live-1.txt)). No scratch CR was part of a Plane sync, so a sync stopping at wave -1 for this reason has not been seen, though an unready `InfisicalAuth` did fail and retry the sync at wave -2 until its Secret existed ([infisical-unready-sync-1.txt](evidence/runs/infisical-unready-sync-1.txt)). Chart references are `optional: false`, so a pod waits in `CreateContainerConfigError` until its Secret exists.
 
 **Other Secrets exist.** The six in the contract are the application's. These also live in the cluster and do not come from Infisical:
 
@@ -289,7 +291,7 @@ flowchart TB
 
   subgraph github["GitHub: private repo, runs CI, Argo CD does not read it in Pass 1"]
     ci["ci.yml: lint, render drift, kubeconform,<br/>conftest, ownership, gitleaks, trivy"]
-    images["images.yml: build arm64, push to GHCR,<br/>open a digest-bump PR for dev"]
+    images["images.yml: build arm64, push to GHCR, scan what was pushed,<br/>open a digest-bump PR for dev"]
     promo["promote-prod-sim.yml: manual dispatch,<br/>opens a PR copying a digest dev recorded"]
     ghcr["GHCR"]
   end
@@ -322,7 +324,7 @@ flowchart TB
   promo -->|"PR merged, git pull"| publish
   promote --> publish
   dev --> publish
-  publish -->|"backup first if a prod-sim image changes"| bare
+  publish -->|"plane-dev check and backup first if a prod-sim image changes"| bare
   bare -->|"read-only mount"| git
   git --> argo
   argo --> envs
@@ -341,8 +343,11 @@ flowchart TB
 | Push to the bare repo | Plain `git push`, no force | Rewritten history is refused, so Argo CD never follows a rewrite with no record of it |
 | Serve to Argo CD | `git daemon` over a read-only mount | Nothing in the cluster can write to the source of truth |
 | Pull images | `containerd-certs.d` tries the local cache first, then the upstream `server` | Docker Hub's quota, and digests make any mirror safe to trust |
-| Refuse unknown digests | `scripts/ci/check-promoted-digests.sh` | Prod-sim receiving a digest dev never recorded |
+| Refuse unknown digests | `scripts/ci/check-promoted-digests.sh` | Prod-sim receiving a digest dev never recorded under that image |
+| Ask `plane-dev` | `scripts/lib/dev-check.sh`, from `scripts/promote.sh` and `scripts/gitops-publish.sh` | Prod-sim receiving a digest `plane-dev` is not running in a ready container, Synced and Healthy. No cluster in reach skips it, and the commit says so |
 | Back up before prod-sim | `scripts/promote.sh` and `scripts/gitops-publish.sh` | Migrations are forward-only, so reverting an image does not revert the schema |
+
+No promotion of prod-sim has run for real. These flows ran against a stubbed `kubectl`, 41 scenarios ([make ci](evidence/ci/ci-2-20261104T225907Z-make-ci.log)), which shows the scripts' logic and nothing about a cluster. `make promote ENV=dev` ran for real at `4f622e3`.
 
 `kind load` is forbidden. It cannot work with this host's containerd image store (kind #3795). Upstream images come from `docker.io` by index digest, never from `artifacts.plane.so`, which fronts Docker Hub and shares its limit.
 
@@ -350,11 +355,11 @@ Argo CD has no webhook, because nothing could call it, so it notices commits by 
 
 The repo-server needs port 443 to fetch platform charts. Offline, charts come from its cache until it restarts, so a full cold start needs internet. [[VERIFY: behaviour of a platform Application when the repo-server restarts with no internet]]
 
-[[VERIFY: Argo CD reads git://plane-git/plane-platform.git from the repo-server under its NetworkPolicy; day-1 gate 5 checked git:// from a plain pod only]]
+Argo CD reads `git://plane-git/plane-platform.git` from the repo-server under its NetworkPolicy. On 2026-11-04 `git ls-remote` with Argo CD's own binary answered in the repo-server pod ([netpol-real-pods-1.txt](evidence/runs/netpol-real-pods-1.txt)), a new repo-server with empty caches fetched Git and charts over new connections ([argocd-restart-under-policy-1.txt](evidence/runs/argocd-restart-under-policy-1.txt)), and every Application has synced from it since.
 
-**Current state of branding.** `apps/wayline/` is not in the repository at the time of writing, so both overlays pin upstream `docker.io/makeplane/*` images. `scripts/ci/build-images.sh` exits successfully with nothing to build until `apps/wayline/images.txt` exists. The delivery path above is ready for branded images but carries none yet. [[VERIFY: overlays reference localhost:5001/wayline/{web,admin,space,backend} once the branded images are built; if not, this paragraph stays]]
+**Current state of branding.** `plane-dev` has run `localhost:5001/wayline/{web,admin,space,backend}` by digest since promotion `4f622e3` on 2026-11-05, built from commit `1563cbf` ([digests](evidence/branding/digests.tsv), [live-dev](evidence/branding/live-dev/README.md)). `plane-prod-sim` still pins upstream's `docker.io/makeplane/*` until it is promoted. `live` stays upstream's in both. Those images came through `make images` and `make promote` on the laptop. The GitHub half of the diagram above has not carried an image: `images.yml` has only run with nothing to build, and workflows may not open pull requests until the owner changes a setting ([ci evidence](evidence/ci/README.md)).
 
-GitHub's Free plan on a private repository has no environment reviewers, no protected branches, and no artifact attestations. A person merging a pull request is the approval, and GitHub cannot enforce it. See [security.md](security.md) and `.github/workflows/README.md`.
+GitHub's Free plan on a private repository has no environment reviewers, no protected branches, no code owners, and no artifact attestations. A person merging a pull request is the approval, and GitHub cannot enforce it. See [security.md](security.md) and `.github/workflows/README.md`.
 
 ## 5. Observability flow
 
@@ -379,7 +384,7 @@ flowchart LR
   end
 
   subgraph logs["Logs"]
-    pods["Pods in plane-dev, plane-prod-sim,<br/>infisical, argocd, traefik, monitoring"]
+    pods["Pods in plane-dev, plane-prod-sim,<br/>infisical, argocd, traefik, monitoring,<br/>and kindnet's container"]
     apiserver["API server"]
     alloy["Alloy Deployment<br/>loki.source.kubernetes"]
     loki["Loki monolithic, filesystem<br/>retention 72h"]
@@ -403,20 +408,20 @@ flowchart LR
   am --> grafana
 ```
 
-**Metrics.** One Prometheus scrapes everything. Selector settings make it pick up every ServiceMonitor and Probe in every namespace. The per-environment split comes from the namespace label the operator sets, since each Probe and ServiceMonitor lives in its own Plane namespace. Exporters run in the Plane namespaces, not `monitoring`, because each holds that environment's credentials. The contract's namespace table lists exporters under `monitoring`, and this code differs.
+**Metrics.** One Prometheus scrapes everything. Selector settings make it pick up every ServiceMonitor and Probe in every namespace. The per-environment split comes from the namespace label the operator sets, since each Probe and ServiceMonitor lives in its own Plane namespace. Exporters run in the Plane namespaces, not `monitoring` (contract section 2). On 2026-11-04 all 40 targets were up ([monitoring-targets-1.txt](evidence/runs/monitoring-targets-1.txt)).
 
 **Probes.** Blackbox probes go to Traefik's in-cluster Service with the public host passed as `?hostname=`, so a failed probe means what a failed user request means. Two API probes exist on purpose: `/api/instances/` is cached in Valkey and can answer 200 with Postgres down, while `/api/public/anchor/__probe__/settings/` needs a database connection. [[VERIFY: /api/instances/ stays 200 with Postgres stopped, while the anchor route fails]] Two API probes every 15 seconds stay under Plane's anonymous limit of 30 a minute.
 
-**Logs.** Alloy runs as a single Deployment and reads logs through the Kubernetes API. It needs no root, no host path, and no privileged namespace. The cost is more load on the API server and kubelet. `monitoring-agents` and `kube-system` are not collected. Tail positions live in an `emptyDir`, so lines can be lost across an Alloy restart. [[MEASURE: API server CPU and memory with Alloy tailing all pods, against the same period without it]]
+**Logs.** Alloy runs as a single Deployment and reads logs through the Kubernetes API. It needs no root, no host path, and no privileged namespace. The cost is more load on the API server and kubelet. On 2026-11-04 a second Alloy on the same 53 log streams added 6 to 40 MiB to API server RSS and about 20 MiB to the kubelet's, with CPU inside the noise of other work ([monitoring-alloy-apiserver-cost-1.txt](evidence/runs/monitoring-alloy-apiserver-cost-1.txt)). That is the price of one more Alloy, not of one against none. `monitoring-agents` is not collected, and from `kube-system` only kindnet's container, whose lines are counted and dropped rather than stored. Tail positions live in an `emptyDir`. Over a pod replacement no line was lost or duplicated in the containers checked, because a new pod re-reads each log and Loki refuses what it already holds ([monitoring-alloy-restart-1.txt](evidence/runs/monitoring-alloy-restart-1.txt)).
 
-**Alerts.** Rules live in `monitoring/manifests/shared/`. Alertmanager has one real receiver, a small Python webhook sink that writes one JSON line per delivery to stdout, which Alloy ships to Loki. There is no external notification, because nothing cloud or third-party is configured in Pass 1. `Watchdog` always fires and repeats every 5 minutes, so a line in the sink is continuous proof that evaluation, routing, and delivery all work. [[VERIFY: make test-alert shows a real alert reaching the sink, and Watchdog lines appear on schedule]]
+**Alerts.** Rules live in `monitoring/manifests/shared/`. Alertmanager has one real receiver, a small Python webhook sink that writes one JSON line per delivery to stdout, which Alloy ships to Loki. There is no external notification, because nothing cloud or third-party is configured in Pass 1. `Watchdog` always fires and repeats every 5 minutes, so a line in the sink is continuous proof that evaluation, routing, and delivery all work. It reached the sink every 5 to 6 minutes on 2026-11-04 ([monitoring-alertmanager-1.txt](evidence/runs/monitoring-alertmanager-1.txt)), a temporary rule took 70s from pending to the sink ([monitoring-alert-path-1.txt](evidence/runs/monitoring-alert-path-1.txt)), and `ArgoSyncFailed` and `PlaneWorkerNoConsumer` fired on real conditions ([h16-fire-1.txt](evidence/runs/h16-fire-1.txt), [plane-prod-sim-worker-no-consumer-alert-1.txt](evidence/runs/plane-prod-sim-worker-no-consumer-alert-1.txt)). The scripted test has not run. [[VERIFY: make test-alert shows a real alert reaching the sink, and Watchdog lines appear on schedule]]
 
 **What is deliberately missing.**
 
 | Gap | Why | Compensating check |
 |---|---|---|
 | API server, etcd, scheduler, controller manager, kube-proxy scrapes | API server off to save series. The others bind to `127.0.0.1` inside a kind node, so they would only show as down | None. `KubeAPIDown` is disabled with it |
-| Disk alerts | The VM reports hundreds of free GiB on a sparse disk while the Mac runs out first | `guard_disk` in `scripts/lib/common.sh`, on the host, at script entry only |
+| Disk alerts that see the host | The chart's `NodeFilesystem*` rules stay on but watch only the VM, which reports hundreds of free GiB on a sparse disk while the Mac runs out first | `guard_disk` in `scripts/lib/common.sh`, on the host, at script entry only |
 | Infisical operator metrics | Scraping needs an extra RBAC binding, and the contract names no operator metrics | None. The NetworkPolicy allows port 8443 anyway, and that rule is unused |
 
 Monitoring has one Prometheus, one Loki, one Alertmanager, and one Grafana for both environments. Noisy series or logs from dev shorten what prod-sim can retain, because `retentionSize` and Loki's volume are shared.
@@ -462,6 +467,8 @@ Every resource has exactly one owner. If two tools believe they own the same thi
 | AppProjects `plane-dev`, `plane-prod-sim` | Cluster-scoped objects, NetworkPolicy, ResourceQuota, LimitRange, and any other namespace | Namespaced workloads and routes inside their own namespace |
 | `CreateNamespace=false` on every Application | Argo CD creating a namespace | |
 | Policy `environments.rego` | A rendered Plane manifest carrying a platform-only kind | Hand-applied objects |
+| Policy `gitops.rego` | A Plane Application under any project but its own, any Application under `default`, and an environment's manifests under another project | A merge on this GitHub plan, where no check can block one |
+| Policy `plane.rego` | A route in a Plane namespace off its own host, a route elsewhere naming a Plane host, a TCP or UDP route in a Plane namespace, and a route to an internal UI with no `node-network-only` | Hand-applied objects |
 
 A human with the admin kubeconfig can still change anything. Self-heal reverts tracked fields. It does not see untracked objects.
 
@@ -477,7 +484,7 @@ Waves order resources inside one Argo CD sync. There are two levels: the root ap
 |---|---|---|
 | -10 | `network-policies`, `backup-storage` | Every later wave starts under default-deny with its allow rules in place. Backup PVs and PVCs exist before anything can mount them |
 | -9 | `traefik` | Ships the IngressRoute CRDs that later routes need |
-| -8 | `metrics-server`, and the `argocd-server` IngressRoute | The route is the root's second source. It needs Traefik's CRD, so Terraform cannot create it |
+| -8 | `metrics-server`, and the `argocd-server` IngressRoute with its `node-network-only` Middleware | These are the root's second source. They need Traefik's CRD, so Terraform cannot create them |
 | -7 | `kube-prometheus-stack` | Ships the monitoring CRDs. Needs `ServerSideApply` because one CRD exceeds the client-side annotation limit |
 | -6 | `loki`, `alloy` | |
 | -5 | `monitoring-extras` | Rules, dashboards, Probes, exporters. Needs the CRDs from -7 |
@@ -486,15 +493,15 @@ Waves order resources inside one Argo CD sync. There are two levels: the root ap
 | -1 | `plane-dev` | Needs the operator's CRDs and Infisical answering |
 | 0 | `plane-prod-sim` | Serial on purpose: simultaneous first boots are the worst case for memory |
 
-The contract's section 6 does not list `backup-storage` (it is in section 13) or the `argocd-server` route. They are in the code.
+**Waves gate only because of a custom health check.** Argo CD removed the health check for `argoproj.io/Application` in version 1.8, so without one a child reports no health and the root's waves pass straight through. `helm/values/argocd.yaml` adds it back, and it counts a child as Healthy only with no `.operation` open and sync status Synced, because Argo CD's own aggregate skips hooks and resources not created yet. A wave waits while a child is Missing or Progressing. A Degraded child fails the root sync, and the root retries without limit, because a child is often briefly Degraded on first boot and automated sync never reattempts a failed commit by itself.
 
-**Waves gate only because of a custom health check.** Argo CD removed the health check for `argoproj.io/Application` in version 1.8, so without one a child reports no health and the root's waves pass straight through. `helm/values/argocd.yaml` adds it back. A wave waits while a child is Missing or Progressing. A Degraded child fails the root sync, and the root retries without limit, because a child is often briefly Degraded on first boot and automated sync never reattempts a failed commit by itself. [[VERIFY: on a fresh install, each root wave waits for the previous wave's Applications to be Healthy]]
+Measured on scratch Applications on the real controller on 2026-11-04: a child read raw Healthy through its whole 63s hook while the check read Progressing, and the next child appeared in the second the hook finished, on a fresh install and on a resync ([argocd-wave-gating-1.txt](evidence/runs/argocd-wave-gating-1.txt)). On the first real boot `kube-prometheus-stack` read Degraded while its image pulled, which failed the root and sent it into backoff ([bootstrap-timeline-1.txt](evidence/runs/bootstrap-timeline-1.txt)), so a Prometheus with no ready pod now reads Progressing ([h43-repro-after-1.txt](evidence/runs/h43-repro-after-1.txt)). [[VERIFY: on a fresh install, each root wave waits for the previous wave's Applications to be Healthy]]
 
-`postgres-exporter` carries `argocd.argoproj.io/ignore-healthcheck`, because `monitoring-extras` syncs at -5 and its Secret `plane-pgdb` does not appear until -1. Without this the root would wait forever on a pod that cannot start yet.
+`postgres-exporter` carries `argocd.argoproj.io/ignore-healthcheck`, because `monitoring-extras` syncs at -5 and its Secret `plane-pgdb` does not appear until -1. Without this the root would wait forever on a pod that cannot start yet. On the first boot the exporter sat in `CreateContainerConfigError` from 21:05 to 21:29 UTC while `monitoring-extras` read Healthy ([monitoring-ignore-healthcheck-1.txt](evidence/runs/monitoring-ignore-healthcheck-1.txt)).
 
 **Waves are not a dependency system between environments after first install.** Once `plane-prod-sim` exists, it polls Git and syncs by itself. A wave only orders the root's own operation. So -1 before 0 protects the first boot. It does not make a later change land in dev before prod-sim. [environments.md](environments.md#the-promotion-model) covers what does.
 
-A child stuck in Progressing holds the root in `Running`, and the root does not pick up a new commit until that operation ends. To inject failure, pause automation on both the child and the root, because the root's self-heal reverts a patch to a child's `syncPolicy`. The children set `retry.refresh: true`, so a retry picks up a newer commit and a revert can land. The root Application at `gitops/bootstrap/chart/templates/root-application.yaml` does not set it. [[VERIFY: whether a bad commit under gitops/applications can be fixed by a revert while the root is retrying, or whether the root stays pinned to the bad revision]]
+A child stuck in Progressing holds the root in `Running`, and the root does not pick up a new commit until that operation ends. Ending it means patching the phase to `Terminating`, and `infrastructure/terraform/README.md` has what that does ([argocd-root-terminate-1.txt](evidence/runs/argocd-root-terminate-1.txt)). To inject failure, pause automation on both the child and the root, because the root's self-heal reverts a patch to a child's `syncPolicy`. The children and the root set `retry.refresh: true`, so a retry reads the newest commit. The root does not stay pinned to a bad revision: on the first boot its operation began at `b98fa47` and reached `4a49a9c` on a retry, with no new operation ([bootstrap-up-terraform-1.txt](evidence/runs/bootstrap-up-terraform-1.txt), [argocd-root-terminate-1.txt](evidence/runs/argocd-root-terminate-1.txt), retry 5). That shows the revision moving. A revert of a bad Application manifest landing this way has not been run.
 
 ### Inside each Plane Application
 
@@ -511,15 +518,15 @@ A child stuck in Progressing holds the root in `Running`, and the root does not 
 
 The migrator Job uses `backoffLimit: 3`, `activeDeadlineSeconds: 900`, and `hook-delete-policy: BeforeHookCreation`. The hardening component removes the chart's `timestamp` annotation, because `now` in a pod template changes every render, which would roll every Deployment and hit the Job's immutable template.
 
-Bootstrap is not a wave. `scripts/infisical-bootstrap.sh` runs on the host after Infisical answers, and `plane-dev` waits at wave -2 until it publishes the identity ids. [[VERIFY: a fresh make up reaches both Plane Applications Healthy with this ordering, with no manual step]]
+Bootstrap is not a wave. `scripts/infisical-bootstrap.sh` runs on the host after Infisical answers, and `plane-dev` waits at wave -2 until it publishes the identity ids. On the first boot the identity was published at 21:25:44 UTC and the next retry landed at 21:28:54 ([infisical-unready-sync-1.txt](evidence/runs/infisical-unready-sync-1.txt)). That boot was not clean. It ran in stages with `UP_STOP_AFTER`, with fixes between them, and prod-sim's Infisical CRs were applied by hand ahead of root's wave 0 ([infisical-prod-sim-crs-1.txt](evidence/runs/infisical-prod-sim-crs-1.txt)). [[VERIFY: a fresh make up reaches both Plane Applications Healthy with this ordering, with no manual step]]
 
-[[VERIFY: a bad backend digest fails at the migrator in wave 2 and leaves running Deployments unchanged, tested by tests/drills/failed-deploy-rollback.sh]]
+`tests/drills/failed-deploy-rollback.sh` uses a bad web image, so it tests a failed rollout in wave 3 and not a failed migrator in wave 2. Neither has run. [[VERIFY: a bad backend digest fails at the migrator in wave 2 and leaves running Deployments unchanged, tested by tests/drills/failed-deploy-rollback.sh]]
 
 [[MEASURE: time from make up on an empty machine to both Plane Applications Healthy]]
 
 ## 8. What this architecture does not provide
 
 - **No high availability.** One node, one API server, one etcd, and one replica of each data service. A node restart is an outage for everything.
-- **No TLS, and no authentication on Prometheus or Alertmanager.** Loopback binding is the only outer boundary.
+- **No TLS, and no authentication on Prometheus or Alertmanager.** Loopback binding is the outer boundary, and a source-address list is the only thing between them and a pod that can reach Traefik.
 - **No independent environments.** See [environments.md](environments.md).
-- **No proof yet.** Plane has not been deployed at the time of writing. See [validation.md](validation.md) for what has run and [known-limitations.md](known-limitations.md) for what is known to be missing.
+- **No proof of a clean install or of recovery.** Plane is deployed and exercised on this laptop, but a clean install, teardown and recreate, full restore, secret rotation, failed deploy drill, load test and `make test-alert` have not run. See [validation.md](validation.md) for what has run and [known-limitations.md](known-limitations.md) for what is known to be missing.
