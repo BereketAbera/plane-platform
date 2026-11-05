@@ -8,7 +8,8 @@
 # S and a number is a scenario of the first review of the clean restore or from before it. R and a number is finding
 # that number of the second review, in clean-restore-harness/scenarios-second-review.sh.
 #
-# macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. It takes about half an hour, in the background.
+# macOS, as the platform is: it wants /bin/bash 3.2, BSD stat and perl. Run it in the background: one scenario at a time
+# takes about an hour, an estimate, and in six ONLY= groups at once it took 26 minutes.
 #
 # WHAT IT DOES. Each scenario copies the real scripts into a throwaway tree under $TMPDIR and runs them there:
 # restore.sh, backup.sh, destroy.sh, up.sh, cluster-up.sh, secret-zero.sh, infisical-bootstrap.sh,
