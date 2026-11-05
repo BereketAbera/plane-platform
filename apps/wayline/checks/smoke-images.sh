@@ -115,11 +115,20 @@ check_response() {
 }
 etag_of() { curl -sI -m 15 "$base$1" | tr -d '\r' | awk -F': ' 'tolower($1) == "etag" { print $2 }'; }
 
+# nginx's own redirect for a directory asked for without its slash. An absolute one names port 3000 inside the container,
+# which the ingress does not serve, so a Host the ingress would send must not change it.
+check_redirect() { # check_redirect <path> <Location>
+  local headers
+  headers="$(curl -s -D - -o /dev/null -m 15 -H 'Host: plane.dev.localhost' "$base$1" | tr -d '\r')"
+  check "$1 with Host plane.dev.localhost: status" "$(printf '%s\n' "$headers" | sed -n '1s/^HTTP[^ ]* \([0-9]*\).*/\1/p')" 301
+  check "$1 with Host plane.dev.localhost: Location" "$(printf '%s\n' "$headers" | grep -i '^location:' | sed 's/^[^:]*: *//')" "$2"
+}
+
 # The stale page in docs/evidence/branding/live-dev/README.md. Without Cache-Control a browser reuses HTML without asking,
 # for about a tenth of the file's age, so a promotion or a rollback goes unseen. Everything without a hash of its content
 # in its name must be asked about every time. Only what the bundler named may be kept, and never HTML under such a name.
 check_caching() { # check_caching <URL prefix of the app> <page> <SPA route> <its directory in the image>
-  local prefix="$1" page="$2" route="$3" dir="$4" assets file sample index_sum missing etag path name
+  local prefix="$1" page="$2" route="$3" dir="$4" assets file sample index_sum missing etag path name mode range
   assets="$(docker exec "$container" find "$dir/assets" -maxdepth 1 -type f)"
   printf '%s files under %sassets/\n' "$(printf '%s\n' "$assets" | wc -l | tr -d ' ')" "$prefix"
 
@@ -149,6 +158,26 @@ check_caching() { # check_caching <URL prefix of the app> <page> <SPA route> <it
   done
   check_response "the directory ${prefix}assets/" 403 "$NO_CACHE" "${prefix}assets/"
 
+  # An error for a real hashed name. The name still promises the file, so a rule that reads only the name stamps the error
+  # with the year, and a browser keeps a 403 after the server recovers: docs/evidence/branding/cache-errors.txt.
+  file="$(printf '%s\n' "$assets" | head -1)"
+  name="${file##*/}"
+  mode="$(docker exec "$container" stat -c %a "$file")"
+  denied_on_purpose="$file"
+  docker exec -u 0 "$container" chmod 000 "$file"
+  check_response "$name unreadable" 403 "$NO_CACHE" "${prefix}assets/$name"
+  docker exec -u 0 "$container" chmod "$mode" "$file"
+  check_response "$name readable again" 200 "$IMMUTABLE" "${prefix}assets/$name"
+  check_response "POST to $name" 405 "$NO_CACHE" "${prefix}assets/$name" -X POST
+  check_response "$name with If-Match another ETag" 412 "$NO_CACHE" "${prefix}assets/$name" -H 'If-Match: "6aebbfcf-from-another-image"'
+  # A range past the end is what nginx would answer 416, with this header and the rest twice. Byte ranges are off, so a
+  # Range header changes nothing: the whole file, as the name promises, once.
+  for range in bytes=999999999- bytes=0-0 bytes=0-0,1-1; do
+    check_response "$name with Range $range" 200 "$IMMUTABLE" "${prefix}assets/$name" -H "Range: $range"
+    check "$name with Range $range is the whole file" "$(curl -s -m 15 -H "Range: $range" "$base${prefix}assets/$name" | shasum -a 256)" "$(curl -s -m 15 "$base${prefix}assets/$name" | shasum -a 256)"
+  done
+  check "$name offers no ranges" "$(curl -sI -m 15 "$base${prefix}assets/$name" | tr -d '\r' | grep -ic '^accept-ranges:' || true)" 0
+
   # Everything else in the image's web root.
   while read -r path; do
     [[ -z "$path" ]] || check_response "not hashed ${path#"$dir"/}" 200 "$NO_CACHE" "$prefix${path#"$dir"/}"
@@ -175,7 +204,8 @@ report_process() {
     fail "$1 licence texts"
   fi
   docker stats --no-stream --format 'memory after these requests: {{.MemUsage}}' "$container"
-  if docker logs "$container" 2>&1 | grep -E 'Permission denied|\[(emerg|crit|alert)\]'; then
+  # check_caching makes one file unreadable, and nginx logs that.
+  if docker logs "$container" 2>&1 | grep -E 'Permission denied|\[(emerg|crit|alert)\]' | grep -vF "${denied_on_purpose:-no file was made unreadable}"; then
     fail "$1 logged permission or fatal errors"
   else
     pass "$1 logs show no permission or fatal errors"
@@ -227,6 +257,8 @@ if [[ -n "$(ref_of web)" ]]; then
   check_response "/source" 302 "$NO_CACHE" /source
   check_response "/licenses/ listing" 200 "$NO_CACHE" /licenses/
   check_response "a missing licence" 404 "$NO_CACHE" /licenses/nothing
+  check_redirect /licenses /licenses/
+  check_redirect /assets /assets/
   # patches/20-auth.patch, where the onboarding form defines its default: false minifies to !1, and upstream's true to !0.
   # check_db.py cannot see this. Its consent line reads a model default, which is false on upstream's image too.
   check "onboarding form's marketing consent default" \
@@ -251,6 +283,8 @@ if [[ -n "$(ref_of admin)" ]]; then
   spa_sum="$(curl -s "$base/god-mode/general/" | shasum -a 256)"
   check "SPA route serves god-mode index.html" "$spa_sum" "$index_sum"
   check_caching /god-mode/ /god-mode/ /god-mode/general/ /usr/share/nginx/html/god-mode
+  check_redirect /god-mode /god-mode/
+  check_redirect /god-mode/assets /god-mode/assets/
   report_process admin
   docker rm -f "$container" >/dev/null
 fi
