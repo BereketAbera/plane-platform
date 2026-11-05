@@ -116,7 +116,7 @@ else
   check "conftest: platform charts" conftest_run charts,plane "$WORK"/charts/*.yaml
   rule_files "$WORK/chart-rules" "$WORK"/charts/*.yaml
   check "promtool: chart rules" promtool_check "$WORK/chart-rules"
-  # Last, and only in the full run: it re-renders the overlays many times, so it takes a minute.
+  # Last, and only in the full run: it re-renders the overlays many times, so it takes some minutes.
   # negative-controls.sh sets SKIP_FLOWS, because none of its defects are in those scripts' paths.
   if [[ "${SKIP_FLOWS:-}" != yes ]]; then
     check "promotion flows with a stub cluster" "$ROOT/scripts/ci/test-promotion-flows.sh"
