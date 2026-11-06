@@ -1,0 +1,98 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hosted-platform
+spec:
+  groups:
+    - name: platform.workloads
+      interval: 30s
+      rules:
+        # Reads the samples as they are: one restart is 1 and two are 2, whatever the series' age and wherever the
+        # evaluation falls between two scrapes. increase() extrapolates, so one restart can read nearly 2.
+        - alert: PodRestarting
+          expr: |
+            max_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|cert-manager|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m])
+              - min_over_time(kube_pod_container_status_restarts_total{namespace=~"plane-.*|cert-manager|monitoring|monitoring-agents|argocd|traefik|infisical"}[15m])
+              >= 2
+          labels: { severity: warning, component: pod }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} restarted more than once in 15m"
+        - alert: ContainerMemorySaturation
+          expr: |
+            sum by (namespace, pod, container) (container_memory_working_set_bytes{namespace=~"plane-.*|cert-manager|monitoring|monitoring-agents|argocd|traefik|infisical",container!="",container!="POD"})
+              / on (namespace, pod, container)
+            sum by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory"})
+              > 0.9
+          for: 5m
+          labels: { severity: warning, component: pod }
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} is at {{ $value | humanizePercentage }} of its memory limit"
+        # The quotas leave Frameflow's reservation free, and it runs nothing yet, so this should stay quiet. Limits may still add
+        # up past what is free once it does.
+        - alert: NodeMemoryLow
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+          for: 5m
+          labels: { severity: warning, component: node }
+          annotations:
+            summary: The node has {{ $value | humanizePercentage }} of its memory available
+    - name: platform.argocd
+      interval: 30s
+      rules:
+        # A copy of the local rules, whose comments hold the measurements. argocd_app_info's labels change with its state, and for:
+        # starts again whenever they do, so these aggregate them away and a flapping Application still fires.
+        - alert: ArgoAppOutOfSync
+          expr: max by (name, dest_namespace) (argocd_app_info{sync_status="OutOfSync"}) == 1
+          for: 15m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} has been out of sync for 15m
+        # A commit Argo CD cannot render, or a Git it cannot read: sync goes Unknown, no operation opens, and the running state
+        # silently stays on the old commit. On this cluster that includes GitHub refusing the deploy key.
+        - alert: ArgoAppSyncUnknown
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{sync_status="Unknown"}[2m])) == 1
+          for: 15m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: Argo CD has been unable to compare Application {{ $labels.name }} with Git for 15m, so new commits do not reach it
+            description: A commit that cannot render, or a Git that cannot be read, leaves sync Unknown and starts no sync. status.conditions has the ComparisonError; see docs/runbooks/argo-sync-stuck.md.
+        - alert: ArgoAppDegraded
+          expr: max by (name, dest_namespace, health_status) (argocd_app_info{health_status=~"Degraded|Missing"}) == 1
+          for: 5m
+          labels: { severity: critical, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} is {{ $labels.health_status }}
+        # Every Application sets retry.limit -1, so a failing sync never completes, and the counter below does not move. .operation
+        # stays set until an operation completes, and shows here as operation="sync", so "still open" is the signal. for: separates
+        # failing from slow, and first boots do run longer than this.
+        - alert: ArgoSyncFailed
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{operation="sync",name!="root"}[2m])) == 1
+          for: 15m
+          labels: { severity: critical, component: argocd, phase: Running }
+          annotations:
+            summary: Application {{ $labels.name }} has had a sync Running for 15m
+            description: Under retry.limit -1 a failed attempt goes back to Running, so this is a retry loop or a wave waiting on something that never gets healthy. status.operationState.message has the error; see docs/runbooks/argo-sync-stuck.md.
+        # A child whose objects never turn healthy, with no operation left open: root waits on it with no retry.
+        - alert: ArgoAppStuckProgressing
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{health_status="Progressing",name!="root"}[2m])) == 1
+          for: 30m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} has read Progressing for 30m
+            description: Something it deployed never turned healthy and has no deadline that would turn it Degraded, such as a StatefulSet. A root sync that reaches its wave waits on it with no retry; see "After a stuck first sync" in infrastructure/terraform/README.md.
+        # Root's operation walks every wave, so it stays open while its children come up.
+        - alert: ArgoRootSyncStuck
+          expr: max by (name, dest_namespace) (max_over_time(argocd_app_info{operation="sync",name="root"}[2m])) == 1
+          for: 60m
+          labels: { severity: warning, component: argocd }
+          annotations:
+            summary: The root Application has had a sync Running for 60m
+        # An operation that did complete as Failed or Error. The counter first appears at 1 on an app's first failure, and increase()
+        # reads that as zero, so a new series also has to count.
+        - alert: ArgoSyncFailed
+          expr: |
+            increase(argocd_app_sync_total{phase=~"Error|Failed"}[15m]) > 0
+              or
+            (argocd_app_sync_total{phase=~"Error|Failed"} unless argocd_app_sync_total{phase=~"Error|Failed"} offset 15m)
+          labels: { severity: critical, component: argocd }
+          annotations:
+            summary: Application {{ $labels.name }} had a {{ $labels.phase }} sync in the last 15m

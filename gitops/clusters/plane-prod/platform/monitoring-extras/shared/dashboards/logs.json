@@ -1,0 +1,261 @@
+{
+ "uid": "wayline-logs",
+ "title": "Logs",
+ "tags": [
+  "wayline",
+  "plane"
+ ],
+ "schemaVersion": 41,
+ "version": 1,
+ "editable": false,
+ "graphTooltip": 1,
+ "timezone": "utc",
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "namespace",
+    "label": "Namespace",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki"
+    },
+    "refresh": 1,
+    "query": "label_values(namespace)",
+    "definition": "label_values(namespace)",
+    "current": {
+     "text": "plane-prod",
+     "value": "plane-prod"
+    },
+    "includeAll": false,
+    "multi": false,
+    "sort": 1
+   },
+   {
+    "name": "container",
+    "label": "Container",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki"
+    },
+    "refresh": 2,
+    "query": "label_values({namespace=\"$namespace\"}, container)",
+    "definition": "label_values({namespace=\"$namespace\"}, container)",
+    "current": {
+     "text": "All",
+     "value": "$__all"
+    },
+    "includeAll": true,
+    "allValue": ".+",
+    "multi": false,
+    "sort": 1
+   },
+   {
+    "name": "search",
+    "label": "Search",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": ""
+    },
+    "hide": 0
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "timeseries",
+   "title": "Log lines by container",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0,
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "drawStyle": "bars",
+      "lineWidth": 2,
+      "fillOpacity": 60,
+      "showPoints": "never",
+      "spanNulls": false,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    },
+    "legend": {
+     "showLegend": true,
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ]
+    }
+   },
+   "targets": [
+    {
+     "expr": "sum by (container) (count_over_time({namespace=\"$namespace\", container=~\"$container\"} |~ \"(?i)$search\" [$__auto]))",
+     "queryType": "range",
+     "legendFormat": "{{container}}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "type": "logs",
+   "title": "Log lines",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 6,
+    "w": 24,
+    "h": 14
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "showLabels": false,
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false
+   },
+   "targets": [
+    {
+     "expr": "{namespace=\"$namespace\", container=~\"$container\"} |~ \"(?i)$search\"",
+     "queryType": "range",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "type": "logs",
+   "title": "API requests with a 5xx",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 20,
+    "w": 12,
+    "h": 10
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "showLabels": false,
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false
+   },
+   "targets": [
+    {
+     "expr": "{namespace=\"$namespace\", container=\"plane-api\"} | json | status_code >= 500",
+     "queryType": "range",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "description": "plane.api.request is a JSON logger with path, method, status_code and duration_ms."
+  },
+  {
+   "id": 4,
+   "type": "logs",
+   "title": "Alert deliveries to the sink",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 20,
+    "w": 12,
+    "h": 10
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "showLabels": false,
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false
+   },
+   "targets": [
+    {
+     "expr": "{namespace=\"monitoring\", container=\"sink\"} | json | line_format \"{{.payload_status}} {{.payload_commonLabels_alertname}} {{.payload_commonLabels_namespace}}\"",
+     "queryType": "range",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "description": "One line per Alertmanager webhook call. Watchdog every 5 minutes means the whole alert path works."
+  }
+ ]
+}

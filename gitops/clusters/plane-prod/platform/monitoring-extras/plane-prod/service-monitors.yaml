@@ -1,0 +1,66 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: postgres-exporter
+spec:
+  selector:
+    matchLabels: { app.kubernetes.io/name: postgres-exporter }
+  endpoints:
+    - { port: metrics, interval: 30s }
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: redis-exporter
+spec:
+  selector:
+    matchLabels: { app.kubernetes.io/name: redis-exporter }
+  endpoints:
+    - { port: metrics, interval: 30s }
+---
+# Two paths on one port would give both scrape pools identical target labels, so their up series
+# would collide. The metrics_path label keeps them apart; the kubelet ServiceMonitor does the same.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: plane-rabbitmq
+spec:
+  selector:
+    matchLabels: { app.kubernetes.io/name: plane-rabbitmq-metrics }
+  endpoints:
+    - port: prometheus
+      path: /metrics
+      interval: 30s
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }
+    # /metrics is aggregated with no queue label, and /metrics/detailed returns nothing unless
+    # families are named. These two give the per-queue depth and consumer count.
+    - port: prometheus
+      path: /metrics/detailed
+      interval: 30s
+      params:
+        family: [queue_coarse_metrics, queue_consumer_count]
+        vhost: ["/"]
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }
+---
+# Needs MINIO_PROMETHEUS_AUTH_TYPE=public on the Silo container; the default is jwt, which answers
+# 403 here. The ingress only routes /uploads to Silo, so /minio/* stays unreachable from outside.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: plane-minio
+spec:
+  selector:
+    matchLabels: { app.name: plane-prod-plane-minio }
+  endpoints:
+    - port: minio-api-9000
+      path: /minio/v2/metrics/cluster
+      interval: 60s
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }
+    - port: minio-api-9000
+      path: /minio/v2/metrics/bucket
+      interval: 60s
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }

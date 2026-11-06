@@ -1,0 +1,11 @@
+# The chart's plane-rabbitmq Service exposes only 5672 and 15672. The Prometheus plugin is on by
+# default in the management image and listens on 15692.
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-rabbitmq-metrics
+  labels: { app.kubernetes.io/name: plane-rabbitmq-metrics }
+spec:
+  selector: { app.name: plane-prod-plane-rabbitmq }
+  ports:
+    - { name: prometheus, port: 15692, targetPort: 15692 }
