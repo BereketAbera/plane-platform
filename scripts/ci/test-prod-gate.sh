@@ -5,10 +5,13 @@
 # only runs kustomize, because the fixture's overlay has no chart. It runs what is on disk, as the scripts' own commit in the
 # fixture. Nothing here can reach a cluster, a registry, GitHub or the real signing key: HOME belongs to the run.
 #
-#   scripts/ci/test-prod-gate.sh               every scenario, in seconds
+#   scripts/ci/test-prod-gate.sh               every scenario, about three minutes on a busy laptop
 #   scripts/ci/test-prod-gate.sh rollback      only the scenarios whose name contains "rollback"
-#   scripts/ci/test-prod-gate.sh --mutations   take each check away in turn, and require its scenario to go red. Minutes
+#   scripts/ci/test-prod-gate.sh --mutations   take each check away in turn, and require its scenario to go red. About ten
+#                                              minutes, so make ci does not run it
 #   scripts/ci/test-prod-gate.sh --mutations arm64   only the mutations whose scenario's name contains "arm64"
+#
+# GATE_SCRIPTS_FROM and GATE_EXACT are how --mutations asks this for one scenario over a changed copy. They reach only this file.
 #
 # It proves the scripts do what they say given these answers, and nothing about GHCR, GitHub or a real cluster.
 # shellcheck source=../lib/common.sh
@@ -41,7 +44,8 @@ RECORD=scripts/record-dev-evidence.sh
 list_mutations() {
   mutation check-refuses-tampered-json "$CHECK" 'refuse "the signature on' 'true "the signature on'
   mutation check-refuses-wrong-signer "$CHECK" 'refuse "the signature on' 'true "the signature on'
-  mutation check-refuses-wrong-namespace "$CHECK" '-I "$SIGNER" -n "$SIGNER" -s' '-I "$SIGNER" -n other -s'
+  mutation check-refuses-wrong-namespace "$CHECK" '-I "$SIGNER" -n "$SIGNER" -s' '-I "$SIGNER" -n other-purpose -s'
+  mutation check-refuses-another-principal "$CHECK" '-I "$SIGNER" -n "$SIGNER" -s' '-I someone-else -n "$SIGNER" -s'
   mutation check-refuses-signers-only-in-the-tree "$CHECK" 'at_commit "$SIGNERS" >"$WORK/signers"' 'cat "$SIGNERS" >"$WORK/signers"'
   mutation check-reads-evidence-from-the-commit "$CHECK" 'at_commit "$EVIDENCE" >"$WORK/evidence.json"' 'cat "$EVIDENCE" >"$WORK/evidence.json"'
   mutation check-reads-the-render-from-the-commit "$CHECK" 'at_commit "$MANIFESTS" >"$WORK/manifests.yaml"' 'cat "$MANIFESTS" >"$WORK/manifests.yaml"'
@@ -75,7 +79,7 @@ list_mutations() {
   mutation check-refuses-arm64-entry "$CHECK" '(if $i.platform != "linux/amd64" then' '(if false then'
   mutation check-refuses-index-entry "$CHECK" '(if ($i.media_type | plain) | not then' '(if false then'
   mutation check-refuses-arm64-production-child "$CHECK" '(if $i.production_runs.platform != "linux/amd64" or' '(if'
-  mutation check-refuses-an-index-with-no-dev-child "$CHECK" '(if $i.dev_ran.platform != "linux/arm64" or' '(if'
+  mutation check-refuses-an-index-with-no-dev-child "$CHECK" '(if $i.dev_ran.platform != "linux/arm64" or (($i.dev_ran.digest | digest) | not) then' '(if false then'
   mutation check-refuses-wayline-recorded-as-upstream "$CHECK" '(if ($i.production_repository | startswith($ghcr)) then' '(if false then'
   mutation check-refuses-another-execution-claim "$CHECK" '(if $e.executed_under != "rosetta-on-arm64" then' '(if false then'
   mutation check-refuses-another-environment "$CHECK" '(if $e.environment != "plane-dev" then' '(if false then'
@@ -91,14 +95,54 @@ list_mutations() {
   mutation check-status-3-from-a-tool-is-a-refusal "$CHECK" 'status=1
   fi' 'true
   fi'
+  mutation check-passes "$CHECK" 'printf '"'"'set_hash=%s\n'"'"' "$SET_HASH"' ':'
+  mutation check-not-promoted "$CHECK" 'not_yet_promoted "no Application reads' 'refuse "no Application reads'
+  mutation check-not-promoted-all-null "$CHECK" 'not_yet_promoted "no Application reads' 'refuse "no Application reads'
+  mutation check-nothing-there-yet "$CHECK" 'not_yet_promoted "this commit has no' 'refuse "this commit has no'
+  mutation check-ignores-signers-in-the-tree "$CHECK" 'at_commit "$SIGNERS" >"$WORK/signers"' 'cat "$SIGNERS" >"$WORK/signers"'
+  mutation check-refuses-a-check-not-in-the-commit "$CHECK" 'refuse "$SELF is not in commit' 'true "$SELF is not in commit'
+  mutation check-refuses-a-hidden-image-field "$CHECK" '.. | objects | select(has("image"))' '.spec?.template?.spec?.containers[]?'
+  mutation check-refuses-a-jsonnet-application "$CHECK" 'refuse "$file: Argo CD would read it' 'continue; true "$file: Argo CD would read it'
+  mutation check-refuses-a-published-branding-skip "$CHECK" '(if (step("branding-overlay").status) != "PASS" then' '(if false then'
+  mutation check-refuses-a-published-smoke-of-another-mode "$CHECK" '(if $published[0].tool != "tests/e2e/smoke.py" or $published[0].environment != "dev" or $published[0].mode != "full" then' '(if false then'
+  mutation check-refuses-a-revision-with-a-bad-shape "$CHECK" '(if ($i.revision | hex40) | not then' '(if false then'
+  mutation check-refuses-a-smaller-set-under-its-own-name "$CHECK" 'refuse "$EVIDENCE is not in this commit' 'exit 0; true "$EVIDENCE is not in this commit'
+  mutation check-refuses-a-smoke-path-outside-runs "$CHECK" 'refuse "$EVIDENCE names no published smoke' 'true "$EVIDENCE names no published smoke'
+  mutation check-refuses-a-time-it-cannot-read "$CHECK" '($started == null or (if' '(false or (if'
+  mutation check-refuses-an-application-it-cannot-read "$CHECK" 'refuse "$file is not YAML' 'continue; true "$file is not YAML'
+  mutation check-refuses-an-image-in-a-job "$CHECK" 'refuse "$EVIDENCE is not in this commit' 'exit 0; true "$EVIDENCE is not in this commit'
+  mutation check-refuses-an-unknown-kind "$CHECK" '"is of kind \($i.kind), which this does not know"' 'empty'
+  mutation check-refuses-another-file-named-plane-prod "$CHECK" '.metadata.name == "plane-prod" or ' ''
+  mutation check-refuses-another-repository "$CHECK" 'refuse "$EVIDENCE is not in this commit' 'exit 0; true "$EVIDENCE is not in this commit'
+  mutation check-refuses-another-schema "$CHECK" '(if $e.schema != 1 then' '(if false then'
+  mutation check-refuses-application-of-another-namespace "$CHECK" '(if $application.spec.destination.namespace != "plane-prod" then' '(if false then'
+  mutation check-refuses-evidence-it-cannot-read "$CHECK" 'printf '"'"'refused: this check stopped' 'true '"'"'refused: this check stopped'
+  mutation check-refuses-missing-signature "$CHECK" 'refuse "$EVIDENCE has no signature' 'true "$EVIDENCE has no signature'
+  mutation check-refuses-no-images "$CHECK" 'refuse "$MANIFESTS names no image' 'exit 0; true "$MANIFESTS names no image'
+  mutation check-refuses-no-signers-file "$CHECK" 'refuse "$SIGNERS is not in this commit' 'true "$SIGNERS is not in this commit'
+  mutation check-refuses-null-digest-in-one-image "$CHECK" 'refuse "$PLANE_APPLICATION exists and $MANIFESTS still names' 'true "$PLANE_APPLICATION exists and $MANIFESTS still names'
+  mutation check-refuses-real-digests-with-no-evidence-and-no-application "$CHECK" 'if [[ -n "$null_references" ]]; then' 'if [[ "$HAS_PLANE_APPLICATION" == no ]]; then not_yet_promoted "no Application"; fi; if [[ -n "$null_references" ]]; then'
   mutation promote-refuses-what-the-check-refuses "$PROMOTE" 'die "check-prod-evidence.sh answered' 'true "check-prod-evidence.sh answered'
   mutation promote-refuses-a-bad-hash "$PROMOTE" 'die "a set hash is 64' 'true "a set hash is 64'
   mutation promote-refuses-a-dirty-overlay "$PROMOTE" 'die "uncommitted changes under' 'true "uncommitted changes under'
   mutation promote-first-promotion "$PROMOTE" 'cp "$TEMPLATE" "$APPLICATION"' ':'
+  mutation promote-second-promotion "$PROMOTE" 'if [[ ! -e "$APPLICATION" ]]; then' 'if true; then'
+  mutation promote-already-holds-the-set "$PROMOTE" 'if ! grep -qxF "$name"$'"'"'\t'"'"'"$repository"$'"'"'\t'"'"'"$tag"$'"'"'\t'"'"'"$digest" "$WORK/overlay.tsv"; then' 'if true; then'
+  mutation promote-first-refusal-leaves-no-application "$PROMOTE" 'restore_from_head "${PATHS[@]}" ||' 'true ||'
+  mutation promote-refuses-a-digest-field-it-cannot-use "$PROMOTE" 'die "$EVIDENCE names an image this cannot use' 'true "$EVIDENCE names an image this cannot use'
+  mutation promote-refuses-an-unknown-set "$PROMOTE" 'die "HEAD has no $EVIDENCE' 'true "HEAD has no $EVIDENCE'
+  mutation promote-refuses-uncommitted-evidence "$PROMOTE" 'die "HEAD has no $EVIDENCE' 'true "HEAD has no $EVIDENCE'
   mutation publish-refuses-going-backwards "$PUBLISH" 'die "$BRANCH was released from' 'true "$BRANCH was released from'
-  mutation publish-no-op-when-the-trees-match "$PUBLISH" '|| unchanged=no' '|| true'
-  mutation publish-no-op-when-the-trees-match "$PUBLISH" 'summary "$BRANCH at $TIP already holds' 'unchanged=no; true "$BRANCH at $TIP already holds'
+  mutation publish-later-release-has-the-tip-as-parent "$PUBLISH" '|| unchanged=no' '|| true'
+  mutation publish-no-op-when-the-trees-match "$PUBLISH" 'if [[ "$unchanged" == yes ]]; then' 'if false; then'
+  mutation publish-rerun-of-the-same-commit-changes-nothing "$PUBLISH" 'if [[ "$unchanged" == yes ]]; then' 'if false; then'
   mutation publish-refuses-failed-evidence "$PUBLISH" 'die "check-prod-evidence.sh refused' 'true "check-prod-evidence.sh refused'
+  mutation publish-refuses-a-digest-with-no-evidence-on-the-first-release "$PUBLISH" 'die "check-prod-evidence.sh refused' 'true "check-prod-evidence.sh refused'
+  mutation publish-keeps-tokens-off-the-command-line "$PUBLISH" 'curl -fsS --retry 3 -K - "https://ghcr.io/token' 'curl -fsS --retry 3 -K - -u "x:$GITHUB_TOKEN" "https://ghcr.io/token'
+  mutation publish-needs-a-run "$PUBLISH" 'die "this is the release-plane-prod job' 'true "this is the release-plane-prod job'
+  mutation publish-needs-a-token-to-read-ghcr "$PUBLISH" 'die "reading GHCR takes GITHUB_TOKEN' 'true "reading GHCR takes GITHUB_TOKEN'
+  mutation publish-no-cluster-tree "$PUBLISH" 'if ! in_commit "$CLUSTER_TREE"; then' 'if false; then'
+  mutation publish-writes-the-job-summary "$PUBLISH" 'printf '"'"'%s\n'"'"' "$1" >>"$GITHUB_STEP_SUMMARY"' ':'
   mutation publish-refuses-off-main "$PUBLISH" 'die "$COMMIT is not on origin' 'true "$COMMIT is not on origin'
   mutation publish-refuses-what-ghcr-lacks "$PUBLISH" 'die "GHCR does not serve $repository@$digest"' 'return 0'
   mutation publish-refuses-an-index-on-ghcr "$PUBLISH" 'die "$repository@$digest is not a plain image manifest' 'true "$repository@$digest is not a plain image manifest'
@@ -110,12 +154,19 @@ list_mutations() {
   mutation publish-refuses-a-tip-with-no-release "$PUBLISH" 'die "$BRANCH at $TIP has no RELEASE.json' 'true "$BRANCH at $TIP has no RELEASE.json'
   mutation publish-refuses-an-unreadable-origin "$PUBLISH" 'die "could not read origin' 'true "could not read origin'
   mutation publish-holds-only-the-hosted-trees "$PUBLISH" 'git update-index --add --cacheinfo "100644,' 'git read-tree --prefix=.github/ "$COMMIT:.github"; git update-index --add --cacheinfo "100644,'
-  mutation publish-holds-only-the-hosted-trees "$PUBLISH" 'die "the release would hold more than' 'true "the release would hold more than'
   mutation publish-later-release-has-the-tip-as-parent "$PUBLISH" 'PARENTS=(-p "$TIP")' 'PARENTS=()'
   mutation publish-refuses-a-branch-that-moved "$PUBLISH" '"$RELEASE:refs/heads/$BRANCH"' '"+$RELEASE:refs/heads/$BRANCH"'
   mutation publish-platform-only "$PUBLISH" "export GIT_AUTHOR_NAME='github-actions[bot]' GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'" ':'
   mutation promote-first-promotion "$PROMOTE" 'export GIT_AUTHOR_NAME=promote-prod GIT_AUTHOR_EMAIL=promote-prod@invalid GIT_COMMITTER_NAME=promote-prod GIT_COMMITTER_EMAIL=promote-prod@invalid' ':'
   mutation record-newest-smoke-failed "$RECORD" '(if .result != "PASS" then' '(if false then'
+  mutation record-passes-and-the-check-accepts-it "$RECORD" 'executed_under: "rosetta-on-arm64", ' ''
+  mutation record-no-key "$RECORD" 'die "$KEY does not exist' 'true "$KEY does not exist'
+  mutation record-no-revision-label "$RECORD" 'die "$reference has no revision label' 'true "$reference has no revision label'
+  mutation record-no-smoke-at-all "$RECORD" 'die "no dev smoke' 'true "no dev smoke'
+  mutation record-only-the-replaced-worker-runs-backend "$RECORD" '(if ($mine | length) > 0 and ($checked | all(.replaced_by_smoke)) then' '(if false then'
+  mutation record-overlay-has-a-null-digest "$RECORD" 'die "$DEV_OVERLAY at $ARGO_REVISION holds an image with no real digest' 'true "$DEV_OVERLAY at $ARGO_REVISION holds an image with no real digest'
+  mutation record-refuses-a-smoke-it-cannot-read "$RECORD" 'die "$file is not JSON' 'continue; true "$file is not JSON'
+  mutation record-worker-started-after-the-smoke "$RECORD" ' and .started_at < $ended' ''
   mutation record-newest-smoke-by-what-it-says "$RECORD" 'if [[ "$started" > "$SMOKE_STARTED" ]]; then' 'if true; then'
   mutation record-branding-overlay-skipped "$RECORD" '(if step("branding-overlay").status != "PASS" then' '(if false then'
   mutation record-a-branded-image-skipped "$RECORD" 'if step("branding-" + $image).status != "PASS" then' 'if false then'
@@ -448,6 +499,8 @@ build_template() {
   git init -q --initial-branch=main --template= "$REPO"
   # As on a runner, so a script that commits has to name itself. commit_all and as_someone name theirs.
   git -C "$REPO" config user.useConfigOnly true
+  # No gc of its own, in the background, under a repository each scenario deletes.
+  git -C "$REPO" config gc.auto 0
   git -C "$REPO" remote add origin "$ORIGIN"
   printf '/.tools/\n/.local/\n/.build/\n' >"$REPO/.gitignore"
 
@@ -683,6 +736,12 @@ check_refuses_wrong_signer() {
 check_refuses_wrong_namespace() {
   sign_file "$(evidence_file)" "$HOME/.ssh/wayline_evidence_ed25519" other-purpose
   commit_all 'signed for another purpose'
+  refused 'does not verify'
+}
+check_refuses_another_principal() {
+  # The right key, trusted for something else.
+  printf 'someone-else %s\n' "$(cut -d' ' -f1-2 "$HOME/.ssh/wayline_evidence_ed25519.pub")" >"$REPO/.github/evidence-signers"
+  commit_all 'the key, under another principal'
   refused 'does not verify'
 }
 check_refuses_missing_signature() {
@@ -1121,6 +1180,15 @@ promote_rollback_to_an_older_set() {
   expect "web goes back to set A" equal "$(overlay_digest prod "$GHCR/web")" "$(digest_of A web)"
   commit_all 'the pull request merges'
   passes "$HASH_A"
+  # The whole way, with the branch already at the newer set.
+  at_commit "$PROMOTED_B"
+  publish_ok
+  expect "the branch starts at set B" equal "$(tip_web_digest)" "$(digest_of B web)"
+  git -C "$REPO" reset -q --hard ORIG_HEAD
+  at_commit "$(head_commit)"
+  publish_ok 78
+  expect "the branch goes back to set A" equal "$(tip_web_digest)" "$(digest_of A web)"
+  expect "and says so" equal "$(tip_release .set_hash)" "$HASH_A"
 }
 promote_refuses_an_unknown_set() {
   promote "$(printf 'f%.0s' {1..64})"
@@ -1474,6 +1542,9 @@ no_evidence_written() { [[ ! -d "$REPO/docs/evidence/promotions" || -z "$(find "
 pod_edit() { jq_edit "$STUB/pods.json" "$1"; }
 
 record_passes_and_the_check_accepts_it() {
+  # The platform goes first, as it does for real.
+  publish_ok 70
+  expect "the first release names no set" equal "$(tip_release .set_hash)" null
   ready_to_record A "$DEV_A"
   record
   expect "it exits 0, and it exited $STATUS" equal "$STATUS" 0
@@ -1545,7 +1616,7 @@ record_smoke_in_verify_mode() {
 record_smoke_not_published() {
   ready_to_record A "$DEV_A"
   rm -f "$(published_smoke)"
-  record_refused 'make publish-evidence'
+  record_refused 'has to name a file Git keeps'
 }
 record_published_copy_differs() {
   ready_to_record A "$DEV_A"
@@ -1780,8 +1851,8 @@ real_render_runs_only_what_the_overlay_names() {
   named="$(yq -r '.images[] | (.newName // .name) + "@" + .digest' "$ROOT/helm/plane/overlays/prod/kustomization.yaml" | LC_ALL=C sort -u)"
   expect "the render's images are the overlay's. Render: $rendered. Overlay: $named" equal "$rendered" "$named"
 }
-real_overlays_match_on_their_upstream_images() {
-  # Dev's digests are the ones with evidence. Each name in one overlay has to be in the other, or the sets can never meet.
+real_overlays_name_the_same_images() {
+  # Dev's digests are the ones with evidence, so a chart image only one of them names could never be in a set both hold.
   local dev prod
   dev="$(yq -r '.images[].name' "$ROOT/helm/plane/overlays/dev/kustomization.yaml" | LC_ALL=C sort)"
   prod="$(yq -r '.images[].name' "$ROOT/helm/plane/overlays/prod/kustomization.yaml" | LC_ALL=C sort)"
@@ -1842,6 +1913,7 @@ scenario check-older-evidenced-set-passes check_older_evidenced_set_passes "$PRO
 scenario check-refuses-tampered-json check_refuses_tampered_json "$PROMOTED_A"
 scenario check-refuses-wrong-signer check_refuses_wrong_signer "$PROMOTED_A"
 scenario check-refuses-wrong-namespace check_refuses_wrong_namespace "$PROMOTED_A"
+scenario check-refuses-another-principal check_refuses_another_principal "$PROMOTED_A"
 scenario check-refuses-missing-signature check_refuses_missing_signature "$PROMOTED_A"
 scenario check-refuses-signers-only-in-the-tree check_refuses_signers_only_in_the_tree "$PROMOTED_A"
 scenario check-ignores-signers-in-the-tree check_ignores_signers_in_the_tree "$PROMOTED_A"
@@ -1990,7 +2062,7 @@ scenario record-key-the-signers-do-not-accept record_key_the_signers_do_not_acce
 
 scenario real-application-is-what-the-check-wants real_application_is_what_the_check_wants "$PROMOTED_A"
 scenario real-render-runs-only-what-the-overlay-names real_render_runs_only_what_the_overlay_names "$SOURCE_COMMIT"
-scenario real-overlays-match-on-their-upstream-images real_overlays_match_on_their_upstream_images "$SOURCE_COMMIT"
+scenario real-overlays-name-the-same-images real_overlays_name_the_same_images "$SOURCE_COMMIT"
 scenario real-signers-accept-a-signature-from-that-key real_signers_accept_a_signature_from_that_key "$SOURCE_COMMIT"
 scenario workflow-release-job workflow_release_job "$SOURCE_COMMIT"
 scenario workflow-promote-job workflow_promote_job "$SOURCE_COMMIT"
