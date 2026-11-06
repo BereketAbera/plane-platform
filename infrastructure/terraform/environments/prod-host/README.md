@@ -8,7 +8,7 @@ Two things outside the cluster, in a root of their own, so that a cluster plan n
   one record id and never lists the zone, so nothing else in `bereket.dev` can change.
 
 Credentials come from the environment, as [`providers.tf`](providers.tf) lists, and never from a file in Git. State is at
-`.local/hosted/plane-prod/terraform-host/terraform.tfstate`.
+`.local/hosted/plane-prod/terraform/host/terraform.tfstate`.
 
 ```bash
 TF=infrastructure/terraform/environments/prod-host

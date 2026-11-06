@@ -13,7 +13,7 @@ warn against creating a cluster and its Kubernetes resources in one module.
 | `modules/argocd` | Used | Argo CD release; second release with the AppProjects and the root Application |
 | `environments/local` | Used | Root module for the kind cluster. State at `.local/terraform/local/terraform.tfstate` |
 | `environments/prod` | Written, not yet run against a cluster | Hosted production's cluster bootstrap. State at `.local/hosted/plane-prod/terraform/terraform.tfstate`. See [its README](environments/prod/README.md) |
-| `environments/prod-host` | Written, not yet planned | Read-only `data "contabo_instance"` and the one imported DNS record. State at `.local/hosted/plane-prod/terraform-host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
+| `environments/prod-host` | Written, not yet planned | Read-only `data "contabo_instance"` and the one imported DNS record. State at `.local/hosted/plane-prod/terraform/host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
 | `environments/dev` | **Untested template** | Interface documents from an earlier plan. Nothing to run |
 
 ## Workflow
