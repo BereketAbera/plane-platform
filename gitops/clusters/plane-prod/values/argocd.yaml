@@ -1,0 +1,267 @@
+# argo-cd chart 10.11.7. Applied only by infrastructure/terraform/modules/argocd, from environments/prod.
+# Lean by design: one replica of each component, no Dex, notifications or ApplicationSet.
+# The admin password is not here. argocd-server generates argocd-initial-admin-secret at first start.
+# The Git credential is not here either: scripts/hosted/bootstrap.sh writes Secret argocd-repo-plane-platform, because Argo CD
+# deploys Infisical and so cannot read this from it. The chart's default known hosts already hold [ssh.github.com]:443.
+
+global:
+  # No route: reached through the SSH tunnel with kubectl port-forward.
+  domain: localhost
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: v3.5.7@sha256:16df57da6f223808d204cd94c67c929b931fa01670b91b0b3a2298c4647de0db
+  # The chart defaults this on. Every NetworkPolicy belongs to the platform project, so the
+  # argocd rules live with the rest in gitops/clusters/plane-prod/platform/network-policies.
+  networkPolicy:
+    create: false
+
+configs:
+  cm:
+    # The chart would default to https://, and the port-forward carries plain HTTP. scripts/hosted/ui.sh uses this port first.
+    url: http://localhost:18080
+
+    # Argo CD removed this check in 1.8, so without it a child reports no health and the root's
+    # waves pass straight through. Base text from docs/operator-manual/health.md at v3.5.7.
+    # A non-hook task waits on anything except Healthy and Degraded (sync_context.go), so Missing
+    # and Progressing hold the wave, while Degraded fails the root sync and the root's retry reruns it.
+    #
+    # The base text alone does not gate. controller/health.go skips hooks and resources not created
+    # yet, so a child reads Healthy between its own waves and through its migrator. Healthy also needs:
+    # - No .operation. It clears only when an operation completes (setOperationState), so this covers
+    #   requested, running, retrying and terminating. With retry limit -1 a failing child never ends.
+    # - Synced. status.health is only as new as the last refresh. A one-wave child's sync succeeds on
+    #   apply, so at that moment it can still show a Healthy computed with objects absent, and that
+    #   same refresh recorded OutOfSync. The post-sync refresh then corrects both.
+    # Cost: a child that stays OutOfSync holds every later wave.
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil and obj.status.health.status ~= nil then
+          hs.status = obj.status.health.status
+          if obj.status.health.message ~= nil then
+            hs.message = obj.status.health.message
+          end
+        end
+        if hs.status == "Healthy" then
+          if obj.operation ~= nil then
+            hs.status = "Progressing"
+            hs.message = "Holding the wave: child sync has not finished"
+          elseif obj.status.sync == nil or obj.status.sync.status ~= "Synced" then
+            hs.status = "Progressing"
+            hs.message = "Holding the wave: child is Healthy but not Synced"
+          end
+        end
+      end
+      return hs
+
+    # Argo CD's built-in check (resource_customizations/monitoring.coreos.com/Prometheus/health.lua at v3.5.7)
+    # reads NoPodReady as Degraded, and that is every Prometheus start: while its image pulls through the
+    # mirror and through each restart's WAL replay. On the first boot measured, a Degraded child failed the
+    # root sync at once, and the root's retry backoff then outlasted the image pull. So not-ready pods read
+    # as Progressing, and the wave simply waits. Reconciled False stays Degraded: the operator could not
+    # build the pods, so waiting will not help.
+    # Cost: a Prometheus that can never start reads Progressing rather than Degraded. Before this, root retried
+    # and re-read the newest commit each time. Now it waits with no retry, so a fix to
+    # applications/kube-prometheus-stack.yaml needs root's operation terminated by hand, as
+    # infrastructure/terraform/README.md says under "After a stuck first sync". No alert says so either: with
+    # Prometheus down, nothing evaluates ArgoRootSyncStuck, and the only sign is Watchdog no longer reaching the sink.
+    resource.customizations.health.monitoring.coreos.com_Prometheus: |
+      local hs = {status = "Progressing", message = "Waiting for initialization"}
+      if obj.status == nil or obj.status.conditions == nil then
+        return hs
+      end
+      local available = nil
+      local reconcile_failure = nil
+      for _, c in ipairs(obj.status.conditions) do
+        if c.type == "Available" then
+          available = c
+        elseif c.type == "Reconciled" and c.status == "False" then
+          reconcile_failure = c
+        end
+      end
+      if available == nil then
+        return hs
+      end
+      if available.status == "True" then
+        hs.status = "Healthy"
+        hs.message = "All instances are available"
+      elseif reconcile_failure ~= nil then
+        hs.status = "Degraded"
+        hs.message = reconcile_failure.message or reconcile_failure.reason
+      elseif available.reason == "NoPodReady" or available.reason == "SomePodsNotReady" then
+        hs.message = available.reason .. ": " .. (available.message or "")
+      else
+        hs.status = "Degraded"
+        hs.message = available.message or available.reason
+      end
+      return hs
+
+    # Field semantics from infisical-k8-operator/v0.11.16. The operator's own comment says to trust
+    # status.error only once observedGeneration matches, so a stale false must not read as Healthy.
+    resource.customizations.health.secrets.infisical.com_InfisicalStaticSecret: |
+      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+      if obj.status ~= nil and obj.status.observedGeneration ~= nil
+         and obj.status.observedGeneration == obj.metadata.generation then
+        if obj.status.error == true then
+          hs.status = "Degraded"
+          hs.message = "Reconcile failed, see the LastReconcileStatus condition"
+        else
+          hs.status = "Healthy"
+          hs.message = "Secrets synced"
+        end
+      end
+      return hs
+
+    # These two carry no status.observedGeneration and no status.error, only this condition.
+    resource.customizations.health.secrets.infisical.com_InfisicalAuth: |
+      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+            hs.message = c.message
+            if c.status == "True" then
+              hs.status = "Healthy"
+            else
+              hs.status = "Degraded"
+            end
+          end
+        end
+      end
+      return hs
+
+    resource.customizations.health.secrets.infisical.com_InfisicalConnection: |
+      hs = {status = "Progressing", message = "Waiting for the operator to reconcile this generation"}
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "secrets.infisical.com/IsReady" and c.observedGeneration == obj.metadata.generation then
+            hs.message = c.message
+            if c.status == "True" then
+              hs.status = "Healthy"
+            else
+              hs.status = "Degraded"
+            end
+          end
+        end
+      end
+      return hs
+
+  params:
+    # Only kubectl port-forward reaches the server, through the SSH tunnel. The CLI needs --grpc-web --plaintext.
+    server.insecure: true
+    # Rendering kube-prometheus-stack is the memory spike, so cap concurrent renders under the 512Mi limit.
+    reposerver.parallelism.limit: 2
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+# The chart has no enable switch for this one. Zero replicas runs no pod and pulls nothing, so this limit costs
+# nothing. It was never measured: it exists so the Deployment still names one, as policy/charts.rego asks.
+applicationSet:
+  replicas: 0
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+
+# Memory below totals 360Mi requests and 1792Mi limits for the four running pods. Peaks measured on the
+# first real run, with monitoring and Infisical synced and no Plane workloads yet: controller 517Mi,
+# repo-server 247Mi, server 83Mi, redis 25Mi.
+# No CPU limits anywhere: throttling a controller only slows a sync.
+controller:
+  replicas: 1
+  # A Service only. The ServiceMonitor that selects it lives in monitoring-extras, so the chart's own
+  # serviceMonitor stays off.
+  metrics:
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    # 768Mi left 37Mi of room: cgroup memory.peak reached 731Mi with Plane running (2026-11-04), and an OOM kill
+    # here stalls every sync. 1024Mi is that peak plus 40%. It only moves the ceiling: no GOMEMLIMIT is set, so
+    # the heap sizes itself the same way, and the namespace has no ResourceQuota to fit.
+    limits:
+      memory: 1024Mi
+  # Upstream ships this off because restarting an overloaded controller makes things worse
+  # (argo-cd#9557). On because a wedged controller here would otherwise hang silently, with
+  # thresholds slack enough (5 min) that first-sync load alone should not trip it.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 10
+
+repoServer:
+  replicas: 1
+  # One replica, and a surge would need room in the namespace's quota for nothing. A render waits out the restart.
+  deploymentStrategy:
+    type: Recreate
+  # Upstream's own manifest at v3.5.7 sets false. The chart defaults to true.
+  automountServiceAccountToken: false
+  serviceAccount:
+    automountServiceAccountToken: false
+  # A Service only, as for the controller.
+  metrics:
+    enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    # Peak 247Mi (cgroup memory.peak) with all 8 chart Applications hard-refreshed at once and
+    # reposerver.parallelism.limit at 2, so this has room.
+    limits:
+      memory: 512Mi
+
+server:
+  replicas: 1
+  # A Service only, as for the controller.
+  metrics:
+    enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 48Mi
+    limits:
+      memory: 192Mi
+
+redis:
+  image:
+    # The chart defaults to ecr-public.aws.com. Same index digest on docker.io, which the node
+    # pulls through the mirror in its registries.yaml.
+    repository: docker.io/library/redis
+    tag: 8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
+  automountServiceAccountToken: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 24Mi
+    limits:
+      memory: 64Mi
+  # The chart ships both off.
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+
+# Helm hook that generates the Redis password into Secret argocd-redis at install time.
+redisSecretInit:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 192Mi
