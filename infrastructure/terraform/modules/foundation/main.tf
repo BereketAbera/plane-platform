@@ -1,18 +1,5 @@
 locals {
-  # Contract section 2. Argo CD runs with CreateNamespace=false, so this is the only creator.
-  namespaces = {
-    argocd     = { enforce = "baseline", environment = null }
-    traefik    = { enforce = "baseline", environment = null }
-    monitoring = { enforce = "baseline", environment = null }
-    # node-exporter only: hostNetwork and hostPID cannot pass baseline.
-    monitoring-agents = { enforce = "privileged", environment = null }
-    infisical         = { enforce = "baseline", environment = null }
-    plane-dev         = { enforce = "baseline", environment = "dev" }
-    # Tighten only after a per-workload non-root test passes (contract section 2).
-    plane-prod-sim = { enforce = "baseline", environment = "prod-sim" }
-  }
-
-  plane_namespaces = { for name, ns in local.namespaces : name => ns if ns.environment != null }
+  plane_namespaces = { for name, ns in var.namespaces : name => ns if ns.environment != null }
 
   # Contract section 10, MiB per pod. Rendered manifests in gitops/environments carry the same numbers.
   plane_deployments = {
@@ -54,10 +41,30 @@ locals {
     sum([for w in values(local.plane_extras) : w.limit])
   )
   quota_pods = 2 * length(local.plane_deployments) + length(local.plane_statefulsets) + length(local.plane_extras)
+
+  # A cluster with no quotas of its own gets the computed budget on each Plane namespace.
+  quotas = var.quotas != null ? var.quotas : tomap({
+    for name in keys(local.plane_namespaces) : name => tomap({
+      "requests.memory" = "${local.quota_request_mib}Mi"
+      "limits.memory"   = "${local.quota_limit_mib}Mi"
+      pods              = tostring(local.quota_pods)
+      # The chart's StatefulSets, the backup PVC (contract section 13), one spare for restore drills.
+      persistentvolumeclaims = tostring(length(local.plane_statefulsets) + 2)
+    })
+  })
+
+  limit_ranges = var.limit_ranges != null ? var.limit_ranges : tomap({
+    for name in keys(local.plane_namespaces) : name => {
+      default         = tomap({ memory = "256Mi" })
+      default_request = tomap({ memory = "64Mi" })
+      # The largest budgeted container is 768Mi. Anything above 1Gi needs a contract change first.
+      max = tomap({ memory = "1Gi" })
+    }
+  })
 }
 
 resource "kubernetes_namespace_v1" "this" {
-  for_each = local.namespaces
+  for_each = var.namespaces
 
   metadata {
     name = each.key
@@ -73,46 +80,52 @@ resource "kubernetes_namespace_v1" "this" {
   }
 }
 
-# Memory and object counts only. The contract budgets no CPU, and a CPU quota would reject any
-# pod that omits a CPU request.
+# The computed budget is memory and object counts only. The contract budgets no CPU, and a CPU quota
+# would reject any pod that omits a CPU request. A cluster that passes its own quotas names its own
+# resources, and its limit_ranges must give a CPU request to any pod that lacks one.
 resource "kubernetes_resource_quota_v1" "plane" {
-  for_each = local.plane_namespaces
+  for_each = local.quotas
 
   metadata {
-    name      = "plane-budget"
+    name      = var.quotas != null ? "budget" : "plane-budget"
     namespace = kubernetes_namespace_v1.this[each.key].metadata[0].name
   }
 
   spec {
-    hard = {
-      "requests.memory" = "${local.quota_request_mib}Mi"
-      "limits.memory"   = "${local.quota_limit_mib}Mi"
-      pods              = local.quota_pods
-      # The chart's StatefulSets, the backup PVC (contract section 13), one spare for restore drills.
-      persistentvolumeclaims = length(local.plane_statefulsets) + 2
-    }
+    hard = each.value
   }
 }
 
 # A quota on limits.memory rejects a pod with no limit. These defaults make such a pod admissible
 # and visibly small, instead of failing a sync with a quota error.
 resource "kubernetes_limit_range_v1" "plane" {
-  for_each = local.plane_namespaces
+  for_each = local.limit_ranges
 
   metadata {
-    name      = "plane-defaults"
+    name      = var.limit_ranges != null ? "defaults" : "plane-defaults"
     namespace = kubernetes_namespace_v1.this[each.key].metadata[0].name
   }
 
   spec {
     limit {
       type            = "Container"
-      default         = { memory = "256Mi" }
-      default_request = { memory = "64Mi" }
-      # The largest budgeted container is 768Mi. Anything above 1Gi needs a contract change first.
-      max = { memory = "1Gi" }
+      default         = each.value.default
+      default_request = each.value.default_request
+      max             = each.value.max
     }
   }
+}
+
+resource "kubernetes_storage_class_v1" "this" {
+  for_each = var.storage_classes
+
+  metadata {
+    name = each.key
+  }
+
+  storage_provisioner = each.value.provisioner
+  reclaim_policy      = each.value.reclaim_policy
+  volume_binding_mode = each.value.volume_binding_mode
 }
 
 # kubeadm created this ConfigMap and is recorded as its field manager, so server-side apply
@@ -136,4 +149,20 @@ resource "kubernetes_config_map_v1_data" "coredns" {
 
   force         = true
   field_manager = "terraform-plane-platform"
+}
+
+# K3s's Corefile imports this ConfigMap's *.override keys, and K3s redeploys its own coredns ConfigMap, so the kubeadm template
+# above would not stay. K3s neither creates nor manages this one, so a plain resource owns it, and destroying it only removes
+# the rewrites. The volume is optional in K3s's Deployment, and the reload plugin should pick the keys up without a restart.
+resource "kubernetes_config_map_v1" "k3s_coredns_custom" {
+  count = length(var.k3s_coredns_rewrites) > 0 ? 1 : 0
+
+  metadata {
+    name      = "coredns-custom"
+    namespace = "kube-system"
+  }
+
+  data = {
+    "rewrites.override" = join("", [for host, target in var.k3s_coredns_rewrites : "rewrite name exact ${host} ${target}\n"])
+  }
 }
