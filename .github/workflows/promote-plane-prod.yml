@@ -1,0 +1,102 @@
+# Opens a pull request moving hosted production to a digest set dev has signed evidence for. It never builds, and it cannot
+# reach the cluster: nothing but ci.yml's release-plane-prod job moves what production reads, and only after this merges.
+#
+# A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan with a private
+# repository: no environment reviewers, no protected branches. See README.md.
+name: promote-plane-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      set_hash:
+        description: The set to promote, the name of a file in docs/evidence/promotions without .json. An older set is a rollback.
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: promote-plane-prod
+  cancel-in-progress: false
+
+jobs:
+  open-pull-request:
+    name: Open promotion pull request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the branch behind the pull request
+      pull-requests: write # open the pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The check reads what the evidence names from history.
+          fetch-depth: 0
+          persist-credentials: false
+      # promote-prod.sh runs scripts/ci/check-prod-evidence.sh on what this would merge, and stops if that refuses.
+      - name: Map the set to GHCR names, render, and check it
+        id: promote
+        env:
+          SET_HASH: ${{ inputs.set_hash }}
+        run: |
+          ./scripts/install-tools.sh helm kustomize yq
+          ./scripts/ci/promote-prod.sh "$SET_HASH"
+          if [[ ! -f .build/promote-prod-message.txt ]]; then
+            echo 'plane-prod already holds this set, so there is nothing to open.' >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo 'message<<MESSAGE_END'
+            cat .build/promote-prod-message.txt
+            echo 'MESSAGE_END'
+            echo "title=$(head -n 1 .build/promote-prod-message.txt)"
+          } >>"$GITHUB_OUTPUT"
+      # A pull request opened with GITHUB_TOKEN starts no job until someone approves its ci run, so check it here.
+      - name: Validate the result
+        if: steps.promote.outputs.title != ''
+        env:
+          SKIP_CHARTS: "yes"
+        run: ./scripts/ci/validate-manifests.sh
+      - name: Open the pull request
+        id: open
+        if: steps.promote.outputs.title != ''
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: promote/plane-prod
+          delete-branch: true
+          add-paths: |
+            helm/plane/overlays/prod/kustomization.yaml
+            gitops/environments/prod/manifests.yaml
+            gitops/clusters/plane-prod/applications/plane-prod.yaml
+          commit-message: ${{ steps.promote.outputs.message }}
+          title: ${{ steps.promote.outputs.title }}
+          body: |
+            Promotion to hosted production, requested by @${{ github.actor }}. `scripts/ci/check-prod-evidence.sh` passed on this
+            change before this pull request opened: every image here is in one signed record that plane-dev ran exactly this set.
+            Nothing was rebuilt. The record is in `docs/evidence/promotions/`, named by the `Promote-Set` line of the commit.
+
+            **Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free plan, so there are no
+            environment reviewers and no protected branches. Review it as the control it stands in for.
+
+            After merging, `ci.yml`'s `release-plane-prod` job checks the merged commit again, confirms each digest on GHCR, and
+            moves `deploy/plane-prod`, the one branch hosted Argo CD reads. If that job goes red, the branch stays where it is
+            and production keeps running what it ran.
+
+            A rollback changes the images and not the database. A migration this set ran stays applied: `docs/runbooks` gives
+            the restore path.
+      # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
+      # promotion. The run stays red, because the pull request this workflow promises does not exist.
+      - name: Explain a refused pull request
+        if: failure() && steps.open.outcome == 'failure'
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          {
+            echo '### Branch pushed, pull request not opened'
+            echo
+            echo 'If the step above says Actions is not permitted to create pull requests, the repository'
+            echo 'setting is off: .github/workflows/README.md names it. A person can open this one by hand,'
+            echo 'and ci.yml then runs on it, which it does not for a pull request opened with GITHUB_TOKEN:'
+            echo
+            echo "https://github.com/$REPOSITORY/compare/main...promote/plane-prod?expand=1"
+          } >>"$GITHUB_STEP_SUMMARY"
