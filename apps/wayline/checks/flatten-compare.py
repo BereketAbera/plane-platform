@@ -10,10 +10,11 @@ sha256 and modification time. Python decides whether a .pyc is stale from its so
 is a real difference. Also hard links, reported as groups of paths that share one inode. Empty directories are paths
 like any other, and are counted in the totals.
 
-    flatten-compare.py [--platform linux/arm64] [--list file] <image a> <image b>
+    flatten-compare.py [--platform <os/architecture>] [--list file] <image a> <image b>
 
-Each image must name a digest. --list writes the whole of image b's merged filesystem as a TSV. Exits 0 if the two match
-on all of that and on their config, 1 if not, listing every difference, and 2 if an image cannot be read.
+Each image must name a digest, and is read for --platform, or else PLATFORM, or else linux/arm64. --list writes the whole of
+image b's merged filesystem as a TSV. Exits 0 if the two match on all of that and on their config, 1 if not, listing every
+difference, and 2 if an image cannot be read, which includes an image of another platform.
 """
 import argparse
 import hashlib
@@ -26,7 +27,7 @@ import tarfile
 # A __pycache__ beside this file would make the source read as changed, and scripts/ci/build-images.sh would refuse it.
 sys.dont_write_bytecode = True
 
-from oci_read import CHUNK, EMPTY_LAYER, Image, Unreadable
+from oci_read import CHUNK, EMPTY_LAYER, Image, Unreadable, default_platform
 
 ATTRIBUTES = ("type", "mode", "uid", "gid", "size", "target", "device", "xattrs", "sha256", "mtime")
 CONFIG_KEYS = ("Env", "Cmd", "Entrypoint", "WorkingDir", "User", "ExposedPorts", "Labels", "Volumes", "StopSignal", "Healthcheck", "Shell", "OnBuild", "ArgsEscaped")
@@ -166,7 +167,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("image_a")
     parser.add_argument("image_b")
-    parser.add_argument("--platform", default="linux/arm64")
+    parser.add_argument("--platform", default=default_platform(), help="default: PLATFORM, or else linux/arm64")
     parser.add_argument("--list", help="write image b's merged filesystem to this file, as TSV")
     args = parser.parse_args()
 
