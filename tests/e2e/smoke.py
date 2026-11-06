@@ -18,6 +18,10 @@ rollout past its deadline is no longer under way, and fails, and so is a sync th
 
 Generated credentials go only to .local/test-accounts.env (mode 0600). They are never printed
 and never written to the evidence file.
+
+--env hosted --mode verify is another flow, for hosted production: over https, with a person's existing account, whose email and
+password come on stdin from scripts/hosted/smoke.sh. It creates no user and never touches the admin sign-up. It makes one project,
+one work item, an attachment, a page and a short-lived API token, and removes them before it ends, whatever else happened.
 """
 from __future__ import annotations
 
@@ -36,6 +40,7 @@ import re
 import secrets
 import select
 import socket
+import ssl
 import struct
 import subprocess
 import sys
@@ -52,6 +57,8 @@ ROOT = Path(__file__).resolve().parents[2]
 LOCAL_DIR = ROOT / ".local"
 HOSTS = {"dev": "plane.dev.localhost", "prod-sim": "plane.prod-sim.localhost"}
 ADMIN_EMAIL = "smoke-admin@wayline.test"
+# Names no host of its own: scripts/hosted/smoke.sh passes the one in infrastructure/hosted.
+HOSTED = "hosted"
 
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 # Hocuspocus 2.15 wire values, confirmed against its source in the research and in the live image.
@@ -164,6 +171,19 @@ class Response:
         return self.body[:200].decode("utf-8", "replace").replace("\n", " ")
 
 
+class TlsConnection(http.client.HTTPSConnection):
+    """Dials one address, and names the public host in SNI and in the certificate check, as a browser would."""
+
+    def __init__(self, server_name: str, host: str, port: int, *, timeout: float, tls: ssl.SSLContext) -> None:
+        super().__init__(host, port, timeout=timeout, context=tls)
+        self.server_name = server_name
+        self.tls = tls
+
+    def connect(self) -> None:
+        http.client.HTTPConnection.connect(self)
+        self.sock = self.tls.wrap_socket(self.sock, server_hostname=self.server_name)
+
+
 class Http:
     """A small client that always dials the Traefik address, whatever host a URL names.
 
@@ -171,12 +191,16 @@ class Http:
     must stay as signed while the TCP connection goes to the published port.
     """
 
-    def __init__(self, host: str, connect_host: str, connect_port: int, timeout: float = 30) -> None:
+    def __init__(self, host: str, connect_host: str, connect_port: int, timeout: float = 30,
+                 tls: ssl.SSLContext | None = None) -> None:
         self.host = host
         self.connect_host = connect_host
         self.connect_port = connect_port
         self.timeout = timeout
+        self.tls = tls
+        self.scheme = "https" if tls else "http"
         self.cookies: dict[str, str] = {}
+        self.cookie_flags: dict[str, dict[str, bool]] = {}
 
     def cookie_header(self) -> str:
         return "; ".join(f"{k}={v}" for k, v in self.cookies.items())
@@ -190,6 +214,7 @@ class Http:
                     self.cookies.pop(name, None)
                 else:
                     self.cookies[name] = morsel.value
+                    self.cookie_flags[name] = {"secure": bool(morsel["secure"]), "httponly": bool(morsel["httponly"])}
 
     def request(self, method: str, target: str, *, headers: dict | None = None, body: bytes | None = None,
                 session: bool = True, host: str | None = None) -> Response:
@@ -198,7 +223,10 @@ class Http:
         request_headers.update(headers or {})
         if session and self.cookies:
             request_headers["Cookie"] = self.cookie_header()
-        connection = http.client.HTTPConnection(self.connect_host, self.connect_port, timeout=self.timeout)
+        if self.tls:
+            connection = TlsConnection(self.host, self.connect_host, self.connect_port, timeout=self.timeout, tls=self.tls)
+        else:
+            connection = http.client.HTTPConnection(self.connect_host, self.connect_port, timeout=self.timeout)
         try:
             connection.request(method, target, body=body, headers=request_headers)
             raw = connection.getresponse()
@@ -217,9 +245,25 @@ class Http:
         return self.request(method, target, headers=headers, body=json.dumps(payload).encode(), **kwargs)
 
     def post_form(self, target: str, fields: dict, **kwargs) -> Response:
-        headers = {"Content-Type": "application/x-www-form-urlencoded", "Origin": f"http://{self.host}",
-                   "Referer": f"http://{self.host}/", **kwargs.pop("headers", {})}
+        headers = {"Content-Type": "application/x-www-form-urlencoded", "Origin": f"{self.scheme}://{self.host}",
+                   "Referer": f"{self.scheme}://{self.host}/", **kwargs.pop("headers", {})}
         return self.request("POST", target, headers=headers, body=urlencode(fields).encode(), **kwargs)
+
+
+def hosted_tls(args: argparse.Namespace) -> ssl.SSLContext:
+    if args.allow_untrusted_certificate:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        return context
+    context = ssl.create_default_context(cafile=args.ca_file)
+    if not args.ca_file and not context.get_ca_certs():
+        # A Python with no CA list of its own, as on macOS from python.org.
+        for candidate in ("/etc/ssl/cert.pem", "/etc/ssl/certs/ca-certificates.crt"):
+            if os.path.exists(candidate):
+                context.load_verify_locations(candidate)
+                break
+    return context
 
 
 def expect(response: Response, *statuses: int) -> Response:
@@ -327,15 +371,18 @@ class WsClosed(Exception):
 
 class WebSocket:
     def __init__(self, connect_host: str, connect_port: int, host: str, target: str, cookie: str,
-                 timeout: float = 15) -> None:
+                 timeout: float = 15, tls: ssl.SSLContext | None = None) -> None:
         self.sock = socket.create_connection((connect_host, connect_port), timeout=timeout)
+        if tls:
+            self.sock = tls.wrap_socket(self.sock, server_hostname=host)
+        origin = f"{'https' if tls else 'http'}://{host}"
         self.buffer = b""
         self.pings = 0
         self.partial = b""
         key = base64.b64encode(secrets.token_bytes(16)).decode()
         request = (
             f"GET {target} HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
-            f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nOrigin: http://{host}\r\n"
+            f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nOrigin: {origin}\r\n"
             f"Cookie: {cookie}\r\n\r\n"
         )
         self.sock.sendall(request.encode())
@@ -553,6 +600,13 @@ class Cluster:
 # --- Local state ---------------------------------------------------------------------------------
 
 
+def read_credentials() -> tuple[str, str]:
+    """Two lines on stdin, so neither reaches an argv or an environment."""
+    email = sys.stdin.readline().rstrip("\n")
+    password = sys.stdin.readline().rstrip("\n")
+    return email, password
+
+
 def write_private(path: Path, content: str) -> None:
     """Write through a 0600 temp file, so the secret is never briefly world-readable."""
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -760,7 +814,8 @@ class Smoke:
         connect_host, _, connect_port = args.connect.partition(":")
         self.connect_host = connect_host
         self.connect_port = int(connect_port or 80)
-        self.http = Http(self.host, self.connect_host, self.connect_port)
+        self.tls = hosted_tls(args) if args.env == HOSTED else None
+        self.http = Http(self.host, self.connect_host, self.connect_port, tls=self.tls)
         self.cluster = Cluster(args.env)
         self.redact = Redactor()
         self.accounts = Accounts(Path(args.accounts), args.env)
@@ -769,6 +824,9 @@ class Smoke:
         self.redact.add(ADMIN_EMAIL)
         self.redact.add(self.accounts.get("ADMIN_EMAIL"))
         self.redact.add(self.accounts.get("API_TOKEN"))
+        self.credentials = read_credentials() if args.env == HOSTED and args.credentials_stdin else ("", "")
+        self.redact.add(self.credentials[0])
+        self.redact.add(self.credentials[1])
         self.sentinel_path = Path(args.sentinel or LOCAL_DIR / f"test-sentinel-{args.env}.json")
         self.run_id = secrets.token_hex(4)
         self.steps: list[dict] = []
@@ -1391,6 +1449,8 @@ class Smoke:
         target = urlsplit(upload["url"])
         if target.netloc != self.host:
             raise StepFailed(f"presigned POST names host {target.netloc}, expected {self.host}")
+        if self.tls and target.scheme != "https":
+            raise StepFailed(f"presigned POST is {target.scheme}, so a browser would refuse it on this https page")
         content_type, body = multipart(upload["fields"], filename, "text/plain", content)
         posted = self.http.request("POST", target.path, session=False, body=body,
                                    headers={"Content-Type": content_type})
@@ -1409,6 +1469,8 @@ class Smoke:
         target = urlsplit(redirect.location)
         if target.netloc != self.host:
             raise StepFailed(f"presigned GET names host {target.netloc}, expected {self.host}")
+        if self.tls and target.scheme != "https":
+            raise StepFailed(f"presigned GET is {target.scheme}, so a browser would refuse it on this https page")
         # Host is part of the signature, so this also proves the ingress preserved it.
         fetched = self.retrying_get(f"{target.path}?{target.query}", session=False, headers={"Accept": "*/*"})
         return expect(fetched, 200).body
@@ -1594,7 +1656,7 @@ class Smoke:
                            "workspaceSlug": self.state["slug"]})
         cookie = f"session-id={self.http.cookies['session-id']}"
         self.state["cookie"] = cookie
-        return WebSocket(self.connect_host, self.connect_port, self.host, f"/live/collaboration?{query}", cookie)
+        return WebSocket(self.connect_host, self.connect_port, self.host, f"/live/collaboration?{query}", cookie, tls=self.tls)
 
     def step_realtime_auth(self, data: dict) -> str:
         ws = self.open_collaboration()
@@ -1994,6 +2056,184 @@ class Smoke:
         data["seconds_until_activity"] = round(seconds, 1)
         return f"new work item got its activity in {seconds:.1f}s"
 
+    # -- hosted production: an existing account over https. Creates no user, and never touches the admin sign-up --
+
+    def step_hosted_certificate(self, data: dict) -> str:
+        """The handshake a browser would make. A failure here is a FAIL, because the chain or the name is wrong."""
+        if self.args.allow_untrusted_certificate:
+            raise StepBlocked("--allow-untrusted-certificate is set, so no certificate was checked, and this run cannot read PASS. "
+                              "That is what a staging certificate needs")
+        with socket.create_connection((self.connect_host, self.connect_port), timeout=self.http.timeout) as raw:
+            with self.tls.wrap_socket(raw, server_hostname=self.host) as secured:
+                certificate = secured.getpeercert()
+                data["tls_version"] = secured.version()
+        issuer = dict(item[0] for item in certificate["issuer"])
+        days = int((ssl.cert_time_to_seconds(certificate["notAfter"]) - time.time()) // 86400)
+        data.update(issuer=issuer.get("organizationName"), issuer_common_name=issuer.get("commonName"), days_left=days)
+        if days < 14:
+            raise StepFailed(f"the served certificate ends in {days} days, and it renews well before that")
+        return f"{data['tls_version']}, issued by {issuer.get('organizationName')}, {days} days left, and valid for {self.host}"
+
+    def step_hosted_redirect(self, data: dict) -> str:
+        plain = Http(self.host, self.connect_host, self.args.http_port)
+        response = plain.get("/", session=False, headers={"Accept": "text/html"})
+        where = urlsplit(response.location)
+        data.update(status=response.status, scheme=where.scheme)
+        # Traefik names the entrypoint's port if it is told to, and 443 means the same.
+        if response.status not in (301, 308) or where.scheme != "https" or where.netloc.removesuffix(":443") != self.host:
+            raise StepFailed(f"http answered {response.status} to {response.location!r}, want a permanent redirect to https://{self.host}/")
+        return f"http answers {response.status} to https"
+
+    def step_hosted_instance(self, data: dict) -> str:
+        """Read only. Sign-up here is off, and an instance with no admin is for a person to claim, through a port-forward."""
+        found = self.instance_now("hosted")
+        instance, config = found.get("instance", found), found.get("config", {})
+        data.update(is_setup_done=instance.get("is_setup_done"), enable_signup=config.get("enable_signup"))
+        if not instance.get("is_setup_done"):
+            raise StepBlocked("this instance has no admin yet, and this mode never claims it. Create it through a port-forward first")
+        if config.get("enable_signup") is True:
+            raise StepFailed("sign-up is open on the public host")
+        return "set up, and sign-up is off"
+
+    def step_hosted_sign_in(self, data: dict) -> str:
+        email, password = self.credentials
+        response = self.http.post_form("/auth/sign-in/", {"csrfmiddlewaretoken": self.csrf(), "email": email, "password": password})
+        expect(response, 302)
+        where = urlsplit(response.location)
+        query = parse_qs(where.query)
+        if "error_code" in query:
+            # A wrong password says nothing about the platform. Sign-in itself answering is what this can show.
+            raise StepBlocked(f"this account was refused: {query['error_code'][0]} {query.get('error_message', [''])[0]}")
+        if where.scheme == "http":
+            raise StepFailed(f"sign-in redirected to {where.scheme}, so the platform does not know it is on https")
+        if "session-id" not in self.http.cookies:
+            raise StepFailed("sign-in did not set session-id")
+        self.redact.add(self.http.cookies["session-id"])
+        anonymous = self.http.get("/api/users/me/", session=False)
+        data["anonymous_me_status"] = anonymous.status
+        if anonymous.status == 200:
+            raise StepFailed("/api/users/me/ answered 200 with no session")
+        self.state["user_id"] = expect(self.http.get("/api/users/me/"), 200).json()["id"]
+        return "session established, anonymous request refused"
+
+    def step_hosted_cookies(self, data: dict) -> str:
+        """The chart's http origin removes Secure from these, which is why the overlay replaces it."""
+        flags = self.http.cookie_flags
+        data["flags"] = flags
+        for name in ("session-id", "csrftoken"):
+            if name not in flags:
+                raise StepFailed(f"{name} was never set")
+            if not flags[name]["secure"]:
+                raise StepFailed(f"{name} has no Secure flag, so a browser would send it over plain http")
+        if not flags["session-id"]["httponly"]:
+            raise StepFailed("session-id has no HttpOnly flag")
+        return "session-id and csrftoken are Secure, and session-id is HttpOnly"
+
+    def step_hosted_workspace(self, data: dict) -> str:
+        listed = expect(self.http.get("/api/users/me/workspaces/"), 200).json()
+        listed = listed.get("results", listed) if isinstance(listed, dict) else listed
+        slugs = [workspace["slug"] for workspace in listed]
+        if self.args.workspace and self.args.workspace not in slugs:
+            raise StepBlocked(f"this account is not a member of workspace {self.args.workspace}")
+        if not slugs:
+            raise StepBlocked("this account has no workspace, and this mode creates none. Make one in the app first")
+        self.state["slug"] = self.args.workspace or slugs[0]
+        data["slug"] = self.state["slug"]
+        return f"using workspace {self.state['slug']}, and leaving it as it was"
+
+    def step_hosted_token(self, data: dict) -> str:
+        """Short-lived on purpose, so a run killed before its cleanup leaves nothing that lasts."""
+        expires = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=2)
+        response = self.http.send_json("POST", "/api/users/api-tokens/", {
+            "label": f"smoke-{self.run_id}", "description": "tests/e2e/smoke.py, removed at the end of its run",
+            "expired_at": expires.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        })
+        created = expect(response, 201).json()
+        token = created.get("token")
+        if not token:
+            raise StepFailed("response has no token")
+        self.redact.add(token)
+        self.state.update(api_token=token, api_token_id=created["id"])
+        return "a token good for 2 hours, removed below"
+
+    def step_hosted_project(self, data: dict) -> str:
+        project = self.create_project(self.state["slug"], "Smoke")
+        self.state.update(project_id=project["id"], project=project)
+        data["project_id"] = project["id"]
+        return f"project {project['identifier']}"
+
+    def step_hosted_work_item(self, data: dict) -> str:
+        self.state["work_item_id"] = self.create_work_item(self.base(), f"smoke {self.run_id}")
+        data["work_item_id"] = self.state["work_item_id"]
+        return self.state["work_item_id"]
+
+    def step_hosted_cleanup(self, data: dict) -> str:
+        """Everything this run made, whatever else happened. What it could not remove is named, for a person. Each call stands
+        alone, so one that fails, or a connection that drops, does not stop the next."""
+        left: list[str] = []
+
+        def attempt(what: str, send, *statuses: int) -> Response | None:
+            try:
+                response = send()
+            except (OSError, http.client.HTTPException) as exc:
+                left.append(f"{what} ({type(exc).__name__})")
+                return None
+            data[what] = response.status
+            if statuses and response.status not in statuses:
+                left.append(f"{what} (HTTP {response.status})")
+            return response
+
+        slug, project_id = self.state.get("slug"), self.state.get("project_id")
+        if self.state.get("asset_id"):
+            attempt("attachment", lambda: self.http.request(
+                "DELETE", f"{self.base()}/work-items/{self.state['work_item_id']}/attachments/{self.state['asset_id']}/",
+                session=False, headers=self.api()), 204)
+        if project_id:
+            # Removing the project takes its work items and pages with it.
+            target = f"/api/v1/workspaces/{slug}/projects/{project_id}/"
+            name = f"project {self.state['project']['identifier']}"
+            attempt(name, lambda: self.http.request("DELETE", target, session=False, headers=self.api()), 204)
+            after = attempt(f"{name}, read again", lambda: self.http.get(target, session=False, headers=self.api()))
+            if after is not None and after.status != 404:
+                left.append(f"{name} still answers")
+        token_id = self.state.get("api_token_id")
+        if token_id:
+            name = f"API token smoke-{self.run_id}"
+            attempt(name, lambda: self.http.request("DELETE", f"/api/users/api-tokens/{token_id}/"), 204)
+            after = attempt(f"{name}, tried again", lambda: self.http.get("/api/v1/users/me/", session=False, headers=self.api()))
+            if after is not None and after.status == 200:
+                left.append(f"{name} still works, until it expires within 2 hours")
+        attempt("sign-out", lambda: self.http.post_form("/auth/sign-out/", {"csrfmiddlewaretoken": self.csrf()}))
+        self.http.cookies.pop("session-id", None)
+        if left:
+            raise StepFailed("could not remove: " + ", ".join(left) + ". Remove them in the app")
+        return "attachment, project and token removed, and signed out. Plane soft-deletes, so the rows and the object go at its next hard-delete task"
+
+    def run_hosted(self) -> None:
+        self.run("tls-certificate", self.step_hosted_certificate)
+        self.run("http-redirect", self.step_hosted_redirect)
+        self.run("reachable", self.step_reachable)
+        self.run("frontends", self.step_frontends, ("reachable",))
+        self.run("routes", self.step_routes, ("reachable",))
+        self.run("instance", self.step_hosted_instance, ("reachable",))
+        self.run("csrf-enforced", self.step_csrf_enforced, ("reachable",))
+        self.run("sign-in", self.step_hosted_sign_in, ("instance",))
+        self.run("secure-cookies", self.step_hosted_cookies, ("sign-in",))
+        try:
+            self.run("workspace", self.step_hosted_workspace, ("sign-in",))
+            self.run("api-token", self.step_hosted_token, ("sign-in",))
+            self.run("project", self.step_hosted_project, ("workspace", "api-token"))
+            self.run("work-item", self.step_hosted_work_item, ("project",))
+            self.run("background-job", self.step_background_job, ("work-item",))
+            self.run("attachment-upload", self.step_attachment_upload, ("work-item",))
+            self.run("attachment-download", self.step_attachment_download, ("attachment-upload",))
+            self.run("realtime-page", self.step_realtime_page, ("project",))
+            self.run("realtime-auth", self.step_realtime_auth, ("realtime-page",))
+            self.run("realtime-denied", self.step_realtime_denied, ("realtime-page",))
+            self.run("realtime-sync", self.step_realtime_sync, ("realtime-auth",))
+        finally:
+            self.run("cleanup", self.step_hosted_cleanup, ("sign-in",))
+
     # -- plans --
 
     def run_full(self) -> None:
@@ -2058,6 +2298,9 @@ class Smoke:
         self.run("branding-fresh-install", self.step_branding_fresh_install, ("reachable",))
 
     def run_verify(self) -> None:
+        if self.args.env == HOSTED:
+            self.run_hosted()
+            return
         self.run("reachable", self.step_reachable)
         self.run("sentinel-reread", self.step_sentinel_reread, ("reachable",))
         if self.args.job_probe:
@@ -2073,6 +2316,191 @@ def now_iso() -> str:
 
 
 # --- Offline self-test ---------------------------------------------------------------------------
+
+
+class StubHosted:
+    """What --env hosted --mode verify calls, over real HTTP with no TLS, as the routes read at upstream's v1.4.3. It knows nothing
+    else of Plane, and a pass against it says nothing about the real server. What it does show: the order, what is removed, and
+    that nothing ever asks for a user or the admin."""
+
+    def __init__(self, *, secure: bool = True, fail_work_item: bool = False, fail_project_delete: bool = False,
+                 presign_scheme: str = "https", redirect_only: bool = False, host: str = "hosted.test") -> None:
+        self.secure, self.fail_work_item, self.fail_project_delete = secure, fail_work_item, fail_project_delete
+        self.presign_scheme, self.redirect_only, self.host = presign_scheme, redirect_only, host
+        self.calls: list[str] = []
+        self.token_live = self.project_live = self.signed_out = False
+        self.asset_deleted = False
+        self.stored = b""
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), self.handler())
+        self.port = self.server.server_address[1]
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def handler(self):
+        stub = self
+        flags = "; Path=/" + ("; Secure" if stub.secure else "")
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *_) -> None:
+                pass
+
+            def reply(self, status: int, payload=None, headers: tuple = ()) -> None:
+                body = payload if isinstance(payload, bytes) else b"" if payload is None else json.dumps(payload).encode()
+                self.send_response(status)
+                for name, value in headers:
+                    self.send_header(name, value)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def answer(self, method: str) -> None:
+                path = urlsplit(self.path).path
+                stub.calls.append(f"{method} {path}")
+                body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+                if stub.redirect_only:
+                    return self.reply(308, headers=(("Location", f"https://{stub.host}/"),))
+                if method == "GET" and path == "/":
+                    return self.reply(200, b"<html>")
+                if path == "/api/instances/":
+                    return self.reply(200, {"instance": {"is_setup_done": True}, "config": {"enable_signup": False}})
+                if path == "/auth/get-csrf-token/":
+                    return self.reply(200, {"csrf_token": "t"}, (("Set-Cookie", f"csrftoken=t{flags}"),))
+                if path == "/auth/sign-in/":
+                    fields = parse_qs(body.decode())
+                    if fields.get("password") != ["right"]:
+                        return self.reply(302, headers=(("Location", f"https://{stub.host}/?error_code=5005&error_message=WRONG"),))
+                    return self.reply(302, headers=(("Location", f"https://{stub.host}/"), ("Set-Cookie", f"session-id=a-session-value{flags}; HttpOnly")))
+                if path == "/auth/sign-out/":
+                    stub.signed_out = True
+                    return self.reply(302, headers=(("Location", f"https://{stub.host}/"),))
+                if path == "/api/users/me/":
+                    return self.reply(200, {"id": "u"}) if "session-id" in self.headers.get("Cookie", "") else self.reply(401)
+                if path == "/api/users/me/workspaces/":
+                    return self.reply(200, [{"slug": "w"}])
+                if path == "/api/users/api-tokens/" and method == "POST":
+                    stub.token_live = True
+                    return self.reply(201, {"id": "t1", "token": "plane_api_secret"})
+                if path == "/api/users/api-tokens/t1/" and method == "DELETE":
+                    stub.token_live = False
+                    return self.reply(204)
+                if path == "/api/v1/users/me/":
+                    return self.reply(200, {"id": "u"}) if stub.token_live else self.reply(401)
+                base = "/api/v1/workspaces/w/projects/"
+                if path == base and method == "POST":
+                    stub.project_live = True
+                    return self.reply(201, {"id": "p1", "identifier": json.loads(body)["identifier"]})
+                if path == f"{base}p1/":
+                    if method == "DELETE":
+                        if stub.fail_project_delete:
+                            return self.reply(500)
+                        stub.project_live = False
+                        return self.reply(204)
+                    return self.reply(200, {}) if stub.project_live else self.reply(404)
+                item = f"{base}p1/work-items/"
+                if path == item and method == "POST":
+                    return self.reply(500) if stub.fail_work_item else self.reply(201, {"id": "i1"})
+                if path == f"{item}i1/activities/":
+                    return self.reply(200, {"results": [{"verb": "created"}]})
+                if path == f"{item}i1/attachments/" and method == "POST":
+                    return self.reply(200, {"asset_id": "a1", "upload_data": {"url": f"{stub.presign_scheme}://{stub.host}/uploads", "fields": {"key": "k"}}})
+                if path == f"{item}i1/attachments/a1/":
+                    if method == "GET":
+                        return self.reply(302, headers=(("Location", f"{stub.presign_scheme}://{stub.host}/uploads/k?X-Amz-Signature=sig"),))
+                    if method == "DELETE":
+                        stub.asset_deleted = True
+                    return self.reply(204)
+                if path == "/uploads":
+                    stub.stored = body.split(b"\r\n\r\n")[-1].rsplit(b"\r\n--", 1)[0]
+                    return self.reply(204)
+                if path == "/uploads/k":
+                    return self.reply(200, stub.stored)
+                return self.reply(404)
+
+            def do_GET(self) -> None:
+                self.answer("GET")
+
+            def do_POST(self) -> None:
+                self.answer("POST")
+
+            def do_DELETE(self) -> None:
+                self.answer("DELETE")
+
+            def do_PATCH(self) -> None:
+                self.answer("PATCH")
+
+        return Handler
+
+
+def hosted_run(directory: str, password: str = "right", **stub_options) -> tuple[Smoke, StubHosted, str]:
+    """One run of the hosted flow against a stub, with what needs a real TLS or WebSocket server left out."""
+    plane, plain = StubHosted(**stub_options), StubHosted(redirect_only=True)
+    smoke = Smoke(parse_args(["--env", HOSTED, "--mode", "verify", "--host", plane.host, "--connect", f"127.0.0.1:{plane.port}",
+                              "--http-port", str(plain.port), "--allow-untrusted-certificate", "--wait-seconds", "1", "--job-timeout", "2",
+                              "--accounts", f"{directory}/a.env", "--sentinel", f"{directory}/s.json"]))
+    smoke.credentials = ("someone@wayline.test", password)
+    smoke.redact.add(password)
+    smoke.http = Http(plane.host, "127.0.0.1", plane.port)
+    for name in ("step_frontends", "step_routes", "step_csrf_enforced", "step_realtime_page", "step_realtime_auth", "step_realtime_denied", "step_realtime_sync"):
+        setattr(smoke, name, lambda _: "left out here")
+    with contextlib.redirect_stdout(io.StringIO()) as printed:
+        smoke.run_verify()
+    plane.server.shutdown()
+    plain.server.shutdown()
+    return smoke, plane, printed.getvalue()
+
+
+def hosted_selftest() -> None:
+    def status(smoke: Smoke, name: str) -> str:
+        return next(step["status"] for step in smoke.steps if step["name"] == name)
+
+    # What a whole run does: everything passes but the certificate, which this cannot check, so the run cannot read PASS.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke, plane, printed = hosted_run(directory)
+        assert status(smoke, "tls-certificate") == "BLOCKED" and smoke.overall() == "BLOCKED", printed
+        assert all(step["status"] == "PASS" for step in smoke.steps if step["name"] != "tls-certificate"), printed
+        assert not plane.token_live and not plane.project_live and plane.asset_deleted and plane.signed_out, printed
+        assert "right" not in printed and "plane_api_secret" not in printed, printed
+        forbidden = [call for call in plane.calls if "sign-up" in call or "/admins/" in call or call.endswith("/api/workspaces/")]
+        assert not forbidden, forbidden
+        assert plane.calls.index("POST /api/v1/workspaces/w/projects/") < plane.calls.index("DELETE /api/v1/workspaces/w/projects/p1/")
+        assert not Path(f"{directory}/a.env").exists(), "this mode writes no accounts file"
+
+    # A failure in the middle still removes what was made.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke, plane, printed = hosted_run(directory, fail_work_item=True)
+        assert status(smoke, "work-item") == "FAIL" and status(smoke, "attachment-upload") == "BLOCKED", printed
+        assert status(smoke, "cleanup") == "PASS" and not plane.project_live and not plane.token_live, printed
+        assert smoke.overall() == "FAIL"
+
+    # What cannot be removed is named, and the rest still goes.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke, plane, printed = hosted_run(directory, fail_project_delete=True)
+        assert status(smoke, "cleanup") == "FAIL" and "could not remove: project" in printed and not plane.token_live, printed
+
+    # The chart's http origin removes Secure, which is the fault this exists to catch.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke, _, printed = hosted_run(directory, secure=False)
+        assert status(smoke, "secure-cookies") == "FAIL" and "Secure" in printed, printed
+
+    # An http presigned URL on an https page is a broken upload in every browser.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke, plane, printed = hosted_run(directory, presign_scheme="http")
+        assert status(smoke, "attachment-upload") == "FAIL" and not plane.project_live, printed
+
+    # A refused account says nothing about the platform, and nothing gets made.
+    with tempfile.TemporaryDirectory() as directory:
+        smoke, plane, printed = hosted_run(directory, password="wrong")
+        assert status(smoke, "sign-in") == "BLOCKED" and smoke.overall() == "BLOCKED" and "wrong" not in printed, printed
+        assert not any(call.startswith("POST /api/users/api-tokens") for call in plane.calls), plane.calls
+
+    # Full mode cannot start here, and neither can this flow without its account.
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            parse_args(["--env", HOSTED, "--host", "h"])
+        except SystemExit as stopped:
+            assert stopped.code == 2
+        else:
+            raise AssertionError("--env hosted must refuse full mode")
+        assert main(["--env", HOSTED, "--mode", "verify", "--host", "h"]) == 2
 
 
 class StubPlane:
@@ -2502,15 +2930,18 @@ def selftest() -> int:
     thread.join(5)
     server.close()
     assert not failures, failures
+    hosted_selftest()
     print("selftest ok")
     return 0
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--env", choices=sorted(HOSTS), default="dev", help="environment under test (default: dev)")
+    parser.add_argument("--env", choices=sorted(HOSTS) + [HOSTED], default="dev",
+                        help="environment under test (default: dev). hosted needs --mode verify, --host and --credentials-stdin")
     parser.add_argument("--mode", choices=["full", "verify"], default="full",
-                        help="full: the whole flow. verify: only re-read the persistence sentinel (default: full)")
+                        help="full: the whole flow. verify: only re-read the persistence sentinel, or with --env hosted, "
+                             "the https flow on an existing account (default: full)")
     parser.add_argument("--evidence", help="where to write the JSON evidence, which holds no secrets "
                                            "(default: .local/evidence-raw/smoke-<env>-<run>.json)")
     parser.add_argument("--host", help="public host override (default: per --env)")
@@ -2533,14 +2964,30 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--job-timeout", type=int, default=120, help="seconds to wait for a background job (default: 120)")
     parser.add_argument("--wait-seconds", type=int, default=180,
                         help="seconds to tolerate a restarting backend on reads (default: 180)")
+    parser.add_argument("--credentials-stdin", action="store_true", help="with --env hosted: read email and password, one line each, from stdin")
+    parser.add_argument("--workspace", help="with --env hosted: the workspace to work in, which must exist (default: the account's first)")
+    parser.add_argument("--http-port", type=int, default=80, help="with --env hosted: the port the redirect to https answers on (default: %(default)s)")
+    parser.add_argument("--ca-file", help="with --env hosted: trust these roots in place of the system's")
+    parser.add_argument("--allow-untrusted-certificate", action="store_true",
+                        help="with --env hosted: run with a staging certificate. Nothing checks it, so the run cannot read PASS")
     parser.add_argument("--selftest", action="store_true", help="check the protocol code offline, then exit")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.env == HOSTED:
+        # Full mode creates users and claims the admin, so it never runs here.
+        if args.mode != "verify":
+            parser.error("--env hosted runs only --mode verify: full mode creates users and claims the admin")
+        if not args.host:
+            parser.error("--env hosted needs --host")
+    return args
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     if args.selftest:
         return selftest()
+    if args.env == HOSTED and not args.credentials_stdin:
+        print("--env hosted signs in with an existing account, so it needs --credentials-stdin", file=sys.stderr)
+        return 2
     smoke = Smoke(args)
     started_at = now_iso()
     print(f"smoke: environment={args.env} host={smoke.host} connect={args.connect} mode={args.mode}", flush=True)
