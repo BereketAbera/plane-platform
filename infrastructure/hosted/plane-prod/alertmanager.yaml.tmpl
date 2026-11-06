@@ -1,0 +1,32 @@
+# Rendered by scripts/hosted/alerts.sh into Secret monitoring/alertmanager-wayline, key alertmanager.yaml, which
+# alertmanagerSpec.configSecret names. Never in Git once rendered: the Telegram token and the Healthchecks URL are credentials.
+# Each receiver below takes the sink when the owner's files for it do not exist, so the config always loads, and alerts.sh and
+# scripts/hosted/status.sh read INCOMPLETE until they do.
+global:
+  resolve_timeout: 5m
+route:
+  receiver: primary
+  group_by: [alertname, namespace]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # Watchdog always fires, so a ping every 5 minutes says rule evaluation, Alertmanager and the way out all work. It goes to
+    # Healthchecks, which alerts the owner by itself when the pings stop, so it still works with this server dead.
+    - matchers: ['alertname="Watchdog"']
+      receiver: deadman
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 5m
+    - matchers: ['alertname="InfoInhibitor"']
+      receiver: "null"
+inhibit_rules:
+  - source_matchers: ['severity="critical"']
+    target_matchers: ['severity=~"warning|info"']
+    equal: [namespace, alertname]
+receivers:
+  - name: "null"
+  - name: primary
+@@PRIMARY@@
+  - name: deadman
+@@DEADMAN@@
