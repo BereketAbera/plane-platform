@@ -33,6 +33,9 @@ GH = {
     "tflint": ("terraform-linters/tflint", "v0.65.0", {"darwin_arm64": "tflint_darwin_arm64.zip", "linux_amd64": "tflint_linux_amd64.zip", "linux_arm64": "tflint_linux_arm64.zip"}, "tflint"),
     # Hosted production only: reads the purchased VPS from Contabo's API. Never needed for the local platform.
     "cntb": ("contabo/cntb", "v1.7", {"darwin_arm64": "cntb_v1.7_darwin_arm64.tar.gz", "linux_amd64": "cntb_v1.7_linux_amd64.tar.gz", "linux_arm64": "cntb_v1.7_linux_arm64.tar.gz"}, "cntb"),
+    # Hosted production only: seals the recovery bundle. One archive holds both binaries.
+    "age": ("FiloSottile/age", "v1.3.2", {"darwin_arm64": "age-v1.3.2-darwin-arm64.tar.gz", "linux_amd64": "age-v1.3.2-linux-amd64.tar.gz", "linux_arm64": "age-v1.3.2-linux-arm64.tar.gz"}, "age/age"),
+    "age-keygen": ("FiloSottile/age", "v1.3.2", {"darwin_arm64": "age-v1.3.2-darwin-arm64.tar.gz", "linux_amd64": "age-v1.3.2-linux-amd64.tar.gz", "linux_arm64": "age-v1.3.2-linux-arm64.tar.gz"}, "age/age-keygen"),
     "k6": ("grafana/k6", "v2.3.0", {"darwin_arm64": "k6-v2.3.0-macos-arm64.zip", "linux_amd64": "k6-v2.3.0-linux-amd64.tar.gz", "linux_arm64": "k6-v2.3.0-linux-arm64.tar.gz"}, "k6"),
     # Ships only inside the Prometheus tarball, about 110 MB. Keep the version the same as the
     # Prometheus image in helm/values/kube-prometheus-stack.yaml, so it reads rules as that does.

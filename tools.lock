@@ -3,6 +3,12 @@
 actionlint	v1.7.12	darwin_arm64	https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_darwin_arm64.tar.gz	aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f	actionlint
 actionlint	v1.7.12	linux_amd64	https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz	8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8	actionlint
 actionlint	v1.7.12	linux_arm64	https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_arm64.tar.gz	325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6	actionlint
+age	v1.3.2	darwin_arm64	https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-arm64.tar.gz	e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5	age/age
+age	v1.3.2	linux_amd64	https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz	cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10	age/age
+age	v1.3.2	linux_arm64	https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-arm64.tar.gz	6b8dc4333c53a5a57c9e5834e3a48f92605d7154014cd07269ff3327db5d37f4	age/age
+age-keygen	v1.3.2	darwin_arm64	https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-arm64.tar.gz	e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5	age/age-keygen
+age-keygen	v1.3.2	linux_amd64	https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz	cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10	age/age-keygen
+age-keygen	v1.3.2	linux_arm64	https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-arm64.tar.gz	6b8dc4333c53a5a57c9e5834e3a48f92605d7154014cd07269ff3327db5d37f4	age/age-keygen
 cntb	v1.7	darwin_arm64	https://github.com/contabo/cntb/releases/download/v1.7/cntb_v1.7_darwin_arm64.tar.gz	f6d45636b9a55a5ed62c4bc6c8526721f777acb90a96213c49f59c74010c76b6	cntb
 cntb	v1.7	linux_amd64	https://github.com/contabo/cntb/releases/download/v1.7/cntb_v1.7_linux_amd64.tar.gz	9ac98e6c384dcc47074d2e8c46316a49d1440f1baaaa1a7dd27e8147ecf312a8	cntb
 cntb	v1.7	linux_arm64	https://github.com/contabo/cntb/releases/download/v1.7/cntb_v1.7_linux_arm64.tar.gz	2987525454a345ccb984ec3a6c5a0691eadd42021af32a11bf8706bbe23326db	cntb
