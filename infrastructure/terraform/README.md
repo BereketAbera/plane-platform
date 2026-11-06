@@ -9,10 +9,12 @@ warn against creating a cluster and its Kubernetes resources in one module.
 
 | Path | Status | Contents |
 |---|---|---|
-| `modules/foundation` | Used | Namespaces with PSA and platform labels; ResourceQuota and LimitRange per Plane namespace; CoreDNS rewrite |
+| `modules/foundation` | Used | Namespaces with PSA and platform labels; ResourceQuota and LimitRange per Plane namespace, or as the caller passes them; a StorageClass if asked; CoreDNS rewrite, by kubeadm's Corefile or K3s's `coredns-custom` |
 | `modules/argocd` | Used | Argo CD release; second release with the AppProjects and the root Application |
 | `environments/local` | Used | Root module for the kind cluster. State at `.local/terraform/local/terraform.tfstate` |
-| `environments/dev`, `environments/prod` | **Untested templates** | Interface documents for pass 2. Nothing to run |
+| `environments/prod` | Written, not yet run against a cluster | Hosted production's cluster bootstrap. State at `.local/hosted/plane-prod/terraform/terraform.tfstate`. See [its README](environments/prod/README.md) |
+| `environments/prod-host` | Written, not yet planned | Read-only `data "contabo_instance"` and the one imported DNS record. State at `.local/hosted/plane-prod/terraform-host/terraform.tfstate`. See [its README](environments/prod-host/README.md) |
+| `environments/dev` | **Untested template** | Interface documents from an earlier plan. Nothing to run |
 
 ## Workflow
 
@@ -29,7 +31,7 @@ terraform -chdir=$TF plan -out=../../../../.local/terraform/local/plan.tfplan
 terraform -chdir=$TF apply ../../../../.local/terraform/local/plan.tfplan
 ```
 
-`terraform init -backend=false` is enough for `validate`, and needs no cluster. Providers are pinned, and
+`terraform init -backend=false` is enough for `validate`, and needs no cluster. Providers are pinned, and each root's
 `.terraform.lock.hcl` carries hashes for `darwin_arm64` and `linux_amd64`. After a provider bump, regenerate both:
 
 ```bash
@@ -46,7 +48,13 @@ kubectl --context kind-plane-platform -n argocd get secret argocd-initial-admin-
 The UI answers at `http://argocd.localhost/` through Traefik, once the root Application has synced Traefik and the route.
 This repo pins no `argocd` CLI, so everything below uses `kubectl` with `KUBECONFIG=.local/kubeconfig`.
 
+`environments/local` takes only its own context: `kube_context` has a validation, because `scripts/up.sh` auto-approves that root, and
+`environments/prod` has no variables at all. Its plan stops at a precondition unless the live `kube-system` UID matches
+`infrastructure/hosted/plane-prod/target.yaml`, and it runs only through `scripts/hosted/bootstrap.sh`.
+
 ## Destroy
+
+Local only. Do not run this against hosted production: it would delete the namespaces there, and with them every claim.
 
 ```bash
 terraform -chdir=$TF destroy
@@ -83,6 +91,11 @@ that would apply the fix, and `terraform apply` works while Git is down. Argo CD
 7984Mi limits and 24 pods per Plane namespace. That is the steady budget (1424Mi and 4192Mi), plus one surge pod for each
 Deployment during a rollout, plus the operator, both exporters, migrator, a backup Job and one ad-hoc pod. It covers
 memory and object counts only, since the contract budgets no CPU.
+
+**Hosted production's quotas come from a file, not from this module.** `infrastructure/hosted/plane-prod/capacity.yaml` holds them, and
+`environments/prod` passes them in. `scripts/ci/check-capacity.sh` reads the same file and fails CI if their sum, with the system's
+share and Frameflow's reservation, no longer fits the node. Passing `quotas` or `limit_ranges` also names the objects `budget` and `defaults`,
+since they then cover namespaces that are not Plane's. With neither passed the module plans what it always did.
 
 ## After a stuck first sync
 
