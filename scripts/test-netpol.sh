@@ -5,6 +5,10 @@
 #   FROM_NS=plane-dev scripts/test-netpol.sh       only rows starting in one namespace
 #   MATRIX=<file> scripts/test-netpol.sh           another matrix, to try a verdict on a target of your own
 #   scripts/test-netpol.sh --selftest              the verdict table, with no cluster
+#   WAYLINE_TARGET=plane-prod scripts/test-netpol.sh   hosted production: its own matrix, on K3s's kube-router, and the node
+#                                                  dialled over SSH. Everything below holds, except where it names kindnet.
+#                                                  kube-router too accepts traffic from the node's own addresses, and it
+#                                                  too fails open, on a missing ipset, with only a warning in the journal.
 #
 # kindnet fails open and silently: when its setup breaks it logs one line and lets everything
 # through. So nothing here is believed until a sentinel has shown, in a throwaway namespace, that a
@@ -40,6 +44,9 @@
 # asked, the row counts.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
+# Hosted production opts in here. Without the variable this does nothing. See scripts/hosted/target.sh.
+# shellcheck source=hosted/target.sh
+if [[ -n "${WAYLINE_TARGET:-}" ]]; then source "$ROOT/scripts/hosted/target.sh"; fi
 
 SELFTEST=no
 if [[ "${1:-}" == --selftest ]]; then
@@ -53,7 +60,7 @@ if [[ "$SELFTEST" == no ]]; then
   "$ROOT/scripts/install-tools.sh" yq kubectl >/dev/null
 fi
 
-MATRIX="${MATRIX:-$ROOT/tests/network-policy-matrix.yaml}"
+MATRIX="${MATRIX:-${HOSTED_NETPOL_MATRIX:-$ROOT/tests/network-policy-matrix.yaml}}"
 [[ -f "$MATRIX" ]] || die "$MATRIX does not exist"
 
 # curlimages/curl 8.17.0, 9.7 MiB compressed on arm64. curl's exit codes separate refused (7) from
@@ -65,6 +72,12 @@ SERVER_IMAGE="docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930
 CONNECT_TIMEOUT=4
 WITNESS_TIMEOUT=3
 PARALLEL_PODS="${PARALLEL_PODS:-4}"
+# How long a new pod waits before its first packet, and how long a new policy gets before the sentinel's next probe. The controller
+# has to learn each. Measured on kindnet only. kube-router's are unmeasured on this VPS, so hosted production starts cautious.
+PROBE_SETTLE_SECONDS="${PROBE_SETTLE_SECONDS:-${WAYLINE_TARGET:+10}}"
+PROBE_SETTLE_SECONDS="${PROBE_SETTLE_SECONDS:-3}"
+POLICY_SETTLE_SECONDS="${POLICY_SETTLE_SECONDS:-${WAYLINE_TARGET:+30}}"
+POLICY_SETTLE_SECONDS="${POLICY_SETTLE_SECONDS:-5}"
 # What every probe pod looks up. Every namespace may reach DNS, or no row anywhere means anything.
 POD_REFERENCE_HOST="kube-dns.kube-system.svc.cluster.local"
 # TEST-NET-1, RFC 5737: nothing is there, so the sentinel can show the node's witness does not answer yes to everything.
@@ -73,8 +86,9 @@ RUN_ID="$(date -u +%H%M%S)"
 SENTINEL_NS="netpol-sentinel-$RUN_ID"
 PROBE_LABEL="plane-platform/netpol-probe"
 WORK="$(mktemp -d)"
-mkdir -p "$LOCAL_DIR/evidence-raw"
-EVIDENCE="$LOCAL_DIR/evidence-raw/netpol-$(date -u +%Y%m%dT%H%M%SZ).tsv"
+EVIDENCE_DIR="${HOSTED_EVIDENCE_DIR:-$LOCAL_DIR/evidence-raw}"
+mkdir -p "$EVIDENCE_DIR"
+EVIDENCE="$EVIDENCE_DIR/netpol-${WAYLINE_TARGET:+$WAYLINE_TARGET-}$(date -u +%Y%m%dT%H%M%SZ).tsv"
 
 cleanup() {
   if [[ "$SELFTEST" == no ]]; then
@@ -89,7 +103,7 @@ trap cleanup EXIT
 # scheme: once TCP connects, whatever the service answers, time_connect is above zero.
 # The sleep gives kindnet's informer time to learn this pod's IP and labels before the first packet.
 # shellcheck disable=SC2016  # expanded by the pod's shell, not this one
-IN_POD_SCRIPT='sleep 3
+IN_POD_SCRIPT='sleep '"$PROBE_SETTLE_SECONDS"'
 n=0
 {
   while read -r id host port; do
@@ -212,7 +226,11 @@ collect_probe_pod() {
 
 # ask_witness <rows, as id address port> <where the readings go>: non-zero if the node could not be asked at all.
 ask_witness() {
-  docker exec -i "$NODE_CONTAINER" bash -c "$NODE_WITNESS" <"$1" >"$2" 2>"$2.err"
+  if [[ -n "${WAYLINE_TARGET:-}" ]]; then
+    node_script "$NODE_WITNESS" <"$1" >"$2" 2>"$2.err"
+  else
+    docker exec -i "$NODE_CONTAINER" bash -c "$NODE_WITNESS" <"$1" >"$2" 2>"$2.err"
+  fi
 }
 
 # --- Sentinel ------------------------------------------------------------------------------------
@@ -251,8 +269,8 @@ assert_witness() {
   ok "sentinel: the node's witness -> a blocked server answers it on an open and a closed port, and $WITNESS_NOBODY does not"
 }
 
-run_sentinel() {
-  log "Sentinel: is NetworkPolicy really enforced?"
+# The local cluster's controller, read from its pod and the node's nftables.
+sentinel_kindnet() {
   kc -n kube-system rollout status ds/kindnet --timeout=30s >/dev/null ||
     die "kindnet is not healthy, and it fails open"
   # grep reads to the end, not -q. With -q it stops at the first match, the writer dies of SIGPIPE, and
@@ -264,6 +282,32 @@ run_sentinel() {
   if ! docker exec "$NODE_CONTAINER" nft list tables 2>/dev/null | grep 'kube-network-policies\|kindnet-network-policies' >/dev/null; then
     warn "no network policy table found by name in nftables on the node. Continuing, the behaviour test decides."
   fi
+}
+
+# K3s's embedded kube-router, read over SSH. It runs in the k3s process, so its log is the journal. With no ipset it warns and
+# enforces nothing, and #14419 lost the FORWARD jumps at startup. The behaviour below is still the real proof.
+sentinel_kube_router() {
+  local readings
+  # shellcheck disable=SC2016  # expanded by the node's shell, not this one
+  readings="$(node_script 'PATH="$PATH:/var/lib/rancher/k3s/data/current/bin:/var/lib/rancher/k3s/data/current/bin/aux"
+printf "skipped=%s\n" "$(journalctl -u k3s --no-pager 2>/dev/null | grep -c "Skipping network policy" || true)"
+printf "chains=%s\n" "$(iptables -S 2>/dev/null | grep -c "^-N KUBE-ROUTER" || true)"
+printf "forward=%s\n" "$(iptables -S FORWARD 2>/dev/null | grep -c "KUBE-ROUTER-FORWARD" || true)"
+command -v ipset >/dev/null 2>&1 && echo ipset=yes || echo ipset=no' </dev/null)" ||
+    die "could not ask the node about kube-router over SSH"
+  grep -qx 'ipset=yes' <<<"$readings" || die "the node has no ipset, so K3s's network policy controller is off, and it only warned"
+  if ! grep -qx 'skipped=0' <<<"$readings"; then
+    die "K3s logged 'Skipping network policy', so it is failing open: $(tr '\n' ' ' <<<"$readings")"
+  fi
+  if grep -qx 'chains=0' <<<"$readings" || grep -qx 'forward=0' <<<"$readings"; then
+    die "K3s's iptables have no KUBE-ROUTER chains, or FORWARD does not jump to them, so nothing enforces policy: $(tr '\n' ' ' <<<"$readings")"
+  fi
+  ok "kube-router: ipset is there, its chains exist, FORWARD jumps to them, and the journal has no skip"
+}
+
+run_sentinel() {
+  log "Sentinel: is NetworkPolicy really enforced?"
+  if [[ -n "${WAYLINE_TARGET:-}" ]]; then sentinel_kube_router; else sentinel_kindnet; fi
 
   # A throwaway namespace, so the positive control runs before any policy applies and nothing here
   # can touch a Plane environment. Deleted by the exit trap.
@@ -333,7 +377,7 @@ spec:
     - from: [{podSelector: {matchLabels: {role: allowed}}}]
       ports: [{port: 8080}]
 YAML
-  sleep 5
+  sleep "$POLICY_SETTLE_SECONDS"
   assert_class TIMEOUT "default-deny blocks a new connection" blocked "$client" "$server" 8080
   assert_class CONNECTED "allow rule admits only the labelled client" allowed '{"role":"allowed"}' "$server" 8080
   local server_address
