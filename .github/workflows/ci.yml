@@ -108,9 +108,9 @@ jobs:
           # The evidence names commits, and the refusal to move backwards reads ancestry.
           fetch-depth: 0
           persist-credentials: false
+      - name: Fetch the pinned yq
+        run: ./scripts/install-tools.sh yq
       - name: Check the evidence, confirm each digest on GHCR, move deploy/plane-prod
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./scripts/install-tools.sh yq
-          ./scripts/ci/publish-release.sh
+        run: ./scripts/ci/publish-release.sh
