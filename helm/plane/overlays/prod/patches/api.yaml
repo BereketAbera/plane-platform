@@ -1,0 +1,5 @@
+- {op: replace, path: /spec/template/spec/containers/0/resources, value: {requests: {cpu: 500m, memory: 768Mi}, limits: {cpu: 3000m, memory: 2048Mi}}}
+# Container env beats the ConfigMap's value, which the chart hard-codes to 1. Only one worker was measured (207 MiB, 293
+# at peak), so three is an estimate. The test makes a reordered env fail the render instead of changing something else.
+- {op: test, path: /spec/template/spec/containers/0/env/1/name, value: GUNICORN_WORKERS}
+- {op: replace, path: /spec/template/spec/containers/0/env/1/value, value: "3"}

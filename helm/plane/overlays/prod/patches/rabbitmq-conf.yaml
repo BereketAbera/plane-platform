@@ -1,0 +1,2 @@
+# The same half of the container limit as components/hardening/rabbitmq-conf.yaml, for this overlay's larger limit.
+- {op: replace, path: /data/20-memory.conf, value: "vm_memory_high_watermark.absolute = 512Mi\n"}

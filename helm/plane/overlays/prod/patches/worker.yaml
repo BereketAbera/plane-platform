@@ -1,0 +1,5 @@
+- {op: replace, path: /spec/template/spec/containers/0/resources, value: {requests: {cpu: 250m, memory: 512Mi}, limits: {cpu: 2000m, memory: 1536Mi}}}
+# Celery forks per CPU the node reports, 12 here, unless told otherwise, and each fork costs memory. Measured at this
+# concurrency (295 MiB, 426 at peak).
+- {op: test, path: /spec/template/spec/containers/0/env/1/name, value: CELERY_WORKER_CONCURRENCY}
+- {op: replace, path: /spec/template/spec/containers/0/env/1/value, value: "4"}

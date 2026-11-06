@@ -1,0 +1,113 @@
+# A dump behind every migration. ADR 0014 keeps the migrator a Sync hook, and on this cluster no laptop runs a dump
+# before a publish, so this does it, in the same sync.
+#
+# Sync at wave 1, the wave that applies Postgres. PreSync or an earlier wave would wait on Postgres before Argo CD
+# applied it, and stop a fresh install for good. So this waits for Postgres itself, and the migrator at wave 2 starts
+# only once this has finished. If it fails the migrator never runs and the sync goes red, which is the point.
+#
+# A sync retries without limit, so one failing migrator would run this every few minutes, and fresh dumps of a half
+# migrated database would rotate out the dump taken before it. Only a new backend image brings new migrations, so each
+# image gets one dump and a retry of the same image keeps it.
+#
+# The nightly backup seals its own dump with restic. This one is plain, mode 0600 for UID 70, so the read-only backup
+# user cannot read it, and it stays on this volume.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: plane-prod-predeploy-dump
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    # As the migrator: no ttlSecondsAfterFinished, because Argo can wait forever on a hook Kubernetes already deleted.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  # Postgres can restart under a dump when its own image moves in this same wave, and the next try starts clean.
+  backoffLimit: 2
+  # Waiting for a cold Postgres has taken minutes, and the dump grows with the data. Unmeasured at any real size.
+  activeDeadlineSeconds: 1800
+  template:
+    metadata:
+      # components/hardening removes this from every plane-* Job, the chart's reason being its timestamp, and removing
+      # a path that is not there fails the render. So it is here to be removed, and the render never holds it.
+      annotations:
+        timestamp: removed-by-hardening
+      labels:
+        app.kubernetes.io/name: plane-predeploy-dump
+        # The label backup Jobs carry, which is what the network policies let reach Postgres.
+        app.kubernetes.io/component: backup
+    spec:
+      restartPolicy: Never
+      serviceAccountName: plane
+      automountServiceAccountToken: false
+      # Components/hardening replaces this with its own, so patches/predeploy-dump.yaml sets the UID again after it. A
+      # hostPath volume ignores fsGroup, so this UID must own or be allowed into the backup folder.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        seccompProfile: {type: RuntimeDefault}
+      volumes:
+        # The same claim as the nightly backup in this namespace. The backup Application owns it.
+        - name: backups
+          persistentVolumeClaim: {claimName: backups}
+      containers:
+        - name: dump
+          # The chart's image name, so the overlay's digest applies and this is always the server's own version:
+          # pg_dump refuses to dump a server newer than itself.
+          image: postgres
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          env:
+            - {name: PGHOST, value: plane-pgdb}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: plane-pgdb, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: plane-pgdb, key: POSTGRES_PASSWORD}}}
+            - {name: POSTGRES_DB, valueFrom: {secretKeyRef: {name: plane-pgdb, key: POSTGRES_DB}}}
+            # Replaced in kustomization.yaml with what the migrator runs.
+            - {name: BACKEND_IMAGE, value: set-by-replacements}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: backups, mountPath: /backups}
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              umask 077
+              ROOT=/backups/predeploy
+              KEEP=5
+              RELEASE="$(printf '%.16s' "${BACKEND_IMAGE##*sha256:}")"
+              mkdir -p "$ROOT"
+
+              until pg_isready -q; do
+                echo "waiting for Postgres"
+                sleep 5
+              done
+
+              if ls -d "$ROOT"/*-"$RELEASE" >/dev/null 2>&1; then
+                echo "backend $RELEASE already has its dump, so this is a retry or a sync with no new migrations"
+                exit 0
+              fi
+
+              rm -rf "$ROOT"/*.partial
+              D="$ROOT/$(date -u +%Y%m%dT%H%M%SZ)-$RELEASE"
+              mkdir "$D.partial"
+
+              # As scripts/backup.sh: these tables hold request and response bodies and grow fast, so only their schema
+              # is kept. An empty database, as on first install, dumps to a small valid file.
+              pg_dump -Fc -Z 6 \
+                --exclude-table-data=api_activity_logs \
+                --exclude-table-data=webhook_logs \
+                --exclude-table-data=email_notification_logs \
+                -f "$D.partial/plane.dump" "$POSTGRES_DB"
+              pg_restore -l "$D.partial/plane.dump" >"$D.partial/plane.toc.txt"
+              TABLES="$(psql -Atc "select count(*) from information_schema.tables where table_schema = 'public'" "$POSTGRES_DB")"
+              printf '{"backend_image":"%s","tables":%s}\n' "$BACKEND_IMAGE" "$TABLES" >"$D.partial/manifest.json"
+              (cd "$D.partial" && sha256sum plane.dump plane.toc.txt manifest.json >SHA256SUMS)
+              mv "$D.partial" "$D"
+              echo "dumped $TABLES tables to predeploy/${D##*/}"
+
+              ls -1d "$ROOT"/*Z-* | sort -r | tail -n +"$((KEEP + 1))" | while read -r OLD; do rm -rf "$OLD"; done
