@@ -25,3 +25,21 @@ variable "service_account_name" {
   type        = string
   default     = "plane-infisical-auth"
 }
+
+variable "environments" {
+  description = "Project and namespace for each environment. The default is the local platform's, so its plan stays empty. Hosted production passes its own through TF_VAR_environments, from scripts/hosted/target.sh."
+  type = map(object({
+    project   = string
+    namespace = string
+  }))
+  default = {
+    dev = {
+      project   = "plane-dev"
+      namespace = "plane-dev"
+    }
+    prod-sim = {
+      project   = "plane-prod-sim"
+      namespace = "plane-prod-sim"
+    }
+  }
+}
