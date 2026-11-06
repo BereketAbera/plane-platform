@@ -58,6 +58,7 @@ deny contains msg if {
 environment_hosts := {
 	"plane-dev": "plane.dev.localhost",
 	"plane-prod-sim": "plane.prod-sim.localhost",
+	"plane-prod": "wayline.bereket.dev",
 }
 
 # Traefik reads IngressRoutes from every namespace, and plane-dev may create them, so a dev route

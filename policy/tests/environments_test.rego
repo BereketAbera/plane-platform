@@ -83,3 +83,9 @@ test_route_without_a_namespace_rejected if {
 test_route_with_a_namespace_accepted if {
 	count(environments.deny) == 0 with input as {"kind": "IngressRoute", "metadata": {"name": "x", "namespace": "plane-dev"}}
 }
+
+test_a_certificate_in_a_render_rejected if {
+	count(environments.deny) == 1 with input as {"kind": "Certificate", "metadata": {"name": "wayline-tls", "namespace": "plane-prod"}}
+	count(environments.deny) == 1 with input as {"kind": "Issuer", "metadata": {"name": "x", "namespace": "plane-prod"}}
+	count(environments.deny) == 1 with input as {"kind": "ClusterIssuer", "metadata": {"name": "x"}}
+}

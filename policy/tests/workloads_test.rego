@@ -52,6 +52,10 @@ test_allowlisted_operator_may_automount if {
 	count(workloads.deny) == 0 with input as pod_template("iso-dev-controller-manager", token_on, limited)
 }
 
+test_hosted_operator_may_automount if {
+	count(workloads.deny) == 0 with input as pod_template("iso-prod-controller-manager", token_on, limited)
+}
+
 test_allowlisted_operator_still_needs_memory_limit if {
 	count(workloads.deny) == 1 with input as pod_template("iso-dev-controller-manager", token_on, {})
 }

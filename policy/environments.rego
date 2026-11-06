@@ -34,6 +34,13 @@ deny contains msg if {
 	msg := sprintf("%s: PreSync hook deadlocks a fresh install, use Sync at wave 2", [kube.label(input)])
 }
 
+# The chart renders these if createIssuer or generateCerts is on, and that would make it a second owner of a certificate.
+# Hosted production's Certificate has its own Application, and a local environment has none.
+deny contains msg if {
+	input.kind in {"Issuer", "ClusterIssuer", "Certificate"}
+	msg := sprintf("%s: a Plane environment's render must not own a certificate", [kube.label(input)])
+}
+
 # The route rules in plane.rego read metadata.namespace. Argo CD would place an object with none in
 # the Application's destination, where those rules would not see it.
 deny contains msg if {
