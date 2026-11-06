@@ -1,0 +1,36 @@
+# The ClusterIssuers and Certificate wayline-tls. Project platform, because a ClusterIssuer is cluster-scoped. They ignore their
+# own health, so an ACME outage or a closed firewall cannot hold monitoring or Infisical behind this wave, and the certificate
+# rules in rules-hosted.yaml say when it fails. No finalizer: the certificate is rate-limited, so it should not be thrown away.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: certificates
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plane-prod
+  source:
+    repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+    targetRevision: deploy/plane-prod
+    path: gitops/clusters/plane-prod/platform/certificates
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - SkipDryRunOnMissingResource=true
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

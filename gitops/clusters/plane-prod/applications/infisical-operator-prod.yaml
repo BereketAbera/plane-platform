@@ -1,0 +1,40 @@
+# Platform project, not plane-prod: the chart renders CRDs and a ClusterRole, which the Plane project refuses. This cluster has
+# one operator, so it installs the CRDs. No finalizer: cascading deletes the CRDs, and with them every Infisical CR in plane-prod.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infisical-operator-prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plane-prod
+  sources:
+    - repoURL: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+      chart: secrets-operator
+      targetRevision: 0.11.16
+      helm:
+        valueFiles:
+          - $values/gitops/clusters/plane-prod/values/infisical-operator-prod.yaml
+    - repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+      targetRevision: deploy/plane-prod
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

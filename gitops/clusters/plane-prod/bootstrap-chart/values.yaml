@@ -1,0 +1,6 @@
+# Set by infrastructure/terraform/modules/argocd, from infrastructure/terraform/environments/prod.
+gitRepoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+# This branch holds only what CI has released: gitops/clusters/plane-prod and gitops/environments/prod.
+targetRevision: deploy/plane-prod
+# Unused by the templates. Terraform passes a hash of this chart so an edit shows up in its plan.
+chartHash: ""
