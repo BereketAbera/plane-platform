@@ -1,5 +1,7 @@
 # Runs the same scripts as `make ci`. No secrets and no cluster, so a compromised tool has little
-# to steal: every job holds a read-only token and persists no credentials.
+# to steal: every job holds a read-only token and persists no credentials. The one exception is
+# release-plane-prod, last below, which runs only on main, after the others, and can move only the
+# branch hosted production reads.
 name: ci
 
 on:
@@ -59,6 +61,8 @@ jobs:
         run: ./scripts/ci/validate-manifests.sh
       - name: One owner per resource
         run: ./scripts/ci/ownership.sh
+      - name: The exact-digest promotion gate, with a throwaway key and repository
+        run: ./scripts/ci/test-prod-gate.sh
 
   security:
     name: Security
@@ -81,3 +85,32 @@ jobs:
           key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
       - name: Gitleaks, trivy config, trivy fs
         run: ./scripts/ci/security.sh
+
+  # What hosted Argo CD reads comes only from here, so CI holds no Kubernetes access and a merge that fails this reaches
+  # nothing: the branch stays where it is, and production keeps running. Serial, because a newer commit replacing one still
+  # waiting loses nothing, and an older one landing after it would be refused as a move backwards. No cache of tools, unlike
+  # the jobs above, because this one can write, and what it fetches is checked against tools.lock.
+  release-plane-prod:
+    name: Release plane-prod
+    needs: [lint, manifests, security]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # move deploy/plane-prod
+      packages: read # read each digest's manifest and config on GHCR
+    concurrency:
+      group: release-plane-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The evidence names commits, and the refusal to move backwards reads ancestry.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the evidence, confirm each digest on GHCR, move deploy/plane-prod
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/install-tools.sh yq
+          ./scripts/ci/publish-release.sh
