@@ -1,10 +1,11 @@
 # The rules only hosted production has, in gitops/clusters/plane-prod/platform/monitoring-extras/shared. Run by promtool from
 # scripts/ci/validate-manifests.sh, which writes each PrometheusRule's spec beside a copy of this file as rules-<name>.yaml.
 #
-# Each number here is DESIGN's: disk 20% and 10%, certificate 21 days, served certificate 14 days, backup 26 hours.
+# Each number here is the hosted design's: disk 20% and 10%, certificate 21 days, served certificate 14 days, backup 26 hours.
 rule_files:
   - rules-hosted.yaml
   - rules-hosted-plane.yaml
+  - rules-hosted-platform.yaml
 evaluation_interval: 30s
 tests:
   - name: disk warns under 20 percent and is critical under 10, each only after holding
@@ -277,3 +278,23 @@ tests:
       - expr: wayline:plane_application:present
         eval_time: 10m
         exp_samples: []
+  - name: the platform rules this cluster keeps read its namespaces, cert-manager's included, and name the node
+    interval: 1m
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="cert-manager",pod="cert-manager-1",container="c"}'
+        values: '0x5 1 2x30'
+      - series: 'node_memory_MemAvailable_bytes{instance="n"}'
+        values: '5x30'
+      - series: 'node_memory_MemTotal_bytes{instance="n"}'
+        values: '100x30'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: PodRestarting
+        exp_alerts:
+          - exp_labels: { namespace: cert-manager, pod: cert-manager-1, container: c, severity: warning, component: pod }
+            exp_annotations: { summary: "cert-manager/cert-manager-1 container c restarted more than once in 15m" }
+      - eval_time: 6m
+        alertname: NodeMemoryLow
+        exp_alerts:
+          - exp_labels: { instance: n, severity: warning, component: node }
+            exp_annotations: { summary: "The node has 5% of its memory available" }
