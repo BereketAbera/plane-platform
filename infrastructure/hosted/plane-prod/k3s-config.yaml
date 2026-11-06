@@ -1,0 +1,26 @@
+# /etc/rancher/k3s/config.yaml on the node. Written before K3s first starts, because the CIDRs cannot change afterwards.
+# Argo CD owns Traefik and metrics-server. ServiceLB is off because klipper hides the client IP, which Plane's throttle needs.
+write-kubeconfig-mode: "0600"
+disable:
+  - traefik
+  - servicelb
+  - metrics-server
+# The same ranges as the local kind cluster, so policies and docs do not need a second set of numbers.
+cluster-cidr: 10.244.0.0/16
+service-cidr: 10.96.0.0/16
+cluster-dns: 10.96.0.10
+# One node needs no overlay, so nothing listens on VXLAN's UDP port.
+flannel-backend: host-gw
+secrets-encryption: true
+protect-kernel-defaults: true
+# Contabo's resolvers were measured at over 3 seconds a lookup, so CoreDNS forwards elsewhere.
+resolv-conf: /etc/rancher/k3s/resolv.conf
+kube-apiserver-arg:
+  - audit-policy-file=/var/lib/rancher/k3s/server/audit.yaml
+  - audit-log-path=/var/lib/rancher/k3s/server/logs/audit.log
+  - audit-log-maxage=14
+  - audit-log-maxbackup=5
+  - audit-log-maxsize=100
+  - service-account-extend-token-expiration=false
+kube-controller-manager-arg:
+  - terminated-pod-gc-threshold=100

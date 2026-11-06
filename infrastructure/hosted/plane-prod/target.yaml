@@ -7,8 +7,8 @@ ssh_user: wayline-admin
 ssh_key: ~/.ssh/wayline_contabo_ed25519
 contabo_instance_id: 203733427
 node_name: vmi3733427
-# The kube-system namespace's UID. `pending` until K3s first runs, and then only provisioning is allowed.
-kube_system_uid: pending
+# The kube-system namespace's UID, which a rebuilt cluster would not share. Scripts refuse a cluster that differs.
+kube_system_uid: 43d68cbe-fd07-40a2-8a09-fccc49d0594d
 kubeconfig: .local/hosted/plane-prod/kubeconfig
 tunnel_port: 16443
 k3s_version: v1.36.6+k3s1
