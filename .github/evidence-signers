@@ -1,0 +1,5 @@
+# Who may sign docs/evidence/promotions/<set-hash>.json.sig, in ssh-keygen's allowed_signers format.
+# The private half stays on the laptop, at ~/.ssh/wayline_evidence_ed25519, so nothing in CI can mint evidence.
+# scripts/ci/check-prod-evidence.sh reads this file as committed at the commit under test. docs/evidence/promotions/README.md
+# says what a signature here does and does not prove.
+wayline-evidence ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEa6Und2p0+40INccs+tlcZW8I1PmkUfrgaTeEpbfCR3 wayline-evidence
