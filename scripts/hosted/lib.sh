@@ -61,7 +61,8 @@ umask 077
 mkdir -p "$LOCAL_DIR" "$HOSTED_EVIDENCE_DIR"
 chmod 700 "$LOCAL_DIR"
 
-kc() { command "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" "$@"; }
+# The bare path and not `command`: bash 3.2 execs `command <path>` in place inside a backgrounded function, and the subshell is gone.
+kc() { "$ROOT/.tools/bin/kubectl" --kubeconfig "$KUBECONFIG" --context "$KUBE_CONTEXT" "$@"; }
 
 cluster_exists() { die "cluster_exists asks about kind, and this script is working on $HOSTED_NAME"; }
 
