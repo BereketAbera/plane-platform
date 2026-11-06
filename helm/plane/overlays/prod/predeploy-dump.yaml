@@ -23,7 +23,7 @@ metadata:
 spec:
   # Postgres can restart under a dump when its own image moves in this same wave, and the next try starts clean.
   backoffLimit: 2
-  # Waiting for a cold Postgres has taken minutes, and the dump grows with the data. Unmeasured at any real size.
+  # A cold Postgres can take minutes to pull and start, and the dump grows with the data. Unmeasured at any real size.
   activeDeadlineSeconds: 1800
   template:
     metadata:

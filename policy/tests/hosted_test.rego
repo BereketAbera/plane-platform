@@ -251,6 +251,22 @@ test_a_traefik_acme_resolver_rejected if {
 	count(hosted.deny) == 0 with input as deployment("traefik", "traefik", "i", {"args": ["--entryPoints.web.address=:8000"]})
 }
 
+issuer(ingress) := {
+	"kind": "ClusterIssuer",
+	"metadata": {"name": "letsencrypt-staging"},
+	"spec": {"acme": {"solvers": [{"http01": {"ingress": ingress}}]}},
+}
+
+test_solver_on_a_cluster_ip_accepted if {
+	count(hosted.deny) == 0 with input as issuer({"ingressClassName": "traefik", "serviceType": "ClusterIP"})
+}
+
+# cert-manager's default when the field is left out.
+test_solver_on_a_node_port_rejected if {
+	count(hosted.deny) == 1 with input as issuer({"ingressClassName": "traefik"})
+	count(hosted.deny) == 1 with input as issuer({"ingressClassName": "traefik", "serviceType": "NodePort"})
+}
+
 git_url := "ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git"
 
 application(source) := {

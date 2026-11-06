@@ -5,6 +5,21 @@
 
 K8S_VERSION=1.36.4
 
+# Hosted production, which is a second cluster with its own tree. deploy/plane-prod holds only these two paths, and the
+# render, so nothing hosted may read anything else.
+HOSTED_TREE=gitops/clusters/plane-prod
+HOSTED_ENVIRONMENT=gitops/environments/prod
+HOSTED_APPLICATION_TEMPLATE="$HOSTED_TREE/plane-prod-application.yaml.tmpl"
+
+hosted_k8s_version() { # What K3s runs on the VPS, so a chart renders and a schema reads for that and not for kind's version.
+  local version
+  version="$(yq -r '.k3s_version // ""' infrastructure/hosted/plane-prod/target.yaml)"
+  version="${version#v}"
+  version="${version%%+*}"
+  [[ -n "$version" ]] || die "infrastructure/hosted/plane-prod/target.yaml states no k3s_version"
+  printf '%s\n' "$version"
+}
+
 # Argo CD reads *.yaml, *.yml, *.json and *.jsonnet in a directory it has no Kustomize or chart for, and
 # everything here, this file, scan-images.sh and the ownership check, reads *.yaml. So one of the others
 # in such a directory would reach the cluster with no check at all, and CI would stay green.
@@ -54,23 +69,80 @@ collect_in_repo() { # collect_in_repo <directory>: one file per source, everythi
   helm template bootstrap gitops/bootstrap/chart --namespace argocd >"$out/bootstrap.yaml"
 }
 
+# The hosted tree, as the hosted Argo CD reads it: the root reads applications/, and each child a directory of platform/.
+# values/ holds Helm values and no manifests. Writes nothing for a part that does not exist yet, so an empty tree passes.
+collect_hosted() { # collect_hosted <directory>: one file per source
+  local out="$1" platform_dir target
+  mkdir -p "$out"
+  [[ ! -d "$HOSTED_TREE/applications" ]] || collect "$HOSTED_TREE/applications" "$out/applications.yaml"
+  # Copied to applications/ by the first promotion, so it must already pass everything an Application there does.
+  [[ ! -f "$HOSTED_APPLICATION_TEMPLATE" ]] || tr -d '\r' <"$HOSTED_APPLICATION_TEMPLATE" >"$out/plane-prod-application.yaml"
+  for platform_dir in "$HOSTED_TREE"/platform/*/; do
+    [[ -d "$platform_dir" ]] || continue
+    target="$out/platform-$(basename "$platform_dir").yaml"
+    collect "${platform_dir%/}" "$target"
+  done
+  # Terraform applies this, and the root and the projects only mean anything once rendered.
+  if [[ -f "$HOSTED_TREE/bootstrap-chart/Chart.yaml" ]]; then
+    helm template bootstrap "$HOSTED_TREE/bootstrap-chart" --namespace argocd >"$out/bootstrap.yaml"
+  fi
+  # A directory with no manifests yet leaves an empty file, and that should not read as a tree to check.
+  find "$out" -type f -name '*.yaml' -size 0 -delete
+}
+
+hosted_applications() { # Every hosted Application, one to a line, including the one the first promotion adds.
+  [[ ! -d "$HOSTED_TREE/applications" ]] || find "$HOSTED_TREE/applications" -type f -name '*.yaml' | LC_ALL=C sort
+  [[ ! -f "$HOSTED_APPLICATION_TEMPLATE" ]] || printf '%s\n' "$HOSTED_APPLICATION_TEMPLATE"
+}
+
+# deploy/plane-prod holds only the two hosted trees and RELEASE.json, so a reference to anything else works here and fails
+# at sync, after the merge. So this reads a copy holding only those: each kustomization builds there, and each path and
+# values file an Application names is there.
+hosted_tree_stands_alone() { # hosted_tree_stands_alone <scratch directory>
+  local copy="$1" application reference kustomization status=0
+  mkdir -p "$copy/gitops/clusters" "$copy/gitops/environments"
+  [[ ! -d "$HOSTED_TREE" ]] || cp -R "$HOSTED_TREE" "$copy/gitops/clusters/"
+  [[ ! -d "$HOSTED_ENVIRONMENT" ]] || cp -R "$HOSTED_ENVIRONMENT" "$copy/gitops/environments/"
+  while read -r kustomization; do
+    if ! kustomize build "$(dirname "$kustomization")" >/dev/null; then
+      warn "${kustomization#"$copy"/} does not build from the two hosted trees alone"
+      status=1
+    fi
+  done < <(find "$copy/gitops" -type f -name kustomization.yaml | LC_ALL=C sort)
+  while read -r application; do
+    while read -r reference; do
+      [[ -n "$reference" && ! -d "$copy/$reference" ]] || continue
+      warn "$application: path $reference is not in the two hosted trees"
+      status=1
+    done < <(yq -r '(.spec.sources // [.spec.source])[] | .path // ""' "$application")
+    while read -r reference; do
+      reference="${reference#\$values/}"
+      [[ -n "$reference" && ! -f "$copy/$reference" ]] || continue
+      warn "$application: values file $reference is not in the two hosted trees"
+      status=1
+    done < <(yq -r '(.spec.sources // [.spec.source])[] | (.helm.valueFiles // [])[]' "$application")
+  done < <(hosted_applications)
+  return "$status"
+}
+
 render_chart() { # render_chart <output directory> <release> <namespace> <repository> <chart> <version> <values file...>
   local out="$1" release="$2" namespace="$3" repo="$4" chart="$5" version="$6" value
   shift 6
-  local args=(--repo "$repo" --version "$version" --kube-version "$K8S_VERSION" --namespace "$namespace")
+  # Argo CD names an OCI repository with no scheme, and Helm wants one and the chart in the same reference.
+  local reference=("$chart" --repo "$repo")
+  [[ "$repo" == http://* || "$repo" == https://* ]] || reference=("oci://${repo#oci://}/$chart")
+  local args=("${reference[@]}" --version "$version" --kube-version "${CHART_KUBE_VERSION:-$K8S_VERSION}" --namespace "$namespace")
   for value in "$@"; do args+=(--values "$value"); done
-  if ! helm template "$release" "$chart" "${args[@]}" >"$out/$release.yaml" 2>"$out/$release.err"; then
+  if ! helm template "$release" "${args[@]}" >"$out/$release.yaml" 2>"$out/$release.err"; then
     cat "$out/$release.err" >&2
     warn "$release: helm template failed"
     return 1
   fi
 }
 
-# Every third-party chart this platform installs: one for each Application with a chart source, plus
-# Argo CD, the one chart Terraform installs. The .err files stay beside the renders, so read *.yaml.
-render_platform_charts() { # render_platform_charts <directory>
-  local out="$1" application name repo chart version values value count=0 status=0
-  mkdir -p "$out"
+# Each chart source of each Application named on stdin, one to a line. CHARTS_RENDERED counts them.
+render_application_charts() { # render_application_charts <directory>
+  local out="$1" application name repo chart version values value status=0
   while read -r application; do
     name="$(yq -r '.metadata.name' "$application")"
     while IFS=$'\t' read -r repo chart version values; do
@@ -78,23 +150,46 @@ render_platform_charts() { # render_platform_charts <directory>
       local files=()
       for value in $values; do files+=("${value#\$values/}"); done
       if render_chart "$out" "$name" "$(yq -r '.spec.destination.namespace' "$application")" "$repo" "$chart" "$version" ${files[@]+"${files[@]}"}; then
-        count=$((count + 1))
+        CHARTS_RENDERED=$((CHARTS_RENDERED + 1))
       else
         status=1
       fi
     done < <(yq -r '
       (.spec.sources // [.spec.source])[] | select(.chart != null)
       | [.repoURL, .chart, .targetRevision, ((.helm.valueFiles // []) | join(" "))] | @tsv' "$application")
-  done < <(find gitops/applications -type f -name '*.yaml' | sort)
+  done
+  return "$status"
+}
 
-  local release=infrastructure/terraform/modules/argocd/main.tf
+render_argocd_chart() { # render_argocd_chart <directory> <values file>: the one chart Terraform installs
+  local out="$1" values="$2" release=infrastructure/terraform/modules/argocd/main.tf
   terraform_field() { awk -v field="$1" '/^resource "helm_release" "argocd"/ { inside = 1 } inside && $1 == field { gsub(/"/, "", $3); print $3; exit } inside && /^}/ { exit }' "$release"; }
-  if render_chart "$out" "$(terraform_field name)" argocd "$(terraform_field repository)" "$(terraform_field chart)" "$(terraform_field version)" helm/values/argocd.yaml; then
-    count=$((count + 1))
-  else
-    status=1
-  fi
+  render_chart "$out" "$(terraform_field name)" argocd "$(terraform_field repository)" "$(terraform_field chart)" "$(terraform_field version)" "$values" || return 1
+  CHARTS_RENDERED=$((CHARTS_RENDERED + 1))
+}
 
-  ok "$count platform chart(s) rendered"
+# Every third-party chart this platform installs: one for each Application with a chart source, plus
+# Argo CD, the one chart Terraform installs. The .err files stay beside the renders, so read *.yaml.
+render_platform_charts() { # render_platform_charts <directory>
+  local out="$1" status=0
+  mkdir -p "$out"
+  CHARTS_RENDERED=0
+  render_application_charts "$out" < <(find gitops/applications -type f -name '*.yaml' | sort) || status=1
+  render_argocd_chart "$out" helm/values/argocd.yaml || status=1
+  ok "$CHARTS_RENDERED platform chart(s) rendered"
+  return "$status"
+}
+
+# The same for hosted production: its own Applications, values and Kubernetes version. Nothing here if the tree is empty.
+render_hosted_charts() { # render_hosted_charts <directory>
+  local out="$1" status=0 CHART_KUBE_VERSION
+  mkdir -p "$out"
+  CHART_KUBE_VERSION="$(hosted_k8s_version)"
+  CHARTS_RENDERED=0
+  render_application_charts "$out" < <(hosted_applications) || status=1
+  if [[ -f "$HOSTED_TREE/values/argocd.yaml" ]]; then
+    render_argocd_chart "$out" "$HOSTED_TREE/values/argocd.yaml" || status=1
+  fi
+  ok "$CHARTS_RENDERED hosted chart(s) rendered"
   return "$status"
 }
