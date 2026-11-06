@@ -1,0 +1,157 @@
+# argocd. Argo CD syncs this file too, so a mistake here can lock it out of its own repair: only NEW connections are evaluated, so it
+# may look healthy until a restart. Change these rules with care.
+#
+# Requires global.networkPolicy.create=false in values/argocd.yaml. Policies are additive, and the chart's default set opens
+# argocd-server to everything.
+#
+# ApplicationSet runs at zero replicas, Dex and notifications are off, so they get no rules. argocd-server has no route: people reach
+# it with kubectl port-forward, which enters the pod's own network namespace, so it needs no rule either.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: argocd
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: argocd
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argocd-server
+  namespace: argocd
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: argocd-server } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 8083 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: argocd-repo-server } }
+      ports:
+        - { protocol: TCP, port: 8081 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: argocd-redis } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argocd-application-controller
+  namespace: argocd
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: argocd-application-controller } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 8082 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: argocd-repo-server } }
+      ports:
+        - { protocol: TCP, port: 8081 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: argocd-redis } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+# Git over SSH to ssh.github.com on 443, chart repositories on 443, and quay.io's for the OCI chart. Those names have no fixed
+# addresses, so the rule is public addresses on that one port, and the except list keeps it from reaching pods, Services or the node.
+# Offline, charts come from this pod's cache until it restarts. It reads no Kubernetes API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: argocd-repo-server } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/name, operator: In, values: [argocd-server, argocd-application-controller] }
+      ports:
+        - { protocol: TCP, port: 8081 }
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 8084 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: argocd-redis } }
+      ports:
+        - { protocol: TCP, port: 6379 }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 5.253.234.127/32]
+      ports:
+        - { protocol: TCP, port: 443 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argocd-redis
+  namespace: argocd
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: argocd-redis } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [argocd-server, argocd-application-controller, argocd-repo-server]
+      ports:
+        - { protocol: TCP, port: 6379 }
+---
+# A Helm hook that writes the argocd-redis Secret. It reruns on every terraform apply that upgrades the release, by which time these
+# policies exist, and a hang there would block Terraform.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argocd-redis-secret-init
+  namespace: argocd
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: argocd-redis-secret-init } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }

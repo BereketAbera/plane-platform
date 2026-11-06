@@ -1,0 +1,88 @@
+# cert-manager. Only the controller leaves the cluster, and only to ACME on 443. The solver pods it starts run in plane-prod, under
+# that namespace's policies.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: cert-manager
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: cert-manager
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# All four kinds of pod here talk to the API server: controller, webhook, cainjector and the startup check Job.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server
+  namespace: cert-manager
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+# ACME on 443, public addresses only. The self-check reads each HTTP-01 token on Traefik's web port, because CoreDNS rewrites the
+# public host to Traefik's Service. Traefik's own policy has the other half.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: controller
+  namespace: cert-manager
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: cert-manager, app.kubernetes.io/component: controller }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9402 }
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 5.253.234.127/32]
+      ports:
+        - { protocol: TCP, port: 443 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8000 }
+---
+# The API server calls this on every issuer and certificate. It comes from the node, which kube-router exempts, so this rule says
+# what is meant more than it enforces anything.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: webhook
+  namespace: cert-manager
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: webhook, app.kubernetes.io/component: webhook }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 10250 }

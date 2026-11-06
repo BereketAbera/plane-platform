@@ -1,0 +1,107 @@
+# traefik. The single door in: every browser request crosses this pod.
+#
+# Numbers every file in this directory uses, because a committed manifest has to name them. The first is host in
+# infrastructure/hosted/plane-prod/target.yaml, and the others are in k3s-config.yaml beside it:
+#   5.253.234.127/32  the node. Kubernetes' Service for the API server resolves to it on 6443, and kube-router evaluates after
+#                     DNAT, so this is what a pod's call to the API looks like. The kubelet and node-exporter answer here too.
+#   10.244.0.0/16     pods
+#   10.96.0.0/16      Services
+#
+# Enforced by K3s's embedded kube-router: new connections only, so a change here may look fine until a restart. A pod on the
+# host network, and anything the node itself sends to a pod, is exempt, so the kubelet's probes need no rule, and only the
+# host firewall guards 6443, 9100 and 10250 from outside.
+#
+# No routes to Argo CD, Grafana, Infisical, Prometheus or Alertmanager exist on this cluster, so nothing here reaches them.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: traefik
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: traefik
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# hostPort reaches this pod through portmap's DNAT with the client's own address as the source. The public internet is the
+# point, and pods and Services are excepted, so a pod in this cluster still needs a rule of its own below.
+#
+# 8080 (dashboard and ping) stays closed: kubelet probes come from the node and bypass policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: traefik-ingress
+  namespace: traefik
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.244.0.0/16, 10.96.0.0/16]
+      ports:
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 8443 }
+    # The api dials its own public host, which CoreDNS rewrites to this Service, and the web entrypoint only redirects.
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: plane-prod } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+    # Probes reach the public host the same way.
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: blackbox-exporter } }
+      ports:
+        - { protocol: TCP, port: 8443 }
+    # Before it asks Let's Encrypt, cert-manager reads each HTTP-01 token itself, on port 80, through the same rewrite.
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cert-manager } }
+          podSelector:
+            matchLabels: { app.kubernetes.io/name: cert-manager, app.kubernetes.io/component: controller }
+      ports:
+        - { protocol: TCP, port: 8000 }
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9100 }
+---
+# The coarse half of each pair: plane-prod's own policies narrow which pods and ports accept.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: traefik-egress
+  namespace: traefik
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+  policyTypes: [Egress]
+  egress:
+    # The CRD and Ingress providers watch the API server.
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+    # 8089 is cert-manager's HTTP-01 solver, which runs in the Certificate's namespace.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: plane-prod } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 8089 }
+        - { protocol: TCP, port: 9000 }
