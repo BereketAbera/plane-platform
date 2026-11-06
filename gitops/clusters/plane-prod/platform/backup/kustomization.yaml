@@ -1,0 +1,13 @@
+# Nightly backups, sealed with restic onto the host. A pod that names a hostPath fails PSA, but a pod that mounts a PVC does
+# not, so the Jobs here and the predeploy dump mount only the PVC named `backups` in their own namespace. Each namespace sees
+# only its own folder. Retain plus a host folder means neither deleting a PVC nor deleting this Application touches a backup.
+#
+# scripts/hosted/bootstrap.sh makes the folders, owned by UID 70, and Secret restic-password in each namespace. Neither is in
+# Git: the password, because a restore starts before Infisical does, and the folders, because a hostPath volume ignores fsGroup
+# and DirectoryOrCreate would make them root's. They are type Directory, so a missing one stops the mount and says so.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - storage.yaml
+  - plane-prod.yaml
+  - infisical.yaml

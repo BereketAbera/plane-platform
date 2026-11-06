@@ -1,0 +1,51 @@
+# A PV binds one PVC, so each namespace has its own, on its own folder of /srv/wayline/backups. Capacity is a label: hostPath
+# enforces nothing, and the disk rules in monitoring-extras are what watch it. 50 GiB is capacity.yaml's budget for backups.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backups-plane-prod
+  labels: {plane-platform/backups: plane-prod}
+spec:
+  capacity: {storage: 40Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: {apiVersion: v1, kind: PersistentVolumeClaim, namespace: plane-prod, name: backups}
+  hostPath: {path: /srv/wayline/backups/plane-prod, type: Directory}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backups
+  namespace: plane-prod
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: backups-plane-prod
+  resources:
+    requests: {storage: 40Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backups-infisical
+  labels: {plane-platform/backups: infisical}
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: {apiVersion: v1, kind: PersistentVolumeClaim, namespace: infisical, name: backups}
+  hostPath: {path: /srv/wayline/backups/infisical, type: Directory}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backups
+  namespace: infisical
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: backups-infisical
+  resources:
+    requests: {storage: 10Gi}

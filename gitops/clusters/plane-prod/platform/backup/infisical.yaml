@@ -1,0 +1,171 @@
+# Nightly backup of Infisical: the body of scripts/backup.sh's Job, on a schedule, sealed with restic. Half an hour before Plane's,
+# because a restore starts with Infisical. See plane-prod.yaml for what differs from that Job and why.
+#
+# Secret zero stays out: the dump is useless without ENCRYPTION_KEY, and it lives in .local/hosted/plane-prod/secret-zero and the
+# recovery bundle, never here. Only a truncated hash of it goes in the manifest.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: plane-backup
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: plane-backup
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "47 1 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 21600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: plane-backup
+        app.kubernetes.io/component: backup
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      # A failed Job's metric is what PlaneBackupFailed reads. Long enough to outlast the next night, and no longer.
+      ttlSecondsAfterFinished: 129600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: plane-backup
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            fsGroup: 70
+            seccompProfile: {type: RuntimeDefault}
+          volumes:
+            - name: backups
+              persistentVolumeClaim: {claimName: backups}
+            - name: restic-password
+              secret: {secretName: restic-password, defaultMode: 0440}
+            - name: work
+              emptyDir: {sizeLimit: 2Gi}
+            - name: tmp
+              emptyDir: {sizeLimit: 64Mi}
+          initContainers:
+            - name: postgres
+              # The server's own version, from gitops/clusters/plane-prod/platform/infisical: pg_dump refuses a newer server.
+              image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+              imagePullPolicy: IfNotPresent
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                - {name: PGHOST, value: infisical-postgres}
+                - {name: PGUSER, valueFrom: {secretKeyRef: {name: infisical-db, key: POSTGRES_USER}}}
+                - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: infisical-db, key: POSTGRES_PASSWORD}}}
+                - {name: POSTGRES_DB, valueFrom: {secretKeyRef: {name: infisical-db, key: POSTGRES_DB}}}
+                # Hashed below and unset at once. The key itself never reaches the backup.
+                - {name: ENCRYPTION_KEY, valueFrom: {secretKeyRef: {name: infisical-secrets, key: ENCRYPTION_KEY}}}
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {cpu: "1", memory: 256Mi}
+              volumeMounts:
+                - {name: work, mountPath: /work}
+                - {name: tmp, mountPath: /tmp}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  umask 077
+                  FP="$(printf %s "$ENCRYPTION_KEY" | sha256sum | cut -c1-16)"
+                  unset ENCRYPTION_KEY
+                  BACKUP_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+                  D=/work/backup
+                  TAB="$(printf '\t')"
+                  mkdir "$D" "$D/postgres"
+                  pg_dump -Fc -Z 0 -f "$D/postgres/infisical.dump" "$POSTGRES_DB"
+                  pg_restore -l "$D/postgres/infisical.dump" > "$D/postgres/infisical.toc.txt"
+                  # One statement per table, because a UNION over 785 partitions runs out of shared
+                  # memory here, as --single-transaction does below (measured, with max_connections=30).
+                  cat > "$D/postgres/rowcounts.sql" <<'SQL'
+                  SELECT format('SELECT %L AS t, count(*) AS c FROM public.%I', tablename, tablename) FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename \gexec
+                  SQL
+                  V="scratch_$(printf '%s' "$BACKUP_ID" | tr '[:upper:]' '[:lower:]')"
+                  trap 'dropdb --if-exists --force "$V" || true' EXIT
+                  createdb "$V"
+                  # Never --single-transaction: 3,000 partition indexes need more locks in one transaction than this server has.
+                  pg_restore --no-owner --no-privileges --exit-on-error -d "$V" "$D/postgres/infisical.dump"
+                  psql -XAt -F "$TAB" -v ON_ERROR_STOP=1 -d "$V" -f "$D/postgres/rowcounts.sql" > "$D/postgres/rowcounts.tsv"
+                  cd "$D"
+                  entry() { printf '{"path":"%s","bytes":%s,"sha256":"%s"}' "$1" "$(wc -c < "$1" | tr -d ' ')" "$(sha256sum "$1" | cut -d' ' -f1)"; }
+                  FILES="$(entry postgres/infisical.dump),$(entry postgres/infisical.toc.txt),$(entry postgres/rowcounts.tsv)"
+                  cat > manifest.json <<JSON
+                  {
+                    "schema": 1,
+                    "kind": "infisical",
+                    "env": "infisical",
+                    "id": "$BACKUP_ID",
+                    "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                    "pg_server_version": "$(psql -XAt -d "$POSTGRES_DB" -c 'SHOW server_version')",
+                    "pg_dump_version": "$(pg_dump --version)",
+                    "encryption_key_fp": "$FP",
+                    "files": [$FILES]
+                  }
+                  JSON
+                  find . -type f ! -name SHA256SUMS -print0 | xargs -0 sha256sum > SHA256SUMS
+                  sha256sum -c SHA256SUMS > /dev/null
+                  echo "postgres: $BACKUP_ID complete, $(wc -l < "$D/postgres/rowcounts.tsv") tables counted from a scratch restore"
+          containers:
+            - name: seal
+              image: docker.io/restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+              imagePullPolicy: IfNotPresent
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                - {name: RESTIC_REPOSITORY, value: /backups/restic}
+                - {name: RESTIC_PASSWORD_FILE, value: /run/restic/password}
+                - {name: RESTIC_CACHE_DIR, value: /work/cache}
+                - {name: TMPDIR, value: /work/tmp}
+                - {name: HOME, value: /tmp}
+                - {name: BACKUP_HOST, value: infisical}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {cpu: "1", memory: 1Gi}
+              volumeMounts:
+                - {name: backups, mountPath: /backups}
+                - {name: restic-password, mountPath: /run/restic, readOnly: true}
+                - {name: work, mountPath: /work}
+                - {name: tmp, mountPath: /tmp}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  # Not 077: new folders in the repository must stay enterable by the read-only pull user's group. restic sets
+                  # its files' modes itself, read-only, from the group bits of the repository's config.
+                  umask 027
+                  if [ -f /work/skip ]; then
+                    echo "seal: nothing to seal"
+                    exit 0
+                  fi
+                  mkdir -p /work/tmp /work/cache
+                  rc=0
+                  restic cat config > /dev/null 2>&1 || rc=$?
+                  case "$rc" in
+                    0) ;;
+                    10) restic init ;;
+                    *)
+                      echo "seal: cannot read the repository at $RESTIC_REPOSITORY, restic exit $rc" >&2
+                      exit 1
+                      ;;
+                  esac
+                  # Group read on config is restic's hint to create everything after it group-readable.
+                  chmod -R g+rX "$RESTIC_REPOSITORY"
+                  # A fixed path and --group-by, so retention groups these and the next run finds its parent.
+                  restic backup --retry-lock 10m --host "$BACKUP_HOST" --tag wayline --group-by host,tags /work/backup
+                  restic forget --retry-lock 10m --host "$BACKUP_HOST" --tag wayline --group-by host,tags \
+                    --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune
+                  restic check --retry-lock 10m --read-data-subset=5%
+                  # Sunday: a quarter of the data, so a month reads all of it.
+                  if [ "$(date -u +%u)" = 7 ]; then
+                    restic check --retry-lock 10m --read-data-subset="$(date -u +%U | awk '{print ($1 % 4) + 1}')/4"
+                  fi
+                  chmod -R g+rX "$RESTIC_REPOSITORY"
+                  restic snapshots --host "$BACKUP_HOST" --tag wayline --latest 1 --compact
+                  echo "seal: complete"
