@@ -1,0 +1,34 @@
+# The isolated namespace for one restore test. scripts/hosted/restore-test.sh fills __NS__, and refuses any name but
+# restore-test-<14 digits>. No Application owns it, no route reaches it, and Secrets of live data never enter it: the only Secret is
+# the restic password, on the VPS, and the prove script needs no network of any kind. Applied in this order, so the policy is there
+# before any pod is.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: __NS__
+  labels:
+    plane-platform/purpose: restore-test
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: __NS__
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# Outside Frameflow's reservation, because it lasts minutes, and small enough that a mistake here cannot starve the node.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: restore-test
+  namespace: __NS__
+spec:
+  hard:
+    pods: "4"
+    requests.cpu: "2"
+    requests.memory: 3Gi
+    limits.cpu: "4"
+    limits.memory: 6Gi

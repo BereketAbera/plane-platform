@@ -1,0 +1,46 @@
+# Tries to reach live data from inside the isolated namespace, by address, because this namespace has no DNS. Every line of TARGETS
+# must time out. scripts/hosted/restore-test.sh also dials each from the node, so a timeout here means the policy and not a target
+# that is down. Exit codes as scripts/test-netpol.sh reads them: curl's 28 with a time_connect of zero is a drop.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: probe
+  namespace: __NS__
+  labels:
+    app.kubernetes.io/name: restore-test-probe
+    plane-platform/purpose: restore-test
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  terminationGracePeriodSeconds: 0
+  activeDeadlineSeconds: 300
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile: {type: RuntimeDefault}
+  containers:
+    - name: probe
+      image: __CURL_IMAGE__
+      imagePullPolicy: IfNotPresent
+      securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 200m, memory: 64Mi}
+      env:
+        - name: TARGETS
+          value: "__TARGETS__"
+      command: [/bin/sh, -c]
+      args:
+        - |
+          # The controller has to learn this pod's address before its first packet means anything.
+          sleep __SETTLE__
+          for target in $TARGETS; do
+            address="${target%:*}"
+            port="${target##*:}"
+            connect="$(curl -sS -o /dev/null --connect-timeout 4 --max-time 6 -w '%{time_connect}' "http://$address:$port/" 2>/dev/null)"
+            code=$?
+            echo "RESULT $address $port $code $connect"
+          done
+          echo DONE
