@@ -26,10 +26,10 @@ UPSTREAM commit ──> overlay/ ──> patches/*.patch ──> codemod/rebrand
 | `checks/leak-scan.sh` | Fails on the upstream brand in what the frontends ship and in the rewritten mail templates, except allowlisted entries with reasons. `backend/check_image.py` covers the rest of the backend image, inside the image |
 | `checks/bundle-art.sh` | Fails if upstream's isometric empty states reach a bundle |
 | `checks/font-urls.sh` | Proves from the built CSS that fonts resolve under `/`, `/god-mode/`, `/spaces/` |
-| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts, that X-Forwarded-For behaves, nginx's redirects, and what a browser may keep: `Cache-Control` on every kind of response including errors for a real hashed name, the 4 security headers and 304s. `backend/check-image.sh` is the backend's part. **Manual:** no workflow runs it |
+| `checks/smoke-images.sh` | Runs each pushed image by digest under the chart's UID, limits and security settings, and checks the licence texts, that X-Forwarded-For behaves, nginx's redirects, and what a browser may keep: `Cache-Control` on every kind of response including errors for a real hashed name, the 4 security headers and 304s. `backend/check-image.sh` is the backend's part. `images.yml` runs it on the x86-64 runner against the digests it just published, and a failure stops the digest bump. Every image must be `PLATFORM`, or nothing runs. By hand, it reads `.build/digests.tsv` |
 | `checks/cache-names.sh` | Stops the build if a file could reach `assets/` with a name no bundler hashed, because nginx keeps such names for a year |
-| `checks/layer-check.py` | Reads every layer of an image as a registry serves it, including files a later layer hides, and fails if any holds the identifier on upstream's commercially licensed files in any case or in UTF-16, the original file's sha256, or bytecode at its path. It opens archives by their first bytes, not their names, and an image with something it could not open exits 2. `scripts/ci/build-images.sh` runs it before publishing anything and again on what it published. `--report-only` does the same for images we deploy unmodified, and never fails a build on them |
-| `checks/layer-check-cases.py` | Tests `layer-check.py` on layers it makes in memory, and with `--registry` as real images through the command. Manual |
+| `checks/layer-check.py` | Reads every layer of an image as a registry serves it, including files a later layer hides, and fails if any holds the identifier on upstream's commercially licensed files in any case or in UTF-16, the original file's sha256, or bytecode at its path. It opens archives by their first bytes, not their names, and an image with something it could not open exits 2. It reads the child of an index for `PLATFORM`, and an image whose config says another platform exits 2 too. `scripts/ci/build-images.sh` runs it before publishing anything and again on what it published. `--report-only` does the same for images we deploy unmodified, and never fails a build on them |
+| `checks/layer-check-cases.py` | Tests `layer-check.py` on layers it makes in memory, what it and the other readers do with an image of another architecture, on a read-only registry it serves on loopback, and with `--registry` real images through the command. `images.yml` runs it without `--registry`, before each build |
 | `checks/flatten-config.py` | Fails if the flattened backend dropped anything its base's config says. `scripts/ci/build-images.sh` runs it before publishing anything, and `checks/smoke-images.sh` on what was published |
 | `checks/flatten-compare.py` | Compares two images path by path and field by field, read from their registries. Manual, for evidence |
 | `checks/space-regions.mjs` | Lists the packages the bundler inlined into the space server, which `runtime/space-deps.mjs` cannot see. Manual, for evidence |
@@ -48,6 +48,10 @@ PLANE_SOURCE_MIRROR=/path/to/clone apps/wayline/scripts/build.sh # no GitHub fet
 make images                                                      # build.sh, then images, then push locally
 SKIP_NATIVE_BUILD=yes make images                                # reuse .build/wayline-dist, if its source has not changed
 ```
+
+`make images` builds `linux/arm64`, which the laptop's kind node runs. `PLATFORM` chooses another, and `images.yml` sets `linux/amd64` on an x86-64 runner,
+because the VPS is x86-64. `scripts/ci/build-images.sh`, `scripts/ci/scan-images.sh`, `checks/smoke-images.sh` and the readers in `checks/` all follow it, so
+a walk or a scan reads the image production runs. A plain manifest names one architecture, and reading it for another fails.
 
 Everything is written under `.build/` at the repo root, including a project-local pnpm store and
 corepack home, so the user's global store does not grow. The build runs under `env -i` because each
@@ -86,9 +90,9 @@ uncommitted source, or one whose source has changed since, and warns when the co
 routes `/` to web, so the path works from `/god-mode/` and `/spaces/` too. The target can be overridden at image build time
 with `WAYLINE_SOURCE_REPO`.
 
-**The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public. The commit it names, `84b63d9`, is on GitHub. The owner must make the repository public before anyone else uses an instance.**
+**The link works once the repository is public. It is private as of 2026-11-07, so `/source` returns 404 to anyone without access. An image `images.yml` publishes is built from a commit already on GitHub, so the commit the link names is there. The owner must make the repository public before anyone else uses an instance.**
 
-`NOTICE.md` and `MODIFICATIONS.md` still say that commit must also be pushed, and `MODIFICATIONS.md` still puts the first push ahead. They are held as they are. Both ship in every image and `images.yml` watches them, so an edit rebuilds the images on the next push and force-updates pull request 1. Neither has changed since `84b63d9`, so they read as the running images carry them, until the owner decides or the next change to those files.
+`NOTICE.md` and `MODIFICATIONS.md` say the same, in words meant to stay true after that. Both ship in every image and `images.yml` watches them, so an edit to either rebuilds the images on the next push.
 
 The licence texts are in every image at `/usr/share/licenses/wayline/`, and at `/licenses/` on the web image.
 
@@ -131,14 +135,15 @@ Upstream's backend image stays on any machine that builds this one, because it i
 ### Publishing to GHCR
 
 - **`images.yml` has run with `apps/wayline` in it.** Runs 41975430939 at `9c8e098` and 42044273310 at `76e98ee` each built the four images natively on arm64, walked them before and after publishing, scanned them, and
-  published them to GHCR as private packages ([CI evidence](../../docs/evidence/ci/README.md)). The build-only job on a pull request has not run, and those digests are not the ones deployed.
+  published them to GHCR as private packages ([CI evidence](../../docs/evidence/ci/README.md)). The build-only job on a pull request has not run, and those digests are not the ones deployed. Those two runs were `linux/arm64`, on `ubuntu-24.04-arm`.
+- **`images.yml` now builds `linux/amd64`, natively on `ubuntu-24.04`, because the VPS is x86-64. Neither job has run that way yet,** and `linux/amd64` digests are not on GHCR until one does.
 - Images go only to the local registry or `ghcr.io/bereketabera/wayline`. That is decision D12 (`backend/email-py-decision.txt`,
   `scripts/publish-gate.sh`, `MODIFICATIONS.md`). The `images.yml` publish job runs that gate first, and fails where publishing is not allowed.
 - Pull requests only build, and never push.
-- A push to main walks every layer of each image in a throwaway registry on the runner, and publishes only when all four pass, copying each by digest. It then walks each again as GHCR serves it, scans what it published with `scripts/ci/scan-images.sh`, and a failure in either stops the prune and the digest bump. An image that fails the first walk or the config check reaches nobody. One that fails the second walk stays in GHCR, with no digest recorded. Then `scripts/prune-ghcr.sh` keeps the newest two versions per image.
-- `make images` does the same with the local registry in place of GHCR, so the throwaway registry, the walks and the copy by digest have run here. On GitHub they ran twice, in runs 41975430939 at `9c8e098` and 42044273310 at `76e98ee`, with the copy to GHCR and its login.
+- A push to main walks every layer of each image in a throwaway registry on the runner, and publishes only when all four pass, copying each by digest. It then walks each again as GHCR serves it, scans what it published with `scripts/ci/scan-images.sh`, and runs it by digest with `checks/smoke-images.sh`. A failure in any of these stops the digest bump. An image that fails the first walk or the config check reaches nobody. One that fails the second walk stays in GHCR, with no digest recorded. One that fails the scan or the smoke stays in GHCR, and no bump opens for it.
+- `make images` builds, walks and copies the same way with the local registry in place of GHCR, for `linux/arm64`, so the throwaway registry, the walks and the copy by digest have run here. On GitHub they ran twice, in runs 41975430939 at `9c8e098` and 42044273310 at `76e98ee`, with the copy to GHCR and its login.
 - `make images` to the local registry uses no GHCR storage and is the path in pass 1.
-- Pruning with `GITHUB_TOKEN` ran in both: the job listed versions and deleted none, so a prune that deletes something has not run, and that may need the package's Actions access set to Admin.
+- **Nothing prunes GHCR.** `images.yml` had a job that kept the newest two versions per image, and it was removed, because it could delete a digest production runs or the evidence names. It listed versions in both runs and deleted none, so a prune that deletes something has never run, and that may need the package's Actions access set to Admin. `scripts/prune-ghcr.sh` stays, and refuses to delete anything until it exempts every digest in `docs/evidence/promotions` and the prod overlay.
 
 **Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the repository's owner, Bereket Abera, has not reviewed that. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
 
@@ -152,7 +157,7 @@ Before the repository is made public, in this order:
 2. Do this before making the repository public, because GitHub's documentation conflicts. One page says a package a workflow creates takes the repository's visibility. Another says a linked package takes the repository's access permissions and not its visibility. So do not assume either way what a package becomes.
 3. Read them again after making the repository public. The same documentation says a package made public cannot be made private again.
 
-Pruning is a precaution, not a response to a known limit. GitHub's Packages billing page lists 500 MB of storage for private
+Pruning was a precaution, not a response to a known limit, so GHCR can keep growing for now. GitHub's Packages billing page lists 500 MB of storage for private
 packages on Free, and also says "Container image storage and bandwidth for the Container registry is currently free", with at
 least a month's notice before that changes. So the 500 MB should not apply to `ghcr.io` today. Two builds are stored there, the first holding 401.8 MiB, and November's usage summary showed no packages row after it ([compare](../../docs/evidence/ci/ci-4-20261105T060219Z-published-compare.txt), [billing](../../docs/evidence/ci/plan-facts-20261105T062632Z.txt)).
 No file records anyone reading the package page. GHCR stores upstream's layers for space too, because nothing is
@@ -178,8 +183,8 @@ on 2026-11-05, nginx base 25.0 MiB on 2026-11-04. The space base is 255.8 MiB fr
    a release now carries the AGPL header on `email.py`, delete the replacement rather than updating it, and see whether the backend still needs flattening.
    `leak-scan` reports new brand strings, usually a line for `codemod/rebrand.mjs`. `checks/flatten-config.py` stops here if the new base's
    config says something the last stage of `runtime/Dockerfile.backend` does not restate, and `checks/layer-check.py` if a layer holds the commercial identifier.
-6. Run `checks/smoke-images.sh` by hand, with `WAYLINE_EXPECT_REF` set to the commit, and `WAYLINE_BASE_CONTROL=yes checks/backend-db.sh`.
-   No workflow runs either.
+6. Run `checks/smoke-images.sh` by hand on what `make images` built, with `WAYLINE_EXPECT_REF` set to the commit, and `WAYLINE_BASE_CONTROL=yes checks/backend-db.sh`.
+   `images.yml` runs the first again on `linux/amd64` after a push. No workflow runs the second.
 7. Look at the app: sign-in, sidebar, board, settings, an empty state, god-mode, a public page.
 
 What this costs, measured on 2026-11-05 with `checks/upstream-check.sh`, which applies the current overlay and every

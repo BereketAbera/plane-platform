@@ -6,7 +6,7 @@ Argo CD reads the local Git remote in pass 1, and only `make gitops-publish` wri
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | pull request, push to main | `scripts/ci/lint.sh`, `validate-manifests.sh`, `ownership.sh`, `security.sh`, with no secrets |
-| `images.yml` | changes under `apps/wayline`, to `scripts/ci/build-images.sh`, or to `images.yml` itself | Builds images. On main, pushes to GHCR, records digests, opens a digest-bump PR for dev |
+| `images.yml` | changes under `apps/wayline`, to `scripts/ci/build-images.sh`, or to `images.yml` itself | Builds `linux/amd64` images natively on x86-64. On main, pushes to GHCR, records digests, scans them, runs them by digest, and opens a digest-bump PR for dev. Deletes nothing |
 | `wayline-upstream-check.yml` | weekly, manual dispatch | Dry-runs the Wayline overlay and patches against an upstream ref, default `preview`, and reports the size of the work. Builds and pushes nothing |
 | `promote-prod-sim.yml` | manual dispatch | Opens a PR copying a digest already recorded for dev to prod-sim. Never rebuilds |
 
@@ -17,9 +17,14 @@ clone and requires the matching check to go red. It takes minutes, so `make ci` 
 against a stub `kubectl`. The full `validate-manifests.sh` runs it. It proves how the scripts behave given those answers,
 and nothing about a real cluster.
 
-`make scan-images` runs trivy over every image the platform runs. It fails only on a CRITICAL finding with a fix in an image
-we build, or on an image it could not scan, and reports everything else. It needs a few GiB of transfer, so no workflow runs it
-in full. `images.yml` runs it on what it just built, with `SCAN_ONLY=built`, as in runs 41975430939 and 42044273310.
+`make scan-images` runs trivy over every image the platform runs, for `PLATFORM`, by default `linux/arm64`. It fails only on a
+CRITICAL finding with a fix in an image we build, on an image it could not scan, or on a result of another architecture, and reports
+everything else. After a digest bump dev runs `linux/amd64` digests under Rosetta, so a full scan on the laptop then needs
+`SCAN_ALSO_PLATFORM=linux/amd64`. It needs a few GiB of transfer, so no workflow runs it in full. `images.yml` runs it on what it
+just built, with `SCAN_ONLY=built` and `PLATFORM=linux/amd64`. Runs 41975430939 and 42044273310 did that for `linux/arm64`.
+
+`images.yml` also runs `apps/wayline/checks/smoke-images.sh` on that x86-64 runner, against the digests it just published, and a
+failure stops the digest bump. That step has not run on a runner yet. Run by hand, on the Mac, it passed for `linux/arm64` images.
 
 The runs behind every statement below are in [docs/evidence/ci/](../../docs/evidence/ci/README.md), along with
 what has not run yet.
@@ -56,19 +61,25 @@ So production approval here is a process, not a control:
   with no jobs and no log until someone approves it. Closing the pull request turned such a run to `failure`, still with no jobs,
   so that red run is no check's result: runs 41976206674, 42045522553 and 41977201138, the last being the red one. Those workflows run `validate-manifests.sh` themselves
   before opening it. No job of `ci.yml` has run on `on: pull_request` yet, and no person has opened a pull request here.
-- **Native arm64 runners work here.** `ubuntu-24.04-arm` ran in this private repository, billed as `Actions Linux ARM` at
-  $0.005 a minute against included compute. It had 2 cores, 7.7 GiB of memory and 34 GiB free on `/`. The x64 runner had
-  14 GiB free. Those sizes come from one run, so treat them as what was seen, not as a promise. Run 41975430939 built, checked
-  and published all four images in a job of 6 minutes 26 seconds, 321 seconds of it in the build step, billed as 7 minutes.
-  Run 42044273310 did the same in 6 minutes 49 seconds, 325 seconds of it in the build step.
+- **`images.yml` builds on `ubuntu-24.04`, because the VPS is x86-64, and has not yet run there.** That runner, on this plan, was
+  measured at about 2 cores and 7 GiB of memory, with about 14 GiB free on `/`. So each job first removes `/usr/local/lib/android` and
+  `/opt/hostedtoolcache/CodeQL`, which hold nothing it uses, and allows two build tasks.
+- **Native arm64 runners work here, and `images.yml` used them until then.** `ubuntu-24.04-arm` ran in this private repository, billed as
+  `Actions Linux ARM` at $0.005 a minute against included compute. It had 2 cores, 7.7 GiB of memory and 34 GiB free on `/`. Those sizes
+  come from one run, so treat them as what was seen, not as a promise. Run 41975430939 built, checked and published all four images in a
+  job of 6 minutes 26 seconds, 321 seconds of it in the build step, billed as 7 minutes. Run 42044273310 did the same in 6 minutes
+  49 seconds, 325 seconds of it in the build step.
 - **Included compute on Free is $12 a month**, shared by all of the account's private repositories: about 2,000 x64 minutes
   or 2,400 arm64 minutes. Without a payment method, GitHub blocks usage once it is spent. A build that reaches the
-  90-minute timeout in `images.yml` costs $0.45.
+  90-minute timeout in `images.yml` costs about $0.54, at the x64 rate those figures give.
 - **`GITHUB_TOKEN` pushes to GHCR.** Runs 41975430939 and 42044273310 each pushed all four images to `ghcr.io/bereketabera/wayline/` and walked every
   layer again as GHCR served it. **The packages are private:** with no credentials, GHCR's token endpoint answered 401 for those
   names after the first build, 200 for a public image, and 403 for a name with no package. Do not push these names by hand: GitHub's documentation says
-  `GITHUB_TOKEN` cannot push to a package that was pushed earlier without being connected to the repository. The prune job lists
-  versions with that token and has deleted nothing in either run, so a delete with it is still untested.
+  `GITHUB_TOKEN` cannot push to a package that was pushed earlier without being connected to the repository.
+- **Nothing deletes a version in GHCR.** `images.yml` had a prune job that kept the newest two, and it was removed, because it could delete
+  a digest production runs or the evidence names. It listed versions in both runs and deleted nothing, so a delete with `GITHUB_TOKEN` is
+  still untested. `apps/wayline/scripts/prune-ghcr.sh` stays, and refuses to delete until it exempts every digest in
+  `docs/evidence/promotions` and the prod overlay.
 - **The GHCR quota is documented, and the images have not met it.** GitHub's Packages billing page gives Free 500 MB of storage,
   shared with Actions artifacts, and 1 GB of transfer a month, then adds: "Container image storage and bandwidth for the Container
   registry is currently free." It promises a month's notice before that changes. Compressed, as run 41975430939 read them from
@@ -78,10 +89,10 @@ So production approval here is a process, not a control:
 - Digests built in GitHub Actions live in GHCR, while Argo CD pulls from `localhost:5001`. After merging a digest bump, run
   `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`, which lower-cases the owner, and only then
   `make gitops-publish`, which does not look in the registry. Copying keeps the digest, and rebuilding would not: run 41975430939
-  built from `9c8e098`, run 42044273310 from `76e98ee` and the Mac from `84b63d9`, and all their digests differ. The `docker login ghcr.io` the copy needs takes
-  a token with `read:packages`, which the `gh` logins on this host do not have. Without it the script stops at its first image
-  with a 401 and writes nothing, so it has never finished a copy. The digests the Mac built were never pushed to GHCR, so it
-  cannot bring those back.
+  built from `9c8e098`, run 42044273310 from `76e98ee` and the Mac from `84b63d9`, and all their digests differ. If Docker cannot read the first image, the
+  script logs it in to `ghcr.io` with `gh auth token`, through a pipe, and prints no token. That login needs `read:packages`, which the `gh` logins on this host did not
+  have when last read: `gh auth refresh -h github.com -s read:packages`. Without it the script stops at its first image, says so and writes nothing, so it has
+  never finished a copy from GHCR. The digests the Mac built were never pushed to GHCR, so it cannot bring those back.
 - **CI depends on GitHub serving each pinned tool.** Each job of `ci.yml` starts by fetching what it needs from release URLs, through
   `scripts/install-tools.sh`, so a job that cannot fetch one fails before any of its checks. On 2026-11-05 GitHub answered 504 for one release
   asset and then another, on and off: Manifests lost three attempts at `76e98ee`, and Lint lost a run at `7cde05a`, while GitHub's status page read

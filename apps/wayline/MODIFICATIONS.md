@@ -6,8 +6,8 @@ form and the license statement. Paths such as `overlay/` and `scripts/apply.sh` 
 - **Upstream:** <https://github.com/makeplane/plane>, tag `v1.4.3`, commit
   `37a15d99231042b3ff5a4401fed479fdbec9effe`. Copyright 2023-present Plane Software, Inc. and contributors.
   AGPL-3.0.
-- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), 2026-11-04 to
-  2026-11-05. They also made the choices this file records, within his brief for this work, unless a sentence names someone else. His name on the work does not mean he reviewed any of it. This file records no review by him, and the D12 section names three decisions he should confirm.
+- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), from
+  2026-11-04. They also made the choices this file records, within his brief for this work, unless a sentence names someone else. His name on the work does not mean he reviewed any of it. This file records no review by him, and the D12 section names three decisions he should confirm.
 - **Modified version's name:** Wayline, a customized deployment of Plane Community Edition, not an
   original product.
 - **License of the modifications:** AGPL-3.0-only.
@@ -18,7 +18,7 @@ form and the license statement. Paths such as `overlay/` and `scripts/apply.sh` 
 
 The `live` service is unmodified and keeps upstream's image.
 
-**The source offer is not live yet.** The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without access until it is made public, and the commit it names must also be pushed. The owner must do both before anyone else uses an instance.
+**The source offer needs a public repository.** The images `.github/workflows/images.yml` publishes are built from a commit already on GitHub, so the commit `/source` names is there. The link works once the repository is public. While the repository is private, `/source` returns 404 to anyone without access, so the owner must make it public before anyone else uses an instance.
 
 ## Behaviour changes
 
@@ -183,6 +183,6 @@ any of this, so this section records what was done and is not a legal claim eith
 
 Moving to an upstream release that carries the AGPL header would end the need for the replacement and the flattening.
 
-**What the owner should confirm**, before the first push of this directory to main, because that push publishes:
+**What the owner should confirm.** He had not confirmed it when images were first published: the first push of this directory went ahead on 2026-11-05, and each later push to main that changes it publishes too.
 
 - [ ] This section, all of it: the file replaced, the image flattened, and publishing with no requirement that the repository be private.
