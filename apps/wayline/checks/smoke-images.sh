@@ -8,11 +8,20 @@
 # backend has its own in-image check, which this calls last, then flatten-config.py. Exits non-zero if any check fails.
 #
 #   apps/wayline/checks/smoke-images.sh [digests.tsv]
+#
+# images.yml runs this on the x86-64 runner against the digests it just published, with PLATFORM=linux/amd64, and its failure
+# stops the digest bump. It pulls by digest, so it needs a login where they are private. Every image must be PLATFORM (default
+# linux/arm64, the laptop's), and one that is not stops this before anything runs. Docker would otherwise start it under
+# emulation where the host has that, and the result would say nothing about native bytes.
 # shellcheck source=../scripts/lib.sh
 source "$(dirname "$0")/../scripts/lib.sh"
 
 DIGESTS="${1:-$BUILD_DIR/digests.tsv}"
 [[ -s "$DIGESTS" ]] || die "no digests at $DIGESTS, run scripts/ci/build-images.sh first"
+PLATFORM="${PLATFORM:-linux/arm64}"
+[[ "$PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "PLATFORM must be linux/amd64 or linux/arm64, got '$PLATFORM'"
+# So every docker command below, and backend/check-image.sh's, takes this platform, including the upstream index that one reads.
+export DOCKER_DEFAULT_PLATFORM="$PLATFORM"
 
 failures=0
 containers=()
@@ -25,6 +34,15 @@ check() { # check <label> <actual> <expected>
   if [[ "$2" == "$3" ]]; then pass "$1: $2"; else fail "$1: got '$2', expected '$3'"; fi
 }
 ref_of() { awk -F'\t' -v n="$1" '$1 == n { print $2 "@" $3 }' "$DIGESTS"; }
+
+printf '== platform: %s\n' "$PLATFORM"
+while IFS=$'\t' read -r name _ <&3; do
+  [[ -n "$name" ]] || continue
+  ref="$(ref_of "$name")"
+  docker pull --quiet "$ref" >/dev/null || die "could not pull $ref for $PLATFORM"
+  check "$name is" "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$ref")" "$PLATFORM"
+done 3<"$DIGESTS"
+[[ "$failures" -eq 0 ]] || die "not every image is $PLATFORM, so none of them was run"
 
 # start <name> <uid> <memory> <cpus> [docker args...]: sets $base to http://127.0.0.1:<published port>.
 start() {
@@ -78,11 +96,13 @@ check_assets() { # check_assets <page path> <asset prefix>
 }
 
 check_brand_html() { # check_brand_html <path>
-  local html
+  local html matches
   html="$(curl -s -m 15 "$base$1")"
-  if printf '%s' "$html" | grep -q '<title>[^<]*Wayline'; then pass "$1 title names Wayline"; else fail "$1 title: $(printf '%s' "$html" | grep -o '<title>[^<]*' | head -1)"; fi
-  if printf '%s' "$html" | grep -qE 'Plane|plane\.so|makeplane'; then
-    if printf '%s' "$html" | grep -oE '.{0,20}(Plane|plane\.so|makeplane).{0,20}' | grep -vqE 'Built on Plane Community Edition'; then
+  # Here-strings, because a grep -q that leaves first would kill a printf, and that would read here as no match.
+  if grep -q '<title>[^<]*Wayline' <<<"$html"; then pass "$1 title names Wayline"; else fail "$1 title: $(grep -o '<title>[^<]*' <<<"$html" | head -1)"; fi
+  if grep -qE 'Plane|plane\.so|makeplane' <<<"$html"; then
+    matches="$(grep -oE '.{0,20}(Plane|plane\.so|makeplane).{0,20}' <<<"$html")"
+    if grep -vqE 'Built on Plane Community Edition' <<<"$matches"; then
       fail "$1 carries the upstream brand"
     else
       pass "$1 has only the permitted credit"
@@ -160,7 +180,9 @@ check_caching() { # check_caching <URL prefix of the app> <page> <SPA route> <it
 
   # An error for a real hashed name. The name still promises the file, so a rule that reads only the name stamps the error
   # with the year, and a browser keeps a 403 after the server recovers: docs/evidence/branding/cache-errors.txt.
-  file="$(printf '%s\n' "$assets" | head -1)"
+  # Not printf into head: under pipefail, head leaving first kills printf. On Ubuntu 24.04 that stopped this script here, with exit
+  # 141 and no message, on every run of this listing. macOS has not shown it.
+  file="${assets%%$'\n'*}"
   name="${file##*/}"
   mode="$(docker exec "$container" stat -c %a "$file")"
   denied_on_purpose="$file"
@@ -188,7 +210,8 @@ check_caching() { # check_caching <URL prefix of the app> <page> <SPA route> <it
   if [[ -z "$etag" ]]; then fail "$page sends no ETag"; fi
   check_response "$page with its ETag" 304 "$NO_CACHE" "$page" -H "If-None-Match: $etag"
   check_response "$page with an ETag from another image" 200 "$NO_CACHE" "$page" -H 'If-None-Match: "6aebbfcf-from-another-image"'
-  file="${prefix}assets/$(printf '%s\n' "$assets" | head -1 | sed 's#.*/##')"
+  file="${assets%%$'\n'*}"
+  file="${prefix}assets/${file##*/}"
   etag="$(etag_of "$file")"
   if [[ -z "$etag" ]]; then fail "$file sends no ETag"; fi
   check_response "$file with its ETag" 304 "$IMMUTABLE" "$file" -H "If-None-Match: $etag"
@@ -251,7 +274,7 @@ if [[ -n "$(ref_of web)" ]]; then
   check "/licenses/OFL-InstrumentSans.txt status" "$(code /licenses/OFL-InstrumentSans.txt)" 200
   check "/licenses/OFL-JetBrainsMono.txt status" "$(code /licenses/OFL-JetBrainsMono.txt)" 200
   check "manifest status" "$(code /site.webmanifest.json)" 200
-  if curl -s "$base/site.webmanifest.json" | grep -q Wayline; then pass "manifest names Wayline"; else fail "manifest does not name Wayline"; fi
+  if grep -q Wayline <<<"$(curl -s "$base/site.webmanifest.json")"; then pass "manifest names Wayline"; else fail "manifest does not name Wayline"; fi
   check "X-Frame-Options" "$(curl -sI "$base/" | tr -d '\r' | awk -F': ' 'tolower($1) == "x-frame-options" { print $2 }')" DENY
   check_caching / / /some-workspace/projects/ /usr/share/nginx/html
   check_response "/source" 302 "$NO_CACHE" /source
@@ -339,7 +362,7 @@ if [[ -n "$(ref_of backend)" ]]; then
   else
     fail "backend licence texts"
   fi
-  if python3 -B "$WAYLINE/checks/flatten-config.py" "$ref"; then
+  if python3 -B "$WAYLINE/checks/flatten-config.py" --platform "$PLATFORM" "$ref"; then
     pass "backend flatten-config.py exit 0"
   else
     fail "backend flatten-config.py"

@@ -1,14 +1,20 @@
-# Pull request: build only. Push to main: build, push to GHCR, prune old versions, record digests,
-# and open a pull request bumping dev. Merging that pull request is left to a person. See README.md
-# for what this plan can and cannot enforce, and for how a GHCR digest reaches the local registry.
+# Pull request: build only. Push to main: build, walk, push to GHCR, record digests, scan and run what was pushed, and open
+# a pull request bumping dev. Merging that pull request is left to a person. See README.md for what this plan can and cannot
+# enforce, and for how a GHCR digest reaches the local registry.
 #
-# Both paths run the same native build through scripts/ci/build-images.sh as `make images` does. Old versions are
-# pruned as a precaution: GitHub's billing page says Container registry storage and bandwidth are currently free,
-# and no bill has been read to confirm it. See apps/wayline/README.md.
+# Both paths run the same native build through scripts/ci/build-images.sh as `make images` does, with PLATFORM=linux/amd64
+# on an x86-64 runner, because the VPS is x86-64. There is no emulation here. On the laptop `make images` stays linux/arm64,
+# the script's default, and nothing changes there until a digest bump is merged. Every check after the build follows
+# PLATFORM, so each reads the image production runs, and a manifest of another architecture fails it.
 #
-# The push path has run: run 41975430939 built, walked and pushed all four images and opened pull request 1. The
-# build-only job for a pull request has not: no pull request has changed these paths yet. checks/smoke-images.sh is
-# manual: it needs the images and is not run here.
+# checks/smoke-images.sh runs here natively, against the digests just published, and its failure stops the job, so no bump opens.
+#
+# Nothing here deletes a version in GHCR. The prune job kept the newest two, so it could have deleted a digest production
+# runs or the evidence names. apps/wayline/scripts/prune-ghcr.sh says what it needs before it may run again.
+#
+# Earlier builds were arm64, on ubuntu-24.04-arm: runs 41975430939 and 42044273310 built, walked and pushed all four images
+# and opened or updated pull request 1. Neither job has run yet as it stands here, on ubuntu-24.04. The build-only job has
+# never run: no pull request has changed these paths yet.
 #
 # Publishing is gated on D12 (apps/wayline/backend/email-py-decision.txt, apps/wayline/MODIFICATIONS.md). The backend
 # image replaces upstream's commercially headed email.py and is flattened, so no layer holds the original, and
@@ -54,23 +60,33 @@ jobs:
   build:
     name: Build only
     if: github.event_name == 'pull_request'
-    # Native arm64, so no emulation. The target is an arm64 kind node.
-    runs-on: ubuntu-24.04-arm
+    # Native x86-64, so no emulation. The target is the VPS.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     permissions:
       contents: read
     steps:
+      # This runner was measured with about 14 GiB free. These two hold nothing a build uses.
+      - name: Free disk
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          df -h /
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Needs nothing but Python, and the walks are worth nothing if an image of another architecture can pass them.
+      - name: Check the layer walk's own cases
+        run: python3 -B apps/wayline/checks/layer-check-cases.py
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: apps/wayline/.node-version
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build without pushing
         env:
+          PLATFORM: linux/amd64
           MIN_FREE_DISK_GIB: "5"
-          # This runner was measured at 2 cores and 7.7 GiB. The defaults in build.sh suit the laptop.
+          # This runner was measured at about 2 cores and 7 GiB. The defaults in build.sh suit the laptop.
           WAYLINE_TURBO_CONCURRENCY: "2"
           WAYLINE_HEAP_MB: "2560"
           PUSH: "no"
@@ -82,13 +98,15 @@ jobs:
   publish:
     name: Build and push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04-arm
+    # Native x86-64, so no emulation. The target is the VPS.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
-    # An arm runner was measured with 34 GiB free, 2 cores and 7.7 GiB of memory. The default disk guard protects the
-    # laptop's shared disk, and this disk is thrown away after the run. The build defaults would allow four tasks
-    # at 3 GiB of heap each, more than this memory holds, so this allows two. A local build under these two values
-    # peaked below the heap limit: docs/evidence/branding/build-ci-settings.txt.
+    # An x64 runner on this plan was measured at about 2 cores and 7 GiB, with about 14 GiB free. The default disk guard protects
+    # the laptop's shared disk, and this disk is thrown away after the run. The build defaults would allow four tasks at 3 GiB
+    # of heap each, more than this memory holds, so this allows two. A local build under these two values peaked at 1640 MiB
+    # across its processes, on arm64: docs/evidence/branding/build-ci-settings.txt.
     env:
+      PLATFORM: linux/amd64
       MIN_FREE_DISK_GIB: "5"
       WAYLINE_TURBO_CONCURRENCY: "2"
       WAYLINE_HEAP_MB: "2560"
@@ -98,6 +116,13 @@ jobs:
     outputs:
       digests: ${{ steps.build.outputs.digests }}
     steps:
+      # This job took about 4 GiB of the arm64 runner's disk up to the scan, in run 42044273310. Trivy's database and every image the
+      # smoke pulls come on top of that, and the guards stop at 5 GiB. These two hold nothing this job uses.
+      - name: Free disk
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          df -h /
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -106,6 +131,9 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
         run: ./apps/wayline/scripts/publish-gate.sh "ghcr.io/${OWNER,,}/wayline"
+      # Needs nothing but Python, and the walks below are worth nothing if an image of another architecture can pass them.
+      - name: Check the layer walk's own cases
+        run: python3 -B apps/wayline/checks/layer-check-cases.py
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: apps/wayline/.node-version
@@ -136,32 +164,18 @@ jobs:
             cat .build/digests.tsv
             echo '```'
           } >>"$GITHUB_STEP_SUMMARY"
-      # A failure here fails this job, so nothing below prunes an old version or opens a bump for these digests.
+      # A failure here fails this job, so no bump opens for these digests.
       - name: Scan what was just pushed
         env:
           SCAN_ONLY: built
           SCAN_MIN_FREE_GIB: "5"
         run: ./scripts/ci/scan-images.sh
-
-  # Its own job, so a prune failure cannot hold back the digest bump. Pruning with GITHUB_TOKEN is still untested.
-  prune:
-    name: Prune old image versions
-    needs: publish
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    continue-on-error: true
-    permissions:
-      contents: read
-      packages: write # delete old versions
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Prune
+      # Pulls each digest from .build/digests.tsv as GHCR serves it, with this job's login, and runs it on this x86-64 runner.
+      # A failure here fails this job too. The images stay in GHCR, and no bump opens for them.
+      - name: Run what was just pushed, by digest
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: ${{ github.repository_owner }}
-        run: ./apps/wayline/scripts/prune-ghcr.sh "${OWNER}" 2
+          WAYLINE_EXPECT_REF: ${{ github.sha }}
+        run: ./apps/wayline/checks/smoke-images.sh
 
   bump-dev:
     name: Open digest bump for dev
@@ -212,11 +226,13 @@ jobs:
           body: |
             Digest bump for dev, opened by `images.yml`. Merge it yourself: nothing merges this automatically.
 
+            These are plain `linux/amd64` manifests, which is what production runs. Dev runs the same bytes under Rosetta.
+
             After merging:
 
             1. `git pull`
             2. `scripts/ci/copy-to-local-registry.sh ghcr.io/<owner>/wayline dev`
             3. `make gitops-publish`
 
-            `validate-manifests.sh` already ran in this workflow, because a pull request opened with
-            `GITHUB_TOKEN` does not start CI on its own.
+            `smoke-images.sh` already ran these digests natively on x86-64 in this workflow. `validate-manifests.sh` ran
+            too, because a pull request opened with `GITHUB_TOKEN` does not start CI on its own.
