@@ -1,6 +1,6 @@
 # 0015. Exclusions: Bitnami, cert-manager, CloudNativePG, Soft Serve
 
-**Status:** Accepted, 2026-11-04.
+**Status:** Accepted, 2026-11-04. Superseded in part on 2026-11-07 by [0018](0018-hosted-tls-cert-manager.md): hosted production uses cert-manager, with Let's Encrypt over HTTP-01 and TLS terminated by Traefik on the node. The cert-manager exclusion below still holds for the local platform, and the Bitnami, CloudNativePG and Soft Serve exclusions hold for all three environments. Where this record mentions Pass 2's Cloudflare termination, it describes a plan that did not happen.
 
 ## Context
 
@@ -29,14 +29,14 @@ All status facts here come from research on 2026-11-04 and may change.
 |---|---|---|
 | `bitnamilegacy` images | Ready-made images with arm64 | Frozen. Pins a security problem in place |
 | Bitnami Secure Images | A maintained line | A vendor product, with terms not reviewed here. Upstream images by digest are simpler |
-| cert-manager with self-signed certificates | HTTPS locally | Browser warnings and a CA to trust, for no gain on loopback. It would also make local behaviour differ from Pass 2's Cloudflare termination |
+| cert-manager with self-signed certificates | HTTPS locally | Browser warnings and a CA to trust, for no gain on loopback. It would also have made local behaviour differ from the Cloudflare termination then planned for Pass 2, which was not built |
 | CloudNativePG | Operator-managed Postgres, PITR | Memory, a CRD set and a chart divergence. Single-node HA is not real HA |
 | Gitea in place of Soft Serve | A maintained forge | Stateful and heavier. Kept as a fallback in [0011](0011-local-git-daemon-as-argo-source.md) |
 
 ## Consequences
 
 - **Bitnami:** Images are upstream's own, by digest, so each needs its own non-root and probe work. In what deploys, the only mention is a comment at `helm/values/infisical.yaml:68`. The checks and their tests name Bitnami too. Since `7cc3f4f` CI enforces this: `policy/plane.rego` refuses a Bitnami image, chart repository or Helm value in anything that renders, and `scripts/ci/lint.sh` covers what never renders into a manifest. Three planted defects show each one fails ([negative controls](../evidence/ci/ci-3-20261104T223937Z-negative-controls-local.log)). On this GitHub plan a failing check cannot block a merge.
-- **cert-manager:** Local traffic is plain HTTP, including login cookies, on loopback only. Certificate behaviour is not exercised in Pass 1, so TLS issues will first appear in Pass 2. The Pass 2 design intends edge termination at Cloudflare, which may keep cert-manager optional.
+- **cert-manager:** Local traffic is plain HTTP, including login cookies, on loopback only. Certificate behaviour is not exercised in Pass 1, so TLS issues will first appear in Pass 2. The Pass 2 design then intended edge termination at Cloudflare, which might have kept cert-manager optional. That was not built, and hosted production uses cert-manager ([0018](0018-hosted-tls-cert-manager.md)).
 - **CloudNativePG:** No point-in-time recovery, no replicas, and no automated failover. Recovery point is the last dump. See [disaster recovery](../disaster-recovery.md). The chart's Postgres is a single pod, so its restart is an outage. It stays the candidate path for Pass 2 if real durability is required.
 - **Soft Serve:** Git hosting is a bare repo with no UI and no access control beyond the laptop.
 - **What would reverse each:** Bitnami, nothing foreseeable. cert-manager, if origin certificates are managed in-cluster. CloudNativePG, if a multi-node cluster and a stated recovery target exist. Soft Serve, only if the project is revived.
