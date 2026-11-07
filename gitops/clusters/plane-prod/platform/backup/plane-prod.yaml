@@ -10,6 +10,9 @@
 #   night, or until make remote-backup runs, and a night that fails to seal it fails as a whole, so PlaneBackupFailed says so. Sealed
 #   ones go after 90 days.
 # - pg_dump -Z 0, because restic compresses, and an already compressed dump would defeat its deduplication. Unmeasured.
+# - The bucket is listed once, first, and the copy, its check and lsjson keep to that listing, where that Job lists the bucket for
+#   each. People upload at any hour, and an upload between that Job's copy and its check reads as an object the copy missed, which
+#   here would fail the night and page.
 #
 # Until the first promotion Plane is not here, so its Secrets are optional and the run says so and succeeds. Once a repository
 # exists, the same absence is a failure, so a Plane that has gone missing cannot read as a quiet success.
@@ -195,11 +198,35 @@ spec:
                   if [ -f /work/skip ]; then exit 0; fi
                   D=/work/backup
                   mkdir -p "$D/objects"
+                  # One listing, taken first, which the copy and the check both keep to. People upload at any hour, and a check that
+                  # listed the bucket again would find what came after the copy and fail the night on it. An object deleted after the
+                  # listing is not there to copy or to compare, and one deleted while the check reads it reads as an error there. So
+                  # the check's own verdict is not the one kept: every listed object still in the bucket afterwards must have checked
+                  # equal, byte for byte, and only those gone from it may be missing.
+                  rclone lsf -R --files-only "src:$BUCKET" > "$D/objects.listed"
+                  rclone copy "src:$BUCKET" "$D/objects" --files-from-raw "$D/objects.listed" --checksum --transfers 4 --stats 0
                   # Plane's presigned GET serves Content-Type as stored, which the copy keeps only in lsjson, so restore replays it.
-                  rclone copy "src:$BUCKET" "$D/objects" --checksum --transfers 4 --stats 0
-                  rclone check "src:$BUCKET" "$D/objects" --one-way --download --combined "$D/objects.check"
-                  rclone lsjson -R --metadata "src:$BUCKET" > "$D/objects.lsjson"
-                  echo "objects: $(wc -l < "$D/objects.check") checked"
+                  # lsjson reads only the objects the copy holds, so the replay meets none the copy lacks. It reads them after the copy
+                  # and before the check, so an object the check finds equal to its copy was that object when lsjson read it. One
+                  # deleted between the copy and lsjson is in the copy with no entry, and a restore puts it back with the type rclone
+                  # guesses from its name.
+                  rclone lsf -R --files-only "$D/objects" > "$D/.objects.held"
+                  rclone lsjson -R --metadata --files-from-raw "$D/.objects.held" "src:$BUCKET" > "$D/objects.lsjson"
+                  rclone check "src:$BUCKET" "$D/objects" --files-from-raw "$D/objects.listed" --one-way --download --combined "$D/objects.check" || :
+                  # Not piped: a listing that failed must fail the run, and not read as every object gone.
+                  rclone lsf -R --files-only --files-from-raw "$D/objects.listed" "src:$BUCKET" > "$D/.objects.still"
+                  LC_ALL=C sort "$D/.objects.still" > "$D/.objects.still.sorted"
+                  sed -n 's/^= //p' "$D/objects.check" | LC_ALL=C sort > "$D/.objects.equal"
+                  LC_ALL=C comm -23 "$D/.objects.still.sorted" "$D/.objects.equal" > "$D/.objects.unequal"
+                  if [ -s "$D/.objects.unequal" ]; then
+                    echo "objects: listed objects still in the bucket that did not check equal to their copies: $(wc -l < "$D/.objects.unequal"). The first of them:" >&2
+                    head -n 5 "$D/.objects.unequal" >&2
+                    exit 1
+                  fi
+                  LISTED=$(($(wc -l < "$D/objects.listed")))
+                  EQUAL=$(($(wc -l < "$D/.objects.equal")))
+                  echo "objects: $EQUAL checked, of $LISTED listed, and $((LISTED - EQUAL)) gone from the bucket before their check"
+                  rm -f "$D/.objects.held" "$D/.objects.still" "$D/.objects.still.sorted" "$D/.objects.equal" "$D/.objects.unequal"
                   # GATE2 begin. A restore's GATE2, made here on what a restore would have: the rows in this dump and the
                   # objects in this backup. It stays a record and not a failure, because a backup with one dangling row
                   # still holds everything else, and is better than none. The manifest carries the count for a plan. If
