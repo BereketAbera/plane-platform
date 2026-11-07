@@ -462,8 +462,10 @@ deny contains msg if {
 }
 
 # Each module those Probes use, as blackbox reads it from the ConfigMap kustomize makes of shared/blackbox.yml. Nothing else reads that file.
-# The rules below hold that ConfigMap by its name, and policy/hosted_combined.rego holds these modules in whatever file the pods behind
-# infisical_prober read, under any name, which no rule reading one object at a time can find.
+# The rules below hold that ConfigMap by its name. policy/hosted_combined.rego follows infisical_prober's Service to each container of the
+# pods it selects, and holds these modules in the one file that container reads: the one its single --config.file names, from one ConfigMap
+# under any name, mounted whole or by items at that file's directory, with no other mount at or under that directory, a subPath one included.
+# No rule reading one object at a time can find that.
 infisical_blackbox_modules := {
 	"http_infisical_login": {"prober": "http", "timeout": "5s", "http": {
 		"preferred_ip_protocol": "ip4",
