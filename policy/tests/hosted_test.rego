@@ -707,6 +707,95 @@ test_solver_on_a_node_port_rejected if {
 	count(hosted.deny) == 1 with input as issuer({"ingressClassName": "traefik", "serviceType": "NodePort"})
 }
 
+# Each certificate as platform/certificates writes it, for a host and a namespace.
+certificate(namespace, name, host) := {
+	"apiVersion": "cert-manager.io/v1",
+	"kind": "Certificate",
+	"metadata": {"name": name, "namespace": namespace, "annotations": {"argocd.argoproj.io/ignore-healthcheck": "true"}},
+	"spec": {
+		"secretName": name,
+		"dnsNames": [host],
+		"privateKey": {"algorithm": "ECDSA", "size": 256, "rotationPolicy": "Always"},
+		"revisionHistoryLimit": 3,
+		"issuerRef": {"name": "letsencrypt-production", "kind": "ClusterIssuer", "group": "cert-manager.io"},
+	},
+}
+
+app_certificate(namespace) := certificate(namespace, apps[namespace].tls, apps[namespace].host)
+
+app_certificate_with(namespace, field, value) := json.patch(app_certificate(namespace), [{"op": "add", "path": sprintf("/spec/%s", [field]), "value": value}])
+
+app_certificate_in(namespace, elsewhere) := json.patch(app_certificate(namespace), [{"op": "replace", "path": "/metadata/namespace", "value": elsewhere}])
+
+test_each_app_certificate_accepted if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 0 with input as app_certificate(namespace)
+	}
+}
+
+test_wayline_and_grafana_certificates_accepted if {
+	count(hosted.deny) == 0 with input as certificate("plane-prod", "wayline-tls", "wayline.bereket.dev")
+	count(hosted.deny) == 0 with input as certificate("monitoring", "grafana-tls", "grafana.bereket.dev")
+}
+
+# The solver answers for any host, from the namespace that asks, so each of these would put another host's key beside the app, or ask
+# for it some other way.
+test_an_app_certificate_beyond_its_own_host_rejected if {
+	every namespace, app in apps {
+		every value in [
+			["dnsNames", ["wayline.bereket.dev"]],
+			["dnsNames", ["grafana.bereket.dev"]],
+			["dnsNames", [app.host, "wayline.bereket.dev"]],
+			["dnsNames", ["*.bereket.dev"]],
+			["dnsNames", []],
+			["commonName", "wayline.bereket.dev"],
+			["secretName", "wayline-tls"],
+			["issuerRef", {"name": "letsencrypt-staging", "kind": "ClusterIssuer", "group": "cert-manager.io"}],
+			["issuerRef", {"name": "letsencrypt-production", "kind": "Issuer", "group": "cert-manager.io"}],
+			["privateKey", {"algorithm": "RSA", "size": 2048}],
+			["secretTemplate", {"annotations": {"reflector.v1.k8s.emberstack.com/reflection-allowed": "true"}}],
+		] {
+			denied := hosted.deny with input as app_certificate_with(namespace, value[0], value[1])
+			count(denied) == 1
+			some msg in denied
+			contains(msg, sprintf("a Certificate in namespace %s is exactly", [namespace]))
+		}
+		count(hosted.deny) == 1 with input as json.remove(app_certificate(namespace), ["spec"])
+	}
+}
+
+# The other direction: no Certificate outside an app's namespace names its host, in any spelling, and an app holds no other's.
+test_another_namespace_holding_an_app_certificate_rejected if {
+	every namespace, app in apps {
+		every elsewhere in ["plane-prod", "monitoring", "cert-manager", "infisical", ""] {
+			doc := app_certificate_in(namespace, elsewhere)
+			says(doc, sprintf("names %s, whose certificate only namespace %s may hold", [app.host, namespace]))
+		}
+		count(hosted.deny) == 1 with input as app_certificate_in(namespace, "plane-prod")
+		wayline_too := json.patch(certificate("plane-prod", "wayline-tls", "wayline.bereket.dev"), [{"op": "add", "path": "/spec/dnsNames/-", "value": upper(app.host)}])
+		count(hosted.deny) == 1 with input as wayline_too
+		says(wayline_too, sprintf("whose certificate only namespace %s may hold", [namespace]))
+		common_name := json.patch(certificate("monitoring", "grafana-tls", "grafana.bereket.dev"), [{"op": "add", "path": "/spec/commonName", "value": app.host}])
+		count(hosted.deny) == 1 with input as common_name
+	}
+	every pair in app_pairs {
+		doc := app_certificate_in(pair[0], pair[1])
+		says(doc, sprintf("a Certificate in namespace %s is exactly", [pair[1]]))
+		says(doc, sprintf("names %s, whose certificate only namespace %s may hold", [apps[pair[0]].host, pair[0]]))
+	}
+}
+
+# cert-manager makes these from each Certificate, so one in Git asks past the rules above, wherever it sits.
+test_cert_manager_requests_in_git_rejected if {
+	every namespace in ["rillmark", "frameflow", "plane-prod", "monitoring", "cert-manager"] {
+		count(hosted.deny) == 1 with input as {"apiVersion": "cert-manager.io/v1", "kind": "CertificateRequest", "metadata": {"name": "x", "namespace": namespace}, "spec": {"request": "", "issuerRef": {"name": "letsencrypt-production", "kind": "ClusterIssuer"}}}
+		count(hosted.deny) == 1 with input as {"apiVersion": "acme.cert-manager.io/v1", "kind": "Order", "metadata": {"name": "x", "namespace": namespace}, "spec": {"dnsNames": ["wayline.bereket.dev"]}}
+		count(hosted.deny) == 1 with input as {"apiVersion": "acme.cert-manager.io/v1", "kind": "Challenge", "metadata": {"name": "x", "namespace": namespace}, "spec": {"dnsName": "wayline.bereket.dev"}}
+	}
+	says({"apiVersion": "cert-manager.io/v1", "kind": "CertificateRequest", "metadata": {"name": "x", "namespace": "rillmark"}}, "no CertificateRequest in Git")
+	count(hosted.deny) == 0 with input as {"apiVersion": "shop.example.com/v1", "kind": "Order", "metadata": {"name": "x", "namespace": "plane-prod"}}
+}
+
 git_url := "ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git"
 
 application(source) := {
@@ -935,6 +1024,11 @@ app_project(namespace) := project(namespace, {
 		{"group": "", "kind": "ResourceQuota"},
 		{"group": "", "kind": "LimitRange"},
 		{"group": "networking.k8s.io", "kind": "NetworkPolicy"},
+		{"group": "cert-manager.io", "kind": "Certificate"},
+		{"group": "cert-manager.io", "kind": "CertificateRequest"},
+		{"group": "cert-manager.io", "kind": "Issuer"},
+		{"group": "acme.cert-manager.io", "kind": "Order"},
+		{"group": "acme.cert-manager.io", "kind": "Challenge"},
 	],
 })
 
@@ -969,20 +1063,22 @@ test_an_app_project_with_cluster_scope_rejected if {
 	}
 }
 
-# Without each of these on its list, the app's own Application could rewrite the quota or limits Terraform sets, or open its policies.
+# Without each of these on its list, the app's own Application could rewrite the quota or limits Terraform sets, open its policies, or
+# ask cert-manager for another host's certificate.
 test_an_app_project_missing_a_blacklist_entry_rejected if {
 	every namespace, _ in apps {
-		every kind in ["ResourceQuota", "LimitRange", "NetworkPolicy"] {
+		every kind in ["ResourceQuota", "LimitRange", "NetworkPolicy", "Certificate", "CertificateRequest", "Issuer", "Order", "Challenge"] {
 			kept := [entry | some entry in app_project(namespace).spec.namespaceResourceBlacklist; entry.kind != kind]
 			denied := hosted.deny with input as app_project_with(namespace, "namespaceResourceBlacklist", kept)
 			count(denied) == 1
 			some msg in denied
 			contains(msg, sprintf("namespaceResourceBlacklist must hold %s", [kind]))
 		}
-		count(hosted.deny) == 3 with input as json.remove(app_project(namespace), ["spec/namespaceResourceBlacklist"])
+		count(hosted.deny) == 8 with input as json.remove(app_project(namespace), ["spec/namespaceResourceBlacklist"])
 
 		# The group counts too: a kind of that name in another API group is not the one that holds the app in.
 		count(hosted.deny) == 1 with input as json.patch(app_project(namespace), [{"op": "replace", "path": "/spec/namespaceResourceBlacklist/2/group", "value": ""}])
+		count(hosted.deny) == 1 with input as json.patch(app_project(namespace), [{"op": "replace", "path": "/spec/namespaceResourceBlacklist/3/group", "value": "certificates.k8s.io"}])
 	}
 }
 
