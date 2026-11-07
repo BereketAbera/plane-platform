@@ -8,6 +8,9 @@
 #   INFISICAL_ROUTE_TEST_SERVE=yes INFISICAL_BACKEND=... tests/routes/infisical-public-route.sh  no questions: leaves it up, for a browser mapped to that port, until Ctrl-C
 #   INFISICAL_ROUTE_TEST_NETWORK=<docker network> ...                                         Traefik joins that network too, so the backend sees it as a
 #                                                                                              proxy of its own range, as Infisical sees Traefik's pod
+#   INFISICAL_ROUTE_TEST_DIRECT=http://127.0.0.1:18110 INFISICAL_BACKEND=... ...               the same Infisical from this machine, past Traefik. On a copy
+#                                                                                              nobody has claimed, the test claims it there and sends the
+#                                                                                              real tokens it hands out through the route
 #
 # Exit, as scripts/test.sh: 0 every row passed, 1 something got through, 2 it could not run. No cluster and no credential: it asks nothing of production.
 # It listens on this machine's loopback alone. CI has no Docker to spare for this, so it runs by hand, and policy/hosted.rego holds the route to the words it proved.
@@ -135,4 +138,5 @@ fi
 log "Traefik ${digest:0:19}, chart $chart_version, $mode backend. Asking"
 mkdir -p "$LOCAL_DIR/evidence-raw"
 evidence="$LOCAL_DIR/evidence-raw/infisical-public-route-$mode-$(date -u +%Y%m%dT%H%M%SZ).log"
-python3 -I "$ROOT/tests/routes/infisical-public-route.py" --port "$TLS_PORT" --echo-port "$ECHO_PORT" --backend "$mode" --log "$evidence"
+python3 -I "$ROOT/tests/routes/infisical-public-route.py" --port "$TLS_PORT" --echo-port "$ECHO_PORT" --backend "$mode" \
+  --direct "${INFISICAL_ROUTE_TEST_DIRECT:-}" --log "$evidence"
