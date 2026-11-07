@@ -26,8 +26,8 @@ spec:
     secretName: grafana-tls
 ---
 # Five tries a minute from one client, which a person mistyping never reaches. Anything over that gets a 429 and never reaches Grafana,
-# whose own limit counts failures per user: this one counts per client, so one address cannot try every name. The connection's address
-# and no header, because this entry point trusts no forwarded header and a client could otherwise send a new one with each try.
+# whose own limit is five failed logins in five minutes, from one address too. The connection's address and no header, because this entry
+# point trusts no forwarded header and a client could otherwise send a new one with each try.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:

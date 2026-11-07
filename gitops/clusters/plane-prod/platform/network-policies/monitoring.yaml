@@ -148,8 +148,8 @@ spec:
       ports:
         - { protocol: TCP, port: 443 }
 ---
-# The API egress is for the dashboard and datasource sidecars, which watch ConfigMaps. No egress here reaches the internet, the public
-# route included: that traffic comes in, and the pod only answers it.
+# The API egress is for the dashboard sidecar, which reads ConfigMaps. No egress here reaches the internet, the public route included: that
+# traffic comes in, and the pod only answers it.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

@@ -202,7 +202,7 @@ grafana:
     tag: 13.3.0-distroless
     sha: 540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
   # scripts/hosted/grafana-admin.sh makes this Secret, from files here, before Argo CD starts, so the chart generates no password
-  # and renders no Secret of its own. The sidecars read it too, for their reload calls.
+  # and renders no Secret of its own.
   admin:
     existingSecret: grafana-admin
     userKey: admin-user
@@ -217,32 +217,62 @@ grafana:
   initChownData: { enabled: false } # nothing to chown without persistence, and no busybox image
   testFramework: { enabled: false }
   defaultDashboardsTimezone: utc
-  # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and the
-  # sidecars below use only the first, so this pod's token can read every Secret in monitoring.
+  # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and this is
+  # the one pod on the internet, so its token would read every Secret in monitoring. The dashboard sidecar below reads ConfigMaps alone. So
+  # useExistingRole stops the chart's Role, and extraObjects writes it with configmaps only. By the same name, because a new one would
+  # change the RoleBinding's roleRef, which the API server refuses on a running cluster. policy/hosted.rego holds it to that.
   rbac:
     namespaced: true
+    useExistingRole: kps-grafana
+  extraObjects:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: kps-grafana
+        namespace: monitoring
+      rules:
+        - apiGroups: [""]
+          resources: [configmaps]
+          verbs: [get, list, watch]
+  # ephemeral-storage bounds the database and logs on the node's only disk. A new database is about 2 MiB in Docker, not measured on this node,
+  # so this is far over what it needs. Past it the kubelet evicts the pod, and the new one starts empty, which loses nothing here.
   resources:
     requests: { cpu: 25m, memory: 128Mi }
-    limits: { cpu: 500m, memory: 384Mi }
+    limits: { cpu: 500m, memory: 384Mi, ephemeral-storage: 2Gi }
   grafana.ini:
     server:
       domain: grafana.bereket.dev
       root_url: https://grafana.bereket.dev
-    # Its login is all that stands between this page and the internet. auth.basic stays on: the sidecars' reload calls use it, and a
-    # guess that way counts toward the same limit on failed logins as one at the form.
+    # Its login is all that stands between this page and the internet. Failed logins count per address and not per username. The password is 64
+    # hex characters, so a count is not what protects it, and per username any stranger could keep the one admin locked out with a guess a minute.
     security:
       cookie_secure: true
       cookie_samesite: lax
       strict_transport_security: true
       disable_gravatar: true
       disable_brute_force_login_protection: false
+      disable_username_login_protection: true
+      disable_ip_address_login_protection: false
     users:
       allow_sign_up: false
       allow_org_create: false
+    # Off, because it answers on every path, where the limit on POST /login does not reach, and each failure writes the name it was given to
+    # the database, at any length. Nothing here needs it: the dashboard sidecar below makes no reload call, and nothing writes datasources.
+    # policy/hosted.rego holds this, auth.anonymous below and the three login protections in security above to these values.
+    auth.basic:
+      enabled: false
+    # hide_version takes the version and commit out of /api/health and most of /login. One field of /login still holds the version.
     auth.anonymous:
       enabled: false
+      hide_version: true
+    # Off, and said so, because policy/hosted.rego requires it: Traefik passes X-WEBAUTH-USER through, so with this on a stranger could
+    # send that header and be whoever they named.
+    auth.proxy:
+      enabled: false
     # The page after login. Grafana's own home offers to create a first dashboard, which read as if none had loaded. The sidecar writes this
-    # file, by the folder annotation in monitoring-extras, and until it has, Grafana falls back to its own.
+    # file, by the folder annotation in monitoring-extras. Until a valid one has been there, as in a new pod whose sidecar or ConfigMap is
+    # broken, /api/dashboards/home answers 500 "Failed to load home dashboard". After that Grafana keeps its own editable copy, uid
+    # default-home-dashboard, and refreshes it from the file while the file is valid. The rest of Grafana does not depend on it.
     dashboards:
       default_home_dashboard_path: /tmp/dashboards/Platform/platform-overview.json
     # No pod here has internet egress, so each of these can only time out and log an error.
@@ -278,17 +308,39 @@ grafana:
       searchNamespace: null # own namespace only; matches rbac.namespaced above
       folderAnnotation: grafana_folder
       resource: configmap # every dashboard here is a ConfigMap; the default also watches Secrets
+      # The reload call would need basic auth. Grafana reads this folder again every 30s by itself.
+      skipReload: true
       provider:
         foldersFromFilesStructure: true
         allowUiUpdates: false
+    # Grafana reads datasources only when it starts, or on a reload call, which would need basic auth. So nothing writes them while it runs:
+    # they are in datasources below, which the chart puts in ConfigMap kps-grafana, and that ConfigMap's checksum is on the pod. So a changed
+    # datasource rolls the pod. From a sidecar, or a ConfigMap labelled for one, it would sit unread until something replaced the pod, and
+    # policy/hosted.rego refuses both.
     datasources:
-      defaultDatasourceEnabled: true
-      uid: prometheus # dashboards in monitoring-extras pin this uid
-      resource: configmap # as above
-  additionalDataSources:
-    - name: Loki
-      uid: loki
-      type: loki
-      access: proxy
-      url: http://loki.monitoring.svc.cluster.local:3100
-      jsonData: { maxLines: 1000 }
+      enabled: false
+  # The three the chart's datasource ConfigMap held, as it held them. Dashboards in monitoring-extras pin these uids. timeInterval is
+  # Prometheus's scrapeInterval above.
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://kps-prometheus.monitoring:9090/
+          access: proxy
+          isDefault: true
+          jsonData: { httpMethod: POST, timeInterval: 30s }
+        - name: Alertmanager
+          type: alertmanager
+          uid: alertmanager
+          url: http://kps-alertmanager.monitoring:9093/
+          access: proxy
+          jsonData: { handleGrafanaManagedAlerts: false, implementation: prometheus }
+        - name: Loki
+          type: loki
+          uid: loki
+          url: http://loki.monitoring.svc.cluster.local:3100
+          access: proxy
+          jsonData: { maxLines: 1000 }
