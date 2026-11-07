@@ -98,6 +98,7 @@ run "cluster separation" scripts/ci/check-cluster-separation.sh
 run "python compile" python_compile_all
 run "smoke.py self check" smoke_self_check
 run "scan report self check" python3 -B scripts/ci/scan-images-report.py --selftest
+run "drill image platform cases" tests/drills/image-platform-cases.sh
 run "network policy verdict self check" scripts/test-netpol.sh --selftest
 run "restore test verdict self check" scripts/hosted/restore-test.sh --selftest
 run "hosted test verdict self check" scripts/hosted/test-hosted.sh --selftest

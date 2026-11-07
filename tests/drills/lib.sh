@@ -55,6 +55,8 @@ app_is() { # app_is <application> <sync status> <health status>
 # config states, and the node runs it whatever that is: dev's backend is a plain linux/amd64 manifest, which the arm64 node runs
 # under Rosetta. Of an index the node runs the child for its own platform, so the index must hold exactly one. Prints
 # <os>/<architecture>, with /<variant> where the config names one, and fails having printed nothing if the registry cannot say.
+# A buildx attestation manifest's config says unknown/unknown, which is no platform a node runs, so that fails too.
+# tests/drills/image-platform-cases.sh tests this against a stand-in for imagetools.
 image_platform() { # image_platform <reference> <the node's os/architecture>
   local raw
   raw="$(docker buildx imagetools inspect --raw "$1" 2>/dev/null)" || return 1
@@ -64,7 +66,7 @@ image_platform() { # image_platform <reference> <the node's os/architecture>
     printf '%s\n' "$2"
   else
     docker buildx imagetools inspect "$1" --format '{{json .Image}}' 2>/dev/null |
-      jq -er 'select((.os // "") != "" and (.architecture // "") != "") | [.os, .architecture, (.variant // empty)] | join("/")' 2>/dev/null
+      jq -er 'select(all(.os, .architecture; . != null and . != "" and . != "unknown")) | [.os, .architecture, (.variant // empty)] | join("/")' 2>/dev/null
   fi
 }
 
