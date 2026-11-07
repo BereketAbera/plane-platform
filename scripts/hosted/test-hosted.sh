@@ -419,13 +419,16 @@ secrets() {
 # Grafana's is the one pod on the internet, and its token is what a bug in it would hold. That token reads the ConfigMaps its sidecars need, which
 # shows the question was answered, and no Secret. The API server's RBAC, asked as that ServiceAccount.
 grafana_token() {
-  local who=system:serviceaccount:monitoring:kps-grafana verb answer allowed=""
+  local who=system:serviceaccount:monitoring:kps-grafana what="Grafana's token reads ConfigMaps and no Secret" verb answer allowed=""
   answer="$(kc -n monitoring auth can-i list configmaps --as="$who" 2>/dev/null || true)"
   case "$answer" in
     yes) ;;
-    no*) row FAIL "Grafana's token reads ConfigMaps" "it cannot, so its sidecars have nothing to write" ;;
+    no*)
+      row FAIL "$what" "it cannot read ConfigMaps, so its sidecars have nothing to write, and a no to Secrets would prove nothing"
+      return 0
+      ;;
     *)
-      row BLOCKED "Grafana's token reads no Secret" "the API server did not answer"
+      row BLOCKED "$what" "the API server did not answer"
       return 0
       ;;
   esac
@@ -433,7 +436,7 @@ grafana_token() {
     answer="$(kc -n monitoring auth can-i "$verb" secrets --as="$who" 2>/dev/null || true)"
     [[ "$answer" != yes ]] || allowed="$allowed $verb"
   done
-  if [[ -n "$allowed" ]]; then row FAIL "Grafana's token reads no Secret" "it may:$allowed"; else row PASS "Grafana's token reads no Secret" "and it reads ConfigMaps"; fi
+  if [[ -n "$allowed" ]]; then row FAIL "$what" "on Secrets it may:$allowed"; else row PASS "$what" "Secrets: no get, list or watch"; fi
 }
 
 # Only plane-prod's ServiceAccount may log in as plane-prod's identity. The right one first, so a dead route cannot pass as a refusal.
