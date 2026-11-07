@@ -337,7 +337,7 @@ could not read is INCONCLUSIVE, never a pass. The matrix:
 |---|---|---|
 | 2026-11-07, 04:38Z, before any Plane workload | 143 PASS, 0 FAIL, 67 INCONCLUSIVE, exit 2. 62 of those were names that did not resolve yet | [log](../evidence/runs/hosted-netpol-first-20261107T043810Z.txt), [matrix](../evidence/runs/netpol-plane-prod-20261107T043811Z.tsv) |
 | 2026-11-07, 07:27Z, with Plane and Grafana's route | 206 PASS, 0 FAIL, 8 INCONCLUSIVE, exit 2. Seven had no witness reading, because this Mac's SSH to the node failed with `Can't assign requested address`, and one was refused to the node too, during a Grafana restart | `hosted-netpol-grafana-20261107T072723Z.log` and `netpol-plane-prod-20261107T072728Z.tsv`, not published yet |
-| Tonight's clean run, `make remote-netpol TARGET=plane-prod CONFIRM=plane-prod` | PENDING | |
+| 2026-11-07, 19:24Z, with Infisical's route | 219 PASS, 0 FAIL, 0 INCONCLUSIVE, the first clean run | `netpol-plane-prod-20261107T192436Z.tsv`, not published yet |
 
 **Lookups.** Contabo's resolvers took over 3 seconds a lookup, so K3s's CoreDNS forwards to 1.1.1.1 and 8.8.8.8 through
 `/etc/rancher/k3s/resolv.conf` ([`k3s-config.yaml`](../../infrastructure/hosted/plane-prod/k3s-config.yaml)). Inside pods, the three public
