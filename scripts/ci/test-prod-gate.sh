@@ -1597,6 +1597,18 @@ publish_refuses_foreign_files_on_the_branch() {
   at_commit "$PROMOTED_B"
   stays_put "$commit" 'holds more than a release should'
 }
+publish_a_name_git_quotes_is_no_foreign_file() {
+  printf 'deployment: {}\n' >"$REPO/gitops/clusters/plane-prod/values/caf$(printf '\303\251').yaml"
+  commit_all 'a values file under a name Git quotes'
+  at_commit "$(head_commit)"
+  publish_ok
+  printf 'unrelated\n' >"$REPO/source.txt"
+  commit_all 'a change the hosted trees do not hold'
+  at_commit "$(head_commit)"
+  publish_ok 78
+  run_status ./scripts/ci/check-deploy-branch.sh
+  expect "the daily look agrees, and it exited $STATUS" equal "$STATUS" 0
+}
 publish_refuses_a_tip_with_no_release() {
   local tree commit
   tree="$(printf '' | git --git-dir="$ORIGIN" mktree)"
@@ -2351,6 +2363,7 @@ scenario check-refuses-a-list-in-applications check_refuses_a_list_in_applicatio
 scenario check-refuses-overrides-on-the-application check_refuses_overrides_on_the_application "$PROMOTED_A"
 scenario check-finds-a-quoted-name-reading-the-render check_finds_a_quoted_name_reading_the_render "$EVIDENCE_A"
 scenario check-refuses-tracked-tools check_refuses_tracked_tools "$PROMOTED_A"
+scenario publish-a-name-git-quotes-is-no-foreign-file publish_a_name_git_quotes_is_no_foreign_file "$PROMOTED_A"
 scenario publish-refuses-a-branch-pushed-by-hand publish_refuses_a_branch_pushed_by_hand "$PROMOTED_A"
 scenario publish-refuses-going-back-to-no-set publish_refuses_going_back_to_no_set "$PROMOTED_A"
 scenario publish-platform-only-twice publish_platform_only_twice "$EVIDENCE_A"

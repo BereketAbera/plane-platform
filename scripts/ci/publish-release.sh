@@ -83,7 +83,8 @@ if [[ -n "$TIP" ]]; then
   remote_git fetch --quiet origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" || die "could not fetch $BRANCH"
   # A person or a bad version of this script put something else there. A workflow file would run on that branch, and
   # GITHUB_TOKEN may not remove one, so this takes a person.
-  foreign="$(git ls-tree -r --name-only "$TIP" | grep -vE "^(RELEASE\.json|$CLUSTER_TREE/.*|$ENVIRONMENT_TREE/.*)$" || true)"
+  # -z, because Git quotes a name it would have to escape, and a quoted name in a hosted tree is no foreign file.
+  foreign="$(git ls-tree -r -z --name-only "$TIP" | tr '\0' '\n' | grep -vE "^(RELEASE\.json|$CLUSTER_TREE/.*|$ENVIRONMENT_TREE/.*)$" || true)"
   [[ -z "$foreign" ]] || die "$BRANCH at $TIP holds more than a release should, so a person has to look at it: ${foreign//$'\n'/, }"
   recorded="$(git cat-file blob "$TIP:RELEASE.json" 2>/dev/null | jq -r '.main_commit // ""' 2>/dev/null || true)"
   [[ "$recorded" =~ ^[a-f0-9]{40}$ ]] || die "$BRANCH at $TIP has no RELEASE.json naming a main commit, so nothing says this would move forwards"

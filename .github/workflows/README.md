@@ -5,7 +5,7 @@ Argo CD reads the local Git remote in pass 1, and only `make gitops-publish` wri
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci.yml` | pull request, push to main | `scripts/ci/lint.sh`, `validate-manifests.sh`, `ownership.sh`, `security.sh`, with no secrets |
+| `ci.yml` | pull request, push to main | `scripts/ci/lint.sh`, `validate-manifests.sh`, `ownership.sh`, `test-prod-gate.sh`, `check-capacity.sh`, `security.sh`, with no secrets. Then, on main, `release-plane-prod` moves `deploy/plane-prod` |
 | `images.yml` | changes under `apps/wayline`, to `scripts/ci/build-images.sh`, or to `images.yml` itself | Builds `linux/amd64` images natively on x86-64. On main, pushes to GHCR, records digests, scans them, runs them by digest, and opens a digest-bump PR for dev. Deletes nothing |
 | `wayline-upstream-check.yml` | weekly, manual dispatch | Dry-runs the Wayline overlay and patches against an upstream ref, default `preview`, and reports the size of the work. Builds and pushes nothing |
 | `promote-prod-sim.yml` | manual dispatch | Opens a PR copying a digest already recorded for dev to prod-sim. Never rebuilds |
@@ -41,6 +41,9 @@ So production approval here is a process, not a control:
 - `promote-prod-sim.yml` opens a pull request, and a person merging it is the approval.
 - **GitHub cannot enforce that.** Anyone with write access can merge their own pull request, push straight
   to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, so it does not even request a review.
+- The same goes for `deploy/plane-prod`, which hosted Argo CD syncs: anyone with write access can push it, and so can any job with
+  `contents: write`. `publish-release.sh`, `check-deploy-branch.yml` and `make remote-status` go red if it differs from what its `RELEASE.json`
+  says. They notice a push, and by then Argo CD may have deployed it. Only a paid plan or verification on the cluster would prevent one.
 - What is enforced is in the scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim
   digest dev never recorded for that image. CI runs that check, but nothing makes a failing check block a merge.
 - Run locally, `scripts/promote.sh` also refuses unless plane-dev is Synced and Healthy with that digest in a ready container.

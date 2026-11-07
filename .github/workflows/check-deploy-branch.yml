@@ -1,6 +1,6 @@
 # Nothing can stop a push to deploy/plane-prod on this plan, and hosted Argo CD syncs whatever that branch holds. Between two pushes to
 # main nothing else looks at it, so this does, each day. It goes red on a branch that differs from what its RELEASE.json says, and it
-# changes nothing. GitHub stops a schedule after 60 days with no activity in the repository, so make remote-status runs the same check.
+# changes nothing. GitHub may delay or drop a scheduled run, so make remote-status runs the same check.
 name: check-deploy-branch
 
 on:

@@ -78,7 +78,7 @@ collect_in_repo() { # collect_in_repo <directory>: one file per source, everythi
 #   anything but an Application in applications/: root applies it, under a project that allows every kind and namespace
 refuse_what_hosted_checks_cannot_read() {
   local found file kinds
-  found="$(find "$HOSTED_TREE" "$HOSTED_ENVIRONMENT" \( -type l -o -name '.argocd-source*' -o -name kustomization.yml -o -name Kustomization \) 2>/dev/null | LC_ALL=C sort)"
+  found="$({ find "$HOSTED_TREE" "$HOSTED_ENVIRONMENT" \( -type l -o -name '.argocd-source*' -o -name kustomization.yml -o -name Kustomization \) 2>/dev/null || true; } | LC_ALL=C sort)"
   [[ -z "$found" ]] || die "Argo CD acts on these and no check here reads them, so they cannot be in the hosted trees. A symlink or an override goes, and a kustomization is named kustomization.yaml: ${found//$'\n'/, }"
   # A submodule is a plain directory on disk, so only Git can say.
   found="$(git ls-files -s -- "$HOSTED_TREE" "$HOSTED_ENVIRONMENT" | awk '$1 != "100644" && $1 != "100755"')"

@@ -13,7 +13,7 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `tunnel.sh` | SSH tunnel, 127.0.0.1:16443 to the node's 6443. Started by `lib.sh` when needed | `remote-tunnel` |
 | `kubeconfig.sh` | Fetch K3s's kubeconfig, rewrite it for the tunnel, and print the UID for `target.yaml` | `remote-kubeconfig` |
 | `status.sh` | Read-only summary | `remote-status` |
-| `bootstrap.sh` | Deploy key, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
+| `bootstrap.sh` | Deploy key, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
 | `ui.sh` | Port-forward an admin UI, which has no public route | `remote-ui` |
 | `alerts.sh` | Render `alertmanager.yaml` from the owner's files into a Secret, and say COMPLETE or INCOMPLETE | `remote-alerts` |
 | `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again | `remote-bundle` |

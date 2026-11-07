@@ -148,7 +148,7 @@ remote-tunnel: remote-guard ## Hosted: the SSH tunnel to K3s's API: make remote-
 remote-kubeconfig: remote-guard ## Hosted: fetch K3s's kubeconfig for the tunnel, and print the kube-system UID: make remote-kubeconfig TARGET=plane-prod
 	@./scripts/hosted/kubeconfig.sh
 
-remote-status: remote-guard ## Hosted: node, Argo CD, pods, certificate, backups, firewall, alert delivery, read-only: make remote-status TARGET=plane-prod
+remote-status: remote-guard ## Hosted: node, Argo CD, pods, certificate, backups, firewall, the release branch, alert delivery, read-only: make remote-status TARGET=plane-prod
 	@./scripts/hosted/status.sh
 
 remote-bootstrap: remote-guard ## Hosted: deploy key, Terraform, restic password, secret zero, Infisical, alerts: make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
