@@ -43,6 +43,7 @@ A record may end with a dated section, **What we found when we ran it**. The dec
 | [0014](0014-migrator-sync-hook.md) | The migrator is an Argo CD `Sync` hook, not `PreSync` | Yes |
 | [0015](0015-exclusions.md) | Exclusions: Bitnami, cert-manager, CloudNativePG, Soft Serve | Partly |
 | [0016](0016-datastore-versions.md) | Datastore versions: Postgres 15, Valkey 7.2, RabbitMQ 3.13 and not 4.3 | Yes |
+| [0017](0017-infisical-public-route.md) | A public route for hosted production's Infisical, for its one admin | Yes |
 
 Numbers are stable and are referenced from code: `infrastructure/kind/cluster.yaml.tmpl` points at 0002. Do not renumber. To change a decision, add a new record that supersedes the old one, and update the old record's status line.
 
