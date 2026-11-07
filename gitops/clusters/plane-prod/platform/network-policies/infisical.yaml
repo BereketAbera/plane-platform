@@ -1,5 +1,6 @@
-# infisical. The secret store: only the operator may reach the server, and nothing here may reach Plane. It has no route: people and
-# scripts come through the SSH tunnel and kubectl port-forward, which needs no rule.
+# infisical. The secret store: only the operator and Traefik may reach the server, and nothing here may reach Plane. Traefik is for the
+# public route, https://infisical.bereket.dev, which the owner chose to give it (docs/adr/0017-infisical-public-route.md), and it reaches
+# 8080 on the server alone: never Postgres or Redis. Scripts still come through the SSH tunnel and kubectl port-forward, which needs no rule.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -39,6 +40,12 @@ spec:
     - from:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: plane-prod } }
           podSelector: { matchLabels: { app.kubernetes.io/name: secrets-operator } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    # The public route. gitops/clusters/plane-prod/platform/infisical/route.yaml says what of it Traefik passes on.
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
       ports:
         - { protocol: TCP, port: 8080 }
   egress:
@@ -98,3 +105,21 @@ spec:
         - podSelector: { matchLabels: { app.kubernetes.io/name: infisical-postgres } }
       ports:
         - { protocol: TCP, port: 5432 }
+---
+# cert-manager starts one of these for each HTTP-01 challenge of infisical-tls, with this label, beside that Certificate. Each answers Let's
+# Encrypt on 8089 through Traefik, and has nothing to call, Infisical's database least of all. Its quota room is in
+# infrastructure/hosted/plane-prod/capacity.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: acme-http01-solver
+  namespace: infisical
+spec:
+  podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8089 }

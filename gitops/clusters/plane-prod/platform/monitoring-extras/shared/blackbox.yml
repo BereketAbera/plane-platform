@@ -1,9 +1,9 @@
 # Body assertions are mandatory. With no endpoints Traefik can fall through to the catch-all web
 # route, which answers 200 with HTML, so a status-only probe would pass while the API is gone.
 #
-# Every target is https://wayline.bereket.dev or https://grafana.bereket.dev. Inside the cluster CoreDNS rewrites those names to Traefik's
-# Service, so a probe crosses the same TLS, certificate and routes as a browser, without leaving the node. The certificate is verified, so a
-# staging certificate or a failed renewal reads as a failed probe. SNI and Host come from the target.
+# Every target is https://wayline.bereket.dev, https://grafana.bereket.dev or https://infisical.bereket.dev. Inside the cluster CoreDNS
+# rewrites those names to Traefik's Service, so a probe crosses the same TLS, certificate and routes as a browser, without leaving the node.
+# The certificate is verified, so a staging certificate or a failed renewal reads as a failed probe. SNI and Host come from the target.
 modules:
   http_html:
     prober: http
@@ -48,6 +48,45 @@ modules:
       fail_if_not_ssl: true
       valid_status_codes: [200]
       fail_if_body_not_matches_regexp: ['<title>Grafana</title>']
+  # Infisical's own page, by its title, as Grafana's: every page there is the same index.html, so another service would not carry it.
+  http_infisical_login:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [200]
+      fail_if_body_not_matches_regexp: ['<title id="initial-document-title">Infisical</title>']
+  # What a stranger reads at the public route: claimed, and closed to sign-up. probe_failed_due_to_cel reads 1 only when Infisical answered
+  # 200 and its body says otherwise, which with the pinned blackbox includes a field gone or a body that is not JSON. A 404 or no answer
+  # leaves it at 0, so InfisicalOpenToClaim is never a route that is down.
+  http_infisical_claimed:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [200]
+      fail_if_body_json_not_matches_cel: "body.config.initialized == true && body.config.allowSignUp == false"
+  # Infisical's MFA router, which answers a call with no bearer token 401 in its own hook, before any handler or the database. One of its
+  # paths sits under each of the route's two limits, and a route whose Middleware is missing gets Traefik's 404, so this reads that as down.
+  http_infisical_no_bearer:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [401]
+      fail_if_body_not_matches_regexp: ['"error":\s*"Missing bearer token"']
+  http_infisical_no_bearer_post:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [401]
+      fail_if_body_not_matches_regexp: ['"error":\s*"Missing bearer token"']
   # A connection that must not succeed: see the denied-prometheus Probe.
   tcp_denied:
     prober: tcp

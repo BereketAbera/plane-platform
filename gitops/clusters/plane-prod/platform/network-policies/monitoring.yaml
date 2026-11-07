@@ -3,7 +3,7 @@
 # write. Alertmanager alone has internet egress, so it can reach Telegram and Healthchecks. Grafana's update and
 # plugin checks have no route, and its values turn them off as well.
 #
-# Grafana alone has a public route, so Traefik reaches it, on 3000 and on nothing else here. Prometheus and
+# Grafana alone here has a public route, so Traefik reaches it, on 3000 and on nothing else here. Prometheus and
 # Alertmanager have no route: people use kubectl port-forward, which enters the pod's own network namespace and so
 # needs no rule.
 #

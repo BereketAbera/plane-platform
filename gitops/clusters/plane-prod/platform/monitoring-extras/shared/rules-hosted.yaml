@@ -46,8 +46,11 @@ spec:
     - name: hosted.certificates
       interval: 30s
       rules:
+        # cert-manager reports an expiry of 0 for a Certificate that has no certificate yet, so a new one's first order read as one that
+        # had expired 20,000 days ago and paged: grafana-tls did at 07:08 UTC on 7 November, within a minute of being created. A certificate
+        # that is never issued is CertificateNotReady's, below. A renewal that fails still has its old certificate's expiry, so it still fires.
         - alert: CertificateExpiringSoon
-          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 21 * 86400
+          expr: (certmanager_certificate_expiration_timestamp_seconds > 0) - time() < 21 * 86400
           labels: { severity: warning, component: certificate }
           annotations:
             summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}, so renewal is failing
@@ -60,19 +63,23 @@ spec:
           annotations:
             summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} has not been Ready for 30m
         # What a browser gets, not what cert-manager thinks it issued. A Secret Traefik failed to reload shows only here. By namespace,
-        # where each Probe lives: plane-prod's are Wayline's, and monitoring's is Grafana's. So a new app's Probe is covered by being there.
+        # where each Probe lives: plane-prod's are Wayline's, monitoring's is Grafana's and infisical's is Infisical's. So a new app's Probe
+        # is covered by being there.
         - alert: ServedCertificateExpiringSoon
           expr: min by (namespace) (probe_ssl_earliest_cert_expiry) - time() < 14 * 86400
           labels: { severity: critical, component: certificate }
           annotations:
             summary: The certificate served for {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}
         - alert: CertificateNotWatched
-          expr: absent(certmanager_certificate_ready_status{name="wayline-tls"}) or absent(certmanager_certificate_ready_status{name="grafana-tls"})
+          expr: |
+            absent(certmanager_certificate_ready_status{name="wayline-tls"})
+              or absent(certmanager_certificate_ready_status{name="grafana-tls"})
+              or absent(certmanager_certificate_ready_status{name="infisical-tls"})
           for: 30m
           labels: { severity: warning, component: certificate }
           annotations:
             summary: cert-manager reports nothing for {{ $labels.name }}, so the certificate alerts cannot fire
-    # The one console on the internet. It is not what users need, so a warning, with time for a certificate's first order and a restart.
+    # One of the two consoles on the internet. It is not what users need, so a warning, with time for a certificate's first order and a restart.
     - name: hosted.grafana
       interval: 30s
       rules:
@@ -88,6 +95,52 @@ spec:
           labels: { severity: warning, component: grafana }
           annotations:
             summary: The probe of https://grafana.bereket.dev is not running, so GrafanaRouteDown cannot fire
+    # The other console on the internet, and the one that holds every secret. Down is a warning, as Grafana's is: the operator reads it
+    # through its Service, so Plane does not notice. Open is not: anyone who signs up, or claims an instance with no admin, owns it. The
+    # probe reads 1 for a 200 whose body is not that config too, which is no less reason to look.
+    - name: hosted.infisical
+      interval: 30s
+      rules:
+        # Its page, and one path under each of the route's two limits: a limit's Middleware gone turns sign-in or token refresh into
+        # Traefik's 404, and only its own probe sees that.
+        - alert: InfisicalRouteDown
+          expr: probe_success{probe=~"infisical|infisical-sign-in|infisical-session"} == 0
+          for: 5m
+          labels: { severity: warning, component: infisical }
+          annotations:
+            summary: "{{ $labels.instance }} has failed its probe for 5m. Infisical is still reachable with make remote-ui, and the operator does not use this route"
+        - alert: InfisicalRouteNotWatched
+          expr: |
+            absent(probe_success{probe="infisical"})
+              or absent(probe_success{probe="infisical-sign-in"})
+              or absent(probe_success{probe="infisical-session"})
+          for: 15m
+          labels: { severity: warning, component: infisical }
+          annotations:
+            summary: The probe {{ $labels.probe }} of https://infisical.bereket.dev is not running, so InfisicalRouteDown cannot fire for it
+        # At once, as NetworkPolicyNotEnforced: the body was read and says it, so this is never a flake. scripts/hosted/README.md, section
+        # Infisical reads open, says what to do.
+        - alert: InfisicalOpenToClaim
+          expr: probe_failed_due_to_cel{probe="infisical-claimed"} == 1
+          labels: { severity: critical, component: infisical }
+          annotations:
+            summary: https://infisical.bereket.dev/api/v1/admin/config does not read claimed and closed to sign-up, so whoever signs up or claims it first may own every production secret
+        - alert: InfisicalClaimNotRead
+          expr: probe_success{probe="infisical-claimed"} == 0 and probe_failed_due_to_cel{probe="infisical-claimed"} == 0
+          for: 10m
+          labels: { severity: warning, component: infisical }
+          annotations:
+            summary: The config at https://infisical.bereket.dev/api/v1/admin/config has not answered for 10m, so InfisicalOpenToClaim cannot fire
+        # With another module on the Probe, probe_success reads 0 and there is no probe_failed_due_to_cel at all, so the two rules above
+        # stay quiet. Only a module that reads the body with CEL gives that series, so its absence counts as not watched too.
+        - alert: InfisicalClaimNotWatched
+          expr: |
+            absent(probe_success{probe="infisical-claimed"})
+              or absent(probe_failed_due_to_cel{probe="infisical-claimed"})
+          for: 15m
+          labels: { severity: warning, component: infisical }
+          annotations:
+            summary: The probe of Infisical's sign-up and admin is not running, or does not read the config's body, so InfisicalOpenToClaim cannot fire
     # The metric appears only after a first success, so absent also covers a CronJob that has never worked, and for: gives the first
     # nightly run time to happen. PlaneBackupFailed sees only a Job that ran and failed, and misses one that never runs.
     - name: hosted.backups
