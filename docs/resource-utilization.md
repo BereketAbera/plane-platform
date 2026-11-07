@@ -1,10 +1,10 @@
 # Resource utilization
 
-CPU, memory, disk and storage for Wayline, a customized Plane Community Edition v1.4.3 deployment on a local kind cluster.
+CPU, memory, disk and storage for Wayline, a customized Plane Community Edition v1.4.3 deployment, in its three environments: dev and prod-sim on one local kind cluster, and hosted production, `plane-prod`, on one K3s node on the owner's Contabo VPS.
 
-**What is measured.** Measured cells come from one laptop, on 2026-11-04 and 2026-11-05, with Docker Desktop set to 14 GiB and 12 CPUs. This is a local deployment, and it makes no claim of being ready for production.
+**What is measured.** The local cells come from one laptop, on 2026-11-04 and 2026-11-05, with Docker Desktop set to 14 GiB and 12 CPUs, and they make no claim about a server. Hosted production's come from its own node on 2026-11-07, and they are all under [Hosted production](#hosted-production), at the end of this page. Neither set predicts the other.
 
-**The main numbers are three windows on 2026-11-05**, on the final images, restored into a new cluster. See [the load window](#the-load-window).
+**The main local numbers are three windows on 2026-11-05**, on the final images, restored into a new cluster. See [the load window](#the-load-window).
 
 | Question | Answer, from one run of each |
 |---|---|
@@ -12,8 +12,10 @@ CPU, memory, disk and storage for Wayline, a customized Plane Community Edition 
 | Idle, the whole platform | All pods used 5,703 MiB and 458 m. The VM used 8.65 GiB, which also holds the owner's other containers |
 | 5, 10 and 20 virtual users, with think time | 2.39, 4.52 and 8.63 requests a second, p95 268, 647 and 1,005 ms, 0 failed of 2,800 |
 | Where it saturates, with no think time | Requests a second stop rising by 5 virtual users: 8.86, 8.37 and 7.82, p95 1,093, 2,095 and 4,935 ms. Postgres sat at its 500 m CPU limit. The API worker topped out at 460 m of its 750 m limit |
+| Hosted production, 12 hours of a working day to 2026-11-07T19:31Z | On average 1.5 to 1.6 busy cores of 12 vCPU and 6.26 of 47.05 GiB of memory used, and 18.45 of 414.92 GB of disk at the end, with the owner's own small data set. Stock CPU dashboards read about 40% there, because the VM's counters account for only part of the clock. See [Hosted production](#hosted-production) |
+| Hosted production under load | Not measured: no load test has run there |
 
-**What these numbers do not prove.** They are one laptop, one run each, in a VM shared with the owner's other containers, so they predict no other host, and Pass 2 needs its own. The cluster was about 37 minutes old when idle began, so Prometheus and Loki held little history. The load test calls only the API, and its own writes grow the table it reads, so the ceiling above belongs to this data and this Postgres limit.
+**What these numbers do not prove.** The local ones are one laptop, one run each, in a VM shared with the owner's other containers, so they predict no other host. The cluster was about 37 minutes old when idle began, so Prometheus and Loki held little history. The load test calls only the API, and its own writes grow the table it reads, so the ceiling above belongs to this data and this Postgres limit.
 
 **What is still open.** A cold install with no defect has not been timed or measured end to end. The cold install of 2026-11-05 gives the disk and pull times under [Disk](#disk) and [Boot and start times](#boot-and-start-times), and each says what its umask defect added. `Docker.raw` directly after a delete: Not measured in Pass 1. `make drill-clean-restore CONFIRM=yes LOSE_CLUSTER=yes` read it only at the top and the bottom of [its output](evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt): 38,276,744 KiB before the delete, and 38,301,404 KiB after the restore, with a cluster back on the disk (TEAR-5b). `Docker.raw` before a first install, and VM memory during one: Not measured in Pass 1.
 
@@ -34,12 +36,12 @@ Three kinds of measured memory appear, and they are not the same thing:
 - **Peak** is cgroup `memory.peak`, the highest since that container started, on the earlier cluster. It includes page cache the kernel can
   reclaim, so a peak at a limit does not by itself mean the process needs more. See [what reached a limit](#what-reached-a-limit).
 
-Numbers here describe one laptop running one kind node. They do not predict a server, and Pass 2 needs its own.
+The local numbers describe one laptop running one kind node, and they do not predict a server. [Hosted production](#hosted-production) has its own server's.
 Contract section 10 says budgets change only with a measurement, so this page is what later budget changes must cite.
 
 ## Minimums used by the scripts
 
-`scripts/prereqs.sh` enforces these. The table explains where each number comes from.
+`scripts/prereqs.sh` enforces these on the machine that runs the local platform. The table explains where each number comes from. Hosted production's node is described in [`capacity.yaml`](../infrastructure/hosted/plane-prod/capacity.yaml) instead, under [its budget](#the-nodes-budget-and-frameflows-share).
 
 | Check | Hard floor | Recommended | Basis |
 |---|---:|---:|---|
@@ -464,3 +466,109 @@ Backups go to `.local/backups/` on the host, not to a kind volume.
 
 `make backup ENV=all` took 42.3 s for all three on 2026-11-04T23:13Z ([dr-backup-4.txt](evidence/runs/dr-backup-4.txt)). These hold test data, so they say
 little about a real database. The size of each object store copy is not in these files.
+
+## Hosted production
+
+Hosted production, `plane-prod`, is one K3s node on the owner's Contabo VPS. Contabo's API lists 12 vCPU, 49,152 MB of memory and 409,600 MB of disk, and the OS reports 12 CPUs, 47 GiB of memory and a 387 GiB ext4 root ([Contabo's API and the server](evidence/runs/hosted-access-dns-20261106T212722Z.txt), [the node after provisioning](evidence/runs/hosted-node-20261106T225936Z.txt)), which node-exporter reads as 47.05 GiB and 414.92 GB. One Plane environment runs there, at the larger sizes of `helm/plane/overlays/prod`, beside its own Argo CD, Infisical, Traefik, cert-manager and monitoring, with the owner's own small data set. No other app runs in the cluster yet, and the quotas hold frameflow's share free.
+
+None of the local numbers above carries over. The node has more than three times the VM's memory, one Plane environment instead of two, and Postgres there requests 1,000 m of CPU with a 4,000 m limit, where the local limit that bound under load was 500 m.
+
+### How it was measured
+
+Two readings, kept apart:
+
+- **First readings**, on the morning of 2026-11-07, before 09:10Z, by the session that brought the platform up. They are in its working notes, which are not committed, and no file in `docs/evidence/` holds them, so they are quoted as that session wrote them.
+- **A read-only capture from 19:30:41Z to 19:33:01Z** (raw `hosted-resources-20261107T193041Z.txt`, not yet published to `docs/evidence/`): `kubectl top`, the quotas, the volumes and the kubelet's summary, over the SSH tunnel, and Prometheus's history through the API server's service proxy. Its scripts are at its end. Until it is published, the figures below that come from it have no file in `docs/evidence/`, which this page's own rule asks of a measured number. All 14 Applications were Synced and Healthy at release `f2bff57`. Each 12-hour figure covers 07:31Z to 19:31Z, summed at every 1-minute step and then averaged or topped, so a top is a real moment. Prometheus's history began about 15 hours earlier, at 04:32Z.
+
+The 12 hours were a working day, not an idle window. They held a restart check at 07:52Z, policy and alert tests, releases of `deploy/plane-prod` at 07:33Z, 08:46Z, 14:42Z, 18:21Z, 18:36Z and 19:21Z (`git log origin/deploy/plane-prod`), and a policy test that had started at 19:24Z. So these are figures for a light day with changes in it, and no quiet window was set aside.
+
+### CPU
+
+The VM's CPU counters do not cover the whole clock. `node_cpu_seconds_total`, summed over every mode and CPU, advanced by 0.723 of a second per CPU per second on average over the 12 hours, between 0.579 and 0.951, and by 0.658 at 19:31Z. Steal read 0 throughout. So the ways of reading CPU use agree on busy cores and disagree on the share:
+
+| Method | 12 hours, average / top | At 19:30 to 19:31Z | First readings |
+|---|---|---|---|
+| Busy cores by the counters: every mode but idle, iowait and steal | 1.47 / 1.99 | 1.64 | |
+| Busy cores in the pods' cgroups, `container_cpu_usage_seconds_total`. K3s itself runs outside any pod, so it is not in this | 1.60 / 2.69 | 1.80 | |
+| `kubectl top node`, the kubelet's reading of the whole node | | 1,635 m | |
+| Busy share as `top` computes it: 1 less idle, over the time the counters accounted | 18.0% / 32.0% | 22.1% | about 17% |
+| Busy share as the stock node dashboards compute it, `instance:node_cpu_utilisation:rate5m`: 1 less idle, iowait and steal, per second of clock | 39.9% / 57.3% | 47.9% | about 34%, with the counters covering about 78% of the clock |
+
+1.5 to 1.6 busy cores is about 13% of 12 vCPU. Divided by the time the counters accounted, it reads about 18%. The stock dashboards count the time the counters missed as busy, so they read about 40%, and they go on overstating CPU use on this VM for as long as the counters fall short. The missing time is not reported as steal, so nothing inside the VM can say where it went.
+
+| Reading | 12 hours, average / top | At 19:31Z | First readings |
+|---|---|---|---|
+| Load average, 1 minute | 8.86 / 18.23 | 10.03 | about 10, read as short bursts |
+| Load average, 15 minutes | 8.77, average | 9.72 | |
+| CPU pressure, `some`: the share of time at least one task waited for a CPU | 31.4% / 48.4% | 42.4% | about 27% |
+| Memory pressure, `some` | | about 0 | |
+| IO pressure, `some` | | 1.6% | |
+
+A load average of 9 to 10 and tasks waiting for a CPU about a third of the time do not fit 1.5 busy cores of 12 by the node's own counters. Whether that is short bursts or CPU time the host withholds, no run here has read.
+
+### Memory
+
+| Reading | 12 hours, average / top | At 19:30 to 19:31Z | First readings |
+|---|---|---|---|
+| Node used, `MemTotal` less `MemAvailable`, of 47.05 GiB | 6.26 / 6.76 GiB | 6.16 GiB | 6.4 of 47 GiB |
+| Pods' working set, summed | 4,061 / 4,480 MiB | 4,080 MiB by `kubectl top pods` | |
+| `kubectl top node` | | 5,672 MiB | |
+| Swap | | none configured | |
+
+The node's used memory sits about 2.3 GiB above the pods' sum. That gap is K3s itself, whose API server, controllers and kubelet run in one process outside any pod, with containerd and the OS, and this page does not split it.
+
+### Per namespace, against its quota
+
+Usage is from Prometheus over the 12 hours. Quota is used and hard at 19:31:00Z, from the same capture. Requests and limits are settings, not usage.
+
+| Namespace | CPU, cores, average / top | Working set MiB, average / top | `requests.cpu` | `requests.memory` | `limits.memory` |
+|---|---:|---:|---|---|---|
+| `plane-prod` | 0.589 / 0.959 | 1,483 / 1,622 | 2,235 m of 3,300 m | 4,700 Mi of 7 Gi | 12,624 Mi of 14,688 Mi |
+| `monitoring` | 0.426 / 0.733 | 1,049 / 1,314 | 255 m of 300 m | 1,536 Mi of 1,792 Mi | 4,128 Mi of 4,416 Mi |
+| `infisical` | 0.245 / 0.735 | 831 / 1,273 | 160 m of 300 m | 848 Mi of 1,664 Mi | 1,376 Mi of 2,400 Mi |
+| `argocd` | 0.207 / 0.689 | 481 / 727 | 195 m of 250 m | 376 Mi of 512 Mi | 1,856 Mi of 1,984 Mi |
+| `kube-system`, K3s's few pods, not K3s | 0.071 / 0.104 | 59 / 63 | no quota | no quota | no quota |
+| `traefik` | 0.028 / 0.111 | 53 / 87 | 50 m of 100 m | 96 Mi of 192 Mi | 256 Mi of 512 Mi |
+| `cert-manager` | 0.024 / 0.042 | 93 / 111 | 40 m of 50 m | 144 Mi of 192 Mi | 384 Mi of 448 Mi |
+| `monitoring-agents` | 0.010 / 0.018 | 12 / 13 | 10 m of 20 m | 24 Mi of 48 Mi | 64 Mi of 128 Mi |
+| `frameflow` | none | none | quota of 0 pods | | |
+
+Plane's namespace used 0.59 cores on average against 2.2 requested, and 1.45 GiB against 4.6 GiB requested. That is the owner's small data set with no load, so it says nothing about whether the sizes hold under load, which no run has tried here.
+
+### The node's budget, and frameflow's share
+
+Settings, from [`capacity.yaml`](../infrastructure/hosted/plane-prod/capacity.yaml) and [`kubelet.conf`](../infrastructure/hosted/plane-prod/kubelet.conf), which Terraform and K3s apply:
+
+| Share | CPU | Memory | Disk |
+|---|---|---|---|
+| The node, as `capacity.yaml` takes it | 12 | 47 Gi | 400 Gi |
+| The system: `kubeReserved` and `systemReserved`, and the memory the kubelet's eviction threshold keeps free | 1,500 m | 5 Gi | 40 Gi |
+| Frameflow's reservation, not deployed | 6 requested, 8 limit | 18 Gi | 100 Gi of temporary disk |
+| Every other namespace's quota, summed | 4,320 m of `requests.cpu` | 24 Gi of `limits.memory` | 180 Gi of `requests.storage` |
+
+`scripts/ci/check-capacity.sh` fails CI unless the quotas, the system's share and frameflow's together fit the node: memory against all 47 Gi, CPU against 12, and disk against 80% of 400 Gi, where `NodeDiskLow` warns. Memory comes to exactly 47 Gi and disk to exactly 320 Gi, so a quota can grow only by taking from another or from frameflow's share. A quota caps and does not reserve, so frameflow's room exists only as what the caps on the rest leave free.
+
+The running kubelet agrees with those reserves. At 19:30:53Z it reported 12 CPUs and 49,330,592 KiB of capacity, and 10,500 m and 44,087,712 KiB allocatable, which is 1,500 m and exactly 5 GiB less, and 357.3 GB of ephemeral storage, which is the disk less its 15 GiB reserved and the 10% eviction threshold. `kubelet.conf` also sets what kind does not: image collection from 75% of the disk down to 65%, removal of images unused for 14 days, and eviction below 1 GiB of free memory or 10% of free disk. So, unlike the local node, a full disk here should mean evictions before write errors, which no run has tried.
+
+### Disk and volumes
+
+| Reading | At 19:31Z | First readings |
+|---|---|---|
+| Root filesystem used, of 414.92 GB | 18.45 GB by the kubelet, 18.47 GB by node-exporter | 17.8 of 415 GB |
+| Images, part of that | 10.71 GB | |
+| Pods' ephemeral storage, all 40 pods | 0.34 GB | |
+| Inodes used | 544,382 of 52,297,728 | |
+
+Every volume is on that one disk. The claims, as declared: in `plane-prod` Postgres 30 Gi, Silo 64 Gi, RabbitMQ 4 Gi, Valkey 2 Gi and backups 40 Gi; in `infisical` Postgres 2 Gi, Redis 1 Gi and backups 10 Gi; in `monitoring` Prometheus 16 Gi, Loki 10 Gi and Alertmanager 1 Gi. All but the two backup volumes are on class `local-path-retain`, and the backups are static hostPath volumes under `/srv/wayline/backups`, all with reclaim `Retain`. The provisioner ignores a declared size, so none of these caps anything, and only Prometheus's `retentionSize` of 12 GiB, Loki's 168h and the disk alerts bound them. How much each volume holds: Not measured. The kubelet reports no usage for hostPath volumes, and no run has read their folders on the node.
+
+### Backups
+
+The nightly CronJobs run at 01:47 UTC for Infisical and 02:17 UTC for Plane, and at 19:31Z neither had run on its schedule yet. A run by hand at 07:07Z sealed Infisical at 5.164 MiB, 429 KiB once stored, and Plane at 1.006 MiB, 286 KiB once stored, with 2 objects. That is the owner's small data set, so it says little about later sizes (raw `hosted-backup-second-20261107T070750Z.log`, not yet published).
+
+### What is not measured on hosted production
+
+- **Load.** `make test-load` runs only in `plane-dev`, and no load test has run against hosted production, so nothing here says where it saturates.
+- **Idle.** No quiet window was set aside. The 12 hours above held tests and six releases.
+- **What each volume holds,** as above.
+- **A steady state.** Prometheus's history was about 15 hours old, and the first nightly backups had not run.
+- **Boot times.** `make remote-bootstrap`'s second run took 94 s and exited 0 ([run](evidence/runs/hosted-bootstrap-20261107T050333Z.txt)), after a first that stopped at 191 s on a missing registry token ([run](evidence/runs/hosted-bootstrap-20261107T042651Z.txt)). How long Argo CD then took to bring each Application up was not read.
