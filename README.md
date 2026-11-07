@@ -1,18 +1,54 @@
 # plane-platform
 
-This is a local deployment platform for a **customized Plane Community Edition v1.4.3 deployment**. It is not an original product.
+This repository deploys **Wayline, a customized Plane Community Edition v1.4.3 deployment**. It is not an original product.
 
-The project management application is [Plane Community Edition](https://github.com/makeplane/plane), built by the Plane team and licensed AGPL-3.0. This repository adds what surrounds it: a kind cluster, Terraform, Argo CD, Infisical, a hardened overlay of the upstream Helm chart, monitoring, backups, and tests. "Wayline" is the name of this customized deployment, and it stays credited to Plane CE wherever it appears.
+The project management application is [Plane Community Edition](https://github.com/makeplane/plane), built by the Plane team and licensed AGPL-3.0. This repository adds what surrounds it: Terraform, Argo CD, Infisical, a hardened overlay of the upstream Helm chart, monitoring, backups, and tests, on a kind cluster on the owner's Mac and on one K3s node on the owner's Contabo VPS. "Wayline" is the name of this customized deployment, and it stays credited to Plane CE wherever it appears.
 
-This is Pass 1 of 2. It runs on one laptop. No Hetzner or Cloudflare resource exists, and nothing about them has been built or tested. Outside the laptop there is only the private GitHub repository, its Actions runs, and four private GHCR packages. Pass 2 would move to Hetzner Cloud with independent dev and prod environments and Cloudflare, as described in [PASS2_HANDOFF.md](PASS2_HANDOFF.md) and [docs/future-hetzner.md](docs/future-hetzner.md).
+## Three environments
 
-**This platform is local and production-inspired, and it makes no claim of being ready for production.**
+| Environment | Where it runs | How to reach it |
+|---|---|---|
+| `dev` | Namespace `plane-dev` of a kind cluster on the owner's Mac, started with `make up` | <http://plane.dev.localhost>, from the Mac only. Argo CD, Grafana, Prometheus, Alertmanager and Infisical at `http://<name>.localhost` |
+| `prod-sim` | Namespace `plane-prod-sim` of the same kind cluster. It is the target of local promotion, and simulates production | <http://plane.prod-sim.localhost>, from the Mac only |
+| Hosted production, `plane-prod` | One K3s node on a Contabo Cloud VPS 12 at `5.253.234.127`, serving since 2026-11-07 | <https://wayline.bereket.dev>. Consoles: <https://grafana.bereket.dev>, and <https://infisical.bereket.dev> for Infisical's one admin from 2026-11-07. Argo CD, Prometheus and Alertmanager have no public route: `make remote-ui TARGET=plane-prod UI=<name>` reaches them through an SSH tunnel |
+
+`dev` and `prod-sim` share one node, one kernel, and one Traefik, Argo CD, Infisical and monitoring stack, so **namespace separation is not equivalent to independent production clusters**. Hosted production is a cluster of its own on its own machine, and it is still a single node, with no high availability. `prod-sim` is not a step on the way there: hosted production takes only a set of digests that `dev` ran, with a signed record of that run.
+
+**Read next:** the [documentation index](docs/README.md); [docs/environments.md](docs/environments.md), what differs between the three, row by row; [docs/architecture.md](docs/architecture.md), how the layers fit, with hosted production in section 9; the [platform contract](docs/platform-contract.md), which is binding; and [docs/validation.md](docs/validation.md), what has run. To install and run each environment, [docs/install.md](docs/install.md). Hosted production's scripts, and what each needs, are in [scripts/hosted/README.md](scripts/hosted/README.md).
+
+The plan for Hetzner Cloud and Cloudflare in [PASS2_HANDOFF.md](PASS2_HANDOFF.md) and [docs/future-hetzner.md](docs/future-hetzner.md) was not built, and no Hetzner or Cloudflare resource exists. Hosted production went to Contabo instead, with DNS in Vercel through Terraform, and TLS terminated by Traefik on the node, with certificates from cert-manager and Let's Encrypt.
 
 ## Status
 
-[docs/validation.md](docs/validation.md) is the authoritative record, and this table only summarizes it. Results use the labels in [contract section 12](docs/platform-contract.md#12-evidence-rule): PASS, FAIL, BLOCKED, NOT RUN. A result counts only with evidence in [docs/evidence/](docs/evidence/README.md). A row there reads NOT RUN when the thing it asks for was not done, and it says what did run, if anything.
+[docs/validation.md](docs/validation.md) is the authoritative record, and these tables only summarize it. Results use the labels in [contract section 12](docs/platform-contract.md#12-evidence-rule): PASS, FAIL, BLOCKED, NOT RUN. A result counts only with evidence in [docs/evidence/](docs/evidence/README.md). A row there reads NOT RUN when the thing it asks for was not done, and it says what did run, if anything. A row reading PENDING names a hosted run planned for the night of 2026-11-07 that had not run when this was written, and it is not a result.
 
-**That record reads 111 PASS, 1 FAIL (BR-3, `/source`), 0 BLOCKED and 7 NOT RUN:** one cold install in one go, Safari, 7 of 23 alert rule names that have never fired, `Docker.raw` right after a delete, read-only roots, RabbitMQ 4.2.9 and the Docker Hub window.
+### Hosted production, 2026-11-07
+
+Hosted production was provisioned on 2026-11-06 and has served <https://wayline.bereket.dev> since 2026-11-07. Many of its checks ran that day and are not published yet, so by the [evidence rules](docs/evidence/README.md#rules) they have no result here, and the rows say which.
+
+| Area | State |
+|---|---|
+| The VPS and its DNS | PASS, 2026-11-06T21:27Z, read only, before any change, as `target.yaml` says: Contabo instance `203733427`, a Cloud VPS 12, running, at `5.253.234.127`, and record `wayline` A `5.253.234.127` in Vercel ([record](docs/evidence/runs/hosted-access-dns-20261106T212722Z.txt)) |
+| The node after provisioning | PASS, 2026-11-06T22:59Z: K3s v1.36.6+k3s1 Ready, Secrets encryption enabled, SSH by key only with no root login, the firewall at stage `closed`, and from outside only port 22 open ([record](docs/evidence/runs/hosted-node-20261106T225936Z.txt)) |
+| The wrong-cluster guard | PASS, 2026-11-07T04:37Z: `make remote-netpol TARGET=plane-prod` with no `CONFIRM=plane-prod` refused before it did anything ([run](docs/evidence/runs/hosted-netpol-first-20261107T043754Z.txt)) |
+| Bootstrap (`make remote-bootstrap`) | BLOCKED at 04:26Z, at step 6 of 8, because the GHCR pull token, one of the owner's inputs, did not exist yet ([run](docs/evidence/runs/hosted-bootstrap-20261107T042651Z.txt)). PASS at 05:03Z, exit 0, with alert delivery and the recovery bundle reading INCOMPLETE at that time ([run](docs/evidence/runs/hosted-bootstrap-20261107T050333Z.txt)) |
+| Static checks and the exact-digest gate | PASS at `5dccc91`, from 00:15Z to 00:28Z: lint, 158 gate scenarios on macOS and in Ubuntu 24.04, 150 planted mutations that each turned their scenario red, and the hosted render and tree validated ([lint](docs/evidence/runs/gate-lint-20261107T001514Z.txt), [macOS](docs/evidence/runs/gate-macos-20261107T001514Z.txt), [Linux](docs/evidence/runs/gate-linux-20261107T001514Z.txt), [mutations](docs/evidence/runs/gate-mutations-20261107T001514Z.txt), [real tree](docs/evidence/runs/gate-real-tree-20261107T001514Z.txt)). CI's runs on GitHub since then are not published |
+| Dev runs the exact bytes | PASS, 05:05Z to 05:15Z. GHCR's four linux/amd64 images were copied into the local registry by digest and published ([copy](docs/evidence/runs/DEV-VALIDATE-copy-publish-20261107T050522Z.txt)). Dev's smoke under Rosetta read BLOCKED at 05:11Z, because the rollout had not finished and its branding check would have read old pods, then PASS at 05:13Z, 45 PASS and 1 SKIP ([first](docs/evidence/runs/DEV-VALIDATE-smoke-20261107T051110Z.txt), [second](docs/evidence/runs/DEV-VALIDATE-smoke-20261107T051309Z.txt), [JSON](docs/evidence/runs/smoke-dev-20261107T051309Z-98217.json)). The signed record of set `6d3610b95f01` followed at 05:15:48Z ([evidence](docs/evidence/promotions/6d3610b95f013b4f07212106e467577f8f45e9ede9ec282ef1223b95d72e5d12.json)) |
+| NetworkPolicy matrix (`make remote-netpol`) | BLOCKED at 04:38Z, before Plane existed: 143 PASS, 0 FAIL and 67 INCONCLUSIVE, mostly names that did not resolve yet, so `make` exited 2 ([run](docs/evidence/runs/hosted-netpol-first-20261107T043810Z.txt), [rows](docs/evidence/runs/netpol-plane-prod-20261107T043811Z.tsv)). Runs after Plane was deployed are not published. A clean run: PENDING |
+| Smoke test over https (`make remote-smoke`) | Earlier runs are not published. The final run, on the owner's account: PENDING |
+| Secrets (`make remote-test ONLY=secrets`) | After Infisical's new values, every row read PASS at 18:44Z, 47 of 47. Its file, `test-hosted-20261107T184239Z.txt`, is not published, so no result here yet |
+| Infisical's public route (`make remote-test ONLY="outside secrets routes"`) | PENDING |
+| The whole `make remote-test` | PENDING |
+| Restart check (`make remote-restart-check`) | An earlier run is not published. PENDING |
+| Backups, the restore test, and the copy on the Mac | Ran on 2026-11-07. Not published, so no result here |
+| Alert delivery to Telegram and Healthchecks.io | Not published, so no result here |
+| Image scan of what hosted production runs (`scan-hosted.yml` on GitHub) | PENDING. The runs on this Mac read part of the list, as [docs/security.md](docs/security.md#container-scanning) says |
+
+### Local platform
+
+**Since Pass 1.** On 2026-11-07 `make up` brought the local platform back after `make down` and two Docker restarts, exit 0 in 130 s, with all 14 Applications Synced and Healthy ([output](docs/evidence/runs/LOCAL-make-up-after-stop-20261107T003953Z.txt)). Dev then took set `6d3610b95f01`, as the hosted table says. The rest of this section is Pass 1, as of 2026-11-05.
+
+**Pass 1's record read 111 PASS, 1 FAIL (BR-3, `/source`), 0 BLOCKED and 7 NOT RUN:** one cold install in one go, Safari, 7 of 23 alert rule names that have never fired, `Docker.raw` right after a delete, read-only roots, RabbitMQ 4.2.9 and the Docker Hub window.
 
 **On 2026-11-05 the platform came back from a fresh clone and from backup, on this one laptop, and Plane worked in both environments.** Both ran the final images, built from `84b63d9`: web `3d7575a1`, admin `ce7adc37`, space `5f0119ff` and backend `8c04bd18`, with a flattened backend and cache headers on HTML. One `make up` on a fresh clone exited 0 in 955 s, keeping the local registry and pull-through caches ([summary](docs/evidence/runs/clean-install-20261105T075041Z/summary.txt)). A full restore from backup into a new cluster passed every restore step ([result](docs/evidence/runs/restore-clean-20261105T081017Z.json)). Then `make down` and `make up` kept the data ([PERS-3](docs/evidence/runs/PERS-3-20261105T083304Z.txt)), and `make test` passed in full, ending at 08:45Z ([output](docs/evidence/runs/MAKE-TEST-20261105T083455Z.txt)). Most of these ran once, and the rows below say what each does not prove.
 
@@ -24,7 +60,7 @@ This is Pass 1 of 2. It runs on one laptop. No Hetzner or Cloudflare resource ex
 
 **Before that the checks ran together at `f30a7f5`, on the cluster that drill left, so not on a quiet machine.** `make test` passed whole, exit 0, from 14:00Z to 14:11Z ([output](docs/evidence/runs/MAKE-TEST-20261105T140019Z.txt), [summary](docs/evidence/runs/test-20261105T140019Z-56547.txt)). `make ci` passed in a clean clone ([output](docs/evidence/runs/ci-2-20261105T140005Z-clean-clone-f30a7f5.txt)). The stubbed restore suite read 1340 passed and 0 failed ([total](docs/evidence/runs/final-harness-f30a7f5/total.txt)), which shows the logic and not the platform. Of its 126 planted defects, 125 were caught and 1 survived ([record](docs/evidence/runs/final-harness-f30a7f5/mutants.txt)), a gap in one scenario that `f05930d` closes ([that defect, caught](docs/evidence/runs/final-harness-f05930d/mutant-survivor-rerun.txt)), with the whole set not run again. A complete image scan passed its policy, with upstream's findings reported and still there ([scan](docs/evidence/security/scan-images-20261105T140048Z/README.md)). The first push since `0dde813` then reached GitHub, and the GitHub Actions row of the table says what it ran. Commits after `f30a7f5` change how CI fetches its tools, one test scenario and these docs, and nothing Argo CD reads. A state below holds as of its date.
 
-Runs up to the re-run of the one surviving planted defect, which ended at 15:02Z, are published under [docs/evidence/runs/](docs/evidence/runs/MANIFEST.tsv), with GitHub's runs in [docs/evidence/ci/](docs/evidence/ci/README.md). By the [evidence rules](docs/evidence/README.md#rules), anything newer has no result here until it is published.
+Pass 1's runs up to the re-run of the one surviving planted defect, which ended at 15:02Z, are published under [docs/evidence/runs/](docs/evidence/runs/MANIFEST.tsv), with GitHub's runs in [docs/evidence/ci/](docs/evidence/ci/README.md). By the [evidence rules](docs/evidence/README.md#rules), anything newer has no result here until it is published.
 
 | Area | State on 2026-11-05 |
 |---|---|
@@ -48,29 +84,32 @@ Runs up to the re-run of the one surviving planted defect, which ended at 15:02Z
 | Teardown and recreation | TEAR-1 PASS: `make destroy` with no `CONFIRM` refused, with the node unchanged ([run](docs/evidence/runs/TEAR-1-20261105T083304Z.txt)). Stop and resume (PERS-3) PASS: `make down` in 15 s, `make up` in 82 s, and the sentinel row and attachment read back in both environments ([run](docs/evidence/runs/PERS-3-20261105T083304Z.txt)). Recreation after removing the local services (TEAR-4): the cold install above ([summary](docs/evidence/runs/clean-install-20261105T105546Z/summary.txt)). Disk after a delete: 31.7 GiB free, 15.6 GiB back ([log](docs/evidence/runs/drill-clean-restore-20261105T105347Z.log)). `Docker.raw`: 38,276,744 KiB before the last drill's delete and 38,301,404 KiB after its restore, with a cluster back on the disk, so a delete alone was not read (TEAR-5b, [output](docs/evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt)) |
 | Wayline branded images | Both environments run the images built from `84b63d9`, by digest from `localhost:5001/wayline` (BR-2), and every gate exited 0 on that build ([evidence](docs/evidence/branding/README.md), [digests](docs/evidence/branding/digests.tsv)). `/source`: FAIL (BR-3), because it answers 302 to `84b63d9` on GitHub, which answers 404 with no credentials while the repository is private ([record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)) |
 | Image scan (`make scan-images`) | PASS (CI-7): the complete scan at `f30a7f5`, 2026-11-05T14:00Z, exit 0, so no image built here has a CRITICAL finding with a fix, and every target on its list was scanned, all 31 ([scan](docs/evidence/security/scan-images-20261105T140048Z/README.md)). The registry, `plane-git` and the kind node are not on that list. The findings did not go away: 15 CRITICAL, 515 HIGH, 768 MEDIUM, 378 LOW, 120 UNKNOWN. Five upstream images have a CRITICAL finding with a fix, which the policy reports and does not fail: postgres 15 and 16 in `gosu`, rabbitmq in `libcrypto3` and `libssl3`, `plane-live`, and argocd in `git-lfs` and `kustomize`. Infisical has 5 CRITICAL with no fix. HIGH findings remain in images built here, backend 4 and space 30, each with a fix not taken. The zeros for web and admin cover OS packages only, so their bundled libraries show only in the lockfile row, and this run has none, because `.build/plane-src` was not on disk. That row last read 1 CRITICAL and 31 HIGH, on this Mac at 05:20Z ([run](docs/evidence/security/scan-images-20261105T052024Z/README.md)) and on a runner at 14:28Z ([log](docs/evidence/ci/ci-4-20261105T142148Z-run-42044273310.log)). The CRITICAL is proxy-addr 2.0.7 in upstream's `pnpm-lock.yaml`, which no bundle ships ([check](docs/evidence/branding/lockfile-critical.txt)), and upstream's `plane-live`, which runs here, still has it. Every scan on this Mac used the database updated 2026-11-04T19:02Z, so none knows a newer advisory. The first complete scan, 2026-11-04T21:54Z, read FAIL, on 5 fixable CRITICAL findings in images built here, and CI-7b shows those fixed ([summary](docs/evidence/security/README.md)) |
-| GitHub Actions workflows on GitHub | `76e98ee` reached GitHub at 14:21Z, the first push since `0dde813`, with 347 commits. `images.yml`: PASS, run 42044273310 at `76e98ee` built and published four new digests from an arm runner, with every layer walk clean, its prune deleted nothing, and it force-updated pull request 1, which stays open and unmerged ([log](docs/evidence/ci/ci-4-20261105T142148Z-run-42044273310.log), [pull request](docs/evidence/ci/ci-5-20261105T150014Z-pr-1.txt)). Run 41975430939 at `9c8e098` did the same first ([walk](docs/evidence/ci/ci-4-20261105T060219Z-published-compare.txt)), and anonymous reads of that build got 401 ([record](docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). None of those digests is running: both environments run the Mac's build of `84b63d9`. `ci.yml`: PASS on 6 runs on `push` up to `0dde813`. At `76e98ee`, run 42044273346: Lint and Security passed, and Manifests failed on three attempts before any check ran, on a 504 from GitHub when it fetched a pinned tool. At `7cde05a`, run 42046683167: Manifests and Security passed, with 149 of 149 stubbed scenarios, and Lint failed the same way, on shellcheck, before any check ran. At `6edde64`, run 42048656380: all three passed ([what happened](docs/evidence/ci/README.md#the-504-on-a-pinned-tool)). `promote-prod-sim.yml` opened promotion pull request 2, closed unmerged as a test. GitHub held the `pull_request` checks with no jobs, run 42045522553 the newest, so no check has run on a pull request |
-| Hetzner, Cloudflare | Out of scope for Pass 1. Nothing provisioned |
+| GitHub Actions workflows on GitHub | `76e98ee` reached GitHub at 14:21Z, the first push since `0dde813`, with 347 commits. `images.yml`: PASS, run 42044273310 at `76e98ee` built and published four new digests from an arm runner, with every layer walk clean, its prune deleted nothing, and it force-updated pull request 1, which stayed open and unmerged until 2026-11-07, when it was merged as `6204af2` with the linux/amd64 bump ([log](docs/evidence/ci/ci-4-20261105T142148Z-run-42044273310.log), [pull request](docs/evidence/ci/ci-5-20261105T150014Z-pr-1.txt)). Run 41975430939 at `9c8e098` did the same first ([walk](docs/evidence/ci/ci-4-20261105T060219Z-published-compare.txt)), and anonymous reads of that build got 401 ([record](docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). None of those digests runs anywhere: on 2026-11-05 both environments ran the Mac's build of `84b63d9`, and prod-sim still does. `ci.yml`: PASS on 6 runs on `push` up to `0dde813`. At `76e98ee`, run 42044273346: Lint and Security passed, and Manifests failed on three attempts before any check ran, on a 504 from GitHub when it fetched a pinned tool. At `7cde05a`, run 42046683167: Manifests and Security passed, with 149 of 149 stubbed scenarios, and Lint failed the same way, on shellcheck, before any check ran. At `6edde64`, run 42048656380: all three passed ([what happened](docs/evidence/ci/README.md#the-504-on-a-pinned-tool)). `promote-prod-sim.yml` opened promotion pull request 2, closed unmerged as a test. GitHub held the `pull_request` checks with no jobs, run 42045522553 the newest, so no check has run on a pull request |
+| Hetzner, Cloudflare | Never built. Hosted production went to Contabo and Vercel, as the hosted table above says |
 
 ## What this platform does not claim
 
 - **Namespace separation is not equivalent to independent production clusters.** `plane-dev` and `plane-prod-sim` share one node, one kernel, one API server, one etcd, one CNI, one Traefik, one Argo CD, one monitoring stack, and one Docker VM. A node failure or a bad cluster-wide change takes out both. "Prod-sim" is a simulation of a promotion path, not a production environment.
-- **Terraform does not create the cluster.** The kind CLI creates the cluster and node, through `scripts/cluster-up.sh`. Docker Compose creates the registry, pull-through caches, and Git remote. Terraform manages only the objects listed under [Who creates what](#who-creates-what).
-- **GitHub does not enforce approval.** On GitHub Free with a private repository there are no required reviewers, protected branches, or environment gates. A pull request merge is a process, not a control. See [.github/workflows/README.md](.github/workflows/README.md).
-- **There is no TLS locally, and no high availability.** Everything is plain HTTP on loopback, with one replica of each stateful service.
+- **Hosted production has no high availability.** It is one node, with one replica of each workload, so a node restart is an outage for all of it. It serves its owner, and it has no SMTP, no IPv6, and one copy of its backups off the VPS, which is pulled to the Mac by hand.
+- **Terraform does not create a cluster.** The kind CLI creates the local cluster and node, through `scripts/cluster-up.sh`, and Docker Compose creates the registry, pull-through caches, and Git remote. On hosted production `scripts/hosted/provision-node.sh` installs K3s on a VPS that Terraform only reads. Terraform manages only the objects listed under [Who creates what](#who-creates-what).
+- **GitHub does not enforce approval.** On GitHub Free with a private repository there are no required reviewers, protected branches, or environment gates. A pull request merge is a process, not a control. That includes `deploy/plane-prod`, which hosted Argo CD syncs: anyone with write access could push it, and `check-deploy-branch.yml` notices only afterwards. See [.github/workflows/README.md](.github/workflows/README.md).
+- **There is no TLS locally.** Everything there is plain HTTP on loopback. Hosted production terminates TLS in Traefik, with certificates from Let's Encrypt.
 
 The full list is in [docs/known-limitations.md](docs/known-limitations.md).
 
 ## Owner decisions still open
 
-Only the owner, Bereket Abera, can settle these, and none is settled as of 2026-11-05. [PASS2_HANDOFF.md](PASS2_HANDOFF.md#owner-decisions-still-open) has the detail.
+Only the owner, Bereket Abera, can settle these, and none is settled as of 2026-11-07. [PASS2_HANDOFF.md](PASS2_HANDOFF.md#owner-decisions-still-open) has the detail.
 
 1. **D12, the `email.py` header.** AI agents replaced the one commercially headed upstream file in the backend image and flattened it. The owner was told and has not reviewed this, and no legal review has happened.
 2. **D16, the licence for platform code.** `LICENSE` is upstream's AGPL-3.0 text and does not say "only", and nearly all the scripts and manifests carry no header.
 3. **D17, two GitHub Apps with access to the repository.** `netlify` and `builder-io-integration`, inferred from the check suites they left. What each covers was not read.
 4. **D18, whether to rename Wayline.** No trademark search has been done on the name.
-5. **D10, a public repository for `/source`.** `/source` needs one, or another source offer, before anyone else uses an instance. It answers 302 to a commit that gives outsiders 404.
+5. **D10, a public repository for `/source`.** `/source` needs one, or another source offer, before anyone else uses an instance. It answers 302 to a commit that gives outsiders 404. Hosted production is on the internet now, with sign-up off.
 
 ## Architecture
+
+### Local platform
 
 ```mermaid
 flowchart TB
@@ -130,7 +169,52 @@ flowchart TB
   mirrors -- "by digest" --> node
 ```
 
-The diagram shows what runs today. The design and its reasons are in [docs/architecture.md](docs/architecture.md).
+### Hosted production
+
+```mermaid
+flowchart TB
+  browser["Browser on the internet"]
+  vercel["Vercel DNS: wayline, grafana, infisical .bereket.dev,<br/>A 5.253.234.127, no AAAA"]
+
+  subgraph gh["GitHub, private repo, Free plan"]
+    main["main: CI, then job release-plane-prod"]
+    deploybranch["deploy/plane-prod: only what CI released"]
+    ghcr["GHCR: linux/amd64 Wayline images"]
+  end
+
+  subgraph mac["The owner's Mac"]
+    devrun["plane-dev on kind runs each set first,<br/>and the Mac signs a record of that run"]
+    hostedlocal[".local/hosted/plane-prod/: secret zero, Terraform state,<br/>keys, recovery bundle, the backup copy"]
+    remote["make remote-* TARGET=plane-prod"]
+  end
+
+  subgraph vps["Contabo VPS: K3s v1.36.6+k3s1, one node"]
+    edge["nftables: 22, 80, 443"]
+    api["K3s API: only through the SSH tunnel"]
+    traefik["Traefik on hostPorts 80 and 443,<br/>certificates from cert-manager"]
+    argo["Argo CD"]
+    plane["plane-prod: web, admin, space, live, api, worker, beat,<br/>postgres, valkey, rabbitmq, silo"]
+    platform["monitoring with Grafana, infisical, cert-manager"]
+    backups["/srv/wayline/backups: nightly restic"]
+  end
+
+  browser --> vercel
+  browser -->|"https"| edge
+  edge --> traefik
+  traefik --> plane
+  traefik -->|"Grafana, Infisical's admin"| platform
+  devrun -->|"signed evidence"| main
+  main --> deploybranch
+  argo -->|"reads"| deploybranch
+  argo --> plane
+  argo --> platform
+  plane -->|"pulls by digest"| ghcr
+  plane --> backups
+  backups -->|"pulled by hand"| hostedlocal
+  remote -->|"SSH tunnel"| api
+```
+
+The diagrams show configuration. The design and its reasons are in [docs/architecture.md](docs/architecture.md), with hosted production in [section 9](docs/architecture.md#9-hosted-production).
 
 ### Who creates what
 
@@ -145,6 +229,8 @@ Each resource has one owner, and [contract section 4](docs/platform-contract.md#
 | Argo CD | Everything else in the cluster, including both Plane environments |
 | Infisical | Secret values and their history |
 | Scripts, via `.local/secret-zero/` | The few secrets that must exist before Infisical does |
+
+On hosted production the owners differ. `scripts/hosted/provision-node.sh` installs K3s and the host's firewall. Terraform in `infrastructure/terraform/environments/prod-host` owns three DNS records in Vercel and only reads the VPS. Terraform in `environments/prod` owns what the cluster needs before Argo CD: namespaces, quotas, LimitRanges, a storage class, the CoreDNS rewrite, the Argo CD release and its projects. CI's `release-plane-prod` job owns branch `deploy/plane-prod`. Argo CD owns everything else on the node, and scripts own the secrets that come from `.local/hosted/plane-prod/`. [Contract section 4](docs/platform-contract.md#4-ownership-exactly-one-owner-per-resource) has both tables.
 
 ## Quick start
 
@@ -199,7 +285,23 @@ Full steps and troubleshooting are in [docs/install.md](docs/install.md) and [do
 
 Do not run `docker system prune -a` to free disk if other projects on the machine rely on cached images. Official MinIO images, for example, can no longer be pulled anonymously, so a pruned copy may not come back.
 
+### Hosted production
+
+Hosted production is reached only through `make remote-<verb> TARGET=plane-prod`, from the one checkout that holds `.local/hosted/plane-prod/`. Each script checks that the cluster behind the tunnel is the one in `infrastructure/hosted/plane-prod/target.yaml`, and anything that changes something also needs `CONFIRM=plane-prod`. `CONFIRM=yes` does not count.
+
+```bash
+make remote-status TARGET=plane-prod                     # read-only: node, Argo CD, pods, certificates, backups, firewall, release branch, alerts
+make remote-ui TARGET=plane-prod UI=argocd               # port-forward a console through the tunnel: argocd, grafana, prometheus, alertmanager, infisical
+make remote-test TARGET=plane-prod CONFIRM=plane-prod    # the hosted suite, or ONLY="outside backups" for parts of it
+make remote-backup TARGET=plane-prod CONFIRM=plane-prod  # run tonight's backups now
+make remote-pull-backups TARGET=plane-prod               # copy the encrypted backups to this Mac, the only copy off the VPS
+```
+
+A change reaches hosted production only through `main`: CI releases it to `deploy/plane-prod`, and a new set of image digests needs the signed record of a dev run first ([how](docs/architecture.md#gitops-path)). [scripts/hosted/README.md](scripts/hosted/README.md) has every script, the first certificate, two-factor for Infisical's admin, the lockouts, and what to do after a rollback.
+
 ## Environment URLs
+
+### Local
 
 All hosts resolve to loopback without editing `/etc/hosts`. Traefik is reached through kind's port mapping, bound to `127.0.0.1` only, so these are not exposed to the LAN. Sign-in details are in [docs/install.md](docs/install.md). None are in this file.
 
@@ -213,15 +315,25 @@ All hosts resolve to loopback without editing `/etc/hosts`. Traefik is reached t
 | <http://alertmanager.localhost> | Alertmanager |
 | <http://infisical.localhost> | Infisical |
 
-All seven answered through Traefik, with the NetworkPolicies applied, in [`make status`](docs/evidence/runs/plane-prod-sim-status-1.txt) on 2026-11-04, and again after the stop and resume on 2026-11-05 ([PERS-3](docs/evidence/runs/PERS-3-20261105T083304Z.txt)): 200, or a 302 from Grafana and Prometheus. `/source` on the web host answers 302 to `84b63d9` on GitHub, which is pushed, and it ends in a 404 for anyone without access, because the repository is private ([record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)).
+All seven answered through Traefik, with the NetworkPolicies applied, in [`make status`](docs/evidence/runs/plane-prod-sim-status-1.txt) on 2026-11-04, and again after the stop and resume on 2026-11-05 ([PERS-3](docs/evidence/runs/PERS-3-20261105T083304Z.txt)): 200, or a 302 from Grafana and Prometheus. `/source` on the web host answers 302 to the commit that built the web image, on GitHub: `84b63d9` in prod-sim, and since 2026-11-07 `5161bf93e424` in dev ([smoke](docs/evidence/runs/smoke-dev-20261107T051309Z-98217.json)). Both are pushed, and each ends in a 404 for anyone without access, because the repository is private ([record](docs/evidence/ci/br-3-20261105T054812Z-source-logged-out.txt)).
 
 A real browser session used `http://plane.dev.localhost` in Chromium ([record](docs/evidence/branding/live-dev/README.md)), and session cookies are host-only, so a dev session gets 401 on the prod-sim host ([check](docs/evidence/runs/plane-dev-cookies-1.txt)). The same held in one Chromium profile on 2026-11-05 ([record](docs/evidence/runs/AUTH-4-20261105T062750Z.txt)), and that browser then held a session on both hosts at once ([record](docs/evidence/branding/live-final/README.md)).
 
 `*.localhost` resolution and cookie separation in Firefox and Safari: Not tested in Pass 1.
 
+### Hosted production
+
+| URL | Backend | Sign-in |
+|---|---|---|
+| <https://wayline.bereket.dev> | Plane, hosted production | The owner's account. Sign-up is off |
+| <https://grafana.bereket.dev> | Grafana, hosted production | One admin login: `make remote-grafana-admin TARGET=plane-prod VERB=login` |
+| <https://infisical.bereket.dev> | Infisical, hosted production, from 2026-11-07 | Its one admin, with an authenticator app: `make remote-infisical-admin TARGET=plane-prod VERB=login` |
+
+Each name is an A record to `5.253.234.127`, with no AAAA, and each has its own Let's Encrypt certificate. Nothing else has a public route. Sign-in details are never in this file.
+
 ## Resource use
 
-[docs/resource-utilization.md](docs/resource-utilization.md) holds the measured values, with their conditions. The main readings here are three windows on 2026-11-05, on the final images, restored into a new cluster, on this laptop. Each is one run, so they predict no other host. The cluster was young, so they are not a steady state.
+[docs/resource-utilization.md](docs/resource-utilization.md) holds the measured values, with their conditions. The readings below are the local platform's. Hosted production's, from 2026-11-07, are not published yet, so none is given here. The main readings here are three windows on 2026-11-05, on the final images, restored into a new cluster, on this laptop. Each is one run, so they predict no other host. The cluster was young, so they are not a steady state.
 
 | Measured | Value | Conditions |
 |---|---:|---|
@@ -267,21 +379,25 @@ The deletes before those installs brought host free from 17.5 to 31.6 GiB, 14.1 
 apps/wayline/                  branding: pinned upstream ref, patches, overlay, codemod, checks, Dockerfiles
 infrastructure/kind/           cluster template, containerd mirror config
 infrastructure/local-services/ registry, pull-through caches, git daemon (Compose)
-infrastructure/terraform/      modules/{foundation,argocd}, environments/local
-                               environments/{dev,prod} are untested Pass 2 interface notes, no Terraform
-helm/plane/                    vendor/ (byte-identical upstream chart), components/hardening, overlays/{dev,prod-sim}
-helm/values/                   values for each platform chart
+infrastructure/hosted/plane-prod/  hosted production's target, capacity, K3s, kubelet and firewall config, restore-test templates
+infrastructure/terraform/      modules/{foundation,argocd}, environments/local, and for hosted production
+                               environments/prod (the cluster) and environments/prod-host (the VPS as data, and DNS).
+                               environments/dev is an untested interface note, no Terraform
+helm/plane/                    vendor/ (byte-identical upstream chart), components/hardening, overlays/{dev,prod-sim,prod}
+helm/values/                   values for each local platform chart
 gitops/bootstrap/              AppProjects and root Application (applied by Terraform), Argo CD route
-gitops/applications/           Application manifests; the root app syncs this directory
+gitops/applications/           Application manifests; the local root app syncs this directory
 gitops/platform/               network policies, backup storage
-gitops/environments/           rendered Plane manifests. Generated by make render, never hand-edited
+gitops/clusters/plane-prod/    hosted production's tree: bootstrap chart, Applications, values, platform manifests
+gitops/environments/           rendered Plane manifests, dev, prod-sim and prod. Generated by make render, never hand-edited
 infisical/                     Terraform root for Infisical config, manifests, docs
 monitoring/                    dashboards, rules, blackbox config, alert sink, ops helpers
-policy/                        conftest rules and their tests
+policy/                        conftest rules and their tests, hosted.rego and hosted_combined.rego for hosted production
 tests/                         day-1 gates, NetworkPolicy matrix, e2e smoke, routes, separation, alert rules, drills, load test
-scripts/                       entry points behind make targets; scripts/ci/ is shared with GitHub Actions
-docs/                          documentation index, contract, ADRs, runbooks, evidence
-.github/workflows/             thin workflows that call the same scripts as make targets
+scripts/                       entry points behind make targets; scripts/ci/ is shared with GitHub Actions,
+                               scripts/hosted/ is everything that touches the VPS
+docs/                          documentation index, contract, ADRs, runbooks, evidence, promotion evidence
+.github/workflows/             thin workflows that call the same scripts as make targets, and the release to deploy/plane-prod
 tools.lock                     pinned CLI versions and checksums
 ```
 
@@ -298,8 +414,8 @@ Plane Community Edition is developed by the Plane team and licensed under AGPL-3
 | Silo (`pgsty/silo`), the MinIO-compatible object store | AGPL-3.0 |
 | Wayline branding patches | Modifications of AGPL-3.0 source, so AGPL-3.0 applies when delivered |
 
-AGPL section 13 applies to a modified version that users interact with over a network. The repository is private today, and Pass 1 serves only loopback. So the `/source` link in the running web image answers 302 to `84b63d9` on GitHub, which returns 404 to anyone without access. That has no practical effect while the owner is the only user, and it must be fixed before anyone else uses a deployed instance. The four GHCR packages read as private too, because an anonymous read of their first build got 401 ([record](docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). Two third-party GitHub Apps, `netlify` and `builder-io-integration`, left check suites on pushed commits, so they may hold access to the repository, which this token cannot list ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). Details and obligations are in [docs/agpl-compliance.md](docs/agpl-compliance.md).
+AGPL section 13 applies to a modified version that users interact with over a network. The repository is private today. The local platform serves only loopback, and there the `/source` link in the web image answers 302 to the commit that built it on GitHub, `84b63d9` in prod-sim and `5161bf93e424` in dev, which returns 404 to anyone without access. Hosted production serves <https://wayline.bereket.dev> on the internet, with sign-up off, and its `/source` link points into the same private repository, so it ends the same way for anyone without access. That must be fixed before anyone but the owner uses an instance (D10). The four GHCR packages read as private too, because an anonymous read of their first build got 401 ([record](docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). Two third-party GitHub Apps, `netlify` and `builder-io-integration`, left check suites on pushed commits, so they may hold access to the repository, which this token cannot list ([record](docs/evidence/ci/br-3-20261105T060937Z-apps.txt)). Details and obligations are in [docs/agpl-compliance.md](docs/agpl-compliance.md).
 
 One upstream file, `apps/api/plane/utils/email.py`, carries a commercial header at `v1.4.3`. AI agents replaced it in the backend image with upstream's own later AGPL-3.0-only version and flattened the image, and a [walk of every layer](docs/evidence/branding/layer-check.txt) reads 0 hits. The owner, Bereket Abera, was told and has not reviewed this, and no legal review has happened. This is engineering, not legal advice ([details](docs/agpl-compliance.md#the-commercial-header-in-emailpy)).
 
-The repository's root `LICENSE` is upstream's AGPL-3.0 text, unchanged, with upstream's `COPYRIGHT.txt` beside it and [NOTICE.md](NOTICE.md) recording what was modified. New source files under `apps/wayline/` carry `SPDX-License-Identifier: AGPL-3.0-only`. The owner has not confirmed the licence for the platform code around it: `LICENSE` does not say "only", and nearly all of those scripts and manifests carry no header. No decision on this is recorded as of 2026-11-05, so the question stays with the owner.
+The repository's root `LICENSE` is upstream's AGPL-3.0 text, unchanged, with upstream's `COPYRIGHT.txt` beside it and [NOTICE.md](NOTICE.md) recording what was modified. New source files under `apps/wayline/` carry `SPDX-License-Identifier: AGPL-3.0-only`. The owner has not confirmed the licence for the platform code around it: `LICENSE` does not say "only", and nearly all of those scripts and manifests carry no header. No decision on this is recorded as of 2026-11-07, so the question stays with the owner.
