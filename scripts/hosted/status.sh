@@ -66,6 +66,20 @@ section "Alert delivery"
 section "Backups off the VPS"
 "$ROOT/scripts/hosted/backup-dest.sh" status || true
 
+# Scripts replace the admin token with the password, which stops at the code once Infisical's admin has two-factor on. Then a person
+# makes the next one in the UI, so its end is worth seeing ahead of time. Read from the token's own payload here, and only its date shown.
+section "Infisical's admin token"
+token_exp="$(jq -r '.token // "" | split(".")[1] // "" | gsub("-"; "+") | gsub("_"; "/") | (. + ("=" * ((4 - (length % 4)) % 4))) | @base64d | fromjson | .exp // 0' \
+  "$LOCAL_DIR/secret-zero/infisical-admin.json" 2>/dev/null || echo 0)"
+if [[ "$token_exp" =~ ^[0-9]+$ && "$token_exp" -gt 0 ]]; then
+  ends="$(date -u -r "$token_exp" +%Y-%m-%dT%H:%MZ 2>/dev/null || date -u -d "@$token_exp" +%Y-%m-%dT%H:%MZ)"
+  days=$(((token_exp - $(date +%s)) / 86400))
+  if [[ "$days" -ge 0 ]]; then printf 'ends %s, in %s days' "$ends" "$days"; else printf 'ended %s' "$ends"; fi
+  printf '. With two-factor on, a person replaces it in the UI: scripts/hosted/README.md, section Locked out of Infisical\n'
+else
+  printf 'none here that can be read: secret-zero/infisical-admin.json. infisical/README.md, section Recovery, says how one comes back\n'
+fi
+
 section "Recovery bundle"
 newest="$(find "$LOCAL_DIR/recovery-bundle" -maxdepth 1 -type f -name 'wayline-recovery-*.tar.age' 2>/dev/null | sort -r | head -1 || true)"
 if [[ -n "$newest" ]]; then printf '%s\n' "newest here: ${newest##*/}. A newer secret or Terraform state makes it stale: scripts/hosted/bundle.sh verify says so"; else printf 'INCOMPLETE: no bundle here. Run: scripts/hosted/bundle.sh\n'; fi

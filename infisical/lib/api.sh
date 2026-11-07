@@ -241,8 +241,13 @@ ia_mint_admin_token() { # why [org-id] [password-file]
   if [[ -z "$org_json" ]]; then org_json="$(ia_org_json "$org")"; fi
 
   ia_request POST /api/v3/auth/select-organization "$(jq -cn --arg org "$org" '{organizationId: $org}')"
-  if [[ "$IA_STATUS" != 200 ]] || [[ "$(printf '%s' "$IA_BODY" | jq -r '.isMfaEnabled')" == true ]]; then
+  if [[ "$IA_STATUS" != 200 ]]; then
     warn "selecting organization $org answered HTTP $IA_STATUS: $(ia_error)"
+    return 1
+  fi
+  # With two-factor on, the server asks for the code here, before any token, and a script has no code to give. A person makes the token.
+  if [[ "$(printf '%s' "$IA_BODY" | jq -r '.isMfaEnabled')" == true ]]; then
+    warn "$INFISICAL_ADMIN_EMAIL has two-factor on, so no script can finish a sign-in with the password. A person makes the token in the UI, as the steps say"
     return 1
   fi
   printf '%s' "$IA_BODY" | jq -er '"Authorization: Bearer " + .token' > "$IA_TMP/auth"
@@ -319,17 +324,19 @@ ia_print_sign_in_steps() { # the command that goes on afterwards
   cat >&2 <<STEPS
 Nothing on this machine can log in to Infisical. Either of these lets it go on:
 
-  With the password of $INFISICAL_ADMIN_EMAIL, from wherever you keep a copy:
-    1. Write it to ${ADMIN_PASSWORD_FILE#"$ROOT"/}, mode 0600.
-    2. Run: $1
-       It signs in by itself, mints a token for the instance admin identity and records that it did.
-
-  Or by hand, in the UI:
-    1. Open $INFISICAL_URL and sign in as $INFISICAL_ADMIN_EMAIL.
+  By hand, in the UI, which works with two-factor on:
+    1. Open $INFISICAL_URL and sign in as $INFISICAL_ADMIN_EMAIL, with the code if two-factor is on. A port-forward's address goes
+       when its script ends: open Infisical the way you usually do instead.
     2. Go to Access Control, Machine Identities, Instance Admin Identity, Token Auth, Add Token, and create one.
     3. Write that token to ${ADMIN_TOKEN_DROP#"$ROOT"/}, one line, mode 0600.
     4. Run: $1
        It checks the token against the server, moves it into place and records that it did.
+
+  Or with the password of $INFISICAL_ADMIN_EMAIL, from wherever you keep a copy, only while that account has no two-factor:
+    1. Write it to ${ADMIN_PASSWORD_FILE#"$ROOT"/}, mode 0600.
+    2. Run: $1
+       It signs in by itself, mints a token for the instance admin identity and records that it did. With two-factor on the server asks
+       for a code, and this stops there.
 
 With no copy of the password either way, see "Admin token and password both gone" in infisical/README.md.
 STEPS

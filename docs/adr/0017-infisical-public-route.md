@@ -111,5 +111,8 @@ outside, policy holding the route's words, and the tunnel as the way in when som
 
 **Costs.** The Secret Sharing pages, member invitations, SSO, account recovery by email and the CLI's browser login do not work through the public
 route. A machine's token works only inside the cluster, so a script that wants Infisical from outside goes through the tunnel. An Infisical upgrade
-waits until someone has read its new routes and web client, run the route test, and changed the version in policy. Safari keeps no session through
+waits until someone has read its new routes and web client, run the route test, and changed the version in policy. Once the admin has
+two-factor on, no script can replace the 90-day admin token with the password, because the sign-in stops at the code: a person adds the next
+one in the UI before it ends, which `make remote-status TARGET=plane-prod` shows, as `scripts/hosted/README.md`, section Locked out of
+Infisical, says. Safari keeps no session through
 the tunnel once cookies are Secure, so the tunnel is for Chrome or Firefox.

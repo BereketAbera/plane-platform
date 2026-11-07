@@ -101,7 +101,9 @@ and the route's limit is 10 a minute per address. That limit answers 429 and let
 
 Locked, with the phone at hand: wait, or clear the lock in the database through the tunnel, and sign in with the password and a code. After twenty,
 Infisical writes an unlock link to its log, because there is no SMTP to mail it. The link names the public host, which refuses it, and the same
-path through the tunnel unlocks the account.
+path through the tunnel unlocks the account. Infisical then redirects to the public host's `/login` whether the unlock worked or not, and
+before the route is up that shows a TLS error. So go back to `http://localhost:<port>/login` yourself: if a sign-in still reads Account is
+locked, the unlock failed, and the first statement below clears it.
 
 ```
 EMAIL="$(jq -r .email .local/hosted/plane-prod/secret-zero/infisical-admin.json)"
@@ -127,6 +129,15 @@ printf "UPDATE users SET \"isMfaEnabled\" = false, \"selectedMfaMethod\" = NULL,
 Each of those, the locks, the unlock link, the recovery code, Disable 2FA and both statements, was run against this image in Docker, and not on
 this cluster. A lost password is in [`infisical/README.md`](../../infisical/README.md#admin-token-and-password-both-gone): the same database, a new
 hash.
+
+**The admin token, once two-factor is on.** Scripts reach Infisical with the instance admin identity's token in
+`.local/hosted/plane-prod/secret-zero/infisical-admin.json`, which ends 90 days after it was made, and `make remote-status TARGET=plane-prod`
+says when. They replace it by signing in with the password, and with two-factor on that stops at the code: bootstrap's step 6,
+`scripts/infisical-bootstrap.sh` and a restore stop with the steps for a person, the UI's first. So make the next one before it ends: sign in,
+then Access Control, Machine Identities, Instance Admin Identity, Token Auth, Add Token, and write the token to
+`.local/hosted/plane-prod/secret-zero/infisical-admin-token.new`, one line, mode 0600. The next `make remote-bootstrap TARGET=plane-prod
+CONFIRM=plane-prod`, or a restore, checks it against the server, moves it into place and records that it did. A token made there works only
+inside the cluster, because the route refuses a machine's credential, and that is where the scripts use it.
 
 ## Infisical reads open
 
