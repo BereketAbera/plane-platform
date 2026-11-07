@@ -10,7 +10,8 @@
 # at hand to prove it decrypts.
 #
 # Holds: secret zero, every Terraform state under .local/hosted/plane-prod/terraform, the deploy key, the restic password, the
-# read-only pull key, the alert credentials, the GHCR token, Grafana's admin login, the off-site credentials and the SSH known hosts.
+# read-only pull key, the alert credentials, the GHCR token, Grafana's admin login, the off-site credentials, the SSH known hosts, and
+# what scripts/hosted/frameflow-inputs.sh made: Frameflow's owner key and its sha256, and Hatchet's three keysets.
 # It does not hold the kubeconfig, which SSH brings back, or any backup, which restic seals by itself.
 #
 # Written to .local/hosted/plane-prod/recovery-bundle. Copy it off this machine, into storage that is not the VPS: this script
@@ -82,6 +83,11 @@ collect() {
   done
   for file in "$LOCAL_DIR"/alert-* "$LOCAL_DIR"/offsite-s3-*; do
     if [[ -f "$file" ]]; then stage "${file##*/}"; fi
+  done
+  # Frameflow's, by name, so a half-made set's leftovers stay out. The keysets must stay the ones Hatchet's database was written with,
+  # and Infisical holds the only other copy. The owner's key is here until it moves to a password manager, and then it is not.
+  for file in owner-access-key OWNER_TOKEN_SHA256 HATCHET_MASTER_KEYSET HATCHET_JWT_PRIVATE_KEYSET HATCHET_JWT_PUBLIC_KEYSET; do
+    stage "frameflow/$file"
   done
   # State alone. Provider plugins are large, and Terraform fetches them again.
   if [[ -d "$LOCAL_DIR/terraform" ]]; then
