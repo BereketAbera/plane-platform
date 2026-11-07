@@ -1,15 +1,25 @@
-# Install and operate locally
+# Install and operate
 
 Wayline is a customized Plane Community Edition v1.4.3 deployment (AGPL-3.0). It is not an original product. This
-repository wraps upstream Plane in a local deployment platform on kind. It is local and production-inspired, and it makes no
-claim of being ready for production. See [known-limitations.md](known-limitations.md).
+repository wraps upstream Plane in a deployment platform with three environments, and this page installs and runs each:
+
+| Environment | Where it runs | How it starts | Address |
+|---|---|---|---|
+| dev, namespace `plane-dev` | The local kind cluster on this Mac | `make up` | `http://plane.dev.localhost` |
+| prod-sim, namespace `plane-prod-sim` | The same kind cluster. It is the promotion target that simulates production | `make up` | `http://plane.prod-sim.localhost` |
+| Hosted production, namespace `plane-prod` | One K3s node on the owner's Contabo VPS | The scripts in `scripts/hosted/`, then `make remote-<verb> TARGET=plane-prod` | `https://wayline.bereket.dev` |
+
+Every section from [Prerequisites](#prerequisites) to [Common first-run failures](#common-first-run-failures) is about the kind
+cluster, which is local and production-inspired and makes no claim of being ready for production. [Hosted production](#hosted-production)
+is about the VPS, which serves the public from one node and so has no high availability. See [known-limitations.md](known-limitations.md).
 
 **Status of this page.** It describes configuration and script behaviour read from the code, with results from real runs
-where they exist, as of 2026-11-05. Two installs from a fresh clone have run: a cold one, with the registry and caches gone, which is the sequence a new machine needs, and one that kept them ([First run](#first-run)). A full restore
+where they exist. The local sections are as of 2026-11-05, and the hosted ones as of 2026-11-07, where
+[What has run on hosted production](#what-has-run-on-hosted-production) gives each run its result and its evidence. Two installs from a fresh clone have run: a cold one, with the registry and caches gone, which is the sequence a new machine needs, and one that kept them ([First run](#first-run)). A full restore
 into a new cluster has run on the merged recovery code ([After a destroy](#after-a-destroy)). `make drill-clean-restore CONFIRM=yes LOSE_CLUSTER=yes`, from 13:06Z to 13:35Z,
 deleted the cluster with kind alone, restored it, and read `RESULT PASS` ([output](evidence/runs/BKP-6-20261105T130633Z-lose-cluster-make.txt), [log](evidence/runs/drill-clean-restore-20261105T130633Z.log)). Do not read an unmarked command as a tested command. It means only that the claim does not depend on a runtime result.
 
-Names and ordering come from the binding [platform contract](platform-contract.md).
+Names and ordering on the kind cluster come from the binding [platform contract](platform-contract.md).
 
 ## Prerequisites
 
@@ -78,7 +88,11 @@ anonymously pullable. Official MinIO images are one example.
 | yq | v4.53.2 | | zizmor | v1.32.0 |
 | k6 | v2.3.0 | | hadolint | v2.15.1 |
 | gitleaks | v8.30.1 | | trivy | v0.76.1 |
-| promtool | v3.15.1 | | | |
+| promtool | v3.15.1 | | cntb | v1.7 |
+| age | v1.3.2 | | age-keygen | v1.3.2 |
+
+`cntb` reads the VPS from Contabo, and `age` encrypts hosted production's recovery bundle. restic 0.19.1 is pinned apart, in
+`scripts/hosted/restic.lock`, and a hosted script fetches and checks it when it needs it.
 
 The `argocd` CLI is not in `tools.lock`, so `make setup` does not install it. [argocd.md](argocd.md) shows the
 `kubectl` equivalent wherever one exists.
@@ -174,7 +188,8 @@ cluster with a restart ([bootstrap-1.txt](evidence/runs/bootstrap-1.txt)).
 
 ## Local URLs
 
-Everything is on loopback over plain HTTP. kind binds only `127.0.0.1`. TLS is out of scope in Pass 1.
+Everything is on loopback over plain HTTP. kind binds only `127.0.0.1`, and nothing terminates TLS on the kind cluster.
+Hosted production's addresses are in [Hosted URLs](#hosted-urls).
 
 | URL | Service | Sign-in | Where the credential comes from |
 |---|---|---|---|
@@ -265,6 +280,8 @@ to supply those credentials yourself.
 ## Make targets
 
 `make help` lists these from the Makefile. Pass parameters as `make target KEY=value`. Make exports them to the script.
+The `remote-*` targets reach hosted production and nothing else, and are in [Hosted make targets](#hosted-make-targets). None of
+the targets below can reach it.
 
 ### Lifecycle
 
@@ -388,3 +405,243 @@ Rows quoting a script message come from the code. Others are expected from sourc
 | Pods restart with `OOMKilled` during first boot | Both environments booting together is the worst case for memory. On the staged boot, with dev then prod-sim, no Plane container restarted or was OOM-killed ([plane-dev-firstboot-1.txt](evidence/runs/plane-dev-firstboot-1.txt), [monitoring-memory-1.txt](evidence/runs/monitoring-memory-1.txt)). The kills there were Grafana's sidecars at 96 MiB and `plane-registry` at 128 MiB, both since raised | Check `make status`. Stop unrelated containers. Change limits only with a measurement |
 
 One refusal comes only after the first run, once prod-sim has a database. `plane-dev has not proven these digests` means `main` brings prod-sim a digest that no ready container in `plane-dev` runs. Fix dev, or set `OVERRIDE_DEV_CHECK="<reason>"`, which is logged.
+
+## Hosted production
+
+Hosted production, `plane-prod`, is the same Wayline on a cluster of its own: one K3s node on a Contabo Cloud VPS 12, instance
+203733427, at `5.253.234.127`, serving `https://wayline.bereket.dev`. It shares nothing with the kind cluster, and no local `make`
+target can reach it. [scripts/hosted/README.md](../scripts/hosted/README.md) lists every script, and holds the procedures this
+section points to: the first certificate, Infisical's two-factor, the lockouts, and the way back after a rollback.
+
+### What differs from local
+
+| | Kind cluster: dev and prod-sim | Hosted production |
+|---|---|---|
+| Cluster | kind v0.33.0, one node in Docker Desktop, Kubernetes v1.36.4 | K3s v1.36.6+k3s1 on Ubuntu 24.04.5, with 12 vCPU, 47 GiB and one 400 GB disk |
+| How a command reaches it | `.local/kubeconfig`, context `kind-plane-platform` | `.local/hosted/plane-prod/kubeconfig`, one context `plane-prod`, on `https://127.0.0.1:16443` through an SSH tunnel. The API server has no public port |
+| Saying yes | `CONFIRM=yes` | `TARGET=plane-prod` always, and `CONFIRM=plane-prod` for anything that changes something. `CONFIRM=yes` does not count, so a habit cannot reach production |
+| Local state | `.local/` | `.local/hosted/plane-prod/`, mode 0700, only in the checkout that ran the bootstrap |
+| What Argo CD reads | `git://plane-git/plane-platform.git`, branch `main`, written by `make gitops-publish` | GitHub over SSH with a read-only deploy key, branch `deploy/plane-prod`, written only by CI. See [argocd.md](argocd.md#hosted-production) |
+| Images | `localhost:5001/wayline/*` | `ghcr.io/bereketabera/wayline/*`, plain linux/amd64 manifests, pulled with Secret `ghcr-pull` |
+| Promotion | `make promote` | A signed record that dev ran the exact digests, then a pull request that a person merges. See [argocd.md](argocd.md#exact-digest-image-sets) |
+| The way in | `127.0.0.1:80` on this Mac, plain HTTP | Traefik's hostPorts 80 and 443 behind the host firewall's stages, with HTTPS from Let's Encrypt certificates that cert-manager gets by HTTP-01 |
+| Names | `*.localhost` | A records on Vercel, owned by Terraform. See [terraform.md](terraform.md#hosted-production) |
+| Secrets | One Infisical in the kind cluster, a project per environment | An Infisical of its own on the VPS, project `plane-prod`. Secret zero, the deploy key, the restic password and the alert credentials stay in `.local/hosted/plane-prod/`, never in Infisical, so nothing is circular |
+| Backups and alerts | `make backup` to `.local/backups`, and a sink that prints lines | Nightly CronJobs sealed with restic on the VPS, pulled to this Mac with `make remote-pull-backups`. Alerts go to the owner's Telegram, and the Watchdog to Healthchecks.io, once the owner's files exist |
+
+### Before you start
+
+On this Mac, in the checkout that will hold hosted production's state:
+
+- `make setup`, for the pinned tools above.
+- `gh`, signed in to an account that administers `BereketAbera/plane-platform`, because the bootstrap adds a deploy key with it.
+- The SSH key that [`target.yaml`](../infrastructure/hosted/plane-prod/target.yaml) names, `~/.ssh/wayline_contabo_ed25519`, which root on a new
+  VPS must accept. The first stage logs in as root with it, and no script types a password.
+- The host's key in `.local/hosted/known_hosts`. Every script that logs in checks it strictly, and refuses without it. Record it with
+  `ssh-keyscan`, as `provision-node.sh` asks.
+- `target.yaml` describing the VPS: its addresses, its Contabo instance id, the node's name, the three hostnames, and
+  `kube_system_uid: pending` for a cluster not made yet. It is not a secret. Every hosted script and both hosted Terraform roots read it.
+- For DNS only: Contabo's API login in `~/.cntb.yaml`, which `scripts/hosted/contabo-login.sh` writes, and the Vercel CLI signed in with
+  `vercel login`.
+
+Run every hosted command from that checkout. Each script finds `.local` and `.tools` beside itself, so the checkout decides which
+kubeconfig, secrets and Terraform state are used, and another clone or worktree holds none of them.
+
+### From nothing, in order
+
+This is the order the scripts ask for on a new VPS. Each step can run again, and changes only what differs.
+
+```bash
+# 1. The node: an admin user and key-only SSH, then the OS with the firewall at stage closed, then K3s
+TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/provision-node.sh access
+TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/provision-node.sh os
+TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/provision-node.sh k3s
+make remote-kubeconfig TARGET=plane-prod     # prints kube_system_uid: record it in target.yaml, and commit
+
+# 2. DNS, before anything asks for a certificate
+TARGET=plane-prod scripts/hosted/host-terraform.sh plan
+TARGET=plane-prod CONFIRM=plane-prod EXPECT='<the changes plan printed>' scripts/hosted/host-terraform.sh apply
+
+# 3. What only the owner can make, typed at hidden prompts
+scripts/hosted/owner-inputs.sh
+scripts/hosted/bundle.sh init                # once per owner; it says so if the recipient is already in Git
+
+# 4. The platform. It leaves the firewall at stage http
+make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
+
+# 5. Infisical's two-factor, through the tunnel, while 443 is still closed
+make remote-ui TARGET=plane-prod UI=infisical          # runs until Ctrl-C, so the next line goes in another tab
+make remote-infisical-admin TARGET=plane-prod VERB=login
+
+# 6. The first promotion, with 443 open to the owner alone until Plane's first admin exists
+TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh owner <your public ipv4>
+#    merge the promotion pull request, then make the admin at https://wayline.bereket.dev/god-mode/
+TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open
+scripts/hosted/edge.sh scan
+
+# 7. Prove it, and keep the recovery bundle
+make remote-status TARGET=plane-prod
+make remote-test TARGET=plane-prod CONFIRM=plane-prod
+make remote-smoke TARGET=plane-prod
+make remote-bundle TARGET=plane-prod
+```
+
+| Step | What it does, and why it comes here |
+|---|---|
+| `provision-node.sh access` | Makes `wayline-admin` with the key and passwordless sudo, then allows SSH by key only, for that user and the backup pull user, with no root login and local forwarding only. A timer on the server undoes the SSH change after 10 minutes, and the script stops it only once a new login works and the server offers publickey alone. If you are locked out anyway, the root password still works on Contabo's VNC console |
+| `provision-node.sh os` | Installs ipset, nftables, conntrack, curl and jq. kube-router needs ipset: without it K3s only warns, and enforces no NetworkPolicy. It checks that automatic security updates are on, with no automatic reboot, sets the resolvers and sysctls, writes a reboot-required metric every 5 minutes, and installs `wayline-edge.service`, which loads the firewall before K3s at every boot. The firewall goes to stage `closed`, unless it has a stage already |
+| `provision-node.sh k3s` | Writes K3s's config, registry mirror, resolver, audit policy and kubelet settings before K3s first starts, because its address ranges cannot change afterwards. Then it installs v1.36.6+k3s1 with the installer from that release's tag, and waits up to 200 s for the node. [kubernetes-helm.md](kubernetes-helm.md#k3ss-own-components) has the settings |
+| `make remote-kubeconfig` | Fetches K3s's kubeconfig over SSH, rewrites it for the tunnel, starts the tunnel, and prints the `kube-system` UID. Until `target.yaml` records it, every script that reaches the cluster refuses, and so does Terraform root `environments/prod`, because that UID is how they tell this cluster from any other |
+| `host-terraform.sh` | Root `environments/prod-host`: checks the VPS's address at Contabo against `target.yaml`, and owns the A records of `wayline`, `grafana` and `infisical`. `apply` applies only a plan whose changes are exactly `EXPECT`. It comes before the bootstrap because the zone's wildcard answers Vercel's address for any name with no record of its own, and a certificate ordered before its record is live fails, and is tried again an hour or more later |
+| `owner-inputs.sh` | The owner's five inputs, in the next table. The GHCR token is the one the bootstrap cannot go without |
+| `bundle.sh init` | Makes `~/.wayline/recovery-identity.txt` and writes its public half to `scripts/hosted/recovery-recipient.txt`, for Git. With no recipient, the bootstrap's last step reads INCOMPLETE, and this Mac holds the only copy of secret zero |
+| `make remote-bootstrap` | Eight steps, each safe to run again: a read-only deploy key on GitHub; the namespaces through Terraform, then the repository Secret and Grafana's admin login, ahead of Argo CD; port 80, then the rest of Terraform, which installs Argo CD and the root Application, so Argo CD starts deploying and asks for the certificates; the backup folders, the read-only pull user and a restic password made once; secret zero; Infisical's first admin, project, identity and seeded values, through a port-forward; alert delivery; the recovery bundle. It waits up to 2,400 s for Infisical. Before step 3 it stops if 443 is open to everyone while Infisical is not claimed and closed to sign-up |
+| Two-factor | Infisical has a public route, so its admin turns on an authenticator app through the tunnel before 443 opens to everyone. There is no SMTP, so email codes are not an option. The steps are in `scripts/hosted/README.md`, section Two-factor for Infisical's admin, and [infisical.md](infisical.md) says what the route allows |
+| The first promotion | Dev runs the exact digests and signs a record of it, `promote-plane-prod.yml` opens a pull request, and merging it is the approval. [argocd.md](argocd.md#exact-digest-image-sets) has the steps. Until it merges, root holds no Plane Application, and the platform comes up alone |
+| `edge.sh owner`, then `open` | Plane's first admin sign-up is open to whoever posts first, so 443 opens to the owner's address alone until the owner has made that admin at `/god-mode/`. `open` refuses while Plane's instance or Infisical is unclaimed, or while Infisical is open to sign-up or does not answer, and then reminds you of the two-factor. `scan`, from this Mac, is the check that counts |
+| Prove it | `make remote-test` runs the hosted suite, and `make remote-smoke` signs in with the owner's account. Run `make remote-bundle` again after every bootstrap, token change or Terraform apply, and copy `.local/hosted/plane-prod/recovery-bundle/` off this Mac |
+
+### What the owner types, and where
+
+Nothing secret reaches a command line, the shell's history or Git. Each value goes in at a prompt, most of them hidden, and what this
+repository keeps lands in a file of mode 0600.
+
+| When | Where | What | Kept in |
+|---|---|---|---|
+| Before DNS | `scripts/hosted/contabo-login.sh` | Contabo's API client id, client secret, API user and API password, from the Control Panel's API page. The secret and the password at hidden prompts. It lists the account's instances to prove them | `~/.cntb.yaml` |
+| Before DNS | `vercel login` | The owner's Vercel sign-in | The Vercel CLI's own login |
+| `owner-inputs.sh`, 1 of 5, required | The browser page `gh` opens | A one-time code, which lets this Mac read the private images | `gh`'s login |
+| 2 of 5, required | Hidden prompt | A classic GitHub token with `read:packages` alone, which GHCR must accept before it is kept. The server pulls with it | `.local/hosted/plane-prod/ghcr-pull-token` |
+| 3 of 5, recommended | Hidden prompt, then Telegram | A bot token from @BotFather, then any message to that bot, so the script finds the chat and sends a test | `alert-telegram-bot-token`, `alert-telegram-chat-id` |
+| 4 of 5, optional | Hidden prompt | A Healthchecks.io ping URL, for a check with a period of 5 minutes and a grace of 10, which says when the whole server is down | `alert-healthchecks-url` |
+| 5 of 5, optional | Prompts, the key hidden | An S3-compatible endpoint, bucket, key id and application key, for a copy of the backups off the VPS | `offsite-s3-*` |
+| After the bootstrap | Infisical, through `make remote-ui TARGET=plane-prod UI=infisical`, in Chrome or Firefox | The admin password, which `make remote-infisical-admin TARGET=plane-prod VERB=login` puts on the clipboard, then an authenticator app's code. Keep sign-up Invite-only, and keep the ten recovery codes in the password manager, apart from the phone | Infisical's database |
+| At stage `owner` | `https://wayline.bereket.dev/god-mode/`, from the owner's own address | Plane's instance admin. The first to post owns the instance | Plane's database |
+| Any time | `https://grafana.bereket.dev` | The login `make remote-grafana-admin TARGET=plane-prod VERB=login` prints and copies | Secret `monitoring/grafana-admin` |
+| To prove it | `make remote-smoke TARGET=plane-prod`, in a Terminal tab | An existing Plane account's email and password, at hidden prompts | Nothing |
+
+`owner-inputs.sh <step>` runs one step again, to add or replace a value: `github`, `ghcr`, `telegram`, `healthchecks` or `offsite`.
+After a change to the Telegram or Healthchecks files, `make remote-alerts TARGET=plane-prod CONFIRM=plane-prod` renders alert delivery
+again. Keep `~/.wayline/recovery-identity.txt` in a password manager: with it, the bundle and this repository, a person can bring
+production back on a new machine.
+
+### Firewall stages
+
+`scripts/hosted/edge.sh` moves the host firewall between four stages. It is an nftables table of its own, `inet wayline_edge`, at
+prerouting priority mangle, so it runs before the DNAT of kube-proxy and portmap, and a hostPort or NodePort cannot get around it.
+
+| Stage | Open to everyone | When |
+|---|---|---|
+| `closed` | 22 | A new VPS, after `provision-node.sh os` |
+| `http` | 22, 80 | Set by the bootstrap before Argo CD starts, so Let's Encrypt reaches the HTTP-01 challenge. Port 80 only redirects, and answers the challenge |
+| `owner <ipv4>` | 22, 80, and 443 from that one address | While Plane's first admin is made, and whenever the site must stay off the internet but reach the owner |
+| `open` | 22, 80, 443 | The site is public |
+
+Every change needs `TARGET=plane-prod CONFIRM=plane-prod`, and sets a timer on the server that puts the previous stage back after 2
+minutes unless a new SSH login works. Port 22 is open in every stage, so going back cannot lock anyone out. `edge.sh status` prints the
+stage in force over SSH. `edge.sh scan` tries ports 22, 80, 443, 6443, 10250, 9100, 2379, 30000 and 32767 from this Mac, which is the
+check that counts, because a check from the server sees nothing the internet sees.
+
+### Hosted URLs
+
+| URL | Service | Sign-in |
+|---|---|---|
+| `https://wayline.bereket.dev` | Plane | Workspace users. Sign-up is off, with `ENABLE_SIGNUP` at `0` |
+| `https://wayline.bereket.dev/god-mode/` | Plane's instance admin | The owner's admin. The route is public |
+| `https://grafana.bereket.dev` | Grafana | One admin login, from `make remote-grafana-admin TARGET=plane-prod VERB=login` |
+| `https://infisical.bereket.dev` | Infisical | Its one admin, with an authenticator app. Public from 2026-11-07, by the owner's choice: [ADR 0017](adr/0017-infisical-public-route.md) |
+| `make remote-ui TARGET=plane-prod UI=argocd` | Argo CD, on `http://localhost:18080` | `admin`, password in Secret `argocd/argocd-initial-admin-secret`, key `password` |
+| `make remote-ui TARGET=plane-prod UI=prometheus`, `UI=alertmanager` | Prometheus and Alertmanager, on 19090 and 19093 | None |
+| `make remote-ui TARGET=plane-prod UI=grafana`, `UI=infisical` | Grafana and Infisical, on 18090 and 18100 | The same logins. This is the way in when a public route is down |
+
+Argo CD, Prometheus, Alertmanager and the storage consoles have no public route, and `policy/hosted.rego` refuses one. `make remote-ui`
+takes the next free port when its own is taken, and prints the address it used.
+
+### Hosted make targets
+
+Each needs `TARGET=plane-prod`.
+
+| Target | What it does | Parameters |
+|---|---|---|
+| `make remote-tunnel` | The SSH tunnel to K3s's API. Scripts start it when they need it | `VERB=start`, `stop` or `status` |
+| `make remote-kubeconfig` | Fetches K3s's kubeconfig for the tunnel, and prints the `kube-system` UID | |
+| `make remote-status` | Read-only: the node and its disk, Applications, pods that are not ready, certificates, backups, the firewall, branch `deploy/plane-prod`, alert delivery, copies off the VPS, when Infisical's admin token ends, and the recovery bundle | |
+| `make remote-bootstrap` | `scripts/hosted/bootstrap.sh`, above | `CONFIRM=plane-prod` |
+| `make remote-ui` | A port-forward to one admin UI, until Ctrl-C | `UI=argocd`, `grafana`, `prometheus`, `alertmanager` or `infisical`, `PORT=` |
+| `make remote-grafana-admin` | Grafana's admin login: `apply` makes it once, `rotate` replaces the password, `login` prints the URL and username and copies the password | `VERB=`, and `CONFIRM=plane-prod` for `apply` and `rotate` |
+| `make remote-infisical-admin` | `VERB=login` prints Infisical's URL and admin email, and copies the password | `VERB=login` |
+| `make remote-smoke` | The smoke test over HTTPS on an existing account, asked at hidden prompts. It removes what it makes | `SMOKE_WORKSPACE=`, `SMOKE_ALLOW_STAGING=yes` |
+| `make remote-test` | The hosted suite. Sections: `outside`, `argo`, `netpol`, `routes`, `psa`, `secrets`, `smoke`, `alerts`, `backups`. Exits 0 when every row passed, 1 on a failure, and 2 when nothing failed and something read BLOCKED or INCOMPLETE | `CONFIRM=plane-prod`, `ONLY="<sections>"` |
+| `make remote-netpol` | The NetworkPolicy sentinel and matrix alone, with short-lived probe pods | `CONFIRM=plane-prod`, `FROM_NS=` |
+| `make remote-backup` | Tonight's backups, now | `CONFIRM=plane-prod`, `ONLY=plane-prod` or `infisical` |
+| `make remote-restart-check` | Restarts Plane's pods one at a time and compares what Postgres holds before and after. The site is down briefly, and an alert may reach the owner's phone | `CONFIRM=plane-prod` |
+| `make remote-pull-setup`, `make remote-pull-backups` | The read-only SFTP user on the node, then a pull of the encrypted backups to this Mac | `CONFIRM=plane-prod` for the first |
+| `make remote-backup-dest` | Copies off the VPS | `VERB=verify`, `push` or `status` |
+| `make remote-restore-test` | Restores the newest backup into an isolated namespace, proves it and removes it, on the VPS or, with `RESTORE_ON=kind`, from this Mac's copy into the kind cluster | `CONFIRM=plane-prod`, `ONLY=`, `KEEP=yes` |
+| `make remote-alerts` | Renders alert delivery from the owner's files, and says COMPLETE or INCOMPLETE | `CONFIRM=plane-prod`, `VERB=state` |
+| `make remote-bundle` | Writes the recovery bundle and proves it decrypts | `VERB=init` or `verify` |
+| `make remote-publish-evidence` | Keeps the hosted Secrets' values for the scrub, then runs `make publish-evidence` | |
+
+Four scripts have no target, because they run before there is a cluster or outside it: `provision-node.sh`, `edge.sh`,
+`host-terraform.sh` and `owner-inputs.sh`, with `contabo-login.sh` beside them. `make scan-images-hosted` is local: it scans what hosted
+production runs from the registries alone, and reaches no cluster. See [security.md](security.md).
+
+### What has run on hosted production
+
+Each result with its date and evidence. A run that has not happened yet reads PENDING.
+
+| Run | Result | When | Evidence |
+|---|---|---|---|
+| The VPS before any change, and wayline's A record | PASS: Contabo reads instance 203733427 running with 12 cores; the server ran Ubuntu 24.04.5 with 47 GiB of memory and 385 GiB of disk free; the record answered `5.253.234.127` from both Vercel name servers, 8.8.8.8 and 1.1.1.1 | 2026-11-06T21:27Z | [hosted-access-dns](evidence/runs/hosted-access-dns-20261106T212722Z.txt) |
+| `provision-node.sh access`, `os`, `k3s` | PASS: the node Ready on v1.36.6+k3s1, secrets encryption enabled, SSH by public key alone with root login off, the firewall at `closed`, and from this Mac only 22 open of the nine ports `edge.sh scan` tries | 2026-11-06T22:59Z | [hosted-node](evidence/runs/hosted-node-20261106T225936Z.txt) |
+| First `make remote-bootstrap` | BLOCKED at step 6, which refused, as it should, because the GHCR token, an owner input, did not exist yet, so the stop says nothing about the platform. Steps 1 to 5 had run: Terraform added 26 resources and then 2, port 80 opened, and secret zero was made. Exit 2 in 191 s | 2026-11-07T04:26Z | [log](evidence/runs/hosted-bootstrap-20261107T042651Z.txt) |
+| First `make remote-netpol`, before any Plane workload | BLOCKED: 143 PASS, 0 FAIL and 67 INCONCLUSIVE of 210 rows, exit 2, 62 of them because Plane's Services did not exist yet. A try without `CONFIRM=plane-prod` refused first | 2026-11-07T04:38Z | [refused](evidence/runs/hosted-netpol-first-20261107T043754Z.txt), [run](evidence/runs/hosted-netpol-first-20261107T043810Z.txt), [rows](evidence/runs/netpol-plane-prod-20261107T043811Z.tsv) |
+| Second `make remote-bootstrap`, with the token | PASS, exit 0 in 94 s. Terraform found nothing to change, and Infisical's root added 5 resources. Alert delivery and the recovery bundle read INCOMPLETE, because the owner's Telegram and Healthchecks files and the bundle's recipient did not exist yet | 2026-11-07T05:03Z | [log](evidence/runs/hosted-bootstrap-20261107T050333Z.txt) |
+| `make remote-test ONLY=secrets`, after Infisical's new values | PASS, every row, 47 of 47 | 2026-11-07T18:44Z | Not published: `.local/evidence-raw/test-hosted-20261107T184239Z.txt`, so not a result until it is in `docs/evidence` |
+| Infisical's route: `make remote-test ONLY="outside secrets routes"` | PENDING | 2026-11-07 | |
+| `make remote-netpol`, the whole matrix | PENDING | 2026-11-07 | |
+| `make remote-test`, the whole suite | PENDING | 2026-11-07 | |
+| `make remote-restart-check` | PENDING | 2026-11-07 | |
+| `make remote-smoke`, on the owner's account | PENDING | 2026-11-07 | |
+| `scan-hosted.yml` on GitHub, every hosted image | PENDING | 2026-11-07 | |
+| `make remote-bootstrap` as it stands now, from start to end | NOT RUN. Both runs above were at `201c85b`. Grafana's login in step 2 and the Infisical checks in steps 3 and 6 came later | | |
+| The whole order above, on a second VPS | NOT RUN. It is read from the scripts | | |
+
+The dev side of the first promotion, which ran the exact digests on this Mac, is in [argocd.md](argocd.md#exact-digest-image-sets).
+
+### Day to day
+
+- **Look first.** `make remote-status TARGET=plane-prod` reads everything above and changes nothing.
+- **By hand.** Scripts set the kubeconfig for themselves. For `kubectl`, define this in your shell, and never merge that kubeconfig into
+  `~/.kube/config`, where another tool could pick it up:
+  ```bash
+  kc() { .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod "$@"; }
+  ```
+- **Credentials.** The `login` verbs put a password on the clipboard and print none. Argo CD's is read the same way as the local one,
+  with `kc -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d | pbcopy`.
+- **The recovery bundle.** `make remote-bundle TARGET=plane-prod` after every bootstrap, token change or Terraform apply, because a newer
+  secret or state makes the older bundle stale. `make remote-bundle TARGET=plane-prod VERB=verify` says whether it is.
+- **Backups.** The nightly CronJobs keep them on the VPS. `make remote-pull-backups TARGET=plane-prod` is the copy off it, and it runs
+  only when someone runs it, unless the owner set up the S3 copy.
+- **Teardown.** No target deletes hosted production, and none should. Do not run `terraform destroy` on either hosted root: see
+  [terraform.md](terraform.md#destroy-caveats).
+- **When something breaks.** The hosted runbooks: [rollback](runbooks/hosted-rollback.md), [restore](runbooks/hosted-restore.md) and
+  [lockout](runbooks/hosted-lockout.md).
+
+### When a hosted step stops
+
+Every row but the last quotes the script's own message.
+
+| Message | Why | What to do |
+|---|---|---|
+| `.local/hosted/known_hosts is missing` | The host's key is not recorded | Record it with `ssh-keyscan`, then run the step again |
+| `target.yaml says kube_system_uid: pending, which admits only provisioning` | The cluster's UID is not recorded | `make remote-kubeconfig TARGET=plane-prod`, then record the UID it prints |
+| `the live kube-system UID is ... and target.yaml records ...` | This is another cluster, or K3s was installed again | Find out which before changing `target.yaml` |
+| `.local/hosted/plane-prod/ghcr-pull-token is missing` | The bootstrap's step 6 needs the pull token | `scripts/hosted/owner-inputs.sh ghcr`, then the bootstrap again. The first real bootstrap ended here |
+| `443 is open to everyone, and Infisical reads ...` | The bootstrap would deploy Infisical's route before its admin exists | `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http`, the bootstrap, then `edge.sh open` |
+| `the firewall's table is not loaded, so this node has no public firewall` | No stage is loaded | `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http` |
+| `... terraform.tfstate is missing, so Terraform would import wayline again` | `host-terraform.sh` ran in a checkout that holds no state | Run it from the checkout that holds `.local/hosted/plane-prod`, or bring the state back from the recovery bundle |
+| `this plan is: ... EXPECT says: ... Nothing was applied` | The plan changed since you read it | Run `plan` again and read it |
+| `Plane's instance reads 'unclaimed'` from `edge.sh open` | Plane has no first admin, and whoever posts first would own it | Make the admin at stage `owner`, then `open` |
+| `something else already listens on 127.0.0.1:16443` | The tunnel's port is taken | Free that port. The tunnel will not share it |
+| A Certificate stays not Ready after port 80 opened | Its first order failed behind the closed firewall, and the next try is an hour away, doubling up to 32 | `scripts/hosted/README.md`, section The first certificate |
