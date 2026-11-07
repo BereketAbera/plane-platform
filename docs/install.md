@@ -476,7 +476,7 @@ make remote-infisical-admin TARGET=plane-prod VERB=login
 # 6. The first promotion, with 443 open to the owner alone until Plane's first admin exists
 TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh owner <your public ipv4>
 #    merge the promotion pull request, then make the admin at https://wayline.bereket.dev/god-mode/
-TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh open
+TARGET=plane-prod CONFIRM=plane-prod TWO_FACTOR=on scripts/hosted/edge.sh open
 scripts/hosted/edge.sh scan
 
 # 7. Prove it, and keep the recovery bundle
@@ -498,7 +498,7 @@ make remote-bundle TARGET=plane-prod
 | `make remote-bootstrap` | Eight steps, each safe to run again: a read-only deploy key on GitHub; the namespaces through Terraform, then the repository Secret and Grafana's admin login, ahead of Argo CD; port 80, then the rest of Terraform, which installs Argo CD and the root Application, so Argo CD starts deploying and asks for the certificates; the backup folders, the read-only pull user and a restic password made once; secret zero; Infisical's first admin, project, identity and seeded values, through a port-forward; alert delivery; the recovery bundle. It waits up to 2,400 s for Infisical. Before step 3 it stops if 443 is open to everyone while Infisical is not claimed and closed to sign-up |
 | Two-factor | Infisical has a public route, so its admin turns on an authenticator app through the tunnel before 443 opens to everyone. There is no SMTP, so email codes are not an option. The steps are in `scripts/hosted/README.md`, section Two-factor for Infisical's admin, and [infisical.md](infisical.md) says what the route allows |
 | The first promotion | Dev runs the exact digests and signs a record of it, `promote-plane-prod.yml` opens a pull request, and merging it is the approval. [argocd.md](argocd.md#exact-digest-image-sets) has the steps. Until it merges, root holds no Plane Application, and the platform comes up alone |
-| `edge.sh owner`, then `open` | Plane's first admin sign-up is open to whoever posts first, so 443 opens to the owner's address alone until the owner has made that admin at `/god-mode/`. `open` refuses while Plane's instance or Infisical is unclaimed, or while Infisical is open to sign-up or does not answer, and then reminds you of the two-factor. `scan`, from this Mac, is the check that counts |
+| `edge.sh owner`, then `open` | Plane's first admin sign-up is open to whoever posts first, so 443 opens to the owner's address alone until the owner has made that admin at `/god-mode/`. `open` stops before it reads or changes anything until `TWO_FACTOR=on` says Infisical's admin has two-factor, which nothing here can read. Then it refuses while Plane's instance or Infisical is unclaimed, or while Infisical is open to sign-up or does not answer. `scan`, from this Mac, is the check that counts |
 | Prove it | `make remote-test` runs the hosted suite, and `make remote-smoke` signs in with the owner's account. Run `make remote-bundle` again after every bootstrap, token change or Terraform apply, and copy `.local/hosted/plane-prod/recovery-bundle/` off this Mac |
 
 ### What the owner types, and where
@@ -638,7 +638,8 @@ Every row but the last quotes the script's own message.
 | `target.yaml says kube_system_uid: pending, which admits only provisioning` | The cluster's UID is not recorded | `make remote-kubeconfig TARGET=plane-prod`, then record the UID it prints |
 | `the live kube-system UID is ... and target.yaml records ...` | This is another cluster, or K3s was installed again | Find out which before changing `target.yaml` |
 | `.local/hosted/plane-prod/ghcr-pull-token is missing` | The bootstrap's step 6 needs the pull token | `scripts/hosted/owner-inputs.sh ghcr`, then the bootstrap again. The first real bootstrap ended here |
-| `443 is open to everyone, and Infisical reads ...` | The bootstrap would deploy Infisical's route before its admin exists | `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http`, the bootstrap, then `edge.sh open` |
+| `443 is open to everyone, and Infisical reads ...` | The bootstrap would deploy Infisical's route before its admin exists | `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http`, the bootstrap, then `TWO_FACTOR=on edge.sh open` |
+| `open puts Infisical's sign-in on the internet, and nothing here can read whether its admin has two-factor on` | `edge.sh open` stops until you say that two-factor is on, and has read and changed nothing | Turn it on through the tunnel, as `scripts/hosted/README.md`, section Two-factor for Infisical's admin, says, then `TARGET=plane-prod CONFIRM=plane-prod TWO_FACTOR=on scripts/hosted/edge.sh open` |
 | `the firewall's table is not loaded, so this node has no public firewall` | No stage is loaded | `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh http` |
 | `... terraform.tfstate is missing, so Terraform would import wayline again` | `host-terraform.sh` ran in a checkout that holds no state | Run it from the checkout that holds `.local/hosted/plane-prod`, or bring the state back from the recovery bundle |
 | `this plan is: ... EXPECT says: ... Nothing was applied` | The plan changed since you read it | Run `plan` again and read it |
