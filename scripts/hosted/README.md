@@ -47,6 +47,18 @@ staging to production also tries at once, because the next request no longer mat
 `grafana-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no record of its own, and that points at Vercel, so its
 A record has to be live before Argo CD first sees that Certificate.
 
+## Locked out of Grafana
+
+Grafana refuses even the right password for a username with five failed logins in the last five minutes, at the form or by basic auth, and the page is
+public, so anyone who guesses `grafana-admin` can do that. It clears by itself five minutes after the last guess. A new pod starts with an empty
+database, so it clears at once, and takes its login from the Secret again. A container restart keeps the database, and the lock with it. All of
+that was run on Grafana 13.3.0 in Docker with this configuration, and not on this cluster:
+
+```
+.tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n monitoring delete pod \
+  -l app.kubernetes.io/name=grafana,app.kubernetes.io/instance=kube-prometheus-stack
+```
+
 ## After a rollback: the database does not go back
 
 A revert on main, or promoting an older set, moves the images and not the database. A migration the newer image ran stays applied. If the
