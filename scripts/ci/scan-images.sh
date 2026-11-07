@@ -4,8 +4,9 @@
 #   scripts/ci/scan-images.sh                   everything: rendered Plane, platform manifests and
 #                                               charts including Argo CD, and Wayline builds if any exist
 #   SCAN_ONLY=built scripts/ci/scan-images.sh   only what .build/digests.tsv names, for CI after a push
-#   SCAN_ONLY=hosted scripts/ci/scan-images.sh  what hosted production runs: every line of policy/hosted-images.txt,
-#                                               and every image in its render, gitops/environments/prod/manifests.yaml
+#   SCAN_ONLY=hosted scripts/ci/scan-images.sh  what hosted production runs, as this checkout says: every line of
+#                                               policy/hosted-images.txt and policy/hosted-system-images.txt, and every
+#                                               image in its render, gitops/environments/prod/manifests.yaml
 #
 # Trivy reads each image directly from its registry for PLATFORM, so nothing is loaded into Docker. The default is
 # linux/arm64, what the laptop's kind node runs. images.yml sets linux/amd64, what the VPS runs. --platform only chooses a child
@@ -16,13 +17,14 @@
 # while the cluster may need it. Digests make any mirror safe. Expect a few GiB of transfer.
 #
 # SCAN_ONLY=hosted reads registries alone and never the cluster, so it scans what this checkout says hosted production runs.
-# validate-manifests.sh holds policy/hosted-images.txt to what the hosted tree and its charts name, and the render holds the
-# rest, Wayline's own among them. The VPS is one x86-64 node, so each image is read for linux/amd64 and an index for its
-# linux/amd64 child: PLATFORM may only be that, and SCAN_ALSO_PLATFORM does not apply. Wayline's images there are private
-# packages on GHCR, which trivy reads with Docker's login, as it does after a push in images.yml. So this needs docker login
-# ghcr.io with a token holding read:packages, which is the login scripts/ci/copy-to-local-registry.sh makes, and
-# scan-hosted.yml logs in with its own GITHUB_TOKEN under packages: read. There is no lockfile row, because .build/plane-src
-# is whatever this machine last built, and production runs what CI built.
+# validate-manifests.sh holds policy/hosted-images.txt to what the hosted tree and its charts name, and
+# policy/hosted-system-images.txt to K3s's own images and those of the probe pods the remote tests start, which no manifest
+# names. The render holds the rest, Wayline's own among them. The VPS is one x86-64 node, so each image is read for
+# linux/amd64 and an index for its linux/amd64 child: PLATFORM may only be that, and SCAN_ALSO_PLATFORM does not apply.
+# Wayline's images there are private packages on GHCR, which trivy reads with Docker's login, as it does after a push in
+# images.yml. So this needs docker login ghcr.io with a token holding read:packages, which is the login
+# scripts/ci/copy-to-local-registry.sh makes, and scan-hosted.yml logs in with its own GITHUB_TOKEN under packages: read.
+# There is no lockfile row, because .build/plane-src is whatever this machine last built, and production runs what CI built.
 #
 # The web, admin and space clients are bundled into static files with no package metadata, so no image
 # scan can see their dependencies. So the lockfiles of the Wayline source in .build/plane-src are scanned
@@ -78,7 +80,8 @@ RESULTS_NAME=scan-images
 OUT="${SCAN_OUTPUT_DIR:-$LOCAL_DIR/evidence-raw/$RESULTS_NAME-$(date -u +%Y%m%dT%H%M%SZ)}"
 mkdir -p "$OUT/images"
 printf '%s\n' "$PLATFORM" ${SCAN_ALSO_PLATFORM:+"$SCAN_ALSO_PLATFORM"} >"$OUT/platform.txt"
-# What the report advises on a result of another platform depends on the kind of scan, because only a full one takes SCAN_ALSO_PLATFORM.
+# What the report advises on a result of another platform depends on the kind of scan, because only a full one takes
+# SCAN_ALSO_PLATFORM.
 printf '%s\n' "${SCAN_ONLY:-full}" >"$OUT/mode.txt"
 RAW_LIST="$WORK/images"
 : >"$RAW_LIST"
@@ -117,11 +120,15 @@ if [[ "$SCAN_ONLY" == built ]]; then
   built_images | add_images built
 elif [[ "$SCAN_ONLY" == hosted ]]; then
   log "Listing what hosted production runs, as this checkout says"
-  # A list of comments alone lists nothing, and the render would then stand for all of it. So it must name an image as
+  # A list of comments alone lists nothing, and the render would then stand for all of it. So each must name an image as
   # add_images reads one: a line that is no comment, with a / or a : in it.
-  grep -qE '^[^#].*[/:]' "$HOSTED_IMAGE_LIST" 2>/dev/null || die "$HOSTED_IMAGE_LIST is missing or lists no image"
+  for list in "$HOSTED_IMAGE_LIST" "$HOSTED_SYSTEM_IMAGE_LIST"; do
+    grep -qE '^[^#].*[/:]' "$list" 2>/dev/null || die "$list is missing or lists no image"
+  done
   [[ -s "$HOSTED_ENVIRONMENT/manifests.yaml" ]] || die "$HOSTED_ENVIRONMENT/manifests.yaml is missing or empty: run make render"
   { grep -vE '^(#|$)' "$HOSTED_IMAGE_LIST" || true; } | add_images hosted-list
+  # K3s's own images and the probes', which no manifest names.
+  { grep -vE '^(#|$)' "$HOSTED_SYSTEM_IMAGE_LIST" || true; } | add_images hosted-system
   # The same reading of the render as the list's own check, so the two cannot disagree on what an image is.
   images_named_in "$HOSTED_ENVIRONMENT/manifests.yaml" | add_images hosted-render
   grep -q '/wayline/' "$RAW_LIST" || warn "the hosted render names no Wayline image, so none is scanned"

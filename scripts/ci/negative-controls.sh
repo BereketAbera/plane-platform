@@ -25,10 +25,11 @@ BASE="$(git -C "$CLONE" rev-parse HEAD)"
 
 # Tools and caches are gitignored. Share them, so no control fetches them again. KUBECONFIG belongs to
 # the clone and does not exist, so nothing run here can reach a cluster.
-mkdir -p "$CLONE/.tools" "$CLONE/.local" "$LOCAL_DIR/kubeconform-schemas" "$LOCAL_DIR/trivy-cache"
+mkdir -p "$CLONE/.tools" "$CLONE/.local" "$LOCAL_DIR/kubeconform-schemas" "$LOCAL_DIR/trivy-cache" "$LOCAL_DIR/k3s-images"
 ln -s "$ROOT/.tools/bin" "$CLONE/.tools/bin"
 ln -s "$LOCAL_DIR/kubeconform-schemas" "$CLONE/.local/kubeconform-schemas"
 ln -s "$LOCAL_DIR/trivy-cache" "$CLONE/.local/trivy-cache"
+ln -s "$LOCAL_DIR/k3s-images" "$CLONE/.local/k3s-images"
 
 DEV_RENDERED=gitops/environments/dev/manifests.yaml
 PROD_SIM_RENDERED=gitops/environments/prod-sim/manifests.yaml
@@ -404,6 +405,11 @@ plant_hosted_image_split_across_chart_values() {
   yq -i '.image.registry = "ghcr.io" | .image.repository = "bereketabera/wl/backend" | .image.digest = "sha256:'"$(printf '9%.0s' {1..64})"'"' gitops/clusters/plane-prod/values/traefik.yaml
 }
 plant_hosted_image_listed_and_gone() { printf 'docker.io/planted/gone@sha256:%s\n' "$(printf '9%.0s' {1..64})" >>policy/hosted-images.txt; }
+plant_hosted_probe_image_unlisted() { replace_first scripts/test-netpol.sh 'curl:8\.17\.0@sha256:[a-f0-9]{64}' "curl:8.17.0@sha256:$(printf '9%.0s' {1..64})"; }
+plant_hosted_k3s_image_unlisted() {
+  python3 -B -c 'p="policy/hosted-system-images.txt"; s=open(p).read().splitlines(True); t=[l for l in s if "/mirrored-pause:" not in l]; assert len(t) == len(s) - 1; open(p, "w").write("".join(t))'
+}
+plant_hosted_k3s_image_listed_and_gone() { printf 'docker.io/rancher/klipper-lb:v0.4.17@sha256:%s\n' "$(printf '9%.0s' {1..64})" >>policy/hosted-system-images.txt; }
 plant_hosted_alloy_without_the_scrub() {
   python3 -B -c 'import re; p="gitops/clusters/plane-prod/values/alloy.yaml"; s=open(p).read(); t,c=re.subn(r"stage\.replace \{.*?\n\s*\}\n", "", s, count=1, flags=re.S); assert c==1; open(p,"w").write(t)'
 }
@@ -628,6 +634,9 @@ control hosted-object-in-applications validate-manifests.sh "so it may hold only
 control hosted-renamed-image-in-the-tree validate-manifests.sh "they are not in policy/hosted-images.txt" plant_hosted_renamed_image
 CONTROL_SKIP_CHARTS=no control hosted-image-split-across-chart-values validate-manifests.sh "they are not in policy/hosted-images.txt" plant_hosted_image_split_across_chart_values
 CONTROL_SKIP_CHARTS=no control hosted-image-listed-and-gone validate-manifests.sh "and nothing hosted runs them" plant_hosted_image_listed_and_gone
+control hosted-probe-image-unlisted validate-manifests.sh "they are not in policy/hosted-system-images.txt, so the hosted scan would miss them" plant_hosted_probe_image_unlisted
+CONTROL_SKIP_CHARTS=no control hosted-k3s-image-unlisted validate-manifests.sh "K3s runs these, and they are not in policy/hosted-system-images.txt" plant_hosted_k3s_image_unlisted
+CONTROL_SKIP_CHARTS=no control hosted-k3s-image-listed-and-gone validate-manifests.sh "and neither K3s nor a probe runs them" plant_hosted_k3s_image_listed_and_gone
 control hosted-values-outside-the-trees validate-manifests.sh 'they must come from $values/gitops/clusters/plane-prod' plant_hosted_values_outside_the_trees
 control hosted-base-outside-the-trees validate-manifests.sh "does not build from the two hosted trees alone" plant_hosted_base_outside_the_trees
 control hosted-alloy-without-the-scrub validate-manifests.sh "no stage.replace ahead of what goes to Loki" plant_hosted_alloy_without_the_scrub

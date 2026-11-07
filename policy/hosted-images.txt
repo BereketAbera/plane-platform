@@ -1,4 +1,5 @@
-# Every image hosted production runs outside Plane's render: what the hosted tree names, and what its charts render, Argo CD's among them.
+# Every image the hosted tree names and its charts render, Argo CD's among them, outside Plane's render. K3s's own images and the
+# probes', which no manifest names, are in policy/hosted-system-images.txt.
 # scripts/ci/validate-manifests.sh fails on an image that is not here and on an entry nothing names, so a new or renamed image is a
 # diff a person reads. This says nothing about an image, and no evidence covers these: docs/evidence/promotions/README.md says what does.
 # Wayline's own images are in the render alone, where they move with each promotion, so they are not here.

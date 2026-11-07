@@ -10,7 +10,7 @@ Argo CD reads the local Git remote in pass 1, and only `make gitops-publish` wri
 | `wayline-upstream-check.yml` | weekly, manual dispatch | Dry-runs the Wayline overlay and patches against an upstream ref, default `preview`, and reports the size of the work. Builds and pushes nothing |
 | `promote-prod-sim.yml` | manual dispatch | Opens a PR copying a digest already recorded for dev to prod-sim. Never rebuilds |
 | `check-deploy-branch.yml` | daily, manual dispatch | Goes red if `deploy/plane-prod` differs from what its `RELEASE.json` says, which means someone pushed it by hand. Changes nothing, and has not run on GitHub yet |
-| `scan-hosted.yml` | weekly, manual dispatch | `make scan-images-hosted`: scans every image hosted production runs, for `linux/amd64`, from the registries alone, with `packages: read` for the private Wayline images, and keeps the report as an artifact. Has not run on GitHub yet |
+| `scan-hosted.yml` | weekly, manual dispatch | `make scan-images-hosted`: scans what hosted production runs, as main says, for `linux/amd64`, from the registries alone: what the hosted tree, its charts and its render name, K3s's own images and the probes' images. Has `packages: read` for the private Wayline images, and keeps the report as an artifact. Has not run on GitHub yet |
 
 `scripts/ci/negative-controls.sh` shows that the checks can fail. It plants one defect at a time in a throwaway
 clone and requires the matching check to go red. It takes minutes, so `make ci` does not run it.

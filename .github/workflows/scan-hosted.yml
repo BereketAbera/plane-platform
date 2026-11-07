@@ -1,7 +1,8 @@
-# Weekly, and on demand: scan every image hosted production runs, for linux/amd64, as main says it runs them. Runs the same
-# script as `make scan-images-hosted`, which reads registries alone and never the cluster, and fails as it does. The Wayline
-# images are private packages on GHCR, so this job logs Docker in with its own token, which packages: read lets read them,
-# and trivy reads that login. The report goes up as an artifact, because whatever is left on a runner goes with it.
+# Weekly, and on demand: scan what hosted production runs, for linux/amd64, as main says: what the hosted tree, its charts and its
+# render name, K3s's own images and the probes' images. Runs the same script as `make scan-images-hosted`, which reads registries
+# alone and never the cluster, and fails as it does. The Wayline images are private packages on GHCR, so this job logs Docker in
+# with its own token, which packages: read lets read them, and trivy reads that login. The report goes up as an artifact,
+# because whatever is left on a runner goes with it.
 name: scan-hosted
 
 on:
@@ -18,7 +19,7 @@ concurrency:
 
 jobs:
   scan:
-    name: Scan every image hosted production runs
+    name: Scan what hosted production runs
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     permissions:
