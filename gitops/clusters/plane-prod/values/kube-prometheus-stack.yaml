@@ -239,6 +239,13 @@ grafana:
   resources:
     requests: { cpu: 25m, memory: 128Mi }
     limits: { cpu: 500m, memory: 384Mi, ephemeral-storage: 2Gi }
+  # A new pod builds its database from nothing, and under this CPU limit that took about 2.5 minutes on 2026-11-07. The chart's liveness
+  # probe starts at 60 s and allows 100 s more, so it killed that first start, and the pod came up only on its second. Liveness and
+  # readiness now wait until Grafana has answered once, for up to 10 minutes, and nothing changes after that.
+  startupProbe:
+    httpGet: { path: /api/health, port: grafana }
+    periodSeconds: 10
+    failureThreshold: 60
   grafana.ini:
     server:
       domain: grafana.bereket.dev
