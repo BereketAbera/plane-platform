@@ -315,6 +315,247 @@ test_plane_route_in_the_grafana_namespace_rejected if {
 	says(route_doc("monitoring", route_spec), "must name only secretName grafana-tls")
 }
 
+# The apps, written out here and not read from the policy, so a change there has to be made twice. Frameflow's other routes are below.
+apps := {
+	"rillmark": {"host": "rillmark.bereket.dev", "tls": "rillmark-tls", "service": {"name": "rillmark", "port": 80}},
+	"awushi-cloudgarden": {"host": "devops.bereket.dev", "tls": "devops-tls", "service": {"name": "awushi-cloudgarden", "port": 80}},
+	"frameflow": {"host": "frameflow.bereket.dev", "tls": "frameflow-tls", "service": {"name": "frameflow-web", "port": 3000}},
+}
+
+# Every two different apps, in both orders.
+app_pairs := [[a, b] | some a, _ in apps; some b, _ in apps; a != b]
+
+on_host(host) := sprintf("Host(`%s`)", [host])
+
+app_spec(namespace) := {
+	"entryPoints": ["websecure"],
+	"routes": [{"kind": "Rule", "match": on_host(apps[namespace].host), "services": [apps[namespace].service]}],
+	"tls": {"secretName": apps[namespace].tls},
+}
+
+# The app's one route, with its rule or its backend swapped.
+app_with_match(namespace, match) := route_doc(namespace, object.union(app_spec(namespace), {"routes": [{"kind": "Rule", "match": match, "services": [apps[namespace].service]}]}))
+
+app_with_service(namespace, service) := route_doc(namespace, object.union(app_spec(namespace), {"routes": [{"kind": "Rule", "match": on_host(apps[namespace].host), "services": [service]}]}))
+
+test_each_app_route_accepted if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 0 with input as route_doc(namespace, app_spec(namespace))
+	}
+}
+
+test_an_app_route_with_an_or_inside_parentheses_accepted if {
+	every namespace, app in apps {
+		count(hosted.deny) == 0 with input as app_with_match(namespace, sprintf("%s && (Path(`/a`) || PathPrefix(`/b/`))", [on_host(app.host)]))
+	}
+}
+
+# Another host, no host, or an OR that lets the rule out of its host, which then matches Wayline's and Grafana's as well.
+test_an_app_route_off_its_host_rejected if {
+	every namespace, app in apps {
+		every match in [
+			"Host(`other.bereket.dev`)",
+			"Host(`wayline.bereket.dev`)",
+			"Host(`grafana.bereket.dev`)",
+			sprintf("Host(`www.%s`)", [app.host]),
+			"PathPrefix(`/`)",
+			"HostRegexp(`.+`)",
+			sprintf("HostRegexp(`^%s$`)", [replace(app.host, ".", "[.]")]),
+			sprintf("%s || PathPrefix(`/`)", [on_host(app.host)]),
+			sprintf("PathPrefix(`/`) || %s", [on_host(app.host)]),
+			sprintf("%s && Path(`/a`) || PathPrefix(`/`)", [on_host(app.host)]),
+			sprintf("%s && (Path(`/a`) || Path(`/b`)", [on_host(app.host)]),
+		] {
+			count(hosted.deny) == 1 with input as app_with_match(namespace, match)
+		}
+	}
+}
+
+test_an_app_route_on_another_apps_host_rejected if {
+	count(app_pairs) == 6
+	every pair in app_pairs {
+		doc := app_with_match(pair[0], on_host(apps[pair[1]].host))
+		says(doc, sprintf("must be limited to Host(`%s`)", [apps[pair[0]].host]))
+		says(doc, sprintf("which only namespace %s may serve", [pair[1]]))
+	}
+}
+
+plane_route_on(match) := route_doc("plane-prod", object.union(route_spec, {"routes": [{"kind": "Rule", "match": match, "services": [{"name": "plane-web", "port": 3000}]}]}))
+
+# The other direction: no route outside an app's namespace names its host, ANDed or ORed with anything, in any spelling.
+test_another_namespace_naming_an_app_host_rejected if {
+	every namespace, app in apps {
+		every match in [
+			on_host(app.host),
+			sprintf("Host(`wayline.bereket.dev`) || %s", [on_host(app.host)]),
+			sprintf("Host(`wayline.bereket.dev`) && %s", [on_host(app.host)]),
+			on_host(upper(app.host)),
+			sprintf("HostRegexp(`^%s$`)", [replace(app.host, ".", `\.`)]),
+			sprintf("HostRegexp(`^%s$`)", [replace(app.host, ".", "[.]")]),
+		] {
+			count(hosted.deny) == 1 with input as plane_route_on(match)
+		}
+		beside_grafana := page_rule(on_host(app.host), {"name": "kps-grafana", "port": 80})
+		says(route_doc("monitoring", object.union(grafana_spec, {"routes": [grafana_login_route, grafana_page_route, beside_grafana]})), sprintf("which only namespace %s may serve", [namespace]))
+		says({"kind": "IngressRoute", "metadata": {"name": "x"}, "spec": app_spec(namespace)}, sprintf("which only namespace %s may serve", [namespace]))
+	}
+	every pair in app_pairs {
+		doc := app_with_match(pair[0], sprintf("%s && %s", [on_host(apps[pair[0]].host), on_host(apps[pair[1]].host)]))
+		count(hosted.deny) == 1 with input as doc
+		says(doc, sprintf("which only namespace %s may serve", [pair[1]]))
+	}
+}
+
+# Only the Services on the app's own list, in its own namespace: not Plane's, not a console, and not another app's.
+test_an_app_backend_outside_its_list_rejected if {
+	every namespace, app in apps {
+		every service in [
+			{"name": "plane-web", "port": 3000},
+			{"name": "plane-web", "port": 3000, "namespace": "plane-prod"},
+			{"name": "plane-minio", "port": 9000, "namespace": "plane-prod"},
+			{"name": "kps-grafana", "port": 80, "namespace": "monitoring"},
+			{"name": "argocd-server", "port": 80, "namespace": "argocd"},
+			{"name": "api@internal", "kind": "TraefikService"},
+			object.union(app.service, {"namespace": "plane-prod"}),
+			object.union(app.service, {"port": 8080}),
+			object.union(app.service, {"kind": "TraefikService"}),
+		] {
+			count(hosted.deny) == 1 with input as app_with_service(namespace, service)
+		}
+		says(app_with_service(namespace, {"name": "plane-web", "port": 3000}), "Hosted production gives no console a public route but Grafana's")
+	}
+	every pair in app_pairs {
+		count(hosted.deny) == 1 with input as app_with_service(pair[0], apps[pair[1]].service)
+		count(hosted.deny) == 1 with input as app_with_service(pair[0], object.union(apps[pair[1]].service, {"namespace": pair[1]}))
+	}
+	count(hosted.deny) == 1 with input as app_with_service("rillmark", {"name": "frameflow-silo", "port": 9000, "namespace": "frameflow"})
+}
+
+test_a_plane_route_to_an_app_service_rejected if {
+	every namespace, app in apps {
+		count(hosted.deny) == 1 with input as route_to(app.service.name, app.service.port)
+		count(hosted.deny) == 1 with input as route_doc("plane-prod", object.union(route_spec, {"routes": [{"match": "Host(`wayline.bereket.dev`)", "services": [object.union(app.service, {"namespace": namespace})]}]}))
+	}
+}
+
+test_an_app_route_without_its_own_certificate_rejected if {
+	every namespace, app in apps {
+		says(route_doc(namespace, json.remove(app_spec(namespace), ["tls"])), sprintf("tls is {} and must name only secretName %s", [app.tls]))
+		count(hosted.deny) == 1 with input as route_doc(namespace, json.remove(app_spec(namespace), ["tls"]))
+		every tls in [{"secretName": "wayline-tls"}, {"secretName": "grafana-tls"}, {"certResolver": "letsencrypt"}, {"secretName": app.tls, "certResolver": "letsencrypt"}] {
+			count(hosted.deny) == 1 with input as route_doc(namespace, json.patch(app_spec(namespace), [{"op": "replace", "path": "/tls", "value": tls}]))
+		}
+	}
+	every pair in app_pairs {
+		count(hosted.deny) == 1 with input as route_doc(pair[0], json.patch(app_spec(pair[0]), [{"op": "replace", "path": "/tls", "value": {"secretName": apps[pair[1]].tls}}]))
+	}
+}
+
+test_an_app_route_on_the_web_entry_point_rejected if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 1 with input as route_doc(namespace, object.union(app_spec(namespace), {"entryPoints": ["web"]}))
+		count(hosted.deny) == 1 with input as route_doc(namespace, object.union(app_spec(namespace), {"entryPoints": ["web", "websecure"]}))
+		count(hosted.deny) == 1 with input as route_doc(namespace, json.remove(app_spec(namespace), ["entryPoints"]))
+	}
+}
+
+test_tcp_and_udp_routes_in_an_app_namespace_rejected if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 1 with input as {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": namespace}, "spec": {}}
+		count(hosted.deny) == 1 with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": namespace}, "spec": {}}
+	}
+}
+
+test_an_app_route_in_another_namespace_rejected if {
+	every namespace, _ in apps {
+		says(route_doc("traefik", app_spec(namespace)), "a route may sit only in namespace")
+		says(route_doc("argocd", app_spec(namespace)), "a route may sit only in namespace")
+		says(route_doc("plane-prod", app_spec(namespace)), "gives no console a public route but Grafana's")
+	}
+	says(route_doc("traefik", app_spec("rillmark")), "or in an app's own, awushi-cloudgarden, frameflow, rillmark")
+}
+
+test_plane_and_grafana_routes_in_an_app_namespace_rejected if {
+	every namespace, app in apps {
+		says(route_doc(namespace, route_spec), sprintf("must be limited to Host(`%s`)", [app.host]))
+		says(route_doc(namespace, route_spec), sprintf("must name only secretName %s", [app.tls]))
+		says(route_doc(namespace, route_spec), "gives no console a public route but Grafana's")
+		says(route_doc(namespace, grafana_spec), "gives no console a public route but Grafana's")
+	}
+}
+
+# Frameflow's three: the presigned uploads to Silo, the sign-in under its limit, and the pages.
+frameflow_upload_route := {
+	"kind": "Rule",
+	"match": "Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/frameflow-media/videos/`)",
+	"services": [{"name": "frameflow-silo", "port": 9000}],
+}
+
+frameflow_login_route := {
+	"kind": "Rule",
+	"match": "Host(`frameflow.bereket.dev`) && Method(`POST`) && Path(`/api/auth/session`)",
+	"middlewares": [{"name": "frameflow-login-limit"}],
+	"services": [{"name": "frameflow-web", "port": 3000}],
+}
+
+frameflow_page_route := {"kind": "Rule", "match": "Host(`frameflow.bereket.dev`)", "services": [{"name": "frameflow-web", "port": 3000}]}
+
+frameflow_spec := {
+	"entryPoints": ["websecure"],
+	"routes": [frameflow_upload_route, frameflow_login_route, frameflow_page_route],
+	"tls": {"secretName": "frameflow-tls"},
+}
+
+# The upload route swapped for this one.
+frameflow_with_upload(route) := route_doc("frameflow", object.union(frameflow_spec, {"routes": [route, frameflow_login_route, frameflow_page_route]}))
+
+test_frameflow_route_with_its_uploads_accepted if {
+	count(hosted.deny) == 0 with input as route_doc("frameflow", frameflow_spec)
+	count(hosted.deny) == 0 with input as frameflow_with_upload(object.union(frameflow_upload_route, {"services": [{"name": "frameflow-silo", "port": 9000, "namespace": "frameflow"}]}))
+}
+
+# All of Silo's API is on that port: another method lists, reads or deletes, and another path reaches other buckets and the admin calls.
+test_silo_for_anything_but_the_uploads_rejected if {
+	every match in [
+		"Host(`frameflow.bereket.dev`) && PathPrefix(`/frameflow-media/videos/`)",
+		"Host(`frameflow.bereket.dev`) && Method(`GET`) && PathPrefix(`/frameflow-media/videos/`)",
+		"Host(`frameflow.bereket.dev`) && (Method(`PUT`) || Method(`GET`)) && PathPrefix(`/frameflow-media/videos/`)",
+		"Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/frameflow-media/`)",
+		"Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/frameflow-media/videos`)",
+		"Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/minio/`)",
+		"Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathRegexp(`^/frameflow-media/videos/`)",
+		"Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/`)",
+		"Host(`frameflow.bereket.dev`) && Method(`PUT`)",
+		"Host(`frameflow.bereket.dev`)",
+	] {
+		count(hosted.deny) == 1 with input as frameflow_with_upload(object.union(frameflow_upload_route, {"match": match}))
+	}
+	says(frameflow_with_upload(object.union(frameflow_upload_route, {"match": "Host(`frameflow.bereket.dev`) && Method(`GET`) && PathPrefix(`/frameflow-media/videos/`)"})), "which the internet reaches only for presigned uploads")
+	count(hosted.deny) == 1 with input as app_with_service("frameflow", {"name": "frameflow-silo", "port": 9000})
+}
+
+# A Middleware could rewrite the path once the rule has read it, and a buffer would hold whole videos.
+test_a_middleware_on_the_upload_route_rejected if {
+	every middlewares in [[{"name": "frameflow-rewrite"}], [{"name": "frameflow-login-limit"}], [{"name": "frameflow-body-limit"}]] {
+		count(hosted.deny) == 1 with input as frameflow_with_upload(object.union(frameflow_upload_route, {"middlewares": middlewares}))
+	}
+}
+
+# Silo's console, the API and Hatchet's dashboard and database sit beside the two, and get no route.
+test_frameflow_backends_beyond_its_two_rejected if {
+	count(hosted.deny) == 1 with input as frameflow_with_upload(object.union(frameflow_upload_route, {"services": [{"name": "frameflow-silo", "port": 9090}]}))
+	says(frameflow_with_upload(object.union(frameflow_upload_route, {"services": [{"name": "frameflow-silo", "port": 9090}]})), "reaches frameflow-silo:9090")
+	every service in [
+		{"name": "frameflow-api", "port": 4000},
+		{"name": "hatchet", "port": 8888},
+		{"name": "hatchet", "port": 7070},
+		{"name": "hatchet-postgres", "port": 5432},
+	] {
+		count(hosted.deny) == 1 with input as app_with_service("frameflow", service)
+		says(app_with_service("frameflow", service), sprintf("reaches %s:%v", [service.name, service.port]))
+	}
+}
+
 middleware(namespace, name, spec) := {"kind": "Middleware", "metadata": {"name": name, "namespace": namespace}, "spec": spec}
 
 limit_with(criterion) := middleware("monitoring", "grafana-login-limit", {"rateLimit": {"average": 5, "period": "1m", "burst": 5, "sourceCriterion": criterion}})
@@ -577,6 +818,122 @@ test_plane_project_stays_in_its_namespace if {
 	count(hosted.deny) == 0 with input as project("plane-prod", {"sourceRepos": [git_url], "destinations": [{"namespace": "plane-prod"}]})
 	count(hosted.deny) == 1 with input as project("plane-prod", {"sourceRepos": [git_url], "destinations": [{"namespace": "*"}]})
 	count(hosted.deny) == 1 with input as project("plane-prod", {"sourceRepos": [git_url], "destinations": [{"namespace": "plane-prod"}], "clusterResourceWhitelist": [{"group": "*", "kind": "*"}]})
+}
+
+app_application(namespace, project, destination) := {
+	"kind": "Application",
+	"metadata": {"name": namespace, "namespace": "argocd"},
+	"spec": {
+		"project": project,
+		"destination": {"server": "https://kubernetes.default.svc", "namespace": destination},
+		"source": plain_source(concat("/", ["gitops/clusters/plane-prod/platform", namespace])),
+	},
+}
+
+test_an_app_project_to_its_own_namespace_accepted if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 0 with input as app_application(namespace, namespace, namespace)
+	}
+}
+
+# The project refuses any other destination at sync, and this says so before the merge.
+test_an_app_project_to_another_namespace_rejected if {
+	every namespace, _ in apps {
+		every destination in ["plane-prod", "monitoring", "argocd", "", "*"] {
+			count(hosted.deny) == 1 with input as app_application(namespace, namespace, destination)
+		}
+		count(hosted.deny) == 1 with input as json.remove(app_application(namespace, namespace, namespace), ["spec/destination/namespace"])
+	}
+	every pair in app_pairs {
+		count(hosted.deny) == 1 with input as app_application(pair[0], pair[0], pair[1])
+	}
+}
+
+# Under platform the same files could make NetworkPolicies and cluster-scoped objects, and under another project they would land in
+# that project's namespace.
+test_an_app_directory_under_another_project_rejected if {
+	every namespace, _ in apps {
+		says(app_application(namespace, "platform", namespace), sprintf("syncs only under project %s", [namespace]))
+		count(hosted.deny) == 1 with input as app_application(namespace, "platform", namespace)
+		count(hosted.deny) == 1 with input as app_application(namespace, "plane-prod", "plane-prod")
+		count(hosted.deny) == 1 with input as object.union(app_application(namespace, "platform", namespace), {"metadata": {"name": "other"}})
+	}
+	every pair in app_pairs {
+		count(hosted.deny) == 1 with input as app_application(pair[0], pair[1], pair[1])
+	}
+}
+
+# Platform's own Applications still deploy to an app's namespace, as Frameflow's Infisical operator will.
+test_platform_project_to_an_app_namespace_accepted if {
+	every namespace, _ in apps {
+		doc := json.patch(application(plain_source("gitops/clusters/plane-prod/platform/backup")), [{"op": "replace", "path": "/spec/destination/namespace", "value": namespace}])
+		count(hosted.deny) == 0 with input as doc
+	}
+}
+
+test_an_unknown_project_names_the_apps_own if {
+	doc := json.patch(application(plain_source("gitops/environments/prod")), [{"op": "replace", "path": "/spec/project", "value": "frameflow-prod"}])
+	count(hosted.deny) == 1 with input as doc
+	says(doc, "does not exist on this cluster, so use platform, plane-prod or an app's own, awushi-cloudgarden, frameflow, rillmark")
+}
+
+# plane-prod's project, as gitops/clusters/plane-prod/bootstrap-chart/templates/appprojects.yaml holds it, with the app's namespace.
+app_project(namespace) := project(namespace, {
+	"sourceRepos": [git_url],
+	"destinations": [{"server": "https://kubernetes.default.svc", "namespace": namespace}],
+	"namespaceResourceBlacklist": [
+		{"group": "", "kind": "ResourceQuota"},
+		{"group": "", "kind": "LimitRange"},
+		{"group": "networking.k8s.io", "kind": "NetworkPolicy"},
+	],
+})
+
+app_project_with(namespace, field, value) := json.patch(app_project(namespace), [{"op": "add", "path": sprintf("/spec/%s", [field]), "value": value}])
+
+test_an_app_project_like_plane_prods_accepted if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 0 with input as app_project(namespace)
+	}
+}
+
+test_an_app_project_reaching_another_namespace_rejected if {
+	every namespace, _ in apps {
+		every destinations in [
+			[{"server": "https://kubernetes.default.svc", "namespace": "*"}],
+			[{"server": "https://kubernetes.default.svc", "namespace": sprintf("%s*", [namespace])}],
+			[{"server": "https://kubernetes.default.svc", "namespace": "plane-prod"}],
+			[{"server": "https://kubernetes.default.svc", "namespace": namespace}, {"server": "https://kubernetes.default.svc", "namespace": "monitoring"}],
+		] {
+			count(hosted.deny) == 1 with input as app_project_with(namespace, "destinations", destinations)
+		}
+	}
+	every pair in app_pairs {
+		count(hosted.deny) == 1 with input as app_project_with(pair[0], "destinations", [{"server": "https://kubernetes.default.svc", "namespace": pair[1]}])
+	}
+}
+
+test_an_app_project_with_cluster_scope_rejected if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 1 with input as app_project_with(namespace, "clusterResourceWhitelist", [{"group": "*", "kind": "*"}])
+		count(hosted.deny) == 1 with input as app_project_with(namespace, "clusterResourceWhitelist", [{"group": "", "kind": "Namespace"}])
+	}
+}
+
+# Without each of these on its list, the app's own Application could rewrite the quota or limits Terraform sets, or open its policies.
+test_an_app_project_missing_a_blacklist_entry_rejected if {
+	every namespace, _ in apps {
+		every kind in ["ResourceQuota", "LimitRange", "NetworkPolicy"] {
+			kept := [entry | some entry in app_project(namespace).spec.namespaceResourceBlacklist; entry.kind != kind]
+			denied := hosted.deny with input as app_project_with(namespace, "namespaceResourceBlacklist", kept)
+			count(denied) == 1
+			some msg in denied
+			contains(msg, sprintf("namespaceResourceBlacklist must hold %s", [kind]))
+		}
+		count(hosted.deny) == 3 with input as json.remove(app_project(namespace), ["spec/namespaceResourceBlacklist"])
+
+		# The group counts too: a kind of that name in another API group is not the one that holds the app in.
+		count(hosted.deny) == 1 with input as json.patch(app_project(namespace), [{"op": "replace", "path": "/spec/namespaceResourceBlacklist/2/group", "value": ""}])
+	}
 }
 
 test_unrelated_document_ignored if {

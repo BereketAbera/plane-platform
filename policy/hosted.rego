@@ -227,19 +227,49 @@ infisical_limit_specs := {
 	}},
 }
 
-route_namespaces := {plane_namespace, grafana_namespace, infisical_namespace}
+# The apps beside Plane, each in a namespace of its own, on a host and a certificate of its own. These are all the Services each may
+# route to, so a console or a database beside them gets no public route, and another Service is a change here that a person reads. Each
+# host is bound to its namespace both ways, below, as policy/plane.rego binds Plane's.
+app_routes := {
+	"frameflow": {
+		"host": "frameflow.bereket.dev",
+		"tls_secret": "frameflow-tls",
+		"backends": {"frameflow-web": 3000, "frameflow-silo": 9000},
+	},
+	"rillmark": {
+		"host": "rillmark.bereket.dev",
+		"tls_secret": "rillmark-tls",
+		"backends": {"rillmark": 80},
+	},
+	"awushi-cloudgarden": {
+		"host": "devops.bereket.dev",
+		"tls_secret": "devops-tls",
+		"backends": {"awushi-cloudgarden": 80},
+	},
+}
+
+app_namespaces := {namespace | some namespace, _ in app_routes}
+
+# Frameflow's Silo answers the internet for the browser's presigned uploads alone: a PUT, under the one prefix the API signs for. The rest
+# of its API is on the same port, bucket listings and admin calls among it, so a route to it has this rule and no other, and no Middleware,
+# which could rewrite the path after the rule has read it. The API checks each upload's declared size, and then the size Silo holds.
+upload_backends := {"frameflow": {"frameflow-silo": "Method(`PUT`) && PathPrefix(`/frameflow-media/videos/`)"}}
+
+route_namespaces := {plane_namespace, grafana_namespace, infisical_namespace} | app_namespaces
 
 # These read the namespace an object states. Argo CD would put one that states none in its Application's destination, where these would not
 # see it, so policy/hosted_tree.rego wants every object in the hosted tree to state its own.
+this_namespace := object.get(input, ["metadata", "namespace"], "")
+
 in_grafana_namespace if object.get(input.metadata, "namespace", "") == grafana_namespace
 
 in_infisical_namespace if object.get(input.metadata, "namespace", "") == infisical_namespace
 
-# Plane's route, Grafana's and Infisical's. Anywhere else it could only be another console's.
+# Plane's route, Grafana's, Infisical's and each app's. Anywhere else it could only be another console's.
 deny contains msg if {
 	route_kinds[input.kind]
 	not route_namespaces[object.get(input.metadata, "namespace", "")]
-	msg := sprintf("%s: a route may sit only in namespace %s, in %s for Grafana's or in %s for Infisical's, and the other consoles get none: reach them through an SSH tunnel and a port-forward", [identity, plane_namespace, grafana_namespace, infisical_namespace])
+	msg := sprintf("%s: a route may sit only in namespace %s, in %s for Grafana's, in %s for Infisical's, or in an app's own, %s, and the other consoles get none: reach them through an SSH tunnel and a port-forward", [identity, plane_namespace, grafana_namespace, infisical_namespace, concat(", ", sort(app_namespaces))])
 }
 
 deny contains msg if {
@@ -256,7 +286,10 @@ deny contains msg if {
 }
 
 # cert-manager is the only certificate owner, so no certResolver either.
-route_tls_secrets := {plane_namespace: tls_secret, grafana_namespace: grafana_tls_secret, infisical_namespace: infisical_tls_secret}
+route_tls_secrets := object.union(
+	{plane_namespace: tls_secret, grafana_namespace: grafana_tls_secret, infisical_namespace: infisical_tls_secret},
+	{namespace: app.tls_secret | some namespace, app in app_routes},
+)
 
 deny contains msg if {
 	input.kind == "IngressRoute"
@@ -284,7 +317,7 @@ deny contains msg if {
 	some route in input.spec.routes
 	some service in route.services
 	not public_backend(service)
-	msg := sprintf("%s: route %q reaches %v:%v. Hosted production gives no console a public route but Grafana's, at %s, and Infisical's, at %s, and only Plane's own Services get one here", [identity, route.match, service.name, object.get(service, "port", "no port"), grafana_host, infisical_host])
+	msg := sprintf("%s: route %q reaches %v:%v. Hosted production gives no console a public route but Grafana's, at %s, and Infisical's, at %s, and only %s get one here", [identity, route.match, service.name, object.get(service, "port", "no port"), grafana_host, infisical_host, routable_here])
 }
 
 # In Grafana's namespace a route is one of those two, and nothing else: not Grafana on another host or with /metrics, and not Prometheus
@@ -622,10 +655,68 @@ deny contains msg if {
 	msg := sprintf("%s: egress rule %v may reach namespace %s, where Traefik reaches only Infisical's server on 8080 and a solver on 8089", [identity, rule, infisical_namespace])
 }
 
+# ---- Routes, continued
+
+# Plane's own, from anywhere but an app's namespace, so a route in no route namespace at all is read as it was before the apps.
 public_backend(service) if {
+	not app_routes[this_namespace]
 	public_backends[service.name] == service.port
 	object.get(service, "kind", "Service") == "Service"
 	object.get(service, "namespace", plane_namespace) == plane_namespace
+}
+
+# An app's own, from its namespace alone. Traefik reads a Service with no namespace in the route's own, and that is this one.
+public_backend(service) if {
+	app := app_routes[this_namespace]
+	app.backends[service.name] == service.port
+	object.get(service, "kind", "Service") == "Service"
+	object.get(service, "namespace", this_namespace) == this_namespace
+}
+
+# What the message above names, for the namespace the route is in.
+routable_here := sprintf("%s's own %s", [this_namespace, concat(" and ", sort({sprintf("%v:%v", [name, port]) | some name, port in app_routes[this_namespace].backends}))]) if {
+	app_routes[this_namespace]
+} else := "Plane's own Services"
+
+# An app's route stays on its host: with no Host, or with an OR beside it, a rule also matches the other hosts, Wayline's and Grafana's
+# among them. policy/plane.rego's stays_on_host reads it, so Plane's host and the apps' are held to the same words.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	app := app_routes[this_namespace]
+	some route in input.spec.routes
+	match := object.get(route, "match", "")
+	not data.plane.stays_on_host(match, app.host)
+	msg := sprintf("%s: route %q must be limited to %s, with any other condition ANDed to it", [identity, match, data.plane.host_matcher(app.host)])
+}
+
+# The other direction: only an app's namespace may name its host, so a route anywhere else cannot take it, however it spells it.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	some namespace, app in app_routes
+	this_namespace != namespace
+	some route in input.spec.routes
+	match := object.get(route, "match", "")
+	names_host(match, app.host)
+	msg := sprintf("%s: route %q names %s, which only namespace %s may serve", [identity, match, app.host, namespace])
+}
+
+# Traefik matches a host in any case, and a HostRegexp would escape its dots, with a backslash or as a class.
+names_host(match, host) if contains(replace(replace(lower(match), `\`, ""), "[.]", "."), host)
+
+# Word for word as upload_backends writes it, after the app's Host, so a wider method or path is a change there that a person reads.
+deny contains msg if {
+	input.kind == "IngressRoute"
+	some route in input.spec.routes
+	some service in route.services
+	condition := upload_backends[this_namespace][service.name]
+	want := sprintf("%s && %s", [data.plane.host_matcher(app_routes[this_namespace].host), condition])
+	not upload_route(route, want)
+	msg := sprintf("%s: route %q reaches %s, which the internet reaches only for presigned uploads, so its rule is exactly %q and it has no middleware", [identity, object.get(route, "match", ""), service.name, want])
+}
+
+upload_route(route, want) if {
+	route.match == want
+	count(object.get(route, "middlewares", [])) == 0
 }
 
 # cert-manager makes its own Ingress for a challenge and removes it, so none belongs in Git. Traefik reads the Ingress
@@ -961,12 +1052,38 @@ deny contains msg if {
 	msg := sprintf("%s: chart %s is at %q, and a chart must be pinned to one version", [identity, source.chart, object.get(source, "targetRevision", "")])
 }
 
-# Only these exist on this cluster, and Terraform holds both.
+# Only these exist on this cluster, and Terraform holds them all: platform, plane-prod and each app's own.
 deny contains msg if {
 	input.kind == "Application"
 	project := object.get(input, ["spec", "project"], "")
 	not project in {"platform", plane_namespace}
-	msg := sprintf("%s: project %q does not exist on this cluster, so use platform or %s", [identity, project, plane_namespace])
+	not app_routes[project]
+	msg := sprintf("%s: project %q does not exist on this cluster, so use platform, %s or an app's own, %s", [identity, project, plane_namespace, concat(", ", sort(app_namespaces))])
+}
+
+# An app's project deploys only to that app's namespace, and refuses any other at sync. This says so before the merge, as
+# policy/gitops.rego does for Plane's.
+deny contains msg if {
+	input.kind == "Application"
+	project := object.get(input, ["spec", "project"], "")
+	app_routes[project]
+	namespace := object.get(input, ["spec", "destination", "namespace"], "")
+	namespace != project
+	msg := sprintf("%s: project %s deploys only to namespace %s, not %q", [identity, project, project, namespace])
+}
+
+# And an app's directory syncs under that app's project alone, whatever the Application is called. Under platform the same files could
+# make NetworkPolicies and objects of cluster scope, which the app's own project refuses.
+deny contains msg if {
+	input.kind == "Application"
+	some source in kube.app_sources(input)
+	git_source(source)
+	path := clean_path(object.get(source, "path", ""))
+	some namespace in app_namespaces
+	path == concat("/", ["gitops/clusters/plane-prod/platform", namespace])
+	project := object.get(input, ["spec", "project"], "")
+	project != namespace
+	msg := sprintf("%s: %s syncs only under project %s, not %q", [identity, path, namespace, project])
 }
 
 deny contains msg if {
@@ -997,19 +1114,44 @@ allowed_source_repo(repo) if {
 	not regex.match(`^(ssh://|git://|git@)|\.git$`, repo)
 }
 
+# plane-prod's project and each app's deploy to their own namespace alone, and touch nothing of cluster scope.
+confined_projects := {plane_namespace} | app_namespaces
+
 deny contains msg if {
 	input.kind == "AppProject"
-	input.metadata.name == plane_namespace
+	confined_projects[input.metadata.name]
 	some destination in input.spec.destinations
-	destination.namespace != plane_namespace
-	msg := sprintf("%s: this project deploys only to namespace %s, not %v", [identity, plane_namespace, destination.namespace])
+	destination.namespace != input.metadata.name
+	msg := sprintf("%s: this project deploys only to namespace %s, not %v", [identity, input.metadata.name, destination.namespace])
 }
 
 deny contains msg if {
 	input.kind == "AppProject"
-	input.metadata.name == plane_namespace
+	confined_projects[input.metadata.name]
 	input.spec.clusterResourceWhitelist
 	msg := sprintf("%s: this project must hold no clusterResourceWhitelist, because cluster scope is what it may never touch", [identity])
+}
+
+# What holds an app in: Terraform owns its quota and limits, and the platform project its NetworkPolicies. Were any of these off the
+# list, the app's own Application could rewrite its quota or its limits, or add a NetworkPolicy that opens it.
+app_project_refuses := {
+	{"group": "", "kind": "ResourceQuota"},
+	{"group": "", "kind": "LimitRange"},
+	{"group": "networking.k8s.io", "kind": "NetworkPolicy"},
+}
+
+deny contains msg if {
+	input.kind == "AppProject"
+	app_routes[input.metadata.name]
+	some refused in app_project_refuses
+	not project_refuses(refused)
+	msg := sprintf("%s: namespaceResourceBlacklist must hold %s in group %q, so the app's own Application cannot change what holds it in", [identity, refused.kind, refused.group])
+}
+
+project_refuses(refused) if {
+	some entry in object.get(input.spec, "namespaceResourceBlacklist", [])
+	object.get(entry, "group", "") == refused.group
+	entry.kind == refused.kind
 }
 
 identity := kube.label(input) if input.metadata.name
