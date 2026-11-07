@@ -387,6 +387,7 @@ YAML
 secrets() {
   section "Rendered Secrets, and who can read them"
   cluster_or_blocked "Rendered Secrets" || return 0
+  grafana_token
   if ! kc -n plane-prod get secret plane-pgdb >/dev/null 2>&1; then
     row BLOCKED "Rendered Secrets" "Plane is not deployed, so no Secret has rendered"
     return 0
@@ -403,6 +404,26 @@ secrets() {
     jq -r 'if .type == "kubernetes.io/dockerconfigjson" and ((.data[".dockerconfigjson"] | @base64d | fromjson).auths["ghcr.io"].password | length) > 0 then "ok" else "wrong" end' 2>/dev/null || true)"
   if [[ "$kind" == ok ]]; then row PASS "Secret ghcr-pull holds a credential for ghcr.io"; else row FAIL "Secret ghcr-pull holds a credential for ghcr.io" "${kind:-missing}"; fi
   identity_refusal
+}
+
+# Grafana's is the one pod on the internet, and its token is what a bug in it would hold. That token reads the ConfigMaps its sidecars need, which
+# shows the question was answered, and no Secret. The API server's RBAC, asked as that ServiceAccount.
+grafana_token() {
+  local who=system:serviceaccount:monitoring:kps-grafana verb answer allowed=""
+  answer="$(kc -n monitoring auth can-i list configmaps --as="$who" 2>/dev/null || true)"
+  case "$answer" in
+    yes) ;;
+    no*) row FAIL "Grafana's token reads ConfigMaps" "it cannot, so its sidecars have nothing to write" ;;
+    *)
+      row BLOCKED "Grafana's token reads no Secret" "the API server did not answer"
+      return 0
+      ;;
+  esac
+  for verb in get list watch; do
+    answer="$(kc -n monitoring auth can-i "$verb" secrets --as="$who" 2>/dev/null || true)"
+    [[ "$answer" != yes ]] || allowed="$allowed $verb"
+  done
+  if [[ -n "$allowed" ]]; then row FAIL "Grafana's token reads no Secret" "it may:$allowed"; else row PASS "Grafana's token reads no Secret" "and it reads ConfigMaps"; fi
 }
 
 # Only plane-prod's ServiceAccount may log in as plane-prod's identity. The right one first, so a dead route cannot pass as a refusal.
