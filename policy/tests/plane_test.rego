@@ -378,3 +378,32 @@ test_only_that_grafana_route_goes_without_the_allow_list if {
 	count(plane.deny) == 1 with input as hosted_grafana("monitoring", [object.union(hosted_grafana_page, {"services": [{"name": "kps-prometheus", "port": 9090}]})])
 	count(plane.deny) == 1 with input as hosted_grafana("monitoring", [json.remove(hosted_grafana_login, ["middlewares"])])
 }
+
+hosted_infisical_guess := {
+	"kind": "Rule",
+	"match": "Host(`infisical.bereket.dev`) && Method(`POST`) && (Path(`/api/v3/auth/login`) || Path(`/api/v2/auth/mfa/send`) || Path(`/api/v2/auth/mfa/verify`) || Path(`/api/v2/auth/mfa/verify/recovery-code`) || PathRegexp(`^/api/v2/mfa-sessions/[^/]+/verify$`) || Path(`/api/v2/password/user/password-reset`) || Path(`/api/v1/password/password-setup`) || Path(`/api/v1/password/email/password-setup`))",
+	"middlewares": [{"name": "infisical-guess-limit"}],
+	"services": [{"name": "infisical", "port": 8080}],
+}
+
+hosted_infisical_page := {
+	"kind": "Rule",
+	"match": "Host(`infisical.bereket.dev`) && PathRegexp(`^/([A-Za-z0-9._~@:$/-]|%20)*$`) && !PathRegexp(`(?i)^/(api|\\.well-known|scep|secret-scanning|signup|admin/signup|requestnewinvite|account-recovery|email-not-verified|login/(ldap|oidc|saml|provider)|cli-redirect|share-secret|shared|secret-request)`)",
+	"services": [{"name": "infisical", "port": 8080}],
+}
+
+hosted_infisical(namespace, routes) := {"kind": "IngressRoute", "metadata": {"name": "infisical", "namespace": namespace}, "spec": {"routes": routes}}
+
+test_hosted_infisical_routes_need_no_allow_list if {
+	count(plane.deny) == 0 with input as hosted_infisical("infisical", [hosted_infisical_guess, hosted_infisical_page])
+}
+
+# The exception is those routes, in that namespace, in those words: the local Infisical's route keeps its allow list.
+test_only_those_infisical_routes_go_without_the_allow_list if {
+	count(plane.deny) == 1 with input as hosted_infisical("monitoring", [hosted_infisical_page])
+	count(plane.deny) == 1 with input as hosted_infisical("infisical", [object.union(hosted_infisical_page, {"match": "Host(`infisical.bereket.dev`)"})])
+	count(plane.deny) == 1 with input as hosted_infisical("infisical", [object.union(hosted_infisical_page, {"match": "Host(`infisical.localhost`)"})])
+	count(plane.deny) == 1 with input as hosted_infisical("infisical", [object.union(hosted_infisical_page, {"services": [{"name": "infisical-postgres", "port": 5432}]})])
+	count(plane.deny) == 1 with input as hosted_infisical("infisical", [json.remove(hosted_infisical_guess, ["middlewares"])])
+	count(plane.deny) == 1 with input as hosted_infisical("infisical", [hosted_grafana_page])
+}

@@ -188,7 +188,7 @@ test_traefik_internal_service_rejected if {
 
 test_a_route_in_another_namespace_rejected if {
 	count(hosted.deny) == 1 with input as route_doc("argocd", route_spec)
-	count(hosted.deny) == 1 with input as route_doc("infisical", route_spec)
+	count(hosted.deny) == 1 with input as route_doc("cert-manager", route_spec)
 	count(hosted.deny) == 1 with input as {"kind": "IngressRoute", "metadata": {"name": "x"}, "spec": route_spec}
 }
 
@@ -196,6 +196,7 @@ test_tcp_and_udp_routes_rejected if {
 	count(hosted.deny) == 1 with input as {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "plane-prod"}, "spec": {}}
 	count(hosted.deny) == 1 with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {}}
 	count(hosted.deny) == 2 with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": "argocd"}, "spec": {}}
+	count(hosted.deny) == 1 with input as {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "infisical"}, "spec": {}}
 }
 
 # Written out here and not read from the policy, so a change there has to be made twice.
@@ -792,4 +793,198 @@ test_other_accounts_bindings_ignored if {
 	])
 	count(hosted.deny) == 0 with input as other
 	count(hosted.deny) == 0 with input as json.patch(other, [{"op": "replace", "path": "/subjects/0", "value": {"kind": "ServiceAccount", "name": "kps-grafana", "namespace": "other"}}])
+}
+
+# Infisical's four, written out here and not read from the policy, so a change there has to be made twice.
+infisical_guess_route := {
+	"kind": "Rule",
+	"match": "Host(`infisical.bereket.dev`) && Method(`POST`) && (Path(`/api/v3/auth/login`) || Path(`/api/v2/auth/mfa/send`) || Path(`/api/v2/auth/mfa/verify`) || Path(`/api/v2/auth/mfa/verify/recovery-code`) || PathRegexp(`^/api/v2/mfa-sessions/[^/]+/verify$`) || Path(`/api/v2/password/user/password-reset`) || Path(`/api/v1/password/password-setup`) || Path(`/api/v1/password/email/password-setup`))",
+	"middlewares": [{"name": "infisical-guess-limit"}],
+	"services": [{"name": "infisical", "port": 8080}],
+}
+
+infisical_session_route := {
+	"kind": "Rule",
+	"match": "Host(`infisical.bereket.dev`) && ((Method(`POST`) && (Path(`/api/v3/auth/select-organization`) || Path(`/api/v1/auth/token`) || Path(`/api/v1/auth/logout`))) || (Method(`GET`) && (Path(`/api/v2/auth/mfa/check/totp`) || Path(`/api/v2/auth/mfa/check/webauthn`))))",
+	"middlewares": [{"name": "infisical-session-limit"}],
+	"services": [{"name": "infisical", "port": 8080}],
+}
+
+infisical_api_route := {
+	"kind": "Rule",
+	"match": "Host(`infisical.bereket.dev`) && PathRegexp(`^/api/(status$|v1/auth/([a-z-]+-auth/identities|token-auth/tokens)/|v1/(access-approvals|admin|agent-vault|alerts|announcement|app-connections|approval-policies|audit-log-streams|cert-manager|dashboard|delegated-approvals|dynamic-secrets|email-domains|external-kms|gateway-pools|github-apps|github-org-sync-config|groups|honey-tokens|identities|identity-templates|insights|integration|integration-auth|kmip|kms|ldap|notifications|oauth|organization|organization-admin|organizations|pam|pit|pki|project-folder-grants|project-templates|projects|proxied-services|relays|reminders|secret-approval-requests|secret-syncs|secret-validation-rules|secrets|sso|sub-organizations|user|user-activation|user-engagement|user-project-additional-privilege|webhooks|workflow-integrations)(/|$)|v2/(folders|gateways|identities|identity-project-additional-privilege|mfa-sessions|organizations|pki|relays|secret-approvals|secret-imports|secret-rotations|secret-scanning|secret-versions|service-token|users)(/|$)|v3/(external-migration|gateways)(/|$)|v4/secrets(/|$))`) && !PathRegexp(`(?i)^/api/(v1/(admin/(bootstrap|signup)|agent-vault/(proxy|session)/|announcement/assets/|cert-manager/(acme|crl|ocsp)/|delegated-approvals/callback|github-apps/manifest/callback|honey-tokens/aws/trigger|identities/details|kmip/(server-registration|servers/(connect|login)|spec/)|ldap/login|oauth/(authorize|token|validate)|organization/agent-proxy-ca|pam/accounts/[^/]+/web-access($|/)|pam/sessions/[^/]+/(chunks(/presigned-put)?|credentials|end)($|/)|pki/ca/[^/]+/certificates/[^/]+/der|proxied-services/[^/]+/report-usage|relays/(heartbeat|register)|sso/(github|gitlab|google|oidc/(callback|login)|redirect|saml2|token-exchange)|user/[^/]+/unlock|workflow-integrations/(microsoft-teams/message-endpoint|slack/oauth_redirect))|v2/(gateways/(heartbeat|metrics|pam-session-key)|mfa-sessions/[^/]+/verify|relays/(connect|heartbeat|login))|v3/gateways/(connect|login|token-auth/enroll))`) && !(Method(`POST`) && PathRegexp(`(?i)^/api/v2/gateways/?$`)) && !((Method(`GET`) || Method(`HEAD`)) && PathRegexp(`(?i)^/api/v2/service-token/?$`)) && !HeaderRegexp(`Authorization`, `[^ -~]|^.{7}st\\.|\\.eyJpZGVudGl0eUlkIjo`) && !HeaderRegexp(`X-Api-Key`, `.*`)",
+	"services": [{"name": "infisical", "port": 8080}],
+}
+
+infisical_page_route := {
+	"kind": "Rule",
+	"match": "Host(`infisical.bereket.dev`) && PathRegexp(`^/([A-Za-z0-9._~@:$/-]|%20)*$`) && !PathRegexp(`(?i)^/(api|\\.well-known|scep|secret-scanning|signup|admin/signup|requestnewinvite|account-recovery|email-not-verified|login/(ldap|oidc|saml|provider)|cli-redirect|share-secret|shared|secret-request)`)",
+	"services": [{"name": "infisical", "port": 8080}],
+}
+
+infisical_routes := [infisical_guess_route, infisical_session_route, infisical_api_route, infisical_page_route]
+
+infisical_spec := {
+	"entryPoints": ["websecure"],
+	"routes": infisical_routes,
+	"tls": {"secretName": "infisical-tls"},
+}
+
+infisical_route := object.union(route_doc("infisical", infisical_spec), {"metadata": {"name": "infisical"}})
+
+infisical_with_routes(routes) := route_doc("infisical", object.union(infisical_spec, {"routes": routes}))
+
+# The API route with one word changed, and the rule that names each change.
+infisical_api_with(old, new) := infisical_with_routes([
+	infisical_guess_route,
+	infisical_session_route,
+	object.union(infisical_api_route, {"match": replace(infisical_api_route.match, old, new)}),
+	infisical_page_route,
+])
+
+not_infisicals := "is not one of Infisical's four"
+
+test_infisical_route_accepted if {
+	count(hosted.deny) == 0 with input as infisical_route
+}
+
+test_infisical_routes_in_any_order_accepted if {
+	count(hosted.deny) == 0 with input as infisical_with_routes([infisical_page_route, infisical_api_route, infisical_session_route, infisical_guess_route])
+}
+
+test_infisical_route_missing_any_one_rejected if {
+	every route in infisical_routes {
+		says(infisical_with_routes([r | some r in infisical_routes; r != route]), "has no route")
+	}
+}
+
+test_infisical_on_any_other_host_rejected if {
+	every host in ["vault.bereket.dev", "infisical.wayline.bereket.dev", "infisical.localhost", "grafana.bereket.dev"] {
+		says(infisical_api_with("Host(`infisical.bereket.dev`)", sprintf("Host(`%s`)", [host])), not_infisicals)
+	}
+	says(infisical_api_with("Host(`infisical.bereket.dev`)", "HostRegexp(`^infisical[.]bereket[.]dev$`)"), not_infisicals)
+	says(infisical_api_with("Host(`infisical.bereket.dev`) && ", ""), not_infisicals)
+}
+
+test_infisical_on_the_web_entry_point_rejected if {
+	count(hosted.deny) == 1 with input as route_doc("infisical", object.union(infisical_spec, {"entryPoints": ["web"]}))
+	count(hosted.deny) == 1 with input as route_doc("infisical", object.union(infisical_spec, {"entryPoints": ["web", "websecure"]}))
+	count(hosted.deny) == 1 with input as route_doc("infisical", json.remove(infisical_spec, ["entryPoints"]))
+}
+
+test_infisical_without_its_own_certificate_rejected if {
+	says(route_doc("infisical", json.remove(infisical_spec, ["tls"])), "tls is {} and must name only secretName infisical-tls")
+	says(route_doc("infisical", object.union(infisical_spec, {"tls": {"secretName": "grafana-tls"}})), "must name only secretName infisical-tls")
+	says(route_doc("infisical", object.union(infisical_spec, {"tls": {"certResolver": "letsencrypt"}})), "must name only secretName infisical-tls")
+}
+
+# Its own Postgres and Redis sit in the same namespace, and only the server is ever a backend.
+test_another_backend_under_the_infisical_host_rejected if {
+	every service in [
+		{"name": "infisical-postgres", "port": 5432},
+		{"name": "infisical-redis", "port": 6379},
+		{"name": "infisical", "port": 8081},
+		{"name": "infisical", "namespace": "plane-prod", "port": 8080},
+		{"name": "api@internal", "kind": "TraefikService"},
+	] {
+		says(infisical_with_routes([infisical_guess_route, infisical_session_route, object.union(infisical_api_route, {"services": [service]}), infisical_page_route]), not_infisicals)
+	}
+}
+
+# A family more, a family that is a prefix of another, or a refusal less, is a public login that nobody read.
+test_infisical_api_widened_rejected if {
+	says(infisical_api_with("|webhooks|", "|webhooks|scim|"), not_infisicals)
+	says(infisical_api_with("|webhooks|", "|webhooks|invite-org|"), not_infisicals)
+	says(infisical_api_with("v4/secrets(/|$)", "v4/secrets(/|$)|v3/secrets(/|$)"), not_infisicals)
+	says(infisical_api_with("|user|", "|user.*|"), not_infisicals)
+	says(infisical_api_with("v1/auth/([a-z-]+-auth/identities|token-auth/tokens)/", "v1/auth/"), not_infisicals)
+	says(infisical_api_with("admin/(bootstrap|signup)|", ""), not_infisicals)
+	says(infisical_api_with("(?i)^/api/(v1/(admin", "^/api/(v1/(admin"), not_infisicals)
+	says(infisical_api_with("|identities/details|", "|"), not_infisicals)
+	says(infisical_api_with("|organization/agent-proxy-ca|", "|"), not_infisicals)
+	says(infisical_api_with(" && !(Method(`POST`) && PathRegexp(`(?i)^/api/v2/gateways/?$`))", ""), not_infisicals)
+	says(infisical_api_with(" && !((Method(`GET`) || Method(`HEAD`)) && PathRegexp(`(?i)^/api/v2/service-token/?$`))", ""), not_infisicals)
+	says(infisical_api_with("(Method(`GET`) || Method(`HEAD`))", "Method(`GET`)"), not_infisicals)
+}
+
+# A machine's credential on a browser's call is refused by the header, whatever path it takes, and each part of that has to stay.
+test_infisical_api_taking_a_machine_credential_rejected if {
+	says(infisical_api_with(" && !HeaderRegexp(`Authorization`, `[^ -~]|^.{7}st\\.|\\.eyJpZGVudGl0eUlkIjo`)", ""), not_infisicals)
+	says(infisical_api_with(" && !HeaderRegexp(`X-Api-Key`, `.*`)", ""), not_infisicals)
+	says(infisical_api_with("`[^ -~]|^.{7}st\\.|", "`^.{7}st\\.|"), not_infisicals)
+	says(infisical_api_with("|^.{7}st\\.|", "|"), not_infisicals)
+	says(infisical_api_with("|\\.eyJpZGVudGl0eUlkIjo`", "`"), not_infisicals)
+	says(infisical_api_with("\\.eyJpZGVudGl0eUlkIjo", "^Bearer [^.]+\\.eyJpZGVudGl0eUlkIjo"), not_infisicals)
+	says(infisical_api_with("!HeaderRegexp(`Authorization`", "!HeaderRegexp(`X-Authorization`"), not_infisicals)
+}
+
+test_infisical_pages_widened_rejected if {
+	says(infisical_with_routes([infisical_guess_route, infisical_session_route, infisical_api_route, object.union(infisical_page_route, {"match": replace(infisical_page_route.match, "|signup|", "|")})]), not_infisicals)
+	says(infisical_with_routes([infisical_guess_route, infisical_session_route, infisical_api_route, object.union(infisical_page_route, {"match": replace(infisical_page_route.match, "(?i)^/(api|", "(?i)^/(")})]), not_infisicals)
+	says(infisical_with_routes([infisical_guess_route, infisical_session_route, infisical_api_route, object.union(infisical_page_route, {"match": "Host(`infisical.bereket.dev`)"})]), not_infisicals)
+}
+
+test_infisical_login_without_its_limit_rejected if {
+	says(infisical_with_routes([json.remove(infisical_guess_route, ["middlewares"]), infisical_session_route, infisical_api_route, infisical_page_route]), not_infisicals)
+	says(infisical_with_routes([object.union(infisical_guess_route, {"middlewares": [{"name": "infisical-session-limit"}]}), infisical_session_route, infisical_api_route, infisical_page_route]), not_infisicals)
+	says(infisical_with_routes([infisical_guess_route, json.remove(infisical_session_route, ["middlewares"]), infisical_api_route, infisical_page_route]), not_infisicals)
+}
+
+test_a_middleware_on_an_infisical_route_without_one_rejected if {
+	says(infisical_with_routes([infisical_guess_route, infisical_session_route, object.union(infisical_api_route, {"middlewares": [{"name": "rewrite"}]}), infisical_page_route]), not_infisicals)
+}
+
+test_prometheus_on_a_path_of_the_infisical_host_rejected if {
+	extra := page_rule("Host(`infisical.bereket.dev`) && PathPrefix(`/prometheus`)", {"name": "kps-prometheus", "namespace": "monitoring", "port": 9090})
+	says(infisical_with_routes(array.concat(infisical_routes, [extra])), not_infisicals)
+}
+
+test_infisical_route_in_another_namespace_rejected if {
+	says(route_doc("plane-prod", infisical_spec), "gives no console a public route but Grafana's")
+	says(route_doc("monitoring", infisical_spec), not_grafanas)
+	says(route_doc("argocd", infisical_spec), "a route may sit only in namespace")
+}
+
+test_grafana_route_in_the_infisical_namespace_rejected if {
+	says(route_doc("infisical", grafana_spec), not_infisicals)
+	says(route_doc("infisical", route_spec), not_infisicals)
+	says(route_doc("infisical", route_spec), "must name only secretName infisical-tls")
+}
+
+infisical_limit(name, average, criterion) := middleware("infisical", name, {"rateLimit": {"average": average, "period": "1m", "burst": average, "sourceCriterion": criterion}})
+
+test_infisical_limits_accepted if {
+	count(hosted.deny) == 0 with input as infisical_limit("infisical-guess-limit", 10, {"ipStrategy": {"depth": 0}})
+	count(hosted.deny) == 0 with input as infisical_limit("infisical-session-limit", 30, {"ipStrategy": {"depth": 0}})
+}
+
+test_an_infisical_limit_on_anything_but_the_connection_rejected if {
+	every criterion in [{"ipStrategy": {"depth": 1}}, {"ipStrategy": {"excludedIPs": ["0.0.0.0/0"]}}, {"requestHeaderName": "X-Forwarded-For"}, {"requestHost": true}] {
+		count(hosted.deny) == 1 with input as infisical_limit("infisical-guess-limit", 10, criterion)
+		count(hosted.deny) == 1 with input as infisical_limit("infisical-session-limit", 30, criterion)
+	}
+}
+
+test_a_looser_infisical_limit_rejected if {
+	count(hosted.deny) == 1 with input as infisical_limit("infisical-guess-limit", 30, {"ipStrategy": {"depth": 0}})
+	count(hosted.deny) == 1 with input as infisical_limit("infisical-session-limit", 300, {"ipStrategy": {"depth": 0}})
+	count(hosted.deny) == 1 with input as middleware("infisical", "infisical-guess-limit", {"stripPrefix": {"prefixes": ["/x"]}})
+}
+
+test_another_middleware_beside_infisical_rejected if {
+	count(hosted.deny) == 1 with input as middleware("infisical", "rewrite", {"replacePath": {"path": "/api/v1/auth/universal-auth/login"}})
+	count(hosted.deny) == 1 with input as middleware("infisical", "grafana-login-limit", {"rateLimit": {"average": 5, "period": "1m", "burst": 5, "sourceCriterion": {"ipStrategy": {"depth": 0}}}})
+}
+
+infisical_image := "docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c"
+
+test_infisical_at_the_version_its_route_was_read_from_accepted if {
+	count(hosted.deny) == 0 with input as deployment("infisical", "infisical", infisical_image, {})
+}
+
+# Another version may bring a login or a sign-up its lists do not name, so the route is read again first.
+test_infisical_at_another_version_rejected if {
+	says(deployment("infisical", "infisical", "docker.io/infisical/infisical:v0.168.0@sha256:0000000000000000000000000000000000000000000000000000000000000000", {}), "was read from v0.167.6")
+	says(deployment("infisical", "infisical", "docker.io/infisical/infisical:latest", {}), "was read from v0.167.6")
+	says(deployment("infisical", "infisical", "docker.io/infisical/infisical:v0.167.6", {}), "was read from v0.167.6")
 }
