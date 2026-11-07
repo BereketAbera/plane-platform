@@ -64,15 +64,60 @@ target_read(domain) := {"path": "infrastructure/hosted/plane-prod/target.yaml", 
 
 with_target(objects) := array.concat(as_read(objects), [target_read("infisical.bereket.dev")])
 
-infisical_everything := [
-	the_route,
-	infisical("Middleware", "infisical-guess-limit"),
-	infisical("Middleware", "infisical-session-limit"),
-	infisical("Probe", "infisical"),
-	infisical("Probe", "infisical-claimed"),
-	infisical("Probe", "infisical-sign-in"),
-	infisical("Probe", "infisical-session"),
-]
+# The blackbox exporter the Probes ask, as kustomize builds monitoring-extras: the generator's ConfigMap under its hashed name, and the
+# Deployment's volume renamed to match. The modules are written out here and not read from the policy.
+claimed_cel := "body.config.initialized == true && body.config.allowSignUp == false"
+
+blackbox_modules := {
+	"http_2xx": {"prober": "http"},
+	"http_infisical_login": {"prober": "http", "timeout": "5s", "http": {"preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [200], "fail_if_body_not_matches_regexp": [`<title id="initial-document-title">Infisical</title>`]}},
+	"http_infisical_claimed": {"prober": "http", "timeout": "5s", "http": {"preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [200], "fail_if_body_json_not_matches_cel": claimed_cel}},
+	"http_infisical_no_bearer": {"prober": "http", "timeout": "5s", "http": {"preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [401], "fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`]}},
+	"http_infisical_no_bearer_post": {"prober": "http", "timeout": "5s", "http": {"method": "POST", "preferred_ip_protocol": "ip4", "fail_if_not_ssl": true, "valid_status_codes": [401], "fail_if_body_not_matches_regexp": [`"error":\s*"Missing bearer token"`]}},
+}
+
+loosened_modules := json.patch(blackbox_modules, [{"op": "replace", "path": "/http_infisical_claimed/http/fail_if_body_json_not_matches_cel", "value": "has(body.config)"}])
+
+blackbox_file(modules) := yaml.marshal({"modules": modules})
+
+blackbox_service := {"apiVersion": "v1", "kind": "Service", "metadata": {"name": "blackbox", "namespace": "monitoring"}, "spec": {"selector": {"app.kubernetes.io/name": "blackbox-exporter"}, "ports": [{"name": "http", "port": 9115, "targetPort": "http"}]}}
+
+blackbox_container := {
+	"name": "blackbox",
+	"image": "quay.io/prometheus/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13",
+	"args": ["--config.file=/config/blackbox.yml"],
+	"volumeMounts": [{"name": "config", "mountPath": "/config", "readOnly": true}],
+}
+
+blackbox_deployment(name, container, volume) := {
+	"apiVersion": "apps/v1",
+	"kind": "Deployment",
+	"metadata": {"name": name, "namespace": "monitoring"},
+	"spec": {"template": {"metadata": {"labels": {"app.kubernetes.io/name": "blackbox-exporter"}}, "spec": {"containers": [container], "volumes": [volume]}}},
+}
+
+config_volume(configmap) := {"name": "config", "configMap": {"name": configmap}}
+
+the_blackbox := blackbox_deployment("blackbox", blackbox_container, config_volume("blackbox-config-4mt2645788"))
+
+blackbox_config(name, files) := {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": name, "namespace": "monitoring"}, "data": files}
+
+the_blackbox_config := blackbox_config("blackbox-config-4mt2645788", {"blackbox.yml": blackbox_file(blackbox_modules)})
+
+blackbox_everything := [blackbox_service, the_blackbox, the_blackbox_config]
+
+infisical_everything := array.concat(
+	[
+		the_route,
+		infisical("Middleware", "infisical-guess-limit"),
+		infisical("Middleware", "infisical-session-limit"),
+		infisical("Probe", "infisical"),
+		infisical("Probe", "infisical-claimed"),
+		infisical("Probe", "infisical-sign-in"),
+		infisical("Probe", "infisical-session"),
+	],
+	blackbox_everything,
+)
 
 # The IngressRoute and a Probe share the name infisical, so this names the kind too.
 infisical_without(kind, name) := [object | some object in infisical_everything; object != infisical(kind, name)]
@@ -143,4 +188,76 @@ test_a_target_unlike_the_policy_rejected if {
 	count(denied) == 1
 	some msg in denied
 	contains(msg, "puts Infisical at vault.bereket.dev, where Terraform points its A record, and policy/hosted.rego allows its routes only at infisical.bereket.dev")
+}
+
+# Everything Infisical's route needs, with the blackbox exporter's three objects as given.
+with_blackbox(objects) := with_target(array.concat([o | some o in infisical_everything; not o in blackbox_everything], objects))
+
+says_once(read, text) if {
+	denied := hosted_combined.deny with input as read
+	count(denied) == 1
+	some msg in denied
+	contains(msg, text)
+}
+
+loosened := "where blackbox module http_infisical_claimed is"
+
+# The generator renamed, and the Deployment's volume with it, or a second file in the same ConfigMap with the flag pointed at it: either way
+# the claim module that pods read is the loosened one, and policy/hosted.rego's rule on blackbox-config sees none of it.
+test_a_claim_module_loosened_where_blackbox_reads_it_rejected if {
+	says_once(with_blackbox([blackbox_service, blackbox_deployment("blackbox", blackbox_container, config_volume("bb-config-7c8f5b9t4k")), blackbox_config("bb-config-7c8f5b9t4k", {"blackbox.yml": blackbox_file(loosened_modules)})]), loosened)
+	second_file := object.union(blackbox_container, {"args": ["--config.file=/config/probes.yml"]})
+	says_once(with_blackbox([blackbox_service, blackbox_deployment("blackbox", second_file, config_volume("blackbox-config-4mt2645788")), blackbox_config("blackbox-config-4mt2645788", {"blackbox.yml": blackbox_file(blackbox_modules), "probes.yml": blackbox_file(loosened_modules)})]), loosened)
+	says_once(with_blackbox([blackbox_service, the_blackbox, blackbox_config("blackbox-config-4mt2645788", {"blackbox.yml": blackbox_file(json.remove(blackbox_modules, ["http_infisical_no_bearer_post"]))})]), "where blackbox module http_infisical_no_bearer_post is missing")
+}
+
+# Each pod the Service selects, so a second Deployment behind it, reading its own file, is read too.
+test_a_second_blackbox_behind_the_service_read_too if {
+	other := blackbox_deployment("blackbox-two", blackbox_container, config_volume("bb-other"))
+	says_once(with_blackbox(array.concat(blackbox_everything, [other, blackbox_config("bb-other", {"blackbox.yml": blackbox_file(loosened_modules)})])), "Deployment monitoring/blackbox-two: container \"blackbox\" reads /config/blackbox.yml from ConfigMap monitoring/bb-other, where blackbox module http_infisical_claimed is")
+	elsewhere := json.patch(other, [{"op": "replace", "path": "/spec/template/metadata/labels", "value": {"app.kubernetes.io/name": "other"}}])
+	count(hosted_combined.deny) == 0 with input as with_blackbox(array.concat(blackbox_everything, [elsewhere]))
+}
+
+# Items may map the key to another file name, and that is still the file read.
+test_blackbox_config_through_items_accepted if {
+	renamed_file := object.union(blackbox_container, {"args": ["--config.file=/config/modules.yml"]})
+	volume := {"name": "config", "configMap": {"name": "blackbox-config-4mt2645788", "items": [{"key": "blackbox.yml", "path": "modules.yml"}]}}
+	count(hosted_combined.deny) == 0 with input as with_blackbox([blackbox_service, blackbox_deployment("blackbox", renamed_file, volume), the_blackbox_config])
+}
+
+# A file nothing here can name: another entrypoint, the flag twice or in two arguments, a file the mount does not hold, or another image.
+test_a_blackbox_whose_file_cannot_be_named_rejected if {
+	every container in [
+		object.union(blackbox_container, {"command": ["/bin/sh", "-c", "exec /bin/blackbox_exporter --config.file=/tmp/x.yml"]}),
+		object.union(blackbox_container, {"args": ["--config.file=/config/blackbox.yml", "--config.file=/config/probes.yml"]}),
+		object.union(blackbox_container, {"args": ["--config.file", "/config/blackbox.yml"]}),
+		object.union(blackbox_container, {"args": []}),
+		object.union(blackbox_container, {"args": ["--config.file=/etc/blackbox_exporter/config.yml"]}),
+		object.union(blackbox_container, {"volumeMounts": [{"name": "config", "mountPath": "/config/blackbox.yml", "subPath": "blackbox.yml"}]}),
+		object.union(blackbox_container, {"image": "docker.io/library/nginx:1.29@sha256:0000000000000000000000000000000000000000000000000000000000000000"}),
+	] {
+		says_once(with_blackbox([blackbox_service, blackbox_deployment("blackbox", container, config_volume("blackbox-config-4mt2645788")), the_blackbox_config]), "nothing here can say which file it reads them from")
+	}
+}
+
+test_a_blackbox_config_that_is_not_here_rejected if {
+	says_once(with_blackbox([blackbox_service, the_blackbox]), "which is key blackbox.yml of ConfigMap monitoring/blackbox-config-4mt2645788, and no one ConfigMap here by that name holds that key")
+	says_once(with_blackbox([blackbox_service, the_blackbox, blackbox_config("blackbox-config-4mt2645788", {"other.yml": blackbox_file(blackbox_modules)})]), "no one ConfigMap here by that name holds that key")
+	says_once(with_blackbox([blackbox_service, the_blackbox, blackbox_config("blackbox-config-4mt2645788", {"blackbox.yml": "modules"})]), "that is no blackbox configuration")
+	says_once(with_blackbox([blackbox_service, the_blackbox, blackbox_config("blackbox-config-4mt2645788", {"blackbox.yml": "modules: [unclosed"})]), "that is no blackbox configuration")
+}
+
+test_a_blackbox_service_that_reaches_no_pod_here_rejected if {
+	says_once(with_blackbox([the_blackbox, the_blackbox_config]), "Service monitoring/blackbox is not here")
+	says_once(with_blackbox([json.remove(blackbox_service, ["spec/selector"]), the_blackbox, the_blackbox_config]), "selects no pods by label")
+	says_once(with_blackbox([object.union(blackbox_service, {"spec": {"type": "ExternalName", "externalName": "blackbox.example.com"}}), the_blackbox, the_blackbox_config]), "selects no pods by label")
+	says_once(with_blackbox([object.union(blackbox_service, {"spec": {"selector": {"app.kubernetes.io/name": "other"}}}), the_blackbox, the_blackbox_config]), "and nothing here runs one")
+	says_once(with_blackbox([blackbox_service, json.patch(the_blackbox, [{"op": "replace", "path": "/metadata/namespace", "value": "infisical"}]), the_blackbox_config]), "and nothing here runs one")
+}
+
+# With none of Infisical's Probes here, nothing reads those modules.
+test_blackbox_without_infisicals_probes_ignored if {
+	count(hosted_combined.deny) == 0 with input as with_target([blackbox_service])
+	count(hosted_combined.deny) == 0 with input as with_target([blackbox_service, blackbox_deployment("blackbox", blackbox_container, config_volume("bb")), blackbox_config("bb", {"blackbox.yml": blackbox_file(loosened_modules)})])
 }

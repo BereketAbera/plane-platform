@@ -5,6 +5,7 @@
 package hosted_combined
 
 import data.hosted
+import data.lib.kube
 import rego.v1
 
 documents := [doc.contents | some doc in input] if {
@@ -117,4 +118,168 @@ deny contains msg if {
 infisical_present(need) if {
 	some doc in documents
 	infisical_object(doc, need.kind, need.name)
+}
+
+# Each of Infisical's Probes asks the prober policy/hosted.rego names for a module, and what a module means is what the pods behind that
+# Service read: the file their --config.file names, in the ConfigMap mounted at its directory. policy/hosted.rego holds a ConfigMap by its
+# name, so with kustomize's generator renamed, or the flag pointed at a second file, a claim module loosened to read no body passed, and it
+# would leave all three claim alerts quiet. So this follows that Service to every pod it selects, and wants each module those Probes use in
+# the file that pod reads, as policy/hosted.rego writes it.
+prober_host := split(hosted.infisical_prober.url, ":")[0]
+
+blackbox := {"name": split(prober_host, ".")[0], "namespace": split(prober_host, ".")[1]}
+
+infisical_watched if {
+	some doc in documents
+	doc.kind == "Probe"
+	object.get(doc.metadata, "namespace", "") == "infisical"
+}
+
+blackbox_services := [doc |
+	some doc in documents
+	doc.kind == "Service"
+	doc.metadata.name == blackbox.name
+	object.get(doc.metadata, "namespace", "") == blackbox.namespace
+]
+
+deny contains msg if {
+	infisical_watched
+	count(blackbox_services) == 0
+	msg := sprintf("Infisical's Probes ask %s for their modules, and Service %s/%s is not here, so nothing here says what they read", [hosted.infisical_prober.url, blackbox.namespace, blackbox.name])
+}
+
+# With no selector, or as an ExternalName, a Service sends its traffic where something other than its pods says, and nothing here reads that.
+selects_pods(service) if {
+	selector := object.get(service, ["spec", "selector"], {})
+	is_object(selector)
+	count(selector) > 0
+	object.get(service, ["spec", "type"], "ClusterIP") != "ExternalName"
+}
+
+deny contains msg if {
+	infisical_watched
+	some service in blackbox_services
+	not selects_pods(service)
+	msg := sprintf("Service %s/%s, which Infisical's Probes ask for their modules, selects no pods by label, so nothing here says where they go. Give it a selector", [blackbox.namespace, blackbox.name])
+}
+
+pod_labels(doc) := object.get(doc, ["spec", "template", "metadata", "labels"], {}) if kube.template_kinds[doc.kind]
+
+pod_labels(doc) := object.get(doc, ["spec", "jobTemplate", "spec", "template", "metadata", "labels"], {}) if doc.kind == "CronJob"
+
+pod_labels(doc) := object.get(doc, ["metadata", "labels"], {}) if doc.kind == "Pod"
+
+blackbox_pods contains doc if {
+	some service in blackbox_services
+	selects_pods(service)
+	some doc in documents
+	kube.is_workload(doc)
+	object.get(doc.metadata, "namespace", "") == blackbox.namespace
+	labels := pod_labels(doc)
+	every key, value in service.spec.selector {
+		labels[key] == value
+	}
+}
+
+deny contains msg if {
+	infisical_watched
+	some service in blackbox_services
+	selects_pods(service)
+	count(blackbox_pods) == 0
+	msg := sprintf("Service %s/%s selects pods labelled %v, and nothing here runs one, so nothing here says what Infisical's Probes read", [blackbox.namespace, blackbox.name, service.spec.selector])
+}
+
+# blackbox_exporter reads its modules from the one file this flag names, so a container must run the exporter's own image and entrypoint, with
+# the flag once and in one argument, for anything here to say which file that is.
+config_flag := "--config.file="
+
+config_file(c) := substring(flags[0], count(config_flag), -1) if {
+	endswith(hosted.image_repository(c.image), "prometheus/blackbox-exporter")
+	not c.command
+	flags := [arg | some arg in object.get(c, "args", []); contains(arg, "config.file")]
+	count(flags) == 1
+	startswith(flags[0], config_flag)
+}
+
+# The ConfigMap and key that file comes from: a configMap volume mounted at the file's directory, whole or with items that name the file. A
+# set, so two that could each be it read as neither.
+config_sources(doc, c) := {source |
+	file := config_file(c)
+	some mount in object.get(c, "volumeMounts", [])
+	not mount.subPath
+	not mount.subPathExpr
+	directory := trim_suffix(mount.mountPath, "/")
+	startswith(file, concat("", [directory, "/"]))
+	name := substring(file, count(directory) + 1, -1)
+	not contains(name, "/")
+	some volume in object.get(kube.pod_spec(doc), "volumes", [])
+	volume.name == mount.name
+	some key in configmap_keys(volume.configMap, name)
+	source := {"file": file, "configmap": volume.configMap.name, "key": key}
+}
+
+configmap_keys(configmap, name) := {name} if not configmap.items
+
+configmap_keys(configmap, name) := {item.key | some item in configmap.items; item.path == name} if configmap.items
+
+configmap_text(source) := texts[0] if {
+	texts := [text |
+		some doc in documents
+		doc.kind == "ConfigMap"
+		doc.metadata.name == source.configmap
+		object.get(doc.metadata, "namespace", "") == blackbox.namespace
+		text := object.get(doc, ["data", source.key], null)
+		is_string(text)
+	]
+	count(texts) == 1
+}
+
+config_modules(text) := modules if {
+	yaml.is_valid(text)
+	config := yaml.unmarshal(text)
+	is_object(config)
+	modules := object.get(config, "modules", {})
+	is_object(modules)
+}
+
+# Every container of those pods, because the port the Service sends to could be any of theirs.
+blackbox_containers contains [doc, c] if {
+	infisical_watched
+	some doc in blackbox_pods
+	some c in object.get(kube.pod_spec(doc), "containers", [])
+}
+
+# The one source a container reads, where there is exactly one.
+blackbox_reads contains [doc, c, source] if {
+	some [doc, c] in blackbox_containers
+	sources := config_sources(doc, c)
+	count(sources) == 1
+	some source in sources
+}
+
+deny contains msg if {
+	some [doc, c] in blackbox_containers
+	count(config_sources(doc, c)) != 1
+	msg := sprintf("%s: container %q is behind Service %s/%s, which Infisical's Probes ask for their modules, and nothing here can say which file it reads them from. Run the blackbox exporter's own image and entrypoint with one --config.file=<file>, and mount the ConfigMap that holds it at its directory", [kube.label(doc), object.get(c, "name", ""), blackbox.namespace, blackbox.name])
+}
+
+deny contains msg if {
+	some [doc, c, source] in blackbox_reads
+	not configmap_text(source)
+	msg := sprintf("%s: container %q reads %s, which is key %s of ConfigMap %s/%s, and no one ConfigMap here by that name holds that key", [kube.label(doc), object.get(c, "name", ""), source.file, source.key, blackbox.namespace, source.configmap])
+}
+
+deny contains msg if {
+	some [doc, c, source] in blackbox_reads
+	text := configmap_text(source)
+	not config_modules(text)
+	msg := sprintf("%s: container %q reads %s from ConfigMap %s/%s, and that is no blackbox configuration, a map of modules, so nothing here can say what Infisical's Probes read", [kube.label(doc), object.get(c, "name", ""), source.file, blackbox.namespace, source.configmap])
+}
+
+deny contains msg if {
+	some [doc, c, source] in blackbox_reads
+	modules := config_modules(configmap_text(source))
+	some name, want in hosted.infisical_blackbox_modules
+	object.get(modules, name, "missing") != want
+	msg := sprintf("%s: container %q reads %s from ConfigMap %s/%s, where blackbox module %s is %v, and must be exactly %v, because Infisical's alerts read what it reports", [kube.label(doc), object.get(c, "name", ""), source.file, blackbox.namespace, source.configmap, name, object.get(modules, name, "missing"), want])
 }
