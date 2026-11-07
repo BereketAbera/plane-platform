@@ -59,18 +59,35 @@ spec:
           labels: { severity: critical, component: certificate }
           annotations:
             summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} has not been Ready for 30m
-        # What a browser gets, not what cert-manager thinks it issued. A Secret Traefik failed to reload shows only here.
+        # What a browser gets, not what cert-manager thinks it issued. A Secret Traefik failed to reload shows only here. By namespace,
+        # where each Probe lives: plane-prod's are Wayline's, and monitoring's is Grafana's. So a new app's Probe is covered by being there.
         - alert: ServedCertificateExpiringSoon
           expr: min by (namespace) (probe_ssl_earliest_cert_expiry) - time() < 14 * 86400
           labels: { severity: critical, component: certificate }
           annotations:
             summary: The certificate served for {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}
         - alert: CertificateNotWatched
-          expr: absent(certmanager_certificate_ready_status{name="wayline-tls"})
+          expr: absent(certmanager_certificate_ready_status{name="wayline-tls"}) or absent(certmanager_certificate_ready_status{name="grafana-tls"})
           for: 30m
           labels: { severity: warning, component: certificate }
           annotations:
-            summary: cert-manager reports nothing for wayline-tls, so the certificate alerts cannot fire
+            summary: cert-manager reports nothing for {{ $labels.name }}, so the certificate alerts cannot fire
+    # The one console on the internet. It is not what users need, so a warning, with time for a certificate's first order and a restart.
+    - name: hosted.grafana
+      interval: 30s
+      rules:
+        - alert: GrafanaRouteDown
+          expr: probe_success{probe="grafana"} == 0
+          for: 5m
+          labels: { severity: warning, component: grafana }
+          annotations:
+            summary: https://grafana.bereket.dev has failed its probe for 5m. The console is still reachable with make remote-ui
+        - alert: GrafanaRouteNotWatched
+          expr: absent(probe_success{probe="grafana"})
+          for: 15m
+          labels: { severity: warning, component: grafana }
+          annotations:
+            summary: The probe of https://grafana.bereket.dev is not running, so GrafanaRouteDown cannot fire
     # The metric appears only after a first success, so absent also covers a CronJob that has never worked, and for: gives the first
     # nightly run time to happen. PlaneBackupFailed sees only a Job that ran and failed, and misses one that never runs.
     - name: hosted.backups
