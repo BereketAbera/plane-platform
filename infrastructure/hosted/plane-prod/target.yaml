@@ -7,6 +7,12 @@ domain: wayline.bereket.dev
 # The two consoles with a public route. Terraform owns each A record, and policy/hosted.rego allows each its host and no other.
 grafana_domain: grafana.bereket.dev
 infisical_domain: infisical.bereket.dev
+# The three apps beside Wayline, each in a namespace of its own. Terraform owns each A record, and policy/hosted.rego routes each host
+# to its own app's namespace and no other.
+frameflow_domain: frameflow.bereket.dev
+rillmark_domain: rillmark.bereket.dev
+# Awushi Cloudgarden's, in namespace awushi-cloudgarden.
+cloudgarden_domain: devops.bereket.dev
 vercel_team_id: team_1eGtu9WXhYyDSABiAGY9XMff
 vercel_record_id: rec_7bb71d1e8b1ea3f06e3bb895
 ssh_user: wayline-admin

@@ -74,3 +74,64 @@ resource "vercel_dns_record" "grafana" {
     }
   }
 }
+
+# The three apps' hosts, made here for the same reason as grafana's. Each goes live before its app's Certificate reaches the cluster: an
+# order that meets the wildcard fails, and its next try is an hour or more away (scripts/hosted/README.md, section The first certificate).
+# A records only, like the others here: the cluster is IPv4 single-stack.
+resource "vercel_dns_record" "frameflow" {
+  team_id = local.target.vercel_team_id
+  domain  = "bereket.dev"
+  name    = trimsuffix(local.target.frameflow_domain, ".bereket.dev")
+  type    = "A"
+  ttl     = 60
+  value   = local.target.host
+
+  lifecycle {
+    prevent_destroy = true
+
+    # The same public mistake as above, and the same file to fix.
+    precondition {
+      condition     = data.contabo_instance.vps.ip_config[0].v4[0].ip == local.target.host
+      error_message = "Contabo says this instance's address is ${data.contabo_instance.vps.ip_config[0].v4[0].ip}, and infrastructure/hosted/plane-prod/target.yaml says ${local.target.host}. Fix target.yaml first, because the firewall, policies and scripts all read it."
+    }
+  }
+}
+
+resource "vercel_dns_record" "rillmark" {
+  team_id = local.target.vercel_team_id
+  domain  = "bereket.dev"
+  name    = trimsuffix(local.target.rillmark_domain, ".bereket.dev")
+  type    = "A"
+  ttl     = 60
+  value   = local.target.host
+
+  lifecycle {
+    prevent_destroy = true
+
+    # The same public mistake as above, and the same file to fix.
+    precondition {
+      condition     = data.contabo_instance.vps.ip_config[0].v4[0].ip == local.target.host
+      error_message = "Contabo says this instance's address is ${data.contabo_instance.vps.ip_config[0].v4[0].ip}, and infrastructure/hosted/plane-prod/target.yaml says ${local.target.host}. Fix target.yaml first, because the firewall, policies and scripts all read it."
+    }
+  }
+}
+
+# Awushi Cloudgarden's. Its host is devops.bereket.dev, so the record in the zone is named devops.
+resource "vercel_dns_record" "cloudgarden" {
+  team_id = local.target.vercel_team_id
+  domain  = "bereket.dev"
+  name    = trimsuffix(local.target.cloudgarden_domain, ".bereket.dev")
+  type    = "A"
+  ttl     = 60
+  value   = local.target.host
+
+  lifecycle {
+    prevent_destroy = true
+
+    # The same public mistake as above, and the same file to fix.
+    precondition {
+      condition     = data.contabo_instance.vps.ip_config[0].v4[0].ip == local.target.host
+      error_message = "Contabo says this instance's address is ${data.contabo_instance.vps.ip_config[0].v4[0].ip}, and infrastructure/hosted/plane-prod/target.yaml says ${local.target.host}. Fix target.yaml first, because the firewall, policies and scripts all read it."
+    }
+  }
+}

@@ -9,7 +9,7 @@ customized Plane Community Edition v1.4.3 deployment, not an original product.
 | `infrastructure/terraform/environments/local` | The kind cluster: dev and prod-sim | Its foundation and its Argo CD |
 | `infisical/terraform` | Each Infisical, with a state of its own per cluster | Projects, identities, Kubernetes Auth |
 | `infrastructure/terraform/environments/prod` | Hosted production, `plane-prod` | Its foundation and its Argo CD |
-| `infrastructure/terraform/environments/prod-host` | Hosted production, outside the cluster | Three DNS records on Vercel. It only reads the VPS |
+| `infrastructure/terraform/environments/prod-host` | Hosted production, outside the cluster | Six DNS records on Vercel. It only reads the VPS |
 
 The local sections are first. [Hosted production](#hosted-production) covers the two hosted roots and the hosted state.
 
@@ -27,8 +27,8 @@ statically and fails if a resource has two owners.
 |---|---|
 | **Terraform**, `infrastructure/terraform/environments/local` | Seven namespaces and their labels; a ResourceQuota and a LimitRange in each Plane namespace; the CoreDNS Corefile rewrite; the Argo CD Helm release; a second Helm release holding the AppProjects and the root Application |
 | **Terraform**, `infisical/terraform` | Infisical projects, environments, machine identities, project memberships, Kubernetes Auth config. On hosted production the same code makes project `plane-prod` and its one identity, bound to namespace `plane-prod`, in a state of its own |
-| **Terraform**, `infrastructure/terraform/environments/prod` | Hosted production's eight namespaces and their labels; a ResourceQuota `budget` in each, and a LimitRange `defaults` in each but `frameflow`, both from `infrastructure/hosted/plane-prod/capacity.yaml`; StorageClass `local-path-retain`; K3s's `coredns-custom` ConfigMap; the Argo CD Helm release; a second Helm release holding AppProjects `platform` and `plane-prod` and the root Application |
-| **Terraform**, `infrastructure/terraform/environments/prod-host` | The A records `wayline`, `grafana` and `infisical` in `bereket.dev`, on Vercel. It reads the VPS from Contabo, and owns nothing there |
+| **Terraform**, `infrastructure/terraform/environments/prod` | Hosted production's ten namespaces and their labels; a ResourceQuota `budget` in each, and a LimitRange `defaults` in each but `frameflow`, both from `infrastructure/hosted/plane-prod/capacity.yaml`; StorageClass `local-path-retain`; K3s's `coredns-custom` ConfigMap; the Argo CD Helm release; a second Helm release holding AppProjects `platform`, `plane-prod`, `frameflow`, `rillmark` and `awushi-cloudgarden` and the root Application |
+| **Terraform**, `infrastructure/terraform/environments/prod-host` | The A records `wayline`, `grafana`, `infisical`, `frameflow`, `rillmark` and `devops` in `bereket.dev`, on Vercel. It reads the VPS from Contabo, and owns nothing there |
 
 ## What Terraform does not own
 
@@ -98,9 +98,9 @@ Root `environments/prod` calls the same module with inputs of its own, and the d
 and limit ranges come from `capacity.yaml`, so they are named `budget` and `defaults`. It adds StorageClass `local-path-retain`. In
 place of the kubeadm Corefile it writes ConfigMap `kube-system/coredns-custom`, whose `*.override` keys K3s's own Corefile imports:
 K3s redeploys its `coredns` ConfigMap, so a template written over it would not stay, and K3s neither makes nor manages this one, so a
-plain resource owns it. Its rewrites send `wayline.bereket.dev`, `grafana.bereket.dev` and `infisical.bereket.dev` to
-`traefik.traefik.svc.cluster.local`, for Plane's self-dial, blackbox and cert-manager's self-check, which inside a pod must reach
-Traefik's Service and not leave through the host firewall.
+plain resource owns it. Its rewrites send `wayline.bereket.dev`, `grafana.bereket.dev`, `infisical.bereket.dev` and each app's host,
+`frameflow.bereket.dev`, `rillmark.bereket.dev` and `devops.bereket.dev`, to `traefik.traefik.svc.cluster.local`, for Plane's self-dial,
+blackbox and cert-manager's self-check, which inside a pod must reach Traefik's Service and not leave through the host firewall.
 
 **`modules/argocd`** creates:
 
@@ -260,7 +260,7 @@ DNS records. Neither can be aimed elsewhere: they take no variables, and both re
 | Credentials | The kubeconfig alone | Contabo's from `~/.cntb.yaml` and Vercel's from its CLI's login, through the environment of one process. Never in a file in Git, a variable or state |
 | Guard | `terraform_data.right_cluster`: a plan stops unless the live `kube-system` UID is the one `target.yaml` records | A precondition on each record: Contabo's address for the instance must be `target.yaml`'s `host` |
 | State | `.local/hosted/plane-prod/terraform/terraform.tfstate` | `.local/hosted/plane-prod/terraform/host/terraform.tfstate` |
-| Outputs | `argocd_url`, `namespaces` | The instance's name, status, size and address, and the three records. None is secret |
+| Outputs | `argocd_url`, `namespaces` | The instance's name, status, size and address, and the six records. None is secret |
 
 Hosted Infisical's root is `infisical/terraform` again, with `TF_VAR_environments` naming project `plane-prod` and namespace
 `plane-prod`, and its state at `.local/hosted/plane-prod/terraform/infisical/terraform.tfstate`. The bootstrap's step 6 runs it through a
@@ -275,6 +275,7 @@ port-forward, through `scripts/infisical-bootstrap.sh` as locally.
 | `argocd`, `monitoring`, `infisical`, `cert-manager`, `plane-prod` | `baseline` | As locally. `plane-prod` stays at baseline until a dry run of restricted passes on the branded images |
 | `traefik` | `privileged` | Traefik's hostPorts cannot pass baseline, and they are the only way in |
 | `monitoring-agents` | `privileged` | node-exporter's hostNetwork and hostPID |
+| `rillmark`, `awushi-cloudgarden` | `restricted` | The static sites. nginx runs as user 101 with every capability dropped, and cert-manager's solver pod passes too |
 | `frameflow` | `restricted` | Not deployed. Its quota allows no pods, and the other quotas leave its share of the node free |
 
 Every namespace also warns and audits at `restricted`. The quotas' numbers and reasons are in `capacity.yaml`, and
@@ -296,6 +297,9 @@ a value: the bootstrap writes Secret `argocd/argocd-repo-plane-platform` from th
 | `vercel_dns_record.wayline` | `wayline.bereket.dev A 5.253.234.127`, TTL 60 | Made before Terraform held it, on 2026-11-06 ([hosted-access-dns](evidence/runs/hosted-access-dns-20261106T212722Z.txt)), then imported by the id `target.yaml` records |
 | `vercel_dns_record.grafana` | `grafana.bereket.dev A 5.253.234.127`, TTL 60 | Made by this root, for Grafana's public route |
 | `vercel_dns_record.infisical` | `infisical.bereket.dev A 5.253.234.127`, TTL 60 | Made by this root on 2026-11-07, before Argo CD first saw Infisical's Certificate |
+| `vercel_dns_record.frameflow` | `frameflow.bereket.dev A 5.253.234.127`, TTL 60 | Made by this root, before Argo CD first sees Frameflow's Certificate |
+| `vercel_dns_record.rillmark` | `rillmark.bereket.dev A 5.253.234.127`, TTL 60 | Made by this root, before Argo CD first sees Rillmark's Certificate |
+| `vercel_dns_record.cloudgarden` | `devops.bereket.dev A 5.253.234.127`, TTL 60 | Made by this root, before Argo CD first sees Awushi Cloudgarden's Certificate |
 
 Each record has `prevent_destroy`. Vercel's provider acts on one record id and never lists the zone, so nothing else in `bereket.dev`
 can change. It cannot see a record it does not hold either: run `vercel dns ls bereket.dev` before a plan adds a record, because one
@@ -314,9 +318,9 @@ whose path is relative to its root's directory.
 
 **Why only one checkout holds it.** `.local/` is gitignored and the backend paths are relative, so a state belongs to the checkout that
 made it, the one that ran the bootstrap. Another clone or worktree has none. From there root `prod` would try to create namespaces that
-exist, and fail. Root `prod-host` would do harm: Terraform would import wayline's record again, and make a second A record for `grafana`
-and another for `infisical`. So `host-terraform.sh` stops at both verbs when its state is missing or empty, before it reads any
-credential. `HOST_TERRAFORM_FIRST_STATE=yes` lets it go on, and is only for a zone that holds none of these records yet. Each script
+exist, and fail. Root `prod-host` would do harm: Terraform would import wayline's record again, and make a second A record for each of the
+others. So `host-terraform.sh` stops at both verbs when its state is missing or empty, before it reads any credential.
+`HOST_TERRAFORM_FIRST_STATE=yes` lets it go on, and is only for a zone that holds none of these records yet. Each script
 also finds `.local` and `.tools` beside itself, so run the hosted steps from that checkout, at the commit you mean to apply.
 
 **Why local, and what it costs.** There is one operator, and a remote backend would add a credential and a service to keep, for one

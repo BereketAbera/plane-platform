@@ -8,10 +8,17 @@ Two things outside the cluster, in a root of their own, so that a cluster plan n
 - `vercel_dns_record.grafana`: the A record for `grafana.bereket.dev`, made here, with `prevent_destroy`, so the zone's wildcard no longer answers
   for that name.
 - `vercel_dns_record.infisical`: the A record for `infisical.bereket.dev`, made the same way and for the same reason.
+- `vercel_dns_record.frameflow`: the A record for `frameflow.bereket.dev`, made the same way and for the same reason.
+- `vercel_dns_record.rillmark`: the A record for `rillmark.bereket.dev`, the same.
+- `vercel_dns_record.cloudgarden`: the A record for `devops.bereket.dev`, Awushi Cloudgarden's host, the same.
+
+Each app's record has to be live before Argo CD first sees that app's Certificate, because the wildcard points at Vercel and a failed order
+waits an hour or more to try again. So apply this root before the change that adds the Certificate reaches `deploy/plane-prod`. There are A
+records only: the cluster is IPv4 single-stack, and none of `wayline`, `grafana` and `infisical` has an AAAA.
 
 Vercel's provider acts on one record id and never lists the zone, so nothing else in `bereket.dev` can change. It also cannot see a record it
-does not hold: run `vercel dns ls bereket.dev` first, because a `grafana` or `infisical` record made by hand would become a second A beside
-this one.
+does not hold: run `vercel dns ls bereket.dev` first, because a `grafana`, `infisical`, `frameflow`, `rillmark` or `devops` record made by
+hand would become a second A beside Terraform's.
 
 Credentials come from the environment, as [`providers.tf`](providers.tf) lists, and never from a file in Git. State is at
 `.local/hosted/plane-prod/terraform/host/terraform.tfstate`, relative to the checkout, and only the checkout that made it holds it. From any
@@ -21,9 +28,13 @@ other, Terraform starts from nothing: it imports wayline's record again and make
 
 ```bash
 TARGET=plane-prod scripts/hosted/host-terraform.sh plan
-# With all three records in state and nothing to change, it ends: This plan: nothing. Before infisical's record
-# existed it ended: This plan: create vercel_dns_record.infisical, and this applied it:
-TARGET=plane-prod CONFIRM=plane-prod EXPECT='create vercel_dns_record.infisical' scripts/hosted/host-terraform.sh apply
+# Before infisical's record existed it ended: This plan: create vercel_dns_record.infisical, and this applied it:
+#   TARGET=plane-prod CONFIRM=plane-prod EXPECT='create vercel_dns_record.infisical' scripts/hosted/host-terraform.sh apply
+# With wayline's, grafana's and infisical's records in state it ends, three to add and no other change:
+# This plan: create vercel_dns_record.cloudgarden, create vercel_dns_record.frameflow, create vercel_dns_record.rillmark
+TARGET=plane-prod CONFIRM=plane-prod \
+  EXPECT='create vercel_dns_record.cloudgarden, create vercel_dns_record.frameflow, create vercel_dns_record.rillmark' \
+  scripts/hosted/host-terraform.sh apply
 ```
 
 If the plan shows anything else, stop and read it. `apply` makes its own plan again and refuses, applying nothing, unless its changes are

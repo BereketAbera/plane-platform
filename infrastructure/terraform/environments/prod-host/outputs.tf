@@ -24,3 +24,18 @@ output "infisical_dns_record" {
   description = "Infisical's DNS record."
   value       = "${vercel_dns_record.infisical.name}.${vercel_dns_record.infisical.domain} ${vercel_dns_record.infisical.type} ${vercel_dns_record.infisical.value}"
 }
+
+output "frameflow_dns_record" {
+  description = "Frameflow's DNS record."
+  value       = "${vercel_dns_record.frameflow.name}.${vercel_dns_record.frameflow.domain} ${vercel_dns_record.frameflow.type} ${vercel_dns_record.frameflow.value}"
+}
+
+output "rillmark_dns_record" {
+  description = "Rillmark's DNS record."
+  value       = "${vercel_dns_record.rillmark.name}.${vercel_dns_record.rillmark.domain} ${vercel_dns_record.rillmark.type} ${vercel_dns_record.rillmark.value}"
+}
+
+output "cloudgarden_dns_record" {
+  description = "Awushi Cloudgarden's DNS record, devops."
+  value       = "${vercel_dns_record.cloudgarden.name}.${vercel_dns_record.cloudgarden.domain} ${vercel_dns_record.cloudgarden.type} ${vercel_dns_record.cloudgarden.value}"
+}

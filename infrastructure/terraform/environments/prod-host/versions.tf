@@ -13,7 +13,7 @@ terraform {
   }
 
   # Relative to this directory. .local/ is gitignored, and scripts/destroy.sh never touches this path. Under terraform/, because
-  # scripts/hosted/bundle.sh puts every state there into the recovery bundle. It holds the one DNS record's id and value and no
+  # scripts/hosted/bundle.sh puts every state there into the recovery bundle. It holds each DNS record's id and value and no
   # credential, because credentials come from the environment.
   backend "local" {
     path = "../../../../.local/hosted/plane-prod/terraform/host/terraform.tfstate"
