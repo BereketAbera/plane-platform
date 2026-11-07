@@ -54,12 +54,18 @@ need_commands() {
 }
 
 env_namespace() {
+  local namespace
   case "$1" in
     dev | prod-sim) printf 'plane-%s' "$1" ;;
     *)
-      # Only what scripts/hosted/target.sh opted in. Nothing local sets this.
-      [[ "${WAYLINE_ENVIRONMENTS:-}" == "$1" ]] || die "unknown environment '$1': expected dev or prod-sim"
-      printf 'plane-%s' "$1"
+      # Only what scripts/hosted/target.sh opted in. Nothing local sets these. Its namespace is the one infisical/terraform binds the
+      # environment's identity to, so it is read from the same map, and an app's need not start with plane-.
+      [[ " ${WAYLINE_ENVIRONMENTS:-} " == *" $1 "* ]] || die "unknown environment '$1': expected dev or prod-sim"
+      [[ -n "${TF_VAR_environments:-}" ]] || die "environment '$1' is opted in, and TF_VAR_environments names no namespace for it"
+      namespace="$(printf '%s' "$TF_VAR_environments" | jq -r --arg env "$1" '.[$env].namespace // ""')" ||
+        die "TF_VAR_environments is not JSON this can read"
+      [[ "$namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || die "TF_VAR_environments gives environment '$1' the namespace '$namespace', which is not one"
+      printf '%s' "$namespace"
       ;;
   esac
 }

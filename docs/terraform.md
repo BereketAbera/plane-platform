@@ -26,7 +26,7 @@ statically and fails if a resource has two owners.
 | Owner | Owns |
 |---|---|
 | **Terraform**, `infrastructure/terraform/environments/local` | Seven namespaces and their labels; a ResourceQuota and a LimitRange in each Plane namespace; the CoreDNS Corefile rewrite; the Argo CD Helm release; a second Helm release holding the AppProjects and the root Application |
-| **Terraform**, `infisical/terraform` | Infisical projects, environments, machine identities, project memberships, Kubernetes Auth config. On hosted production the same code makes project `plane-prod` and its one identity, bound to namespace `plane-prod`, in a state of its own |
+| **Terraform**, `infisical/terraform` | Infisical projects, environments, machine identities, project memberships, Kubernetes Auth config. On hosted production the same code makes project `plane-prod` and its one identity, bound to namespace `plane-prod`, and project `frameflow-prod` and its one identity, bound to namespace `frameflow`, in a state of its own |
 | **Terraform**, `infrastructure/terraform/environments/prod` | Hosted production's ten namespaces and their labels; a ResourceQuota `budget` in each, and a LimitRange `defaults` in each, both from `infrastructure/hosted/plane-prod/capacity.yaml`; StorageClass `local-path-retain`; K3s's `coredns-custom` ConfigMap; the Argo CD Helm release; a second Helm release holding AppProjects `platform`, `plane-prod`, `frameflow`, `rillmark` and `awushi-cloudgarden` and the root Application |
 | **Terraform**, `infrastructure/terraform/environments/prod-host` | The A records `wayline`, `grafana`, `infisical`, `frameflow`, `rillmark` and `devops` in `bereket.dev`, on Vercel. It reads the VPS from Contabo, and owns nothing there |
 
@@ -263,8 +263,9 @@ DNS records. Neither can be aimed elsewhere: they take no variables, and both re
 | Outputs | `argocd_url`, `namespaces` | The instance's name, status, size and address, and the six records. None is secret |
 
 Hosted Infisical's root is `infisical/terraform` again, with `TF_VAR_environments` naming project `plane-prod` and namespace
-`plane-prod`, and its state at `.local/hosted/plane-prod/terraform/infisical/terraform.tfstate`. The bootstrap's step 6 runs it through a
-port-forward, through `scripts/infisical-bootstrap.sh` as locally.
+`plane-prod`, and project `frameflow-prod` and namespace `frameflow`, and its state at
+`.local/hosted/plane-prod/terraform/infisical/terraform.tfstate`. The bootstrap's step 6 runs it through a port-forward, through
+`scripts/infisical-bootstrap.sh` as locally.
 
 ### environments/prod: the cluster
 

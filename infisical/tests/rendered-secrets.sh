@@ -17,7 +17,18 @@ source "$ROOT/infisical/lib/api.sh"
 
 need_commands jq kubectl
 
-ENVIRONMENTS="${*:-${WAYLINE_ENVIRONMENTS:-dev prod-sim}}"
+# Plane's contract, so with no argument Plane's environments alone: hosted production's WAYLINE_ENVIRONMENTS names
+# Frameflow's too, whose Secrets have a shape of their own.
+if [[ $# -gt 0 ]]; then
+  ENVIRONMENTS="$*"
+else
+  ENVIRONMENTS=""
+  for env in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
+    case "$env" in
+      dev | prod-sim | prod) ENVIRONMENTS="${ENVIRONMENTS:+$ENVIRONMENTS }$env" ;;
+    esac
+  done
+fi
 FAILED=0
 BLOCKED=0
 

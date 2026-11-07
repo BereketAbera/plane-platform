@@ -15,6 +15,13 @@
 # initialized instance this signs in with the first admin's password and mints another, or takes one a person
 # made (.local/secret-zero/infisical-admin-token.new), and records it. RENEW_ADMIN_TOKEN=yes does so
 # ahead of time, before a token ends. See infisical/README.md, section Recovery.
+#
+# PLAN_ONLY=yes prints what Terraform would do to an instance already bootstrapped, and says for each
+# environment what it would make and what it would change of what exists, so a new environment's can be
+# seen to leave prod's alone. It applies, seeds, publishes and mints nothing, and replaces no file here. On
+# hosted production, with Infisical forwarded as `make remote-ui TARGET=plane-prod UI=infisical` does:
+#   WAYLINE_TARGET=plane-prod CONFIRM=plane-prod PLAN_ONLY=yes INFISICAL_URL=http://127.0.0.1:<port> scripts/infisical-bootstrap.sh
+# Run it on its own like that: scripts/hosted/bootstrap.sh applies Terraform of its own before it calls this.
 # shellcheck source=lib/common.sh
 source "$(dirname "$0")/lib/common.sh"
 # Hosted production opts in here. Without the variable this does nothing. See scripts/hosted/target.sh.
@@ -33,23 +40,66 @@ ADMIN_ORG="wayline"
 TF_ROOT="$ROOT/infisical/terraform"
 TF_STATE_DIR="$LOCAL_DIR/terraform/infisical"
 RESTORED="${INFISICAL_RESTORED:-}"
+PLAN_ONLY="${PLAN_ONLY:-}"
+[[ "$RESTORED" != yes || "$PLAN_ONLY" != yes ]] || die "choose INFISICAL_RESTORED=yes or PLAN_ONLY=yes, not both: restored mode checks its own saved plan before it applies"
 
-# Fixed by helm/plane/overlays/*/infisical.yaml and infisical/manifests/token-reviewer.yaml.
+# Fixed by helm/plane/overlays/*/infisical.yaml and infisical/manifests/token-reviewer.yaml, and for an app
+# beside Wayline by its own folder, gitops/clusters/plane-prod/platform/<namespace>/, and
+# gitops/clusters/plane-prod/platform/infisical/token-reviewer.yaml.
 IDENTITY_SECRET=plane-infisical-identity
 IDENTITY_KEY=identityId
 AUTH_SERVICE_ACCOUNT=plane-infisical-auth
 
+# PLAN_ONLY=yes binds nothing, so there a mismatch is only reported, and the plan still shows what would be bound.
+overlay_problem() {
+  if [[ "$PLAN_ONLY" == yes ]]; then warn "$1"; else die "$1"; fi
+}
+
+# What an app's folder syncs, as its Application reads it: the kustomization's build, or each file.
+app_manifests() { # directory
+  local file
+  if [[ -f "$1/kustomization.yaml" ]]; then
+    need_commands kustomize
+    kustomize build "$1"
+  else
+    while read -r file; do
+      printf -- '---\n'
+      cat "$file"
+    done < <(find "$1" -maxdepth 1 -type f -name '*.yaml' | LC_ALL=C sort)
+  fi
+}
+
 # Terraform would bind Kubernetes Auth to the wrong account and login would fail with a 401 long
 # after this script finished, so a rename in the overlay stops here instead.
 check_overlay() {
-  local env file actual
+  local env file actual ns
   for env in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
-    file="$ROOT/gitops/environments/$env/manifests.yaml"
-    [[ -f "$file" ]] || die "$file is missing. Run: make render"
-    actual="$(yq -N 'select(.kind == "InfisicalAuth") | [.spec.kubernetes.identityIdRef.name, .spec.kubernetes.identityIdRef.key, .spec.kubernetes.serviceAccountRef.name] | join(" ")' "$file" \
-      | awk 'NF && !found { found = $0 } END { print found }')"
-    [[ "$actual" == "$IDENTITY_SECRET $IDENTITY_KEY $AUTH_SERVICE_ACCOUNT" ]] \
-      || die "$file references '$actual', this script publishes '$IDENTITY_SECRET $IDENTITY_KEY $AUTH_SERVICE_ACCOUNT'. Align them."
+    case "$env" in
+      dev | prod-sim | prod)
+        file="$ROOT/gitops/environments/$env/manifests.yaml"
+        [[ -f "$file" ]] || die "$file is missing. Run: make render"
+        actual="$(yq -N 'select(.kind == "InfisicalAuth") | [.spec.kubernetes.identityIdRef.name, .spec.kubernetes.identityIdRef.key, .spec.kubernetes.serviceAccountRef.name] | join(" ")' "$file" \
+          | awk 'NF && !found { found = $0 } END { print found }')"
+        [[ "$actual" == "$IDENTITY_SECRET $IDENTITY_KEY $AUTH_SERVICE_ACCOUNT" ]] \
+          || overlay_problem "$file references '$actual', this script publishes '$IDENTITY_SECRET $IDENTITY_KEY $AUTH_SERVICE_ACCOUNT'. Align them."
+        ;;
+      *)
+        # An app's own folder, with no render: each object there names its namespace, so the references must name
+        # this one, the namespace Terraform binds the identity to and this publishes its id in.
+        ns="$(env_namespace "$env")"
+        file="$ROOT/gitops/clusters/plane-prod/platform/$ns"
+        # An app's secrets come before its manifests: this runs from the merge that holds the scripts, and the folder
+        # lands in the next one. Until then nothing in $ns logs in, and there is nothing here to compare with.
+        if [[ ! -d "$file" ]]; then
+          warn "$file is not in this checkout yet, so nothing here says what InfisicalAuth in $ns references. This binds and publishes Secret $IDENTITY_SECRET, key $IDENTITY_KEY, and ServiceAccount $AUTH_SERVICE_ACCOUNT, both in $ns, and the folder must reference those"
+          continue
+        fi
+        actual="$(app_manifests "$file" | yq -N 'select(.kind == "InfisicalAuth") | [.spec.kubernetes.identityIdRef.name, .spec.kubernetes.identityIdRef.namespace, .spec.kubernetes.identityIdRef.key, .spec.kubernetes.serviceAccountRef.name, .spec.kubernetes.serviceAccountRef.namespace] | join(" ")' \
+          | awk 'NF && !found { found = $0 } END { print found }')"
+        [[ "$actual" == "$IDENTITY_SECRET $ns $IDENTITY_KEY $AUTH_SERVICE_ACCOUNT $ns" ]] \
+          || overlay_problem "$file references '$actual', this script publishes '$IDENTITY_SECRET $ns $IDENTITY_KEY $AUTH_SERVICE_ACCOUNT $ns'. Align them."
+        ;;
+    esac
   done
 }
 
@@ -137,6 +187,35 @@ apply_restored() {
   tf apply -lock-timeout=10m -input=false "$IA_TMP/restored.tfplan"
 }
 
+# The plan, printed, and for each environment what it would make and what it would change of what exists, which
+# for one that exists already should be nothing. Saved, so what is summed up is what was printed.
+plan_only() {
+  local rc=0 plan env made changes
+  tf plan -lock-timeout=10m -input=false -detailed-exitcode -out="$IA_TMP/preview.tfplan" || rc=$?
+  case "$rc" in
+    0)
+      ok "PLAN_ONLY=yes: Terraform has nothing to change"
+      return 0
+      ;;
+    2) ;;
+    *) die "terraform plan failed" ;;
+  esac
+  plan="$(tf show -json "$IA_TMP/preview.tfplan")"
+  for env in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
+    made="$(jq -r --arg env "$env" '[.resource_changes[]? | select(.index == $env and .change.actions == ["create"])] | length' <<<"$plan")"
+    changes="$(jq -r --arg env "$env" '[.resource_changes[]?
+        | select(.index == $env and .change.actions != ["no-op"] and .change.actions != ["read"] and .change.actions != ["create"])
+        | "\(.address) (\(.change.actions | join("+")))"] | join(", ")' <<<"$plan")"
+    if [[ -n "$changes" ]]; then
+      warn "PLAN_ONLY=yes: $env: would change what exists: $changes"
+    elif [[ "$made" -gt 0 ]]; then
+      ok "PLAN_ONLY=yes: $env: would make $made resources, and change nothing that exists"
+    else
+      ok "PLAN_ONLY=yes: $env: no change"
+    fi
+  done
+}
+
 publish_identity() { # env. An id is not a credential, yet the CRD accepts only a Secret reference.
   local env="$1" ns id
   ns="$(env_namespace "$env")"
@@ -161,6 +240,8 @@ initialized="$(printf '%s' "$IA_BODY" | jq -r '.config.initialized | tostring')"
 
 case "$initialized" in
   false)
+    [[ "$PLAN_ONLY" != yes ]] \
+      || die "Infisical is uninitialized, so there is nothing to plan against: the first run bootstraps it, and PLAN_ONLY=yes writes nothing"
     [[ "$RESTORED" != yes ]] \
       || die "Infisical is uninitialized, so the restore did not take. Refusing to bootstrap: that would generate new credentials and new secrets."
     if [[ -f "$RESTORE_CLEAN_MARKER" ]]; then
@@ -170,11 +251,14 @@ case "$initialized" in
     bootstrap_instance
     ;;
   true)
-    ensure_rc=0
-    ia_ensure_admin "$(jq -r '.organization.id // empty' "$MACHINE_FILE" 2>/dev/null || true)" || ensure_rc=$?
-    if [[ "$ensure_rc" -ne 0 ]]; then
-      ia_print_sign_in_steps "scripts/infisical-bootstrap.sh"
-      die "Infisical is initialized, bootstrap works only once, and nothing here could replace the admin token. $(ia_admin_problem)."
+    # PLAN_ONLY=yes mints no token: ia_load_admin below says if the one here cannot be used.
+    if [[ "$PLAN_ONLY" != yes ]]; then
+      ensure_rc=0
+      ia_ensure_admin "$(jq -r '.organization.id // empty' "$MACHINE_FILE" 2>/dev/null || true)" || ensure_rc=$?
+      if [[ "$ensure_rc" -ne 0 ]]; then
+        ia_print_sign_in_steps "scripts/infisical-bootstrap.sh"
+        die "Infisical is initialized, bootstrap works only once, and nothing here could replace the admin token. $(ia_admin_problem)."
+      fi
     fi
     ok "Infisical already bootstrapped"
     ;;
@@ -195,10 +279,14 @@ KUBE_CA="$(kc -n infisical get configmap kube-root-ca.crt -o jsonpath='{.data.ca
 
 mkdir -p "$TF_STATE_DIR"
 chmod 700 "$TF_STATE_DIR"
-log "Applying infisical/terraform"
+if [[ "$PLAN_ONLY" == yes ]]; then log "Planning infisical/terraform, and applying nothing"; else log "Applying infisical/terraform"; fi
 tf init -input=false -lockfile=readonly ${HOSTED_INFISICAL_TF_BACKEND:+-backend-config="$HOSTED_INFISICAL_TF_BACKEND"} >/dev/null
 if [[ "$RESTORED" == yes ]]; then
   apply_restored
+elif [[ "$PLAN_ONLY" == yes ]]; then
+  plan_only
+  ok "PLAN_ONLY=yes: nothing was applied, seeded or published"
+  exit 0
 else
   tf apply -lock-timeout=10m -input=false -auto-approve
 fi
