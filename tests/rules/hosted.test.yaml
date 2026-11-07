@@ -73,6 +73,19 @@ tests:
         exp_alerts:
           - exp_labels: { namespace: plane-prod, name: renewal-failing, severity: warning, component: certificate }
             exp_annotations: { summary: "Certificate plane-prod/renewal-failing expires in 20d 23h 59m 0s, so renewal is failing" }
+  - name: a certificate not issued yet reads an expiry of 0, which is no renewal failing, and once issued with 14 days it fires as before
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_expiration_timestamp_seconds{namespace="infisical",name="infisical-tls"}'
+        values: '0x5 1209600x5'
+    alert_rule_test:
+      - { eval_time: 0m, alertname: CertificateExpiringSoon, exp_alerts: [] }
+      - { eval_time: 5m, alertname: CertificateExpiringSoon, exp_alerts: [] }
+      - eval_time: 8m
+        alertname: CertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: infisical, name: infisical-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "Certificate infisical/infisical-tls expires in 13d 23h 52m 0s, so renewal is failing" }
   - name: a certificate that stays not Ready fires, while one being issued has 30 minutes
     interval: 1m
     input_series:
