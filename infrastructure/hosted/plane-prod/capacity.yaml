@@ -82,7 +82,9 @@ quotas:
     pods: "2"
     persistentvolumeclaims: "0"
     requests.storage: "0"
-  # 1376Mi steady, and either the server's surge or the nightly backup.
+  # 1376Mi steady, and either the server's surge or the nightly backup, or infisical-tls's solver, which is smaller. A surge fills this to the
+  # last MiB, and the node has none to spare, so a solver that meets one waits for it. The first order would meet the rollout of the values
+  # that come with the route, so those go out first, on their own: scripts/hosted/README.md, section The first certificate.
   infisical:
     requests.cpu: 300m
     requests.memory: 1664Mi

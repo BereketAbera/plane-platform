@@ -11,8 +11,8 @@
 # host network, and anything the node itself sends to a pod, is exempt, so the kubelet's probes need no rule, and only the
 # host firewall guards 6443, 9100 and 10250 from outside.
 #
-# Grafana is the one console with a route, and egress below reaches it on its container port alone. No route to Argo CD, Infisical,
-# Prometheus or Alertmanager exists on this cluster, so nothing here reaches them.
+# Grafana and Infisical are the two consoles with a route, and egress below reaches each on its container port alone. No route to Argo CD,
+# Prometheus or Alertmanager exists on this cluster, so nothing here reaches them, and nothing here reaches a database.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -83,8 +83,8 @@ spec:
       ports:
         - { protocol: TCP, port: 9100 }
 ---
-# The coarse half of each pair for plane-prod, whose own policies narrow which pods and ports accept. monitoring holds the consoles with
-# no route, so there each rule names its pods.
+# The coarse half of each pair for plane-prod, whose own policies narrow which pods and ports accept. monitoring and infisical hold the
+# consoles with no route and the databases, so there each rule names its pods.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -115,6 +115,18 @@ spec:
     # The solver for grafana-tls, which runs beside that Certificate.
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+      ports:
+        - { protocol: TCP, port: 8089 }
+    # Infisical's server, for its public route, and nothing else in its namespace: its Postgres and Redis least of all.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: infisical } }
+          podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    # The solver for infisical-tls, which runs beside that Certificate.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: infisical } }
           podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
       ports:
         - { protocol: TCP, port: 8089 }
