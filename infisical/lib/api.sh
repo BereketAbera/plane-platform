@@ -321,6 +321,10 @@ ia_ensure_admin() { # [org-id]
 
 # The way back with no token and no password on this machine. For a run that has stopped and will resume.
 ia_print_sign_in_steps() { # the command that goes on afterwards
+  local resume="$1"
+  # Hosted production's Infisical is reached only through the port-forward that make remote-bootstrap makes, and its files only through the
+  # target that sets WAYLINE_TARGET. The caller's own command, run as printed, would read the local platform's files and wait for its Infisical.
+  if [[ -n "${WAYLINE_TARGET:-}" ]]; then resume="make remote-bootstrap TARGET=$WAYLINE_TARGET CONFIRM=$WAYLINE_TARGET"; fi
   cat >&2 <<STEPS
 Nothing on this machine can log in to Infisical. Either of these lets it go on:
 
@@ -329,12 +333,12 @@ Nothing on this machine can log in to Infisical. Either of these lets it go on:
        when its script ends: open Infisical the way you usually do instead.
     2. Go to Access Control, Machine Identities, Instance Admin Identity, Token Auth, Add Token, and create one.
     3. Write that token to ${ADMIN_TOKEN_DROP#"$ROOT"/}, one line, mode 0600.
-    4. Run: $1
+    4. Run: $resume
        It checks the token against the server, moves it into place and records that it did.
 
   Or with the password of $INFISICAL_ADMIN_EMAIL, from wherever you keep a copy, only while that account has no two-factor:
     1. Write it to ${ADMIN_PASSWORD_FILE#"$ROOT"/}, mode 0600.
-    2. Run: $1
+    2. Run: $resume
        It signs in by itself, mints a token for the instance admin identity and records that it did. With two-factor on the server asks
        for a code, and this stops there.
 
