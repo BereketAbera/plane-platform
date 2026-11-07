@@ -395,13 +395,20 @@ So neither reads a separator the other does not. The rules allow for a trailing 
 family finds no route in Fastify. [`tests/routes/infisical-public-route.sh`](../tests/routes/infisical-public-route.sh) asks the pinned Traefik
 every anonymous and machine route, 59 refused paths in 49 spellings each over HTTP/1.1 and four of them over HTTP/2, 43 walks from an allowed
 path to a refused one, 12 kinds of machine credential on six of a browser's calls, and 49 calls a browser makes. Behind an echo server, which
-shows what arrives, 4083 rows passed and none failed. Behind this Infisical, which shows what its router makes of it, 3480 passed and none failed.
+sees each request as Traefik forwards it and so is the proof that nothing refused arrives, 4083 rows passed and none failed. Behind this
+Infisical, which shows what its router makes of what does arrive in another shape, 3480 passed and none failed. That run cannot see what
+Traefik forwarded, and it then read any 404 from Infisical as no route, which a handler's own 404 is not. The 47 rows it read so were 40
+spellings and walks that Traefik passed on with an encoded slash, a NUL or a backslash inside a segment, which Fastify reads as one segment, 5
+rows that stay, and two header tricks. Which kind of 404 each of the 40 was is not on record. The test now reads only its router's own
+`Route <method>:<url> not found` as no route, and has run that way, with none failed, against a stand-in that answers as this version's code
+does, and not yet against the image. With the CA certificate download let through, the stand-in run fails, as it should.
 
 **What stays reachable with no session.** 24 of the 143: `GET /api/status` and `GET /api/v1/admin/config`, which a sign-in page reads; the
 sign-in itself, token refresh and logout, which read the session cookie; the five two-factor endpoints, which need the token a correct password
 issues; the four certificate downloads of the certificate manager's internal CAs, which hold only public certificates and which its pages call,
-and no CA exists here; and the ten under `/api/v2/users/me`, which check a session in their router's own hook. The pages and the web client's
-files are public, as every website's are, and say that this is v0.167.6.
+and no CA exists here; and the ten under `/api/v2/users/me`, nine of which check a session in a hook of their own route. The tenth,
+`POST /api/v2/users/me/emails/code`, checks none: it takes a sign-up token this server signed, in its body, which only someone partway through
+signing up holds. The pages and the web client's files are public, as every website's are, and say that this is v0.167.6.
 
 **What the values change.** `SITE_URL` is `https://infisical.bereket.dev`, `HTTPS_ENABLED` is true and `TRUSTED_PROXY_CIDRS` is
 `10.244.0.0/16`. `INVITE_ONLY_SIGNUP` is not set, because this version reads no such variable: with it set and sign-up opened in the database, a

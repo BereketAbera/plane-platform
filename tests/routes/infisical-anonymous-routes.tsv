@@ -1,6 +1,7 @@
 # Every route Infisical v0.167.6 registers with no authentication hook, read from the running server by logging its onRoute event, because its OpenAPI
 # document leaves many of these out. tests/routes/infisical-public-route.py asks each of them through the public route. "refused" must not reach the
-# server. "stays" must, and docs/infisical.md says why it can. Those under /api/v2/users/me check the session in a hook of their own router.
+# server. "stays" must, and docs/infisical.md says why it can. Nine of those under /api/v2/users/me check the session in a hook of their own route,
+# and POST /api/v2/users/me/emails/code takes a sign-up token in its body instead.
 # decision, method, route
 refused	GET	/.well-known/est/:identifier/cacerts
 refused	POST	/.well-known/est/:identifier/simpleenroll

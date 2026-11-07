@@ -20,7 +20,8 @@ NAMESPACES="plane-prod infisical monitoring argocd cert-manager traefik"
 tmp="$(mktemp "$LOCAL_DIR/.scrub-values.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT
 # Grafana's admin password, which lives in a file here and works from outside. Secret monitoring/grafana-admin holds it too, but this needs
-# no cluster, and that login is the one credential here a stranger could use from the internet.
+# no cluster. It and Infisical's admin password are the two logins a stranger could use from the internet, and Infisical's is a file in
+# secret-zero, every file of which scripts/publish-evidence.sh scrubs already.
 if [[ -s "$LOCAL_DIR/grafana-admin-password" ]]; then
   { base64 <"$LOCAL_DIR/grafana-admin-password" | tr -d '\n'; printf '\n'; } >>"$tmp"
 fi

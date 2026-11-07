@@ -58,15 +58,20 @@ Around it:
   key is refused by its header on every call of the API route, so the bootstrap's 90-day instance admin token, the operator's tokens and any token
   made later work only inside the cluster.
 - **Exact words in policy.** [`policy/hosted.rego`](../../policy/hosted.rego) allows these four routes and two limits in their words and no others,
-  keeps Argo CD, Prometheus, Alertmanager and the storage consoles refused, and refuses an Infisical image of another version until the route has
-  been read again for it.
+  keeps Argo CD, Prometheus, Alertmanager and the storage consoles refused, and refuses any Infisical image but the one the route was read
+  from, digest and all, until the route has been read again for it. It holds the server's values for the route, the four Probes and their
+  blackbox modules, and every NetworkPolicy that admits anything into namespace infisical, and
+  [`policy/hosted_combined.rego`](../../policy/hosted_combined.rego) wants both limits and every Probe wherever the route is.
 - **Proved against the pinned Traefik.** [`tests/routes/infisical-public-route.sh`](../../tests/routes/infisical-public-route.sh) starts the
   Traefik image and flags hosted production pins, in Docker, with `route.yaml`, and asks every anonymous and machine route, and the named ones in
   49 spellings each: trailing and doubled slashes, case, percent-encoding once and twice, encoded slashes and dots, dot segments, semicolons,
-  backslashes, NUL and the rest, over HTTP/1.1 and HTTP/2. Once with an echo server behind it, which shows what arrives, and once with a real
-  Infisical of this version, which shows what its router does with it. Nothing refused reached a handler of its own.
-- **Only Traefik, and only to the server.** NetworkPolicy lets Traefik reach Infisical's port 8080 and nothing else in that namespace. Its
-  Postgres and Redis stay denied to it, and the matrix has rows for both. The server's pod holds no Kubernetes token.
+  backslashes, NUL and the rest, over HTTP/1.1 and HTTP/2. With an echo server behind it, which sees each request as Traefik forwards it, that
+  is the proof that nothing refused arrives. With a real Infisical of this version behind it, it shows what Fastify's router makes of what does
+  arrive in another shape. That run cannot see what Traefik forwarded, so it does not stand in for the echo run. Given the backend's own address on a copy nobody has claimed, it also claims that copy and sends the real tokens it hands out through
+  the route, so a version whose tokens begin another way fails it.
+- **Only Traefik, and only to the server.** NetworkPolicy lets Traefik reach Infisical's server on 8080, and cert-manager's solver there on 8089
+  while a challenge runs, and nothing else in that namespace. Its Postgres and Redis stay denied to it, and the matrix has rows for both. The
+  server's pod holds no Kubernetes token.
 - **Only admin.** Sign-up is closed in the database. A probe through the route reads the config any sign-in page reads, and
   `InfisicalOpenToClaim` is critical at the first reading that is not claimed and closed. `scripts/hosted/edge.sh open` refuses while Infisical
   reads otherwise, as it already refuses for Plane, and `scripts/hosted/bootstrap.sh` will not let Argo CD deploy the route with 443 open to
@@ -101,10 +106,24 @@ not the threat. These are:
 - **Locks a person with the password can cause.** Wrong codes lock the account, for up to an hour and then until it is unlocked, and need the
   password first. Wrong passwords move no lock, so a stranger can cause none.
 - **Relaxed SSRF protection.** `ALLOW_INTERNAL_IP_CONNECTIONS=true` stays, for Kubernetes token review. The server's egress reaches only its
-  database, Redis and the API server, so whatever a caller could get it to dial, nothing else answers.
+  database, Redis, the API server and kube-dns on 53, so whatever a caller could get it to dial, nothing else answers. A name it looks up does
+  leave the node, as a query CoreDNS forwards.
 - **Mail in the log.** With no SMTP, any mail Infisical would send is written to its log, and Loki keeps that log for 7 days behind Grafana's public
   login. With an authenticator app no code is mailed. The flows a stranger could start that would mail one, sign-up and account recovery, are
-  refused.
+  refused. The unlock link, which carries a token good once, is there as well.
+- **What strangers write to the log.** Infisical logs every request's URL with its query string, and the email of each sign-in to an account
+  it does not have, which anyone can send to the sign-in, as `scripts/hosted/test-hosted.sh` itself does. Loki keeps those for 7 days too, so
+  whoever reads Loki reads them, and a stranger chooses some of that text. Dropping those lines or their query strings in Alloy would end it,
+  at the cost of the request log.
+- **Traefik holds Infisical's Secrets in memory.** Traefik's token reads Secrets in every namespace, and with namespace infisical among those it
+  watches for the route and the solver's Ingress, its providers keep a copy of each Secret there that Helm did not make: `infisical-secrets`,
+  which holds the root keys, `infisical-db`, `infisical-redis` and `restic-password`. Code run in Traefik, the pod on the internet, could read
+  them through the API anyway. The copy adds a bug that only reads memory. Keeping the route, its limits and its Certificate in a namespace
+  that holds only the TLS key would end it, and needs Traefik to allow every route a Service in another namespace. That is the owner's choice.
+- **Public secret sharing is off in the server**, by `DISABLE_PUBLIC_SECRET_SHARING`, and the route refuses it too. A super admin can turn it
+  back on in the Server Console's environment overrides, which nothing in Git can see.
+- **The instance's settings are public.** `/api/v1/admin/config` answers anyone with them, as every sign-in page reads them, so whatever is set
+  there later, a sign-in page's text or an allowed domain, is readable on the public host. Its claim probe watches the two fields that matter.
 
 What bounds it: one admin, sign-up closed and watched, two-factor, a limit per address, the route's allow list, no machine's credential from
 outside, policy holding the route's words, and the tunnel as the way in when something goes wrong.
