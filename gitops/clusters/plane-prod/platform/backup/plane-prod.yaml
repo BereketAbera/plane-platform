@@ -4,7 +4,10 @@
 # - It runs with no laptop, so nothing can be read live or passed in. Images are pinned here. Postgres must stay the server's
 #   own version, or pg_dump refuses, and the failure alerts.
 # - Plaintext stays in an emptyDir, which goes with the pod. What stays on the host is restic's repository, encrypted, with
-#   retention by restic. /backups/predeploy is the Sync hook's, and nothing here touches it.
+#   retention by restic.
+# - /backups/predeploy is where the Sync hook writes a dump, plain, because restic's image cannot be in Plane's render: every image
+#   there must be one dev ran. So this seals what it finds there, under tag predeploy, and empties the folder. A plain dump lasts one
+#   night, or until make remote-backup runs, and past a failed night the alerts below say so. Sealed ones go after 90 days.
 # - pg_dump -Z 0, because restic compresses, and an already compressed dump would defeat its deduplication. Unmeasured.
 #
 # Until the first promotion Plane is not here, so its Secrets are optional and the run says so and succeeds. Once a repository
@@ -104,6 +107,13 @@ spec:
                     exit 0
                   fi
                   mkdir "$D" "$D/postgres"
+
+                  # A run killed before its trap below leaves its scratch copy in the live server, a full plaintext copy with nothing
+                  # to remove it. Only this Job makes them, one at a time, so any found here is left over.
+                  psql -XAt -d "$POSTGRES_DB" -c "SELECT datname FROM pg_database WHERE datname LIKE 'scratch\_%'" | while read -r OLD; do
+                    echo "postgres: dropping $OLD, which an earlier run left"
+                    dropdb --if-exists --force "$OLD" || echo "postgres: could not drop $OLD" >&2
+                  done
 
                   # These tables hold request and response bodies and grow fast under API-key traffic.
                   # Their schema is kept; their rows are not worth restoring.
@@ -277,7 +287,8 @@ spec:
                   # Not 077: new folders in the repository must stay enterable by the read-only pull user's group. restic sets
                   # its files' modes itself, read-only, from the group bits of the repository's config.
                   umask 027
-                  if [ -f /work/skip ]; then
+                  PREDEPLOY=/backups/predeploy
+                  if [ -f /work/skip ] && ! ls "$PREDEPLOY"/*/plane.dump > /dev/null 2>&1; then
                     echo "seal: nothing to seal"
                     exit 0
                   fi
@@ -294,8 +305,28 @@ spec:
                   esac
                   # Group read on config is restic's hint to create everything after it group-readable.
                   chmod -R g+rX "$RESTIC_REPOSITORY"
+                  # What the Sync hook left. Its folder stays, empty, because its name is how the hook knows this image has its dump. A
+                  # .partial is its Job's for no longer than that Job's deadline, so an old one is from a Job that died.
+                  if [ -d "$PREDEPLOY" ]; then
+                    find "$PREDEPLOY" -maxdepth 1 -type d -name '*.partial' -mmin +120 -exec rm -rf {} +
+                    for DUMP in "$PREDEPLOY"/*Z-*; do
+                      case "$DUMP" in *.partial) continue ;; esac
+                      [ -f "$DUMP/plane.dump" ] || continue
+                      restic backup --retry-lock 10m --host "$BACKUP_HOST" --tag predeploy "$DUMP"
+                      rm -rf "${DUMP:?}"/*
+                      echo "seal: ${DUMP##*/} is in restic, tag predeploy, and gone from this disk"
+                    done
+                  fi
+                  if [ -f /work/skip ]; then
+                    echo "seal: nothing else to seal"
+                    exit 0
+                  fi
                   # A fixed path and --group-by, so retention groups these and the next run finds its parent.
                   restic backup --retry-lock 10m --host "$BACKUP_HOST" --tag wayline --group-by host,tags /work/backup
+                  # A dump from before a migration goes by age, as far back as the monthlies below reach. --keep-within counts back from
+                  # the newest snapshot of the group, and with no tag filter that is tonight's, so the last dump cannot stay for ever
+                  # because no promotion came after it. --keep-tag leaves the nightlies to the next line.
+                  restic forget --retry-lock 10m --host "$BACKUP_HOST" --group-by host --keep-tag wayline --keep-within 90d
                   restic forget --retry-lock 10m --host "$BACKUP_HOST" --tag wayline --group-by host,tags \
                     --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune
                   restic check --retry-lock 10m --read-data-subset=5%

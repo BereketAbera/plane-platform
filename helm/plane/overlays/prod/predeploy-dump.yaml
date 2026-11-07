@@ -9,8 +9,10 @@
 # migrated database would rotate out the dump taken before it. Only a new backend image brings new migrations, so each
 # image gets one dump and a retry of the same image keeps it.
 #
-# The nightly backup seals its own dump with restic. This one is plain, mode 0600 for UID 70, so the read-only backup
-# user cannot read it, and it stays on this volume.
+# Plain, because restic's image cannot be here: every image in this render must be one dev ran, and dev has no such Job. So it is mode
+# 0600 for UID 70, which the read-only backup user cannot read, until the next nightly in platform/backup seals it into the same
+# repository, tag predeploy, and empties its folder. The folder stays, because the check below goes by its name. What is on the disk
+# between those is one night's worth, or less after make remote-backup. scripts/hosted/README.md has the way back.
 apiVersion: batch/v1
 kind: Job
 metadata:
