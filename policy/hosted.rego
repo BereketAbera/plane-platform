@@ -232,6 +232,7 @@ grafana_ini_wanted := {
 	{"section": "security", "key": "disable_brute_force_login_protection", "value": "false", "why": "it switches off both counts"},
 	{"section": "auth.anonymous", "key": "enabled", "value": "false", "why": "a stranger would read every dashboard with no login"},
 	{"section": "auth.anonymous", "key": "hide_version", "value": "true", "why": "it keeps the version and commit out of /api/health and most of /login"},
+	{"section": "auth.proxy", "key": "enabled", "value": "false", "why": "Traefik passes X-WEBAUTH-USER through, so a stranger could send it and be that user"},
 }
 
 is_grafana(kind) if {

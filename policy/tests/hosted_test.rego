@@ -592,6 +592,8 @@ good_grafana_ini := concat("\n", [
 	"hide_version = true",
 	"[auth.basic]",
 	"enabled = false",
+	"[auth.proxy]",
+	"enabled = false",
 	"[security]",
 	"cookie_secure = true",
 	"disable_brute_force_login_protection = false",
@@ -619,6 +621,7 @@ test_grafana_ini_with_any_guard_reverted_rejected if {
 		["disable_brute_force_login_protection = false", "disable_brute_force_login_protection = true", "[security] disable_brute_force_login_protection = true"],
 		["hide_version = true", "hide_version = false", "[auth.anonymous] hide_version = false"],
 		["[auth.anonymous]\nenabled = false", "[auth.anonymous]\nenabled = true", "[auth.anonymous] enabled = true"],
+		["[auth.proxy]\nenabled = false", "[auth.proxy]\nenabled = true", "[auth.proxy] enabled = true"],
 	] {
 		doc := grafana_config(replace(good_grafana_ini, swap[0], swap[1]))
 		count(hosted.deny) == 1 with input as doc
@@ -639,8 +642,8 @@ test_grafana_ini_with_any_guard_missing_rejected if {
 		says(doc, "grafana.ini must set")
 	}
 	says(grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "")), "must set [auth.basic] enabled = false")
-	count(hosted.deny) == 6 with input as grafana_config("")
-	count(hosted.deny) == 6 with input as {"kind": "ConfigMap", "metadata": {"name": "kps-grafana", "namespace": "monitoring"}, "data": {}}
+	count(hosted.deny) == 7 with input as grafana_config("")
+	count(hosted.deny) == 7 with input as {"kind": "ConfigMap", "metadata": {"name": "kps-grafana", "namespace": "monitoring"}, "data": {}}
 }
 
 # A second line for the same key, a key under another section, or one Grafana would not read as that key.

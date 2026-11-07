@@ -265,6 +265,10 @@ grafana:
     auth.anonymous:
       enabled: false
       hide_version: true
+    # Off, and said so, because policy/hosted.rego requires it: Traefik passes X-WEBAUTH-USER through, so with this on a stranger could
+    # send that header and be whoever they named.
+    auth.proxy:
+      enabled: false
     # The page after login. Grafana's own home offers to create a first dashboard, which read as if none had loaded. The sidecar writes this
     # file, by the folder annotation in monitoring-extras. Until a valid one has been there, as in a new pod whose sidecar or ConfigMap is
     # broken, /api/dashboards/home answers 500 "Failed to load home dashboard". After that Grafana keeps its own editable copy, uid
