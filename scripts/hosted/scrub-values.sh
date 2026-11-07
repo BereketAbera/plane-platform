@@ -15,7 +15,7 @@ source "$(dirname "$0")/lib.sh"
 command -v jq >/dev/null 2>&1 || die "jq not found. Run: make setup"
 
 FILE="$LOCAL_DIR/evidence-scrub-values"
-NAMESPACES="plane-prod infisical monitoring argocd cert-manager traefik"
+NAMESPACES="plane-prod infisical monitoring argocd cert-manager traefik rillmark awushi-cloudgarden"
 
 tmp="$(mktemp "$LOCAL_DIR/.scrub-values.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT
