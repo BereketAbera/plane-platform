@@ -2,13 +2,165 @@
 
 Wayline is a customized Plane Community Edition v1.4.3 deployment. This page covers how that
 deployment and the platform around it are observed: what is scraped, why Plane needs blackbox probes,
-which alerts exist, what each can and cannot see, where they go, and how the path is tested.
+which alerts exist, what each can and cannot see, where they go, and how the path is tested. It covers the kind
+cluster, where dev and prod-sim run, and [hosted production](#hosted-production), the K3s node at https://wayline.bereket.dev.
 
-**Status.** The stack ran on a local kind cluster on 2026-11-04 and 2026-11-05, and from about 08:12Z on 2026-11-05 on three clusters in turn, each restored from backup, with the cold install's own cluster between the first two. A reading with no later date comes from the first cluster, and a later one from the first restored cluster, unless it says otherwise. Targets, rules, dashboards, log search and
+**Hosted production, 2026-11-07.** Alerts reach the owner through Telegram, and `Watchdog` pings Healthchecks.io. What has run there, and what is PENDING tonight, is under [Hosted production](#hosted-production).
+
+**Kind cluster.** The stack ran on a local kind cluster on 2026-11-04 and 2026-11-05, and from about 08:12Z on 2026-11-05 on three clusters in turn, each restored from backup, with the cold install's own cluster between the first two. A reading with no later date comes from the first cluster, and a later one from the first restored cluster, unless it says otherwise. Targets, rules, dashboards, log search and
 several alerts were proved by queries, not by pod status, and each result links its file under
 [`docs/evidence/runs/`](evidence/README.md).
-`make test-alert` passed once in each environment, and `tests/drills/alert-rules.sh` found [a real defect](#the-data-service-drill) in two rules, fixed and read again in dev. What Pass 1 did not test says so where it comes up. This stack is sized for a laptop and has no redundancy: one Prometheus, one Alertmanager, one
-Loki, no paging. It is local and production-inspired, and it makes no claim of production readiness.
+`make test-alert` passed once in each environment, and `tests/drills/alert-rules.sh` found [a real defect](#the-data-service-drill) in two rules, fixed and read again in dev. What Pass 1 did not test says so where it comes up. On kind this stack is sized for a laptop, has no redundancy, and pages
+nobody. Hosted production runs one of each too, and pages through Telegram.
+
+## Hosted production
+
+The node runs the same stack, from plain copies of the local values under
+[`gitops/clusters/plane-prod/values/`](../gitops/clusters/plane-prod/values/), changed for K3s and for a public site. Wayline's probes,
+rules, dashboards and sink are copies too, under
+[`gitops/clusters/plane-prod/platform/monitoring-extras/`](../gitops/clusters/plane-prod/platform/monitoring-extras/). The rest of this page
+describes the kind cluster. What it says of Plane's probes, rules and their traps holds for hosted production's copies, unless this section
+says otherwise.
+
+### What differs
+
+| | Kind cluster | Hosted production |
+|---|---|---|
+| Prometheus retention | 3 days or 1 GiB | 15 days or 12 GiB, on a 16 GiB `local-path-retain` volume |
+| Loki retention | 72 hours | 168 hours, on its filesystem, on the node's one disk |
+| Alertmanager retention | 24 hours | 120 hours |
+| Scrapes off | etcd, controller-manager, scheduler and kube-proxy, which kind binds to loopback, and the API server, to save series | The same: K3s runs the control plane in one process and exposes none of the first four, and the API server stays off for its series. `KubeAPIDown` is off with it, and `KubeQuotaAlmostFull` and `KubeQuotaFullyUsed` too, because the quotas sit near full by design |
+| Probe targets | Traefik's Service, with the public host as `?hostname=` | The public URLs over HTTPS, which CoreDNS rewrites to Traefik's Service, so a probe gets the certificate a browser gets |
+| Where alerts go | The sink, so nobody | Telegram for warning and critical, Healthchecks.io for `Watchdog`, and nowhere for info |
+| Grafana | `http://grafana.localhost`, loopback only | https://grafana.bereket.dev, public, one admin login |
+| Prometheus, Alertmanager | `*.localhost`, loopback only, behind a source-address check | No route. `make remote-ui TARGET=plane-prod UI=prometheus`, or `UI=alertmanager`, through the tunnel |
+| What Alloy reads | Six named namespaces, and kindnet's one line | Every namespace but `kube-system`, `kube-public`, `kube-node-lease` and `restore-test-*`, with a Telegram bot token replaced by `<redacted>` before Loki |
+| The policy engine's alert | `KindnetSkippedNetworkPolicies` | `NetworkPolicyNotEnforced`, from a probe that must never connect |
+
+### Probes
+
+| `probe` label | Namespace | Target | Says |
+|---|---|---|---|
+| `api-instance`, `api-db`, `live`, `frontend` | `plane-prod` | `https://wayline.bereket.dev/…`, every 15s | Plane's four, as [below](#blackbox-probes) |
+| `grafana` | `monitoring` | `https://grafana.bereket.dev/login`, every 30s | Grafana's public login page answers |
+| `infisical`, `infisical-sign-in`, `infisical-session` | `infisical` | Its `/login`, and one path under each of the route's two limits, every 30s | Infisical's page and both limited parts of its route answer as they should |
+| `infisical-claimed` | `infisical` | `/api/v1/admin/config`, every 30s, its body read with CEL | Infisical has its admin and is closed to sign-up |
+| `denied-prometheus` | `monitoring` | Prometheus's port, which every policy denies blackbox | Must never connect: a connection means NetworkPolicy is not enforced |
+
+Every target is a public name that CoreDNS rewrites to Traefik's Service, so a probe never leaves the node. That makes the certificate and
+Traefik's routes real, and it means a closed 443, a wrong DNS record or Contabo's network failing reads nothing here. Nothing probes the site
+from outside: `edge.sh scan` and `make remote-test`'s `outside` section read that, when someone runs them.
+
+From 19:23Z to 20:30Z on 2026-11-07, read-only, `infisical-sign-in` and `infisical-session` were answered 500 at nearly every minute's
+reading, and `InfisicalRouteDown` was firing for both, active since 19:23:47Z, while `infisical` and `infisical-claimed` read 200. The hosted
+handoff traces the 500 to Infisical v0.167.6 itself, whose two-factor routes turn their own 401 into a 500. No file in `docs/evidence` holds
+that reading.
+
+### Rules
+
+[`rules-hosted.yaml`](../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml),
+[`rules-hosted-plane.yaml`](../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted-plane.yaml) and
+[`rules-hosted-platform.yaml`](../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted-platform.yaml) hold 44 alerting rules
+under 42 names and one recording rule. [`tests/rules/hosted.test.yaml`](../tests/rules/hosted.test.yaml) holds them to their numbers, in
+`scripts/ci/validate-manifests.sh`. The Plane and platform files are copies of the [local rules](#alert-rules), with three changes. Plane's
+availability rules and `PlaneValkeyDown` also need `wayline:plane_application:present`, so they stay quiet in the days before the first
+promotion and fire if Plane goes after it. kindnet's two rules are gone. `NodeMemoryLow` stands in for `VmMemoryLow`.
+
+What only hosted production has, because only it has a real disk, a public certificate, nightly backups, a reboot to take and kube-router:
+
+| Alert | Fires on | `for` | Severity |
+|---|---|---|---|
+| `NodeDiskLow`, `NodeDiskCritical` | The root filesystem under 20%, and under 10%, free. The kubelet evicts at 10% | 10m, 5m | warning, critical |
+| `NodeDiskNotRead` | No series for the root filesystem | 15m | warning |
+| `CertificateExpiringSoon` | An issued certificate expires within 21 days, so renewal is failing | none | warning |
+| `CertificateNotReady` | A Certificate is not Ready | 30m | critical |
+| `ServedCertificateExpiringSoon` | The certificate a probe was served expires within 14 days, by namespace | none | critical |
+| `CertificateNotWatched` | cert-manager reports nothing for `wayline-tls`, `grafana-tls` or `infisical-tls` | 30m | warning |
+| `GrafanaRouteDown`, `GrafanaRouteNotWatched` | Grafana's probe fails, or is absent | 5m, 15m | warning |
+| `InfisicalRouteDown`, `InfisicalRouteNotWatched` | One of Infisical's three route probes fails, or is absent | 5m, 15m | warning |
+| `InfisicalOpenToClaim` | The config was read, and it does not say claimed and closed to sign-up | none | critical |
+| `InfisicalClaimNotRead`, `InfisicalClaimNotWatched` | The config does not answer, or the claim probe or its CEL reading is absent | 10m, 15m | warning |
+| `BackupTooOld` | A `plane-backup` CronJob last succeeded over 26 hours ago | none | critical |
+| `BackupNeverSucceeded` | No success recorded for the CronJob in `plane-prod`, or in `infisical` | 26h | critical |
+| `NetworkPolicyNotEnforced`, `NetworkPolicyNotTested` | The denied probe connected, or is absent | none, 15m | critical, warning |
+| `NodeRebootRequired`, `NodeRebootNotWatched` | An update waits for a reboot, which nothing takes unasked, or nothing reports whether one does | 1h | warning |
+| `PublicFirewallNotLoaded` | The public firewall's table is not loaded, so the API server's and kubelet's ports answer on the public address | 10m | critical |
+
+Each rule that reads a metric something else must produce has a partner on its absence, so an exporter or probe that stops does not leave
+its rule silent for good. Two have fired for a reason other than the one they name. `CertificateExpiringSoon` paged at `grafana-tls`'s first
+order at 07:08Z on 2026-11-07, because cert-manager reports an expiry of 0 before a certificate exists. `ec76d65` keeps it quiet until one
+does, as the rule's comment records, with a promtool test that fails on the old rule. It fired once more, at 19:23Z, for `infisical-tls`'s
+first order, which the hosted handoff says began before Prometheus had loaded that rule. `InfisicalRouteDown` is the other,
+[above](#probes). Prometheus's own record of both was read at 20:30Z, and no file in `docs/evidence` holds it.
+
+### Where alerts go
+
+The routing is not in Git as a file. `make remote-alerts TARGET=plane-prod CONFIRM=plane-prod` runs
+[`scripts/hosted/alerts.sh`](../scripts/hosted/alerts.sh), which renders
+[`alertmanager.yaml.tmpl`](../infrastructure/hosted/plane-prod/alertmanager.yaml.tmpl) with the owner's files into Secret
+`monitoring/alertmanager-wayline`, because the Telegram token and the Healthchecks URL are credentials.
+
+```mermaid
+flowchart LR
+  rule["PrometheusRule"] --> prom["Prometheus"]
+  prom --> am["Alertmanager"]
+  am -->|"warning and critical"| tg["Telegram, plain text"]
+  am -->|"Watchdog, every 5m"| hc["Healthchecks.io"]
+  am -->|"info and InfoInhibitor"| discard["null receiver"]
+  hc -->|"when the pings stop"| owner["the owner"]
+```
+
+| Setting | Value | Why |
+|---|---|---|
+| `group_by` | `alertname`, `namespace` | |
+| `group_wait`, `group_interval`, `repeat_interval` | 30s, 5m, 4h. For `Watchdog` 0s, 1m and 5m | `make remote-test` waits up to 150 s for a notification, against the 30s |
+| Severity `info` | No receiver, except `WaylineSyntheticTest` | `CPUThrottlingHigh` alone fired in three namespaces on the first day, and a phone that buzzes for that gets muted. Info alerts still show in Grafana and Alertmanager |
+| Inhibition | A critical alert silences warning and info alerts of the same name and namespace | |
+| Telegram | Plain text, firing as `ALERT:` and resolved as `Cleared:` | One stray `<` or `&` makes Telegram refuse a whole message in HTML mode |
+| Healthchecks | `Watchdog` alone, no resolved | A stop in pings is the whole signal, so Healthchecks tells the owner when the server, Prometheus, Alertmanager or the way out has died |
+
+With an owner's file missing, its receiver falls back to the [sink](#routing-to-the-sink), so the config always loads, and
+`make remote-alerts TARGET=plane-prod VERB=state` and `make remote-status` read INCOMPLETE. At the bootstrap of 05:03Z on 2026-11-07 both
+receivers were still the sink ([hosted-bootstrap-20261107T050333Z.txt](evidence/runs/hosted-bootstrap-20261107T050333Z.txt)).
+
+| What | When, UTC | Result | Evidence |
+|---|---|---|---|
+| `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=alerts`: delivery COMPLETE, every scrape target up, nothing critical firing, `Watchdog` firing, a synthetic alert taken, Alertmanager's Telegram counter up and its failure counter not, and no Telegram bot token in Loki | 2026-11-07 07:31 | PASS, every row | Not yet published: `test-hosted-20261107T073149Z.txt` |
+| `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`, which takes Plane's API away for a minute or two, so `PlaneApiDown` and its `Cleared` should reach Telegram | 2026-11-07, tonight | PENDING | |
+| The whole `make remote-test`, its alerts section among the rest | 2026-11-07, tonight | PENDING | |
+
+No test reads the phone. The synthetic row reads Alertmanager's own counter, and only the owner reads Healthchecks. The hosted handoff
+notes record that a real outage during the first restart check, at 07:52Z, reached the owner's Telegram. No file in `docs/evidence` holds
+that.
+
+### Logs and dashboards
+
+Alloy reads every namespace but K3s's own and the restore tests', whose pods work on a copy of live data. Before Loki, it replaces a Telegram
+bot token with `<redacted>`, because Alertmanager logs a failed send with its URL and the token is in that URL, and it drops blackbox's access
+lines. `make remote-test`'s alerts section asks Loki for any token left.
+
+Grafana is at https://grafana.bereket.dev, behind one admin login: `make remote-grafana-admin TARGET=plane-prod VERB=login` prints the URL and
+username and copies the password. [Security](security.md#what-is-public) has what guards that login. It holds 26 dashboards: Wayline's four,
+copies of the local ones, and the chart's 22. A read of the cluster on 2026-11-07 counted 26 in the ConfigMaps labelled `grafana_dashboard`,
+and screenshots of all 26 are not yet published (`grafana-dashboards-20261107/`). `Persistent Volumes` shows no data there, as on kind,
+because local-path volumes emit no `kubelet_volume_stats_*`.
+
+Grafana keeps its database in an `emptyDir`, so every restart signs everyone out and loses what was made in its UI: saved dashboards, stars,
+preferences, tokens and annotations. A datasource change restarts it too, because datasources are now set in `grafana.datasources` in the
+values file and the pod rolls on their checksum. Dashboards come from Git, and Grafana rereads their folder every 30 seconds.
+
+On this VM the chart's CPU panels overstate use, against what `top` reports. That is the hosted handoff's reading of 2026-11-07, no file in
+`docs/evidence` holds it yet, and [resource utilization](resource-utilization.md) is where its numbers belong.
+
+### What hosted monitoring cannot see
+
+| Gap | Why |
+|---|---|
+| The site from outside | Every probe runs on the node, through the CoreDNS rewrite |
+| The node dying | Nothing on it can report that. Healthchecks does, when `Watchdog`'s pings stop |
+| A person told | No row reads Telegram or Healthchecks from the other end |
+| An app's own health | Pods can look healthy while the app is broken, which is why a probe matters. [Monitoring a new app](monitoring-new-app.md) has the steps |
+| History past retention | 15 days or 12 GiB for Prometheus, 7 days for Loki, shared by everything on the node |
 
 ## Stack
 
@@ -186,7 +338,8 @@ appears at wave -1 or later, so without the annotation it would hold the root's 
 
 ## Dashboards
 
-Grafana is at `http://grafana.localhost`, user `admin`. The chart generates the password, so it is never in Git.
+On kind, Grafana is at `http://grafana.localhost`, user `admin`. The chart generates the password, so it is never in Git. Hosted
+production's Grafana is under [Logs and dashboards](#logs-and-dashboards).
 
 ```bash
 KUBECONFIG=.local/kubeconfig .tools/bin/kubectl -n monitoring get secret kps-grafana \
@@ -338,8 +491,9 @@ check, and `make status` prints host free space.
 
 ## Routing to the sink
 
-Alertmanager has one real receiver. There is no email, chat or paging integration in Pass 1, so **an alert reaching
-the sink notifies no human.** Someone has to look at Grafana or the sink's log.
+On kind, Alertmanager has one real receiver. There is no email, chat or paging integration there, so **an alert reaching
+the sink notifies no human.** Someone has to look at Grafana or the sink's log. Hosted production pages: see
+[Where alerts go](#where-alerts-go).
 
 ```mermaid
 flowchart LR
@@ -378,7 +532,8 @@ login of their own. They are at `http://prometheus.localhost` and `http://alertm
 `node-network-only` Middleware on all five internal UIs admits only `172.16.0.0/12`. The host gets 200, and a pod gets 403 from Traefik, spoofed
 headers included ([routes-after-2.txt](evidence/runs/routes-after-2.txt)). This is a door check and not a login: a pod free to leave
 through `host.docker.internal` came back as the host and read Prometheus, and only NetworkPolicy keeps Plane pods from that door
-([h17-doors-free-egress-2.txt](evidence/runs/h17-doors-free-egress-2.txt)). Pass 2 must put them behind auth before exposing them.
+([h17-doors-free-egress-2.txt](evidence/runs/h17-doors-free-egress-2.txt)). On hosted production neither has a route at all, and the
+tunnel reaches them: see [Hosted production](#hosted-production).
 
 ## Loki and Alloy
 
@@ -410,7 +565,8 @@ not been tried. Real anon peaked at 341 MiB, 53% of the limit, at 22:26Z on 2026
 The `grafana/loki` chart on `grafana.github.io` has been the Enterprise chart since 2026-03-16, so this repo uses
 the same 20.4.1 from `grafana-community`. Do not swap the source because the other index looks current.
 
-Filesystem storage is not supported for production by Loki itself. It fits a local Pass 1 only.
+Filesystem storage is not supported for production by Loki itself. It fits the kind cluster. Hosted production uses it too, on the node's
+one disk, and that is one of its limits.
 
 The "API requests with a 5xx" panel parses `container="plane-api"` lines as JSON. The parser works: `status_code >= 400` returned 8 lines
 and `>= 500` returned none, at that read on 2026-11-04 ([monitoring-logql-1.txt](evidence/runs/monitoring-logql-1.txt)). No read has caught that panel showing a 5xx, though the `api-db` probe has since read 500 in Postgres rounds, as above.
@@ -499,7 +655,7 @@ That is one run each, in dev, on a scale to 0. Crashes and hung processes were n
 | The `PlanePostgresDown` and `PlaneApiDatabaseProbeFailing` pair | By hand, with self-heal paused, following the pattern in `scripts/test-alert.sh` |
 | `PlaneWorkerNoConsumer` | Same, scaling `plane-worker-wl` to 0. It has already fired once for a real reason |
 | `PlaneCeleryQueueMissing` | It needs a broker up with no `celery` queue for 10m: a fresh broker whose worker never starts, or a broker the contract forbids, on a throwaway dev run. A restart of a broker whose worker did not reattach keeps the queue, and read `PlaneWorkerNoConsumer` instead ([plane-prod-sim-worker-broker-restart-1.txt](evidence/runs/plane-prod-sim-worker-broker-restart-1.txt)). It has only gone pending so far |
-| A real notification to a person | Not possible in Pass 1: the sink is the end of the path |
+| A real notification to a person | Not possible on kind: the sink is the end of the path. Hosted production's path is under [Where alerts go](#where-alerts-go) |
 
 Whether a rule reads anything was checked on 2026-11-05 at 02:01Z, with both environments Synced and Healthy, by asking for the selector under each
 rule with its threshold left off ([monitoring-history-reads-1.txt](evidence/runs/monitoring-history-reads-1.txt)). 16 of the 24 returned series. The other 8 name a
@@ -529,6 +685,8 @@ Volume growth per day on an idle platform was not tested in Pass 1, because the 
 ## Related
 
 - [Runbooks](runbooks/README.md)
+- [Monitoring a new app](monitoring-new-app.md), on hosted production
+- [`scripts/hosted/README.md`](../scripts/hosted/README.md), for the scripts that reach hosted production, and getting back into Grafana
 - [`monitoring/README.md`](../monitoring/README.md), for the decisions behind this stack and the limits of the kindnet alert
 - [Security](security.md), for why `monitoring-agents` is `privileged`, and for postgres-exporter's superuser among what Pass 1 leaves
 - [Known limitations](known-limitations.md)
