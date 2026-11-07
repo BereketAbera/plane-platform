@@ -75,9 +75,10 @@ Around it:
   on the test's own model of Fastify's router, which does not read them as the path refused, and none of them reaches a refused route when routed
   by hand through this image's own find-my-way. With a real Infisical of this version behind it, the test shows what Infisical answers, and cannot
   see what Traefik forwarded, so neither run stands in for the other. The verdict that run now uses has not run against the image, only against a
-  stand-in that routes with the same model. [`docs/infisical.md`](../infisical.md#the-public-route) says what each run showed. Given the backend's
-  own address on a copy nobody has claimed, it also claims that copy and sends the real tokens it hands out through the route, so a version whose
-  tokens begin another way fails it.
+  stand-in that routes with the same model. [`docs/infisical.md`](../infisical.md#the-public-route) says what each run showed. Given a throwaway
+  copy nobody has claimed, named by its container and asked at the port it publishes on 127.0.0.1, it also claims that copy and sends the real
+  tokens it hands out through the route, so a version whose tokens begin another way fails it. It refuses any other target, and this mode too
+  has run only against a stand-in.
 - **Only Traefik, and only to the server.** NetworkPolicy lets Traefik reach Infisical's server on 8080, and cert-manager's solver there on 8089
   while a challenge runs, and nothing else in that namespace. Its Postgres and Redis stay denied to it, and the matrix has rows for both. The
   server's pod holds no Kubernetes token.
