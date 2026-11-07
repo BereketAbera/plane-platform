@@ -11,6 +11,7 @@ Git remote, and only `make gitops-publish` writes to it. Hosted production's Arg
 | `wayline-upstream-check.yml` | weekly, manual dispatch | Dry-runs the Wayline overlay and patches against an upstream ref, default `preview`, and reports the size of the work. Builds and pushes nothing |
 | `promote-prod-sim.yml` | manual dispatch | Opens a PR copying a digest already recorded for dev to prod-sim. Never rebuilds |
 | `promote-plane-prod.yml` | manual dispatch, with a set's hash | Opens a PR moving hosted production to a set dev has signed evidence for, once `check-prod-evidence.sh` and `validate-manifests.sh` pass on it. Never rebuilds. After the merge, `release-plane-prod` moves `deploy/plane-prod` |
+| `promote-app.yml` | manual dispatch | Opens a PR pointing one image of Rillmark, Awushi Cloudgarden or Frameflow at a digest its own repository published, through `scripts/ci/promote-app.sh`, which edits the app's manifest and `policy/hosted-images.txt` together. One branch per app, `promote/<app>`. Never rebuilds, and cannot read those private packages, so it does not look the digest up. [docs/hosted-apps.md](../../docs/hosted-apps.md) says how a person does |
 | `check-deploy-branch.yml` | daily, manual dispatch | Goes red if `deploy/plane-prod` differs from what its `RELEASE.json` says, which means someone pushed it by hand. Changes nothing, and has not run on GitHub yet |
 | `scan-hosted.yml` | weekly, manual dispatch | `make scan-images-hosted`: scans what hosted production runs, as main says, for `linux/amd64`, from the registries alone: what the hosted tree, its charts and its render name, K3s's own images and the probes' images. Reads the render on `deploy/plane-prod` too, and its report says whether that branch's trees differ from main's. Has `packages: read` for the private Wayline images, and keeps the report as an artifact. Has not run on GitHub yet |
 
@@ -45,7 +46,8 @@ The branch protection and ruleset APIs answer 403 here. The rest comes from GitH
 
 So production approval here is a process, not a control:
 
-- `promote-prod-sim.yml` and `promote-plane-prod.yml` open a pull request, and a person merging it is the approval.
+- `promote-prod-sim.yml`, `promote-plane-prod.yml` and `promote-app.yml` each open a pull request, and a person merging it is the
+  approval.
 - **GitHub cannot enforce that.** Anyone with write access can merge their own pull request, push straight
   to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, so it does not even request a review.
 - The same goes for `deploy/plane-prod`, which hosted Argo CD syncs: anyone with write access can push it, and so can any job with
@@ -53,6 +55,9 @@ So production approval here is a process, not a control:
   says. They notice a push, and by then Argo CD may have deployed it. Only a paid plan or verification on the cluster would prevent one.
 - What is enforced is in the scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim
   digest dev never recorded for that image. CI runs that check, but nothing makes a failing check block a merge.
+- For the apps beside Wayline, `scripts/ci/promote-app.sh` holds the manifest and `policy/hosted-images.txt` to one and the
+  same image string, and refuses one named anywhere else Argo CD reads. Nothing confirms the digest itself: `publish-release.sh`
+  confirms Wayline's on GHCR and no others, so a wrong one shows only after the sync, as ImagePullBackOff.
 - Run locally, `scripts/promote.sh` also refuses unless plane-dev is Synced and Healthy with that digest in a ready container.
   `promote-prod-sim.yml` has no cluster in reach, so there the check is skipped, and the run and the commit message
   (`Promote-Dev-Check: skipped`) say so. `make gitops-publish` then runs it after the merge, and refuses to publish a prod-sim

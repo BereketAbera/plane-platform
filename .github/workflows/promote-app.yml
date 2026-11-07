@@ -1,0 +1,162 @@
+# Opens a pull request pointing one image of an app beside Wayline on hosted production, Rillmark, Awushi Cloudgarden or Frameflow, at
+# a digest that app's own repository built and published. It never builds, and it cannot reach the cluster. ci.yml's release-plane-prod
+# job moves what production reads, after this merges. This job's token could push that branch too, as any with contents: write can, and
+# only publish-release.sh and check-deploy-branch.yml would notice.
+#
+# It does not look the digest up on GHCR, because the app's packages are private and this job's token cannot read them: none of them
+# grants this repository access. So the pull request says what was checked and what the person merging it has to check first.
+#
+# One branch per app, promote/<app>. A second dispatch for the same app before the first pull request merges replaces that pull
+# request's change with its own, so promote an app's components one at a time.
+#
+# A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan with a private repository: no
+# environment reviewers, no protected branches. See README.md.
+name: promote-app
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: The app to promote.
+        required: true
+        type: choice
+        options:
+          - rillmark
+          - awushi-cloudgarden
+          - frameflow
+      component:
+        description: The image to move, as in ghcr.io/bereketabera/<app>/<component>, such as web or backend.
+        required: true
+        default: web
+        type: string
+      digest:
+        description: The digest to run, sha256:..., as the app's images.yml run on main recorded it. For the static sites, the index.
+        required: true
+        type: string
+      tag:
+        description: The first 12 characters of the commit that run built, as it tags the image. Leave empty to keep the tag there now.
+        required: false
+        type: string
+
+permissions: {}
+
+# Each app has its own branch and files, so only promotions of the same app wait for each other.
+concurrency:
+  group: promote-app-${{ inputs.app }}
+  cancel-in-progress: false
+
+jobs:
+  open-pull-request:
+    name: Open promotion pull request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the branch behind the pull request
+      pull-requests: write # open the pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # validate-manifests.sh's promotion invariant reads the dev overlay's history.
+          fetch-depth: 0
+          persist-credentials: false
+      # Before anything else reads them. A refusal does not repeat the value, so nothing typed into a dispatch reaches the log as a line
+      # the runner would read as a command.
+      - name: Check the inputs
+        id: check
+        env:
+          APP: ${{ inputs.app }}
+          COMPONENT: ${{ inputs.component }}
+          DIGEST: ${{ inputs.digest }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$APP" =~ ^(rillmark|awushi-cloudgarden|frameflow)$ ]] || { echo '::error::app is rillmark, awushi-cloudgarden or frameflow'; exit 1; }
+          [[ "$COMPONENT" =~ ^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$ ]] || { echo '::error::component is a lower-case name such as web or backend'; exit 1; }
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo '::error::digest is sha256: and 64 lower-case hex characters'; exit 1; }
+          [[ "$TAG" =~ ^([a-f0-9]{12})?$ ]] || { echo '::error::tag is empty, or the first 12 lower-case hex characters of a commit'; exit 1; }
+          echo "app=$APP" >>"$GITHUB_OUTPUT"
+          if [[ -n "$TAG" ]]; then
+            echo "tag=$TAG, from this dispatch" >>"$GITHUB_OUTPUT"
+          else
+            echo "tag=kept as it was, so it may name the commit of the image before" >>"$GITHUB_OUTPUT"
+          fi
+      # promote-app.sh refuses unless the app's folder names that image as one string, nothing else in the hosted trees names it, and
+      # policy/hosted-images.txt lists it once. It moves the two together.
+      - name: Point the manifest and the image list at the digest
+        id: promote
+        env:
+          APP: ${{ inputs.app }}
+          COMPONENT: ${{ inputs.component }}
+          DIGEST: ${{ inputs.digest }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          ./scripts/install-tools.sh yq
+          ./scripts/ci/promote-app.sh "$APP" "$COMPONENT" "$DIGEST"
+          if [[ ! -f .build/promote-app-message.txt ]]; then
+            echo "$APP already runs this image, so there is nothing to open." >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo 'message<<MESSAGE_END'
+            cat .build/promote-app-message.txt
+            echo 'MESSAGE_END'
+            echo "title=$(head -n 1 .build/promote-app-message.txt)"
+            echo "image=$(sed -n 's/^Promote-Image: [^=]*=//p' .build/promote-app-message.txt)"
+            echo "replaces=$(sed -n 's/^Promote-Replaces: //p' .build/promote-app-message.txt)"
+          } >>"$GITHUB_OUTPUT"
+      # A pull request opened with GITHUB_TOKEN starts no job until someone approves its ci run, so check it here.
+      - name: Validate the result
+        if: steps.promote.outputs.title != ''
+        env:
+          SKIP_CHARTS: "yes"
+        run: ./scripts/ci/validate-manifests.sh
+      - name: Open the pull request
+        id: open
+        if: steps.promote.outputs.title != ''
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: promote/${{ steps.check.outputs.app }}
+          delete-branch: true
+          add-paths: |
+            gitops/clusters/plane-prod/platform/${{ steps.check.outputs.app }}
+            policy/hosted-images.txt
+          commit-message: ${{ steps.promote.outputs.message }}
+          title: ${{ steps.promote.outputs.title }}
+          body: |
+            Promotion of one image of `${{ steps.check.outputs.app }}` on hosted production, requested by @${{ github.actor }}:
+
+            - from `${{ steps.promote.outputs.replaces }}`
+            - to `${{ steps.promote.outputs.image }}`
+            - tag: ${{ steps.check.outputs.tag }}
+
+            in `gitops/clusters/plane-prod/platform/${{ steps.check.outputs.app }}/` and on the same line of `policy/hosted-images.txt`.
+            `scripts/ci/validate-manifests.sh` passed on this change before this pull request opened. Nothing was built.
+
+            **Nothing looked this digest up.** This job's token cannot read the app's private package, and `publish-release.sh` confirms
+            Wayline's digests on GHCR and no others. Before merging, check that it is the digest the app repository's `images.yml` recorded
+            on main, in its `image-digests` artifact, for the commit you mean to ship. The static sites' runs record one only after their
+            linux/amd64 image passed its smoke test and scan. `docs/hosted-apps.md`, under Checking a digest, has the commands, with your own
+            login. A wrong digest shows only after the sync, as ImagePullBackOff, while the pod before it keeps serving.
+
+            **Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free plan, so there are no
+            environment reviewers and no protected branches. Review it as the control it stands in for.
+
+            After merging, `ci.yml`'s `release-plane-prod` job moves `deploy/plane-prod`, and Argo CD syncs Application
+            `${{ steps.check.outputs.app }}` and no other. `make remote-status TARGET=plane-prod` shows it. If that job goes red, the branch
+            stays where it is and production keeps running what it ran. To roll back, revert this commit on main.
+      # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
+      # promotion. The run stays red, because the pull request this workflow promises does not exist.
+      - name: Explain a refused pull request
+        if: failure() && steps.open.outcome == 'failure'
+        env:
+          REPOSITORY: ${{ github.repository }}
+          APP: ${{ steps.check.outputs.app }}
+        run: |
+          {
+            echo '### Branch pushed, pull request not opened'
+            echo
+            echo 'If the step above says Actions is not permitted to create pull requests, the repository'
+            echo 'setting is off: .github/workflows/README.md names it. A person can open this one by hand,'
+            echo 'and ci.yml then runs on it, which it does not for a pull request opened with GITHUB_TOKEN:'
+            echo
+            echo "https://github.com/$REPOSITORY/compare/main...promote/$APP?expand=1"
+          } >>"$GITHUB_STEP_SUMMARY"

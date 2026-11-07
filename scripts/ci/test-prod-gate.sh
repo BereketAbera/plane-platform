@@ -2102,6 +2102,22 @@ workflow_promote_job() {
   expect "the input reaches no shell by expansion" equal "$(workflow_says '[.jobs[].steps[] | select(.run // "" | test("inputs\\."))] | length')" 0
   expect "the pull request holds the Application" grep -qF 'gitops/clusters/plane-prod/applications/plane-prod.yaml' "$ROOT/.github/workflows/promote-plane-prod.yml"
 }
+workflow_promote_app_job() {
+  local job='.jobs["open-pull-request"]' checkout='[.steps[] | select(.uses // "" | test("actions/checkout"))][0]'
+  as_json "$ROOT/.github/workflows/promote-app.yml"
+  expect "dispatch only" equal "$(workflow_says '.on | keys | join(" ")')" workflow_dispatch
+  expect "it asks for the app, the component and the digest" equal "$(workflow_says '[.on.workflow_dispatch.inputs | to_entries[] | select(.value.required) | .key] | sort | join(" ")')" 'app component digest'
+  expect "the app is one of the three" equal "$(workflow_says '.on.workflow_dispatch.inputs.app.options | sort | join(" ")')" 'awushi-cloudgarden frameflow rillmark'
+  expect "the workflow itself grants nothing" equal "$(workflow_says '.permissions | length')" 0
+  expect "only what opening a pull request takes" equal "$(workflow_says "$job.permissions | to_entries | map(.key + \"=\" + .value) | sort | join(\" \")")" 'contents=write pull-requests=write'
+  expect "every action pinned to a commit" equal "$(workflow_says "[$job.steps[] | select(.uses) | .uses | select(test(\"@[a-f0-9]{40}$\") | not)] | length")" 0
+  expect "no credentials left in the checkout" equal "$(workflow_says "$job | $checkout | .with[\"persist-credentials\"]")" false
+  expect "nothing a cache could poison in a job that can write" equal "$(workflow_says "[$job.steps[] | select(.uses // \"\" | test(\"actions/cache\"))] | length")" 0
+  expect "it goes through the script, which edits the manifest and the list together" equal "$(workflow_says "[$job.steps[] | select(.run // \"\" | test(\"scripts/ci/promote-app.sh\"))] | length")" 1
+  expect "it validates what it opens" equal "$(workflow_says "[$job.steps[] | select(.run // \"\" | test(\"scripts/ci/validate-manifests.sh\"))] | length")" 1
+  expect "the inputs reach no shell by expansion" equal "$(workflow_says '[.jobs[].steps[] | select(.run // "" | test("inputs\\."))] | length')" 0
+  expect "the pull request holds the app's folder and the list, and nothing else" equal "$(workflow_says "[$job.steps[] | select(.uses // \"\" | test(\"create-pull-request\")) | .with[\"add-paths\"] | split(\"\n\")[] | select(. != \"\")] | sort | join(\" \")")" 'gitops/clusters/plane-prod/platform/${{ steps.check.outputs.app }} policy/hosted-images.txt'
+}
 workflow_deploy_branch_check() {
   local job='.jobs.compare' checkout='[.steps[] | select(.uses // "" | test("actions/checkout"))][0]'
   as_json "$ROOT/.github/workflows/check-deploy-branch.yml"
@@ -2386,6 +2402,7 @@ scenario real-overlays-name-the-same-images real_overlays_name_the_same_images "
 scenario real-signers-accept-a-signature-from-that-key real_signers_accept_a_signature_from_that_key "$SOURCE_COMMIT"
 scenario workflow-release-job workflow_release_job "$SOURCE_COMMIT"
 scenario workflow-promote-job workflow_promote_job "$SOURCE_COMMIT"
+scenario workflow-promote-app-job workflow_promote_app_job "$SOURCE_COMMIT"
 scenario workflow-gate-runs-in-make-ci workflow_gate_runs_in_make_ci "$SOURCE_COMMIT"
 scenario workflow-deploy-branch-check workflow_deploy_branch_check "$SOURCE_COMMIT"
 
