@@ -56,6 +56,18 @@ test_hosted_operator_may_automount if {
 	count(workloads.deny) == 0 with input as pod_template("iso-prod-controller-manager", token_on, limited)
 }
 
+test_frameflow_operator_may_automount if {
+	count(workloads.deny) == 0 with input as pod_template("iso-frameflow-controller-manager", token_on, limited)
+}
+
+test_frameflow_operator_serviceaccount_may_automount if {
+	count(workloads.deny) == 0 with input as {"kind": "ServiceAccount", "metadata": {"name": "iso-frameflow-controller-manager"}, "automountServiceAccountToken": true}
+}
+
+test_frameflow_workload_may_not_automount if {
+	count(workloads.deny) == 1 with input as pod_template("frameflow-api", token_on, limited)
+}
+
 test_allowlisted_operator_still_needs_memory_limit if {
 	count(workloads.deny) == 1 with input as pod_template("iso-dev-controller-manager", token_on, {})
 }
