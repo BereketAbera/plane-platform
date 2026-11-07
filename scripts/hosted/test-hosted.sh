@@ -865,13 +865,15 @@ outside() {
     if [[ -n "${extra// /}" ]]; then row FAIL "only 22, 80 and 443 answer on IPv6" "also open: $extra"; else row PASS "nothing extra answers on IPv6" "open: ${open6:-none, or this machine has no IPv6}"; fi
   fi
 
+  # Frameflow's host passes these two before Frameflow is deployed, because Terraform owns its record and port 80 redirects every host.
+  # Its certificate comes when Frameflow does, so it has no row below yet.
   local host
-  for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN"; do resolves_to_the_node "$host"; done
+  for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN" "$HOSTED_RILLMARK_DOMAIN" "$HOSTED_CLOUDGARDEN_DOMAIN" "$HOSTED_FRAMEFLOW_DOMAIN"; do resolves_to_the_node "$host"; done
 
   if [[ " $open " != *" 80 "* ]]; then
     row BLOCKED "http redirects to https" "port 80 is closed. Move the firewall on: scripts/hosted/edge.sh"
   else
-    for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN"; do redirects_to_https "$host"; done
+    for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN" "$HOSTED_RILLMARK_DOMAIN" "$HOSTED_CLOUDGARDEN_DOMAIN" "$HOSTED_FRAMEFLOW_DOMAIN"; do redirects_to_https "$host"; done
   fi
 
   if [[ " $open " != *" 443 "* ]]; then
@@ -882,6 +884,8 @@ outside() {
   served_certificate "$HOSTED_DOMAIN" wayline-tls
   served_certificate "$HOSTED_GRAFANA_DOMAIN" grafana-tls
   served_certificate "$HOSTED_INFISICAL_DOMAIN" infisical-tls
+  served_certificate "$HOSTED_RILLMARK_DOMAIN" rillmark-tls
+  served_certificate "$HOSTED_CLOUDGARDEN_DOMAIN" devops-tls
   grafana_public
   infisical_public
 
@@ -993,7 +997,7 @@ psa() {
   section "Pod Security"
   cluster_or_blocked "Pod Security" || return 0
   local namespace answer
-  for namespace in plane-prod infisical monitoring; do
+  for namespace in plane-prod infisical monitoring rillmark awushi-cloudgarden; do
     # A server-side dry run, so nothing is created, and admission still has to say yes.
     answer="$(kc apply --dry-run=server -f - 2>&1 <<YAML || true
 apiVersion: v1
