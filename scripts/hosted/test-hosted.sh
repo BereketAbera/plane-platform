@@ -993,34 +993,55 @@ for host in '$HOSTED_DOMAIN $ADMIN_HOSTS'.split():
 
 # ------ Pod Security ---------------------------------------------------------------------------------------------------
 
-psa() {
-  section "Pod Security"
-  cluster_or_blocked "Pod Security" || return 0
-  local namespace answer
-  for namespace in plane-prod infisical monitoring rillmark awushi-cloudgarden; do
-    # A server-side dry run, so nothing is created, and admission still has to say yes.
-    answer="$(kc apply --dry-run=server -f - 2>&1 <<YAML || true
+# A server-side dry run of a probe pod, so nothing is created, and admission still has to say yes. Prints what admission answers,
+# warnings too. Each argument after the name is one more line of the pod's spec.
+dry_run_pod() { # namespace name [spec line...]
+  local namespace="$1" name="$2" line spec=""
+  shift 2
+  for line in "$@"; do spec+="  $line"$'\n'; done
+  kc apply --dry-run=server -f - 2>&1 <<YAML || true
 apiVersion: v1
 kind: Pod
 metadata:
-  name: test-hosted-host-network
+  name: $name
   namespace: $namespace
 spec:
-  hostNetwork: true
-  automountServiceAccountToken: false
+${spec}  automountServiceAccountToken: false
   containers:
     - name: probe
       image: docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
       resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 32Mi}}
 YAML
-)"
-    if [[ "$answer" == *hostNetwork* && "$answer" == *PodSecurity* ]]; then
-      row PASS "$namespace refuses hostNetwork" "admission said no"
-    elif [[ "$answer" == *created* ]]; then
-      row FAIL "$namespace refuses hostNetwork" "admission allowed it, on a dry run, so nothing was made"
-    else
-      row BLOCKED "$namespace refuses hostNetwork" "$(tr '\n' ' ' <<<"$answer" | cut -c1-160)"
-    fi
+}
+
+# Every namespace warns and audits at restricted, whatever it enforces, so an answer that admits the pod can still name Pod Security and
+# the very field, in a warning that it "would violate" it. Only a refusal says "violates". The quota is read after Pod Security, so a pod
+# the quota refuses got past it.
+psa_row() { # what answer reason: the row, from what admission answered, which must refuse for that reason
+  local what="$1" answer="$2" reason="$3"
+  if [[ "$answer" == *created* || "$answer" == *"exceeded quota"* ]]; then
+    row FAIL "$what" "Pod Security let it through, on a dry run, so nothing was made"
+  elif [[ "$answer" == *"violates PodSecurity"* && "$answer" == *"$reason"* ]]; then
+    row PASS "$what" "admission said no"
+  else
+    row BLOCKED "$what" "$(tr '\n' ' ' <<<"$answer" | cut -c1-160)"
+  fi
+}
+
+psa() {
+  section "Pod Security"
+  cluster_or_blocked "Pod Security" || return 0
+  local namespace
+  # Every app's namespace, frameflow's too, which answers before Frameflow is deployed: Pod Security refuses a pod before the quota
+  # reads it, so a quota of no pods hides no weaker level.
+  for namespace in plane-prod infisical monitoring rillmark awushi-cloudgarden frameflow; do
+    psa_row "$namespace refuses hostNetwork" "$(dry_run_pod "$namespace" test-hosted-host-network 'hostNetwork: true')" hostNetwork
+  done
+  # baseline refuses hostNetwork too, so the rows above cannot tell it from restricted, which the apps' namespaces enforce. This pod sets
+  # no securityContext at all, so it may escalate, keeps its capabilities and may run as root: baseline admits it, and restricted alone
+  # refuses it.
+  for namespace in rillmark awushi-cloudgarden frameflow; do
+    psa_row "$namespace refuses what only baseline allows" "$(dry_run_pod "$namespace" test-hosted-baseline-only)" 'violates PodSecurity "restricted:'
   done
 }
 
